@@ -55,7 +55,8 @@ Until November 2026 all the logic was one file, `src/app.js`. It is now cut into
 
 How to find things:
 - **Every file starts with a banner** – `/* ================= NAME: what it does ================= */` – written when the feature was built. The banner is the file's description; `src/app/manifest.txt` lists every file in load order.
-- **Folders and file names are a filing system, not boundaries.** A file can use anything declared in any other file. Shared helpers still sit in whichever section first needed them: for example `loadJsPdf` is in `safety/site-inductions.js`, and `BRGB` and `pdfLogo` are in `photos/photos.js`. Search `src/app/` for a name rather than guessing from the folder.
+- **`docs/MODULES.md` is the generated map**: for every file, the names it declares that other files use, the files it depends on, and what it runs at load. It also lists the most widely used names and every variable assigned from another file.
+- **Folders and file names are a filing system, not boundaries.** A file can use anything declared in any other file – 117 of the 126 files sit in one dependency loop. Shared helpers still sit in whichever section first needed them: for example `loadJsPdf` is in `safety/site-inductions.js`, and `BRGB` and `pdfLogo` are in `photos/photos.js`. Search `src/app/` for a name rather than guessing from the folder.
 - **Feature modules**: eleven newer features are self-contained IIFEs that expose a few functions – `DWS`, `LEADS`, `WTN`, `SENDTO`, `SIGNIN`, `SIGNSHEET`, `CUT`, `SUBAG`, `SAMPLES`, `CJOBS`, `QRSITE`. Everything else is top-level functions in the shared scope.
 - `docs/FEATURES.md` maps tabs to the function or module that draws them.
 
@@ -74,6 +75,15 @@ src/shell.html       ─► shell + <script> + that + </script>  =  dist/index.h
 - `dist/index.html` is the single file that gets published; the platform wraps it in its own `<html>` skeleton. `npm run dev` serves the same assembly with the tests' fake backend.
 - **How the split was verified**: cutting `app.js` at its existing banners gave a build byte-for-byte identical to the one before (same SHA-256). Three banner comments were then added so that helpers, boot, planning leads and deleted items each have their own file; with banner lines ignored the build is still identical to the original.
 - `scripts/split.mjs <page or script>` is the reverse: it cuts an assembled app back into these files by matching banners. It is how a version published to the artifact from somewhere else is merged (`docs/PLATFORM.md` › Publishing).
+
+## Structure checks
+`scripts/modules.mjs` parses every file (acorn + eslint-scope, dev dependencies) and fails `npm test` if:
+- a name is declared at the top level of two files (for functions the later one would silently win);
+- a name is used that is declared nowhere in `src/app/` and is not a browser or CDN-library global;
+- a file uses another file's `const`/`let` while the page loads, and that file comes later in the manifest;
+- `docs/MODULES.md` is not what the script would generate now.
+
+`npm run build` and `npm run dev` do not need these dependencies.
 
 ## Load order
 The files share **one function scope**, exactly as when they were one file. That has three consequences, and they are the only rules about order:

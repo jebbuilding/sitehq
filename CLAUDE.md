@@ -17,9 +17,10 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ROADMAP.md`.
 1. Edit the file under `src/app/` (and `src/shell.html` for CSS/static markup). Find code by searching `src/app/` for the function name or the banner – folder names are a filing system, and shared helpers are not always where the name suggests. Keep the existing style (see below).
 2. `npm run build` – syntax-checks each file and the whole, and writes `dist/index.html` + `tests/timesheets.html`. `npm run dev` serves the app at `localhost:4321/owner|trade|client` on the fake backend for a look by hand.
 3. Write or update a Playwright test in `tests/features/` that exercises the change through the UI against the fake backend (copy the header of a recent one, e.g. `h412.js` for owner-side, `h395.js` for a seeded owner session, `h400.js` if pdf.js is needed). Run it from `tests/`.
-4. `npm test` – must stay at `flows: N passed, 0 failed` and `ERRORS (0)` for owner, trade and client crawls.
-5. Look at generated PDFs/screens (tests write PNG/PDF outputs into `tests/`, git-ignored) – PDF layout bugs (overlaps, text running into lines) only show visually.
-6. Publish (only while still on claude.ai): see `docs/PLATFORM.md` › Publishing. Capabilities are carried forward; never pass `capabilities` unless deliberately changing rules, and then pass the **full** declaration from `platform/capabilities.json`.
+4. `npm run modules` – regenerates `docs/MODULES.md` (the map of what each file declares and uses) and runs the structure checks: no name declared twice, no name used that is declared nowhere, nothing used at load before the file that declares it. Commit the regenerated file.
+5. `npm test` – runs the same checks (and fails if `docs/MODULES.md` is stale), and must stay at `flows: N passed, 0 failed` and `ERRORS (0)` for owner, trade and client crawls.
+6. Look at generated PDFs/screens (tests write PNG/PDF outputs into `tests/`, git-ignored) – PDF layout bugs (overlaps, text running into lines) only show visually.
+7. Publish (only while still on claude.ai): see `docs/PLATFORM.md` › Publishing. Capabilities are carried forward; never pass `capabilities` unless deliberately changing rules, and then pass the **full** declaration from `platform/capabilities.json`.
 
 ## Code conventions (match them)
 - Global state object `S`; `render()` redraws the current tab into `#main`. Owner tab = `S.otab`, trade tab = `S.tab`, per-view filters in `S.f`.

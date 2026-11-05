@@ -4,6 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 node scripts/build.mjs
+node scripts/modules.mjs --check   # structure checks + docs/MODULES.md is current
 cd tests
 [ -d jspdfpkg ] || ../scripts/vendor.sh
 out=$(node flows.js 2>&1 || true)

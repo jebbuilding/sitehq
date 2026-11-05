@@ -15,3 +15,5 @@ data/
 exports/
 *.export.json
 .env
+# rewritten by tests/flows.js on every run
+tests/flowdump.json

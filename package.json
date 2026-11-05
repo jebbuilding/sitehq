@@ -7,11 +7,16 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
+    "modules": "node scripts/modules.mjs",
+    "check": "node scripts/modules.mjs --check",
     "vendor": "bash scripts/vendor.sh",
     "test": "bash scripts/test.sh",
     "test:feature": "cd tests && node"
   },
   "devDependencies": {
+    "acorn": "^8.19.0",
+    "eslint-scope": "^9.1.2",
+    "globals": "^17.14.0",
     "playwright": "^1.47.0"
   }
 }

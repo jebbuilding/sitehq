@@ -33,6 +33,8 @@ src/app/              the whole application (~13k lines, vanilla JS, no framewor
 src/app/manifest.txt  the order the files are joined in (they share one scope – see docs/ARCHITECTURE.md)
 scripts/bundle.mjs    joins src/app/ into the one app script (used by build, dev and split)
 scripts/build.mjs     shell + app → dist/index.html (+ syntax check); copies to tests/timesheets.html
+scripts/analyze.mjs   parses src/app/ (acorn + eslint-scope): what each file declares and uses
+scripts/modules.mjs    structure checks + writes docs/MODULES.md (`npm run modules`; `npm run check` verifies)
 scripts/split.mjs     the reverse: cuts a built or published page back into src/app/ (for merging artifact-side versions)
 scripts/dev.mjs       local dev server: src/ + the tests' fake backend, at localhost:4321/owner|trade|client
 scripts/vendor.sh     npm-packs jsPDF, pdf.js, SheetJS, mammoth, qrcode-generator into tests/ for offline tests
@@ -55,6 +57,7 @@ CLAUDE.md             working instructions for Claude Code in this repo
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | How to work on this code (conventions, workflow, rules that must not be broken) |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the app is built and how it runs |
+| [`docs/MODULES.md`](docs/MODULES.md) | Generated: what every file declares, what uses it, what it depends on |
 | [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) | Collections, document kinds, access rules |
 | [`docs/PLATFORM.md`](docs/PLATFORM.md) | The claude.ai Artifact runtime: capabilities, publishing, sharing, limits, the Nov 2026 "Forbidden" incident |
 | [`docs/FEATURES.md`](docs/FEATURES.md) | Feature inventory by role and where it lives in the code |
