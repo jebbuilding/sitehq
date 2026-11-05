@@ -19,6 +19,8 @@ npm test                    # build + flows suite + crawl every tab as owner / t
 
 Expected output: `flows: 35 passed, 0 failed` and `ERRORS (0)` for each of the three crawls.
 
+Use it in a browser: `npm run dev` → `http://localhost:4321/owner`, `/trade` or `/client` (`/trade?onboarding` shows the "fill in your details" gate). This serves `src/` wrapped in the tests' fake backend and seed data, re-read on every request – edit, then reload. The data lives in the page: a reload resets it, tabs don't share it, and no access rules are enforced, so it is for UI work, not for checking permissions. Uploads are held in the server's memory, downloads save for real, and the company logo is a grey block (the real one exists only on the live artifact). Needs no `npm install`, but does need a connection for the CDN libraries (PDFs, spreadsheets) and fonts. `HOST=0.0.0.0 npm run dev` lets an iPad on the same network open it.
+
 Build only: `npm run build` → `dist/index.html` (this is exactly the file that gets published).
 
 Run one feature test: `cd tests && node features/h412.js`.
@@ -29,6 +31,7 @@ Run one feature test: `cd tests && node features/h412.js`.
 src/shell.html        <style> + static HTML (header, tab bar, sheets, viewers) – everything before the <script>
 src/app.js            the whole application (~13k lines, vanilla JS, no framework, no build step)
 scripts/build.mjs     shell + app → dist/index.html (+ syntax check); copies to tests/timesheets.html
+scripts/dev.mjs       local dev server: src/ + the tests' fake backend, at localhost:4321/owner|trade|client
 scripts/vendor.sh     npm-packs jsPDF, pdf.js, SheetJS, mammoth, qrcode-generator into tests/ for offline tests
 scripts/test.sh       build + core suite
 tests/harness8src.js  fake platform: in-memory db (Firestore-like), assets, user, downloads

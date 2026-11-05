@@ -5,6 +5,7 @@
   "description": "SiteHQ – job management for JEB Building Services (owner, trades, client portal). Currently runs as a claude.ai Artifact.",
   "type": "module",
   "scripts": {
+    "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "vendor": "bash scripts/vendor.sh",
     "test": "bash scripts/test.sh",
