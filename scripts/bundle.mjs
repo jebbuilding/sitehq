@@ -9,7 +9,8 @@
 // The last point is why this is not esbuild: the published script stays the source text, so a version published
 // from somewhere else can be cut back into files (scripts/split.mjs). `npm run check` proves with esbuild that the
 // modules are valid and that it would evaluate them in this same order, so swapping bundlers later is a small change.
-// Used by build.mjs (the published page), dev.mjs (local server) and split.mjs (the reverse operation).
+// Used by build.mjs (the published page and the page for our own hosting), dev.mjs and local.mjs (local servers)
+// and split.mjs (the reverse operation).
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -100,4 +101,19 @@ export function pageFragment(app = bundleApp()) {
   const shell = fs.readFileSync(path.join(root, "src/shell.html"), "utf8");
   if (shell.split(STYLE_SLOT).length !== 2) throw new Error("src/shell.html must contain the styles placeholder comment exactly once");
   return shell.replace(STYLE_SLOT, () => "<style>\n" + bundleCss() + "</style>") + "<script>\n" + app + "</script>\n";
+}
+
+export const ADAPTER = "src/platform/aws-adapter.js";
+
+/**
+ * The page for our own hosting: a complete HTML document with the platform adapter (window.claude on SiteHQ's own
+ * backend, server/) in a script of its own ahead of the published fragment. `before` is extra markup put ahead of
+ * the adapter – the local server uses it to tell the adapter where the API is and who is signed in.
+ */
+export function webPage(app = bundleApp(), before = "") {
+  const adapter = fs.readFileSync(path.join(root, ADAPTER), "utf8");
+  try { new Function(adapter); } catch (e) { throw new Error(`Syntax error in ${ADAPTER}: ${e.message}`); }
+  if (/<\/script/i.test(adapter)) throw new Error(`${ADAPTER} must not contain "</script" – it is put in the page as an inline script`);
+  return '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>SiteHQ</title></head><body>\n'
+    + before + "<script>\n" + (adapter.endsWith("\n") ? adapter : adapter + "\n") + "</script>\n" + pageFragment(app) + "</body></html>\n";
 }

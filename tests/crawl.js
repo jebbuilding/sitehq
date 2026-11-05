@@ -1,5 +1,8 @@
 const fs=require('fs');const {chromium}=require('playwright');
 const mode=process.argv[2]||'owner';const only=process.argv[3]||'';
+// SITEHQ_URL=http://127.0.0.1:<port> crawls the app served there at /owner, /trade or /client (the app on its own
+// backend: scripts/test-backend.mjs) instead of the page with the fake platform built below. Nothing else changes.
+const base=(process.env.SITEHQ_URL||'').replace(/\/$/,'');
 let src=fs.readFileSync('harness8src.js','utf8');
 const seed=`window.__store=store;
 store["todos/c1"]={kind:"client",name:"Sue Jones",phone:"07700900111",email:"sue@example.com",address:"4 Rolle Road",postcode:"EX8 2AB",work:"Loft conversion",stage:"won",portalCode:"ABC123",notes:[],created:1,site:"4 Rolle Road, Exmouth"};
@@ -19,10 +22,10 @@ let page_src=fs.readFileSync('timesheets.html','utf8');
 if(mode==='trade')page_src=page_src.replace('function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}','function detailsDone(d){return true}');
 const SKIP=/delete|remove|sign out|log out|reset|restore|wipe|undo|clear all|fill in forms as me|team view|leave the|tap again|stop \(|disconnect|archive|⬇ backup|backup|^×$|^✕$/i;
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});ctx.setDefaultTimeout(1500);
- await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(u.includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});if(u.includes('xlsx'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('xlsxpkg/package/dist/xlsx.full.min.js','utf8')});return r.abort()});
+ await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(base&&u.startsWith(base+'/'))return r.continue();if(u.includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});if(u.includes('xlsx'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('xlsxpkg/package/dist/xlsx.full.min.js','utf8')});return r.abort()});
  const p=await ctx.newPage();let cur='load';const errs=[];
  p.on('pageerror',e=>errs.push(cur+' :: '+e.message));p.on('console',m=>{if(m.type()==='error'&&!/Failed to load resource|ERR_FAILED|net::/.test(m.text()))errs.push(cur+' :: console '+m.text().slice(0,200))});p.on('dialog',d=>d.dismiss().catch(()=>{}));
- await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(mode==='owner')+page_src+'</body></html>');await p.waitForTimeout(1500);await p.keyboard.press('Escape');
+ if(base)await p.goto(base+'/'+mode);else await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(mode==='owner')+page_src+'</body></html>');await p.waitForTimeout(1500);await p.keyboard.press('Escape');
  const closeAll=async()=>{for(let k=0;k<3;k++){await p.keyboard.press('Escape').catch(()=>{});for(const s of ['.np-cancel','#f-cancel','#viewer-close','#chat-back','#fv-close','#mk-cancel','#pv-exit']){const el=await p.$(s);if(el&&await el.isVisible().catch(()=>false))await el.click({timeout:800}).catch(()=>{})}}};
  const isClient=mode==='client';
  const tabs=isClient?await p.$$eval('.ptabs button',x=>x.map(t=>[t.dataset.v,t.textContent.trim()])):await p.$$eval('#tabs .tab',x=>x.map(t=>[t.dataset.t,t.textContent.trim()]).filter(t=>t[0]!=='me'&&t[0]!=='__back'));
