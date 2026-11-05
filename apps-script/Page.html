@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html><head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--brand:#7a1d1d;--ink:#1b1817;--soft:#f4efed;--line:#e3dad6;--ok:#1d7a45}
+*{box-sizing:border-box}body{margin:0;font:17px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:#faf8f7}
+header{background:var(--brand);color:#fff;padding:16px 18px}header small{opacity:.85;display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase}header b{font-size:21px;display:block;margin-top:2px}header span{font-size:14px;opacity:.9}
+main{max-width:560px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+h2{font-size:20px;margin:0 0 8px}label{display:block;font-size:14px;font-weight:600;margin:12px 0 4px}
+input{width:100%;font-size:18px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+button{font:inherit;font-size:18px;font-weight:700;border:0;border-radius:12px;padding:15px 18px;width:100%;margin-top:12px;cursor:pointer;background:var(--brand);color:#fff}
+button.sec{background:var(--soft);color:var(--ink);font-weight:600}button.ok{background:var(--ok)}button:disabled{opacity:.6}
+.muted{color:#6f6562;font-size:14px}.err{color:#b3261e;font-weight:600;margin-top:8px}.row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.det{margin:8px 0}.det b{display:block;font-size:13px;color:#6f6562;text-transform:uppercase;letter-spacing:.04em}
+.tick{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);font-size:16px}.tick input{width:24px;height:24px;flex:none;margin-top:2px}
+.big{font-size:40px;text-align:center;margin:6px 0}.who a{color:var(--brand)}
+.notice{background:#fff6dc;border:1px solid #efd58a;border-radius:10px;padding:10px 12px;font-size:15px;margin-bottom:8px}
+</style></head><body>
+<header><small>Site sign-in</small><b id="sname">Loading…</b><span id="saddr"></span></header>
+<main id="m"><div class="card muted">Loading…</div></main>
+<script>
+var SITE=<?!= JSON.stringify(siteId) ?>;var site=null,me=null;var KEY="sitehq-qr-me";
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){return null}}function save(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+function forget(){try{localStorage.removeItem(KEY)}catch(e){}me=null;home()}
+function run(fn,args,ok,btn){if(btn){btn.disabled=true}var r=google.script.run.withSuccessHandler(function(x){if(btn)btn.disabled=false;ok(x)}).withFailureHandler(function(e){if(btn)btn.disabled=false;var el=$("err");if(el)el.textContent=(e&&e.message||"Something went wrong").replace(/^Error: /,"");else alert(e.message)});r[fn].apply(r,args)}
+function start(){if(!SITE){$("m").innerHTML='<div class="card">This code isn\'t linked to a site.</div>';return}
+  run("getSite",[SITE],function(s){if(!s){$("sname").textContent="Not set up";$("m").innerHTML='<div class="card">This site isn\'t set up for sign-in yet. Please see the site manager.</div>';return}
+    site=s;$("sname").textContent=s.name;$("saddr").textContent=(s.company?s.company+" · ":"")+(s.address||"");me=load();home()})}
+function myOpen(){if(!me||!site)return null;var o=(me.open||{})[site.id];return o&&site.onSite.some(function(r){return r.id===o})?o:null}
+function home(){var h="";var open=myOpen();
+  if(me&&open){h+='<div class="card"><div class="big">👋</div><h2>You\'re signed in, '+esc(me.name.split(" ")[0])+'</h2><p class="muted">Tap below when you leave the site.</p><button class="ok" id="out">Sign out</button><div id="err" class="err"></div></div>'}
+  else if(me){h+='<div class="card"><h2>Welcome back, '+esc(me.name.split(" ")[0])+'</h2><p class="muted">'+esc(me.name)+(me.company?" · "+esc(me.company):"")+'</p><button id="in">Sign in</button><button class="sec" id="notme">Not you?</button><div id="err" class="err"></div></div>'}
+  else{h+='<div class="card"><h2>Sign in to this site</h2><label for="n">Your full name</label><input id="n" autocomplete="name"><label for="c">Company (or “self-employed”, “visitor”)</label><input id="c" autocomplete="organization"><label for="p">Mobile number</label><input id="p" type="tel" autocomplete="tel" inputmode="tel"><p class="muted">Your number lets us recognise you next time, so you only do the induction once. It\'s only used for site safety.</p><button id="go">Next</button><div id="err" class="err"></div></div>'}
+  if(site.onSite.length){h+='<div class="card"><h2 style="font-size:17px">On site now ('+site.onSite.length+')</h2><p class="muted">Already signed in on another phone? Tap your name to sign out.</p>'+site.onSite.map(function(r){return '<div class="row"><span><b>'+esc(r.name)+'</b><br><span class="muted">'+esc(r.company||"")+' · in '+esc(r.in)+'</span></span><span><button class="sec so" data-id="'+esc(r.id)+'" style="width:auto;margin:0;padding:10px 14px;font-size:15px">Sign out</button></span></div>'}).join("")+'</div>'}
+  if(site.phone)h+='<p class="muted" style="text-align:center">Site manager: <a href="tel:'+esc(site.phone.replace(/\s+/g,""))+'">'+esc(site.phone)+'</a></p>';
+  $("m").innerHTML=h;
+  if($("out"))$("out").onclick=function(){doOut(open,this)};
+  if($("in"))$("in").onclick=function(){check(me,this)};
+  if($("notme"))$("notme").onclick=forget;
+  if($("go"))$("go").onclick=function(){var f={name:$("n").value.trim(),company:$("c").value.trim(),mobile:$("p").value.trim()};if(!f.name||!f.mobile){$("err").textContent="Please add your name and mobile number.";return}check(f,this)};
+  Array.prototype.forEach.call(document.querySelectorAll(".so"),function(b){b.onclick=function(){if(!confirm("Sign out "+b.closest(".row").querySelector("b").textContent+"?"))return;doOut(b.dataset.id,b)}})}
+function check(f,btn){run("checkPerson",[site.id,f.mobile],function(c){if(c.error){$("err").textContent="This site isn't set up any more.";return}
+  var p={name:f.name||c.name,company:f.company||c.company,mobile:f.mobile};if(c.openId){me=Object.assign({},p,{open:Object.assign({},(me&&me.open)||{})});me.open[site.id]=c.openId;save(me);done("Already signed in",c.openId);return}
+  if(c.needInduction)induction(p,c);else doIn(p,false,btn)},btn)}
+function induction(p,c){var h='<div class="card">'+(c.changed?'<div class="notice">⚠️ <b>The induction for this site has changed.</b> Please read it again and confirm.</div>':c.expired?'<div class="notice">It\'s been a while since you were here – please read the induction again.</div>':'')+'<h2>Site induction</h2><p class="muted">Please read this before you go on site.</p>';
+  site.details.forEach(function(d){if(d[1])h+='<div class="det"><b>'+esc(d[0])+'</b>'+esc(d[1]).replace(/\n/g,"<br>")+'</div>'});
+  h+='<h2 style="margin-top:14px;font-size:17px">Tick each one to confirm</h2>'+site.items.map(function(t,i){return '<label class="tick"><input type="checkbox" class="it"> <span>'+esc(t)+'</span></label>'}).join("")+'<button id="ok">I have read and understood this – sign me in</button><button class="sec" id="back">Back</button><div id="err" class="err"></div></div>';
+  $("m").innerHTML=h;window.scrollTo(0,0);$("back").onclick=home;
+  $("ok").onclick=function(){var all=Array.prototype.every.call(document.querySelectorAll(".it"),function(x){return x.checked});if(!all){$("err").textContent="Please tick every point.";return}doIn(p,true,this)}}
+function doIn(p,inducted,btn){run("signIn",[{siteId:site.id,name:p.name,company:p.company,mobile:p.mobile,inducted:inducted}],function(r){me=Object.assign({},load()||{},p);me.open=Object.assign({},me.open||{});me.open[site.id]=r.id;save(me);done("Signed in at "+r.time,r.id)},btn)}
+function doOut(id,btn){run("signOut",[id],function(r){if(me&&me.open&&me.open[site.id]===id){delete me.open[site.id];save(me)}$("m").innerHTML='<div class="card"><div class="big">✅</div><h2>Signed out'+(r.time?" at "+esc(r.time):"")+'</h2><p class="muted">Thanks – have a safe journey.</p><button class="sec" id="h">Done</button></div>';$("h").onclick=function(){start()}},btn)}
+function done(t,id){$("m").innerHTML='<div class="card"><div class="big">✅</div><h2>'+esc(t)+'</h2><p class="muted">Scan the same code again when you leave to sign out.</p><button class="sec" id="h">Done</button></div>';$("h").onclick=function(){start()}}
+start();
+</script></body></html>

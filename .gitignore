@@ -1,0 +1,17 @@
+node_modules/
+dist/
+# test outputs and vendored libraries
+tests/timesheets.html
+tests/*.png
+tests/*.pdf
+tests/*.jpg
+tests/jspdfpkg/
+tests/pdfjspkg/
+tests/xlsxpkg/
+tests/mammothpkg/
+tests/qrlib/
+# NEVER commit real data exports (personal data: NI numbers, medical notes, client details)
+data/
+exports/
+*.export.json
+.env

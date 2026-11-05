@@ -1,0 +1,129 @@
+{
+  "assets": {},
+  "db": {
+    "rules": [
+      {
+        "path": "sheets",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
+        "path": "sheets/{self}",
+        "read": "interact",
+        "write": "interact"
+      },
+      {
+        "path": "sites",
+        "read": "view",
+        "write": "owner"
+      },
+      {
+        "path": "equipment",
+        "read": "view",
+        "write": "owner"
+      },
+      {
+        "path": "docs",
+        "read": "view",
+        "write": "owner"
+      },
+      {
+        "path": "inductions",
+        "read": "view",
+        "write": "owner"
+      },
+      {
+        "path": "jobs",
+        "read": "interact",
+        "write": "owner"
+      },
+      {
+        "path": "jobdone",
+        "read": "interact",
+        "write": "interact"
+      },
+      {
+        "path": "talks",
+        "read": "interact",
+        "write": "owner"
+      },
+      {
+        "path": "chats",
+        "read": "interact",
+        "write": "interact"
+      },
+      {
+        "path": "msgs",
+        "read": "interact",
+        "write": "interact"
+      },
+      {
+        "path": "settings",
+        "read": "view",
+        "write": "owner"
+      },
+      {
+        "path": "plan",
+        "read": "interact",
+        "write": "owner"
+      },
+      {
+        "path": "planprivate",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
+        "path": "visitinds",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
+        "path": "offapp",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
+        "path": "todos",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
+        "path": "portal",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
+        "path": "portal/{self}",
+        "read": "interact",
+        "write": "interact"
+      },
+      {
+        "path": "wfiles",
+        "read": "view",
+        "write": "owner"
+      },
+      {
+        "path": "wfiles/{self}",
+        "read": "view",
+        "write": "interact"
+      },
+      {
+        "path": "sphotos",
+        "read": "interact",
+        "write": "owner"
+      },
+      {
+        "path": "sphotos/{self}",
+        "read": "interact",
+        "write": "interact"
+      }
+    ]
+  },
+  "downloads": {},
+  "sample": {},
+  "user": {
+    "scopes": [
+      "profile"
+    ]
+  }
+}

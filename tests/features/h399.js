@@ -1,0 +1,24 @@
+const fs=require('fs');const {chromium}=require('playwright');
+let src=fs.readFileSync('harness8src.js','utf8');
+const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
+src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed);
+src=src.replace('upload:async(b)=>(window.__last=b,','upload:async(b)=>{const id="up"+Math.random().toString(36).slice(2);window.__blobs[id]=b;return {id,url:"",sizeBytes:b.size,contentType:b.type}},_x:async(b)=>(window.__last=b,');
+eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
+const page_src=fs.readFileSync('timesheets.html','utf8').replace('const blobUrl=id=>"/_blob/"+id;','const blobUrl=id=>window.__blobs[id]?URL.createObjectURL(window.__blobs[id]):"/_blob/"+id;');
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1100,height:1400}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>console.log('ERR',e.message));
+ await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(u.includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});r.abort()});
+ const savePdf=async(name)=>{const r=await p.evaluate(async()=>{const d=(window.__dl||[]).pop();if(!d)return null;const u=new Uint8Array(await d.data.arrayBuffer());let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return {fn:d.filename,b64:btoa(s)}});console.log('pdf',r&&r.fn);if(r)fs.writeFileSync(name,Buffer.from(r.b64,'base64'))};
+ try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
+ console.log('tab label',await p.evaluate(()=>[...document.querySelectorAll('.tab')].map(t=>t.textContent).find(t=>/Employ|People/.test(t))));
+ await p.click('.tab[data-t=jobs]');await p.waitForTimeout(400);await p.click('#ws-new');await p.waitForTimeout(500);
+ await p.click('#wsx-kind button[data-v=door]');await p.waitForTimeout(400);
+ await p.evaluate(()=>{const g=document.getElementById('wsx-gal');if(g&&g.tagName==='DETAILS')g.open=true;const b=document.querySelector('#wsx-gal .wschev');if(b)b.click()});await p.waitForTimeout(400);
+ const n=await p.locator('#wsx-gallery .wsgb').count();console.log('door designs',n);
+ const css=await p.evaluate(()=>{const r=document.getElementById('wsx-root');const cs=getComputedStyle(r);return [...document.querySelectorAll('style')].map(s=>s.outerHTML).join('')+'<style>:root{'+[...cs].filter(k=>k.startsWith('--')).map(k=>k+':'+cs.getPropertyValue(k)).join(';')+'}</style>'});const gh=await p.evaluate(()=>[...document.querySelectorAll('#wsx-gallery .wsgb')].filter(b=>/Composite|Wooden/.test(b.textContent)).map(b=>'<div style="display:inline-block;width:130px;margin:4px;font:11px sans-serif;text-align:center;vertical-align:top">'+b.innerHTML+'</div>').join(''));const p2=await ctx.newPage();await p2.setContent(css+'<body style="width:1100px;background:#fff">'+gh+'</body>');await p2.screenshot({path:'doorgal.png',fullPage:true});await p2.close();
+ await p.evaluate(()=>{document.getElementById('wsx-gal').open=true});await p.waitForTimeout(200);await p.evaluate(()=>[...document.querySelectorAll('#wsx-gallery .wsgb')].find(b=>/Wooden – framed, ledged/.test(b.textContent)).click());await p.waitForTimeout(400);
+ console.log('design select',await p.inputValue('#wsx-d-des'));await p.selectOption('#wsx-d-des','Door: arched glass top, panels below');await p.waitForTimeout(400);
+ await p.click('#wsx-pdf');await p.waitForTimeout(400);await p.locator('.dimask button',{hasText:'Order request'}).click();await p.waitForTimeout(3000);await savePdf('door_order.pdf');
+ await p.click('#wsx-x').catch(()=>{});await p.evaluate(()=>{const r=document.getElementById('wsx-root');if(r)r.remove()});
+ await p.click('.tab[data-t=clients]');await p.waitForTimeout(300);await p.click('.brandrow');await p.waitForTimeout(400);console.log('after logo tab',await p.evaluate(()=>{const t=document.querySelector('.tab[aria-selected=true],.tab[aria-current=page],.tab.on');return t&&t.dataset.t}));
+ }catch(e){console.log('FAIL',String(e.message).split('\n')[0])}
+ await b.close()})();

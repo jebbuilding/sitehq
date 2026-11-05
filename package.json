@@ -1,0 +1,16 @@
+{
+  "name": "sitehq",
+  "private": true,
+  "version": "0.323.0",
+  "description": "SiteHQ – job management for JEB Building Services (owner, trades, client portal). Currently runs as a claude.ai Artifact.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "vendor": "bash scripts/vendor.sh",
+    "test": "bash scripts/test.sh",
+    "test:feature": "cd tests && node"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

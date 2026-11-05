@@ -1,0 +1,22 @@
+const fs=require('fs');const {chromium}=require('playwright');
+let src=fs.readFileSync('harness8src.js','utf8');
+const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
+src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;'+seed);
+eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
+const page_src=fs.readFileSync('timesheets.html','utf8');
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1000,height:1000}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>console.log('ERR',e.message));
+ await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(u.includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});r.abort()});
+ const savePdf=async(name)=>{const r=await p.evaluate(async()=>{const d=(window.__dl||[]).pop();if(!d)return null;const u=new Uint8Array(await d.data.arrayBuffer());let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return {fn:d.filename,b64:btoa(s)}});console.log('pdf',r&&r.fn);if(r)fs.writeFileSync(name,Buffer.from(r.b64,'base64'))};
+ try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
+ await p.click('.tab[data-t=jobs]');await p.waitForTimeout(400);await p.click('#ws-new');await p.waitForTimeout(500);
+ console.log('gar hidden for window',await p.locator('#wsx-gar').isHidden(),'fb shown',await p.locator('#wsx-fb').isVisible());
+ await p.click('#wsx-kind button[data-v=garage]');await p.waitForTimeout(400);
+ console.log('gar shown',await p.locator('#wsx-gar').isVisible(),'fb hidden',await p.locator('#wsx-fb').isHidden(),'presets',await p.locator('.wsgb[data-i]').count(),'motor hidden',await p.locator('#wsx-g-gmotor').isHidden());
+ await p.click('.wsgb[data-i="5"]');await p.waitForTimeout(300);console.log('calc',(await p.innerText('#wsx-calc')).replace(/\n/g,' '));
+ await p.selectOption('#wsx-g-gmake','Hörmann LPU 42 sectional');await p.selectOption('#wsx-g-ggear','Electric – sectional operator');await p.waitForTimeout(200);console.log('motor',await p.inputValue('#wsx-g-gmotor'),'elec',await p.inputValue('#wsx-g-gelec'),'motor visible',await p.locator('#wsx-g-gmotor').isVisible());
+ await p.selectOption('#wsx-g-gelec','New supply needed – fused spur from the consumer unit');await p.selectOption('#wsx-g-gby','JEB to arrange');await p.fill('#wsx-g-gnote','Spur off garage lighting circuit, socket on ceiling');await p.fill('#wsx-g-ghead','220');await p.fill('#wsx-g-gsl','120');await p.fill('#wsx-g-gsr','95');await p.dispatchEvent('#wsx-g-gsr','change');
+ await p.evaluate(()=>document.querySelector('#wsx-gar2').scrollIntoView());await p.screenshot({path:'gar1.png'});
+ await p.click('#wsx-pdf');await p.waitForTimeout(600);await p.click('[data-m=order]');await p.waitForTimeout(4000);await savePdf('gar.pdf');
+ await p.click('#wsx-pdf');await p.waitForTimeout(600);await p.click('[data-m=full]');await p.waitForTimeout(4000);await savePdf('gar2.pdf');
+ }catch(e){console.log('FAIL',e.message.split('\n').slice(0,4).join('|'))}
+ await b.close()})();

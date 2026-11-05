@@ -1,0 +1,14 @@
+const fs=require('fs');const {chromium}=require('playwright');
+let src=fs.readFileSync('harness8src.js','utf8');
+eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
+const page_src=fs.readFileSync('timesheets.html','utf8');
+const seed='store["sheets/emp1"]={name:"Sam Test",details:{fullName:"Sam Test",confirmedAt:1,empType:"cis",nokName:"x",nokPhone:"1",trade:"Groundworker"}};store["sheets/emp1/photos/p"].markups=[{assetId:"m1",note:"Move this 300mm left",created:Date.now()}];store["sheets/emp1/signoffs/pr-1"]={type:"prompt",form:"markup",ref:"p",refLabel:"12 Marine Way",note:"Move this 300mm left",status:"open",created:Date.now()};';
+(async()=>{const b=await chromium.launch();const p=await (await b.newContext({viewport:{width:400,height:820}})).newPage();p.on('pageerror',e=>console.log('ERR',e.message));
+ await p.route('https://app.test/**',r=>{const u=r.request().url();if(u.includes('/_blob/'))return r.fulfill({body:fs.readFileSync('fixtures/ld1.png'),contentType:'image/jpeg'});
+   r.fulfill({body:'<!doctype html><html><head><meta charset=utf8></head><body>'+fake(false).replace('const ns={',seed+'const ns={')+page_src+'</body></html>',contentType:'text/html'})});
+ await p.goto('https://app.test/');await p.waitForTimeout(1000);
+ console.log('POP',(await p.innerText('#form')).replace(/\s+/g,' ').slice(0,200));
+ await p.click('#form .pr-go');await p.waitForTimeout(500);console.log('VIEW',(await p.innerText('#viewer')).replace(/\s+/g,' ').slice(-200));
+ await p.waitForTimeout(300);console.log('status',await p.evaluate(()=>0));
+ await p.click('#viewer button');await p.waitForTimeout(300);await p.waitForTimeout(800);console.log('banner',await p.$$eval('.prompts',x=>x.map(e=>e.innerText.replace(/\s+/g,' '))));await p.screenshot({path:'emp_tiles.png'});
+ await b.close();})();
