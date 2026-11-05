@@ -6,43 +6,79 @@ Goal: run the **existing code base** on our own hosting with our own database an
 3. No real data in git; data moves via encrypted export/import.
 4. Freeze the claude.ai artifact at cutover (read-only) to avoid split-brain.
 
-## Phase 0 – repo & backup (now)
+## Phase 0 – repo & backup
 - [x] Code, tests, platform rules, Apps Script, docs in this repo.
-- [ ] James creates the GitHub repo (private); push; Jasper clones locally in Claude Code.
-- [ ] CI: GitHub Actions running `npm run vendor && npm test` (Playwright Chromium) on every push.
-- [ ] **Data export** (owner-run, from a Claude session with access to the artifact): every collection (incl. per-user subcollections under `sheets/*` and `portal/*`, owner's `data/users/<id>/…`) to JSON + every asset (`/_blob/<id>`) to files + `template.json`. Store as an encrypted archive held by James (e.g. 7z/age with a passphrase), not in GitHub.
+- [x] Private GitHub repo; CI running `npm test` on every push.
+- [ ] **Data export** (owner-run, from a Claude session with access to the artifact): every collection (incl. per-user subcollections under `sheets/*` and `portal/*`, owner's `data/users/<id>/…`) to JSON + every asset (`/_blob/<id>`) to files + `template.json`. Store as an encrypted archive held by James (e.g. 7z/age with a passphrase), not in GitHub. **Still the only copy of the live data – do this first, whatever else happens.**
+- [ ] Decide with James whether new features on the claude.ai artifact stop now, so the artifact and this repo do not drift before cutover.
 
-## Phase 1 – lift & shift behind an adapter
-**Recommended backend: Firebase** (Hosting + Firestore + Auth + Cloud Storage + Cloud Functions), because the app already speaks Firestore's API shape:
+## Phase 1 – own hosting behind an adapter
 
-| App expects (`window.claude.use`) | Firebase implementation |
+### Decision (Jasper, 5 Nov 2026): AWS, DynamoDB, London
+What the app asks of a backend, measured from `src/app/`: ~660 documents and ~140 files (176 MB); documents addressed by path; 36 live subscriptions; ~390 write call sites; **one `where`, two `orderBy`, two `limit`, no transactions**; 23 path rules. It needs a path-keyed document store with a change feed, not a query engine, and it should stay schemaless – James adds new record kinds with each feature, and a relational schema would need a migration every time.
+
+Everything in **eu-west-2 (London)**, in the AWS organisation Jasper already runs.
+
+| App expects (`window.claude.use`) | AWS implementation |
 |---|---|
-| `db.doc(p).get/set/update/delete/onSnapshot`, `db.collection(p).where/orderBy/limit/get/onSnapshot/add` | Firestore web SDK – near 1:1 (map `update` merge semantics, `{__delete__:true}` → `deleteField()`) |
-| path rules (`platform/capabilities.json`) | Firestore security rules with custom claims `role: owner|trade|client` (`{self}` → `request.auth.uid`) |
-| `assets.upload/list/delete`, `/_blob/<id>` URLs, `blobUrl(id)` | Cloud Storage `assets/<id>`; `blobUrl` → signed/download URL (keep ids stable) |
-| `user.id/isOwner/canEdit/profiles/me` | Firebase Auth (email link / password) + claims; profiles from `sheets/{uid}` |
-| `downloads.save({filename,data})` | plain `<a download>` / Web Share API |
-| `sample(input,opts)` (Ask Claude, sketch reading) | Cloud Function proxy to the Anthropic API (key server-side, per-user rate limit) |
-| owner-device fan-out (supplier/maker copies, site-job copies, prompts) | Firestore-triggered Cloud Functions (or keep client fan-out initially) |
-| Claude scheduled task (planning leads) | Cloud Scheduler + Function |
-| Google Apps Script QR sign-in | public route + Function writing straight to `signins` (no copy/paste import) |
+| `db.doc(p).get/set/update/delete/onSnapshot`, `db.collection(p).get/add/onSnapshot`, `.where(f,"==",v)`, `.orderBy`, `.limit` | **DynamoDB**, one table: partition key = collection path, sort key = document id. A collection read is one query; the few filters and sorts run in the API (collections are small) |
+| path rules (`platform/capabilities.json`) | **One Lambda API** (HTTP) that checks every read and write against the same rules file, deployed with the code. `{self}` = the signed-in user's id; levels map to roles owner / trade / client |
+| live updates (`onSnapshot`) | **API Gateway WebSocket**: clients subscribe to a path; the API pushes each accepted write to the subscribers allowed to read it. (Fallback if this proves fiddly: poll for changes every few seconds – acceptable at this size) |
+| `assets.upload/list/delete`, `/_blob/<id>` URLs | **S3**, served through CloudFront on the same `/_blob/<id>` path so `blobUrl(id)` does not change; uploads via the API (pre-signed) |
+| `user.id/isOwner/profiles` | **Cognito**, emailed one-time code (no passwords); role and id in the token; profiles from `sheets/{uid}` |
+| `downloads.save({filename,data})` | plain `<a download>` / Web Share API (as `scripts/dev.mjs` already does) |
+| `sample(input,opts)` (Ask Claude, sketch reading) | off at launch, or a Lambda calling Claude through Amazon Bedrock in a UK/EU region if the model is offered there, so AWS stays the only processor (GDPR decision 3) |
+| the page | **S3 + CloudFront**, one distribution per environment |
+| owner-device fan-out (supplier/maker copies, site-job copies, prompts) | keep on the owner's device at first; move to the API later |
+| Claude scheduled task (planning leads) | to decide (GDPR decision 4); EventBridge schedule + Lambda if kept |
+| Google Apps Script QR sign-in | later: a public endpoint on the same API writing to `signins`, which removes Google as a processor |
 
-Steps:
-1. `src/platform/firebase-adapter.js` exposing `window.claude = { use(name) }` with the same shapes as `platform/types/*.d.ts` (only the members the app uses). Build twice: `dist/claude/` (as today) and `dist/web/` (adapter injected).
-2. Auth UI: sign-in screen (email link). Map existing platform user ids → new Firebase uids at import (`sheets/{oldId}` → `sheets/{newUid}`, and every reference: `who`, `people[]`, `portalUid`, chat members, `by`, `owner` fields…). Write and test an id-remap script against the export.
-3. Port rules; write rules tests (Firebase emulator) mirroring the matrix in `docs/DATA_MODEL.md`.
-4. Point the existing Playwright suite at the adapter + Firebase emulator (replace `harness8src.js` fake with the emulator) – the UI tests should pass unchanged.
-5. Staging project with anonymised data → James + one trade test on real devices (iPad Safari, Android Chrome).
-6. Cutover: freeze artifact (publish a read-only banner), final export, import, invite trades/clients by email, PWA "Add to home screen".
+Why not the alternatives: **Firebase** would be less code (rules, live updates and sign-in are built in – it was the earlier recommendation here) but puts the data in a second cloud; **Postgres/Supabase** is better for reporting later, but the app does almost no querying today and a schema fights the way features get added; **AppSync** was the poor fit noted before – a thin Lambda in front of DynamoDB avoids it.
 
-Alternatives considered: **AWS** (S3+CloudFront hosting is fine, but DynamoDB/AppSync is a poor fit for path rules + live snapshots → much more adapter code); **Supabase** (Postgres + realtime + auth + storage; better for reporting/invoicing later, but document→jsonb mapping and rules→RLS is more up-front work). S3 alone only hosts the static page – it doesn't answer where the database, auth and files live.
+### Steps
+1. Backend code in `server/`: the API with the rules interpreter, WebSocket handlers, file upload. Rules tests that mirror the matrix in `docs/DATA_MODEL.md`, run against DynamoDB Local.
+2. Infrastructure in `infra/` as an **AWS CDK** app (see *Infrastructure* below): table, API, WebSocket, buckets, CloudFront, Cognito, DNS.
+3. `src/platform/aws-adapter.js` exposing `window.claude = { use(name) }` with the same shapes as `platform/types/*.d.ts` (only the members the app uses). The build produces a second page with the adapter in front of the app.
+4. Sign-in screen (emailed code); invite flow for trades; the client portal's join-code flow.
+5. Point the existing Playwright suite at the adapter + local backend, alongside the fake – the UI tests should pass unchanged.
+6. Server-side enforcement of what is client-side today: PIN-protected deletes, locks on signed sign-offs and waste transfer notes, the audit chain.
+7. Import script: the Phase 0 export → DynamoDB + S3, with platform user ids remapped to Cognito ids everywhere they appear (`sheets/{oldId}`, `who`, `people[]`, `portalUid`, chat members, `by`, `owner`…). Rehearse on a copy.
+8. Trial on real devices (iPad Safari, Android Chrome) in the dev environment with **synthetic data**.
+9. Cutover: freeze the artifact (read-only banner), final export, import, verify, invite people by email, "Add to home screen". Then delete the data from claude.ai, and the build chats that contain it.
 
-## Phase 2 – harden
-- Sensitive fields (NI, medical, next of kin, key-safe/alarm codes) → restricted subcollection or field-level encryption; minimise who/what reads them.
-- GDPR: DPIA, privacy notice (exists in-app), retention & erasure jobs, subject-access export, processor terms (Firebase/Google, Anthropic).
-- Backups (scheduled Firestore export + Storage versioning), monitoring (Sentry), uptime alerts, audit log server-side.
-- Move business rules that matter for security server-side (locking signed docs, PIN-protected deletes, owner-only operations).
-- Replace the catch-all `todos` with proper collections (`clients`, `suppliers`, `surveys`, `wtns`, …) via migration.
+### Infrastructure: AWS CDK (`infra/`)
+- **One CDK app, one stack definition, instantiated once per environment** (`dev`, `prod`) from a small config file: environment name, AWS account and region, domain. Nothing about an environment is hard-coded in the stack.
+- **Every resource is told apart by environment** three ways: its **name** carries it (`sitehq-dev-…`, `sitehq-prod-…`), it is **tagged** (`project=sitehq`, `env=dev|prod`, applied to the whole stack), and each environment has its own **subdomain** (for example `dev.<domain>` and `app.<domain>`, with certificates and DNS records created by the stack).
+- Because names, tags and subdomains carry the environment, both can live in one AWS account or in two. Two accounts is the stronger separation for production personal data (a mistake with dev credentials cannot reach it); the config decides, the stack does not change.
+- Production-only settings are switches in the config, not a different stack: deletion protection and point-in-time recovery on the table, bucket versioning, retained resources on stack deletion, tighter CORS and sign-in settings.
+- `cdk synth` for both environments runs in CI on every pull request; `cdk deploy` runs only from the release workflows below.
+- Still to supply: the domain name and hosted zone, and the AWS account id(s).
+
+### Release flow
+- **Two environments**, `dev` (synthetic data only, ever) and `prod`, both deployed by CDK from GitHub Actions.
+- **`main` → dev**: every merge runs the tests and deploys to dev. James builds features through Claude on a branch, opens a pull request, and tries the result on his iPad at the dev address.
+- **`production` branch → prod**: a manually run "promote" GitHub Action fast-forwards `production` to a chosen, tested `main` commit and deploys it (page, API and any infrastructure change together). It needs Jasper's approval each time (GitHub Environment protection). Nobody pushes to `production` directly.
+- **Review gates** (CODEOWNERS): changes to `platform/capabilities.json`, `infra/`, `server/`, sign-in, `scripts/` and `.github/` need Jasper's review before merge. Feature code under `src/app/` and `src/styles/` needs green CI only.
+- **Credentials**: GitHub deploys through short-lived AWS roles (OIDC); no long-lived keys in GitHub.
+- **Rollback**: promote the previous commit. Data: DynamoDB point-in-time recovery, S3 versioning.
+
+### GDPR decisions (James is the controller; items 1–4 are his to sign off – this is not legal advice)
+1. **Paperwork**: data protection impact assessment (health information, staff time and location), ICO registration, written terms with anyone who can reach production data (including Jasper), record of what is held and why.
+2. **Retention**: how long each kind of record is kept, set with his accountant; then deletion for leavers and old jobs, and a per-person export.
+3. **AI features**: off at launch, or through Bedrock in region (above).
+4. **Planning leads**: using applicants' names from public registers for letters is direct marketing and needs its own decision.
+5. **Location**: all data and backups in London only.
+6. **Sensitive fields** – NI number, medical notes, next of kin, key-safe and alarm codes – move to a restricted area readable only by the owner and the person themselves, encrypted with their own key, never written to logs.
+7. **Enforcement on the server** (step 6 above).
+8. **No real data outside production**: dev and tests use synthetic data; production data is never copied down; James's feature-building sessions never see production. (The 5 Nov 2026 incident was exactly this – `docs/PLATFORM.md`.)
+9. **Access and audit**: named accounts, a second factor for the owner, a server-side log of deletes and exports.
+10. **Backups** with a tested restore; a written plan for a data breach (who tells whom, within 72 hours).
+
+## Phase 2 – harden (after go-live)
+- Move the owner-device fan-out and the QR sign-in onto the API.
+- Monitoring and alerts (errors, uptime), dependency updates.
+- Replace the catch-all `todos` with separate collections (`clients`, `suppliers`, `surveys`, `wtns`, …) via migration.
+- Reporting, if James needs it: export to a query store rather than changing the main database.
 
 ## Phase 3 – modernise (only where it pays)
 - [x] Cut `app.js` into files along the existing banners (`src/app/`, Nov 2026) – same script once joined, no behaviour change.
