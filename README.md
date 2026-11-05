@@ -17,11 +17,15 @@ npm run vendor              # fetch the exact CDN library versions the app uses,
 npm test                    # build + flows suite + crawl every tab as owner / trade / client
 ```
 
-Expected output: `flows: 35 passed, 0 failed` and `ERRORS (0)` for each of the three crawls.
+Expected output: `flows: 35 passed, 0 failed` and `ERRORS (0)` for each of the three crawls, then the backend tests: `N passed, 0 failed`, `backend crawl …: ERRORS (0)` three times, `live updates: all passed` and `backend tests: OK`.
 
 Use it in a browser: `npm run dev` → `http://localhost:4321/owner`, `/trade` or `/client` (`/trade?onboarding` shows the "fill in your details" gate). This serves `src/` wrapped in the tests' fake backend and seed data, re-read on every request – edit, then reload. The data lives in the page: a reload resets it, tabs don't share it, and no access rules are enforced, so it is for UI work, not for checking permissions. Uploads are held in the server's memory, downloads save for real, and the company logo is a grey block (the real one exists only on the live artifact). Needs no `npm install`, but does need a connection for the CDN libraries (PDFs, spreadsheets) and fonts. `HOST=0.0.0.0 npm run dev` lets an iPad on the same network open it.
 
-Build only: `npm run build` → `dist/index.html` (this is exactly the file that gets published).
+On its own backend: `npm run local` → `http://localhost:4322/owner`, `/trade` or `/client`. Same app and seed data, but behind `src/platform/aws-adapter.js` and the API in `server/`, all in one local process (no AWS account). Here the data is held by the server: it survives a reload, tabs share it, a change in one tab appears in the others as it happens, and the access rules are enforced – open `/owner` and `/trade` side by side. It is forgotten when the server stops. Needs `npm install`. See [`server/README.md`](server/README.md).
+
+Build only: `npm run build` → `dist/index.html` (this is exactly the file that gets published to claude.ai) and `dist/web/index.html` (the same app as a complete page for our own hosting, with the adapter in front).
+
+Backend tests only: `npm run test:backend` (after a build).
 
 Run one feature test: `cd tests && node features/h412.js`.
 
@@ -32,17 +36,23 @@ src/shell.html        static HTML (header, tab bar, sheets, viewers) – everyth
 src/styles/           the stylesheet: base.css, shared.css and one file per folder of src/app/; index.css lists them in order and the build inlines them into the page
 src/app/              the whole application (~13k lines, vanilla JS, no framework): ES modules, one per section, in folders by area
 src/app/core/boot.js  the entry point: the only file that runs anything at load
+src/platform/aws-adapter.js   window.claude.use(...) on our own backend; put ahead of the app in dist/web/index.html
+server/               our own backend: HTTP API, rules, live updates, files, sign-in – Lambda handlers + a local runner (server/README.md)
 scripts/bundle.mjs    joins the modules into the one app script, in the order their imports imply (used by build, dev and split)
-scripts/build.mjs     shell + app → dist/index.html (+ syntax check); copies to tests/timesheets.html
+scripts/build.mjs     shell + app → dist/index.html (+ syntax check); copies to tests/timesheets.html; adapter + that → dist/web/index.html
 scripts/analyze.mjs   parses src/app/ (acorn + eslint-scope): what each file declares and uses
 scripts/modules.mjs   writes each file's import/export block and docs/MODULES.md, runs the structure checks (`npm run modules`; `npm run check` only verifies)
 .prettierrc.json      formatting for src/app/ only (`npm run format` = Prettier + modules)
 scripts/split.mjs     the reverse: cuts a built or published page back into src/app/ (for merging artifact-side versions)
 scripts/dev.mjs       local dev server: src/ + the tests' fake backend, at localhost:4321/owner|trade|client
+scripts/local.mjs     local run on our own backend: adapter + server/ in one process, at localhost:4322/owner|trade|client
+scripts/seed.mjs      reads the made-up seed data out of the test files (shared by dev.mjs and local.mjs)
+scripts/test-backend.mjs   backend tests: server/test/, the crawl ×3 on the local backend, the two-browser live test
 scripts/vendor.sh     npm-packs jsPDF, pdf.js, SheetJS, mammoth, qrcode-generator into tests/ for offline tests
-scripts/test.sh       build + core suite
+scripts/test.sh       build + core suite + backend tests
 tests/harness8src.js  fake platform: in-memory db (Firestore-like), assets, user, downloads
-tests/crawl.js        seeds data, opens the app as owner|trade|client, clicks every tab/button, counts JS errors
+tests/crawl.js        seeds data, opens the app as owner|trade|client, clicks every tab/button, counts JS errors (SITEHQ_URL=… crawls a served app instead)
+tests/backend-live.mjs   two browsers on the local backend: an owner's change appears live in a trade's page
 tests/flows.js        cross-role end-to-end flows (owner sends → trade sees, etc.)
 tests/features/*.js   per-feature Playwright scripts written while building each feature (h37x–h414)
 tests/fixtures/       synthetic images/PDFs used by tests (no real data)
@@ -64,6 +74,7 @@ CLAUDE.md             working instructions for Claude Code in this repo
 | [`docs/PLATFORM.md`](docs/PLATFORM.md) | The claude.ai Artifact runtime: capabilities, publishing, sharing, limits, the Nov 2026 "Forbidden" incident |
 | [`docs/FEATURES.md`](docs/FEATURES.md) | Feature inventory by role and where it lives in the code |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Productionisation plan (own hosting, adapter, data migration) |
+| [`server/README.md`](server/README.md) | The backend: layout, HTTP API, live updates, rules and the assumptions behind them, what the CDK stack needs |
 | [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) | Debt, risks and open items |
 | [`docs/SECURITY_PRIVACY.md`](docs/SECURITY_PRIVACY.md) | Personal data held, protections, GDPR gaps |
 

@@ -10,6 +10,16 @@
 - Owner PIN hash lives in the owner's private `data/users/<id>/pin`; verification is client-side.
 - Key-safe and alarm codes are stored in client records (owner-only, but plaintext).
 
+## Own backend (`server/`, `src/platform/aws-adapter.js`) – built Nov 2026, not deployed
+- **Clients lose two things on our backend**: the client conversation and the company details on "About us". The server confines a client to `portal/<their id>`; chats live in `chats`/`msgs` and company details in `settings/app`. No error shows – the screens are empty or fall back. Needs a decision before clients are invited (`server/README.md` › Rules, assumption 2).
+- `update` is a shallow merge here (as in the test fake); the claude.ai platform documents a deep merge. They differ only when a nested object is sent with fewer keys than are stored. Not checked against live behaviour (`server/README.md` › Rules, assumption 6).
+- Never run on AWS: the DynamoDB store is tested against an emulator (dynalite), the S3 and API Gateway code against stand-ins, Cognito against tokens signed in the test. First real run will be the dev deployment.
+- No sign-in screen yet, so the web build shows the app's "Sign in to use the app" message (which still mentions claude.ai) anywhere but under `npm run local`.
+- `tests/flows.js` and the feature scripts run only on the fake; on the backend only the crawl and one live test run.
+- The adapter re-reads a whole collection when any document in it changes. Fine at today's size (~660 documents); the owner's `todos` is the one to watch.
+- At page load every listener reads twice (once straight away, once when its subscription is confirmed, so nothing that changed in between is missed): about 70 small requests for the owner. Harmless at this size; the second read could be dropped if the server sent a version with the confirmation.
+- Abandoned uploads are not cleaned up; there are no rate limits or storage caps.
+
 ## Code
 - The app is 2.1 MB of JavaScript, now ~130 ES modules under `src/app/` with explicit imports, but still tightly coupled: 116 files import each other in one loop, around one state object `S` (`docs/ARCHITECTURE.md` › What is still coupled). No types; HTML built with string templates (`esc()` must be used on all user data – audit when touching code).
 - The published script is joined in sloppy mode, as it always was; the modules have not been run in strict mode (which a real bundler's ES-module output or native modules would use). esbuild accepts them, but strict-only runtime differences are untested.

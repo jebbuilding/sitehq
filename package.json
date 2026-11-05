@@ -6,20 +6,31 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "local": "node scripts/local.mjs",
     "build": "node scripts/build.mjs",
     "modules": "node scripts/modules.mjs",
     "check": "node scripts/modules.mjs --check && prettier --check src/app --log-level warn",
     "format": "prettier --write src/app --log-level warn && node scripts/modules.mjs",
     "vendor": "bash scripts/vendor.sh",
     "test": "bash scripts/test.sh",
+    "test:backend": "node scripts/test-backend.mjs",
     "test:feature": "cd tests && node"
   },
   "devDependencies": {
     "acorn": "^8.19.0",
+    "dynalite": "^4.0.0",
     "esbuild": "^0.28.2",
     "eslint-scope": "^9.1.2",
     "globals": "^17.14.0",
     "playwright": "^1.47.0",
-    "prettier": "^3.9.10"
+    "prettier": "^3.9.10",
+    "ws": "^8.22.1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.1163.0",
+    "@aws-sdk/client-dynamodb": "^3.1163.0",
+    "@aws-sdk/client-s3": "^3.1163.0",
+    "@aws-sdk/s3-request-presigner": "^3.1163.0",
+    "aws-jwt-verify": "^5.2.1"
   }
 }

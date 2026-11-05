@@ -18,6 +18,8 @@ Levels: `view` < `interact` < `admin` < `owner`. `{self}` = the signed-in user's
 | `portal/{self}` | interact | interact | a client's own portal area |
 | `data/users/{uid}/…` | private to that user | | platform-enforced per-user area (owner PIN hash, planning leads) |
 
+On our own backend the same file is enforced by `server/core/rules.mjs`, with owner / trade / client taken from the sign-in. `server/test/rules.test.mjs` checks this table row by row (and fails if the file and the table drift apart). Two things are stricter there than on claude.ai – a client can reach only `portal/{self}`, and a path no rule covers is owner-only – see `server/README.md` › Rules for those and the other assumptions.
+
 ## People: `sheets/{uid}`
 Profile: `name`, `joined`, `role` (`employed`/`sub`/…), `details` {fullName, address, postcode, dob, mobile, email, ni, utr, empType (`employed`/`cis`/`selfemp`), trade, company, driving, medical, cscs, nok*}, `photo` (asset id), `reads` (chat read markers), `day` (today's plan), flags (`foreman`, `signOnly`, `left`…).
 

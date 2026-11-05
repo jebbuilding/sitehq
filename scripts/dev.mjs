@@ -3,26 +3,21 @@
 // Sources are re-read and re-assembled (scripts/bundle.mjs) on every request: edit src/, reload the page.
 // The database is the in-memory fake from tests/harness8src.js with the seed from tests/crawl.js – it lives in the
 // page, so a reload resets it, tabs do not share data, and no access rules are enforced. Synthetic data only.
+// For the same app on SiteHQ's own backend (data kept between reloads, shared by tabs, rules enforced): npm run local.
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
-import zlib from "node:zlib";
 import { bundleApp, pageFragment, root } from "./bundle.mjs";
+import { SEEDED, between, crawlSeedSource, greyPng, logoIdOf } from "./seed.mjs";
 
 const read = f => fs.readFileSync(path.join(root, f), "utf8");
 const PORT = Number(process.env.PORT) || 4321, HOST = process.env.HOST || "127.0.0.1";
 const ROLES = ["owner", "trade", "client"];
 const MAX_UPLOAD = 20 * 1024 * 1024; // same limit as the platform
 
-function between(s, a, b, what) {
-  const i = s.indexOf(a), j = i < 0 ? -1 : s.indexOf(b, i + a.length);
-  if (j < 0) throw new Error(`dev: cannot find ${what} – has it changed shape?`);
-  return s.slice(i + a.length, j);
-}
-
 // Same construction as tests/crawl.js and tests/flows.js: the harness's `fake` template with the crawl seed spliced in.
 function fakePlatform(owner) {
-  const seed = between(read("tests/crawl.js"), "const seed=`", "`;\nsrc=src.replace", "the seed in tests/crawl.js");
+  const seed = crawlSeedSource();
   const anchor = "const store={}, listeners=[];";
   const harness = read("tests/harness8src.js");
   if (!harness.includes(anchor)) throw new Error("dev: cannot find the store in tests/harness8src.js – has it changed shape?");
@@ -56,9 +51,7 @@ window.claude={use:async name=>{
 let logoId = null; // read from the app each time a page is built
 function page(role, onboarding) {
   let app = bundleApp();
-  const logo = /const LOGO_ID\s*=\s*"([^"]+)"/.exec(app);
-  if (!logo) throw new Error("dev: cannot find LOGO_ID in the app – has it changed shape?");
-  logoId = logo[1];
+  logoId = logoIdOf(app);
   if (role === "trade" && !onboarding) { // as the crawl does: skip the "fill in your details" gate
     const gate = "function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}";
     if (!app.includes(gate)) throw new Error("dev: cannot find detailsDone in the app – has it changed shape?");
@@ -73,14 +66,7 @@ function page(role, onboarding) {
 const blobs = new Map();
 // The real company logo exists only as an asset on the live artifact (LOGO_ID in the app). Stand in a plain grey
 // block so the header and PDFs have something in the logo slot.
-function greyPng(w, h) {
-  const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]), out = Buffer.alloc(body.length + 8); out.writeUInt32BE(data.length, 0); body.copy(out, 4); out.writeUInt32BE(zlib.crc32(body), out.length - 4); return out; };
-  const head = Buffer.alloc(13); head.writeUInt32BE(w, 0); head.writeUInt32BE(h, 4); head[8] = 8; // 8-bit greyscale
-  const rows = Buffer.alloc((w + 1) * h, 0x9a); for (let y = 0; y < h; y++) rows[y * (w + 1)] = 0; // filter byte per row
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", head), chunk("IDAT", zlib.deflateSync(rows)), chunk("IEND", Buffer.alloc(0))]);
-}
 const LOGO = { type: "image/png", body: greyPng(240, 80) };
-const SEEDED = { a1: ["clip_sheet.pdf", "application/pdf"], a3: ["clip_sheet.pdf", "application/pdf"], a9: ["clip_sheet.pdf", "application/pdf"], a2: ["test.jpg", "image/jpeg"], img1: ["ld1.png", "image/png"] };
 
 function blob(req, res, id) {
   if (!/^[\w-]{1,64}$/.test(id)) { res.writeHead(400); return res.end(); }
