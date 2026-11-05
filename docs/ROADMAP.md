@@ -47,7 +47,8 @@ Alternatives considered: **AWS** (S3+CloudFront hosting is fine, but DynamoDB/Ap
 ## Phase 3 – modernise (only where it pays)
 - [x] Cut `app.js` into files along the existing banners (`src/app/`, Nov 2026) – same script once joined, no behaviour change.
 - [x] Make them real ES modules (Nov 2026): generated imports/exports, one entry point (`core/boot.js`), no work at load outside it, order derived from imports, checked against esbuild on every test run.
-- After the artifact is frozen: replace `scripts/bundle.mjs` with esbuild/Vite (small change – the modules are already valid), then consider strict mode and lazy-loading the drawing tools.
+- After the artifact is frozen: replace `scripts/bundle.mjs` with esbuild/Vite (small change – the modules are already valid) and minify, then consider strict mode.
+- Lazy-loading the drawing tools and survey (about a third of the code): measured Nov 2026, the whole script takes ~0.1 s to parse and run on a desktop, ~0.45 s with the CPU slowed 4× and ~0.7 s slowed 6× (headless Chromium, not a real phone). A third of that is the most lazy-loading could save, and a single-file artifact cannot load code separately anyway. Not worth doing before own hosting; measure on a real trade phone first.
 - Decoupling features from each other is separate, larger work with no mechanical route (`docs/ARCHITECTURE.md` › What is still coupled); do it per feature when there is a reason. Add JSDoc types / `// @ts-check` before any framework.
 - Component framework screen-by-screen if desired (Svelte/React) behind the same `S`/`render()` contract; don't big-bang rewrite – the tests encode the behaviour.
 - Native wrapper (Capacitor) for App Store/Play only if push notifications / camera integration justify it. Most updates still ship as web content.

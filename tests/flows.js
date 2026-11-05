@@ -5,7 +5,7 @@ function build(owner,uid,dump){let src=H.replace('const store={}, listeners=[];'
   if(dump)src=src.replace('const ns={','Object.assign(store,'+JSON.stringify(dump)+');const ns={');
   if(uid)src=src.replace(`id:async()=>\${owner?'"owner"':'"emp1"'}`,`id:async()=>"${uid}"`);
   const f=eval('('+src.slice(src.indexOf('const fake=')+11,src.indexOf('(async()=>{\n  const b=await chromium.launch();')).trim().replace(/;$/,'')+')');return f(owner)}
-let page_src=fs.readFileSync('timesheets.html','utf8');{const i=page_src.lastIndexOf('})();');page_src=page_src.slice(0,i)+'window.__T={viewClient,openEntry,openPersonMonth,openClientChat,S,render};\n'+page_src.slice(i)}const trade_src=page_src.replace('function detailsDone(d){return !!(d&&d.confirmedAt)}','function detailsDone(d){return true}');
+let page_src=fs.readFileSync('timesheets.html','utf8');{const i=page_src.lastIndexOf('})();');page_src=page_src.slice(0,i)+'window.__T={viewClient,openEntry,openPersonMonth,openClientChat,S,render};\n'+page_src.slice(i)}const trade_src=page_src.replace('function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}','function detailsDone(d){return true}');
 const R=[];const ok=(name,cond,info)=>{R.push((cond?'✅ ':'❌ ')+name+(info?'  — '+info:''))};
 (async()=>{const b=await chromium.launch();
  const mk=async(html,src)=>{const ctx=await b.newContext({viewport:{width:390,height:1000}});ctx.setDefaultTimeout(3000);await ctx.route(/^https?:\/\//,r=>r.abort());const p=await ctx.newPage();p.errs=[];p.on('pageerror',e=>p.errs.push(e.message));p.on('dialog',d=>d.dismiss());

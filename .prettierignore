@@ -1,0 +1,5 @@
+# Only the app's modules are formatted with Prettier; everything else keeps its own style.
+/*
+!/src
+/src/*
+!/src/app

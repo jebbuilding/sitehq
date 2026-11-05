@@ -16,7 +16,7 @@ src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];'+
 if(mode==='client'){src=src.replace("id:async()=>${owner?'\"owner\"':'\"emp1\"'}",'id:async()=>"u9"')}
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 let page_src=fs.readFileSync('timesheets.html','utf8');
-if(mode==='trade')page_src=page_src.replace('function detailsDone(d){return !!(d&&d.confirmedAt)}','function detailsDone(d){return true}');
+if(mode==='trade')page_src=page_src.replace('function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}','function detailsDone(d){return true}');
 const SKIP=/delete|remove|sign out|log out|reset|restore|wipe|undo|clear all|fill in forms as me|team view|leave the|tap again|stop \(|disconnect|archive|⬇ backup|backup|^×$|^✕$/i;
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});ctx.setDefaultTimeout(1500);
  await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(u.includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});if(u.includes('xlsx'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('xlsxpkg/package/dist/xlsx.full.min.js','utf8')});return r.abort()});

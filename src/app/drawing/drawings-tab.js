@@ -24,72 +24,468 @@ import { drawShare } from "../sites/doc-visibility.js";
 import { same } from "../sites/project-pages.js";
 import { jobDraft, myName, openJobEditor } from "../survey/door-window-survey.js";
 export { drawOpen, drawView, myDrawings };
-const myDrawings=()=>(S.mine.photos||[]).filter(p=>isSketch(p)&&p.assetId).sort((a,b)=>(b.editedAt||b.created||0)-(a.editedAt||a.created||0));
-function drawView(){const own=ownerMode();const list=myDrawings();
-  $("main").innerHTML=`<button type="button" class="btn primary drawnew" id="dw-new">✏️ Start a new drawing</button>
+const myDrawings = () =>
+  (S.mine.photos || [])
+    .filter((p) => isSketch(p) && p.assetId)
+    .sort((a, b) => (b.editedAt || b.created || 0) - (a.editedAt || a.created || 0));
+function drawView() {
+  const own = ownerMode();
+  const list = myDrawings();
+  $("main").innerHTML =
+    `<button type="button" class="btn primary drawnew" id="dw-new">✏️ Start a new drawing</button>
     <div class="who" style="margin:6px 0 12px">Starts on A3 at 1:50 (change it with <b>📐 Paper</b>). Walls, doors, kitchen and bathroom symbols drop in at real size, 🧲 snap keeps lines straight and joined, and you can add pages, photos and measurements. Tap <b>📄 PDF</b> for a printable copy with your logo, and <b>Save</b> to keep it here.</div>
-    ${list.length?`<div class="flabel">My drawings (${list.length})</div><div class="drawgrid">${list.map(p=>`<button type="button" class="drawtile" data-id="${esc(p.id)}"><img src="${blobUrl(p.assetId)}" alt="" loading="lazy"><span class="dtt"><b>${esc(p.title||"Drawing")}</b><span class="who">${esc(stamp(p.editedAt||p.created))}${p.site?" · "+esc(p.site):""}</span>${p.check==="open"?'<span class="tag day">Sent to James</span>':p.check==="ok"?'<span class="tag ok">James: right ✓</span>':p.check==="change"?'<span class="tag bad">Needs changing</span>':""}${p.signReq==="open"?'<span class="tag bad">✍ Please check &amp; sign</span>':p.signReq==="ok"?'<span class="tag ok">✓ You approved</span>':p.signReq==="change"?'<span class="tag day">You asked for changes</span>':""}${own&&p.signSent?(()=>{const st=dwSignStatus(p);return st.length?`<span class="tag ${st.some(x=>x.s==="change")?"bad":st.every(x=>x.s==="ok")?"ok":"day"}">✍ ${st.filter(x=>x.s==="ok").length}/${st.length} approved</span>`:""})():""}</span></button>`).join("")}</div>`
-      :`<div class="empty"><strong>No drawings yet</strong>Tap "Start a new drawing" to sketch something out.</div>`}`;
-  $("dw-new").onclick=()=>{if(!S.assets){toast(uploadErr({code:"not_granted"}));return}openNotePage({title:"",pro:ownerMode(),canSend:ownerMode(),onSave:r=>drawSaveNew(r)})};
-  $("main").querySelectorAll(".drawtile").forEach(b=>b.onclick=()=>{const p=list.find(x=>x.id===b.dataset.id);if(p)drawOpen(p)})}
-async function drawSaveNew(r){const now=Date.now();const id=newId();
-  const d={kind:"sketch",assetId:r.preview,pageSrc:r.src,title:r.title||"Drawing "+new Date(now).toLocaleDateString("en-GB",{day:"numeric",month:"short"}),site:r.site||"",category:SK_CAT,caption:"",takenAt:now,date:iso(new Date(now)),trade:myTrade()||"",check:"",mine:true,created:now,editedAt:now};
-  try{await myDoc("photos",id).set(d);S.mine.photos=(S.mine.photos||[]).concat([Object.assign({id},d)]);const p=Object.assign({id},d);
-    if(r.send&&ownerMode()){toast("Drawing saved");render();dwSendForSign(p,dwUpdFor(p))}else{toast(ownerMode()?"Drawing saved. Only you can see it. Tap 👁 Who can see to share it":"Drawing saved in ✏️ Drawings");render();drawOpen(p)}}catch(e){toast(uploadErr(e))}}
-function dwUpdFor(p){return async patch=>{await myDoc("photos",p.id).update(patch);Object.assign(p,patch);const i=(S.mine.photos||[]).findIndex(x=>x.id===p.id);if(i>=0)S.mine.photos[i]=Object.assign({},S.mine.photos[i],patch)}}
+    ${
+      list.length
+        ? `<div class="flabel">My drawings (${list.length})</div><div class="drawgrid">${list
+            .map(
+              (p) =>
+                `<button type="button" class="drawtile" data-id="${esc(p.id)}"><img src="${blobUrl(p.assetId)}" alt="" loading="lazy"><span class="dtt"><b>${esc(p.title || "Drawing")}</b><span class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(p.site) : ""}</span>${p.check === "open" ? '<span class="tag day">Sent to James</span>' : p.check === "ok" ? '<span class="tag ok">James: right ✓</span>' : p.check === "change" ? '<span class="tag bad">Needs changing</span>' : ""}${p.signReq === "open" ? '<span class="tag bad">✍ Please check &amp; sign</span>' : p.signReq === "ok" ? '<span class="tag ok">✓ You approved</span>' : p.signReq === "change" ? '<span class="tag day">You asked for changes</span>' : ""}${
+                  own && p.signSent
+                    ? (() => {
+                        const st = dwSignStatus(p);
+                        return st.length
+                          ? `<span class="tag ${st.some((x) => x.s === "change") ? "bad" : st.every((x) => x.s === "ok") ? "ok" : "day"}">✍ ${st.filter((x) => x.s === "ok").length}/${st.length} approved</span>`
+                          : "";
+                      })()
+                    : ""
+                }</span></button>`,
+            )
+            .join("")}</div>`
+        : `<div class="empty"><strong>No drawings yet</strong>Tap "Start a new drawing" to sketch something out.</div>`
+    }`;
+  $("dw-new").onclick = () => {
+    if (!S.assets) {
+      toast(uploadErr({ code: "not_granted" }));
+      return;
+    }
+    openNotePage({
+      title: "",
+      pro: ownerMode(),
+      canSend: ownerMode(),
+      onSave: (r) => drawSaveNew(r),
+    });
+  };
+  $("main")
+    .querySelectorAll(".drawtile")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          const p = list.find((x) => x.id === b.dataset.id);
+          if (p) drawOpen(p);
+        }),
+    );
+}
+async function drawSaveNew(r) {
+  const now = Date.now();
+  const id = newId();
+  const d = {
+    kind: "sketch",
+    assetId: r.preview,
+    pageSrc: r.src,
+    title:
+      r.title ||
+      "Drawing " + new Date(now).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+    site: r.site || "",
+    category: SK_CAT,
+    caption: "",
+    takenAt: now,
+    date: iso(new Date(now)),
+    trade: myTrade() || "",
+    check: "",
+    mine: true,
+    created: now,
+    editedAt: now,
+  };
+  try {
+    await myDoc("photos", id).set(d);
+    S.mine.photos = (S.mine.photos || []).concat([Object.assign({ id }, d)]);
+    const p = Object.assign({ id }, d);
+    if (r.send && ownerMode()) {
+      toast("Drawing saved");
+      render();
+      dwSendForSign(p, dwUpdFor(p));
+    } else {
+      toast(
+        ownerMode()
+          ? "Drawing saved. Only you can see it. Tap 👁 Who can see to share it"
+          : "Drawing saved in ✏️ Drawings",
+      );
+      render();
+      drawOpen(p);
+    }
+  } catch (e) {
+    toast(uploadErr(e));
+  }
+}
+function dwUpdFor(p) {
+  return async (patch) => {
+    await myDoc("photos", p.id).update(patch);
+    Object.assign(p, patch);
+    const i = (S.mine.photos || []).findIndex((x) => x.id === p.id);
+    if (i >= 0) S.mine.photos[i] = Object.assign({}, S.mine.photos[i], patch);
+  };
+}
 /* who can see a drawing: only me, the trades on its site (filed as a PDF in the site's Plans › Drawings), and/or the client's portal */
-async function drawSiteSync(p){try{const f=await drawPdfFile(p);const a=await uploadFile(f,f.name);await S.db.doc("docs/"+p.siteDoc).update({assetId:a.id,fileName:f.name,contentType:f.type,size:f.size,title:p.title||"Drawing",uploaded:Date.now()});toast("The trades' copy is updated too")}catch(e){toast("Couldn't update the trades' copy. Open 👁 Who can see and save again.")}}
-function drawOpen(p){const own=ownerMode();
-  openViewer(`<h3 style="margin:0 0 6px">${esc(p.title||"Drawing")}</h3><div class="who">${esc(stamp(p.editedAt||p.created))}${p.site?" · "+esc(p.site):""}</div>
-    <button type="button" class="invimg" id="dw-big" style="margin:10px 0"><img src="${blobUrl(p.assetId)}" alt="${esc(p.title||"Drawing")}"></button>
-    <label for="dw-title">Name<input id="dw-title" maxlength="80" value="${esc(p.title||"")}"></label>
-    ${pickField("dw-site","Site (optional)",siteNames(),p.site||"","e.g. 12 Marine Way, Exmouth",false)}
-    ${!own&&p.signReq?`<div class="notice ${p.signReq==="open"?"warn":""}" style="margin-top:10px">${p.signReq==="open"?`<b>✍ James has asked you to check and approve this drawing.</b>${p.caption?`<br>“${esc(p.caption)}”`:""}
-        ${p.signStmt?`<div class="who" style="margin-top:6px">By signing you confirm: <b>${esc(p.signStmt)}</b></div>`:""}${p.sheetAsset?`<button type="button" class="btn" id="dw-sheetopen" style="margin-top:6px">📄 Open the sign-off sheet</button>`:""}
+async function drawSiteSync(p) {
+  try {
+    const f = await drawPdfFile(p);
+    const a = await uploadFile(f, f.name);
+    await S.db.doc("docs/" + p.siteDoc).update({
+      assetId: a.id,
+      fileName: f.name,
+      contentType: f.type,
+      size: f.size,
+      title: p.title || "Drawing",
+      uploaded: Date.now(),
+    });
+    toast("The trades' copy is updated too");
+  } catch (e) {
+    toast("Couldn't update the trades' copy. Open 👁 Who can see and save again.");
+  }
+}
+function drawOpen(p) {
+  const own = ownerMode();
+  openViewer(`<h3 style="margin:0 0 6px">${esc(p.title || "Drawing")}</h3><div class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(p.site) : ""}</div>
+    <button type="button" class="invimg" id="dw-big" style="margin:10px 0"><img src="${blobUrl(p.assetId)}" alt="${esc(p.title || "Drawing")}"></button>
+    <label for="dw-title">Name<input id="dw-title" maxlength="80" value="${esc(p.title || "")}"></label>
+    ${pickField("dw-site", "Site (optional)", siteNames(), p.site || "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${
+      !own && p.signReq
+        ? `<div class="notice ${p.signReq === "open" ? "warn" : ""}" style="margin-top:10px">${
+            p.signReq === "open"
+              ? `<b>✍ James has asked you to check and approve this drawing.</b>${p.caption ? `<br>“${esc(p.caption)}”` : ""}
+        ${p.signStmt ? `<div class="who" style="margin-top:6px">By signing you confirm: <b>${esc(p.signStmt)}</b></div>` : ""}${p.sheetAsset ? `<button type="button" class="btn" id="dw-sheetopen" style="margin-top:6px">📄 Open the sign-off sheet</button>` : ""}
         <label for="dw-sn" style="margin-top:8px">Comments (optional)<textarea id="dw-sn" maxlength="400" placeholder="e.g. Socket needs to move 300 left"></textarea></label>
-        ${p.sheetAsset?`<label for="dw-snm">Your full name<input id="dw-snm" maxlength="80" value="${esc(myName())}"></label><div><div class="checkhead"><span class="flabel" style="margin:0">Sign with your finger</span><button type="button" class="pillbtn" id="dw-sclr">Clear</button></div><canvas id="dw-sig" class="sigpad" aria-label="Signature box"></canvas></div>`:""}
+        ${p.sheetAsset ? `<label for="dw-snm">Your full name<input id="dw-snm" maxlength="80" value="${esc(myName())}"></label><div><div class="checkhead"><span class="flabel" style="margin:0">Sign with your finger</span><button type="button" class="pillbtn" id="dw-sclr">Clear</button></div><canvas id="dw-sig" class="sigpad" aria-label="Signature box"></canvas></div>` : ""}
         <div class="actions"><button type="button" class="btn primary" id="dw-ok">✓ Approve</button><button type="button" class="btn" id="dw-ch">✎ Needs changes</button></div>`
-        :`<b>${p.signReq==="ok"?"✓ You approved this drawing":"You asked for changes"}</b> · ${esc(stamp(p.signedAt))}${p.signNote?`<br>“${esc(p.signNote)}”`:""}`}</div>`:""}
-    ${own&&p.signSheet?SIGNSHEET.cardHtml(p):own&&p.signSent?(()=>{const st=dwSignStatus(p);return `<div class="card" style="margin:10px 0;padding:10px 12px"><b>✍ Sign-off</b> <span class="who">sent ${esc(stamp(p.signSent.at))}</span>${st.map(x=>`<div class="dwsrow"><span>${esc(x.name)}</span><span class="tag ${x.s==="ok"?"ok":x.s==="change"?"bad":"day"}">${x.s==="ok"?"✓ Approved":x.s==="change"?"Needs changes":"Waiting"}</span>${x.note?`<div class="who">“${esc(x.note)}”${x.at?" · "+esc(stamp(x.at)):""}</div>`:""}</div>`).join("")}${p.signSent.client?`<div class="dwsrow"><span>👤 ${esc(((S.clients||[]).find(c=>c.id===p.signSent.client)||{}).name||"Client")}</span><span class="who">answer shows in Client portal › Sign-offs</span></div>`:""}</div>`})():""}
-    <div class="actions" style="margin-top:10px">${p.pageSrc?`<button type="button" class="btn primary" id="dw-edit">✎ Open and keep drawing</button>`:""}${own?`<button type="button" class="btn primary" id="dw-vis">👁 Who can see${p.siteDoc?((p.seeWho||[]).length?" · 👤 "+p.seeWho.length+" trade"+(p.seeWho.length===1?"":"s"):" · 👷 trades"):""}${p.clientDoc?" · 🏡 client":""}${!p.siteDoc&&!p.clientDoc?" · 🔒 only me":""}</button><button type="button" class="btn primary" id="dw-ssheet">✍️ Client go-ahead / sign-off</button><button type="button" class="btn" id="dw-sign">✍️ Quick approval (trade / client)</button><button type="button" class="btn" id="dw-sheet">📋 Add to a client sign-off sheet</button><button type="button" class="btn" id="dw-job">🔨 Add to a job sheet</button>`:""}<button type="button" class="btn" id="dw-dl">⬇ Save to my phone</button>
-      ${own?`<button type="button" class="btn" id="dw-send">📤 Send to a trade</button>`:`<button type="button" class="btn" id="dw-send">📤 ${p.check==="open"?"Sent to James ✓":"Send to James to check"}</button>`}
+              : `<b>${p.signReq === "ok" ? "✓ You approved this drawing" : "You asked for changes"}</b> · ${esc(stamp(p.signedAt))}${p.signNote ? `<br>“${esc(p.signNote)}”` : ""}`
+          }</div>`
+        : ""
+    }
+    ${
+      own && p.signSheet
+        ? SIGNSHEET.cardHtml(p)
+        : own && p.signSent
+          ? (() => {
+              const st = dwSignStatus(p);
+              return `<div class="card" style="margin:10px 0;padding:10px 12px"><b>✍ Sign-off</b> <span class="who">sent ${esc(stamp(p.signSent.at))}</span>${st.map((x) => `<div class="dwsrow"><span>${esc(x.name)}</span><span class="tag ${x.s === "ok" ? "ok" : x.s === "change" ? "bad" : "day"}">${x.s === "ok" ? "✓ Approved" : x.s === "change" ? "Needs changes" : "Waiting"}</span>${x.note ? `<div class="who">“${esc(x.note)}”${x.at ? " · " + esc(stamp(x.at)) : ""}</div>` : ""}</div>`).join("")}${p.signSent.client ? `<div class="dwsrow"><span>👤 ${esc(((S.clients || []).find((c) => c.id === p.signSent.client) || {}).name || "Client")}</span><span class="who">answer shows in Client portal › Sign-offs</span></div>` : ""}</div>`;
+            })()
+          : ""
+    }
+    <div class="actions" style="margin-top:10px">${p.pageSrc ? `<button type="button" class="btn primary" id="dw-edit">✎ Open and keep drawing</button>` : ""}${own ? `<button type="button" class="btn primary" id="dw-vis">👁 Who can see${p.siteDoc ? ((p.seeWho || []).length ? " · 👤 " + p.seeWho.length + " trade" + (p.seeWho.length === 1 ? "" : "s") : " · 👷 trades") : ""}${p.clientDoc ? " · 🏡 client" : ""}${!p.siteDoc && !p.clientDoc ? " · 🔒 only me" : ""}</button><button type="button" class="btn primary" id="dw-ssheet">✍️ Client go-ahead / sign-off</button><button type="button" class="btn" id="dw-sign">✍️ Quick approval (trade / client)</button><button type="button" class="btn" id="dw-sheet">📋 Add to a client sign-off sheet</button><button type="button" class="btn" id="dw-job">🔨 Add to a job sheet</button>` : ""}<button type="button" class="btn" id="dw-dl">⬇ Save to my phone</button>
+      ${own ? `<button type="button" class="btn" id="dw-send">📤 Send to a trade</button>` : `<button type="button" class="btn" id="dw-send">📤 ${p.check === "open" ? "Sent to James ✓" : "Send to James to check"}</button>`}
       <button type="button" class="btn" id="dw-saveinfo">Save name</button><button type="button" class="linkdanger" id="dw-del">Delete</button></div>`);
-  const upd=async patch=>{await myDoc("photos",p.id).update(patch);Object.assign(p,patch);const i=(S.mine.photos||[]).findIndex(x=>x.id===p.id);if(i>=0)S.mine.photos[i]=Object.assign({},S.mine.photos[i],patch)};
-  if(own)SIGNSHEET.wireCard(p,upd);if($("dw-ssheet"))$("dw-ssheet").onclick=()=>{closeViewer();SIGNSHEET.open(p,upd)};
-  let dwSig=null;if($("dw-sig")){dwSig=sigPad($("dw-sig"));$("dw-sclr").onclick=()=>dwSig.clear()}if($("dw-sheetopen"))$("dw-sheetopen").onclick=()=>openFile(p.sheetAsset,"Sign-off sheet.pdf","application/pdf");
-  $("dw-big").onclick=()=>openFile(p.assetId,(p.title||"drawing")+".jpg","image/jpeg");
-  $("dw-dl").onclick=()=>saveAsset(p.assetId,(p.title||"Drawing").replace(/[^\w\s-]/g,"").trim()+".jpg");
-  $("dw-saveinfo").onclick=async()=>{try{await upd({title:$("dw-title").value.trim()||p.title,site:pickVal("dw-site")||""});toast("Saved");render()}catch(e){toast("Couldn't save")}};
-  if($("dw-edit"))$("dw-edit").onclick=()=>{closeViewer();openNotePage({srcId:p.pageSrc,title:p.title,site:p.site||"",pro:own,canSend:own,onSave:async r=>{try{await upd(Object.assign({assetId:r.preview,pageSrc:r.src,title:r.title||p.title,editedAt:Date.now()},r.site?{site:r.site}:{}));toast("Drawing saved");render();if(p.siteDoc)drawSiteSync(p);if(r.send&&own)dwSendForSign(p,upd);else drawOpen(p)}catch(e){toast("Couldn't save")}}})};
-  if($("dw-sign"))$("dw-sign").onclick=()=>{closeViewer();dwSendForSign(p,upd)};
-  if($("dw-vis"))$("dw-vis").onclick=()=>{closeViewer();drawShare(p,upd)};
-  if($("dw-job"))$("dw-job").onclick=()=>{const jobs=(S.jobs||[]).filter(j=>j.status!=="closed").sort((a,b)=>(p.site&&same(b.site,p.site)?1:0)-(p.site&&same(a.site,p.site)?1:0)||(b.created||0)-(a.created||0));
-    const d=document.createElement("div");d.className="dimask";d.style.zIndex="90";d.innerHTML=`<form class="dimbox"><b>🔨 Add this drawing to a job sheet</b><div class="who">It's added to the job's files as a PDF, so the trades on that job can open it.</div>
-      ${jobs.length?`<select class="dwj-j"><option value="">Choose a job sheet…</option>${jobs.map(j=>`<option value="${esc(j.id)}">${esc(j.title||"Job")}${j.site?" · "+esc(j.site):""}${j.kind==="snag"?" (snags)":""}</option>`).join("")}</select>`:'<div class="notice">No open job sheets yet.</div>'}
-      <div class="dimbtns"><button type="button" class="btn dwj-new">+ New job sheet with this drawing</button><button type="button" class="btn dwj-x">Cancel</button>${jobs.length?'<button type="submit" class="btn primary">Add</button>':""}</div></form>`;document.body.appendChild(d);d.querySelector(".dwj-x").onclick=()=>d.remove();
-    const mk=async()=>{d.querySelector(".dimbox").innerHTML="<b>Making the drawing PDF…</b>";const f=await drawPdfFile(p);const a=await uploadFile(f,f.name);return {assetId:a.id,name:p.title||"Drawing",fileName:f.name,contentType:f.type,size:f.size}};
-    d.querySelector(".dwj-new").onclick=async()=>{try{const fi=await mk();d.remove();closeViewer();openJobEditor("job",null);setTimeout(()=>{if(jobDraft){jobDraft.files.push(fi);const s2=$("je-site");if(p.site&&s2){try{s2.value=p.site;s2.dispatchEvent(new Event("change"))}catch(e){}}if(jobDraft.redraw)jobDraft.redraw()}toast("Drawing added. Fill in the job and save.")},150)}catch(e){d.remove();toast("Couldn't add the drawing")}};
-    if(jobs.length)d.querySelector("form").onsubmit=async e=>{e.preventDefault();const id=d.querySelector(".dwj-j").value;if(!id){toast("Choose a job sheet");return}const j=jobs.find(x=>x.id===id);
-      try{const fi=await mk();const files=(j.files||[]).concat([fi]);await S.db.doc("jobs/"+j.id).update({files,updated:Date.now()});j.files=files;d.remove();toast("Drawing added to "+(j.title||"the job sheet"))}catch(x){d.remove();toast("Couldn't add the drawing")}}};
-  if($("dw-sheet"))$("dw-sheet").onclick=()=>{const cl=(S.clients||[]).filter(clActive).sort((a,b)=>nmSortKey(a).localeCompare(nmSortKey(b)));if(!cl.length){toast("Add a client first");return}
-    const sc=p.site?cl.find(c=>clientSites(c).some(x=>same(x,p.site))):null;
-    const d=document.createElement("div");d.className="dimask";d.style.zIndex="90";d.innerHTML=`<form class="dimbox"><b>📋 Which client?</b><div class="who">The drawing goes into a sign-off sheet as a PDF. You can add photos, more files and a price before sending.</div>
-      <select class="dws-c">${cl.map(c=>`<option value="${esc(c.id)}" ${sc&&sc.id===c.id?"selected":""}>${esc(c.name)}${c.site?" · "+esc(c.site):""}</option>`).join("")}</select>
-      <div class="dimbtns"><button type="button" class="btn dws-x">Cancel</button><button type="submit" class="btn primary">Next</button></div></form>`;document.body.appendChild(d);d.querySelector(".dws-x").onclick=()=>d.remove();
-    d.querySelector("form").onsubmit=async e=>{e.preventDefault();const c=cl.find(x=>x.id===d.querySelector(".dws-c").value);d.querySelector(".dimbox").innerHTML="<b>Making the drawing PDF…</b>";
-      try{const f=await drawPdfFile(p);d.remove();closeViewer();S.preAttach=[f];ptAskSign(c,null,"design");setTimeout(()=>{const t=$("pa-title");if(t&&!t.value)t.value=p.title||"Drawing"},50)}catch(x){d.remove();toast("Couldn't make the drawing PDF")}}};
-  const ans=async ok=>{const nm=$("dw-snm")?$("dw-snm").value.trim():myName();if(ok&&dwSig){if(!nm){toast("Add your name");return}if(!dwSig.drawn){toast("Please sign in the box");return}}
-    try{await upd({signReq:ok?"ok":"change",signNote:($("dw-sn")||{}).value?$("dw-sn").value.trim():"",signedAt:Date.now(),signedName:nm||myName(),signImg:ok&&dwSig?dwSig.data():""});toast(ok?"Approved. James can see it.":"Sent back to James");closeViewer();render()}catch(e){toast("Couldn't save")}};
-  if($("dw-ok"))$("dw-ok").onclick=()=>ans(true);if($("dw-ch"))$("dw-ch").onclick=()=>{if(!$("dw-sn").value.trim()){toast("Say what needs changing");$("dw-sn").focus();return}ans(false)};
-  $("dw-send").onclick=async()=>{if(own){closeViewer();ownerSendDrawing(p);return}if(p.check==="open"){toast("Already sent to James");return}
-    try{await upd({check:"open",title:$("dw-title").value.trim()||p.title,site:pickVal("dw-site")||p.site||""});toast("Sent to James to check");closeViewer();render()}catch(e){toast("Couldn't send")}};
-  const del=$("dw-del");del.onclick=async()=>{if(del.dataset.armed!=="1"){del.dataset.armed="1";del.textContent="Tap again to delete";return}
-    try{await myDoc("photos",p.id).delete();S.mine.photos=(S.mine.photos||[]).filter(x=>x.id!==p.id);toast("Deleted");closeViewer();render()}catch(e){toast("Couldn't delete")}}}
-function ownerSendDrawing(p){const ids=teamIds();
-  openSheet(`<h3 id="sheettitle">Send "${esc(p.title||"Drawing")}"</h3><fieldset class="od-who"><legend>Send to</legend>${ids.map(id=>`<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(id)}"> ${esc(nameOf(id))}</label>`).join("")||"No trades on the app yet."}</fieldset>
-    <label for="os-note">Message (optional)<textarea id="os-note" maxlength="400"></textarea></label>${formFoot(false,"Send")}`,async()=>{
-      const to=[...document.querySelectorAll(".od-who input:checked")].map(x=>x.value);if(!to.length){showErr("Choose who to send it to.");return}
-      $("f-save").disabled=true;const now=Date.now();
-      try{for(const who of to){const pid=newId();await S.db.doc("sheets/"+who+"/photos/"+pid).set({kind:"sketch",assetId:p.assetId,pageSrc:p.pageSrc||"",title:p.title||"Drawing",site:p.site||"",category:SK_CAT,caption:$("os-note").value.trim(),takenAt:now,date:iso(new Date(now)),fromOwner:true,check:"",created:now});await SENDTO.notifyTrade(who,"sketch:"+pid,p.title||"Drawing",$("os-note").value.trim())}
-        closeForm();toast("Sent to "+to.map(nameOf).join(", "))}catch(e){showErr("Couldn't send. Check your connection.");$("f-save").disabled=false}},null)}
-
+  const upd = async (patch) => {
+    await myDoc("photos", p.id).update(patch);
+    Object.assign(p, patch);
+    const i = (S.mine.photos || []).findIndex((x) => x.id === p.id);
+    if (i >= 0) S.mine.photos[i] = Object.assign({}, S.mine.photos[i], patch);
+  };
+  if (own) SIGNSHEET.wireCard(p, upd);
+  if ($("dw-ssheet"))
+    $("dw-ssheet").onclick = () => {
+      closeViewer();
+      SIGNSHEET.open(p, upd);
+    };
+  let dwSig = null;
+  if ($("dw-sig")) {
+    dwSig = sigPad($("dw-sig"));
+    $("dw-sclr").onclick = () => dwSig.clear();
+  }
+  if ($("dw-sheetopen"))
+    $("dw-sheetopen").onclick = () =>
+      openFile(p.sheetAsset, "Sign-off sheet.pdf", "application/pdf");
+  $("dw-big").onclick = () => openFile(p.assetId, (p.title || "drawing") + ".jpg", "image/jpeg");
+  $("dw-dl").onclick = () =>
+    saveAsset(p.assetId, (p.title || "Drawing").replace(/[^\w\s-]/g, "").trim() + ".jpg");
+  $("dw-saveinfo").onclick = async () => {
+    try {
+      await upd({ title: $("dw-title").value.trim() || p.title, site: pickVal("dw-site") || "" });
+      toast("Saved");
+      render();
+    } catch (e) {
+      toast("Couldn't save");
+    }
+  };
+  if ($("dw-edit"))
+    $("dw-edit").onclick = () => {
+      closeViewer();
+      openNotePage({
+        srcId: p.pageSrc,
+        title: p.title,
+        site: p.site || "",
+        pro: own,
+        canSend: own,
+        onSave: async (r) => {
+          try {
+            await upd(
+              Object.assign(
+                {
+                  assetId: r.preview,
+                  pageSrc: r.src,
+                  title: r.title || p.title,
+                  editedAt: Date.now(),
+                },
+                r.site ? { site: r.site } : {},
+              ),
+            );
+            toast("Drawing saved");
+            render();
+            if (p.siteDoc) drawSiteSync(p);
+            if (r.send && own) dwSendForSign(p, upd);
+            else drawOpen(p);
+          } catch (e) {
+            toast("Couldn't save");
+          }
+        },
+      });
+    };
+  if ($("dw-sign"))
+    $("dw-sign").onclick = () => {
+      closeViewer();
+      dwSendForSign(p, upd);
+    };
+  if ($("dw-vis"))
+    $("dw-vis").onclick = () => {
+      closeViewer();
+      drawShare(p, upd);
+    };
+  if ($("dw-job"))
+    $("dw-job").onclick = () => {
+      const jobs = (S.jobs || [])
+        .filter((j) => j.status !== "closed")
+        .sort(
+          (a, b) =>
+            (p.site && same(b.site, p.site) ? 1 : 0) - (p.site && same(a.site, p.site) ? 1 : 0) ||
+            (b.created || 0) - (a.created || 0),
+        );
+      const d = document.createElement("div");
+      d.className = "dimask";
+      d.style.zIndex = "90";
+      d.innerHTML = `<form class="dimbox"><b>🔨 Add this drawing to a job sheet</b><div class="who">It's added to the job's files as a PDF, so the trades on that job can open it.</div>
+      ${jobs.length ? `<select class="dwj-j"><option value="">Choose a job sheet…</option>${jobs.map((j) => `<option value="${esc(j.id)}">${esc(j.title || "Job")}${j.site ? " · " + esc(j.site) : ""}${j.kind === "snag" ? " (snags)" : ""}</option>`).join("")}</select>` : '<div class="notice">No open job sheets yet.</div>'}
+      <div class="dimbtns"><button type="button" class="btn dwj-new">+ New job sheet with this drawing</button><button type="button" class="btn dwj-x">Cancel</button>${jobs.length ? '<button type="submit" class="btn primary">Add</button>' : ""}</div></form>`;
+      document.body.appendChild(d);
+      d.querySelector(".dwj-x").onclick = () => d.remove();
+      const mk = async () => {
+        d.querySelector(".dimbox").innerHTML = "<b>Making the drawing PDF…</b>";
+        const f = await drawPdfFile(p);
+        const a = await uploadFile(f, f.name);
+        return {
+          assetId: a.id,
+          name: p.title || "Drawing",
+          fileName: f.name,
+          contentType: f.type,
+          size: f.size,
+        };
+      };
+      d.querySelector(".dwj-new").onclick = async () => {
+        try {
+          const fi = await mk();
+          d.remove();
+          closeViewer();
+          openJobEditor("job", null);
+          setTimeout(() => {
+            if (jobDraft) {
+              jobDraft.files.push(fi);
+              const s2 = $("je-site");
+              if (p.site && s2) {
+                try {
+                  s2.value = p.site;
+                  s2.dispatchEvent(new Event("change"));
+                } catch (e) {}
+              }
+              if (jobDraft.redraw) jobDraft.redraw();
+            }
+            toast("Drawing added. Fill in the job and save.");
+          }, 150);
+        } catch (e) {
+          d.remove();
+          toast("Couldn't add the drawing");
+        }
+      };
+      if (jobs.length)
+        d.querySelector("form").onsubmit = async (e) => {
+          e.preventDefault();
+          const id = d.querySelector(".dwj-j").value;
+          if (!id) {
+            toast("Choose a job sheet");
+            return;
+          }
+          const j = jobs.find((x) => x.id === id);
+          try {
+            const fi = await mk();
+            const files = (j.files || []).concat([fi]);
+            await S.db.doc("jobs/" + j.id).update({ files, updated: Date.now() });
+            j.files = files;
+            d.remove();
+            toast("Drawing added to " + (j.title || "the job sheet"));
+          } catch (x) {
+            d.remove();
+            toast("Couldn't add the drawing");
+          }
+        };
+    };
+  if ($("dw-sheet"))
+    $("dw-sheet").onclick = () => {
+      const cl = (S.clients || [])
+        .filter(clActive)
+        .sort((a, b) => nmSortKey(a).localeCompare(nmSortKey(b)));
+      if (!cl.length) {
+        toast("Add a client first");
+        return;
+      }
+      const sc = p.site ? cl.find((c) => clientSites(c).some((x) => same(x, p.site))) : null;
+      const d = document.createElement("div");
+      d.className = "dimask";
+      d.style.zIndex = "90";
+      d.innerHTML = `<form class="dimbox"><b>📋 Which client?</b><div class="who">The drawing goes into a sign-off sheet as a PDF. You can add photos, more files and a price before sending.</div>
+      <select class="dws-c">${cl.map((c) => `<option value="${esc(c.id)}" ${sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select>
+      <div class="dimbtns"><button type="button" class="btn dws-x">Cancel</button><button type="submit" class="btn primary">Next</button></div></form>`;
+      document.body.appendChild(d);
+      d.querySelector(".dws-x").onclick = () => d.remove();
+      d.querySelector("form").onsubmit = async (e) => {
+        e.preventDefault();
+        const c = cl.find((x) => x.id === d.querySelector(".dws-c").value);
+        d.querySelector(".dimbox").innerHTML = "<b>Making the drawing PDF…</b>";
+        try {
+          const f = await drawPdfFile(p);
+          d.remove();
+          closeViewer();
+          S.preAttach = [f];
+          ptAskSign(c, null, "design");
+          setTimeout(() => {
+            const t = $("pa-title");
+            if (t && !t.value) t.value = p.title || "Drawing";
+          }, 50);
+        } catch (x) {
+          d.remove();
+          toast("Couldn't make the drawing PDF");
+        }
+      };
+    };
+  const ans = async (ok) => {
+    const nm = $("dw-snm") ? $("dw-snm").value.trim() : myName();
+    if (ok && dwSig) {
+      if (!nm) {
+        toast("Add your name");
+        return;
+      }
+      if (!dwSig.drawn) {
+        toast("Please sign in the box");
+        return;
+      }
+    }
+    try {
+      await upd({
+        signReq: ok ? "ok" : "change",
+        signNote: ($("dw-sn") || {}).value ? $("dw-sn").value.trim() : "",
+        signedAt: Date.now(),
+        signedName: nm || myName(),
+        signImg: ok && dwSig ? dwSig.data() : "",
+      });
+      toast(ok ? "Approved. James can see it." : "Sent back to James");
+      closeViewer();
+      render();
+    } catch (e) {
+      toast("Couldn't save");
+    }
+  };
+  if ($("dw-ok")) $("dw-ok").onclick = () => ans(true);
+  if ($("dw-ch"))
+    $("dw-ch").onclick = () => {
+      if (!$("dw-sn").value.trim()) {
+        toast("Say what needs changing");
+        $("dw-sn").focus();
+        return;
+      }
+      ans(false);
+    };
+  $("dw-send").onclick = async () => {
+    if (own) {
+      closeViewer();
+      ownerSendDrawing(p);
+      return;
+    }
+    if (p.check === "open") {
+      toast("Already sent to James");
+      return;
+    }
+    try {
+      await upd({
+        check: "open",
+        title: $("dw-title").value.trim() || p.title,
+        site: pickVal("dw-site") || p.site || "",
+      });
+      toast("Sent to James to check");
+      closeViewer();
+      render();
+    } catch (e) {
+      toast("Couldn't send");
+    }
+  };
+  const del = $("dw-del");
+  del.onclick = async () => {
+    if (del.dataset.armed !== "1") {
+      del.dataset.armed = "1";
+      del.textContent = "Tap again to delete";
+      return;
+    }
+    try {
+      await myDoc("photos", p.id).delete();
+      S.mine.photos = (S.mine.photos || []).filter((x) => x.id !== p.id);
+      toast("Deleted");
+      closeViewer();
+      render();
+    } catch (e) {
+      toast("Couldn't delete");
+    }
+  };
+}
+function ownerSendDrawing(p) {
+  const ids = teamIds();
+  openSheet(
+    `<h3 id="sheettitle">Send "${esc(p.title || "Drawing")}"</h3><fieldset class="od-who"><legend>Send to</legend>${ids.map((id) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(id)}"> ${esc(nameOf(id))}</label>`).join("") || "No trades on the app yet."}</fieldset>
+    <label for="os-note">Message (optional)<textarea id="os-note" maxlength="400"></textarea></label>${formFoot(false, "Send")}`,
+    async () => {
+      const to = [...document.querySelectorAll(".od-who input:checked")].map((x) => x.value);
+      if (!to.length) {
+        showErr("Choose who to send it to.");
+        return;
+      }
+      $("f-save").disabled = true;
+      const now = Date.now();
+      try {
+        for (const who of to) {
+          const pid = newId();
+          await S.db.doc("sheets/" + who + "/photos/" + pid).set({
+            kind: "sketch",
+            assetId: p.assetId,
+            pageSrc: p.pageSrc || "",
+            title: p.title || "Drawing",
+            site: p.site || "",
+            category: SK_CAT,
+            caption: $("os-note").value.trim(),
+            takenAt: now,
+            date: iso(new Date(now)),
+            fromOwner: true,
+            check: "",
+            created: now,
+          });
+          await SENDTO.notifyTrade(
+            who,
+            "sketch:" + pid,
+            p.title || "Drawing",
+            $("os-note").value.trim(),
+          );
+        }
+        closeForm();
+        toast("Sent to " + to.map(nameOf).join(", "));
+      } catch (e) {
+        showErr("Couldn't send. Check your connection.");
+        $("f-save").disabled = false;
+      }
+    },
+    null,
+  );
+}

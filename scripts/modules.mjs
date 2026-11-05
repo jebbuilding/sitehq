@@ -52,9 +52,11 @@ const sorted = names => [...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 const relative = (from, to) => { const r = path.posix.relative(path.posix.dirname(from), to); return r.startsWith(".") ? r : "./" + r; };
 let rewritten = 0;
 for (const f of files) {
-  const imports = [...deps.get(f.file)].sort(([a], [b]) => (a < b ? -1 : 1)).map(([file, names]) => `import { ${sorted(names).join(", ")} } from "${relative(f.file, file)}";\n`);
+  // written the way Prettier would print it (.prettierrc.json: printWidth 100), so formatting never fights the generator
+  const list = (names, before, after) => { const one = `${before} { ${names.join(", ")} }${after};\n`; return one.length - 1 <= 100 ? one : `${before} {\n${names.map(n => `  ${n},\n`).join("")}}${after};\n`; };
+  const imports = [...deps.get(f.file)].sort(([a], [b]) => (a < b ? -1 : 1)).map(([file, names]) => list(sorted(names), "import", ` from "${relative(f.file, file)}"`));
   const exported = sorted(usedBy.get(f.file).keys());
-  const header = imports.join("") + (exported.length ? `export { ${exported.join(", ")} };\n` : "");
+  const header = imports.join("") + (exported.length ? list(exported, "export", "") : "");
   if (header === f.header) continue;
   if (check) { problems.push(`${APP_DIR}/${f.file}: its import/export block is out of date – run: npm run modules`); continue; }
   const p = parts(f.raw);

@@ -2,32 +2,317 @@
 import { NP_U } from "./construction-details.js";
 export { NP_ANNO_BOX, NP_MEMBR, NP_TEXTSYM, npAnnoLine, npAnnoSym, npFrame };
 /* stud wall framing seen from the side: sole and head plates, studs at centres, noggins */
-function npFrame(ctx,o,x0,y0,w,h){const lw=ctx.lineWidth,mm=ctx.__mm||0;const sw=mm?50*mm:Math.max(w*0.02,3),cc=mm?(o.cc||400)*mm:Math.max(w/8,sw*3);const fill=(x,y,ww,hh)=>{ctx.save();ctx.fillStyle="#f3e2c4";ctx.fillRect(x,y,ww,hh);ctx.restore();ctx.strokeRect(x,y,ww,hh)};
-  ctx.save();ctx.lineWidth=Math.max(lw*0.6,0.5);fill(x0,y0+h-sw,w,sw);fill(x0,y0,w,sw);if(o.dh)fill(x0,y0+sw,w,sw);const top=y0+sw*(o.dh?2:1),bot=y0+h-sw;const xs=[x0];for(let x=x0+cc;x<x0+w-sw;x+=cc)xs.push(x);xs.push(x0+w-sw);
-  const all=[];xs.forEach(x=>all.push(x));all.push(x0+sw);all.push(x0+w-sw*2);(o.adds||[]).forEach(ad=>{const b=xs.reduce((p,c)=>Math.abs(c-(x0+ad.t))<Math.abs(p-(x0+ad.t))?c:p,xs[0]);for(let i=1;i<=(ad.n||1);i++)all.push(b+(x0+ad.t>=b?1:-1)*sw*i)});
-  [...new Set(all.map(x=>Math.round(x*10)/10))].forEach(x=>fill(x,top,sw,bot-top));const nh=(top+bot)/2;for(let i=0;i<xs.length-1;i++){const a=xs[i]+sw,b=xs[i+1];if(b-a>sw)fill(a,nh-(i%2?sw:0),b-a,sw)}ctx.restore()}
-const NP_ANNO_BOX=new Set(["secmark","tagbox","tagcirc","viewtitle","scalebar","joists","ibeam","timber","padstone","egroundfill"]);
-const NP_TEXTSYM={elevel:["Level","FFL ±0.000"],secmark:["Section letter","A"],tagbox:["Tag, e.g. EW01","EW01"],tagcirc:["Tag, e.g. W01 or D01","W01"],viewtitle:["View title","Ground Floor Plan"],joists:["Joist note","Floor joists @ 400 c/c"]};
-const NP_MEMBR={breather:["#e07b00",[6,3]],dpcl:["#2f5fb3",[5,3]],dpm:["#7a2fb3",[8,3,1.5,3]],vcl:["#d43f9b",[8,3,1.5,3]],hidden:[null,[4,3]],centre:[null,[10,3,2,3]]};
-function npAnnoSym(ctx,o,x0,y0,w,h,cx,cy){const lw=ctx.lineWidth,mm=ctx.__mm||0,c=ctx.strokeStyle,m=Math.min(w,h),x1=x0+w,y1=y0+h;const ln=(a,b,cc,d)=>{ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(cc,d);ctx.stroke()};const thin=f=>{ctx.lineWidth=Math.max(lw*(f||0.5),0.5)};const full=()=>{ctx.lineWidth=lw};
-  const txt=(t,x,y,sz,al,wt)=>{ctx.save();ctx.setLineDash([]);ctx.fillStyle=c;ctx.font=`${wt||600} ${Math.max(6,sz)}px system-ui,-apple-system,sans-serif`;ctx.textAlign=al||"center";ctx.textBaseline="middle";ctx.fillText(t,x,y);ctx.restore()};const S=o.s||(NP_TEXTSYM[o.k]||[])[1]||"";
-  switch(o.k){
-    case "secmark":{const r=m*0.32;ctx.beginPath();ctx.moveTo(cx-r,cy);ctx.lineTo(cx,cy-r*1.7);ctx.lineTo(cx+r,cy);ctx.closePath();ctx.globalAlpha=.85;ctx.fill();ctx.globalAlpha=1;ctx.save();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(cx,cy+r*0.15,r,0,7);ctx.fill();ctx.restore();
-      ctx.beginPath();ctx.arc(cx,cy+r*0.15,r,0,7);ctx.stroke();thin(0.5);ln(cx-r*0.75,cy+r*0.15,cx+r*0.75,cy+r*0.15);full();txt(S+"-"+S,cx,cy-r*0.25,r*0.55,"center",700);txt("SECTION",cx,cy+r*0.55,r*0.28,"center",500);
-      ctx.save();ctx.setLineDash([lw*4,lw*2,lw,lw*2]);ln(cx,cy+r*1.15,cx,y1);ctx.restore();break}
-    case "tagbox":{const fs=Math.min(h*0.55,w/(Math.max(3,S.length)*0.66));ctx.save();ctx.fillStyle="#fff";ctx.fillRect(x0,y0,w,h);ctx.restore();ctx.strokeRect(x0,y0,w,h);thin(0.5);ctx.strokeRect(x0+lw*1.2,y0+lw*1.2,w-lw*2.4,h-lw*2.4);full();txt(S,cx,cy,fs,"center",700);break}
-    case "tagcirc":{const r=m/2;ctx.save();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();ctx.restore();ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.stroke();txt(S,cx,cy,Math.min(r*0.8,r*2/(Math.max(2,S.length)*0.62)),"center",700);break}
-    case "viewtitle":{const sc=mm?"1 : "+Math.round(NP_U/mm):"Not to scale";const fs=h*0.42;txt(S,x0,y0+h*0.28,fs,"left",500);ctx.lineWidth=lw;ln(x0,y0+h*0.58,x1,y0+h*0.58);txt(sc,x0+fs*0.2,y0+h*0.82,fs*0.55,"left",400);break}
-    case "scalebar":{const total=mm?(()=>{const opts=[1000,2000,5000,10000,20000,50000];let best=opts[0];for(const v of opts)if(v*mm<=w)best=v;return best})():0;const L=total?total*mm:w;const n=total>=10000?(total/1000>=20?4:5):5;const bh=h*0.22;
-      for(let k=0;k<n;k++){const x=x0+L*k/n;if(k%2===0){ctx.fillRect(x,y0+h*0.3,L/n,bh)}ctx.strokeRect(x,y0+h*0.3,L/n,bh)}
-      const lab=v=>v>=1000?(Math.round(v/100)/10)+" m":Math.round(v)+" mm";const fs=Math.min(h*0.24,L/7);if(total){txt("0",x0,y0+h*0.75,fs,"center",500);txt(lab(total/2),x0+L/2,y0+h*0.75,fs,"center",500);txt(lab(total),x0+L,y0+h*0.75,fs,"center",500)}txt(total?"Scale 1:"+Math.round(NP_U/mm):"Set a scale in 📐 Paper",x0,y0+h*0.1,h*0.2,"left",600);break}
-    case "joists":{ctx.save();ctx.setLineDash([lw*4,lw*3]);ctx.strokeRect(x0,y0,w,h);ctx.restore();const v=w>=h;const st=mm?400*mm:Math.max(m/6,10);thin(0.6);if(v){for(let y=y0+st;y<y1;y+=st)ln(x0,y,x1,y)}else{for(let x=x0+st;x<x1;x+=st)ln(x,y0,x,y1)}full();
-      const a=v?[x0+w*0.2,cy]:[cx,y0+h*0.2],b=v?[x1-w*0.2,cy]:[cx,y1-h*0.2];ln(a[0],a[1],b[0],b[1]);[a,b].forEach((p,i)=>{const q=i?a:b;const an=Math.atan2(p[1]-q[1],p[0]-q[0]),hh=Math.max(8,lw*4);ln(p[0],p[1],p[0]-hh*Math.cos(an-0.5),p[1]-hh*Math.sin(an-0.5));ln(p[0],p[1],p[0]-hh*Math.cos(an+0.5),p[1]-hh*Math.sin(an+0.5))});
-      ctx.save();ctx.fillStyle="#fff";const fs=Math.min(m*0.16,(v?w:h)*0.05);ctx.globalAlpha=.9;const tw=fs*S.length*0.55;ctx.fillRect(cx-tw/2-fs*0.3,cy-fs*1.6,tw+fs*0.6,fs*1.2);ctx.restore();txt(S,cx,cy-fs,fs,"center",600);break}
-    case "ibeam":{const f=Math.max(h*0.08,lw),wt=Math.max(w*0.08,lw);ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(x1,y0+f);ctx.lineTo(cx+wt/2,y0+f);ctx.lineTo(cx+wt/2,y1-f);ctx.lineTo(x1,y1-f);ctx.lineTo(x1,y1);ctx.lineTo(x0,y1);ctx.lineTo(x0,y1-f);ctx.lineTo(cx-wt/2,y1-f);ctx.lineTo(cx-wt/2,y0+f);ctx.lineTo(x0,y0+f);ctx.closePath();ctx.globalAlpha=.35;ctx.fill();ctx.globalAlpha=1;ctx.stroke();break}
-    case "timber":{ctx.save();ctx.fillStyle="#f3e2c4";ctx.fillRect(x0,y0,w,h);ctx.restore();ctx.strokeRect(x0,y0,w,h);thin(0.6);ln(x0,y0,x1,y1);ln(x1,y0,x0,y1);full();break}
-    case "padstone":{ctx.strokeRect(x0,y0,w,h);thin(0.5);for(let k=1;k<4;k++)ln(x0+w*k/4,y0,x0+w*k/4-w*0.12,y1);full();break}
-    case "egroundfill":{ctx.save();ctx.fillStyle="#dcebd3";ctx.beginPath();ctx.moveTo(x0,y0+h*0.08);for(let k=0;k<=12;k++){ctx.lineTo(x0+w*k/12,y0+h*0.08+Math.sin(k*1.3)*h*0.03)}ctx.lineTo(x1,y1-h*0.15);for(let k=12;k>=0;k--)ctx.lineTo(x0+w*k/12,y1-h*0.15+Math.sin(k*0.9)*h*0.08);ctx.closePath();ctx.fill();ctx.restore();
-      ctx.lineWidth=lw*1.6;ctx.beginPath();ctx.moveTo(x0,y0+h*0.08);for(let k=0;k<=12;k++)ctx.lineTo(x0+w*k/12,y0+h*0.08+Math.sin(k*1.3)*h*0.03);ctx.stroke();full();break}}}
-function npAnnoLine(ctx,o,P,ln,L,lw){const M=NP_MEMBR[o.k];if(!M)return false;ctx.save();if(M[0])ctx.strokeStyle=M[0];ctx.setLineDash(M[1].map(x=>x*Math.max(lw,1)));ln(P(0,0),P(L,0));ctx.restore();return true}
-
+function npFrame(ctx, o, x0, y0, w, h) {
+  const lw = ctx.lineWidth,
+    mm = ctx.__mm || 0;
+  const sw = mm ? 50 * mm : Math.max(w * 0.02, 3),
+    cc = mm ? (o.cc || 400) * mm : Math.max(w / 8, sw * 3);
+  const fill = (x, y, ww, hh) => {
+    ctx.save();
+    ctx.fillStyle = "#f3e2c4";
+    ctx.fillRect(x, y, ww, hh);
+    ctx.restore();
+    ctx.strokeRect(x, y, ww, hh);
+  };
+  ctx.save();
+  ctx.lineWidth = Math.max(lw * 0.6, 0.5);
+  fill(x0, y0 + h - sw, w, sw);
+  fill(x0, y0, w, sw);
+  if (o.dh) fill(x0, y0 + sw, w, sw);
+  const top = y0 + sw * (o.dh ? 2 : 1),
+    bot = y0 + h - sw;
+  const xs = [x0];
+  for (let x = x0 + cc; x < x0 + w - sw; x += cc) xs.push(x);
+  xs.push(x0 + w - sw);
+  const all = [];
+  xs.forEach((x) => all.push(x));
+  all.push(x0 + sw);
+  all.push(x0 + w - sw * 2);
+  (o.adds || []).forEach((ad) => {
+    const b = xs.reduce(
+      (p, c) => (Math.abs(c - (x0 + ad.t)) < Math.abs(p - (x0 + ad.t)) ? c : p),
+      xs[0],
+    );
+    for (let i = 1; i <= (ad.n || 1); i++) all.push(b + (x0 + ad.t >= b ? 1 : -1) * sw * i);
+  });
+  [...new Set(all.map((x) => Math.round(x * 10) / 10))].forEach((x) => fill(x, top, sw, bot - top));
+  const nh = (top + bot) / 2;
+  for (let i = 0; i < xs.length - 1; i++) {
+    const a = xs[i] + sw,
+      b = xs[i + 1];
+    if (b - a > sw) fill(a, nh - (i % 2 ? sw : 0), b - a, sw);
+  }
+  ctx.restore();
+}
+const NP_ANNO_BOX = new Set([
+  "secmark",
+  "tagbox",
+  "tagcirc",
+  "viewtitle",
+  "scalebar",
+  "joists",
+  "ibeam",
+  "timber",
+  "padstone",
+  "egroundfill",
+]);
+const NP_TEXTSYM = {
+  elevel: ["Level", "FFL ±0.000"],
+  secmark: ["Section letter", "A"],
+  tagbox: ["Tag, e.g. EW01", "EW01"],
+  tagcirc: ["Tag, e.g. W01 or D01", "W01"],
+  viewtitle: ["View title", "Ground Floor Plan"],
+  joists: ["Joist note", "Floor joists @ 400 c/c"],
+};
+const NP_MEMBR = {
+  breather: ["#e07b00", [6, 3]],
+  dpcl: ["#2f5fb3", [5, 3]],
+  dpm: ["#7a2fb3", [8, 3, 1.5, 3]],
+  vcl: ["#d43f9b", [8, 3, 1.5, 3]],
+  hidden: [null, [4, 3]],
+  centre: [null, [10, 3, 2, 3]],
+};
+function npAnnoSym(ctx, o, x0, y0, w, h, cx, cy) {
+  const lw = ctx.lineWidth,
+    mm = ctx.__mm || 0,
+    c = ctx.strokeStyle,
+    m = Math.min(w, h),
+    x1 = x0 + w,
+    y1 = y0 + h;
+  const ln = (a, b, cc, d) => {
+    ctx.beginPath();
+    ctx.moveTo(a, b);
+    ctx.lineTo(cc, d);
+    ctx.stroke();
+  };
+  const thin = (f) => {
+    ctx.lineWidth = Math.max(lw * (f || 0.5), 0.5);
+  };
+  const full = () => {
+    ctx.lineWidth = lw;
+  };
+  const txt = (t, x, y, sz, al, wt) => {
+    ctx.save();
+    ctx.setLineDash([]);
+    ctx.fillStyle = c;
+    ctx.font = `${wt || 600} ${Math.max(6, sz)}px system-ui,-apple-system,sans-serif`;
+    ctx.textAlign = al || "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.restore();
+  };
+  const S = o.s || (NP_TEXTSYM[o.k] || [])[1] || "";
+  switch (o.k) {
+    case "secmark": {
+      const r = m * 0.32;
+      ctx.beginPath();
+      ctx.moveTo(cx - r, cy);
+      ctx.lineTo(cx, cy - r * 1.7);
+      ctx.lineTo(cx + r, cy);
+      ctx.closePath();
+      ctx.globalAlpha = 0.85;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(cx, cy + r * 0.15, r, 0, 7);
+      ctx.fill();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(cx, cy + r * 0.15, r, 0, 7);
+      ctx.stroke();
+      thin(0.5);
+      ln(cx - r * 0.75, cy + r * 0.15, cx + r * 0.75, cy + r * 0.15);
+      full();
+      txt(S + "-" + S, cx, cy - r * 0.25, r * 0.55, "center", 700);
+      txt("SECTION", cx, cy + r * 0.55, r * 0.28, "center", 500);
+      ctx.save();
+      ctx.setLineDash([lw * 4, lw * 2, lw, lw * 2]);
+      ln(cx, cy + r * 1.15, cx, y1);
+      ctx.restore();
+      break;
+    }
+    case "tagbox": {
+      const fs = Math.min(h * 0.55, w / (Math.max(3, S.length) * 0.66));
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.restore();
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.5);
+      ctx.strokeRect(x0 + lw * 1.2, y0 + lw * 1.2, w - lw * 2.4, h - lw * 2.4);
+      full();
+      txt(S, cx, cy, fs, "center", 700);
+      break;
+    }
+    case "tagcirc": {
+      const r = m / 2;
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 7);
+      ctx.fill();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 7);
+      ctx.stroke();
+      txt(S, cx, cy, Math.min(r * 0.8, (r * 2) / (Math.max(2, S.length) * 0.62)), "center", 700);
+      break;
+    }
+    case "viewtitle": {
+      const sc = mm ? "1 : " + Math.round(NP_U / mm) : "Not to scale";
+      const fs = h * 0.42;
+      txt(S, x0, y0 + h * 0.28, fs, "left", 500);
+      ctx.lineWidth = lw;
+      ln(x0, y0 + h * 0.58, x1, y0 + h * 0.58);
+      txt(sc, x0 + fs * 0.2, y0 + h * 0.82, fs * 0.55, "left", 400);
+      break;
+    }
+    case "scalebar": {
+      const total = mm
+        ? (() => {
+            const opts = [1000, 2000, 5000, 10000, 20000, 50000];
+            let best = opts[0];
+            for (const v of opts) if (v * mm <= w) best = v;
+            return best;
+          })()
+        : 0;
+      const L = total ? total * mm : w;
+      const n = total >= 10000 ? (total / 1000 >= 20 ? 4 : 5) : 5;
+      const bh = h * 0.22;
+      for (let k = 0; k < n; k++) {
+        const x = x0 + (L * k) / n;
+        if (k % 2 === 0) {
+          ctx.fillRect(x, y0 + h * 0.3, L / n, bh);
+        }
+        ctx.strokeRect(x, y0 + h * 0.3, L / n, bh);
+      }
+      const lab = (v) => (v >= 1000 ? Math.round(v / 100) / 10 + " m" : Math.round(v) + " mm");
+      const fs = Math.min(h * 0.24, L / 7);
+      if (total) {
+        txt("0", x0, y0 + h * 0.75, fs, "center", 500);
+        txt(lab(total / 2), x0 + L / 2, y0 + h * 0.75, fs, "center", 500);
+        txt(lab(total), x0 + L, y0 + h * 0.75, fs, "center", 500);
+      }
+      txt(
+        total ? "Scale 1:" + Math.round(NP_U / mm) : "Set a scale in 📐 Paper",
+        x0,
+        y0 + h * 0.1,
+        h * 0.2,
+        "left",
+        600,
+      );
+      break;
+    }
+    case "joists": {
+      ctx.save();
+      ctx.setLineDash([lw * 4, lw * 3]);
+      ctx.strokeRect(x0, y0, w, h);
+      ctx.restore();
+      const v = w >= h;
+      const st = mm ? 400 * mm : Math.max(m / 6, 10);
+      thin(0.6);
+      if (v) {
+        for (let y = y0 + st; y < y1; y += st) ln(x0, y, x1, y);
+      } else {
+        for (let x = x0 + st; x < x1; x += st) ln(x, y0, x, y1);
+      }
+      full();
+      const a = v ? [x0 + w * 0.2, cy] : [cx, y0 + h * 0.2],
+        b = v ? [x1 - w * 0.2, cy] : [cx, y1 - h * 0.2];
+      ln(a[0], a[1], b[0], b[1]);
+      [a, b].forEach((p, i) => {
+        const q = i ? a : b;
+        const an = Math.atan2(p[1] - q[1], p[0] - q[0]),
+          hh = Math.max(8, lw * 4);
+        ln(p[0], p[1], p[0] - hh * Math.cos(an - 0.5), p[1] - hh * Math.sin(an - 0.5));
+        ln(p[0], p[1], p[0] - hh * Math.cos(an + 0.5), p[1] - hh * Math.sin(an + 0.5));
+      });
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      const fs = Math.min(m * 0.16, (v ? w : h) * 0.05);
+      ctx.globalAlpha = 0.9;
+      const tw = fs * S.length * 0.55;
+      ctx.fillRect(cx - tw / 2 - fs * 0.3, cy - fs * 1.6, tw + fs * 0.6, fs * 1.2);
+      ctx.restore();
+      txt(S, cx, cy - fs, fs, "center", 600);
+      break;
+    }
+    case "ibeam": {
+      const f = Math.max(h * 0.08, lw),
+        wt = Math.max(w * 0.08, lw);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y0);
+      ctx.lineTo(x1, y0 + f);
+      ctx.lineTo(cx + wt / 2, y0 + f);
+      ctx.lineTo(cx + wt / 2, y1 - f);
+      ctx.lineTo(x1, y1 - f);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x0, y1);
+      ctx.lineTo(x0, y1 - f);
+      ctx.lineTo(cx - wt / 2, y1 - f);
+      ctx.lineTo(cx - wt / 2, y0 + f);
+      ctx.lineTo(x0, y0 + f);
+      ctx.closePath();
+      ctx.globalAlpha = 0.35;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.stroke();
+      break;
+    }
+    case "timber": {
+      ctx.save();
+      ctx.fillStyle = "#f3e2c4";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.restore();
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.6);
+      ln(x0, y0, x1, y1);
+      ln(x1, y0, x0, y1);
+      full();
+      break;
+    }
+    case "padstone": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.5);
+      for (let k = 1; k < 4; k++) ln(x0 + (w * k) / 4, y0, x0 + (w * k) / 4 - w * 0.12, y1);
+      full();
+      break;
+    }
+    case "egroundfill": {
+      ctx.save();
+      ctx.fillStyle = "#dcebd3";
+      ctx.beginPath();
+      ctx.moveTo(x0, y0 + h * 0.08);
+      for (let k = 0; k <= 12; k++) {
+        ctx.lineTo(x0 + (w * k) / 12, y0 + h * 0.08 + Math.sin(k * 1.3) * h * 0.03);
+      }
+      ctx.lineTo(x1, y1 - h * 0.15);
+      for (let k = 12; k >= 0; k--)
+        ctx.lineTo(x0 + (w * k) / 12, y1 - h * 0.15 + Math.sin(k * 0.9) * h * 0.08);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = lw * 1.6;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0 + h * 0.08);
+      for (let k = 0; k <= 12; k++)
+        ctx.lineTo(x0 + (w * k) / 12, y0 + h * 0.08 + Math.sin(k * 1.3) * h * 0.03);
+      ctx.stroke();
+      full();
+      break;
+    }
+  }
+}
+function npAnnoLine(ctx, o, P, ln, L, lw) {
+  const M = NP_MEMBR[o.k];
+  if (!M) return false;
+  ctx.save();
+  if (M[0]) ctx.strokeStyle = M[0];
+  ctx.setLineDash(M[1].map((x) => x * Math.max(lw, 1)));
+  ln(P(0, 0), P(L, 0));
+  ctx.restore();
+  return true;
+}

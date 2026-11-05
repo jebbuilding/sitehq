@@ -5,238 +5,2728 @@ import { npCanopy } from "./paving.js";
 import { NP_DES_BOX } from "./symbols-design.js";
 import { npHexMix } from "./walls.js";
 export { NP_BASIC, NP_X, NP_XLAB, NP_XREAL, NP_XSHAPES, initSymbolsMore, npXSym };
-const NP_XCI={sock1:"1G",usb:"USB",outsock:"WP",cooker:"45A",isol:"ISO",sw2:"2W",dimmer:"DIM",pull:"PC",pir:"PIR",bell:"BELL",tel:"TEL",data:"DATA",spk:"SPK",watermeter:"W",pump:"P",bgully:"BG",ptp:"PTP",waterbutt:"WB",pumpst:"PS",fblanket:"FB",codet:"CO",keysafe:"KEY"};
-const NP_XBX={emerg:"EM",emeter:"kWh",inverter:"INV",battery:"BATT",alarm:"ALARM",gasmeter:"GAS",softener:"SOFT",cws:"CWS",grease:"GREASE",catchpit:"CP",dumper:"DUMPER",genny:"GEN",signboard:"SITE BOARD",spillkit:"SPILL KIT",larder:"LARDER",chest:"DRAWERS",bedside:"",oven:"OVEN",dw:"DW",td:"TD"};
-function npXSym(ctx,o,x0,y0,w,h,cx,cy){const lw=ctx.lineWidth,c=ctx.strokeStyle,m=Math.min(w,h),x1=x0+w,y1=y0+h,v=w>=h,k=o.k;
-  const L=(a,b,c2,d)=>{ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c2,d);ctx.stroke()};const B=(x,y,ww,hh)=>ctx.strokeRect(x,y,ww,hh);
-  const C=(x,y,r,fill)=>{ctx.beginPath();ctx.arc(x,y,Math.max(.5,r),0,7);if(fill){ctx.save();ctx.fillStyle=fill===1?c:fill;ctx.fill();ctx.restore()}ctx.stroke()};
-  const E=(x,y,rx,ry)=>{ctx.beginPath();ctx.ellipse(x,y,Math.max(.5,rx),Math.max(.5,ry),0,0,7);ctx.stroke()};
-  const RR=(x,y,ww,hh,r)=>{ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,ww,hh,Math.max(0,Math.min(r,ww/2,hh/2)));else ctx.rect(x,y,ww,hh);ctx.stroke()};
-  const thin=f=>{ctx.lineWidth=Math.max(lw*(f||0.5),0.5)};const full=()=>{ctx.lineWidth=lw};
-  const T=(t,x,y,f)=>npLbl(ctx,t,x==null?cx:x,y==null?cy:y,f||Math.min(h*0.42,w/(String(t).length*0.66+0.5)));
-  const dash=fn=>{ctx.save();ctx.setLineDash([lw*3,lw*2.5]);fn();ctx.restore()};
-  const clip=fn=>{ctx.save();ctx.beginPath();ctx.rect(x0,y0,w,h);ctx.clip();fn();ctx.restore()};
-  const hatch=st=>clip(()=>{thin(0.4);const s2=st||m/7;for(let d=-h;d<w+h;d+=s2)L(x0+d,y1,x0+d+h,y0);full()});
-  const tint=(col,a)=>{ctx.save();ctx.globalAlpha=a||0.18;ctx.fillStyle=col;ctx.fillRect(x0,y0,w,h);ctx.restore()};
-  const chairAt=(x,y,an,s)=>{ctx.save();ctx.translate(x,y);ctx.rotate(an);B(-s/2,-s/2,s,s);thin(0.6);L(-s/2,-s/2+s*0.18,s/2,-s/2+s*0.18);full();ctx.restore()};
-  if(NP_XCI[k]!=null){const r=m*0.46;C(cx,cy,r,k==="codet"||k==="fblanket"?"#fff":0);T(NP_XCI[k],cx,cy,r*(NP_XCI[k].length>2?0.62:0.9));return}
-  if(NP_XBX[k]!=null){B(x0,y0,w,h);if(k==="oven"){thin(0.6);B(x0+w*0.15,y0+h*0.3,w*0.7,h*0.5);full()}if(k==="dw"||k==="td"){thin(0.6);C(cx,cy+h*0.08,m*0.3);full()}if(k==="larder"||k==="chest"){thin(0.5);for(let i=1;i<4;i++)L(x0,y0+h*i/4,x1,y0+h*i/4);full()}if(k==="emerg"){tint("#16a34a",0.2)}
-    if(NP_XBX[k])T(NP_XBX[k],cx,k==="oven"?y0+h*0.17:k==="dw"||k==="td"?y0+h*0.2:cy,k==="oven"||k==="dw"||k==="td"?Math.min(h*0.2,w/(NP_XBX[k].length*0.7+0.5)):null);return}
-  switch(k){
+const NP_XCI = {
+  sock1: "1G",
+  usb: "USB",
+  outsock: "WP",
+  cooker: "45A",
+  isol: "ISO",
+  sw2: "2W",
+  dimmer: "DIM",
+  pull: "PC",
+  pir: "PIR",
+  bell: "BELL",
+  tel: "TEL",
+  data: "DATA",
+  spk: "SPK",
+  watermeter: "W",
+  pump: "P",
+  bgully: "BG",
+  ptp: "PTP",
+  waterbutt: "WB",
+  pumpst: "PS",
+  fblanket: "FB",
+  codet: "CO",
+  keysafe: "KEY",
+};
+const NP_XBX = {
+  emerg: "EM",
+  emeter: "kWh",
+  inverter: "INV",
+  battery: "BATT",
+  alarm: "ALARM",
+  gasmeter: "GAS",
+  softener: "SOFT",
+  cws: "CWS",
+  grease: "GREASE",
+  catchpit: "CP",
+  dumper: "DUMPER",
+  genny: "GEN",
+  signboard: "SITE BOARD",
+  spillkit: "SPILL KIT",
+  larder: "LARDER",
+  chest: "DRAWERS",
+  bedside: "",
+  oven: "OVEN",
+  dw: "DW",
+  td: "TD",
+};
+function npXSym(ctx, o, x0, y0, w, h, cx, cy) {
+  const lw = ctx.lineWidth,
+    c = ctx.strokeStyle,
+    m = Math.min(w, h),
+    x1 = x0 + w,
+    y1 = y0 + h,
+    v = w >= h,
+    k = o.k;
+  const L = (a, b, c2, d) => {
+    ctx.beginPath();
+    ctx.moveTo(a, b);
+    ctx.lineTo(c2, d);
+    ctx.stroke();
+  };
+  const B = (x, y, ww, hh) => ctx.strokeRect(x, y, ww, hh);
+  const C = (x, y, r, fill) => {
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(0.5, r), 0, 7);
+    if (fill) {
+      ctx.save();
+      ctx.fillStyle = fill === 1 ? c : fill;
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.stroke();
+  };
+  const E = (x, y, rx, ry) => {
+    ctx.beginPath();
+    ctx.ellipse(x, y, Math.max(0.5, rx), Math.max(0.5, ry), 0, 0, 7);
+    ctx.stroke();
+  };
+  const RR = (x, y, ww, hh, r) => {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, Math.max(0, Math.min(r, ww / 2, hh / 2)));
+    else ctx.rect(x, y, ww, hh);
+    ctx.stroke();
+  };
+  const thin = (f) => {
+    ctx.lineWidth = Math.max(lw * (f || 0.5), 0.5);
+  };
+  const full = () => {
+    ctx.lineWidth = lw;
+  };
+  const T = (t, x, y, f) =>
+    npLbl(
+      ctx,
+      t,
+      x == null ? cx : x,
+      y == null ? cy : y,
+      f || Math.min(h * 0.42, w / (String(t).length * 0.66 + 0.5)),
+    );
+  const dash = (fn) => {
+    ctx.save();
+    ctx.setLineDash([lw * 3, lw * 2.5]);
+    fn();
+    ctx.restore();
+  };
+  const clip = (fn) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0, y0, w, h);
+    ctx.clip();
+    fn();
+    ctx.restore();
+  };
+  const hatch = (st) =>
+    clip(() => {
+      thin(0.4);
+      const s2 = st || m / 7;
+      for (let d = -h; d < w + h; d += s2) L(x0 + d, y1, x0 + d + h, y0);
+      full();
+    });
+  const tint = (col, a) => {
+    ctx.save();
+    ctx.globalAlpha = a || 0.18;
+    ctx.fillStyle = col;
+    ctx.fillRect(x0, y0, w, h);
+    ctx.restore();
+  };
+  const chairAt = (x, y, an, s) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(an);
+    B(-s / 2, -s / 2, s, s);
+    thin(0.6);
+    L(-s / 2, -s / 2 + s * 0.18, s / 2, -s / 2 + s * 0.18);
+    full();
+    ctx.restore();
+  };
+  if (NP_XCI[k] != null) {
+    const r = m * 0.46;
+    C(cx, cy, r, k === "codet" || k === "fblanket" ? "#fff" : 0);
+    T(NP_XCI[k], cx, cy, r * (NP_XCI[k].length > 2 ? 0.62 : 0.9));
+    return;
+  }
+  if (NP_XBX[k] != null) {
+    B(x0, y0, w, h);
+    if (k === "oven") {
+      thin(0.6);
+      B(x0 + w * 0.15, y0 + h * 0.3, w * 0.7, h * 0.5);
+      full();
+    }
+    if (k === "dw" || k === "td") {
+      thin(0.6);
+      C(cx, cy + h * 0.08, m * 0.3);
+      full();
+    }
+    if (k === "larder" || k === "chest") {
+      thin(0.5);
+      for (let i = 1; i < 4; i++) L(x0, y0 + (h * i) / 4, x1, y0 + (h * i) / 4);
+      full();
+    }
+    if (k === "emerg") {
+      tint("#16a34a", 0.2);
+    }
+    if (NP_XBX[k])
+      T(
+        NP_XBX[k],
+        cx,
+        k === "oven" ? y0 + h * 0.17 : k === "dw" || k === "td" ? y0 + h * 0.2 : cy,
+        k === "oven" || k === "dw" || k === "td"
+          ? Math.min(h * 0.2, w / (NP_XBX[k].length * 0.7 + 0.5))
+          : null,
+      );
+    return;
+  }
+  switch (k) {
     /* kitchen & bathroom */
-    case "hood":dash(()=>{B(x0,y0,w,h);L(x0,y0,x1,y1);L(x1,y0,x0,y1)});T("HOOD",cx,cy,Math.min(h*0.25,w/6));break;
-    case "bidet":E(cx,cy+h*0.08,w*0.42,h*0.4);thin(0.6);E(cx,cy+h*0.1,w*0.25,h*0.24);C(cx,y0+h*0.18,m*0.06);full();L(x0+w*0.1,y0,x1-w*0.1,y0);break;
-    case "urinal":ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(x1,y0+h*0.3);ctx.quadraticCurveTo(cx,y1+h*0.4,x0,y0+h*0.3);ctx.closePath();ctx.stroke();thin(0.5);C(cx,y0+h*0.45,m*0.07);full();break;
-    case "vanity":B(x0,y0,w,h);thin(0.7);E(x0+w*0.27,cy,w*0.17,h*0.32);E(x0+w*0.73,cy,w*0.17,h*0.32);C(x0+w*0.27,y0+h*0.12,m*0.04);C(x0+w*0.73,y0+h*0.12,m*0.04);full();break;
-    case "quadrant":ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.ellipse(x0,y0,w,h,0,0,Math.PI/2);ctx.closePath();ctx.stroke();thin(0.6);C(x0+w*0.3,y0+h*0.3,m*0.05);full();break;
-    case "walkin":B(x0,y0,w,h);ctx.lineWidth=lw*2.2;L(x0+w*0.55,y1,x0+w*0.55,y0+h*0.25);full();thin(0.6);C(x0+w*0.27,cy,m*0.06);L(x0,y0,x0+w*0.55,y1);L(x0+w*0.55,y0,x0,y1);full();break;
-    case "wetdrain":B(x0,y0,w,h);thin(0.5);for(let x=x0+w*0.05;x<x1-w*0.04;x+=Math.max(h*0.8,w/30))L(x,y0+h*0.25,x,y1-h*0.25);full();break;
-    case "cornerbath":ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(x1,y0+h*0.35);ctx.quadraticCurveTo(x1-w*0.05,y1-h*0.05,x0+w*0.35,y1);ctx.lineTo(x0,y1);ctx.closePath();ctx.stroke();thin(0.6);ctx.beginPath();ctx.moveTo(x0+w*0.1,y0+h*0.1);ctx.lineTo(x1-w*0.1,y0+h*0.1);ctx.quadraticCurveTo(x1-w*0.2,y1-h*0.2,x0+w*0.1,y1-h*0.1);ctx.closePath();ctx.stroke();C(x0+w*0.25,y0+h*0.25,m*0.04);full();break;
+    case "hood":
+      dash(() => {
+        B(x0, y0, w, h);
+        L(x0, y0, x1, y1);
+        L(x1, y0, x0, y1);
+      });
+      T("HOOD", cx, cy, Math.min(h * 0.25, w / 6));
+      break;
+    case "bidet":
+      E(cx, cy + h * 0.08, w * 0.42, h * 0.4);
+      thin(0.6);
+      E(cx, cy + h * 0.1, w * 0.25, h * 0.24);
+      C(cx, y0 + h * 0.18, m * 0.06);
+      full();
+      L(x0 + w * 0.1, y0, x1 - w * 0.1, y0);
+      break;
+    case "urinal":
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y0);
+      ctx.lineTo(x1, y0 + h * 0.3);
+      ctx.quadraticCurveTo(cx, y1 + h * 0.4, x0, y0 + h * 0.3);
+      ctx.closePath();
+      ctx.stroke();
+      thin(0.5);
+      C(cx, y0 + h * 0.45, m * 0.07);
+      full();
+      break;
+    case "vanity":
+      B(x0, y0, w, h);
+      thin(0.7);
+      E(x0 + w * 0.27, cy, w * 0.17, h * 0.32);
+      E(x0 + w * 0.73, cy, w * 0.17, h * 0.32);
+      C(x0 + w * 0.27, y0 + h * 0.12, m * 0.04);
+      C(x0 + w * 0.73, y0 + h * 0.12, m * 0.04);
+      full();
+      break;
+    case "quadrant":
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y0);
+      ctx.ellipse(x0, y0, w, h, 0, 0, Math.PI / 2);
+      ctx.closePath();
+      ctx.stroke();
+      thin(0.6);
+      C(x0 + w * 0.3, y0 + h * 0.3, m * 0.05);
+      full();
+      break;
+    case "walkin":
+      B(x0, y0, w, h);
+      ctx.lineWidth = lw * 2.2;
+      L(x0 + w * 0.55, y1, x0 + w * 0.55, y0 + h * 0.25);
+      full();
+      thin(0.6);
+      C(x0 + w * 0.27, cy, m * 0.06);
+      L(x0, y0, x0 + w * 0.55, y1);
+      L(x0 + w * 0.55, y0, x0, y1);
+      full();
+      break;
+    case "wetdrain":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let x = x0 + w * 0.05; x < x1 - w * 0.04; x += Math.max(h * 0.8, w / 30))
+        L(x, y0 + h * 0.25, x, y1 - h * 0.25);
+      full();
+      break;
+    case "cornerbath":
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y0);
+      ctx.lineTo(x1, y0 + h * 0.35);
+      ctx.quadraticCurveTo(x1 - w * 0.05, y1 - h * 0.05, x0 + w * 0.35, y1);
+      ctx.lineTo(x0, y1);
+      ctx.closePath();
+      ctx.stroke();
+      thin(0.6);
+      ctx.beginPath();
+      ctx.moveTo(x0 + w * 0.1, y0 + h * 0.1);
+      ctx.lineTo(x1 - w * 0.1, y0 + h * 0.1);
+      ctx.quadraticCurveTo(x1 - w * 0.2, y1 - h * 0.2, x0 + w * 0.1, y1 - h * 0.1);
+      ctx.closePath();
+      ctx.stroke();
+      C(x0 + w * 0.25, y0 + h * 0.25, m * 0.04);
+      full();
+      break;
     /* furniture */
-    case "chair":chairAt(cx,cy,0,m*0.9);break;
-    case "armchair":RR(x0,y0,w,h,m*0.12);thin(0.6);B(x0,y0,w*0.16,h);B(x1-w*0.16,y0,w*0.16,h);B(x0+w*0.16,y0,w*0.68,h*0.22);full();break;
-    case "cornersofa":{const d=m*0.42;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(x1,y0+d);ctx.lineTo(x0+d,y0+d);ctx.lineTo(x0+d,y1);ctx.lineTo(x0,y1);ctx.closePath();ctx.stroke();thin(0.55);L(x0+d*0.3,y0+d*0.3,x1,y0+d*0.3);L(x0+d*0.3,y0+d*0.3,x0+d*0.3,y1);for(let x=x0+d+(w-d)/3;x<x1-1;x+=(w-d)/3)L(x,y0+d*0.3,x,y0+d);for(let y=y0+d+(h-d)/2;y<y1-1;y+=(h-d)/2)L(x0+d*0.3,y,x0+d,y);full();break}
-    case "rtable":{const r=m*0.3;C(cx,cy,r);for(let i=0;i<4;i++){const an=i*Math.PI/2;chairAt(cx+Math.cos(an)*(r+m*0.1),cy+Math.sin(an)*(r+m*0.1),an+Math.PI/2,m*0.18)}break}
-    case "bunk":B(x0,y0,w,h);thin(0.6);B(x0+w*0.1,y0+h*0.04,w*0.8,h*0.12);dash(()=>{L(x0,y0,x1,y1);L(x1,y0,x0,y1)});full();T("BUNK",cx,cy,Math.min(w*0.2,h*0.1));break;
-    case "cot":B(x0,y0,w,h);thin(0.45);for(let x=x0+w/10;x<x1-1;x+=w/10){L(x,y0,x,y0+h*0.06);L(x,y1,x,y1-h*0.06)}B(x0+w*0.1,y0+h*0.1,w*0.8,h*0.8);full();break;
-    case "sideboard":B(x0,y0,w,h);thin(0.5);for(let i=1;i<4;i++)L(x0+w*i/4,y0,x0+w*i/4,y1);full();break;
-    case "tvunit":B(x0,y0,w,h);ctx.lineWidth=lw*2;L(x0+w*0.15,y0+h*0.3,x1-w*0.15,y0+h*0.3);full();T("TV",cx,y0+h*0.68,h*0.35);break;
-    case "bookcase":B(x0,y0,w,h);thin(0.5);for(let x=x0+w/8;x<x1-1;x+=w/8)L(x,y0,x,y1);full();break;
+    case "chair":
+      chairAt(cx, cy, 0, m * 0.9);
+      break;
+    case "armchair":
+      RR(x0, y0, w, h, m * 0.12);
+      thin(0.6);
+      B(x0, y0, w * 0.16, h);
+      B(x1 - w * 0.16, y0, w * 0.16, h);
+      B(x0 + w * 0.16, y0, w * 0.68, h * 0.22);
+      full();
+      break;
+    case "cornersofa": {
+      const d = m * 0.42;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y0);
+      ctx.lineTo(x1, y0 + d);
+      ctx.lineTo(x0 + d, y0 + d);
+      ctx.lineTo(x0 + d, y1);
+      ctx.lineTo(x0, y1);
+      ctx.closePath();
+      ctx.stroke();
+      thin(0.55);
+      L(x0 + d * 0.3, y0 + d * 0.3, x1, y0 + d * 0.3);
+      L(x0 + d * 0.3, y0 + d * 0.3, x0 + d * 0.3, y1);
+      for (let x = x0 + d + (w - d) / 3; x < x1 - 1; x += (w - d) / 3)
+        L(x, y0 + d * 0.3, x, y0 + d);
+      for (let y = y0 + d + (h - d) / 2; y < y1 - 1; y += (h - d) / 2)
+        L(x0 + d * 0.3, y, x0 + d, y);
+      full();
+      break;
+    }
+    case "rtable": {
+      const r = m * 0.3;
+      C(cx, cy, r);
+      for (let i = 0; i < 4; i++) {
+        const an = (i * Math.PI) / 2;
+        chairAt(
+          cx + Math.cos(an) * (r + m * 0.1),
+          cy + Math.sin(an) * (r + m * 0.1),
+          an + Math.PI / 2,
+          m * 0.18,
+        );
+      }
+      break;
+    }
+    case "bunk":
+      B(x0, y0, w, h);
+      thin(0.6);
+      B(x0 + w * 0.1, y0 + h * 0.04, w * 0.8, h * 0.12);
+      dash(() => {
+        L(x0, y0, x1, y1);
+        L(x1, y0, x0, y1);
+      });
+      full();
+      T("BUNK", cx, cy, Math.min(w * 0.2, h * 0.1));
+      break;
+    case "cot":
+      B(x0, y0, w, h);
+      thin(0.45);
+      for (let x = x0 + w / 10; x < x1 - 1; x += w / 10) {
+        L(x, y0, x, y0 + h * 0.06);
+        L(x, y1, x, y1 - h * 0.06);
+      }
+      B(x0 + w * 0.1, y0 + h * 0.1, w * 0.8, h * 0.8);
+      full();
+      break;
+    case "sideboard":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let i = 1; i < 4; i++) L(x0 + (w * i) / 4, y0, x0 + (w * i) / 4, y1);
+      full();
+      break;
+    case "tvunit":
+      B(x0, y0, w, h);
+      ctx.lineWidth = lw * 2;
+      L(x0 + w * 0.15, y0 + h * 0.3, x1 - w * 0.15, y0 + h * 0.3);
+      full();
+      T("TV", cx, y0 + h * 0.68, h * 0.35);
+      break;
+    case "bookcase":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let x = x0 + w / 8; x < x1 - 1; x += w / 8) L(x, y0, x, y1);
+      full();
+      break;
     /* electrics & renewables */
-    case "wlight":{const r=Math.min(w/2,h)*0.95;ctx.beginPath();ctx.arc(cx,y0,r,0,Math.PI);ctx.stroke();L(cx-r,y0,cx+r,y0);thin(0.6);L(cx-r*0.45,y0+r*0.15,cx+r*0.45,y0+r*0.75);L(cx+r*0.45,y0+r*0.15,cx-r*0.45,y0+r*0.75);full();break}
-    case "batten":B(x0,y0,w,h);ctx.lineWidth=lw*1.8;L(x0,y0-h*0.5,x0,y1+h*0.5);L(x1,y0-h*0.5,x1,y1+h*0.5);full();break;
-    case "evc":RR(x0,y0,w,h,m*0.15);tint("#16a34a",0.15);T("EV ⚡",cx,cy);break;
-    case "solar":B(x0,y0,w,h);tint("#1e3a8a",0.18);thin(0.45);for(let i=1;i<6;i++)L(x0+w*i/6,y0,x0+w*i/6,y1);for(let i=1;i<4;i++)L(x0,y0+h*i/4,x1,y0+h*i/4);full();break;
-    case "cctv":ctx.save();ctx.translate(cx,cy);ctx.rotate(-0.4);B(-w*0.35,-h*0.18,w*0.55,h*0.36);ctx.beginPath();ctx.moveTo(w*0.2,-h*0.1);ctx.lineTo(w*0.42,-h*0.24);ctx.lineTo(w*0.42,h*0.24);ctx.lineTo(w*0.2,h*0.1);ctx.stroke();ctx.restore();L(cx-w*0.2,cy+h*0.15,cx-w*0.2,y1);break;
+    case "wlight": {
+      const r = Math.min(w / 2, h) * 0.95;
+      ctx.beginPath();
+      ctx.arc(cx, y0, r, 0, Math.PI);
+      ctx.stroke();
+      L(cx - r, y0, cx + r, y0);
+      thin(0.6);
+      L(cx - r * 0.45, y0 + r * 0.15, cx + r * 0.45, y0 + r * 0.75);
+      L(cx + r * 0.45, y0 + r * 0.15, cx - r * 0.45, y0 + r * 0.75);
+      full();
+      break;
+    }
+    case "batten":
+      B(x0, y0, w, h);
+      ctx.lineWidth = lw * 1.8;
+      L(x0, y0 - h * 0.5, x0, y1 + h * 0.5);
+      L(x1, y0 - h * 0.5, x1, y1 + h * 0.5);
+      full();
+      break;
+    case "evc":
+      RR(x0, y0, w, h, m * 0.15);
+      tint("#16a34a", 0.15);
+      T("EV ⚡", cx, cy);
+      break;
+    case "solar":
+      B(x0, y0, w, h);
+      tint("#1e3a8a", 0.18);
+      thin(0.45);
+      for (let i = 1; i < 6; i++) L(x0 + (w * i) / 6, y0, x0 + (w * i) / 6, y1);
+      for (let i = 1; i < 4; i++) L(x0, y0 + (h * i) / 4, x1, y0 + (h * i) / 4);
+      full();
+      break;
+    case "cctv":
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-0.4);
+      B(-w * 0.35, -h * 0.18, w * 0.55, h * 0.36);
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, -h * 0.1);
+      ctx.lineTo(w * 0.42, -h * 0.24);
+      ctx.lineTo(w * 0.42, h * 0.24);
+      ctx.lineTo(w * 0.2, h * 0.1);
+      ctx.stroke();
+      ctx.restore();
+      L(cx - w * 0.2, cy + h * 0.15, cx - w * 0.2, y1);
+      break;
     /* heating & ventilation */
-    case "ashp":B(x0,y0,w,h);C(x0+w*0.35,cy,m*0.38);thin(0.5);for(let i=0;i<3;i++){const an=i*2.1;L(x0+w*0.35,cy,x0+w*0.35+Math.cos(an)*m*0.34,cy+Math.sin(an)*m*0.34)}full();T("ASHP",x0+w*0.8,cy,Math.min(h*0.3,w*0.12));break;
-    case "oiltank":RR(x0,y0,w,h,m*0.3);hatch(m/4);T("OIL",cx,cy,m*0.35);break;
-    case "lpg":RR(x0,y0,w,h,m/2);T("LPG",cx,cy,m*0.4);break;
-    case "mvhr":B(x0,y0,w,h);thin(0.6);L(x0,y0,x1,y1);L(x1,y0,x0,y1);full();T("MVHR",cx,cy,Math.min(h*0.25,w/5));break;
-    case "ufhman":L(x0,cy,x1,cy);thin(0.6);for(let i=0;i<6;i++)C(x0+w*(i+0.5)/6,cy,Math.min(h*0.3,w/16));full();T("UFH",cx,y0+h*0.12,Math.min(h*0.25,w/8));break;
-    case "stove":B(x0,y0,w,h);thin(0.6);B(x0+w*0.15,y0+h*0.35,w*0.7,h*0.55);full();C(cx,y0+h*0.18,m*0.13);break;
-    case "fireplace":B(x0,y0,w,h);hatch(m/4);ctx.save();ctx.fillStyle="#fff";ctx.fillRect(x0+w*0.25,y0,w*0.5,h*0.6);ctx.restore();B(x0+w*0.25,y0,w*0.5,h*0.6);break;
-    case "vent":B(x0,y0,w,h);thin(0.5);for(let i=1;i<5;i++)L(x0+w*0.15,y0+h*i/5,x1-w*0.15,y0+h*i/5);full();break;
+    case "ashp":
+      B(x0, y0, w, h);
+      C(x0 + w * 0.35, cy, m * 0.38);
+      thin(0.5);
+      for (let i = 0; i < 3; i++) {
+        const an = i * 2.1;
+        L(x0 + w * 0.35, cy, x0 + w * 0.35 + Math.cos(an) * m * 0.34, cy + Math.sin(an) * m * 0.34);
+      }
+      full();
+      T("ASHP", x0 + w * 0.8, cy, Math.min(h * 0.3, w * 0.12));
+      break;
+    case "oiltank":
+      RR(x0, y0, w, h, m * 0.3);
+      hatch(m / 4);
+      T("OIL", cx, cy, m * 0.35);
+      break;
+    case "lpg":
+      RR(x0, y0, w, h, m / 2);
+      T("LPG", cx, cy, m * 0.4);
+      break;
+    case "mvhr":
+      B(x0, y0, w, h);
+      thin(0.6);
+      L(x0, y0, x1, y1);
+      L(x1, y0, x0, y1);
+      full();
+      T("MVHR", cx, cy, Math.min(h * 0.25, w / 5));
+      break;
+    case "ufhman":
+      L(x0, cy, x1, cy);
+      thin(0.6);
+      for (let i = 0; i < 6; i++) C(x0 + (w * (i + 0.5)) / 6, cy, Math.min(h * 0.3, w / 16));
+      full();
+      T("UFH", cx, y0 + h * 0.12, Math.min(h * 0.25, w / 8));
+      break;
+    case "stove":
+      B(x0, y0, w, h);
+      thin(0.6);
+      B(x0 + w * 0.15, y0 + h * 0.35, w * 0.7, h * 0.55);
+      full();
+      C(cx, y0 + h * 0.18, m * 0.13);
+      break;
+    case "fireplace":
+      B(x0, y0, w, h);
+      hatch(m / 4);
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(x0 + w * 0.25, y0, w * 0.5, h * 0.6);
+      ctx.restore();
+      B(x0 + w * 0.25, y0, w * 0.5, h * 0.6);
+      break;
+    case "vent":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let i = 1; i < 5; i++)
+        L(x0 + w * 0.15, y0 + (h * i) / 5, x1 - w * 0.15, y0 + (h * i) / 5);
+      full();
+      break;
     /* drainage */
-    case "septic":RR(x0,y0,w,h,m*0.3);L(x0+w*0.62,y0,x0+w*0.62,y1);thin(0.6);C(x0+w*0.3,cy,m*0.15);C(x0+w*0.81,cy,m*0.15);full();break;
-    case "channel":B(x0,y0,w,h);thin(0.5);for(let x=x0+h*0.6;x<x1-h*0.3;x+=h*0.9)L(x,y0+h*0.2,x,y1-h*0.2);full();break;
+    case "septic":
+      RR(x0, y0, w, h, m * 0.3);
+      L(x0 + w * 0.62, y0, x0 + w * 0.62, y1);
+      thin(0.6);
+      C(x0 + w * 0.3, cy, m * 0.15);
+      C(x0 + w * 0.81, cy, m * 0.15);
+      full();
+      break;
+    case "channel":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let x = x0 + h * 0.6; x < x1 - h * 0.3; x += h * 0.9)
+        L(x, y0 + h * 0.2, x, y1 - h * 0.2);
+      full();
+      break;
     /* doors & windows (boxes) */
-    case "pocket":B(x0,y0,w,h);dash(()=>B(x0+w*0.5,y0+h*0.25,w*0.5,h*0.5));ctx.lineWidth=lw*1.8;L(x0+w*0.05,cy,x0+w*0.55,cy);full();break;
-    case "garagedr":L(x0,y0,x0,y1);L(x1,y0,x1,y1);dash(()=>{B(x0,y0+h*0.3,w,h*0.4)});T("GARAGE DOOR",cx,y1+h*0.9,Math.min(h*1.2,w/12));break;
-    case "baywin":ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+w*0.22,y1);ctx.lineTo(x1-w*0.22,y1);ctx.lineTo(x1,y0);ctx.stroke();thin(0.55);ctx.beginPath();ctx.moveTo(x0+w*0.04,y0);ctx.lineTo(x0+w*0.24,y1-h*0.12);ctx.lineTo(x1-w*0.24,y1-h*0.12);ctx.lineTo(x1-w*0.04,y0);ctx.stroke();full();break;
-    case "loft":dash(()=>{B(x0,y0,w,h);L(x0,y0,x1,y1);L(x1,y0,x0,y1)});T("LOFT",cx,cy+m*0.32,m*0.16);break;
+    case "pocket":
+      B(x0, y0, w, h);
+      dash(() => B(x0 + w * 0.5, y0 + h * 0.25, w * 0.5, h * 0.5));
+      ctx.lineWidth = lw * 1.8;
+      L(x0 + w * 0.05, cy, x0 + w * 0.55, cy);
+      full();
+      break;
+    case "garagedr":
+      L(x0, y0, x0, y1);
+      L(x1, y0, x1, y1);
+      dash(() => {
+        B(x0, y0 + h * 0.3, w, h * 0.4);
+      });
+      T("GARAGE DOOR", cx, y1 + h * 0.9, Math.min(h * 1.2, w / 12));
+      break;
+    case "baywin":
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + w * 0.22, y1);
+      ctx.lineTo(x1 - w * 0.22, y1);
+      ctx.lineTo(x1, y0);
+      ctx.stroke();
+      thin(0.55);
+      ctx.beginPath();
+      ctx.moveTo(x0 + w * 0.04, y0);
+      ctx.lineTo(x0 + w * 0.24, y1 - h * 0.12);
+      ctx.lineTo(x1 - w * 0.24, y1 - h * 0.12);
+      ctx.lineTo(x1 - w * 0.04, y0);
+      ctx.stroke();
+      full();
+      break;
+    case "loft":
+      dash(() => {
+        B(x0, y0, w, h);
+        L(x0, y0, x1, y1);
+        L(x1, y0, x0, y1);
+      });
+      T("LOFT", cx, cy + m * 0.32, m * 0.16);
+      break;
     /* structure */
-    case "pier":B(x0,y0,w,h);hatch(m/5);break;
-    case "pile":C(cx,cy,m*0.46);L(cx-m*0.32,cy-m*0.32,cx+m*0.32,cy+m*0.32);L(cx+m*0.32,cy-m*0.32,cx-m*0.32,cy+m*0.32);break;
-    case "padfdn":dash(()=>B(x0,y0,w,h));B(x0+w*0.35,y0+h*0.35,w*0.3,h*0.3);break;
+    case "pier":
+      B(x0, y0, w, h);
+      hatch(m / 5);
+      break;
+    case "pile":
+      C(cx, cy, m * 0.46);
+      L(cx - m * 0.32, cy - m * 0.32, cx + m * 0.32, cy + m * 0.32);
+      L(cx + m * 0.32, cy - m * 0.32, cx - m * 0.32, cy + m * 0.32);
+      break;
+    case "padfdn":
+      dash(() => B(x0, y0, w, h));
+      B(x0 + w * 0.35, y0 + h * 0.35, w * 0.3, h * 0.3);
+      break;
     /* site plant & equipment */
-    case "skip":ctx.beginPath();ctx.moveTo(x0,y0+h*0.15);ctx.lineTo(x0+w*0.18,y0);ctx.lineTo(x1-w*0.18,y0);ctx.lineTo(x1,y0+h*0.15);ctx.lineTo(x1,y1-h*0.15);ctx.lineTo(x1-w*0.18,y1);ctx.lineTo(x0+w*0.18,y1);ctx.lineTo(x0,y1-h*0.15);ctx.closePath();ctx.stroke();tint("#f59e0b",0.15);T("SKIP",cx,cy,Math.min(h*0.35,w/4));break;
-    case "mixer":B(x0+w*0.05,y0+h*0.2,w*0.9,h*0.6);C(x0+w*0.4,cy,m*0.38);thin(0.6);C(x0+w*0.4,cy,m*0.15);full();T("MIXER",x0+w*0.8,cy,Math.min(h*0.18,w*0.08));break;
-    case "scaffold":B(x0,y0,w,h);thin(0.45);for(let i=1;i<4;i++)L(x0,y0+h*i/4,x1,y0+h*i/4);full();for(let x=x0;x<=x1+1;x+=Math.max(w/6,h*0.9)){C(Math.min(x,x1),y0,m*0.06,1);C(Math.min(x,x1),y1,m*0.06,1)}T("SCAFFOLD",cx,cy,Math.min(h*0.22,w/10));break;
-    case "tower":B(x0,y0,w,h);thin(0.6);L(x0,y0,x1,y1);L(x1,y0,x0,y1);full();[[x0,y0],[x1,y0],[x0,y1],[x1,y1]].forEach(([a,b])=>C(a,b,m*0.07,1));T("TOWER",cx,y1+m*0.22,m*0.18);break;
-    case "hoist":B(x0,y0,w,h);thin(0.7);L(cx,y1-h*0.15,cx,y0+h*0.15);L(cx,y0+h*0.15,cx-w*0.15,y0+h*0.35);L(cx,y0+h*0.15,cx+w*0.15,y0+h*0.35);full();T("HOIST",cx,y1-h*0.08,m*0.14);break;
-    case "crane":dash(()=>E(cx,cy,w/2,h/2));B(cx-m*0.1,cy-m*0.1,m*0.2,m*0.2);ctx.lineWidth=lw*1.6;L(cx,cy,x1,cy);full();T("CRANE",cx,cy+m*0.2,m*0.07);break;
-    case "telehandler":RR(x0,y0+h*0.15,w*0.75,h*0.7,m*0.1);thin(0.6);B(x0+w*0.08,y0+h*0.25,w*0.22,h*0.5);full();ctx.lineWidth=lw*2;L(x0+w*0.4,cy,x1,cy);full();L(x1,cy-h*0.3,x1,cy+h*0.3);[[0.1,0],[0.6,0],[0.1,1],[0.6,1]].forEach(([a,b])=>B(x0+w*a,b?y1-h*0.15:y0,w*0.14,h*0.15));T("TELEHANDLER",x0+w*0.48,cy,Math.min(h*0.14,w/16));break;
-    case "digger":B(x0,y0,w*0.6,h*0.22);B(x0,y1-h*0.22,w*0.6,h*0.22);RR(x0+w*0.06,y0+h*0.18,w*0.5,h*0.64,m*0.1);thin(0.6);B(x0+w*0.1,y0+h*0.25,w*0.2,h*0.3);full();ctx.lineWidth=lw*2;L(x0+w*0.45,cy,x1-w*0.1,cy);full();ctx.beginPath();ctx.moveTo(x1-w*0.12,cy-h*0.2);ctx.lineTo(x1,cy-h*0.12);ctx.lineTo(x1,cy+h*0.12);ctx.lineTo(x1-w*0.12,cy+h*0.2);ctx.stroke();T("EXCAVATOR",x0+w*0.33,y0+h*0.68,Math.min(h*0.12,w/15));break;
-    case "matstore":B(x0,y0,w,h);hatch(m/6);ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.3,cy-h*0.12,w*0.6,h*0.24);ctx.restore();T("MATERIALS",cx,cy,Math.min(h*0.17,w/9));break;
-    case "wheelwash":B(x0,y0,w,h);thin(0.5);for(let y=y0+h*0.2;y<y1-h*0.1;y+=h*0.2){ctx.beginPath();for(let x=x0+w*0.05;x<=x1-w*0.05;x+=w/40)ctx.lineTo(x,y+Math.sin(x/w*40)*h*0.03);ctx.stroke()}full();T("WHEEL WASH",cx,cy,Math.min(h*0.16,w/10));break;
-    case "firstaid":B(x0,y0,w,h);ctx.save();ctx.fillStyle="#16a34a";ctx.fillRect(x0,y0,w,h);ctx.fillStyle="#fff";ctx.fillRect(cx-m*0.1,cy-m*0.32,m*0.2,m*0.64);ctx.fillRect(cx-m*0.32,cy-m*0.1,m*0.64,m*0.2);ctx.restore();B(x0,y0,w,h);break;
-    case "smoking":dash(()=>B(x0,y0,w,h));T("SMOKING AREA",cx,cy,Math.min(h*0.14,w/9));break;
-    case "fuel":B(x0,y0,w,h);dash(()=>B(x0+w*0.08,y0+h*0.12,w*0.84,h*0.76));tint("#dc2626",0.12);T("FUEL (BUNDED)",cx,cy,Math.min(h*0.16,w/11));break;
-    case "gascage":B(x0,y0,w,h);clip(()=>{thin(0.35);const st=m/6;for(let d=-h;d<w+h;d+=st){L(x0+d,y1,x0+d+h,y0);L(x0+d,y0,x0+d+h,y1)}full()});ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.32,cy-h*0.13,w*0.64,h*0.26);ctx.restore();T("GAS CAGE",cx,cy,Math.min(h*0.18,w/8));break;
+    case "skip":
+      ctx.beginPath();
+      ctx.moveTo(x0, y0 + h * 0.15);
+      ctx.lineTo(x0 + w * 0.18, y0);
+      ctx.lineTo(x1 - w * 0.18, y0);
+      ctx.lineTo(x1, y0 + h * 0.15);
+      ctx.lineTo(x1, y1 - h * 0.15);
+      ctx.lineTo(x1 - w * 0.18, y1);
+      ctx.lineTo(x0 + w * 0.18, y1);
+      ctx.lineTo(x0, y1 - h * 0.15);
+      ctx.closePath();
+      ctx.stroke();
+      tint("#f59e0b", 0.15);
+      T("SKIP", cx, cy, Math.min(h * 0.35, w / 4));
+      break;
+    case "mixer":
+      B(x0 + w * 0.05, y0 + h * 0.2, w * 0.9, h * 0.6);
+      C(x0 + w * 0.4, cy, m * 0.38);
+      thin(0.6);
+      C(x0 + w * 0.4, cy, m * 0.15);
+      full();
+      T("MIXER", x0 + w * 0.8, cy, Math.min(h * 0.18, w * 0.08));
+      break;
+    case "scaffold":
+      B(x0, y0, w, h);
+      thin(0.45);
+      for (let i = 1; i < 4; i++) L(x0, y0 + (h * i) / 4, x1, y0 + (h * i) / 4);
+      full();
+      for (let x = x0; x <= x1 + 1; x += Math.max(w / 6, h * 0.9)) {
+        C(Math.min(x, x1), y0, m * 0.06, 1);
+        C(Math.min(x, x1), y1, m * 0.06, 1);
+      }
+      T("SCAFFOLD", cx, cy, Math.min(h * 0.22, w / 10));
+      break;
+    case "tower":
+      B(x0, y0, w, h);
+      thin(0.6);
+      L(x0, y0, x1, y1);
+      L(x1, y0, x0, y1);
+      full();
+      [
+        [x0, y0],
+        [x1, y0],
+        [x0, y1],
+        [x1, y1],
+      ].forEach(([a, b]) => C(a, b, m * 0.07, 1));
+      T("TOWER", cx, y1 + m * 0.22, m * 0.18);
+      break;
+    case "hoist":
+      B(x0, y0, w, h);
+      thin(0.7);
+      L(cx, y1 - h * 0.15, cx, y0 + h * 0.15);
+      L(cx, y0 + h * 0.15, cx - w * 0.15, y0 + h * 0.35);
+      L(cx, y0 + h * 0.15, cx + w * 0.15, y0 + h * 0.35);
+      full();
+      T("HOIST", cx, y1 - h * 0.08, m * 0.14);
+      break;
+    case "crane":
+      dash(() => E(cx, cy, w / 2, h / 2));
+      B(cx - m * 0.1, cy - m * 0.1, m * 0.2, m * 0.2);
+      ctx.lineWidth = lw * 1.6;
+      L(cx, cy, x1, cy);
+      full();
+      T("CRANE", cx, cy + m * 0.2, m * 0.07);
+      break;
+    case "telehandler":
+      RR(x0, y0 + h * 0.15, w * 0.75, h * 0.7, m * 0.1);
+      thin(0.6);
+      B(x0 + w * 0.08, y0 + h * 0.25, w * 0.22, h * 0.5);
+      full();
+      ctx.lineWidth = lw * 2;
+      L(x0 + w * 0.4, cy, x1, cy);
+      full();
+      L(x1, cy - h * 0.3, x1, cy + h * 0.3);
+      [
+        [0.1, 0],
+        [0.6, 0],
+        [0.1, 1],
+        [0.6, 1],
+      ].forEach(([a, b]) => B(x0 + w * a, b ? y1 - h * 0.15 : y0, w * 0.14, h * 0.15));
+      T("TELEHANDLER", x0 + w * 0.48, cy, Math.min(h * 0.14, w / 16));
+      break;
+    case "digger":
+      B(x0, y0, w * 0.6, h * 0.22);
+      B(x0, y1 - h * 0.22, w * 0.6, h * 0.22);
+      RR(x0 + w * 0.06, y0 + h * 0.18, w * 0.5, h * 0.64, m * 0.1);
+      thin(0.6);
+      B(x0 + w * 0.1, y0 + h * 0.25, w * 0.2, h * 0.3);
+      full();
+      ctx.lineWidth = lw * 2;
+      L(x0 + w * 0.45, cy, x1 - w * 0.1, cy);
+      full();
+      ctx.beginPath();
+      ctx.moveTo(x1 - w * 0.12, cy - h * 0.2);
+      ctx.lineTo(x1, cy - h * 0.12);
+      ctx.lineTo(x1, cy + h * 0.12);
+      ctx.lineTo(x1 - w * 0.12, cy + h * 0.2);
+      ctx.stroke();
+      T("EXCAVATOR", x0 + w * 0.33, y0 + h * 0.68, Math.min(h * 0.12, w / 15));
+      break;
+    case "matstore":
+      B(x0, y0, w, h);
+      hatch(m / 6);
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.3, cy - h * 0.12, w * 0.6, h * 0.24);
+      ctx.restore();
+      T("MATERIALS", cx, cy, Math.min(h * 0.17, w / 9));
+      break;
+    case "wheelwash":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let y = y0 + h * 0.2; y < y1 - h * 0.1; y += h * 0.2) {
+        ctx.beginPath();
+        for (let x = x0 + w * 0.05; x <= x1 - w * 0.05; x += w / 40)
+          ctx.lineTo(x, y + Math.sin((x / w) * 40) * h * 0.03);
+        ctx.stroke();
+      }
+      full();
+      T("WHEEL WASH", cx, cy, Math.min(h * 0.16, w / 10));
+      break;
+    case "firstaid":
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.fillStyle = "#16a34a";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - m * 0.1, cy - m * 0.32, m * 0.2, m * 0.64);
+      ctx.fillRect(cx - m * 0.32, cy - m * 0.1, m * 0.64, m * 0.2);
+      ctx.restore();
+      B(x0, y0, w, h);
+      break;
+    case "smoking":
+      dash(() => B(x0, y0, w, h));
+      T("SMOKING AREA", cx, cy, Math.min(h * 0.14, w / 9));
+      break;
+    case "fuel":
+      B(x0, y0, w, h);
+      dash(() => B(x0 + w * 0.08, y0 + h * 0.12, w * 0.84, h * 0.76));
+      tint("#dc2626", 0.12);
+      T("FUEL (BUNDED)", cx, cy, Math.min(h * 0.16, w / 11));
+      break;
+    case "gascage":
+      B(x0, y0, w, h);
+      clip(() => {
+        thin(0.35);
+        const st = m / 6;
+        for (let d = -h; d < w + h; d += st) {
+          L(x0 + d, y1, x0 + d + h, y0);
+          L(x0 + d, y0, x0 + d + h, y1);
+        }
+        full();
+      });
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.32, cy - h * 0.13, w * 0.64, h * 0.26);
+      ctx.restore();
+      T("GAS CAGE", cx, cy, Math.min(h * 0.18, w / 8));
+      break;
     /* landscaping & garden */
-    case "greenhouse":B(x0,y0,w,h);L(x0,cy,x1,cy);thin(0.45);for(let i=1;i<6;i++)L(x0+w*i/6,y0,x0+w*i/6,y1);full();break;
-    case "pergola":[[x0,y0],[x1,y0],[x0,y1],[x1,y1]].forEach(([a,b])=>{ctx.save();ctx.fillStyle=c;ctx.fillRect(a-m*0.04,b-m*0.04,m*0.08,m*0.08);ctx.restore()});thin(0.6);L(x0,y0,x1,y0);L(x0,y1,x1,y1);for(let x=x0+w/8;x<x1;x+=w/8)L(x,y0-h*0.04,x,y1+h*0.04);full();break;
-    case "hottub":RR(x0,y0,w,h,m*0.15);C(cx,cy,m*0.38);thin(0.5);C(cx,cy,m*0.28);full();break;
-    case "pool":RR(x0,y0,w,h,m*0.08);thin(0.55);RR(x0+m*0.06,y0+m*0.06,w-m*0.12,h-m*0.12,m*0.06);for(let i=0;i<3;i++)B(x0+m*0.06,y0+m*0.06+i*m*0.1,m*0.3-i*m*0.08,m*0.1);for(let y=y0+h*0.35;y<y1-h*0.15;y+=h*0.2){ctx.beginPath();for(let x=x0+w*0.3;x<=x1-w*0.1;x+=w/60)ctx.lineTo(x,y+Math.sin(x/w*50)*h*0.02);ctx.stroke()}full();break;
-    case "trampoline":C(cx,cy,m*0.48);thin(0.5);C(cx,cy,m*0.38);full();break;
-    case "bbq":RR(x0,y0,w,h,m*0.15);thin(0.5);for(let x=x0+w*0.15;x<x1-w*0.1;x+=w*0.1)L(x,y0+h*0.2,x,y1-h*0.2);full();break;
-    case "bench":B(x0,y0,w,h);thin(0.5);for(let i=1;i<4;i++)L(x0,y0+h*i/4,x1,y0+h*i/4);full();break;
-    case "gardenlight":C(cx,cy,m*0.22,1);thin(0.6);for(let i=0;i<8;i++){const an=i*Math.PI/4;L(cx+Math.cos(an)*m*0.3,cy+Math.sin(an)*m*0.3,cx+Math.cos(an)*m*0.48,cy+Math.sin(an)*m*0.48)}full();break;
-    case "bollard":C(cx,cy,m*0.45,1);break;
-    case "raisedbed":B(x0,y0,w,h);B(x0+m*0.1,y0+m*0.1,w-m*0.2,h-m*0.2);thin(0.5);for(let x=x0+m*0.3;x<x1-m*0.2;x+=m*0.35)for(let y=y0+m*0.3;y<y1-m*0.2;y+=m*0.35)C(x,y,m*0.04);full();break;
-    case "conifer":{ctx.beginPath();const n=14;for(let i=0;i<=n*2;i++){const an=i*Math.PI/n,r=i%2?m*0.3:m*0.48;ctx.lineTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r)}ctx.closePath();ctx.stroke();C(cx,cy,m*0.04,1);break}
-    case "treeremove":thin(0.7);ctx.beginPath();for(let i=0;i<=24;i++){const an=i*Math.PI/12,r=m*(i%2?0.42:0.48);ctx.lineTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r)}ctx.closePath();ctx.stroke();full();ctx.save();ctx.strokeStyle="#dc2626";ctx.lineWidth=lw*1.5;L(cx-m*0.35,cy-m*0.35,cx+m*0.35,cy+m*0.35);L(cx+m*0.35,cy-m*0.35,cx-m*0.35,cy+m*0.35);ctx.restore();break;
-    case "rpz":dash(()=>E(cx,cy,w/2,h/2));C(cx,cy,m*0.04,1);T("RPA",cx,cy+m*0.12,m*0.07);break;
-    case "washline":C(cx,cy,m*0.06,1);thin(0.5);L(x0,y0,x1,y1);L(x1,y0,x0,y1);B(x0+w*0.15,y0+h*0.15,w*0.7,h*0.7);B(x0+w*0.3,y0+h*0.3,w*0.4,h*0.4);full();break;
+    case "greenhouse":
+      B(x0, y0, w, h);
+      L(x0, cy, x1, cy);
+      thin(0.45);
+      for (let i = 1; i < 6; i++) L(x0 + (w * i) / 6, y0, x0 + (w * i) / 6, y1);
+      full();
+      break;
+    case "pergola":
+      [
+        [x0, y0],
+        [x1, y0],
+        [x0, y1],
+        [x1, y1],
+      ].forEach(([a, b]) => {
+        ctx.save();
+        ctx.fillStyle = c;
+        ctx.fillRect(a - m * 0.04, b - m * 0.04, m * 0.08, m * 0.08);
+        ctx.restore();
+      });
+      thin(0.6);
+      L(x0, y0, x1, y0);
+      L(x0, y1, x1, y1);
+      for (let x = x0 + w / 8; x < x1; x += w / 8) L(x, y0 - h * 0.04, x, y1 + h * 0.04);
+      full();
+      break;
+    case "hottub":
+      RR(x0, y0, w, h, m * 0.15);
+      C(cx, cy, m * 0.38);
+      thin(0.5);
+      C(cx, cy, m * 0.28);
+      full();
+      break;
+    case "pool":
+      RR(x0, y0, w, h, m * 0.08);
+      thin(0.55);
+      RR(x0 + m * 0.06, y0 + m * 0.06, w - m * 0.12, h - m * 0.12, m * 0.06);
+      for (let i = 0; i < 3; i++)
+        B(x0 + m * 0.06, y0 + m * 0.06 + i * m * 0.1, m * 0.3 - i * m * 0.08, m * 0.1);
+      for (let y = y0 + h * 0.35; y < y1 - h * 0.15; y += h * 0.2) {
+        ctx.beginPath();
+        for (let x = x0 + w * 0.3; x <= x1 - w * 0.1; x += w / 60)
+          ctx.lineTo(x, y + Math.sin((x / w) * 50) * h * 0.02);
+        ctx.stroke();
+      }
+      full();
+      break;
+    case "trampoline":
+      C(cx, cy, m * 0.48);
+      thin(0.5);
+      C(cx, cy, m * 0.38);
+      full();
+      break;
+    case "bbq":
+      RR(x0, y0, w, h, m * 0.15);
+      thin(0.5);
+      for (let x = x0 + w * 0.15; x < x1 - w * 0.1; x += w * 0.1)
+        L(x, y0 + h * 0.2, x, y1 - h * 0.2);
+      full();
+      break;
+    case "bench":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let i = 1; i < 4; i++) L(x0, y0 + (h * i) / 4, x1, y0 + (h * i) / 4);
+      full();
+      break;
+    case "gardenlight":
+      C(cx, cy, m * 0.22, 1);
+      thin(0.6);
+      for (let i = 0; i < 8; i++) {
+        const an = (i * Math.PI) / 4;
+        L(
+          cx + Math.cos(an) * m * 0.3,
+          cy + Math.sin(an) * m * 0.3,
+          cx + Math.cos(an) * m * 0.48,
+          cy + Math.sin(an) * m * 0.48,
+        );
+      }
+      full();
+      break;
+    case "bollard":
+      C(cx, cy, m * 0.45, 1);
+      break;
+    case "raisedbed":
+      B(x0, y0, w, h);
+      B(x0 + m * 0.1, y0 + m * 0.1, w - m * 0.2, h - m * 0.2);
+      thin(0.5);
+      for (let x = x0 + m * 0.3; x < x1 - m * 0.2; x += m * 0.35)
+        for (let y = y0 + m * 0.3; y < y1 - m * 0.2; y += m * 0.35) C(x, y, m * 0.04);
+      full();
+      break;
+    case "conifer": {
+      ctx.beginPath();
+      const n = 14;
+      for (let i = 0; i <= n * 2; i++) {
+        const an = (i * Math.PI) / n,
+          r = i % 2 ? m * 0.3 : m * 0.48;
+        ctx.lineTo(cx + Math.cos(an) * r, cy + Math.sin(an) * r);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      C(cx, cy, m * 0.04, 1);
+      break;
+    }
+    case "treeremove":
+      thin(0.7);
+      ctx.beginPath();
+      for (let i = 0; i <= 24; i++) {
+        const an = (i * Math.PI) / 12,
+          r = m * (i % 2 ? 0.42 : 0.48);
+        ctx.lineTo(cx + Math.cos(an) * r, cy + Math.sin(an) * r);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      full();
+      ctx.save();
+      ctx.strokeStyle = "#dc2626";
+      ctx.lineWidth = lw * 1.5;
+      L(cx - m * 0.35, cy - m * 0.35, cx + m * 0.35, cy + m * 0.35);
+      L(cx + m * 0.35, cy - m * 0.35, cx - m * 0.35, cy + m * 0.35);
+      ctx.restore();
+      break;
+    case "rpz":
+      dash(() => E(cx, cy, w / 2, h / 2));
+      C(cx, cy, m * 0.04, 1);
+      T("RPA", cx, cy + m * 0.12, m * 0.07);
+      break;
+    case "washline":
+      C(cx, cy, m * 0.06, 1);
+      thin(0.5);
+      L(x0, y0, x1, y1);
+      L(x1, y0, x0, y1);
+      B(x0 + w * 0.15, y0 + h * 0.15, w * 0.7, h * 0.7);
+      B(x0 + w * 0.3, y0 + h * 0.3, w * 0.4, h * 0.4);
+      full();
+      break;
     /* fire safety */
-    case "fd30":RR(x0,y0,w,h,m*0.2);tint("#dc2626",0.12);T("FD30S",cx,cy);break;
-    case "exitsign":ctx.save();ctx.fillStyle="#16a34a";ctx.fillRect(x0,y0,w,h);ctx.fillStyle="#fff";ctx.strokeStyle="#fff";ctx.lineWidth=Math.max(lw,1);ctx.beginPath();ctx.moveTo(x0+w*0.62,cy);ctx.lineTo(x1-w*0.08,cy);ctx.moveTo(x1-w*0.16,cy-h*0.2);ctx.lineTo(x1-w*0.08,cy);ctx.lineTo(x1-w*0.16,cy+h*0.2);ctx.stroke();npLbl(ctx,"EXIT",x0+w*0.32,cy,Math.min(h*0.5,w*0.16));ctx.restore();B(x0,y0,w,h);break;
-    case "callpoint":B(x0,y0,w,h);tint("#dc2626",0.3);C(cx,cy,m*0.22);break;
-    case "sounder":C(cx,cy,m*0.46);ctx.beginPath();ctx.moveTo(cx-m*0.2,cy+m*0.15);ctx.lineTo(cx-m*0.12,cy-m*0.18);ctx.quadraticCurveTo(cx,cy-m*0.3,cx+m*0.12,cy-m*0.18);ctx.lineTo(cx+m*0.2,cy+m*0.15);ctx.closePath();ctx.stroke();break;
-    case "sprinkler":C(cx,cy,m*0.15);L(cx-m*0.1,cy,cx+m*0.1,cy);thin(0.6);for(let i=0;i<6;i++){const an=i*Math.PI/3;L(cx+Math.cos(an)*m*0.22,cy+Math.sin(an)*m*0.22,cx+Math.cos(an)*m*0.46,cy+Math.sin(an)*m*0.46)}full();break;
+    case "fd30":
+      RR(x0, y0, w, h, m * 0.2);
+      tint("#dc2626", 0.12);
+      T("FD30S", cx, cy);
+      break;
+    case "exitsign":
+      ctx.save();
+      ctx.fillStyle = "#16a34a";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.fillStyle = "#fff";
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = Math.max(lw, 1);
+      ctx.beginPath();
+      ctx.moveTo(x0 + w * 0.62, cy);
+      ctx.lineTo(x1 - w * 0.08, cy);
+      ctx.moveTo(x1 - w * 0.16, cy - h * 0.2);
+      ctx.lineTo(x1 - w * 0.08, cy);
+      ctx.lineTo(x1 - w * 0.16, cy + h * 0.2);
+      ctx.stroke();
+      npLbl(ctx, "EXIT", x0 + w * 0.32, cy, Math.min(h * 0.5, w * 0.16));
+      ctx.restore();
+      B(x0, y0, w, h);
+      break;
+    case "callpoint":
+      B(x0, y0, w, h);
+      tint("#dc2626", 0.3);
+      C(cx, cy, m * 0.22);
+      break;
+    case "sounder":
+      C(cx, cy, m * 0.46);
+      ctx.beginPath();
+      ctx.moveTo(cx - m * 0.2, cy + m * 0.15);
+      ctx.lineTo(cx - m * 0.12, cy - m * 0.18);
+      ctx.quadraticCurveTo(cx, cy - m * 0.3, cx + m * 0.12, cy - m * 0.18);
+      ctx.lineTo(cx + m * 0.2, cy + m * 0.15);
+      ctx.closePath();
+      ctx.stroke();
+      break;
+    case "sprinkler":
+      C(cx, cy, m * 0.15);
+      L(cx - m * 0.1, cy, cx + m * 0.1, cy);
+      thin(0.6);
+      for (let i = 0; i < 6; i++) {
+        const an = (i * Math.PI) / 3;
+        L(
+          cx + Math.cos(an) * m * 0.22,
+          cy + Math.sin(an) * m * 0.22,
+          cx + Math.cos(an) * m * 0.46,
+          cy + Math.sin(an) * m * 0.46,
+        );
+      }
+      full();
+      break;
     /* accessibility & lifts */
-    case "lift":B(x0,y0,w,h);thin(0.6);L(x0,y0,x1,y1);L(x1,y0,x0,y1);full();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-m*0.22,cy-m*0.1,m*0.44,m*0.2);ctx.restore();T("LIFT",cx,cy,m*0.14);break;
-    case "docm":{B(x0,y0,w,h);const s2=m*0.28;thin(0.7);B(x0+w*0.06,y0+h*0.04,s2*0.6,s2*0.3);E(x0+w*0.06+s2*0.3,y0+h*0.04+s2*0.75,s2*0.25,s2*0.45);B(x1-w*0.3,y0+h*0.04,w*0.25,s2*0.55);ctx.lineWidth=lw*1.6;L(x0+w*0.06+s2*0.7,y0+h*0.12,x0+w*0.06+s2*0.7,y0+h*0.12+s2*1.1);full();dash(()=>C(x0+w*0.5,y1-w*0.5,w*0.45));T("♿",x0+w*0.5,y1-w*0.5,m*0.2);break}
-    case "ramp":B(x0,y0,w,h);thin(0.7);L(x0+w*0.1,cy,x1-w*0.1,cy);L(x1-w*0.1,cy,x1-w*0.18,cy-h*0.12);L(x1-w*0.1,cy,x1-w*0.18,cy+h*0.12);full();T("RAMP 1:12",cx,cy-h*0.25,Math.min(h*0.18,w/10));break;
-    case "gasboiler":B(x0,y0,w,h);ctx.save();ctx.fillStyle="#ea580c";ctx.beginPath();ctx.moveTo(cx,y0+h*0.18);ctx.quadraticCurveTo(cx+w*0.22,y0+h*0.5,cx,y0+h*0.72);ctx.quadraticCurveTo(cx-w*0.22,y0+h*0.5,cx,y0+h*0.18);ctx.fill();ctx.restore();T("GAS",cx,y1-h*0.12,Math.min(h*0.18,w/4));break;
-    case "unvented":C(cx,cy,m*0.42);T("UV",cx,cy,m*0.22);C(x1-m*0.1,y0+m*0.12,m*0.1);thin(0.6);L(x1-m*0.1,y0+m*0.22,cx+m*0.3,cy-m*0.28);full();break;
-    case "eufh":{B(x0,y0,w,h);ctx.save();ctx.strokeStyle="#dc2626";thin(0.5);ctx.beginPath();const st=Math.max(m/12,3);let up=0;for(let x=x0+st;x<x1-st*0.5;x+=st,up^=1){ctx.lineTo(x,up?y0+st:y1-st)}ctx.stroke();ctx.restore();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.3,cy-h*0.08,w*0.6,h*0.16);ctx.fillStyle="#dc2626";T("ELECTRIC UFH",cx,cy,Math.min(h*0.11,w/10));ctx.restore();break}
-    case "wufh":{B(x0,y0,w,h);const st=Math.max(m/10,3);ctx.save();thin(0.6);ctx.beginPath();let dir=1;for(let y=y0+st;y<y1-st*0.5;y+=st,dir=-dir){if(dir>0){ctx.moveTo(x0+st,y);ctx.lineTo(x1-st,y)}else{ctx.moveTo(x1-st,y);ctx.lineTo(x0+st,y)}}ctx.strokeStyle="#2563eb";ctx.stroke();ctx.restore();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.28,cy-h*0.08,w*0.56,h*0.16);ctx.fillStyle="#2563eb";T("WET UFH",cx,cy,Math.min(h*0.11,w/9));ctx.restore();break}
-    case "mvhrsup":case "mvhrext":{const col=k==="mvhrsup"?"#2563eb":"#dc2626";ctx.save();ctx.strokeStyle=col;ctx.fillStyle=col;C(cx,cy,m*0.42);T(k==="mvhrsup"?"S":"E",cx,cy,m*0.42);ctx.restore();break}
-    case "mvhrplen":B(x0,y0,w,h);thin(0.5);for(let i=1;i<5;i++)C(x0+w*i/5,y1,Math.min(h*0.12,w/14));full();T("PLENUM",cx,y0+h*0.4,Math.min(h*0.3,w/7));break;
-    case "mvhrin":case "mvhrout":B(x0,y0,w,h);thin(0.5);for(let i=1;i<5;i++)L(x0+w*0.15,y0+h*i/5,x1-w*0.15,y0+h*i/5);full();T(k==="mvhrin"?"INTAKE":"EXHAUST",cx,y1+h*0.25,m*0.2);break;
-    case "mvhrcond":C(cx,cy,m*0.42);T("C",cx,cy,m*0.42);break;
-    case "cu3":B(x0,y0,w,h);thin(0.6);[0.2,0.4,0.6].forEach(f=>L(x0+w*0.06,y0+h*(f+0.1),x0+w*0.45,y0+h*(f+0.1)));full();T("3Φ DB",x0+w*0.72,cy,Math.min(h*0.38,w/6));break;
+    case "lift":
+      B(x0, y0, w, h);
+      thin(0.6);
+      L(x0, y0, x1, y1);
+      L(x1, y0, x0, y1);
+      full();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - m * 0.22, cy - m * 0.1, m * 0.44, m * 0.2);
+      ctx.restore();
+      T("LIFT", cx, cy, m * 0.14);
+      break;
+    case "docm": {
+      B(x0, y0, w, h);
+      const s2 = m * 0.28;
+      thin(0.7);
+      B(x0 + w * 0.06, y0 + h * 0.04, s2 * 0.6, s2 * 0.3);
+      E(x0 + w * 0.06 + s2 * 0.3, y0 + h * 0.04 + s2 * 0.75, s2 * 0.25, s2 * 0.45);
+      B(x1 - w * 0.3, y0 + h * 0.04, w * 0.25, s2 * 0.55);
+      ctx.lineWidth = lw * 1.6;
+      L(
+        x0 + w * 0.06 + s2 * 0.7,
+        y0 + h * 0.12,
+        x0 + w * 0.06 + s2 * 0.7,
+        y0 + h * 0.12 + s2 * 1.1,
+      );
+      full();
+      dash(() => C(x0 + w * 0.5, y1 - w * 0.5, w * 0.45));
+      T("♿", x0 + w * 0.5, y1 - w * 0.5, m * 0.2);
+      break;
+    }
+    case "ramp":
+      B(x0, y0, w, h);
+      thin(0.7);
+      L(x0 + w * 0.1, cy, x1 - w * 0.1, cy);
+      L(x1 - w * 0.1, cy, x1 - w * 0.18, cy - h * 0.12);
+      L(x1 - w * 0.1, cy, x1 - w * 0.18, cy + h * 0.12);
+      full();
+      T("RAMP 1:12", cx, cy - h * 0.25, Math.min(h * 0.18, w / 10));
+      break;
+    case "gasboiler":
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.fillStyle = "#ea580c";
+      ctx.beginPath();
+      ctx.moveTo(cx, y0 + h * 0.18);
+      ctx.quadraticCurveTo(cx + w * 0.22, y0 + h * 0.5, cx, y0 + h * 0.72);
+      ctx.quadraticCurveTo(cx - w * 0.22, y0 + h * 0.5, cx, y0 + h * 0.18);
+      ctx.fill();
+      ctx.restore();
+      T("GAS", cx, y1 - h * 0.12, Math.min(h * 0.18, w / 4));
+      break;
+    case "unvented":
+      C(cx, cy, m * 0.42);
+      T("UV", cx, cy, m * 0.22);
+      C(x1 - m * 0.1, y0 + m * 0.12, m * 0.1);
+      thin(0.6);
+      L(x1 - m * 0.1, y0 + m * 0.22, cx + m * 0.3, cy - m * 0.28);
+      full();
+      break;
+    case "eufh": {
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.strokeStyle = "#dc2626";
+      thin(0.5);
+      ctx.beginPath();
+      const st = Math.max(m / 12, 3);
+      let up = 0;
+      for (let x = x0 + st; x < x1 - st * 0.5; x += st, up ^= 1) {
+        ctx.lineTo(x, up ? y0 + st : y1 - st);
+      }
+      ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.3, cy - h * 0.08, w * 0.6, h * 0.16);
+      ctx.fillStyle = "#dc2626";
+      T("ELECTRIC UFH", cx, cy, Math.min(h * 0.11, w / 10));
+      ctx.restore();
+      break;
+    }
+    case "wufh": {
+      B(x0, y0, w, h);
+      const st = Math.max(m / 10, 3);
+      ctx.save();
+      thin(0.6);
+      ctx.beginPath();
+      let dir = 1;
+      for (let y = y0 + st; y < y1 - st * 0.5; y += st, dir = -dir) {
+        if (dir > 0) {
+          ctx.moveTo(x0 + st, y);
+          ctx.lineTo(x1 - st, y);
+        } else {
+          ctx.moveTo(x1 - st, y);
+          ctx.lineTo(x0 + st, y);
+        }
+      }
+      ctx.strokeStyle = "#2563eb";
+      ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.28, cy - h * 0.08, w * 0.56, h * 0.16);
+      ctx.fillStyle = "#2563eb";
+      T("WET UFH", cx, cy, Math.min(h * 0.11, w / 9));
+      ctx.restore();
+      break;
+    }
+    case "mvhrsup":
+    case "mvhrext": {
+      const col = k === "mvhrsup" ? "#2563eb" : "#dc2626";
+      ctx.save();
+      ctx.strokeStyle = col;
+      ctx.fillStyle = col;
+      C(cx, cy, m * 0.42);
+      T(k === "mvhrsup" ? "S" : "E", cx, cy, m * 0.42);
+      ctx.restore();
+      break;
+    }
+    case "mvhrplen":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let i = 1; i < 5; i++) C(x0 + (w * i) / 5, y1, Math.min(h * 0.12, w / 14));
+      full();
+      T("PLENUM", cx, y0 + h * 0.4, Math.min(h * 0.3, w / 7));
+      break;
+    case "mvhrin":
+    case "mvhrout":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let i = 1; i < 5; i++)
+        L(x0 + w * 0.15, y0 + (h * i) / 5, x1 - w * 0.15, y0 + (h * i) / 5);
+      full();
+      T(k === "mvhrin" ? "INTAKE" : "EXHAUST", cx, y1 + h * 0.25, m * 0.2);
+      break;
+    case "mvhrcond":
+      C(cx, cy, m * 0.42);
+      T("C", cx, cy, m * 0.42);
+      break;
+    case "cu3":
+      B(x0, y0, w, h);
+      thin(0.6);
+      [0.2, 0.4, 0.6].forEach((f) =>
+        L(x0 + w * 0.06, y0 + h * (f + 0.1), x0 + w * 0.45, y0 + h * (f + 0.1)),
+      );
+      full();
+      T("3Φ DB", x0 + w * 0.72, cy, Math.min(h * 0.38, w / 6));
+      break;
     /* survey, drainage detail, services, construction phase, building, external works, notes */
-    case "exspot":case "prspot":{const r=m*0.3;if(k==="exspot"){L(x0+r*0.2,cy-r,x0+r*2.2,cy+r);L(x0+r*0.2,cy+r,x0+r*2.2,cy-r)}else{C(x0+r*1.2,cy,r);L(x0+r*0.2,cy,x0+r*2.2,cy);L(x0+r*1.2,cy-r,x0+r*1.2,cy+r)}npLbl(ctx,o.lab||(k==="exspot"?"Ex 0.000":"+0.000"),x0+r*2.6+(w-r*2.6)/2,cy,Math.min(h*0.55,(w-r*2.6)/((o.lab||"Ex 0.000").length*0.6)));break}
-    case "treetag":{dash(()=>E(cx,cy,w/2,h/2));npCanopy(ctx,cx,cy,w*0.28,h*0.28,o.a[0]+o.a[1],lw,"#3f3f3f","#dfe9d6");C(cx,cy,m*0.03);ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-m*0.09,cy-m*0.2-m*0.06,m*0.18,m*0.12);ctx.restore();T(o.lab||"T1",cx,cy-m*0.2,m*0.08);break}
-    case "demolish":B(x0,y0,w,h);clip(()=>{thin(0.4);const st=m/10;for(let d=-h;d<w+h;d+=st)L(x0+d,y1,x0+d+h,y0);full()});ctx.save();ctx.strokeStyle="#dc2626";ctx.lineWidth=lw*1.3;L(x0,y0,x1,y1);L(x1,y0,x0,y1);ctx.restore();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.35,cy-h*0.08,w*0.7,h*0.16);ctx.restore();ctx.save();ctx.fillStyle="#dc2626";T("TO BE DEMOLISHED",cx,cy,Math.min(h*0.11,w/12));ctx.restore();break;
-    case "mhlev":{const sq=h;B(x0,y0,sq,sq);thin(0.6);L(x0,y0,x0+sq,y1);L(x0+sq,y0,x0,y1);full();const t=o.lab||"CL 0.000  IL 0.000";npLbl(ctx,t,x0+sq+(w-sq)/2,cy,Math.min(h*0.4,(w-sq)/(t.length*0.58)));break}
-    case "rwh":C(cx,cy,m*0.46);C(cx,cy,m*0.36);T("RWH",cx,cy,m*0.22);break;
-    case "raingarden":npCanopy(ctx,cx,cy,w/2,h/2,o.a[0],lw,"#0e7490","#d4ead9");thin(0.5);for(let i=0;i<5;i++)C(x0+w*(0.25+i*0.12),cy+h*(i%2?0.12:-0.1),m*0.07);full();T("RAIN GARDEN",cx,cy+h*0.3,Math.min(h*0.14,w/12));break;
-    case "interceptor":B(x0,y0,w,h);L(x0+w/3,y0,x0+w/3,y1);L(x0+w*2/3,y0,x0+w*2/3,y1);thin(0.6);[1,3,5].forEach(f=>C(x0+w*f/6,cy,m*0.15));full();T("INTERCEPTOR",cx,y1+h*0.25,Math.min(h*0.25,w/10));break;
-    case "backdrop":B(x0,y0,w,h);thin(0.6);L(x0,y0,x1,y1);L(x1,y0,x0,y1);full();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-m*0.2,cy-m*0.16,m*0.4,m*0.32);ctx.restore();T("BD",cx,cy,m*0.24);break;
-    case "pipelab":{L(x0,cy,x1,cy);L(x1,cy,x1-h*0.5,cy-h*0.35);L(x1,cy,x1-h*0.5,cy+h*0.35);const t=o.lab||"100Ø @ 1:40";ctx.save();ctx.font=`600 ${Math.min(h*0.8,w/(t.length*0.6))}px system-ui,sans-serif`;const tw=ctx.measureText(t).width;ctx.fillStyle="#fff";ctx.fillRect(cx-tw/2-2,cy-h*0.45,tw+4,h*0.9);ctx.restore();npLbl(ctx,t,cx,cy,Math.min(h*0.8,w/(t.length*0.6)));break}
-    case "bbox":B(x0,y0,w,h);C(cx,cy,m*0.3);T("BB",cx,cy,m*0.2);break;
-    case "govr":B(x0,y0,w,h);ctx.save();ctx.fillStyle="#d4a106";T("GAS GOV",cx,cy,Math.min(h*0.3,w/6));ctx.restore();break;
-    case "streetlamp":C(cx,cy,m*0.2,"#f2c230");thin(0.6);for(let i=0;i<8;i++){const a=i*Math.PI/4;L(cx+Math.cos(a)*m*0.28,cy+Math.sin(a)*m*0.28,cx+Math.cos(a)*m*0.45,cy+Math.sin(a)*m*0.45)}full();T("SL",cx+m*0.5,cy-m*0.45,m*0.2);break;
-    case "substn":B(x0,y0,w,h);hatch(m/6);ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.32,cy-h*0.14,w*0.64,h*0.28);ctx.fillStyle="#dc2626";npLbl(ctx,"⚡ SUBSTATION",cx,cy,Math.min(h*0.14,w/10));ctx.restore();break;
-    case "jointbay":dash(()=>B(x0,y0,w,h));T("JOINT BAY",cx,cy,Math.min(h*0.3,w/10));break;
-    case "exclusion":ctx.save();ctx.strokeStyle="#dc2626";dash(()=>B(x0,y0,w,h));clip(()=>{thin(0.35);const st=m/8;for(let d=-h;d<w+h;d+=st)L(x0+d,y1,x0+d+h,y0);full()});ctx.restore();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.32,cy-h*0.1,w*0.64,h*0.2);ctx.fillStyle="#dc2626";T("EXCLUSION ZONE",cx,cy,Math.min(h*0.12,w/10));ctx.restore();break;
-    case "oversail":ctx.save();ctx.strokeStyle="#ea580c";dash(()=>E(cx,cy,w/2,h/2));ctx.fillStyle="#ea580c";T("CRANE OVERSAIL ZONE",cx,y0+h*0.08,Math.min(h*0.04,w/22));ctx.restore();break;
-    case "delivery":dash(()=>B(x0,y0,w,h));thin(0.7);L(x0+w*0.1,cy,x1-w*0.12,cy);L(x1-w*0.12,cy,x1-w*0.2,cy-h*0.12);L(x1-w*0.12,cy,x1-w*0.2,cy+h*0.12);full();T("DELIVERIES / LOADING",cx,y0+h*0.22,Math.min(h*0.12,w/14));break;
-    case "banksman":C(cx,cy,m*0.46,"#fde047");C(cx,cy-m*0.18,m*0.1);L(cx,cy-m*0.08,cx,cy+m*0.14);L(cx-m*0.15,cy,cx+m*0.15,cy-m*0.05);L(cx,cy+m*0.14,cx-m*0.1,cy+m*0.3);L(cx,cy+m*0.14,cx+m*0.1,cy+m*0.3);break;
-    case "spoil":{ctx.beginPath();ctx.moveTo(x0,y1);ctx.quadraticCurveTo(cx,y0-h*0.2,x1,y1);ctx.closePath();ctx.stroke();clip(()=>{thin(0.4);for(let i=0;i<9;i++){const x=x0+w*(0.1+i*0.1);L(x,y1,x+w*0.04,y1-h*0.4*Math.sin(Math.PI*(i+1)/10))}full()});T("SPOIL HEAP",cx,y1+h*0.12,Math.min(h*0.12,w/10));break}
-    case "washout":B(x0,y0,w,h);dash(()=>B(x0+m*0.08,y0+m*0.08,w-m*0.16,h-m*0.16));T("CONCRETE WASHOUT",cx,cy,Math.min(h*0.1,w/12));break;
-    case "padstonep":B(x0,y0,w,h);hatch(m/3);T("PS",cx,cy,m*0.6);break;
-    case "cavtray":case "weepvent":ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(cx,y1);ctx.closePath();ctx.stroke();T(k==="cavtray"?"CT":"WV",cx,y0+h*0.35,m*0.32);break;
-    case "inszone":B(x0,y0,w,h);ctx.save();ctx.strokeStyle="#ca8a04";thin(0.6);ctx.beginPath();const zz=h*0.8;for(let x=x0;x<=x1;x+=zz/2){const up=Math.round((x-x0)/(zz/2))%2;ctx.lineTo(x,up?y0+h*0.12:y1-h*0.12)}ctx.stroke();ctx.restore();full();break;
-    case "tactile":B(x0,y0,w,h);ctx.save();ctx.fillStyle=c;const ts=m/6;for(let y=y0+ts/2;y<y1;y+=ts)for(let x=x0+ts/2;x<x1;x+=ts){ctx.beginPath();ctx.arc(x,y,ts*0.18,0,7);ctx.fill()}ctx.restore();break;
-    case "stepsrail":B(x0,y0,w,h);thin(0.6);for(let i=1;i<6;i++)L(x0,y0+h*i/6,x1,y0+h*i/6);full();ctx.lineWidth=lw*1.6;L(x0+w*0.06,y0,x0+w*0.06,y1);L(x1-w*0.06,y0,x1-w*0.06,y1);full();L(cx,y1-h*0.1,cx,y0+h*0.15);L(cx,y0+h*0.15,cx-w*0.05,y0+h*0.25);L(cx,y0+h*0.15,cx+w*0.05,y0+h*0.25);break;
-    case "binscreen":B(x0,y0,w,h);thin(0.5);for(let x=x0+w/14;x<x1;x+=w/14)L(x,y1-h*0.12,x,y1);full();[0.2,0.5,0.8].forEach(f=>B(x0+w*f-w*0.11,y0+h*0.12,w*0.22,h*0.62));T("BINS",cx,y0+h*0.45,Math.min(h*0.16,w/10));break;
-    case "cyclestore":B(x0,y0,w,h);thin(0.6);[0.25,0.5,0.75].forEach(f=>{C(x0+w*f-w*0.06,cy,m*0.14);C(x0+w*f+w*0.06,cy,m*0.14)});full();T("CYCLES",cx,y0+h*0.15,Math.min(h*0.14,w/10));break;
-    case "evbay":B(x0,y0,w,h);ctx.save();ctx.fillStyle="#16a34a";T("EV ⚡",cx,cy,Math.min(w*0.22,h*0.1));ctx.restore();thin(0.5);L(x0+w*0.15,y1-h*0.04,x1-w*0.15,y1-h*0.04);full();break;
-    case "north2":C(cx,cy,m*0.45);ctx.save();ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(cx,cy-m*0.42);ctx.lineTo(cx+m*0.14,cy+m*0.2);ctx.lineTo(cx,cy+m*0.08);ctx.lineTo(cx-m*0.14,cy+m*0.2);ctx.closePath();ctx.fill();ctx.restore();T("N",cx,cy-m*0.58,m*0.2);break;
-    case "north3":ctx.beginPath();ctx.moveTo(cx,y0);ctx.lineTo(cx+w*0.35,y1);ctx.lineTo(cx,y1-h*0.2);ctx.closePath();ctx.save();ctx.fillStyle=c;ctx.fill();ctx.restore();ctx.beginPath();ctx.moveTo(cx,y0);ctx.lineTo(cx-w*0.35,y1);ctx.lineTo(cx,y1-h*0.2);ctx.stroke();T("N",cx,y1+h*0.12,m*0.35);break;
-    case "revtri":ctx.beginPath();ctx.moveTo(cx,y0);ctx.lineTo(x1,y1);ctx.lineTo(x0,y1);ctx.closePath();ctx.stroke();T(o.lab||"A",cx,y0+h*0.62,m*0.45);break;
-    case "dns":ctx.save();ctx.strokeStyle="#dc2626";ctx.lineWidth=lw*1.6;B(x0,y0,w,h);ctx.fillStyle="#dc2626";T("DO NOT SCALE",cx,cy,Math.min(h*0.5,w/7.5));ctx.restore();break;
-    case "keyplan":B(x0,y0,w,h);T("KEY PLAN",cx,y0+h*0.1,Math.min(h*0.09,w/10));thin(0.6);B(x0+w*0.2,y0+h*0.25,w*0.6,h*0.55);full();ctx.save();ctx.fillStyle="#dc2626";ctx.globalAlpha=0.35;ctx.fillRect(x0+w*0.2,y0+h*0.25,w*0.3,h*0.55);ctx.restore();break;
+    case "exspot":
+    case "prspot": {
+      const r = m * 0.3;
+      if (k === "exspot") {
+        L(x0 + r * 0.2, cy - r, x0 + r * 2.2, cy + r);
+        L(x0 + r * 0.2, cy + r, x0 + r * 2.2, cy - r);
+      } else {
+        C(x0 + r * 1.2, cy, r);
+        L(x0 + r * 0.2, cy, x0 + r * 2.2, cy);
+        L(x0 + r * 1.2, cy - r, x0 + r * 1.2, cy + r);
+      }
+      npLbl(
+        ctx,
+        o.lab || (k === "exspot" ? "Ex 0.000" : "+0.000"),
+        x0 + r * 2.6 + (w - r * 2.6) / 2,
+        cy,
+        Math.min(h * 0.55, (w - r * 2.6) / ((o.lab || "Ex 0.000").length * 0.6)),
+      );
+      break;
+    }
+    case "treetag": {
+      dash(() => E(cx, cy, w / 2, h / 2));
+      npCanopy(ctx, cx, cy, w * 0.28, h * 0.28, o.a[0] + o.a[1], lw, "#3f3f3f", "#dfe9d6");
+      C(cx, cy, m * 0.03);
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - m * 0.09, cy - m * 0.2 - m * 0.06, m * 0.18, m * 0.12);
+      ctx.restore();
+      T(o.lab || "T1", cx, cy - m * 0.2, m * 0.08);
+      break;
+    }
+    case "demolish":
+      B(x0, y0, w, h);
+      clip(() => {
+        thin(0.4);
+        const st = m / 10;
+        for (let d = -h; d < w + h; d += st) L(x0 + d, y1, x0 + d + h, y0);
+        full();
+      });
+      ctx.save();
+      ctx.strokeStyle = "#dc2626";
+      ctx.lineWidth = lw * 1.3;
+      L(x0, y0, x1, y1);
+      L(x1, y0, x0, y1);
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.35, cy - h * 0.08, w * 0.7, h * 0.16);
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#dc2626";
+      T("TO BE DEMOLISHED", cx, cy, Math.min(h * 0.11, w / 12));
+      ctx.restore();
+      break;
+    case "mhlev": {
+      const sq = h;
+      B(x0, y0, sq, sq);
+      thin(0.6);
+      L(x0, y0, x0 + sq, y1);
+      L(x0 + sq, y0, x0, y1);
+      full();
+      const t = o.lab || "CL 0.000  IL 0.000";
+      npLbl(ctx, t, x0 + sq + (w - sq) / 2, cy, Math.min(h * 0.4, (w - sq) / (t.length * 0.58)));
+      break;
+    }
+    case "rwh":
+      C(cx, cy, m * 0.46);
+      C(cx, cy, m * 0.36);
+      T("RWH", cx, cy, m * 0.22);
+      break;
+    case "raingarden":
+      npCanopy(ctx, cx, cy, w / 2, h / 2, o.a[0], lw, "#0e7490", "#d4ead9");
+      thin(0.5);
+      for (let i = 0; i < 5; i++)
+        C(x0 + w * (0.25 + i * 0.12), cy + h * (i % 2 ? 0.12 : -0.1), m * 0.07);
+      full();
+      T("RAIN GARDEN", cx, cy + h * 0.3, Math.min(h * 0.14, w / 12));
+      break;
+    case "interceptor":
+      B(x0, y0, w, h);
+      L(x0 + w / 3, y0, x0 + w / 3, y1);
+      L(x0 + (w * 2) / 3, y0, x0 + (w * 2) / 3, y1);
+      thin(0.6);
+      [1, 3, 5].forEach((f) => C(x0 + (w * f) / 6, cy, m * 0.15));
+      full();
+      T("INTERCEPTOR", cx, y1 + h * 0.25, Math.min(h * 0.25, w / 10));
+      break;
+    case "backdrop":
+      B(x0, y0, w, h);
+      thin(0.6);
+      L(x0, y0, x1, y1);
+      L(x1, y0, x0, y1);
+      full();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - m * 0.2, cy - m * 0.16, m * 0.4, m * 0.32);
+      ctx.restore();
+      T("BD", cx, cy, m * 0.24);
+      break;
+    case "pipelab": {
+      L(x0, cy, x1, cy);
+      L(x1, cy, x1 - h * 0.5, cy - h * 0.35);
+      L(x1, cy, x1 - h * 0.5, cy + h * 0.35);
+      const t = o.lab || "100Ø @ 1:40";
+      ctx.save();
+      ctx.font = `600 ${Math.min(h * 0.8, w / (t.length * 0.6))}px system-ui,sans-serif`;
+      const tw = ctx.measureText(t).width;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - tw / 2 - 2, cy - h * 0.45, tw + 4, h * 0.9);
+      ctx.restore();
+      npLbl(ctx, t, cx, cy, Math.min(h * 0.8, w / (t.length * 0.6)));
+      break;
+    }
+    case "bbox":
+      B(x0, y0, w, h);
+      C(cx, cy, m * 0.3);
+      T("BB", cx, cy, m * 0.2);
+      break;
+    case "govr":
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.fillStyle = "#d4a106";
+      T("GAS GOV", cx, cy, Math.min(h * 0.3, w / 6));
+      ctx.restore();
+      break;
+    case "streetlamp":
+      C(cx, cy, m * 0.2, "#f2c230");
+      thin(0.6);
+      for (let i = 0; i < 8; i++) {
+        const a = (i * Math.PI) / 4;
+        L(
+          cx + Math.cos(a) * m * 0.28,
+          cy + Math.sin(a) * m * 0.28,
+          cx + Math.cos(a) * m * 0.45,
+          cy + Math.sin(a) * m * 0.45,
+        );
+      }
+      full();
+      T("SL", cx + m * 0.5, cy - m * 0.45, m * 0.2);
+      break;
+    case "substn":
+      B(x0, y0, w, h);
+      hatch(m / 6);
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.32, cy - h * 0.14, w * 0.64, h * 0.28);
+      ctx.fillStyle = "#dc2626";
+      npLbl(ctx, "⚡ SUBSTATION", cx, cy, Math.min(h * 0.14, w / 10));
+      ctx.restore();
+      break;
+    case "jointbay":
+      dash(() => B(x0, y0, w, h));
+      T("JOINT BAY", cx, cy, Math.min(h * 0.3, w / 10));
+      break;
+    case "exclusion":
+      ctx.save();
+      ctx.strokeStyle = "#dc2626";
+      dash(() => B(x0, y0, w, h));
+      clip(() => {
+        thin(0.35);
+        const st = m / 8;
+        for (let d = -h; d < w + h; d += st) L(x0 + d, y1, x0 + d + h, y0);
+        full();
+      });
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.32, cy - h * 0.1, w * 0.64, h * 0.2);
+      ctx.fillStyle = "#dc2626";
+      T("EXCLUSION ZONE", cx, cy, Math.min(h * 0.12, w / 10));
+      ctx.restore();
+      break;
+    case "oversail":
+      ctx.save();
+      ctx.strokeStyle = "#ea580c";
+      dash(() => E(cx, cy, w / 2, h / 2));
+      ctx.fillStyle = "#ea580c";
+      T("CRANE OVERSAIL ZONE", cx, y0 + h * 0.08, Math.min(h * 0.04, w / 22));
+      ctx.restore();
+      break;
+    case "delivery":
+      dash(() => B(x0, y0, w, h));
+      thin(0.7);
+      L(x0 + w * 0.1, cy, x1 - w * 0.12, cy);
+      L(x1 - w * 0.12, cy, x1 - w * 0.2, cy - h * 0.12);
+      L(x1 - w * 0.12, cy, x1 - w * 0.2, cy + h * 0.12);
+      full();
+      T("DELIVERIES / LOADING", cx, y0 + h * 0.22, Math.min(h * 0.12, w / 14));
+      break;
+    case "banksman":
+      C(cx, cy, m * 0.46, "#fde047");
+      C(cx, cy - m * 0.18, m * 0.1);
+      L(cx, cy - m * 0.08, cx, cy + m * 0.14);
+      L(cx - m * 0.15, cy, cx + m * 0.15, cy - m * 0.05);
+      L(cx, cy + m * 0.14, cx - m * 0.1, cy + m * 0.3);
+      L(cx, cy + m * 0.14, cx + m * 0.1, cy + m * 0.3);
+      break;
+    case "spoil": {
+      ctx.beginPath();
+      ctx.moveTo(x0, y1);
+      ctx.quadraticCurveTo(cx, y0 - h * 0.2, x1, y1);
+      ctx.closePath();
+      ctx.stroke();
+      clip(() => {
+        thin(0.4);
+        for (let i = 0; i < 9; i++) {
+          const x = x0 + w * (0.1 + i * 0.1);
+          L(x, y1, x + w * 0.04, y1 - h * 0.4 * Math.sin((Math.PI * (i + 1)) / 10));
+        }
+        full();
+      });
+      T("SPOIL HEAP", cx, y1 + h * 0.12, Math.min(h * 0.12, w / 10));
+      break;
+    }
+    case "washout":
+      B(x0, y0, w, h);
+      dash(() => B(x0 + m * 0.08, y0 + m * 0.08, w - m * 0.16, h - m * 0.16));
+      T("CONCRETE WASHOUT", cx, cy, Math.min(h * 0.1, w / 12));
+      break;
+    case "padstonep":
+      B(x0, y0, w, h);
+      hatch(m / 3);
+      T("PS", cx, cy, m * 0.6);
+      break;
+    case "cavtray":
+    case "weepvent":
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y0);
+      ctx.lineTo(cx, y1);
+      ctx.closePath();
+      ctx.stroke();
+      T(k === "cavtray" ? "CT" : "WV", cx, y0 + h * 0.35, m * 0.32);
+      break;
+    case "inszone":
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.strokeStyle = "#ca8a04";
+      thin(0.6);
+      ctx.beginPath();
+      const zz = h * 0.8;
+      for (let x = x0; x <= x1; x += zz / 2) {
+        const up = Math.round((x - x0) / (zz / 2)) % 2;
+        ctx.lineTo(x, up ? y0 + h * 0.12 : y1 - h * 0.12);
+      }
+      ctx.stroke();
+      ctx.restore();
+      full();
+      break;
+    case "tactile":
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.fillStyle = c;
+      const ts = m / 6;
+      for (let y = y0 + ts / 2; y < y1; y += ts)
+        for (let x = x0 + ts / 2; x < x1; x += ts) {
+          ctx.beginPath();
+          ctx.arc(x, y, ts * 0.18, 0, 7);
+          ctx.fill();
+        }
+      ctx.restore();
+      break;
+    case "stepsrail":
+      B(x0, y0, w, h);
+      thin(0.6);
+      for (let i = 1; i < 6; i++) L(x0, y0 + (h * i) / 6, x1, y0 + (h * i) / 6);
+      full();
+      ctx.lineWidth = lw * 1.6;
+      L(x0 + w * 0.06, y0, x0 + w * 0.06, y1);
+      L(x1 - w * 0.06, y0, x1 - w * 0.06, y1);
+      full();
+      L(cx, y1 - h * 0.1, cx, y0 + h * 0.15);
+      L(cx, y0 + h * 0.15, cx - w * 0.05, y0 + h * 0.25);
+      L(cx, y0 + h * 0.15, cx + w * 0.05, y0 + h * 0.25);
+      break;
+    case "binscreen":
+      B(x0, y0, w, h);
+      thin(0.5);
+      for (let x = x0 + w / 14; x < x1; x += w / 14) L(x, y1 - h * 0.12, x, y1);
+      full();
+      [0.2, 0.5, 0.8].forEach((f) => B(x0 + w * f - w * 0.11, y0 + h * 0.12, w * 0.22, h * 0.62));
+      T("BINS", cx, y0 + h * 0.45, Math.min(h * 0.16, w / 10));
+      break;
+    case "cyclestore":
+      B(x0, y0, w, h);
+      thin(0.6);
+      [0.25, 0.5, 0.75].forEach((f) => {
+        C(x0 + w * f - w * 0.06, cy, m * 0.14);
+        C(x0 + w * f + w * 0.06, cy, m * 0.14);
+      });
+      full();
+      T("CYCLES", cx, y0 + h * 0.15, Math.min(h * 0.14, w / 10));
+      break;
+    case "evbay":
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.fillStyle = "#16a34a";
+      T("EV ⚡", cx, cy, Math.min(w * 0.22, h * 0.1));
+      ctx.restore();
+      thin(0.5);
+      L(x0 + w * 0.15, y1 - h * 0.04, x1 - w * 0.15, y1 - h * 0.04);
+      full();
+      break;
+    case "north2":
+      C(cx, cy, m * 0.45);
+      ctx.save();
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - m * 0.42);
+      ctx.lineTo(cx + m * 0.14, cy + m * 0.2);
+      ctx.lineTo(cx, cy + m * 0.08);
+      ctx.lineTo(cx - m * 0.14, cy + m * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      T("N", cx, cy - m * 0.58, m * 0.2);
+      break;
+    case "north3":
+      ctx.beginPath();
+      ctx.moveTo(cx, y0);
+      ctx.lineTo(cx + w * 0.35, y1);
+      ctx.lineTo(cx, y1 - h * 0.2);
+      ctx.closePath();
+      ctx.save();
+      ctx.fillStyle = c;
+      ctx.fill();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.moveTo(cx, y0);
+      ctx.lineTo(cx - w * 0.35, y1);
+      ctx.lineTo(cx, y1 - h * 0.2);
+      ctx.stroke();
+      T("N", cx, y1 + h * 0.12, m * 0.35);
+      break;
+    case "revtri":
+      ctx.beginPath();
+      ctx.moveTo(cx, y0);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x0, y1);
+      ctx.closePath();
+      ctx.stroke();
+      T(o.lab || "A", cx, y0 + h * 0.62, m * 0.45);
+      break;
+    case "dns":
+      ctx.save();
+      ctx.strokeStyle = "#dc2626";
+      ctx.lineWidth = lw * 1.6;
+      B(x0, y0, w, h);
+      ctx.fillStyle = "#dc2626";
+      T("DO NOT SCALE", cx, cy, Math.min(h * 0.5, w / 7.5));
+      ctx.restore();
+      break;
+    case "keyplan":
+      B(x0, y0, w, h);
+      T("KEY PLAN", cx, y0 + h * 0.1, Math.min(h * 0.09, w / 10));
+      thin(0.6);
+      B(x0 + w * 0.2, y0 + h * 0.25, w * 0.6, h * 0.55);
+      full();
+      ctx.save();
+      ctx.fillStyle = "#dc2626";
+      ctx.globalAlpha = 0.35;
+      ctx.fillRect(x0 + w * 0.2, y0 + h * 0.25, w * 0.3, h * 0.55);
+      ctx.restore();
+      break;
     /* outside lights, gates, CCTV */
-    case "wallant":ctx.beginPath();ctx.arc(cx,y0,Math.min(w/2,h),0,Math.PI);ctx.closePath();ctx.stroke();ctx.save();ctx.fillStyle="#f2c230";ctx.beginPath();ctx.arc(cx,y0,Math.min(w/2,h)*0.5,0,Math.PI);ctx.fill();ctx.restore();break;
-    case "postlight":C(cx,cy,m*0.45);ctx.save();ctx.fillStyle="#f2c230";ctx.beginPath();ctx.arc(cx,cy,m*0.28,0,7);ctx.fill();ctx.restore();thin(0.6);L(cx-m*0.3,cy-m*0.3,cx+m*0.3,cy+m*0.3);L(cx+m*0.3,cy-m*0.3,cx-m*0.3,cy+m*0.3);full();break;
-    case "floodlt":ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(x1-w*0.2,y1);ctx.lineTo(x0+w*0.2,y1);ctx.closePath();ctx.stroke();ctx.save();ctx.fillStyle="#f2c230";ctx.globalAlpha=0.6;ctx.fill();ctx.restore();thin(0.5);[-0.3,0,0.3].forEach(f=>L(cx+f*w,y1,cx+f*w*1.6,y1+h*0.6));full();break;
-    case "vgates":{const g=w/2;ctx.lineWidth=lw*1.6;L(x0,y0,x0+g,y0);L(x1,y0,x1-g,y0);full();thin(0.5);dash(()=>{ctx.beginPath();ctx.arc(x0,y0,g,0,Math.PI/2);ctx.stroke();ctx.beginPath();ctx.arc(x1,y0,g,Math.PI/2,Math.PI);ctx.stroke()});full();ctx.save();ctx.fillStyle=c;ctx.fillRect(x0-m*0.04,y0-m*0.04,m*0.08,m*0.08);ctx.fillRect(x1-m*0.04,y0-m*0.04,m*0.08,m*0.08);ctx.restore();T("GATES",cx,y0+h*0.35,Math.min(h*0.18,w/10));break}
-    case "vslide":ctx.lineWidth=lw*1.6;L(x0,cy,x0+w*0.55,cy);full();thin(0.5);dash(()=>L(x0+w*0.55,cy,x1,cy));L(x0+w*0.3,cy-h*0.8,x0+w*0.45,cy-h*0.8);L(x0+w*0.45,cy-h*0.8,x0+w*0.4,cy-h*1.1);L(x0+w*0.45,cy-h*0.8,x0+w*0.4,cy-h*0.5);full();ctx.save();ctx.fillStyle=c;ctx.fillRect(x0-h*0.2,cy-h*0.2,h*0.4,h*0.4);ctx.restore();T("SLIDING GATE",x0+w*0.75,cy-h*0.9,Math.min(h*0.9,w/14));break;
-    case "pgate":ctx.lineWidth=lw*1.6;L(x0,y0,x1,y0);full();thin(0.5);dash(()=>{ctx.beginPath();ctx.arc(x0,y0,w,0,Math.PI/2);ctx.stroke()});full();ctx.save();ctx.fillStyle=c;ctx.fillRect(x0-m*0.05,y0-m*0.05,m*0.1,m*0.1);ctx.restore();break;
-    case "intercom":B(x0,y0,w,h);thin(0.6);C(cx,y0+h*0.35,m*0.15);for(let i=0;i<3;i++)L(x0+w*0.25,y0+h*(0.62+i*0.1),x1-w*0.25,y0+h*(0.62+i*0.1));full();break;
-    case "cctvdome":ctx.beginPath();ctx.arc(cx,cy,m*0.45,0,7);ctx.stroke();ctx.save();ctx.fillStyle=npHexMix(c,0.5);ctx.beginPath();ctx.arc(cx,cy,m*0.22,0,7);ctx.fill();ctx.restore();T("CCTV",cx,cy+m*0.62,m*0.2);break;
-    case "nvr":B(x0,y0,w,h);thin(0.5);L(x0+w*0.08,y0+h*0.3,x1-w*0.4,y0+h*0.3);[0.7,0.8,0.9].forEach(f=>C(x0+w*f,y0+h*0.3,m*0.05,1));full();T("NVR / DVR",cx,y0+h*0.7,Math.min(h*0.28,w/7));break;
+    case "wallant":
+      ctx.beginPath();
+      ctx.arc(cx, y0, Math.min(w / 2, h), 0, Math.PI);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.save();
+      ctx.fillStyle = "#f2c230";
+      ctx.beginPath();
+      ctx.arc(cx, y0, Math.min(w / 2, h) * 0.5, 0, Math.PI);
+      ctx.fill();
+      ctx.restore();
+      break;
+    case "postlight":
+      C(cx, cy, m * 0.45);
+      ctx.save();
+      ctx.fillStyle = "#f2c230";
+      ctx.beginPath();
+      ctx.arc(cx, cy, m * 0.28, 0, 7);
+      ctx.fill();
+      ctx.restore();
+      thin(0.6);
+      L(cx - m * 0.3, cy - m * 0.3, cx + m * 0.3, cy + m * 0.3);
+      L(cx + m * 0.3, cy - m * 0.3, cx - m * 0.3, cy + m * 0.3);
+      full();
+      break;
+    case "floodlt":
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y0);
+      ctx.lineTo(x1 - w * 0.2, y1);
+      ctx.lineTo(x0 + w * 0.2, y1);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.save();
+      ctx.fillStyle = "#f2c230";
+      ctx.globalAlpha = 0.6;
+      ctx.fill();
+      ctx.restore();
+      thin(0.5);
+      [-0.3, 0, 0.3].forEach((f) => L(cx + f * w, y1, cx + f * w * 1.6, y1 + h * 0.6));
+      full();
+      break;
+    case "vgates": {
+      const g = w / 2;
+      ctx.lineWidth = lw * 1.6;
+      L(x0, y0, x0 + g, y0);
+      L(x1, y0, x1 - g, y0);
+      full();
+      thin(0.5);
+      dash(() => {
+        ctx.beginPath();
+        ctx.arc(x0, y0, g, 0, Math.PI / 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x1, y0, g, Math.PI / 2, Math.PI);
+        ctx.stroke();
+      });
+      full();
+      ctx.save();
+      ctx.fillStyle = c;
+      ctx.fillRect(x0 - m * 0.04, y0 - m * 0.04, m * 0.08, m * 0.08);
+      ctx.fillRect(x1 - m * 0.04, y0 - m * 0.04, m * 0.08, m * 0.08);
+      ctx.restore();
+      T("GATES", cx, y0 + h * 0.35, Math.min(h * 0.18, w / 10));
+      break;
+    }
+    case "vslide":
+      ctx.lineWidth = lw * 1.6;
+      L(x0, cy, x0 + w * 0.55, cy);
+      full();
+      thin(0.5);
+      dash(() => L(x0 + w * 0.55, cy, x1, cy));
+      L(x0 + w * 0.3, cy - h * 0.8, x0 + w * 0.45, cy - h * 0.8);
+      L(x0 + w * 0.45, cy - h * 0.8, x0 + w * 0.4, cy - h * 1.1);
+      L(x0 + w * 0.45, cy - h * 0.8, x0 + w * 0.4, cy - h * 0.5);
+      full();
+      ctx.save();
+      ctx.fillStyle = c;
+      ctx.fillRect(x0 - h * 0.2, cy - h * 0.2, h * 0.4, h * 0.4);
+      ctx.restore();
+      T("SLIDING GATE", x0 + w * 0.75, cy - h * 0.9, Math.min(h * 0.9, w / 14));
+      break;
+    case "pgate":
+      ctx.lineWidth = lw * 1.6;
+      L(x0, y0, x1, y0);
+      full();
+      thin(0.5);
+      dash(() => {
+        ctx.beginPath();
+        ctx.arc(x0, y0, w, 0, Math.PI / 2);
+        ctx.stroke();
+      });
+      full();
+      ctx.save();
+      ctx.fillStyle = c;
+      ctx.fillRect(x0 - m * 0.05, y0 - m * 0.05, m * 0.1, m * 0.1);
+      ctx.restore();
+      break;
+    case "intercom":
+      B(x0, y0, w, h);
+      thin(0.6);
+      C(cx, y0 + h * 0.35, m * 0.15);
+      for (let i = 0; i < 3; i++)
+        L(x0 + w * 0.25, y0 + h * (0.62 + i * 0.1), x1 - w * 0.25, y0 + h * (0.62 + i * 0.1));
+      full();
+      break;
+    case "cctvdome":
+      ctx.beginPath();
+      ctx.arc(cx, cy, m * 0.45, 0, 7);
+      ctx.stroke();
+      ctx.save();
+      ctx.fillStyle = npHexMix(c, 0.5);
+      ctx.beginPath();
+      ctx.arc(cx, cy, m * 0.22, 0, 7);
+      ctx.fill();
+      ctx.restore();
+      T("CCTV", cx, cy + m * 0.62, m * 0.2);
+      break;
+    case "nvr":
+      B(x0, y0, w, h);
+      thin(0.5);
+      L(x0 + w * 0.08, y0 + h * 0.3, x1 - w * 0.4, y0 + h * 0.3);
+      [0.7, 0.8, 0.9].forEach((f) => C(x0 + w * f, y0 + h * 0.3, m * 0.05, 1));
+      full();
+      T("NVR / DVR", cx, y0 + h * 0.7, Math.min(h * 0.28, w / 7));
+      break;
     /* ground protection mats, slope symbol */
-    case "groundmat":{const mw=w/Math.max(1,Math.round(w/(m*1.9))),mh=h;for(let x=x0;x<x1-1;x+=mw){B(x,y0,mw,mh);thin(0.4);clip(()=>{const st=Math.max(mh/8,2);for(let y=y0+st;y<y1;y+=st)for(let xx=x+st*((Math.round((y-y0)/st))%2?1:0.5);xx<x+mw;xx+=st)C(xx,y,Math.max(st*0.12,0.4),1)});full()}T("GROUND PROTECTION MATS",cx,y0-h*0.12,Math.min(h*0.14,w/16));break}
-    case "slope":ctx.beginPath();[[0,0.12],[0.42,0.32],[0.44,0.62],[0.62,0.18],[0.58,0.96],[0.86,0.24]].forEach(([a,b],i)=>{const X=x0+w*a,Y=y0+h*b;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.stroke();break;
+    case "groundmat": {
+      const mw = w / Math.max(1, Math.round(w / (m * 1.9))),
+        mh = h;
+      for (let x = x0; x < x1 - 1; x += mw) {
+        B(x, y0, mw, mh);
+        thin(0.4);
+        clip(() => {
+          const st = Math.max(mh / 8, 2);
+          for (let y = y0 + st; y < y1; y += st)
+            for (let xx = x + st * (Math.round((y - y0) / st) % 2 ? 1 : 0.5); xx < x + mw; xx += st)
+              C(xx, y, Math.max(st * 0.12, 0.4), 1);
+        });
+        full();
+      }
+      T("GROUND PROTECTION MATS", cx, y0 - h * 0.12, Math.min(h * 0.14, w / 16));
+      break;
+    }
+    case "slope":
+      ctx.beginPath();
+      [
+        [0, 0.12],
+        [0.42, 0.32],
+        [0.44, 0.62],
+        [0.62, 0.18],
+        [0.58, 0.96],
+        [0.86, 0.24],
+      ].forEach(([a, b], i) => {
+        const X = x0 + w * a,
+          Y = y0 + h * b;
+        i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+      });
+      ctx.stroke();
+      break;
     /* poles, cables, fibre */
-    case "tpole":case "epole":{C(cx,cy,m*0.3);L(cx-m*0.46,cy,cx+m*0.46,cy);L(cx,cy-m*0.46,cx,cy+m*0.46);T(k==="tpole"?"TP":"EP",cx+m*0.42,cy-m*0.38,m*0.24);break}
-    case "polestay":{C(cx,y0+m*0.4,m*0.25,1);dash(()=>L(cx,y0+m*0.4,cx,y1-m*0.3));B(cx-m*0.35,y1-m*0.3,m*0.7,m*0.3);break}
-    case "btjb":B(x0,y0,w,h);thin(0.6);L(x0,y0,x1,y1);L(x1,y0,x0,y1);full();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-m*0.28,cy-m*0.16,m*0.56,m*0.32);ctx.restore();ctx.save();ctx.fillStyle="#7c3aed";T("TEL",cx,cy,m*0.24);ctx.restore();break;
-    case "fibrept":{ctx.save();ctx.strokeStyle="#ea580c";ctx.fillStyle="#ea580c";ctx.beginPath();ctx.moveTo(cx,y0);ctx.lineTo(x1,cy);ctx.lineTo(cx,y1);ctx.lineTo(x0,cy);ctx.closePath();ctx.stroke();T("FP",cx,cy,m*0.3);ctx.restore();break}
-    case "fibrecab":B(x0,y0,w,h);ctx.save();ctx.fillStyle="#ea580c";T("FIBRE CAB",cx,cy,Math.min(h*0.4,w/7));ctx.restore();break;
+    case "tpole":
+    case "epole": {
+      C(cx, cy, m * 0.3);
+      L(cx - m * 0.46, cy, cx + m * 0.46, cy);
+      L(cx, cy - m * 0.46, cx, cy + m * 0.46);
+      T(k === "tpole" ? "TP" : "EP", cx + m * 0.42, cy - m * 0.38, m * 0.24);
+      break;
+    }
+    case "polestay": {
+      C(cx, y0 + m * 0.4, m * 0.25, 1);
+      dash(() => L(cx, y0 + m * 0.4, cx, y1 - m * 0.3));
+      B(cx - m * 0.35, y1 - m * 0.3, m * 0.7, m * 0.3);
+      break;
+    }
+    case "btjb":
+      B(x0, y0, w, h);
+      thin(0.6);
+      L(x0, y0, x1, y1);
+      L(x1, y0, x0, y1);
+      full();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - m * 0.28, cy - m * 0.16, m * 0.56, m * 0.32);
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#7c3aed";
+      T("TEL", cx, cy, m * 0.24);
+      ctx.restore();
+      break;
+    case "fibrept": {
+      ctx.save();
+      ctx.strokeStyle = "#ea580c";
+      ctx.fillStyle = "#ea580c";
+      ctx.beginPath();
+      ctx.moveTo(cx, y0);
+      ctx.lineTo(x1, cy);
+      ctx.lineTo(cx, y1);
+      ctx.lineTo(x0, cy);
+      ctx.closePath();
+      ctx.stroke();
+      T("FP", cx, cy, m * 0.3);
+      ctx.restore();
+      break;
+    }
+    case "fibrecab":
+      B(x0, y0, w, h);
+      ctx.save();
+      ctx.fillStyle = "#ea580c";
+      T("FIBRE CAB", cx, cy, Math.min(h * 0.4, w / 7));
+      ctx.restore();
+      break;
     /* drainage */
-    case "attank":B(x0,y0,w,h);thin(0.4);{const cs=Math.max(m/4,8);for(let x=x0+cs;x<x1-1;x+=cs)L(x,y0,x,y1);for(let y=y0+cs;y<y1-1;y+=cs)L(x0,y,x1,y)}full();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.32,cy-h*0.12,w*0.64,h*0.24);ctx.restore();T("ATTENUATION TANK",cx,cy,Math.min(h*0.16,w/12));break;
-    case "silttrap":C(cx,cy,m*0.46);C(cx,cy,m*0.3);T("ST",cx,cy,m*0.22);break;
+    case "attank":
+      B(x0, y0, w, h);
+      thin(0.4);
+      {
+        const cs = Math.max(m / 4, 8);
+        for (let x = x0 + cs; x < x1 - 1; x += cs) L(x, y0, x, y1);
+        for (let y = y0 + cs; y < y1 - 1; y += cs) L(x0, y, x1, y);
+      }
+      full();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.32, cy - h * 0.12, w * 0.64, h * 0.24);
+      ctx.restore();
+      T("ATTENUATION TANK", cx, cy, Math.min(h * 0.16, w / 12));
+      break;
+    case "silttrap":
+      C(cx, cy, m * 0.46);
+      C(cx, cy, m * 0.3);
+      T("ST", cx, cy, m * 0.22);
+      break;
     /* bridges (plan) */
-    case "brroad":case "brrail":case "brfoot":{const e=Math.min(w*0.12,h*0.4);ctx.lineWidth=lw*1.6;L(x0+e,y0,x1-e,y0);L(x0+e,y1,x1-e,y1);L(x0+e,y0,x0,y0-e*0.6);L(x1-e,y0,x1,y0-e*0.6);L(x0+e,y1,x0,y1+e*0.6);L(x1-e,y1,x1,y1+e*0.6);full();
-      if(k==="brroad"){thin(0.5);dash(()=>L(x0+e,cy,x1-e,cy));full()}else if(k==="brrail"){thin(0.6);L(x0+e,cy-h*0.12,x1-e,cy-h*0.12);L(x0+e,cy+h*0.12,x1-e,cy+h*0.12);for(let x=x0+e;x<x1-e;x+=h*0.18)L(x,cy-h*0.2,x,cy+h*0.2);full()}else{thin(0.5);dash(()=>{L(x0+e,y0+h*0.15,x1-e,y0+h*0.15);L(x0+e,y1-h*0.15,x1-e,y1-h*0.15)});full()}
-      T(k==="brroad"?"ROAD BRIDGE":k==="brrail"?"RAIL BRIDGE":"FOOTBRIDGE",cx,k==="brrail"?y0+h*0.22:cy-h*0.2,Math.min(h*0.14,w/14));break}
-    case "culvert":dash(()=>{L(x0,y0+h*0.2,x1,y0+h*0.2);L(x0,y1-h*0.2,x1,y1-h*0.2)});ctx.lineWidth=lw*1.5;L(x0,y0,x0,y1);L(x1,y0,x1,y1);L(x0,y0,x0+w*0.06,y0);L(x0,y1,x0+w*0.06,y1);L(x1,y0,x1-w*0.06,y0);L(x1,y1,x1-w*0.06,y1);full();T("CULVERT",cx,cy,Math.min(h*0.25,w/10));break;
+    case "brroad":
+    case "brrail":
+    case "brfoot": {
+      const e = Math.min(w * 0.12, h * 0.4);
+      ctx.lineWidth = lw * 1.6;
+      L(x0 + e, y0, x1 - e, y0);
+      L(x0 + e, y1, x1 - e, y1);
+      L(x0 + e, y0, x0, y0 - e * 0.6);
+      L(x1 - e, y0, x1, y0 - e * 0.6);
+      L(x0 + e, y1, x0, y1 + e * 0.6);
+      L(x1 - e, y1, x1, y1 + e * 0.6);
+      full();
+      if (k === "brroad") {
+        thin(0.5);
+        dash(() => L(x0 + e, cy, x1 - e, cy));
+        full();
+      } else if (k === "brrail") {
+        thin(0.6);
+        L(x0 + e, cy - h * 0.12, x1 - e, cy - h * 0.12);
+        L(x0 + e, cy + h * 0.12, x1 - e, cy + h * 0.12);
+        for (let x = x0 + e; x < x1 - e; x += h * 0.18) L(x, cy - h * 0.2, x, cy + h * 0.2);
+        full();
+      } else {
+        thin(0.5);
+        dash(() => {
+          L(x0 + e, y0 + h * 0.15, x1 - e, y0 + h * 0.15);
+          L(x0 + e, y1 - h * 0.15, x1 - e, y1 - h * 0.15);
+        });
+        full();
+      }
+      T(
+        k === "brroad" ? "ROAD BRIDGE" : k === "brrail" ? "RAIL BRIDGE" : "FOOTBRIDGE",
+        cx,
+        k === "brrail" ? y0 + h * 0.22 : cy - h * 0.2,
+        Math.min(h * 0.14, w / 14),
+      );
+      break;
+    }
+    case "culvert":
+      dash(() => {
+        L(x0, y0 + h * 0.2, x1, y0 + h * 0.2);
+        L(x0, y1 - h * 0.2, x1, y1 - h * 0.2);
+      });
+      ctx.lineWidth = lw * 1.5;
+      L(x0, y0, x0, y1);
+      L(x1, y0, x1, y1);
+      L(x0, y0, x0 + w * 0.06, y0);
+      L(x0, y1, x0 + w * 0.06, y1);
+      L(x1, y0, x1 - w * 0.06, y0);
+      L(x1, y1, x1 - w * 0.06, y1);
+      full();
+      T("CULVERT", cx, cy, Math.min(h * 0.25, w / 10));
+      break;
     /* bridges & poles (elevation) */
-    case "ebrarch":{const dk=h*0.12;B(x0,y0,w,dk);ctx.beginPath();ctx.moveTo(x0,y1);ctx.quadraticCurveTo(cx,y0-h*0.35,x1,y1);ctx.stroke();L(x0,y0+dk,x0,y1);L(x1,y0+dk,x1,y1);thin(0.5);for(let i=1;i<8;i++){const x=x0+w*i/8,t=i/8,yy=y1-(1-(2*t-1)**2)*(h*0.67);L(x,y0+dk,x,yy)}full();break}
-    case "ebrbeam":{const dk=h*0.18;B(x0,y0,w,dk);[0.03,0.5,0.97].forEach(f=>{B(x0+w*f-w*0.025,y0+dk,w*0.05,h-dk)});thin(0.5);L(x0,y0-h*0.15,x1,y0-h*0.15);for(let x=x0;x<=x1;x+=w/12)L(x,y0,x,y0-h*0.15);full();break}
-    case "ebrtruss":{const dk=h*0.1,tt=y0+h*0.15;B(x0,y1-dk-h*0.25,w,dk);const yb=y1-h*0.25-dk;L(x0,tt,x1,tt);const n2=8;for(let i=0;i<=n2;i++){const x=x0+w*i/n2;L(x,tt,x,yb);if(i<n2)L(x,i%2?tt:yb,x+w/n2,i%2?yb:tt)}B(x0,yb+dk,w*0.04,h*0.25);B(x1-w*0.04,yb+dk,w*0.04,h*0.25);break}
-    case "ebrsusp":{const dk=y1-h*0.2;ctx.lineWidth=lw*1.4;L(x0,dk,x1,dk);full();[0.25,0.75].forEach(f=>{const x=x0+w*f;B(x-w*0.015,y0,w*0.03,y1-y0)});ctx.beginPath();ctx.moveTo(x0,dk-h*0.1);ctx.quadraticCurveTo(x0+w*0.12,y0+h*0.3,x0+w*0.25,y0);ctx.quadraticCurveTo(cx,y0+h*1.1,x0+w*0.75,y0);ctx.quadraticCurveTo(x0+w*0.88,y0+h*0.3,x1,dk-h*0.1);ctx.stroke();thin(0.4);for(let x=x0+w*0.29;x<x0+w*0.72;x+=w/30){const t=(x-(x0+w*0.25))/(w*0.5);const yy=y0+(4*t*(1-t))*(h*0.55)*0.98;L(x,yy,x,dk)}full();break}
-    case "etpole":{const pw=Math.max(w*0.08,2);ctx.save();ctx.fillStyle=npHexMix(c,0.75);ctx.fillRect(cx-pw/2,y0+h*0.04,pw,h*0.9);ctx.restore();B(cx-pw/2,y0+h*0.04,pw,h*0.9);L(x0+w*0.1,y0+h*0.1,x1-w*0.1,y0+h*0.1);[0.15,0.85].forEach(f=>C(x0+w*f,y0+h*0.09,Math.max(w*0.03,1.5)));ctx.save();ctx.strokeStyle="#7c3aed";thin(0.6);ctx.beginPath();ctx.moveTo(x0,y0+h*0.22);ctx.quadraticCurveTo(cx-w*0.25,y0+h*0.12,cx,y0+h*0.1);ctx.quadraticCurveTo(cx+w*0.25,y0+h*0.12,x1,y0+h*0.22);ctx.stroke();ctx.restore();L(x0,y1-h*0.06,x1,y1-h*0.06);T("TP",cx+pw*1.8,y0+h*0.3,Math.min(w*0.18,h*0.05));break}
+    case "ebrarch": {
+      const dk = h * 0.12;
+      B(x0, y0, w, dk);
+      ctx.beginPath();
+      ctx.moveTo(x0, y1);
+      ctx.quadraticCurveTo(cx, y0 - h * 0.35, x1, y1);
+      ctx.stroke();
+      L(x0, y0 + dk, x0, y1);
+      L(x1, y0 + dk, x1, y1);
+      thin(0.5);
+      for (let i = 1; i < 8; i++) {
+        const x = x0 + (w * i) / 8,
+          t = i / 8,
+          yy = y1 - (1 - (2 * t - 1) ** 2) * (h * 0.67);
+        L(x, y0 + dk, x, yy);
+      }
+      full();
+      break;
+    }
+    case "ebrbeam": {
+      const dk = h * 0.18;
+      B(x0, y0, w, dk);
+      [0.03, 0.5, 0.97].forEach((f) => {
+        B(x0 + w * f - w * 0.025, y0 + dk, w * 0.05, h - dk);
+      });
+      thin(0.5);
+      L(x0, y0 - h * 0.15, x1, y0 - h * 0.15);
+      for (let x = x0; x <= x1; x += w / 12) L(x, y0, x, y0 - h * 0.15);
+      full();
+      break;
+    }
+    case "ebrtruss": {
+      const dk = h * 0.1,
+        tt = y0 + h * 0.15;
+      B(x0, y1 - dk - h * 0.25, w, dk);
+      const yb = y1 - h * 0.25 - dk;
+      L(x0, tt, x1, tt);
+      const n2 = 8;
+      for (let i = 0; i <= n2; i++) {
+        const x = x0 + (w * i) / n2;
+        L(x, tt, x, yb);
+        if (i < n2) L(x, i % 2 ? tt : yb, x + w / n2, i % 2 ? yb : tt);
+      }
+      B(x0, yb + dk, w * 0.04, h * 0.25);
+      B(x1 - w * 0.04, yb + dk, w * 0.04, h * 0.25);
+      break;
+    }
+    case "ebrsusp": {
+      const dk = y1 - h * 0.2;
+      ctx.lineWidth = lw * 1.4;
+      L(x0, dk, x1, dk);
+      full();
+      [0.25, 0.75].forEach((f) => {
+        const x = x0 + w * f;
+        B(x - w * 0.015, y0, w * 0.03, y1 - y0);
+      });
+      ctx.beginPath();
+      ctx.moveTo(x0, dk - h * 0.1);
+      ctx.quadraticCurveTo(x0 + w * 0.12, y0 + h * 0.3, x0 + w * 0.25, y0);
+      ctx.quadraticCurveTo(cx, y0 + h * 1.1, x0 + w * 0.75, y0);
+      ctx.quadraticCurveTo(x0 + w * 0.88, y0 + h * 0.3, x1, dk - h * 0.1);
+      ctx.stroke();
+      thin(0.4);
+      for (let x = x0 + w * 0.29; x < x0 + w * 0.72; x += w / 30) {
+        const t = (x - (x0 + w * 0.25)) / (w * 0.5);
+        const yy = y0 + 4 * t * (1 - t) * (h * 0.55) * 0.98;
+        L(x, yy, x, dk);
+      }
+      full();
+      break;
+    }
+    case "etpole": {
+      const pw = Math.max(w * 0.08, 2);
+      ctx.save();
+      ctx.fillStyle = npHexMix(c, 0.75);
+      ctx.fillRect(cx - pw / 2, y0 + h * 0.04, pw, h * 0.9);
+      ctx.restore();
+      B(cx - pw / 2, y0 + h * 0.04, pw, h * 0.9);
+      L(x0 + w * 0.1, y0 + h * 0.1, x1 - w * 0.1, y0 + h * 0.1);
+      [0.15, 0.85].forEach((f) => C(x0 + w * f, y0 + h * 0.09, Math.max(w * 0.03, 1.5)));
+      ctx.save();
+      ctx.strokeStyle = "#7c3aed";
+      thin(0.6);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0 + h * 0.22);
+      ctx.quadraticCurveTo(cx - w * 0.25, y0 + h * 0.12, cx, y0 + h * 0.1);
+      ctx.quadraticCurveTo(cx + w * 0.25, y0 + h * 0.12, x1, y0 + h * 0.22);
+      ctx.stroke();
+      ctx.restore();
+      L(x0, y1 - h * 0.06, x1, y1 - h * 0.06);
+      T("TP", cx + pw * 1.8, y0 + h * 0.3, Math.min(w * 0.18, h * 0.05));
+      break;
+    }
     /* foundations (plan): dashed = below ground */
-    case "stripfdn":dash(()=>B(x0,y0,w,h));thin(0.5);dash(()=>L(x0,cy,x1,cy));full();T("STRIP FDN",cx,cy-h*0.22,Math.min(h*0.24,w/12));break;
-    case "trenchfdn":dash(()=>B(x0,y0,w,h));hatch(m/3);T("TRENCH FILL",cx,cy,Math.min(h*0.24,w/12));break;
-    case "raft":dash(()=>B(x0,y0,w,h));thin(0.35);dash(()=>B(x0+m*0.08,y0+m*0.08,w-m*0.16,h-m*0.16));clip(()=>{const st=m/8;for(let x=x0+st;x<x1;x+=st)L(x,y0,x,y1);for(let y=y0+st;y<y1;y+=st)L(x0,y,x1,y)});full();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(cx-w*0.14,cy-h*0.06,w*0.28,h*0.12);ctx.restore();T("RAFT",cx,cy,Math.min(h*0.1,w/8));break;
-    case "pilecap":B(x0,y0,w,h);thin(0.6);[[0.28,0.28],[0.72,0.28],[0.28,0.72],[0.72,0.72]].forEach(([a,b])=>{C(x0+w*a,y0+h*b,m*0.13);L(x0+w*a-m*0.09,y0+h*b-m*0.09,x0+w*a+m*0.09,y0+h*b+m*0.09)});full();break;
-    case "groundbeam":dash(()=>{B(x0,y0,w,h)});thin(0.5);L(x0,y0+h*0.3,x1,y0+h*0.3);L(x0,y1-h*0.3,x1,y1-h*0.3);full();T("GB",x0+h*0.8,cy,h*0.36);break;
-    case "fdnstep":dash(()=>{ctx.beginPath();ctx.moveTo(x0,y1);ctx.lineTo(x0,cy);ctx.lineTo(x1,cy);ctx.lineTo(x1,y0);ctx.stroke()});T("STEP",cx,y1-h*0.15,m*0.18);break;
+    case "stripfdn":
+      dash(() => B(x0, y0, w, h));
+      thin(0.5);
+      dash(() => L(x0, cy, x1, cy));
+      full();
+      T("STRIP FDN", cx, cy - h * 0.22, Math.min(h * 0.24, w / 12));
+      break;
+    case "trenchfdn":
+      dash(() => B(x0, y0, w, h));
+      hatch(m / 3);
+      T("TRENCH FILL", cx, cy, Math.min(h * 0.24, w / 12));
+      break;
+    case "raft":
+      dash(() => B(x0, y0, w, h));
+      thin(0.35);
+      dash(() => B(x0 + m * 0.08, y0 + m * 0.08, w - m * 0.16, h - m * 0.16));
+      clip(() => {
+        const st = m / 8;
+        for (let x = x0 + st; x < x1; x += st) L(x, y0, x, y1);
+        for (let y = y0 + st; y < y1; y += st) L(x0, y, x1, y);
+      });
+      full();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(cx - w * 0.14, cy - h * 0.06, w * 0.28, h * 0.12);
+      ctx.restore();
+      T("RAFT", cx, cy, Math.min(h * 0.1, w / 8));
+      break;
+    case "pilecap":
+      B(x0, y0, w, h);
+      thin(0.6);
+      [
+        [0.28, 0.28],
+        [0.72, 0.28],
+        [0.28, 0.72],
+        [0.72, 0.72],
+      ].forEach(([a, b]) => {
+        C(x0 + w * a, y0 + h * b, m * 0.13);
+        L(
+          x0 + w * a - m * 0.09,
+          y0 + h * b - m * 0.09,
+          x0 + w * a + m * 0.09,
+          y0 + h * b + m * 0.09,
+        );
+      });
+      full();
+      break;
+    case "groundbeam":
+      dash(() => {
+        B(x0, y0, w, h);
+      });
+      thin(0.5);
+      L(x0, y0 + h * 0.3, x1, y0 + h * 0.3);
+      L(x0, y1 - h * 0.3, x1, y1 - h * 0.3);
+      full();
+      T("GB", x0 + h * 0.8, cy, h * 0.36);
+      break;
+    case "fdnstep":
+      dash(() => {
+        ctx.beginPath();
+        ctx.moveTo(x0, y1);
+        ctx.lineTo(x0, cy);
+        ctx.lineTo(x1, cy);
+        ctx.lineTo(x1, y0);
+        ctx.stroke();
+      });
+      T("STEP", cx, y1 - h * 0.15, m * 0.18);
+      break;
     /* notes & details */
-    case "grid":C(cx,y0+m*0.5,m*0.48);T(o.lab||"A",cx,y0+m*0.5,m*0.5);dash(()=>L(cx,y0+m,cx,y1));break;
-    case "lvl":{const t=h*0.45;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+t,y0);ctx.lineTo(x0+t/2,y0+t*0.8);ctx.closePath();ctx.stroke();L(x0,y0+t*0.8,x1,y0+t*0.8);npLbl(ctx,o.lab||"FFL +0.000",x0+t+(w-t)/2,y0+t*0.3,Math.min(t*0.6,(w-t)/9));break}
-    case "spot":L(x0,cy,x0+m*0.6,cy);L(x0+m*0.3,cy-m*0.3,x0+m*0.3,cy+m*0.3);npLbl(ctx,o.lab||"+0.00",x0+m*0.6+(w-m*0.6)/2,cy-h*0.15,Math.min(h*0.45,(w-m*0.6)/4));break;
-    case "detref":C(cx,cy,m*0.46);L(cx-m*0.46,cy,cx+m*0.46,cy);T(o.lab||"1",cx,cy-m*0.2,m*0.28);T("D01",cx,cy+m*0.22,m*0.2);break;
-    case "elevref":{ctx.beginPath();ctx.moveTo(cx,y0);ctx.lineTo(x1,cy);ctx.lineTo(cx,y1);ctx.lineTo(x0,cy);ctx.closePath();ctx.stroke();ctx.save();ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(cx,y0);ctx.lineTo(cx+m*0.18,y0+m*0.18);ctx.lineTo(cx-m*0.18,y0+m*0.18);ctx.closePath();ctx.fill();ctx.restore();C(cx,cy,m*0.25,"#fff");T(o.lab||"E1",cx,cy,m*0.2);break}
-    case "brk":ctx.beginPath();ctx.moveTo(x0,cy);ctx.lineTo(cx-w*0.04,cy);ctx.lineTo(cx-w*0.015,y0);ctx.lineTo(cx+w*0.015,y1);ctx.lineTo(cx+w*0.04,cy);ctx.lineTo(x1,cy);ctx.stroke();break;
-    default:B(x0,y0,w,h);T(k.toUpperCase())}
+    case "grid":
+      C(cx, y0 + m * 0.5, m * 0.48);
+      T(o.lab || "A", cx, y0 + m * 0.5, m * 0.5);
+      dash(() => L(cx, y0 + m, cx, y1));
+      break;
+    case "lvl": {
+      const t = h * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + t, y0);
+      ctx.lineTo(x0 + t / 2, y0 + t * 0.8);
+      ctx.closePath();
+      ctx.stroke();
+      L(x0, y0 + t * 0.8, x1, y0 + t * 0.8);
+      npLbl(
+        ctx,
+        o.lab || "FFL +0.000",
+        x0 + t + (w - t) / 2,
+        y0 + t * 0.3,
+        Math.min(t * 0.6, (w - t) / 9),
+      );
+      break;
+    }
+    case "spot":
+      L(x0, cy, x0 + m * 0.6, cy);
+      L(x0 + m * 0.3, cy - m * 0.3, x0 + m * 0.3, cy + m * 0.3);
+      npLbl(
+        ctx,
+        o.lab || "+0.00",
+        x0 + m * 0.6 + (w - m * 0.6) / 2,
+        cy - h * 0.15,
+        Math.min(h * 0.45, (w - m * 0.6) / 4),
+      );
+      break;
+    case "detref":
+      C(cx, cy, m * 0.46);
+      L(cx - m * 0.46, cy, cx + m * 0.46, cy);
+      T(o.lab || "1", cx, cy - m * 0.2, m * 0.28);
+      T("D01", cx, cy + m * 0.22, m * 0.2);
+      break;
+    case "elevref": {
+      ctx.beginPath();
+      ctx.moveTo(cx, y0);
+      ctx.lineTo(x1, cy);
+      ctx.lineTo(cx, y1);
+      ctx.lineTo(x0, cy);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.save();
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.moveTo(cx, y0);
+      ctx.lineTo(cx + m * 0.18, y0 + m * 0.18);
+      ctx.lineTo(cx - m * 0.18, y0 + m * 0.18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      C(cx, cy, m * 0.25, "#fff");
+      T(o.lab || "E1", cx, cy, m * 0.2);
+      break;
+    }
+    case "brk":
+      ctx.beginPath();
+      ctx.moveTo(x0, cy);
+      ctx.lineTo(cx - w * 0.04, cy);
+      ctx.lineTo(cx - w * 0.015, y0);
+      ctx.lineTo(cx + w * 0.015, y1);
+      ctx.lineTo(cx + w * 0.04, cy);
+      ctx.lineTo(x1, cy);
+      ctx.stroke();
+      break;
+    default:
+      B(x0, y0, w, h);
+      T(k.toUpperCase());
+  }
 }
 
-const NP_XGROUPS=[["Kitchen & bathroom", ["oven", "dw", "td", "hood", "larder", "bidet", "urinal", "vanity", "quadrant", "walkin", "cornerbath", "wetdrain"]], ["Furniture", ["chair", "armchair", "cornersofa", "rtable", "bunk", "cot", "sideboard", "tvunit", "bookcase", "chest", "bedside"]], ["Electrics", ["sock1", "usb", "outsock", "cooker", "isol", "sw2", "dimmer", "pull", "pir", "wlight", "batten", "emerg", "bell", "tel", "data", "spk", "emeter", "evc", "solar", "inverter", "battery", "cctv", "alarm"]], ["Heating & ventilation", ["ashp", "oiltank", "lpg", "gasmeter", "watermeter", "softener", "cws", "pump", "mvhr", "ufhman", "stove", "fireplace", "vent"]], ["Drainage", ["septic", "ptp", "pumpst", "bgully", "catchpit", "grease", "channel", "waterbutt"]], ["Doors & windows", ["pocket", "garagedr", "baywin", "loft"]], ["Walls & structure", ["pier", "pile", "padfdn"]], ["Site plant & equipment", ["skip", "mixer", "scaffold", "tower", "hoist", "crane", "telehandler", "digger", "dumper", "genny", "matstore", "wheelwash", "fuel", "gascage", "firstaid", "spillkit", "smoking", "signboard", "keysafe"]], ["Landscaping", ["greenhouse", "pergola", "hottub", "pool", "trampoline", "bbq", "bench", "raisedbed", "conifer", "treeremove", "rpz", "washline", "gardenlight", "bollard"]], ["Fire safety", ["fd30", "exitsign", "callpoint", "sounder", "sprinkler", "codet", "fblanket"]], ["Accessibility & lifts", ["lift", "docm", "ramp"]], ["Notes & details", ["grid", "lvl", "spot", "detref", "elevref", "brk"]]];
-const NP_XSHAPES=[["oven", "▣ Built-in oven", "Kitchen & bathroom", "pro"], ["dw", "▣ Dishwasher", "Kitchen & bathroom", "pro"], ["td", "▣ Tumble dryer", "Kitchen & bathroom", "pro"], ["hood", "⌂ Cooker hood / extractor", "Kitchen & bathroom", "pro"], ["larder", "▥ Larder / tall unit", "Kitchen & bathroom", "pro"], ["bidet", "◒ Bidet", "Kitchen & bathroom", "pro"], ["urinal", "◡ Urinal", "Kitchen & bathroom", "pro"], ["vanity", "◒◒ Double basin / vanity unit", "Kitchen & bathroom", "pro"], ["quadrant", "◜ Quadrant shower", "Kitchen & bathroom", "pro"], ["walkin", "▯ Walk-in shower with screen", "Kitchen & bathroom", "pro"], ["cornerbath", "◺ Corner bath", "Kitchen & bathroom", "pro"], ["wetdrain", "═ Linear shower drain", "Kitchen & bathroom", "pro"], ["chair", "▢ Chair", "Furniture", "pro"], ["armchair", "▢ Armchair", "Furniture", "pro"], ["cornersofa", "└ Corner sofa", "Furniture", "pro"], ["rtable", "◯ Round table & 4 chairs", "Furniture", "pro"], ["bunk", "🛏 Bunk bed", "Furniture", "pro"], ["cot", "▥ Cot", "Furniture", "pro"], ["sideboard", "▭ Sideboard", "Furniture", "pro"], ["tvunit", "▭ TV unit", "Furniture", "pro"], ["bookcase", "▥ Bookcase", "Furniture", "pro"], ["chest", "▥ Chest of drawers", "Furniture", "pro"], ["bedside", "▫ Bedside table", "Furniture", "pro"], ["sock1", "⏻ Single socket", "Electrics", "pro"], ["usb", "⏻ USB socket", "Electrics", "pro"], ["outsock", "⏻ Outdoor socket (weatherproof)", "Electrics", "pro"], ["cooker", "⊟ Cooker switch (45A)", "Electrics", "pro"], ["isol", "⊟ Isolator", "Electrics", "pro"], ["sw2", "⊘ 2-way switch", "Electrics", "pro"], ["dimmer", "⊘ Dimmer switch", "Electrics", "pro"], ["pull", "⊘ Pull-cord switch", "Electrics", "pro"], ["pir", "◉ PIR sensor", "Electrics", "pro"], ["wlight", "◓ Wall light", "Electrics", "pro"], ["batten", "▬ LED batten / strip light", "Electrics", "pro"], ["emerg", "▣ Emergency light", "Electrics", "pro"], ["bell", "◉ Doorbell", "Electrics", "pro"], ["tel", "◉ Phone point", "Electrics", "pro"], ["data", "◉ Data / network point", "Electrics", "pro"], ["spk", "◉ Speaker", "Electrics", "pro"], ["emeter", "▣ Electric meter", "Electrics", "pro"], ["evc", "⚡ EV charger", "Electrics", "pro"], ["solar", "▦ Solar panels", "Electrics", "pro"], ["inverter", "▣ Solar inverter", "Electrics", "pro"], ["battery", "▣ Home battery", "Electrics", "pro"], ["cctv", "◥ CCTV camera", "Electrics", "pro"], ["alarm", "▣ Alarm panel", "Electrics", "pro"], ["ashp", "◎ Air source heat pump", "Heating & ventilation", "pro"], ["oiltank", "▭ Oil tank", "Heating & ventilation", "pro"], ["lpg", "⬭ LPG tank", "Heating & ventilation", "pro"], ["gasmeter", "▣ Gas meter", "Heating & ventilation", "pro"], ["watermeter", "◉ Water meter", "Heating & ventilation", "pro"], ["softener", "▣ Water softener", "Heating & ventilation", "pro"], ["cws", "▣ Cold water tank (loft)", "Heating & ventilation", "pro"], ["pump", "◉ Shower / booster pump", "Heating & ventilation", "pro"], ["mvhr", "⊠ MVHR unit", "Heating & ventilation", "pro"], ["ufhman", "⋯ Underfloor heating manifold", "Heating & ventilation", "pro"], ["stove", "▣ Wood burner / stove", "Heating & ventilation", "pro"], ["fireplace", "▥ Fireplace & hearth", "Heating & ventilation", "pro"], ["vent", "▤ Air vent / grille", "Heating & ventilation", "pro"], ["septic", "⬭ Septic tank", "Drainage", "pro"], ["ptp", "◉ Sewage treatment plant", "Drainage", "pro"], ["pumpst", "◉ Pumping station", "Drainage", "pro"], ["bgully", "◉ Back inlet gully", "Drainage", "pro"], ["catchpit", "▣ Catch pit", "Drainage", "pro"], ["grease", "▣ Grease trap", "Drainage", "pro"], ["channel", "═ Channel / linear drain", "Drainage", "pro"], ["waterbutt", "◉ Water butt", "Drainage", "pro"], ["pocket", "⇥ Pocket / sliding-into-wall door", "Doors & windows", "pro"], ["garagedr", "═ Garage door (plan)", "Doors & windows", "pro"], ["baywin", "⏢ Bay window", "Doors & windows", "pro"], ["loft", "⊠ Loft hatch", "Doors & windows", "pro"], ["pier", "▦ Brick pier", "Walls & structure", "pro"], ["pile", "⊗ Pile", "Walls & structure", "pro"], ["padfdn", "▣ Pad foundation", "Walls & structure", "pro"], ["skip", "⬣ Skip", "Site plant & equipment", "pro"], ["mixer", "◎ Cement mixer", "Site plant & equipment", "pro"], ["scaffold", "▤ Scaffold (plan)", "Site plant & equipment", "pro"], ["tower", "⊠ Mobile tower scaffold", "Site plant & equipment", "pro"], ["hoist", "⇧ Hoist", "Site plant & equipment", "pro"], ["crane", "◯ Crane & slew radius", "Site plant & equipment", "pro"], ["telehandler", "▭ Telehandler", "Site plant & equipment", "pro"], ["digger", "▭ Excavator", "Site plant & equipment", "pro"], ["dumper", "▣ Dumper", "Site plant & equipment", "pro"], ["genny", "▣ Generator", "Site plant & equipment", "pro"], ["matstore", "▨ Materials storage area", "Site plant & equipment", "pro"], ["wheelwash", "≈ Wheel wash", "Site plant & equipment", "pro"], ["fuel", "▣ Fuel store (bunded)", "Site plant & equipment", "pro"], ["gascage", "▩ Gas bottle cage", "Site plant & equipment", "pro"], ["firstaid", "✚ First aid point", "Site plant & equipment", "pro"], ["spillkit", "▣ Spill kit", "Site plant & equipment", "pro"], ["smoking", "⬚ Smoking area", "Site plant & equipment", "pro"], ["signboard", "▬ Site sign board", "Site plant & equipment", "pro"], ["keysafe", "◉ Key safe", "Site plant & equipment", "pro"], ["greenhouse", "▥ Greenhouse", "Landscaping", "pro"], ["pergola", "⋕ Pergola", "Landscaping", "pro"], ["hottub", "◎ Hot tub", "Landscaping", "pro"], ["pool", "▭ Swimming pool", "Landscaping", "pro"], ["trampoline", "◎ Trampoline", "Landscaping", "pro"], ["bbq", "▥ BBQ / outdoor kitchen", "Landscaping", "pro"], ["bench", "▤ Garden bench", "Landscaping", "pro"], ["raisedbed", "▣ Raised bed", "Landscaping", "pro"], ["conifer", "✳ Conifer", "Landscaping", "pro"], ["treeremove", "✕ Tree to be removed", "Landscaping", "pro"], ["rpz", "◌ Tree root protection area", "Landscaping", "pro"], ["washline", "✕ Rotary washing line", "Landscaping", "pro"], ["gardenlight", "☼ Garden light", "Landscaping", "pro"], ["bollard", "● Bollard", "Landscaping", "pro"], ["fd30", "▭ Fire door tag (FD30S)", "Fire safety", "pro"], ["exitsign", "➜ Fire exit sign", "Fire safety", "pro"], ["callpoint", "▣ Fire alarm call point", "Fire safety", "pro"], ["sounder", "◉ Fire alarm sounder", "Fire safety", "pro"], ["sprinkler", "✺ Sprinkler head", "Fire safety", "pro"], ["codet", "◉ Carbon monoxide alarm", "Fire safety", "pro"], ["fblanket", "◉ Fire blanket", "Fire safety", "pro"], ["lift", "⊠ Passenger lift", "Accessibility & lifts", "pro"], ["docm", "♿ Accessible WC (Part M)", "Accessibility & lifts", "pro"], ["ramp", "⇢ Ramp", "Accessibility & lifts", "pro"], ["grid", "Ⓐ Grid line", "Notes & details", "pro"], ["lvl", "▽ Level marker (FFL)", "Notes & details", "pro"], ["spot", "+ Spot level", "Notes & details", "pro"], ["detref", "⊖ Detail reference", "Notes & details", "pro"], ["elevref", "◇ Elevation marker", "Notes & details", "pro"], ["brk", "⌇ Break line", "Notes & details", "pro"]];
-const NP_XREAL={oven:[600,600],dw:[600,600],td:[600,600],hood:[900,500],larder:[600,600],bidet:[380,560],urinal:[400,350],vanity:[1200,500],quadrant:[900,900],walkin:[1400,900],cornerbath:[1500,1500],wetdrain:[800,100],chair:[450,450],armchair:[850,850],cornersofa:[2500,2000],rtable:[1800,1800],bunk:[900,1900],cot:[700,1300],sideboard:[1600,450],tvunit:[1800,400],bookcase:[900,300],chest:[800,450],bedside:[450,400],sock1:[300,300],usb:[300,300],outsock:[300,300],cooker:[300,300],isol:[300,300],sw2:[300,300],dimmer:[300,300],pull:[300,300],pir:[300,300],wlight:[400,250],batten:[1200,100],emerg:[400,200],bell:[300,300],tel:[300,300],data:[300,300],spk:[300,300],emeter:[400,300],evc:[400,300],solar:[1700,1000],inverter:[500,350],battery:[600,250],cctv:[400,300],alarm:[400,300],ashp:[1000,400],oiltank:[2000,1200],lpg:[1500,800],gasmeter:[400,300],watermeter:[300,300],softener:[300,500],cws:[900,600],pump:[300,300],mvhr:[800,600],ufhman:[600,150],stove:[500,450],fireplace:[1200,400],vent:[300,300],septic:[2500,1500],ptp:[1800,1800],pumpst:[1200,1200],bgully:[400,400],catchpit:[600,600],grease:[800,600],channel:[2000,150],waterbutt:[600,600],pocket:[1000,150],garagedr:[2400,150],baywin:[2400,700],loft:[600,600],pier:[440,440],pile:[300,300],padfdn:[1000,1000],skip:[3700,1800],mixer:[1500,900],scaffold:[3000,1300],tower:[2500,1300],hoist:[1500,1500],crane:[20000,20000],telehandler:[5000,2400],digger:[5000,2500],dumper:[3000,1600],genny:[1200,800],matstore:[4000,3000],wheelwash:[4000,3000],fuel:[1500,1000],gascage:[1200,800],firstaid:[500,500],spillkit:[500,500],smoking:[2000,2000],signboard:[1200,200],keysafe:[300,300],greenhouse:[2400,1800],pergola:[3000,3000],hottub:[2100,2100],pool:[8000,4000],trampoline:[3000,3000],bbq:[1200,600],bench:[1500,500],raisedbed:[2400,1200],conifer:[2000,2000],treeremove:[3000,3000],rpz:[6000,6000],washline:[2500,2500],gardenlight:[300,300],bollard:[200,200],fd30:[700,400],exitsign:[600,300],callpoint:[300,300],sounder:[300,300],sprinkler:[300,300],codet:[300,300],fblanket:[400,400],lift:[1600,1600],docm:[1500,2200],ramp:[3000,1200],grid:[600,3000],lvl:[1500,600],spot:[900,400],detref:[800,800],elevref:[900,900],brk:[3000,400]};
-const NP_XLAB=new Set(["grid","lvl","spot","detref","elevref","lvlline","contour","easement","steelub","secline","exspot","prspot","treetag","mhlev","pipelab","revtri"]);
-const NP_X=new Set(["oven", "dw", "td", "hood", "larder", "bidet", "urinal", "vanity", "quadrant", "walkin", "cornerbath", "wetdrain", "chair", "armchair", "cornersofa", "rtable", "bunk", "cot", "sideboard", "tvunit", "bookcase", "chest", "bedside", "sock1", "usb", "outsock", "cooker", "isol", "sw2", "dimmer", "pull", "pir", "wlight", "batten", "emerg", "bell", "tel", "data", "spk", "emeter", "evc", "solar", "inverter", "battery", "cctv", "alarm", "ashp", "oiltank", "lpg", "gasmeter", "watermeter", "softener", "cws", "pump", "mvhr", "ufhman", "stove", "fireplace", "vent", "septic", "ptp", "pumpst", "bgully", "catchpit", "grease", "channel", "waterbutt", "pocket", "garagedr", "baywin", "loft", "pier", "pile", "padfdn", "skip", "mixer", "scaffold", "tower", "hoist", "crane", "telehandler", "digger", "dumper", "genny", "matstore", "wheelwash", "fuel", "gascage", "firstaid", "spillkit", "smoking", "signboard", "keysafe", "greenhouse", "pergola", "hottub", "pool", "trampoline", "bbq", "bench", "raisedbed", "conifer", "treeremove", "rpz", "washline", "gardenlight", "bollard", "fd30", "exitsign", "callpoint", "sounder", "sprinkler", "codet", "fblanket", "lift", "docm", "ramp", "grid", "lvl", "spot", "detref", "elevref", "brk"]);
-
-
-
-
+const NP_XGROUPS = [
+  [
+    "Kitchen & bathroom",
+    [
+      "oven",
+      "dw",
+      "td",
+      "hood",
+      "larder",
+      "bidet",
+      "urinal",
+      "vanity",
+      "quadrant",
+      "walkin",
+      "cornerbath",
+      "wetdrain",
+    ],
+  ],
+  [
+    "Furniture",
+    [
+      "chair",
+      "armchair",
+      "cornersofa",
+      "rtable",
+      "bunk",
+      "cot",
+      "sideboard",
+      "tvunit",
+      "bookcase",
+      "chest",
+      "bedside",
+    ],
+  ],
+  [
+    "Electrics",
+    [
+      "sock1",
+      "usb",
+      "outsock",
+      "cooker",
+      "isol",
+      "sw2",
+      "dimmer",
+      "pull",
+      "pir",
+      "wlight",
+      "batten",
+      "emerg",
+      "bell",
+      "tel",
+      "data",
+      "spk",
+      "emeter",
+      "evc",
+      "solar",
+      "inverter",
+      "battery",
+      "cctv",
+      "alarm",
+    ],
+  ],
+  [
+    "Heating & ventilation",
+    [
+      "ashp",
+      "oiltank",
+      "lpg",
+      "gasmeter",
+      "watermeter",
+      "softener",
+      "cws",
+      "pump",
+      "mvhr",
+      "ufhman",
+      "stove",
+      "fireplace",
+      "vent",
+    ],
+  ],
+  ["Drainage", ["septic", "ptp", "pumpst", "bgully", "catchpit", "grease", "channel", "waterbutt"]],
+  ["Doors & windows", ["pocket", "garagedr", "baywin", "loft"]],
+  ["Walls & structure", ["pier", "pile", "padfdn"]],
+  [
+    "Site plant & equipment",
+    [
+      "skip",
+      "mixer",
+      "scaffold",
+      "tower",
+      "hoist",
+      "crane",
+      "telehandler",
+      "digger",
+      "dumper",
+      "genny",
+      "matstore",
+      "wheelwash",
+      "fuel",
+      "gascage",
+      "firstaid",
+      "spillkit",
+      "smoking",
+      "signboard",
+      "keysafe",
+    ],
+  ],
+  [
+    "Landscaping",
+    [
+      "greenhouse",
+      "pergola",
+      "hottub",
+      "pool",
+      "trampoline",
+      "bbq",
+      "bench",
+      "raisedbed",
+      "conifer",
+      "treeremove",
+      "rpz",
+      "washline",
+      "gardenlight",
+      "bollard",
+    ],
+  ],
+  ["Fire safety", ["fd30", "exitsign", "callpoint", "sounder", "sprinkler", "codet", "fblanket"]],
+  ["Accessibility & lifts", ["lift", "docm", "ramp"]],
+  ["Notes & details", ["grid", "lvl", "spot", "detref", "elevref", "brk"]],
+];
+const NP_XSHAPES = [
+  ["oven", "▣ Built-in oven", "Kitchen & bathroom", "pro"],
+  ["dw", "▣ Dishwasher", "Kitchen & bathroom", "pro"],
+  ["td", "▣ Tumble dryer", "Kitchen & bathroom", "pro"],
+  ["hood", "⌂ Cooker hood / extractor", "Kitchen & bathroom", "pro"],
+  ["larder", "▥ Larder / tall unit", "Kitchen & bathroom", "pro"],
+  ["bidet", "◒ Bidet", "Kitchen & bathroom", "pro"],
+  ["urinal", "◡ Urinal", "Kitchen & bathroom", "pro"],
+  ["vanity", "◒◒ Double basin / vanity unit", "Kitchen & bathroom", "pro"],
+  ["quadrant", "◜ Quadrant shower", "Kitchen & bathroom", "pro"],
+  ["walkin", "▯ Walk-in shower with screen", "Kitchen & bathroom", "pro"],
+  ["cornerbath", "◺ Corner bath", "Kitchen & bathroom", "pro"],
+  ["wetdrain", "═ Linear shower drain", "Kitchen & bathroom", "pro"],
+  ["chair", "▢ Chair", "Furniture", "pro"],
+  ["armchair", "▢ Armchair", "Furniture", "pro"],
+  ["cornersofa", "└ Corner sofa", "Furniture", "pro"],
+  ["rtable", "◯ Round table & 4 chairs", "Furniture", "pro"],
+  ["bunk", "🛏 Bunk bed", "Furniture", "pro"],
+  ["cot", "▥ Cot", "Furniture", "pro"],
+  ["sideboard", "▭ Sideboard", "Furniture", "pro"],
+  ["tvunit", "▭ TV unit", "Furniture", "pro"],
+  ["bookcase", "▥ Bookcase", "Furniture", "pro"],
+  ["chest", "▥ Chest of drawers", "Furniture", "pro"],
+  ["bedside", "▫ Bedside table", "Furniture", "pro"],
+  ["sock1", "⏻ Single socket", "Electrics", "pro"],
+  ["usb", "⏻ USB socket", "Electrics", "pro"],
+  ["outsock", "⏻ Outdoor socket (weatherproof)", "Electrics", "pro"],
+  ["cooker", "⊟ Cooker switch (45A)", "Electrics", "pro"],
+  ["isol", "⊟ Isolator", "Electrics", "pro"],
+  ["sw2", "⊘ 2-way switch", "Electrics", "pro"],
+  ["dimmer", "⊘ Dimmer switch", "Electrics", "pro"],
+  ["pull", "⊘ Pull-cord switch", "Electrics", "pro"],
+  ["pir", "◉ PIR sensor", "Electrics", "pro"],
+  ["wlight", "◓ Wall light", "Electrics", "pro"],
+  ["batten", "▬ LED batten / strip light", "Electrics", "pro"],
+  ["emerg", "▣ Emergency light", "Electrics", "pro"],
+  ["bell", "◉ Doorbell", "Electrics", "pro"],
+  ["tel", "◉ Phone point", "Electrics", "pro"],
+  ["data", "◉ Data / network point", "Electrics", "pro"],
+  ["spk", "◉ Speaker", "Electrics", "pro"],
+  ["emeter", "▣ Electric meter", "Electrics", "pro"],
+  ["evc", "⚡ EV charger", "Electrics", "pro"],
+  ["solar", "▦ Solar panels", "Electrics", "pro"],
+  ["inverter", "▣ Solar inverter", "Electrics", "pro"],
+  ["battery", "▣ Home battery", "Electrics", "pro"],
+  ["cctv", "◥ CCTV camera", "Electrics", "pro"],
+  ["alarm", "▣ Alarm panel", "Electrics", "pro"],
+  ["ashp", "◎ Air source heat pump", "Heating & ventilation", "pro"],
+  ["oiltank", "▭ Oil tank", "Heating & ventilation", "pro"],
+  ["lpg", "⬭ LPG tank", "Heating & ventilation", "pro"],
+  ["gasmeter", "▣ Gas meter", "Heating & ventilation", "pro"],
+  ["watermeter", "◉ Water meter", "Heating & ventilation", "pro"],
+  ["softener", "▣ Water softener", "Heating & ventilation", "pro"],
+  ["cws", "▣ Cold water tank (loft)", "Heating & ventilation", "pro"],
+  ["pump", "◉ Shower / booster pump", "Heating & ventilation", "pro"],
+  ["mvhr", "⊠ MVHR unit", "Heating & ventilation", "pro"],
+  ["ufhman", "⋯ Underfloor heating manifold", "Heating & ventilation", "pro"],
+  ["stove", "▣ Wood burner / stove", "Heating & ventilation", "pro"],
+  ["fireplace", "▥ Fireplace & hearth", "Heating & ventilation", "pro"],
+  ["vent", "▤ Air vent / grille", "Heating & ventilation", "pro"],
+  ["septic", "⬭ Septic tank", "Drainage", "pro"],
+  ["ptp", "◉ Sewage treatment plant", "Drainage", "pro"],
+  ["pumpst", "◉ Pumping station", "Drainage", "pro"],
+  ["bgully", "◉ Back inlet gully", "Drainage", "pro"],
+  ["catchpit", "▣ Catch pit", "Drainage", "pro"],
+  ["grease", "▣ Grease trap", "Drainage", "pro"],
+  ["channel", "═ Channel / linear drain", "Drainage", "pro"],
+  ["waterbutt", "◉ Water butt", "Drainage", "pro"],
+  ["pocket", "⇥ Pocket / sliding-into-wall door", "Doors & windows", "pro"],
+  ["garagedr", "═ Garage door (plan)", "Doors & windows", "pro"],
+  ["baywin", "⏢ Bay window", "Doors & windows", "pro"],
+  ["loft", "⊠ Loft hatch", "Doors & windows", "pro"],
+  ["pier", "▦ Brick pier", "Walls & structure", "pro"],
+  ["pile", "⊗ Pile", "Walls & structure", "pro"],
+  ["padfdn", "▣ Pad foundation", "Walls & structure", "pro"],
+  ["skip", "⬣ Skip", "Site plant & equipment", "pro"],
+  ["mixer", "◎ Cement mixer", "Site plant & equipment", "pro"],
+  ["scaffold", "▤ Scaffold (plan)", "Site plant & equipment", "pro"],
+  ["tower", "⊠ Mobile tower scaffold", "Site plant & equipment", "pro"],
+  ["hoist", "⇧ Hoist", "Site plant & equipment", "pro"],
+  ["crane", "◯ Crane & slew radius", "Site plant & equipment", "pro"],
+  ["telehandler", "▭ Telehandler", "Site plant & equipment", "pro"],
+  ["digger", "▭ Excavator", "Site plant & equipment", "pro"],
+  ["dumper", "▣ Dumper", "Site plant & equipment", "pro"],
+  ["genny", "▣ Generator", "Site plant & equipment", "pro"],
+  ["matstore", "▨ Materials storage area", "Site plant & equipment", "pro"],
+  ["wheelwash", "≈ Wheel wash", "Site plant & equipment", "pro"],
+  ["fuel", "▣ Fuel store (bunded)", "Site plant & equipment", "pro"],
+  ["gascage", "▩ Gas bottle cage", "Site plant & equipment", "pro"],
+  ["firstaid", "✚ First aid point", "Site plant & equipment", "pro"],
+  ["spillkit", "▣ Spill kit", "Site plant & equipment", "pro"],
+  ["smoking", "⬚ Smoking area", "Site plant & equipment", "pro"],
+  ["signboard", "▬ Site sign board", "Site plant & equipment", "pro"],
+  ["keysafe", "◉ Key safe", "Site plant & equipment", "pro"],
+  ["greenhouse", "▥ Greenhouse", "Landscaping", "pro"],
+  ["pergola", "⋕ Pergola", "Landscaping", "pro"],
+  ["hottub", "◎ Hot tub", "Landscaping", "pro"],
+  ["pool", "▭ Swimming pool", "Landscaping", "pro"],
+  ["trampoline", "◎ Trampoline", "Landscaping", "pro"],
+  ["bbq", "▥ BBQ / outdoor kitchen", "Landscaping", "pro"],
+  ["bench", "▤ Garden bench", "Landscaping", "pro"],
+  ["raisedbed", "▣ Raised bed", "Landscaping", "pro"],
+  ["conifer", "✳ Conifer", "Landscaping", "pro"],
+  ["treeremove", "✕ Tree to be removed", "Landscaping", "pro"],
+  ["rpz", "◌ Tree root protection area", "Landscaping", "pro"],
+  ["washline", "✕ Rotary washing line", "Landscaping", "pro"],
+  ["gardenlight", "☼ Garden light", "Landscaping", "pro"],
+  ["bollard", "● Bollard", "Landscaping", "pro"],
+  ["fd30", "▭ Fire door tag (FD30S)", "Fire safety", "pro"],
+  ["exitsign", "➜ Fire exit sign", "Fire safety", "pro"],
+  ["callpoint", "▣ Fire alarm call point", "Fire safety", "pro"],
+  ["sounder", "◉ Fire alarm sounder", "Fire safety", "pro"],
+  ["sprinkler", "✺ Sprinkler head", "Fire safety", "pro"],
+  ["codet", "◉ Carbon monoxide alarm", "Fire safety", "pro"],
+  ["fblanket", "◉ Fire blanket", "Fire safety", "pro"],
+  ["lift", "⊠ Passenger lift", "Accessibility & lifts", "pro"],
+  ["docm", "♿ Accessible WC (Part M)", "Accessibility & lifts", "pro"],
+  ["ramp", "⇢ Ramp", "Accessibility & lifts", "pro"],
+  ["grid", "Ⓐ Grid line", "Notes & details", "pro"],
+  ["lvl", "▽ Level marker (FFL)", "Notes & details", "pro"],
+  ["spot", "+ Spot level", "Notes & details", "pro"],
+  ["detref", "⊖ Detail reference", "Notes & details", "pro"],
+  ["elevref", "◇ Elevation marker", "Notes & details", "pro"],
+  ["brk", "⌇ Break line", "Notes & details", "pro"],
+];
+const NP_XREAL = {
+  oven: [600, 600],
+  dw: [600, 600],
+  td: [600, 600],
+  hood: [900, 500],
+  larder: [600, 600],
+  bidet: [380, 560],
+  urinal: [400, 350],
+  vanity: [1200, 500],
+  quadrant: [900, 900],
+  walkin: [1400, 900],
+  cornerbath: [1500, 1500],
+  wetdrain: [800, 100],
+  chair: [450, 450],
+  armchair: [850, 850],
+  cornersofa: [2500, 2000],
+  rtable: [1800, 1800],
+  bunk: [900, 1900],
+  cot: [700, 1300],
+  sideboard: [1600, 450],
+  tvunit: [1800, 400],
+  bookcase: [900, 300],
+  chest: [800, 450],
+  bedside: [450, 400],
+  sock1: [300, 300],
+  usb: [300, 300],
+  outsock: [300, 300],
+  cooker: [300, 300],
+  isol: [300, 300],
+  sw2: [300, 300],
+  dimmer: [300, 300],
+  pull: [300, 300],
+  pir: [300, 300],
+  wlight: [400, 250],
+  batten: [1200, 100],
+  emerg: [400, 200],
+  bell: [300, 300],
+  tel: [300, 300],
+  data: [300, 300],
+  spk: [300, 300],
+  emeter: [400, 300],
+  evc: [400, 300],
+  solar: [1700, 1000],
+  inverter: [500, 350],
+  battery: [600, 250],
+  cctv: [400, 300],
+  alarm: [400, 300],
+  ashp: [1000, 400],
+  oiltank: [2000, 1200],
+  lpg: [1500, 800],
+  gasmeter: [400, 300],
+  watermeter: [300, 300],
+  softener: [300, 500],
+  cws: [900, 600],
+  pump: [300, 300],
+  mvhr: [800, 600],
+  ufhman: [600, 150],
+  stove: [500, 450],
+  fireplace: [1200, 400],
+  vent: [300, 300],
+  septic: [2500, 1500],
+  ptp: [1800, 1800],
+  pumpst: [1200, 1200],
+  bgully: [400, 400],
+  catchpit: [600, 600],
+  grease: [800, 600],
+  channel: [2000, 150],
+  waterbutt: [600, 600],
+  pocket: [1000, 150],
+  garagedr: [2400, 150],
+  baywin: [2400, 700],
+  loft: [600, 600],
+  pier: [440, 440],
+  pile: [300, 300],
+  padfdn: [1000, 1000],
+  skip: [3700, 1800],
+  mixer: [1500, 900],
+  scaffold: [3000, 1300],
+  tower: [2500, 1300],
+  hoist: [1500, 1500],
+  crane: [20000, 20000],
+  telehandler: [5000, 2400],
+  digger: [5000, 2500],
+  dumper: [3000, 1600],
+  genny: [1200, 800],
+  matstore: [4000, 3000],
+  wheelwash: [4000, 3000],
+  fuel: [1500, 1000],
+  gascage: [1200, 800],
+  firstaid: [500, 500],
+  spillkit: [500, 500],
+  smoking: [2000, 2000],
+  signboard: [1200, 200],
+  keysafe: [300, 300],
+  greenhouse: [2400, 1800],
+  pergola: [3000, 3000],
+  hottub: [2100, 2100],
+  pool: [8000, 4000],
+  trampoline: [3000, 3000],
+  bbq: [1200, 600],
+  bench: [1500, 500],
+  raisedbed: [2400, 1200],
+  conifer: [2000, 2000],
+  treeremove: [3000, 3000],
+  rpz: [6000, 6000],
+  washline: [2500, 2500],
+  gardenlight: [300, 300],
+  bollard: [200, 200],
+  fd30: [700, 400],
+  exitsign: [600, 300],
+  callpoint: [300, 300],
+  sounder: [300, 300],
+  sprinkler: [300, 300],
+  codet: [300, 300],
+  fblanket: [400, 400],
+  lift: [1600, 1600],
+  docm: [1500, 2200],
+  ramp: [3000, 1200],
+  grid: [600, 3000],
+  lvl: [1500, 600],
+  spot: [900, 400],
+  detref: [800, 800],
+  elevref: [900, 900],
+  brk: [3000, 400],
+};
+const NP_XLAB = new Set([
+  "grid",
+  "lvl",
+  "spot",
+  "detref",
+  "elevref",
+  "lvlline",
+  "contour",
+  "easement",
+  "steelub",
+  "secline",
+  "exspot",
+  "prspot",
+  "treetag",
+  "mhlev",
+  "pipelab",
+  "revtri",
+]);
+const NP_X = new Set([
+  "oven",
+  "dw",
+  "td",
+  "hood",
+  "larder",
+  "bidet",
+  "urinal",
+  "vanity",
+  "quadrant",
+  "walkin",
+  "cornerbath",
+  "wetdrain",
+  "chair",
+  "armchair",
+  "cornersofa",
+  "rtable",
+  "bunk",
+  "cot",
+  "sideboard",
+  "tvunit",
+  "bookcase",
+  "chest",
+  "bedside",
+  "sock1",
+  "usb",
+  "outsock",
+  "cooker",
+  "isol",
+  "sw2",
+  "dimmer",
+  "pull",
+  "pir",
+  "wlight",
+  "batten",
+  "emerg",
+  "bell",
+  "tel",
+  "data",
+  "spk",
+  "emeter",
+  "evc",
+  "solar",
+  "inverter",
+  "battery",
+  "cctv",
+  "alarm",
+  "ashp",
+  "oiltank",
+  "lpg",
+  "gasmeter",
+  "watermeter",
+  "softener",
+  "cws",
+  "pump",
+  "mvhr",
+  "ufhman",
+  "stove",
+  "fireplace",
+  "vent",
+  "septic",
+  "ptp",
+  "pumpst",
+  "bgully",
+  "catchpit",
+  "grease",
+  "channel",
+  "waterbutt",
+  "pocket",
+  "garagedr",
+  "baywin",
+  "loft",
+  "pier",
+  "pile",
+  "padfdn",
+  "skip",
+  "mixer",
+  "scaffold",
+  "tower",
+  "hoist",
+  "crane",
+  "telehandler",
+  "digger",
+  "dumper",
+  "genny",
+  "matstore",
+  "wheelwash",
+  "fuel",
+  "gascage",
+  "firstaid",
+  "spillkit",
+  "smoking",
+  "signboard",
+  "keysafe",
+  "greenhouse",
+  "pergola",
+  "hottub",
+  "pool",
+  "trampoline",
+  "bbq",
+  "bench",
+  "raisedbed",
+  "conifer",
+  "treeremove",
+  "rpz",
+  "washline",
+  "gardenlight",
+  "bollard",
+  "fd30",
+  "exitsign",
+  "callpoint",
+  "sounder",
+  "sprinkler",
+  "codet",
+  "fblanket",
+  "lift",
+  "docm",
+  "ramp",
+  "grid",
+  "lvl",
+  "spot",
+  "detref",
+  "elevref",
+  "brk",
+]);
 
 /* trades and clients get a short, simple list */
-const NP_BASIC=new Set(["tri","fillrect","fillcirc","cross","cloud","wall","door","window","opening","stairs","wc","basin","bath","shower","sink","units","socket","switch","light","rad","mh","tree","fence","north"]);
+const NP_BASIC = new Set([
+  "tri",
+  "fillrect",
+  "fillcirc",
+  "cross",
+  "cloud",
+  "wall",
+  "door",
+  "window",
+  "opening",
+  "stairs",
+  "wc",
+  "basin",
+  "bath",
+  "shower",
+  "sink",
+  "units",
+  "socket",
+  "switch",
+  "light",
+  "rad",
+  "mh",
+  "tree",
+  "fence",
+  "north",
+]);
 /* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
-function initSymbolsMore(){
-[["exspot","+ Existing level (type it)",1200,400,"Survey & existing site"],["prspot","⊕ Proposed level (type it)",1200,400,"Survey & existing site"],["treetag","◎ Tree survey tag & root area (type T1…)",6000,6000,"Survey & existing site"],["demolish","▨ Building to be demolished",6000,4000,"Survey & existing site"],["mhlev","⊠ Manhole with cover & invert levels (type them)",2400,700,"Drainage"],["rwh","◉ Rainwater harvesting tank",2000,2000,"Drainage"],["raingarden","❀ Rain garden",3000,1500,"Drainage"],["interceptor","▣ Interceptor (fuel / oil)",2400,1000,"Drainage"],["backdrop","⊠ Backdrop manhole",1000,1000,"Drainage"],["pipelab","→ Pipe size & fall label (type it)",1800,350,"Drainage"],["bbox","◉ Water boundary box",300,300,"Services"],["govr","▣ Gas governor",900,700,"Services"],["streetlamp","✳ Street lamp",500,500,"Services"],["substn","⚡ Electricity substation",3500,2500,"Services"],["jointbay","┅ Cable joint bay",2200,900,"Services"],["exclusion","▨ Exclusion zone",4000,3000,"Construction phase"],["oversail","◯ Crane oversail zone",20000,20000,"Construction phase"],["delivery","⇢ Delivery / loading bay",8000,3500,"Construction phase"],["banksman","☺ Banksman point",600,600,"Construction phase"],["spoil","▲ Spoil heap",4000,3000,"Construction phase"],["washout","▣ Concrete washout",2000,2000,"Construction phase"],["padstonep","▩ Padstone",440,215,"Walls & structure"],["cavtray","▾ Cavity tray marker",300,300,"Walls & structure"],["weepvent","▾ Weep vent marker",300,300,"Walls & structure"],["inszone","≋ Insulation zone",2000,300,"Walls & structure"],["tactile","⁙ Tactile paving",1200,800,"External works"],["stepsrail","☰ Steps with handrail",1500,1200,"External works"],["binscreen","▥ Bin store with timber screen",2600,1300,"External works"],["cyclestore","⚲ Cycle store",2000,1200,"External works"],["evbay","⚡ EV parking bay",2400,4800,"External works"],["north2","◉ North point (circle)",900,900,"Notes & details"],["north3","◭ North point (half arrow)",600,900,"Notes & details"],["revtri","△ Revision triangle (type the letter)",450,400,"Notes & details"],["dns","▭ DO NOT SCALE stamp",3000,600,"Notes & details"],["keyplan","▭ Key plan box",3000,2200,"Notes & details"]].forEach(([k,l,a,b,g])=>{NP_X.add(k);NP_XSHAPES.push([k,l,g,"pro"]);NP_XREAL[k]=[a,b]});
-NP_XGROUPS.push(["Survey & existing site",["exspot","prspot","treetag","demolish","contour","bndry","redline","hedgerem","fencerem"]]);
-NP_XGROUPS.push(["Drainage",["mhlev","rwh","raingarden","interceptor","backdrop","pipelab","swale"]]);
-NP_XGROUPS.push(["Services",["bbox","govr","streetlamp","substn","jointbay","easement"]]);
-NP_XGROUPS.push(["Construction phase",["exclusion","oversail","delivery","banksman","spoil","washout","treefence","walkway"]]);
-NP_XGROUPS.push(["Walls & structure",["padstonep","cavtray","weepvent","inszone","lintelp","steelub","movjoint","firewall"]]);
-NP_XGROUPS.push(["External works",["tactile","stepsrail","binscreen","cyclestore","evbay","kerb","kerbdrop","kerbflush","retweep","gabion","ramp"]]);
-NP_XGROUPS.push(["Notes & details",["north2","north3","revtri","dns","keyplan","secline","matchline"]]);
-[["cu3","▤ Consumer unit / distribution board (3-phase)",600,300],["gasboiler","🔥 Gas boiler (combi / system)",450,350],["unvented","◎ Unvented hot water cylinder",600,600],["eufh","⌇ Electric underfloor heating area",3000,2500],["wufh","∿ Wet underfloor heating area",3000,2500],["mvhrsup","◉ MVHR supply valve",250,250],["mvhrext","◉ MVHR extract valve",250,250],["mvhrplen","▭ MVHR plenum / distribution box",700,350],["mvhrin","▤ MVHR fresh air intake (outside)",350,350],["mvhrout","▤ MVHR exhaust terminal (outside)",350,350],["mvhrcond","◉ MVHR condensate drain",200,200]].forEach(([k,l,a,b])=>{NP_X.add(k);NP_XSHAPES.push([k,l,"Electrics","pro"]);NP_XREAL[k]=[a,b]});
-NP_XGROUPS.push(["Electrics",["cu3"]]);
-NP_XGROUPS.push(["Heating & ventilation",["gasboiler","unvented","ufhman","eufh","wufh","mvhr","mvhrsup","mvhrext","mvhrplen","ductsup","ductext","mvhrin","mvhrout","mvhrcond"]]);
-[["gasboiler","unvented","eufh","wufh","mvhrsup","mvhrext","mvhrplen","mvhrin","mvhrout","mvhrcond","cu3"]].flat().forEach(k=>{const e=NP_XSHAPES.find(x=>x[0]===k);if(e&&k!=="cu3")e[2]="Heating & ventilation"});
-[["groundmat","▦ Ground protection matting",2400,1200],["slope","⩘ Slope / bank symbol",1500,1200],["wallant","◐ Outside wall light",300,200],["postlight","◉ Driveway post / bollard light",250,250],["floodlt","◭ Floodlight (PIR)",350,250],["vgates","⌒⌒ Vehicle gates (double swing)",3600,1800],["vslide","⇥ Sliding vehicle gate",4000,400],["pgate","⌒ Pedestrian gate",1000,1000],["intercom","☎ Gate / driveway intercom",350,350],["cctvdome","◓ CCTV dome camera",300,300],["nvr","▣ CCTV recorder (DVR / NVR)",450,300],
- ["tpole","⊕ Telegraph pole (telecoms)",400,400],["epole","⊕ Electricity pole",400,400],["polestay","↘ Pole stay",400,1200],["btjb","▣ Telecoms joint box / chamber",600,600],["fibrept","◈ Fibre point / connection box",400,400],["fibrecab","▣ Fibre / street cabinet",1200,500],["attank","▦ Attenuation tank (crates)",4000,2000],["silttrap","◉ Silt trap",600,600],["brroad","═ Road bridge (plan)",6000,3000],["brfoot","┅ Footbridge (plan)",4000,1500],["brrail","╫ Rail bridge (plan)",6000,3000],["culvert","⊐ Culvert",4000,1200],["ebrarch","◠ Arch bridge (elevation)",8000,3000],["ebrbeam","▬ Beam bridge (elevation)",8000,2500],["ebrtruss","⋈ Truss bridge (elevation)",8000,3000],["ebrsusp","⌒ Suspension bridge (elevation)",10000,4000],["etpole","┼ Telegraph pole & cables (elevation)",1500,8000]].forEach(([k,l,a,b])=>{NP_X.add(k);NP_XSHAPES.push([k,l,/^e/.test(k)?"Bridges, poles & cables (side on)":"Bridges, poles & cables","pro"]);NP_XREAL[k]=[a,b]});
-NP_XGROUPS.push(["Bridges, poles & cables",["tpole","epole","polestay","ohl","ohbt","ubt","uelec","fibre","fibrept","fibrecab","btjb","brroad","brfoot","brrail","culvert"]]);
-NP_XGROUPS.push(["Drainage",["attank","silttrap","landdrain","soakaway"]]);
-NP_XGROUPS.push(["Landscaping",["groundmat","slope","embank","lvlline"]]);
-NP_XGROUPS.push(["Outside lights, gates & CCTV",["wallant","postlight","floodlt","gardenlight","bollard","vgates","vslide","pgate","intercom","cctv","cctvdome","nvr"]]);
-[["stripfdn","┅ Strip foundation (plan)",3000,600],["trenchfdn","▨ Trench fill foundation (plan)",3000,600],["raft","▦ Raft foundation (plan)",5000,4000],["pilecap","⊞ Pile cap",900,900],["groundbeam","═ Ground beam",3000,450],["fdnstep","⌐ Step in foundation",600,600]].forEach(([k,l,a,b])=>{NP_X.add(k);NP_XSHAPES.push([k,l,"Foundations","pro"]);NP_XREAL[k]=[a,b]});
-NP_XGROUPS.push(["Foundations",["stripfdn","trenchfdn","raft","pilecap","groundbeam","fdnstep","padfdn","pile","pier"]]);
-NP_X.forEach(k=>NP_DES_BOX.add(k));
-NP_LIB.splice(NP_LIB.findIndex(c=>c[0]==="elev"&&c[1]==="Garden & scale")+1||NP_LIB.length,0,["elev","Bridges, poles & cables",["ebrarch","ebrbeam","ebrtruss","ebrsusp","etpole"]]);
-NP_XGROUPS.forEach(([g,ks])=>{const e=NP_LIB.find(c=>c[1]===g&&c[0]!=="elev");if(e)ks.forEach(k=>{if(!e[2].includes(k))e[2].push(k)});else{const i=NP_LIB.findIndex(c=>c[0]==="elev");NP_LIB.splice(i<0?NP_LIB.length:i,0,["plan",g,ks.slice()])}});
+function initSymbolsMore() {
+  [
+    ["exspot", "+ Existing level (type it)", 1200, 400, "Survey & existing site"],
+    ["prspot", "⊕ Proposed level (type it)", 1200, 400, "Survey & existing site"],
+    ["treetag", "◎ Tree survey tag & root area (type T1…)", 6000, 6000, "Survey & existing site"],
+    ["demolish", "▨ Building to be demolished", 6000, 4000, "Survey & existing site"],
+    ["mhlev", "⊠ Manhole with cover & invert levels (type them)", 2400, 700, "Drainage"],
+    ["rwh", "◉ Rainwater harvesting tank", 2000, 2000, "Drainage"],
+    ["raingarden", "❀ Rain garden", 3000, 1500, "Drainage"],
+    ["interceptor", "▣ Interceptor (fuel / oil)", 2400, 1000, "Drainage"],
+    ["backdrop", "⊠ Backdrop manhole", 1000, 1000, "Drainage"],
+    ["pipelab", "→ Pipe size & fall label (type it)", 1800, 350, "Drainage"],
+    ["bbox", "◉ Water boundary box", 300, 300, "Services"],
+    ["govr", "▣ Gas governor", 900, 700, "Services"],
+    ["streetlamp", "✳ Street lamp", 500, 500, "Services"],
+    ["substn", "⚡ Electricity substation", 3500, 2500, "Services"],
+    ["jointbay", "┅ Cable joint bay", 2200, 900, "Services"],
+    ["exclusion", "▨ Exclusion zone", 4000, 3000, "Construction phase"],
+    ["oversail", "◯ Crane oversail zone", 20000, 20000, "Construction phase"],
+    ["delivery", "⇢ Delivery / loading bay", 8000, 3500, "Construction phase"],
+    ["banksman", "☺ Banksman point", 600, 600, "Construction phase"],
+    ["spoil", "▲ Spoil heap", 4000, 3000, "Construction phase"],
+    ["washout", "▣ Concrete washout", 2000, 2000, "Construction phase"],
+    ["padstonep", "▩ Padstone", 440, 215, "Walls & structure"],
+    ["cavtray", "▾ Cavity tray marker", 300, 300, "Walls & structure"],
+    ["weepvent", "▾ Weep vent marker", 300, 300, "Walls & structure"],
+    ["inszone", "≋ Insulation zone", 2000, 300, "Walls & structure"],
+    ["tactile", "⁙ Tactile paving", 1200, 800, "External works"],
+    ["stepsrail", "☰ Steps with handrail", 1500, 1200, "External works"],
+    ["binscreen", "▥ Bin store with timber screen", 2600, 1300, "External works"],
+    ["cyclestore", "⚲ Cycle store", 2000, 1200, "External works"],
+    ["evbay", "⚡ EV parking bay", 2400, 4800, "External works"],
+    ["north2", "◉ North point (circle)", 900, 900, "Notes & details"],
+    ["north3", "◭ North point (half arrow)", 600, 900, "Notes & details"],
+    ["revtri", "△ Revision triangle (type the letter)", 450, 400, "Notes & details"],
+    ["dns", "▭ DO NOT SCALE stamp", 3000, 600, "Notes & details"],
+    ["keyplan", "▭ Key plan box", 3000, 2200, "Notes & details"],
+  ].forEach(([k, l, a, b, g]) => {
+    NP_X.add(k);
+    NP_XSHAPES.push([k, l, g, "pro"]);
+    NP_XREAL[k] = [a, b];
+  });
+  NP_XGROUPS.push([
+    "Survey & existing site",
+    [
+      "exspot",
+      "prspot",
+      "treetag",
+      "demolish",
+      "contour",
+      "bndry",
+      "redline",
+      "hedgerem",
+      "fencerem",
+    ],
+  ]);
+  NP_XGROUPS.push([
+    "Drainage",
+    ["mhlev", "rwh", "raingarden", "interceptor", "backdrop", "pipelab", "swale"],
+  ]);
+  NP_XGROUPS.push(["Services", ["bbox", "govr", "streetlamp", "substn", "jointbay", "easement"]]);
+  NP_XGROUPS.push([
+    "Construction phase",
+    ["exclusion", "oversail", "delivery", "banksman", "spoil", "washout", "treefence", "walkway"],
+  ]);
+  NP_XGROUPS.push([
+    "Walls & structure",
+    ["padstonep", "cavtray", "weepvent", "inszone", "lintelp", "steelub", "movjoint", "firewall"],
+  ]);
+  NP_XGROUPS.push([
+    "External works",
+    [
+      "tactile",
+      "stepsrail",
+      "binscreen",
+      "cyclestore",
+      "evbay",
+      "kerb",
+      "kerbdrop",
+      "kerbflush",
+      "retweep",
+      "gabion",
+      "ramp",
+    ],
+  ]);
+  NP_XGROUPS.push([
+    "Notes & details",
+    ["north2", "north3", "revtri", "dns", "keyplan", "secline", "matchline"],
+  ]);
+  [
+    ["cu3", "▤ Consumer unit / distribution board (3-phase)", 600, 300],
+    ["gasboiler", "🔥 Gas boiler (combi / system)", 450, 350],
+    ["unvented", "◎ Unvented hot water cylinder", 600, 600],
+    ["eufh", "⌇ Electric underfloor heating area", 3000, 2500],
+    ["wufh", "∿ Wet underfloor heating area", 3000, 2500],
+    ["mvhrsup", "◉ MVHR supply valve", 250, 250],
+    ["mvhrext", "◉ MVHR extract valve", 250, 250],
+    ["mvhrplen", "▭ MVHR plenum / distribution box", 700, 350],
+    ["mvhrin", "▤ MVHR fresh air intake (outside)", 350, 350],
+    ["mvhrout", "▤ MVHR exhaust terminal (outside)", 350, 350],
+    ["mvhrcond", "◉ MVHR condensate drain", 200, 200],
+  ].forEach(([k, l, a, b]) => {
+    NP_X.add(k);
+    NP_XSHAPES.push([k, l, "Electrics", "pro"]);
+    NP_XREAL[k] = [a, b];
+  });
+  NP_XGROUPS.push(["Electrics", ["cu3"]]);
+  NP_XGROUPS.push([
+    "Heating & ventilation",
+    [
+      "gasboiler",
+      "unvented",
+      "ufhman",
+      "eufh",
+      "wufh",
+      "mvhr",
+      "mvhrsup",
+      "mvhrext",
+      "mvhrplen",
+      "ductsup",
+      "ductext",
+      "mvhrin",
+      "mvhrout",
+      "mvhrcond",
+    ],
+  ]);
+  [
+    [
+      "gasboiler",
+      "unvented",
+      "eufh",
+      "wufh",
+      "mvhrsup",
+      "mvhrext",
+      "mvhrplen",
+      "mvhrin",
+      "mvhrout",
+      "mvhrcond",
+      "cu3",
+    ],
+  ]
+    .flat()
+    .forEach((k) => {
+      const e = NP_XSHAPES.find((x) => x[0] === k);
+      if (e && k !== "cu3") e[2] = "Heating & ventilation";
+    });
+  [
+    ["groundmat", "▦ Ground protection matting", 2400, 1200],
+    ["slope", "⩘ Slope / bank symbol", 1500, 1200],
+    ["wallant", "◐ Outside wall light", 300, 200],
+    ["postlight", "◉ Driveway post / bollard light", 250, 250],
+    ["floodlt", "◭ Floodlight (PIR)", 350, 250],
+    ["vgates", "⌒⌒ Vehicle gates (double swing)", 3600, 1800],
+    ["vslide", "⇥ Sliding vehicle gate", 4000, 400],
+    ["pgate", "⌒ Pedestrian gate", 1000, 1000],
+    ["intercom", "☎ Gate / driveway intercom", 350, 350],
+    ["cctvdome", "◓ CCTV dome camera", 300, 300],
+    ["nvr", "▣ CCTV recorder (DVR / NVR)", 450, 300],
+    ["tpole", "⊕ Telegraph pole (telecoms)", 400, 400],
+    ["epole", "⊕ Electricity pole", 400, 400],
+    ["polestay", "↘ Pole stay", 400, 1200],
+    ["btjb", "▣ Telecoms joint box / chamber", 600, 600],
+    ["fibrept", "◈ Fibre point / connection box", 400, 400],
+    ["fibrecab", "▣ Fibre / street cabinet", 1200, 500],
+    ["attank", "▦ Attenuation tank (crates)", 4000, 2000],
+    ["silttrap", "◉ Silt trap", 600, 600],
+    ["brroad", "═ Road bridge (plan)", 6000, 3000],
+    ["brfoot", "┅ Footbridge (plan)", 4000, 1500],
+    ["brrail", "╫ Rail bridge (plan)", 6000, 3000],
+    ["culvert", "⊐ Culvert", 4000, 1200],
+    ["ebrarch", "◠ Arch bridge (elevation)", 8000, 3000],
+    ["ebrbeam", "▬ Beam bridge (elevation)", 8000, 2500],
+    ["ebrtruss", "⋈ Truss bridge (elevation)", 8000, 3000],
+    ["ebrsusp", "⌒ Suspension bridge (elevation)", 10000, 4000],
+    ["etpole", "┼ Telegraph pole & cables (elevation)", 1500, 8000],
+  ].forEach(([k, l, a, b]) => {
+    NP_X.add(k);
+    NP_XSHAPES.push([
+      k,
+      l,
+      /^e/.test(k) ? "Bridges, poles & cables (side on)" : "Bridges, poles & cables",
+      "pro",
+    ]);
+    NP_XREAL[k] = [a, b];
+  });
+  NP_XGROUPS.push([
+    "Bridges, poles & cables",
+    [
+      "tpole",
+      "epole",
+      "polestay",
+      "ohl",
+      "ohbt",
+      "ubt",
+      "uelec",
+      "fibre",
+      "fibrept",
+      "fibrecab",
+      "btjb",
+      "brroad",
+      "brfoot",
+      "brrail",
+      "culvert",
+    ],
+  ]);
+  NP_XGROUPS.push(["Drainage", ["attank", "silttrap", "landdrain", "soakaway"]]);
+  NP_XGROUPS.push(["Landscaping", ["groundmat", "slope", "embank", "lvlline"]]);
+  NP_XGROUPS.push([
+    "Outside lights, gates & CCTV",
+    [
+      "wallant",
+      "postlight",
+      "floodlt",
+      "gardenlight",
+      "bollard",
+      "vgates",
+      "vslide",
+      "pgate",
+      "intercom",
+      "cctv",
+      "cctvdome",
+      "nvr",
+    ],
+  ]);
+  [
+    ["stripfdn", "┅ Strip foundation (plan)", 3000, 600],
+    ["trenchfdn", "▨ Trench fill foundation (plan)", 3000, 600],
+    ["raft", "▦ Raft foundation (plan)", 5000, 4000],
+    ["pilecap", "⊞ Pile cap", 900, 900],
+    ["groundbeam", "═ Ground beam", 3000, 450],
+    ["fdnstep", "⌐ Step in foundation", 600, 600],
+  ].forEach(([k, l, a, b]) => {
+    NP_X.add(k);
+    NP_XSHAPES.push([k, l, "Foundations", "pro"]);
+    NP_XREAL[k] = [a, b];
+  });
+  NP_XGROUPS.push([
+    "Foundations",
+    ["stripfdn", "trenchfdn", "raft", "pilecap", "groundbeam", "fdnstep", "padfdn", "pile", "pier"],
+  ]);
+  NP_X.forEach((k) => NP_DES_BOX.add(k));
+  NP_LIB.splice(
+    NP_LIB.findIndex((c) => c[0] === "elev" && c[1] === "Garden & scale") + 1 || NP_LIB.length,
+    0,
+    ["elev", "Bridges, poles & cables", ["ebrarch", "ebrbeam", "ebrtruss", "ebrsusp", "etpole"]],
+  );
+  NP_XGROUPS.forEach(([g, ks]) => {
+    const e = NP_LIB.find((c) => c[1] === g && c[0] !== "elev");
+    if (e)
+      ks.forEach((k) => {
+        if (!e[2].includes(k)) e[2].push(k);
+      });
+    else {
+      const i = NP_LIB.findIndex((c) => c[0] === "elev");
+      NP_LIB.splice(i < 0 ? NP_LIB.length : i, 0, ["plan", g, ks.slice()]);
+    }
+  });
 }

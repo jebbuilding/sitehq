@@ -61,13 +61,13 @@ Every file under `src/app/` has the same three parts, in this order:
 import { CH } from "./chat.js";                                 ← 2. import/export block – GENERATED
 import { esc } from "../core/helpers.js";
 export { intlNum, isApple, openCallSheet, phoneOf };
-const intlNum=n=>{…};                                           ← 3. the code
-function phoneOf(id){…}
+const intlNum = (n) => {…};                                     ← 3. the code
+function phoneOf(id) {…}
 ```
 
 1. **Banner** – one comment line, written when the feature was built. It is the file's description, and `scripts/split.mjs` matches sections to files by it, so don't reword one casually.
 2. **Import/export block** – written by `npm run modules`, never by hand. Every top-level name in the app is unique (checked), so "which file declares this name" has exactly one answer: use a name from another file, run `npm run modules`, and the import and the matching export appear. A name nothing else uses is not exported.
-3. **Code** – top-level declarations only (functions, `const`, `let`). **A file does nothing when it is loaded.** If it needs to wire up part of the page at start-up, it declares an `initSomething()` function and `core/boot.js` calls it.
+3. **Code** – top-level declarations only (functions, `const`, `let`), formatted with Prettier (`npm run format`; settings in `.prettierrc.json`). HTML is still built in template literals, which Prettier leaves as they are, so those lines stay long. **A file does nothing when it is loaded.** If it needs to wire up part of the page at start-up, it declares an `initSomething()` function and `core/boot.js` calls it.
 
 Three conventions follow from being real modules:
 - **A variable can only be assigned in the file that declares it.** Other files go through a setter (`setEditing`, `setFormType`, `setKindVal`, `setProxyFor`, `setNpScx`, `setPinFails`, `setPinLockUntil`). Reading an imported variable always gives its current value.
@@ -104,6 +104,7 @@ src/shell.html       ─► shell + <script> + that + </script>  =  dist/index.h
 - any file other than `core/boot.js` has a statement that runs at load;
 - a file uses another file's `const`/`let` *while it is being loaded* (for example in an initialiser) and that other file imports it back, directly or through other files – in a loop like that the value may not be ready;
 - an import/export block, or `docs/MODULES.md`, is not what `npm run modules` would write;
+- a file is not formatted the way Prettier would format it (`npm run format` fixes it);
 - esbuild rejects the modules (for example an assignment to an import), or would evaluate them in a different order from `bundle.mjs`.
 
 `npm run build` and `npm run dev` need no `npm install`; the checks do.
@@ -113,7 +114,8 @@ Each step either left the built page provably unchanged or was compared against 
 1. **Cut into files**: `dist/index.html` byte-for-byte identical to the build from the single `app.js` (same SHA-256); then three banner comments added (identical with banner lines ignored).
 2. **Import/export blocks added**: build byte-for-byte identical again (the blocks are dropped when joining).
 3. **Setters** for the 39 assignments made from another file, **`init` functions** for the 93 statements that ran at load, two small files split out so the low-level helpers import nothing (`timesheets/working-day.js`, `people/employment-types.js`), and **order derived from imports**: here the text does change, so the original and new pages were both loaded with the fake backend and the value of every top-level name compared straight after load. All 1,244 names present in both were identical (data tables, state, the wrapped `render`), apart from the 17 functions containing the setter edits and one timestamp.
-4. The full suite (35 flows, owner/trade/client crawls) at each step.
+4. **Formatting with Prettier**: for all 128 files the syntax tree and the comments are identical before and after (parsed with acorn; the only normalisation is that `a||(b||c)` and `(a||b)||c` count as the same, which Prettier regroups). After load, every non-function value is identical too.
+5. The full suite (35 flows, owner/trade/client crawls) at each step, and the 49 per-feature scripts in `tests/features/` compared against their output on the original build.
 
 ## What is still coupled
 Being modules makes the coupling explicit; it does not remove it. `docs/MODULES.md` has the numbers: about 1,430 file-to-file imports, and 116 of the 128 files import each other in one loop.

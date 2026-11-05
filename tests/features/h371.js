@@ -11,7 +11,7 @@ src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];wi
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 const page_src=fs.readFileSync('timesheets.html','utf8');
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:430,height:900},hasTouch:true});ctx.setDefaultTimeout(6000);const p=await ctx.newPage();p.on('pageerror',e=>console.log('ERR',e.message));await ctx.route(/^https?:\/\//,r=>r.abort());
- try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(false)+page_src.replace('function detailsDone(d){return !!(d&&d.confirmedAt)}','function detailsDone(d){return true}')+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
+ try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(false)+page_src.replace('function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}','function detailsDone(d){return true}')+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  await p.waitForTimeout(500);await p.click('.tab[data-t=planner]');await p.waitForTimeout(700);await p.evaluate(()=>document.querySelector('.pb-top').scrollIntoView());await p.screenshot({path:'pb5.png'});console.log('daysheet',(await p.innerText('.pb-ds')).replace(/\n/g,' | ').slice(0,300));
  }catch(e){console.log('FAIL',e.message.split('\n').slice(0,4).join('|'))}
  await b.close()})();

@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 node scripts/build.mjs
 node scripts/modules.mjs --check   # structure checks + docs/MODULES.md is current
+npx prettier --check src/app --log-level warn   # formatting (fix with: npm run format)
 cd tests
 [ -d jspdfpkg ] || ../scripts/vendor.sh
 out=$(node flows.js 2>&1 || true)

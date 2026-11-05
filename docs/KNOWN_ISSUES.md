@@ -17,7 +17,10 @@
 - Shared helpers live in whichever section first needed them (e.g. `loadJsPdf` in `safety/site-inductions.js`, `BRGB`/`pdfLogo` in `photos/photos.js`). File names follow the banners, which were not checked against every line of content.
 - `todos` is a schemaless catch-all keyed by `kind`; `signoffs` subcollection likewise by `type`.
 - Some older features predate the IIFE module pattern and share globals.
-- Tests run against a fake backend that doesn't enforce rules; ~50 feature scripts are kept (older ones dropped), they print results rather than assert in a framework.
+- Tests run against a fake backend that doesn't enforce rules; ~50 feature scripts are kept (older ones dropped), they print results rather than assert in a framework, and they are not part of `npm test`.
+- The feature scripts reach into the app by replacing exact source text in the built page (nine anchors such as `function render() {`). A replace that stops matching does nothing, so a script can silently stop testing what it claims to (`CLAUDE.md` › Gotchas).
+- Four feature scripts exit with an error on the original v323 build and still do: `h38`, `h385`, `h39`, `h40`. `h384` has a race after a tab click (its output depends on timing, not on the app).
+- The published page grew when the code was formatted: 2.25 MB → 2.90 MB, or 674 KB → 758 KB gzipped (+12%), and the script takes 10–18% longer to parse and run (about +0.07 s with the CPU slowed 4×, +0.1 s slowed 6×). Minifying at build time would undo both, but the build must keep the source text until the artifact is frozen (`docs/ARCHITECTURE.md` › Build).
 
 ## Product open items (from James)
 - Permit numbers for EMS and Stuart Partners waste transfer sites (Setup › Waste transfer sites).

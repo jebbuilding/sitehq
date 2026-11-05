@@ -3,7 +3,7 @@ let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;'+seed);
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
-const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S={db:null','const S=window.__S={db:null');
+const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null');
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:430,height:900},hasTouch:true});ctx.setDefaultTimeout(6000);const p=await ctx.newPage();p.on('pageerror',e=>console.log('ERR',e.message));await ctx.route(/^https?:\/\//,r=>r.abort());
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  // delete a timesheet entry of emp1 and the client c1 + a plan entry via the db wrapper, as the UI would

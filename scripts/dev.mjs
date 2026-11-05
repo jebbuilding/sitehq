@@ -58,7 +58,7 @@ function page(role, onboarding) {
   let app = bundleApp();
   logoId = between(app, 'const LOGO_ID="', '"', "LOGO_ID in the app");
   if (role === "trade" && !onboarding) { // as the crawl does: skip the "fill in your details" gate
-    const gate = "function detailsDone(d){return !!(d&&d.confirmedAt)}";
+    const gate = "function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}";
     if (!app.includes(gate)) throw new Error("dev: cannot find detailsDone in the app – has it changed shape?");
     app = app.replace(gate, () => "function detailsDone(d){return true}");
   }

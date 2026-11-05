@@ -35,6 +35,7 @@ scripts/bundle.mjs    joins the modules into the one app script, in the order th
 scripts/build.mjs     shell + app → dist/index.html (+ syntax check); copies to tests/timesheets.html
 scripts/analyze.mjs   parses src/app/ (acorn + eslint-scope): what each file declares and uses
 scripts/modules.mjs   writes each file's import/export block and docs/MODULES.md, runs the structure checks (`npm run modules`; `npm run check` only verifies)
+.prettierrc.json      formatting for src/app/ only (`npm run format` = Prettier + modules)
 scripts/split.mjs     the reverse: cuts a built or published page back into src/app/ (for merging artifact-side versions)
 scripts/dev.mjs       local dev server: src/ + the tests' fake backend, at localhost:4321/owner|trade|client
 scripts/vendor.sh     npm-packs jsPDF, pdf.js, SheetJS, mammoth, qrcode-generator into tests/ for offline tests

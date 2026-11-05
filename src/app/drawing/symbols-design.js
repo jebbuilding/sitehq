@@ -3,95 +3,1048 @@ import { npLbl, npStairs } from "./construction-details.js";
 import { NP_X, npXSym } from "./symbols-more.js";
 import { npHexMix } from "./walls.js";
 export { NP_DES_BOX, npDesignLine, npDesignSym, npScallop };
-const NP_DES_BOX=new Set(["firepoint","elecpoint","stopcock","gaspoint","canteen","dryroom","fireassembly","fireext","portaloo","container","siteoffice","sauna","studio","gardenroom","gardenoffice","stairsu","rooflight","lantern","stairsl","spiral","column","chimney","dbed","sbed","sofa","table","wardrobe","island","desk","patio","decking","lawn","gravel","blockpave","planting","shrub","pond","shed","car","parking","bins","gsteps","elant","echim","estairs","efence","egate","etree","eperson","ehedge"]);
-function npScallop(ctx,pts,closed,amp){const n=pts.length;ctx.beginPath();for(let i=0;i<(closed?n:n-1);i++){const p=pts[i],q=pts[(i+1)%n];const mx=(p[0]+q[0])/2,my=(p[1]+q[1])/2,r=Math.hypot(q[0]-p[0],q[1]-p[1])/2,an=Math.atan2(q[1]-p[1],q[0]-p[0]);if(i===0)ctx.moveTo(p[0],p[1]);ctx.arc(mx,my,r,an+Math.PI,an,false)}ctx.stroke()}
-function npDesignSym(ctx,o,x0,y0,w,h,cx,cy){if(NP_X.has(o.k)){npXSym(ctx,o,x0,y0,w,h,cx,cy);return}if(o.k==="stairsl"||o.k==="stairsu"){npStairs(ctx,o,x0,y0,w,h);return}const lw=ctx.lineWidth,mm=ctx.__mm||0,c=ctx.strokeStyle;const m=Math.min(w,h),v=w>=h,x1=x0+w,y1=y0+h;
-  const ln=(a,b,cc,d)=>{ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(cc,d);ctx.stroke()};const thin=f=>{ctx.lineWidth=Math.max(lw*(f||0.5),0.5)};const full=()=>{ctx.lineWidth=lw};
-  const ell=(x,y,rx,ry,fill)=>{ctx.beginPath();ctx.ellipse(x,y,Math.max(.5,rx),Math.max(.5,ry),0,0,7);if(fill)ctx.fill();ctx.stroke()};
-  const clip=fn=>{ctx.save();ctx.beginPath();ctx.rect(x0,y0,w,h);ctx.clip();fn();ctx.restore()};const R=(v2,fb)=>mm?v2*mm:fb;
-  const dash=fn=>{ctx.save();ctx.setLineDash([lw*3,lw*2.5]);fn();ctx.restore()};const lbl=(t,f)=>npLbl(ctx,t,cx,cy,Math.min(h*0.4,w/(t.length*0.7))*(f||1));
-  const rrect=(x,y,ww,hh,r)=>{ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,ww,hh,Math.min(r,ww/2,hh/2));else ctx.rect(x,y,ww,hh);ctx.stroke()};
-  const arrow=(a,b)=>{ln(a[0],a[1],b[0],b[1]);const an=Math.atan2(b[1]-a[1],b[0]-a[0]),hh=Math.max(8,lw*4);ln(b[0],b[1],b[0]-hh*Math.cos(an-0.5),b[1]-hh*Math.sin(an-0.5));ln(b[0],b[1],b[0]-hh*Math.cos(an+0.5),b[1]-hh*Math.sin(an+0.5))};
-  switch(o.k){
-    case "rooflight":{ctx.strokeRect(x0,y0,w,h);const i=m*0.12;thin(0.7);ctx.strokeRect(x0+i,y0+i,w-2*i,h-2*i);dash(()=>{ln(x0+i,y0+i,x1-i,y1-i);ln(x1-i,y0+i,x0+i,y1-i)});full();break}
-    case "lantern":{ctx.strokeRect(x0,y0,w,h);const i=m*0.06;thin(0.7);ctx.strokeRect(x0+i,y0+i,w-2*i,h-2*i);const r=m/2-i;const A=v?[x0+i+r,cy]:[cx,y0+i+r],B=v?[x1-i-r,cy]:[cx,y1-i-r];ln(A[0],A[1],B[0],B[1]);
-      [[x0+i,y0+i,A],[x0+i,y1-i,A],[x1-i,y0+i,B],[x1-i,y1-i,B]].forEach(([px,py,q])=>{if(!v)q=(py<cy?A:B);ln(px,py,q[0],q[1])});
-      thin(0.4);const st=R(600,m*0.3);if(v){for(let x=A[0]+st;x<B[0];x+=st){ln(x,y0+i,x,cy);ln(x,cy,x,y1-i)}}else{for(let y=A[1]+st;y<B[1];y+=st){ln(x0+i,y,cx,y);ln(cx,y,x1-i,y)}}full();break}
-    case "stairsl_old":{const fw=m*0.38;ctx.strokeRect(x0,y1-fw,w-fw,fw);ctx.strokeRect(x1-fw,y0,fw,h-fw);ctx.strokeRect(x1-fw,y1-fw,fw,fw);thin(0.7);const n1=Math.max(3,Math.round((w-fw)/Math.max(fw*0.28,R(250,10))));for(let k=1;k<n1;k++){const x=x0+(w-fw)*k/n1;ln(x,y1-fw,x,y1)}
-      const n2=Math.max(3,Math.round((h-fw)/Math.max(fw*0.28,R(250,10))));for(let k=1;k<n2;k++){const y=y0+(h-fw)*k/n2;ln(x1-fw,y,x1,y)}full();ctx.beginPath();ctx.moveTo(x0+fw*0.2,y1-fw/2);ctx.lineTo(x1-fw/2,y1-fw/2);ctx.lineTo(x1-fw/2,y0+fw*0.6);ctx.stroke();arrow([x1-fw/2,y0+fw*0.9],[x1-fw/2,y0+fw*0.3]);
-      ell(x0+fw*0.2,y1-fw/2,m*0.025,m*0.025,true);break}
-    case "spiral":{const r=m/2;ell(cx,cy,r,r);ell(cx,cy,r*0.15,r*0.15);thin(0.6);const n=14;for(let k=0;k<n;k++){const a=2*Math.PI*k/n;ln(cx+Math.cos(a)*r*0.15,cy+Math.sin(a)*r*0.15,cx+Math.cos(a)*r,cy+Math.sin(a)*r)}full();ctx.beginPath();ctx.arc(cx,cy,r*0.6,-Math.PI*0.9,Math.PI*0.6);ctx.stroke();
-      const a=Math.PI*0.6;const p=[cx+Math.cos(a)*r*0.6,cy+Math.sin(a)*r*0.6];arrow([p[0]+Math.sin(a)*r*0.15,p[1]-Math.cos(a)*r*0.15],p);break}
-    case "column":{ctx.fillRect(x0,y0,w,h);ctx.strokeRect(x0,y0,w,h);break}
-    case "chimney":{ctx.strokeRect(x0,y0,w,h);clip(()=>{thin(0.45);const st=Math.max(m/5,R(50,4));for(let x=x0-h;x<x1;x+=st)ln(x,y1,x+h,y0)});ctx.save();ctx.fillStyle="#fff";const f=m*0.28;ctx.fillRect(cx-f,cy-f,2*f,2*f);ctx.restore();ctx.strokeRect(cx-f,cy-f,2*f,2*f);break}
-    case "dbed":case "sbed":{ctx.strokeRect(x0,y0,w,h);const pw=o.k==="dbed"?2:1,ph=h*0.14,g=w*0.06;for(let k=0;k<pw;k++){const ww=(w-g*(pw+1))/pw;rrect(x0+g+k*(ww+g),y0+h*0.04,ww,ph,ph*0.3)}thin(0.6);ln(x0,y0+h*0.3,x1,y0+h*0.3);ln(x0,y0+h*0.3,x0+w*0.25,y0+h*0.42);full();break}
-    case "sofa":{rrect(x0,y0,w,h,m*0.12);const t=h*0.25,a=w*0.1;thin(0.7);ln(x0+a,y0+t,x1-a,y0+t);ln(x0+a,y0+t,x0+a,y1);ln(x1-a,y0+t,x1-a,y1);const n=Math.max(2,Math.round((w-2*a)/h));for(let k=1;k<n;k++){const x=x0+a+(w-2*a)*k/n;ln(x,y0+t,x,y1)}full();break}
-    case "table":{const cs=Math.min(m*0.28,R(450,m*0.28));const tx=x0+cs*0.9,ty=y0+cs*0.9,tw=w-cs*1.8,th=h-cs*1.8;ctx.strokeRect(tx,ty,tw,th);thin(0.7);const n=Math.max(1,Math.round(tw/(cs*1.6)));
-      for(let k=0;k<n;k++){const x=tx+tw*(k+0.5)/n-cs/2;ctx.strokeRect(x,y0,cs,cs*0.8);ctx.strokeRect(x,y1-cs*0.8,cs,cs*0.8)}if(th>cs*1.2){ctx.strokeRect(x0,cy-cs/2,cs*0.8,cs);ctx.strokeRect(x1-cs*0.8,cy-cs/2,cs*0.8,cs)}full();break}
-    case "wardrobe":{ctx.strokeRect(x0,y0,w,h);dash(()=>{if(v)ln(x0+w*0.04,cy,x1-w*0.04,cy);else ln(cx,y0+h*0.04,cx,y1-h*0.04)});thin(0.5);const n=v?Math.max(2,Math.round(w/(h*1.1))):Math.max(2,Math.round(h/(w*1.1)));for(let k=1;k<n;k++){if(v)ln(x0+w*k/n,y0,x0+w*k/n,y1);else ln(x0,y0+h*k/n,x1,y0+h*k/n)}full();break}
-    case "island":{ctx.strokeRect(x0,y0,w,h*0.75);dash(()=>ctx.strokeRect(x0,y0,w,h*0.62));const n=Math.max(2,Math.round(w/(h*0.6)));thin(0.7);for(let k=0;k<n;k++)ell(x0+w*(k+0.5)/n,y0+h*0.88,h*0.11,h*0.11);full();break}
-    case "desk":{ctx.strokeRect(x0,y0,w,h*0.62);thin(0.7);ell(cx,y0+h*0.82,h*0.16,h*0.16);full();break}
-    case "patio":case "blockpave":{ctx.strokeRect(x0,y0,w,h);clip(()=>{thin(0.45);if(o.k==="patio"){const st=R(600,Math.max(m/6,8));for(let x=x0+st;x<x1;x+=st)ln(x,y0,x,y1);for(let y=y0+st;y<y1;y+=st)ln(x0,y,x1,y)}
-      else{const bh=R(100,Math.max(m/24,4)),bl=bh*2;let r=0;for(let y=y0;y<y1;y+=bh,r++){ln(x0,y,x1,y);for(let x=x0+(r%2?bl/2:0);x<x1;x+=bl)ln(x,y,x,y+bh)}}});full();break}
-    case "decking":{ctx.strokeRect(x0,y0,w,h);clip(()=>{thin(0.45);const st=R(145,Math.max(m/18,4));if(v){for(let y=y0+st;y<y1;y+=st)ln(x0,y,x1,y)}else{for(let x=x0+st;x<x1;x+=st)ln(x,y0,x,y1)}});full();break}
-    case "lawn":case "gravel":{dash(()=>ctx.strokeRect(x0,y0,w,h));clip(()=>{const st=o.k==="lawn"?R(400,Math.max(m/8,10)):R(120,Math.max(m/20,5));let k=0;thin(0.5);for(let y=y0+st/2;y<y1;y+=st,k++)for(let x=x0+(k%2?st/2:st/6);x<x1;x+=st){
-        if(o.k==="lawn"){const t=st*0.18;ln(x-t,y,x,y-t*1.6);ln(x,y-t*1.6,x+t,y);ln(x,y,x,y-t*1.9)}else{ctx.beginPath();ctx.arc(x+((x*7+y*3)%3-1)*st*0.15,y,Math.max(lw*0.4,0.5),0,7);ctx.fill()}}});full();break}
-    case "planting":case "shrub":case "ehedge":{if(o.k==="ehedge"){ctx.beginPath();ctx.moveTo(x0,y1);ctx.lineTo(x0,y0+h*0.25);ctx.stroke();ctx.beginPath();ctx.moveTo(x1,y0+h*0.25);ctx.lineTo(x1,y1);ctx.lineTo(x0,y1);ctx.stroke();const n=Math.max(4,Math.round(w/(h*0.35)));const pts=[];for(let k=0;k<=n;k++)pts.push([x0+w*k/n,y0+h*0.25]);npScallop(ctx,pts,false);
-        thin(0.4);clip(()=>{for(let k=0;k<n*3;k++){const x=x0+w*((k*37)%100)/100,y=y0+h*0.35+h*0.55*((k*53)%100)/100;ctx.beginPath();ctx.arc(x,y,h*0.05,Math.PI,2*Math.PI);ctx.stroke()}});full();break}
-      const n=Math.max(8,Math.round((w+h)/(m*0.35)));const pts=[];for(let k=0;k<n;k++){const a=2*Math.PI*k/n;pts.push([cx+w/2*Math.cos(a),cy+h/2*Math.sin(a)])}npScallop(ctx,pts,true);
-      if(o.k==="shrub"){ell(cx,cy,m*0.04,m*0.04,true)}else{thin(0.6);const st=Math.max(m*0.3,R(500,10));for(let y=y0+st/2;y<y1;y+=st)for(let x=x0+st/2;x<x1;x+=st){const dx=(x-cx)/(w/2),dy=(y-cy)/(h/2);if(dx*dx+dy*dy<0.6)ell(x,y,st*0.22,st*0.22)}full()}break}
-    case "pond":{const n=10;ctx.beginPath();for(let k=0;k<=n;k++){const a=2*Math.PI*k/n,rr=1+0.08*Math.sin(k*2.3);const p=[cx+w/2*rr*Math.cos(a),cy+h/2*rr*Math.sin(a)];k?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])}ctx.closePath();ctx.stroke();
-      thin(0.5);[[0.3,-0.15],[0.55,0.15],[0.4,0.35]].forEach(([a,b])=>{const y=cy+h*b*0.8,x=x0+w*a;ctx.beginPath();for(let k=0;k<=6;k++){const px=x+k*w*0.04,py=y+Math.sin(k*1.6)*h*0.02;k?ctx.lineTo(px,py):ctx.moveTo(px,py)}ctx.stroke()});full();break}
-    case "elecpoint":case "gaspoint":{const col=o.k==="elecpoint"?"#dc2626":"#d4a106";ctx.save();ctx.fillStyle=o.k==="elecpoint"?"#fee2e2":"#fef3c7";ctx.fillRect(x0,y0,w,h);ctx.strokeStyle=col;ctx.lineWidth=lw*1.3;ctx.strokeRect(x0,y0,w,h);ctx.fillStyle=col;
-      if(o.k==="elecpoint"){ctx.beginPath();const s2=m*0.36;ctx.moveTo(cx+s2*0.15,cy-s2);ctx.lineTo(cx-s2*0.45,cy+s2*0.1);ctx.lineTo(cx-s2*0.02,cy+s2*0.1);ctx.lineTo(cx-s2*0.2,cy+s2);ctx.lineTo(cx+s2*0.45,cy-s2*0.15);ctx.lineTo(cx+s2*0.02,cy-s2*0.15);ctx.closePath();ctx.fill()}
-      else{ctx.font=`800 ${m*0.55}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("G",cx,cy+m*0.03)}ctx.restore();break}
-    case "stopcock":{const col="#2563eb";ctx.save();ctx.strokeStyle=col;ctx.fillStyle="#dbeafe";ctx.lineWidth=lw*1.3;ell(cx,cy,w/2,h/2,true);ctx.fillStyle=col;const s2=m*0.28;ctx.beginPath();ctx.moveTo(cx-s2,cy-s2*0.7);ctx.lineTo(cx+s2,cy+s2*0.7);ctx.lineTo(cx+s2,cy-s2*0.7);ctx.lineTo(cx-s2,cy+s2*0.7);ctx.closePath();ctx.fill();ln(cx,cy,cx,cy-s2*1.2);ln(cx-s2*0.5,cy-s2*1.2,cx+s2*0.5,cy-s2*1.2);ctx.restore();break}
-    case "fireassembly":{ctx.save();ctx.fillStyle="#15803d";ctx.fillRect(x0,y0,w,h);ctx.strokeStyle="#fff";ctx.lineWidth=Math.max(lw,m*0.03);ctx.strokeRect(x0+m*0.05,y0+m*0.05,w-m*0.1,h-m*0.1);ctx.fillStyle="#fff";
-      const ppl=[[-0.22,0],[0,-0.05],[0.22,0]];ppl.forEach(([dx,dy])=>{const px=cx+dx*w,py=y0+h*0.38+dy*h;ctx.beginPath();ctx.arc(px,py-m*0.12,m*0.06,0,7);ctx.fill();ctx.fillRect(px-m*0.05,py-m*0.05,m*0.1,m*0.2)});
-      ctx.font=`700 ${Math.min(h*0.12,w/12)}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("FIRE ASSEMBLY",cx,y0+h*0.72);ctx.fillText("POINT",cx,y0+h*0.86);ctx.restore();break}
-    case "firepoint":{ctx.save();ctx.fillStyle="#dc2626";ctx.fillRect(x0,y0,w,h);ctx.strokeStyle="#fff";ctx.lineWidth=Math.max(lw,m*0.03);ctx.strokeRect(x0+m*0.05,y0+m*0.05,w-m*0.1,h-m*0.1);ctx.fillStyle="#fff";
-      [-0.18,0.18].forEach(dx=>{const bw=w*0.16,bh=h*0.36,bx=cx+dx*w-bw/2,by=y0+h*0.3;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,bw*0.35);else ctx.rect(bx,by,bw,bh);ctx.fill();ctx.fillRect(cx+dx*w-bw*0.18,y0+h*0.2,bw*0.36,h*0.1)});
-      ctx.beginPath();ctx.arc(cx,y0+h*0.48,m*0.07,0,7);ctx.fill();ctx.font=`800 ${Math.min(h*0.14,w/7)}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("FIRE POINT",cx,y0+h*0.84);ctx.restore();break}
-    case "fireext":{ctx.save();ctx.fillStyle="#dc2626";ctx.fillRect(x0,y0,w,h);ctx.fillStyle="#fff";const bw=w*0.28,bh=h*0.55,bx=cx-bw/2,by=y0+h*0.3;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,bw*0.35);else ctx.rect(bx,by,bw,bh);ctx.fill();ctx.fillRect(cx-bw*0.18,y0+h*0.18,bw*0.36,h*0.13);
-      ctx.strokeStyle="#fff";ctx.lineWidth=Math.max(lw,m*0.04);ln(cx+bw*0.1,y0+h*0.2,cx+bw*0.9,y0+h*0.14);ln(cx+bw*0.9,y0+h*0.14,cx+bw*1.1,y0+h*0.45);ctx.restore();break}
-    case "canteen":case "dryroom":{const t=R(60,m*0.04);ctx.strokeRect(x0,y0,w,h);thin(0.55);ctx.strokeRect(x0+t,y0+t,w-2*t,h-2*t);full();
-      if(o.k==="canteen"){const tw=w*0.4,th=h*0.28;ctx.strokeRect(cx-tw/2,cy-th/2+h*0.08,tw,th);thin(0.6);[-0.3,0,0.3].forEach(f=>{ctx.strokeRect(cx+f*tw-tw*0.08,cy-th/2+h*0.08-th*0.42,tw*0.16,th*0.3);ctx.strokeRect(cx+f*tw-tw*0.08,cy+th/2+h*0.08+th*0.12,tw*0.16,th*0.3)});ctx.strokeRect(x0+t,y0+t,w*0.35,h*0.16);full();npLbl(ctx,"CANTEEN",cx,y0+h*0.2+t,Math.min(h*0.14,w/9))}
-      else{thin(0.6);const ry=y0+t+h*0.22;ln(x0+t+w*0.08,ry,x1-t-w*0.08,ry);for(let x=x0+t+w*0.12;x<x1-t-w*0.1;x+=w*0.09){ctx.beginPath();ctx.moveTo(x,ry);ctx.lineTo(x-w*0.025,ry+h*0.18);ctx.lineTo(x+w*0.025,ry+h*0.18);ctx.closePath();ctx.stroke()}ctx.strokeRect(x1-t-w*0.18,y1-t-h*0.14,w*0.16,h*0.12);full();npLbl(ctx,"DRYING ROOM",cx,y1-h*0.3,Math.min(h*0.13,w/11))}break}
-    case "portaloo":{ctx.strokeRect(x0,y0,w,h);const t=R(50,m*0.06);thin(0.6);ctx.strokeRect(x0+t,y0+t,w-2*t,h-2*t);full();ctx.save();ctx.fillStyle="#fff";ctx.fillRect(x0+w*0.25,y1-t*1.2,w*0.5,t*1.4);ctx.restore();
-      thin(0.5);ctx.beginPath();ctx.arc(x0+w*0.25,y1,w*0.5,-Math.PI/2,0);dash(()=>ctx.stroke());full();ell(cx,y0+h*0.36,w*0.13,h*0.16);ctx.strokeRect(cx-w*0.2,y0+t,w*0.4,h*0.12);npLbl(ctx,"WC",cx,y0+h*0.72,Math.min(h*0.16,w*0.2));break}
-    case "container":case "siteoffice":{ctx.strokeRect(x0,y0,w,h);const t=R(60,m*0.04);thin(0.55);ctx.strokeRect(x0+t,y0+t,w-2*t,h-2*t);
-      if(o.k==="container"){const st=R(300,(v?w:h)/16);clip(()=>{if(v)for(let x=x0+st;x<x1;x+=st)ln(x,y0,x,y0+t),ln(x,y1-t,x,y1);else for(let y=y0+st;y<y1;y+=st)ln(x0,y,x0+t,y),ln(x1-t,y,x1,y)});full();ctx.lineWidth=lw*1.6;if(v){ln(x1,y0+t,x1,cy-t*0.3);ln(x1,cy+t*0.3,x1,y1-t)}else{ln(x0+t,y1,cx-t*0.3,y1);ln(cx+t*0.3,y1,x1-t,y1)}full();lbl(mm&&(v?w:h)>9000*mm?"40ft CONTAINER":"CONTAINER",0.5)}
-      else{full();const dw=R(800,(v?w:h)*0.16);ctx.save();ctx.fillStyle="#fff";if(v)ctx.fillRect(x0+w*0.12,y1-t*1.3,dw,t*1.6);else ctx.fillRect(x1-t*1.3,y0+h*0.12,t*1.6,dw);ctx.restore();thin(0.5);if(v){ctx.beginPath();ctx.arc(x0+w*0.12,y1-t,dw,-Math.PI/2,0);dash(()=>ctx.stroke())}else{ctx.beginPath();ctx.arc(x1-t,y0+h*0.12,dw,Math.PI/2,Math.PI);dash(()=>ctx.stroke())}
-        [[0.45,0.65],[0.75,0.9]].forEach(([a,b2])=>{if(v){ln(x0+w*a,y0,x0+w*b2,y0);ln(x0+w*a,y0+t,x0+w*b2,y0+t)}else{ln(x0,y0+h*a,x0,y0+h*b2);ln(x0+t,y0+h*a,x0+t,y0+h*b2)}});
-        if(v){ctx.strokeRect(x1-t-w*0.28,y0+t,w*0.28,h*0.32)}else{ctx.strokeRect(x0+t,y1-t-h*0.28,w*0.32,h*0.28)}full();lbl("SITE OFFICE",0.5)}break}
-    case "sauna":{const t=R(70,m*0.05);ctx.strokeRect(x0,y0,w,h);thin(0.55);ctx.strokeRect(x0+t,y0+t,w-2*t,h-2*t);clip(()=>{const st=R(90,m/18);for(let y=y0+t+st;y<y1-t;y+=st)ln(x0+t,y,x1-t,y)});full();ctx.save();ctx.fillStyle=npHexMix(c,0.85);
-      ctx.fillRect(x0+t,y0+t,w-2*t,h*0.22);ctx.fillRect(x0+t,y0+t,w*0.22,h-2*t);ctx.restore();ctx.strokeRect(x0+t,y0+t,w-2*t,h*0.22);ctx.strokeRect(x0+t,y0+t,w*0.22,h-2*t);ctx.strokeRect(x1-t-m*0.22,y1-t-m*0.22,m*0.2,m*0.2);thin(0.5);ln(x1-t-m*0.22,y1-t-m*0.22,x1-t-m*0.02,y1-t-m*0.02);full();lbl("SAUNA",0.45);break}
-    case "studio":case "gardenroom":case "gardenoffice":{const t=R(150,m*0.06);ctx.strokeRect(x0,y0,w,h);ctx.strokeRect(x0+t,y0+t,w-2*t,h-2*t);
+const NP_DES_BOX = new Set([
+  "firepoint",
+  "elecpoint",
+  "stopcock",
+  "gaspoint",
+  "canteen",
+  "dryroom",
+  "fireassembly",
+  "fireext",
+  "portaloo",
+  "container",
+  "siteoffice",
+  "sauna",
+  "studio",
+  "gardenroom",
+  "gardenoffice",
+  "stairsu",
+  "rooflight",
+  "lantern",
+  "stairsl",
+  "spiral",
+  "column",
+  "chimney",
+  "dbed",
+  "sbed",
+  "sofa",
+  "table",
+  "wardrobe",
+  "island",
+  "desk",
+  "patio",
+  "decking",
+  "lawn",
+  "gravel",
+  "blockpave",
+  "planting",
+  "shrub",
+  "pond",
+  "shed",
+  "car",
+  "parking",
+  "bins",
+  "gsteps",
+  "elant",
+  "echim",
+  "estairs",
+  "efence",
+  "egate",
+  "etree",
+  "eperson",
+  "ehedge",
+]);
+function npScallop(ctx, pts, closed, amp) {
+  const n = pts.length;
+  ctx.beginPath();
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const p = pts[i],
+      q = pts[(i + 1) % n];
+    const mx = (p[0] + q[0]) / 2,
+      my = (p[1] + q[1]) / 2,
+      r = Math.hypot(q[0] - p[0], q[1] - p[1]) / 2,
+      an = Math.atan2(q[1] - p[1], q[0] - p[0]);
+    if (i === 0) ctx.moveTo(p[0], p[1]);
+    ctx.arc(mx, my, r, an + Math.PI, an, false);
+  }
+  ctx.stroke();
+}
+function npDesignSym(ctx, o, x0, y0, w, h, cx, cy) {
+  if (NP_X.has(o.k)) {
+    npXSym(ctx, o, x0, y0, w, h, cx, cy);
+    return;
+  }
+  if (o.k === "stairsl" || o.k === "stairsu") {
+    npStairs(ctx, o, x0, y0, w, h);
+    return;
+  }
+  const lw = ctx.lineWidth,
+    mm = ctx.__mm || 0,
+    c = ctx.strokeStyle;
+  const m = Math.min(w, h),
+    v = w >= h,
+    x1 = x0 + w,
+    y1 = y0 + h;
+  const ln = (a, b, cc, d) => {
+    ctx.beginPath();
+    ctx.moveTo(a, b);
+    ctx.lineTo(cc, d);
+    ctx.stroke();
+  };
+  const thin = (f) => {
+    ctx.lineWidth = Math.max(lw * (f || 0.5), 0.5);
+  };
+  const full = () => {
+    ctx.lineWidth = lw;
+  };
+  const ell = (x, y, rx, ry, fill) => {
+    ctx.beginPath();
+    ctx.ellipse(x, y, Math.max(0.5, rx), Math.max(0.5, ry), 0, 0, 7);
+    if (fill) ctx.fill();
+    ctx.stroke();
+  };
+  const clip = (fn) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0, y0, w, h);
+    ctx.clip();
+    fn();
+    ctx.restore();
+  };
+  const R = (v2, fb) => (mm ? v2 * mm : fb);
+  const dash = (fn) => {
+    ctx.save();
+    ctx.setLineDash([lw * 3, lw * 2.5]);
+    fn();
+    ctx.restore();
+  };
+  const lbl = (t, f) => npLbl(ctx, t, cx, cy, Math.min(h * 0.4, w / (t.length * 0.7)) * (f || 1));
+  const rrect = (x, y, ww, hh, r) => {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, Math.min(r, ww / 2, hh / 2));
+    else ctx.rect(x, y, ww, hh);
+    ctx.stroke();
+  };
+  const arrow = (a, b) => {
+    ln(a[0], a[1], b[0], b[1]);
+    const an = Math.atan2(b[1] - a[1], b[0] - a[0]),
+      hh = Math.max(8, lw * 4);
+    ln(b[0], b[1], b[0] - hh * Math.cos(an - 0.5), b[1] - hh * Math.sin(an - 0.5));
+    ln(b[0], b[1], b[0] - hh * Math.cos(an + 0.5), b[1] - hh * Math.sin(an + 0.5));
+  };
+  switch (o.k) {
+    case "rooflight": {
+      ctx.strokeRect(x0, y0, w, h);
+      const i = m * 0.12;
+      thin(0.7);
+      ctx.strokeRect(x0 + i, y0 + i, w - 2 * i, h - 2 * i);
+      dash(() => {
+        ln(x0 + i, y0 + i, x1 - i, y1 - i);
+        ln(x1 - i, y0 + i, x0 + i, y1 - i);
+      });
+      full();
+      break;
+    }
+    case "lantern": {
+      ctx.strokeRect(x0, y0, w, h);
+      const i = m * 0.06;
+      thin(0.7);
+      ctx.strokeRect(x0 + i, y0 + i, w - 2 * i, h - 2 * i);
+      const r = m / 2 - i;
+      const A = v ? [x0 + i + r, cy] : [cx, y0 + i + r],
+        B = v ? [x1 - i - r, cy] : [cx, y1 - i - r];
+      ln(A[0], A[1], B[0], B[1]);
+      [
+        [x0 + i, y0 + i, A],
+        [x0 + i, y1 - i, A],
+        [x1 - i, y0 + i, B],
+        [x1 - i, y1 - i, B],
+      ].forEach(([px, py, q]) => {
+        if (!v) q = py < cy ? A : B;
+        ln(px, py, q[0], q[1]);
+      });
+      thin(0.4);
+      const st = R(600, m * 0.3);
+      if (v) {
+        for (let x = A[0] + st; x < B[0]; x += st) {
+          ln(x, y0 + i, x, cy);
+          ln(x, cy, x, y1 - i);
+        }
+      } else {
+        for (let y = A[1] + st; y < B[1]; y += st) {
+          ln(x0 + i, y, cx, y);
+          ln(cx, y, x1 - i, y);
+        }
+      }
+      full();
+      break;
+    }
+    case "stairsl_old": {
+      const fw = m * 0.38;
+      ctx.strokeRect(x0, y1 - fw, w - fw, fw);
+      ctx.strokeRect(x1 - fw, y0, fw, h - fw);
+      ctx.strokeRect(x1 - fw, y1 - fw, fw, fw);
+      thin(0.7);
+      const n1 = Math.max(3, Math.round((w - fw) / Math.max(fw * 0.28, R(250, 10))));
+      for (let k = 1; k < n1; k++) {
+        const x = x0 + ((w - fw) * k) / n1;
+        ln(x, y1 - fw, x, y1);
+      }
+      const n2 = Math.max(3, Math.round((h - fw) / Math.max(fw * 0.28, R(250, 10))));
+      for (let k = 1; k < n2; k++) {
+        const y = y0 + ((h - fw) * k) / n2;
+        ln(x1 - fw, y, x1, y);
+      }
+      full();
+      ctx.beginPath();
+      ctx.moveTo(x0 + fw * 0.2, y1 - fw / 2);
+      ctx.lineTo(x1 - fw / 2, y1 - fw / 2);
+      ctx.lineTo(x1 - fw / 2, y0 + fw * 0.6);
+      ctx.stroke();
+      arrow([x1 - fw / 2, y0 + fw * 0.9], [x1 - fw / 2, y0 + fw * 0.3]);
+      ell(x0 + fw * 0.2, y1 - fw / 2, m * 0.025, m * 0.025, true);
+      break;
+    }
+    case "spiral": {
+      const r = m / 2;
+      ell(cx, cy, r, r);
+      ell(cx, cy, r * 0.15, r * 0.15);
+      thin(0.6);
+      const n = 14;
+      for (let k = 0; k < n; k++) {
+        const a = (2 * Math.PI * k) / n;
+        ln(
+          cx + Math.cos(a) * r * 0.15,
+          cy + Math.sin(a) * r * 0.15,
+          cx + Math.cos(a) * r,
+          cy + Math.sin(a) * r,
+        );
+      }
+      full();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.6, -Math.PI * 0.9, Math.PI * 0.6);
+      ctx.stroke();
+      const a = Math.PI * 0.6;
+      const p = [cx + Math.cos(a) * r * 0.6, cy + Math.sin(a) * r * 0.6];
+      arrow([p[0] + Math.sin(a) * r * 0.15, p[1] - Math.cos(a) * r * 0.15], p);
+      break;
+    }
+    case "column": {
+      ctx.fillRect(x0, y0, w, h);
+      ctx.strokeRect(x0, y0, w, h);
+      break;
+    }
+    case "chimney": {
+      ctx.strokeRect(x0, y0, w, h);
+      clip(() => {
+        thin(0.45);
+        const st = Math.max(m / 5, R(50, 4));
+        for (let x = x0 - h; x < x1; x += st) ln(x, y1, x + h, y0);
+      });
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      const f = m * 0.28;
+      ctx.fillRect(cx - f, cy - f, 2 * f, 2 * f);
+      ctx.restore();
+      ctx.strokeRect(cx - f, cy - f, 2 * f, 2 * f);
+      break;
+    }
+    case "dbed":
+    case "sbed": {
+      ctx.strokeRect(x0, y0, w, h);
+      const pw = o.k === "dbed" ? 2 : 1,
+        ph = h * 0.14,
+        g = w * 0.06;
+      for (let k = 0; k < pw; k++) {
+        const ww = (w - g * (pw + 1)) / pw;
+        rrect(x0 + g + k * (ww + g), y0 + h * 0.04, ww, ph, ph * 0.3);
+      }
+      thin(0.6);
+      ln(x0, y0 + h * 0.3, x1, y0 + h * 0.3);
+      ln(x0, y0 + h * 0.3, x0 + w * 0.25, y0 + h * 0.42);
+      full();
+      break;
+    }
+    case "sofa": {
+      rrect(x0, y0, w, h, m * 0.12);
+      const t = h * 0.25,
+        a = w * 0.1;
+      thin(0.7);
+      ln(x0 + a, y0 + t, x1 - a, y0 + t);
+      ln(x0 + a, y0 + t, x0 + a, y1);
+      ln(x1 - a, y0 + t, x1 - a, y1);
+      const n = Math.max(2, Math.round((w - 2 * a) / h));
+      for (let k = 1; k < n; k++) {
+        const x = x0 + a + ((w - 2 * a) * k) / n;
+        ln(x, y0 + t, x, y1);
+      }
+      full();
+      break;
+    }
+    case "table": {
+      const cs = Math.min(m * 0.28, R(450, m * 0.28));
+      const tx = x0 + cs * 0.9,
+        ty = y0 + cs * 0.9,
+        tw = w - cs * 1.8,
+        th = h - cs * 1.8;
+      ctx.strokeRect(tx, ty, tw, th);
+      thin(0.7);
+      const n = Math.max(1, Math.round(tw / (cs * 1.6)));
+      for (let k = 0; k < n; k++) {
+        const x = tx + (tw * (k + 0.5)) / n - cs / 2;
+        ctx.strokeRect(x, y0, cs, cs * 0.8);
+        ctx.strokeRect(x, y1 - cs * 0.8, cs, cs * 0.8);
+      }
+      if (th > cs * 1.2) {
+        ctx.strokeRect(x0, cy - cs / 2, cs * 0.8, cs);
+        ctx.strokeRect(x1 - cs * 0.8, cy - cs / 2, cs * 0.8, cs);
+      }
+      full();
+      break;
+    }
+    case "wardrobe": {
+      ctx.strokeRect(x0, y0, w, h);
+      dash(() => {
+        if (v) ln(x0 + w * 0.04, cy, x1 - w * 0.04, cy);
+        else ln(cx, y0 + h * 0.04, cx, y1 - h * 0.04);
+      });
+      thin(0.5);
+      const n = v ? Math.max(2, Math.round(w / (h * 1.1))) : Math.max(2, Math.round(h / (w * 1.1)));
+      for (let k = 1; k < n; k++) {
+        if (v) ln(x0 + (w * k) / n, y0, x0 + (w * k) / n, y1);
+        else ln(x0, y0 + (h * k) / n, x1, y0 + (h * k) / n);
+      }
+      full();
+      break;
+    }
+    case "island": {
+      ctx.strokeRect(x0, y0, w, h * 0.75);
+      dash(() => ctx.strokeRect(x0, y0, w, h * 0.62));
+      const n = Math.max(2, Math.round(w / (h * 0.6)));
+      thin(0.7);
+      for (let k = 0; k < n; k++) ell(x0 + (w * (k + 0.5)) / n, y0 + h * 0.88, h * 0.11, h * 0.11);
+      full();
+      break;
+    }
+    case "desk": {
+      ctx.strokeRect(x0, y0, w, h * 0.62);
+      thin(0.7);
+      ell(cx, y0 + h * 0.82, h * 0.16, h * 0.16);
+      full();
+      break;
+    }
+    case "patio":
+    case "blockpave": {
+      ctx.strokeRect(x0, y0, w, h);
+      clip(() => {
+        thin(0.45);
+        if (o.k === "patio") {
+          const st = R(600, Math.max(m / 6, 8));
+          for (let x = x0 + st; x < x1; x += st) ln(x, y0, x, y1);
+          for (let y = y0 + st; y < y1; y += st) ln(x0, y, x1, y);
+        } else {
+          const bh = R(100, Math.max(m / 24, 4)),
+            bl = bh * 2;
+          let r = 0;
+          for (let y = y0; y < y1; y += bh, r++) {
+            ln(x0, y, x1, y);
+            for (let x = x0 + (r % 2 ? bl / 2 : 0); x < x1; x += bl) ln(x, y, x, y + bh);
+          }
+        }
+      });
+      full();
+      break;
+    }
+    case "decking": {
+      ctx.strokeRect(x0, y0, w, h);
+      clip(() => {
+        thin(0.45);
+        const st = R(145, Math.max(m / 18, 4));
+        if (v) {
+          for (let y = y0 + st; y < y1; y += st) ln(x0, y, x1, y);
+        } else {
+          for (let x = x0 + st; x < x1; x += st) ln(x, y0, x, y1);
+        }
+      });
+      full();
+      break;
+    }
+    case "lawn":
+    case "gravel": {
+      dash(() => ctx.strokeRect(x0, y0, w, h));
+      clip(() => {
+        const st = o.k === "lawn" ? R(400, Math.max(m / 8, 10)) : R(120, Math.max(m / 20, 5));
+        let k = 0;
+        thin(0.5);
+        for (let y = y0 + st / 2; y < y1; y += st, k++)
+          for (let x = x0 + (k % 2 ? st / 2 : st / 6); x < x1; x += st) {
+            if (o.k === "lawn") {
+              const t = st * 0.18;
+              ln(x - t, y, x, y - t * 1.6);
+              ln(x, y - t * 1.6, x + t, y);
+              ln(x, y, x, y - t * 1.9);
+            } else {
+              ctx.beginPath();
+              ctx.arc(
+                x + (((x * 7 + y * 3) % 3) - 1) * st * 0.15,
+                y,
+                Math.max(lw * 0.4, 0.5),
+                0,
+                7,
+              );
+              ctx.fill();
+            }
+          }
+      });
+      full();
+      break;
+    }
+    case "planting":
+    case "shrub":
+    case "ehedge": {
+      if (o.k === "ehedge") {
+        ctx.beginPath();
+        ctx.moveTo(x0, y1);
+        ctx.lineTo(x0, y0 + h * 0.25);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x1, y0 + h * 0.25);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x0, y1);
+        ctx.stroke();
+        const n = Math.max(4, Math.round(w / (h * 0.35)));
+        const pts = [];
+        for (let k = 0; k <= n; k++) pts.push([x0 + (w * k) / n, y0 + h * 0.25]);
+        npScallop(ctx, pts, false);
+        thin(0.4);
+        clip(() => {
+          for (let k = 0; k < n * 3; k++) {
+            const x = x0 + (w * ((k * 37) % 100)) / 100,
+              y = y0 + h * 0.35 + (h * 0.55 * ((k * 53) % 100)) / 100;
+            ctx.beginPath();
+            ctx.arc(x, y, h * 0.05, Math.PI, 2 * Math.PI);
+            ctx.stroke();
+          }
+        });
+        full();
+        break;
+      }
+      const n = Math.max(8, Math.round((w + h) / (m * 0.35)));
+      const pts = [];
+      for (let k = 0; k < n; k++) {
+        const a = (2 * Math.PI * k) / n;
+        pts.push([cx + (w / 2) * Math.cos(a), cy + (h / 2) * Math.sin(a)]);
+      }
+      npScallop(ctx, pts, true);
+      if (o.k === "shrub") {
+        ell(cx, cy, m * 0.04, m * 0.04, true);
+      } else {
+        thin(0.6);
+        const st = Math.max(m * 0.3, R(500, 10));
+        for (let y = y0 + st / 2; y < y1; y += st)
+          for (let x = x0 + st / 2; x < x1; x += st) {
+            const dx = (x - cx) / (w / 2),
+              dy = (y - cy) / (h / 2);
+            if (dx * dx + dy * dy < 0.6) ell(x, y, st * 0.22, st * 0.22);
+          }
+        full();
+      }
+      break;
+    }
+    case "pond": {
+      const n = 10;
+      ctx.beginPath();
+      for (let k = 0; k <= n; k++) {
+        const a = (2 * Math.PI * k) / n,
+          rr = 1 + 0.08 * Math.sin(k * 2.3);
+        const p = [cx + (w / 2) * rr * Math.cos(a), cy + (h / 2) * rr * Math.sin(a)];
+        k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      thin(0.5);
+      [
+        [0.3, -0.15],
+        [0.55, 0.15],
+        [0.4, 0.35],
+      ].forEach(([a, b]) => {
+        const y = cy + h * b * 0.8,
+          x = x0 + w * a;
+        ctx.beginPath();
+        for (let k = 0; k <= 6; k++) {
+          const px = x + k * w * 0.04,
+            py = y + Math.sin(k * 1.6) * h * 0.02;
+          k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.stroke();
+      });
+      full();
+      break;
+    }
+    case "elecpoint":
+    case "gaspoint": {
+      const col = o.k === "elecpoint" ? "#dc2626" : "#d4a106";
+      ctx.save();
+      ctx.fillStyle = o.k === "elecpoint" ? "#fee2e2" : "#fef3c7";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = lw * 1.3;
+      ctx.strokeRect(x0, y0, w, h);
+      ctx.fillStyle = col;
+      if (o.k === "elecpoint") {
+        ctx.beginPath();
+        const s2 = m * 0.36;
+        ctx.moveTo(cx + s2 * 0.15, cy - s2);
+        ctx.lineTo(cx - s2 * 0.45, cy + s2 * 0.1);
+        ctx.lineTo(cx - s2 * 0.02, cy + s2 * 0.1);
+        ctx.lineTo(cx - s2 * 0.2, cy + s2);
+        ctx.lineTo(cx + s2 * 0.45, cy - s2 * 0.15);
+        ctx.lineTo(cx + s2 * 0.02, cy - s2 * 0.15);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.font = `800 ${m * 0.55}px system-ui,sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("G", cx, cy + m * 0.03);
+      }
+      ctx.restore();
+      break;
+    }
+    case "stopcock": {
+      const col = "#2563eb";
+      ctx.save();
+      ctx.strokeStyle = col;
+      ctx.fillStyle = "#dbeafe";
+      ctx.lineWidth = lw * 1.3;
+      ell(cx, cy, w / 2, h / 2, true);
+      ctx.fillStyle = col;
+      const s2 = m * 0.28;
+      ctx.beginPath();
+      ctx.moveTo(cx - s2, cy - s2 * 0.7);
+      ctx.lineTo(cx + s2, cy + s2 * 0.7);
+      ctx.lineTo(cx + s2, cy - s2 * 0.7);
+      ctx.lineTo(cx - s2, cy + s2 * 0.7);
+      ctx.closePath();
+      ctx.fill();
+      ln(cx, cy, cx, cy - s2 * 1.2);
+      ln(cx - s2 * 0.5, cy - s2 * 1.2, cx + s2 * 0.5, cy - s2 * 1.2);
+      ctx.restore();
+      break;
+    }
+    case "fireassembly": {
+      ctx.save();
+      ctx.fillStyle = "#15803d";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = Math.max(lw, m * 0.03);
+      ctx.strokeRect(x0 + m * 0.05, y0 + m * 0.05, w - m * 0.1, h - m * 0.1);
+      ctx.fillStyle = "#fff";
+      const ppl = [
+        [-0.22, 0],
+        [0, -0.05],
+        [0.22, 0],
+      ];
+      ppl.forEach(([dx, dy]) => {
+        const px = cx + dx * w,
+          py = y0 + h * 0.38 + dy * h;
+        ctx.beginPath();
+        ctx.arc(px, py - m * 0.12, m * 0.06, 0, 7);
+        ctx.fill();
+        ctx.fillRect(px - m * 0.05, py - m * 0.05, m * 0.1, m * 0.2);
+      });
+      ctx.font = `700 ${Math.min(h * 0.12, w / 12)}px system-ui,sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("FIRE ASSEMBLY", cx, y0 + h * 0.72);
+      ctx.fillText("POINT", cx, y0 + h * 0.86);
+      ctx.restore();
+      break;
+    }
+    case "firepoint": {
+      ctx.save();
+      ctx.fillStyle = "#dc2626";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = Math.max(lw, m * 0.03);
+      ctx.strokeRect(x0 + m * 0.05, y0 + m * 0.05, w - m * 0.1, h - m * 0.1);
+      ctx.fillStyle = "#fff";
+      [-0.18, 0.18].forEach((dx) => {
+        const bw = w * 0.16,
+          bh = h * 0.36,
+          bx = cx + dx * w - bw / 2,
+          by = y0 + h * 0.3;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, bw * 0.35);
+        else ctx.rect(bx, by, bw, bh);
+        ctx.fill();
+        ctx.fillRect(cx + dx * w - bw * 0.18, y0 + h * 0.2, bw * 0.36, h * 0.1);
+      });
+      ctx.beginPath();
+      ctx.arc(cx, y0 + h * 0.48, m * 0.07, 0, 7);
+      ctx.fill();
+      ctx.font = `800 ${Math.min(h * 0.14, w / 7)}px system-ui,sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("FIRE POINT", cx, y0 + h * 0.84);
+      ctx.restore();
+      break;
+    }
+    case "fireext": {
+      ctx.save();
+      ctx.fillStyle = "#dc2626";
+      ctx.fillRect(x0, y0, w, h);
+      ctx.fillStyle = "#fff";
+      const bw = w * 0.28,
+        bh = h * 0.55,
+        bx = cx - bw / 2,
+        by = y0 + h * 0.3;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, bw * 0.35);
+      else ctx.rect(bx, by, bw, bh);
+      ctx.fill();
+      ctx.fillRect(cx - bw * 0.18, y0 + h * 0.18, bw * 0.36, h * 0.13);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = Math.max(lw, m * 0.04);
+      ln(cx + bw * 0.1, y0 + h * 0.2, cx + bw * 0.9, y0 + h * 0.14);
+      ln(cx + bw * 0.9, y0 + h * 0.14, cx + bw * 1.1, y0 + h * 0.45);
+      ctx.restore();
+      break;
+    }
+    case "canteen":
+    case "dryroom": {
+      const t = R(60, m * 0.04);
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.55);
+      ctx.strokeRect(x0 + t, y0 + t, w - 2 * t, h - 2 * t);
+      full();
+      if (o.k === "canteen") {
+        const tw = w * 0.4,
+          th = h * 0.28;
+        ctx.strokeRect(cx - tw / 2, cy - th / 2 + h * 0.08, tw, th);
+        thin(0.6);
+        [-0.3, 0, 0.3].forEach((f) => {
+          ctx.strokeRect(
+            cx + f * tw - tw * 0.08,
+            cy - th / 2 + h * 0.08 - th * 0.42,
+            tw * 0.16,
+            th * 0.3,
+          );
+          ctx.strokeRect(
+            cx + f * tw - tw * 0.08,
+            cy + th / 2 + h * 0.08 + th * 0.12,
+            tw * 0.16,
+            th * 0.3,
+          );
+        });
+        ctx.strokeRect(x0 + t, y0 + t, w * 0.35, h * 0.16);
+        full();
+        npLbl(ctx, "CANTEEN", cx, y0 + h * 0.2 + t, Math.min(h * 0.14, w / 9));
+      } else {
+        thin(0.6);
+        const ry = y0 + t + h * 0.22;
+        ln(x0 + t + w * 0.08, ry, x1 - t - w * 0.08, ry);
+        for (let x = x0 + t + w * 0.12; x < x1 - t - w * 0.1; x += w * 0.09) {
+          ctx.beginPath();
+          ctx.moveTo(x, ry);
+          ctx.lineTo(x - w * 0.025, ry + h * 0.18);
+          ctx.lineTo(x + w * 0.025, ry + h * 0.18);
+          ctx.closePath();
+          ctx.stroke();
+        }
+        ctx.strokeRect(x1 - t - w * 0.18, y1 - t - h * 0.14, w * 0.16, h * 0.12);
+        full();
+        npLbl(ctx, "DRYING ROOM", cx, y1 - h * 0.3, Math.min(h * 0.13, w / 11));
+      }
+      break;
+    }
+    case "portaloo": {
+      ctx.strokeRect(x0, y0, w, h);
+      const t = R(50, m * 0.06);
+      thin(0.6);
+      ctx.strokeRect(x0 + t, y0 + t, w - 2 * t, h - 2 * t);
+      full();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(x0 + w * 0.25, y1 - t * 1.2, w * 0.5, t * 1.4);
+      ctx.restore();
+      thin(0.5);
+      ctx.beginPath();
+      ctx.arc(x0 + w * 0.25, y1, w * 0.5, -Math.PI / 2, 0);
+      dash(() => ctx.stroke());
+      full();
+      ell(cx, y0 + h * 0.36, w * 0.13, h * 0.16);
+      ctx.strokeRect(cx - w * 0.2, y0 + t, w * 0.4, h * 0.12);
+      npLbl(ctx, "WC", cx, y0 + h * 0.72, Math.min(h * 0.16, w * 0.2));
+      break;
+    }
+    case "container":
+    case "siteoffice": {
+      ctx.strokeRect(x0, y0, w, h);
+      const t = R(60, m * 0.04);
+      thin(0.55);
+      ctx.strokeRect(x0 + t, y0 + t, w - 2 * t, h - 2 * t);
+      if (o.k === "container") {
+        const st = R(300, (v ? w : h) / 16);
+        clip(() => {
+          if (v)
+            for (let x = x0 + st; x < x1; x += st) (ln(x, y0, x, y0 + t), ln(x, y1 - t, x, y1));
+          else for (let y = y0 + st; y < y1; y += st) (ln(x0, y, x0 + t, y), ln(x1 - t, y, x1, y));
+        });
+        full();
+        ctx.lineWidth = lw * 1.6;
+        if (v) {
+          ln(x1, y0 + t, x1, cy - t * 0.3);
+          ln(x1, cy + t * 0.3, x1, y1 - t);
+        } else {
+          ln(x0 + t, y1, cx - t * 0.3, y1);
+          ln(cx + t * 0.3, y1, x1 - t, y1);
+        }
+        full();
+        lbl(mm && (v ? w : h) > 9000 * mm ? "40ft CONTAINER" : "CONTAINER", 0.5);
+      } else {
+        full();
+        const dw = R(800, (v ? w : h) * 0.16);
+        ctx.save();
+        ctx.fillStyle = "#fff";
+        if (v) ctx.fillRect(x0 + w * 0.12, y1 - t * 1.3, dw, t * 1.6);
+        else ctx.fillRect(x1 - t * 1.3, y0 + h * 0.12, t * 1.6, dw);
+        ctx.restore();
+        thin(0.5);
+        if (v) {
+          ctx.beginPath();
+          ctx.arc(x0 + w * 0.12, y1 - t, dw, -Math.PI / 2, 0);
+          dash(() => ctx.stroke());
+        } else {
+          ctx.beginPath();
+          ctx.arc(x1 - t, y0 + h * 0.12, dw, Math.PI / 2, Math.PI);
+          dash(() => ctx.stroke());
+        }
+        [
+          [0.45, 0.65],
+          [0.75, 0.9],
+        ].forEach(([a, b2]) => {
+          if (v) {
+            ln(x0 + w * a, y0, x0 + w * b2, y0);
+            ln(x0 + w * a, y0 + t, x0 + w * b2, y0 + t);
+          } else {
+            ln(x0, y0 + h * a, x0, y0 + h * b2);
+            ln(x0 + t, y0 + h * a, x0 + t, y0 + h * b2);
+          }
+        });
+        if (v) {
+          ctx.strokeRect(x1 - t - w * 0.28, y0 + t, w * 0.28, h * 0.32);
+        } else {
+          ctx.strokeRect(x0 + t, y1 - t - h * 0.28, w * 0.32, h * 0.28);
+        }
+        full();
+        lbl("SITE OFFICE", 0.5);
+      }
+      break;
+    }
+    case "sauna": {
+      const t = R(70, m * 0.05);
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.55);
+      ctx.strokeRect(x0 + t, y0 + t, w - 2 * t, h - 2 * t);
+      clip(() => {
+        const st = R(90, m / 18);
+        for (let y = y0 + t + st; y < y1 - t; y += st) ln(x0 + t, y, x1 - t, y);
+      });
+      full();
+      ctx.save();
+      ctx.fillStyle = npHexMix(c, 0.85);
+      ctx.fillRect(x0 + t, y0 + t, w - 2 * t, h * 0.22);
+      ctx.fillRect(x0 + t, y0 + t, w * 0.22, h - 2 * t);
+      ctx.restore();
+      ctx.strokeRect(x0 + t, y0 + t, w - 2 * t, h * 0.22);
+      ctx.strokeRect(x0 + t, y0 + t, w * 0.22, h - 2 * t);
+      ctx.strokeRect(x1 - t - m * 0.22, y1 - t - m * 0.22, m * 0.2, m * 0.2);
+      thin(0.5);
+      ln(x1 - t - m * 0.22, y1 - t - m * 0.22, x1 - t - m * 0.02, y1 - t - m * 0.02);
+      full();
+      lbl("SAUNA", 0.45);
+      break;
+    }
+    case "studio":
+    case "gardenroom":
+    case "gardenoffice": {
+      const t = R(150, m * 0.06);
+      ctx.strokeRect(x0, y0, w, h);
+      ctx.strokeRect(x0 + t, y0 + t, w - 2 * t, h - 2 * t);
       /* glazed front along the long bottom side, doors in the middle */
-      const gx0=x0+w*0.15,gx1=x1-w*0.15;ctx.save();ctx.fillStyle="#fff";ctx.fillRect(gx0,y1-t-lw,gx1-gx0,t+lw*2);ctx.restore();thin(0.55);ln(gx0,y1-t*0.6,gx1,y1-t*0.6);ln(gx0,y1-t*0.4,gx1,y1-t*0.4);full();ln(gx0,y1-t,gx0,y1);ln(gx1,y1-t,gx1,y1);
-      const dw=Math.min((gx1-gx0)*0.3,R(900,(gx1-gx0)*0.3));thin(0.5);dash(()=>{ctx.beginPath();ctx.arc(cx-dw,y1-t,dw,-Math.PI/2,0);ctx.stroke();ctx.beginPath();ctx.arc(cx+dw,y1-t,dw,Math.PI,-Math.PI/2);ctx.stroke()});full();
-      if(o.k==="gardenoffice"){ctx.strokeRect(x0+t,y0+t,w*0.4,h*0.18);ell(x0+t+w*0.2,y0+t+h*0.3,m*0.06,m*0.06)}
-      if(o.k==="studio"){ctx.strokeRect(x1-t-w*0.22,y0+t,w*0.22,h*0.3);thin(0.5);ln(x1-t-w*0.22,y0+t,x1-t,y0+t+h*0.3);full()}
-      lbl(o.k==="studio"?"STUDIO":o.k==="gardenroom"?"GARDEN ROOM":"OUTSIDE OFFICE",0.45);break}
-    case "shed":{ctx.strokeRect(x0,y0,w,h);thin(0.6);ln(x0,y0,x1,y1);ln(x1,y0,x0,y1);full();ctx.save();ctx.fillStyle="#fff";ctx.globalAlpha=.85;ctx.fillRect(cx-m*0.32,cy-m*0.13,m*0.64,m*0.26);ctx.restore();lbl("SHED",0.55);break}
-    case "car":{rrect(x0,y0,w,h,m*0.3);thin(0.7);if(v){const a=x0+w*0.3,b=x0+w*0.62;ctx.strokeRect(a,y0+h*0.12,b-a,h*0.76);ln(a,y0+h*0.12,a-w*0.08,y0+h*0.18);ln(a,y1-h*0.12,a-w*0.08,y1-h*0.18);ln(a-w*0.08,y0+h*0.18,a-w*0.08,y1-h*0.18)}
-      else{const a=y0+h*0.3,b=y0+h*0.62;ctx.strokeRect(x0+w*0.12,a,w*0.76,b-a);ln(x0+w*0.12,a,x0+w*0.18,a-h*0.08);ln(x1-w*0.12,a,x1-w*0.18,a-h*0.08);ln(x0+w*0.18,a-h*0.08,x1-w*0.18,a-h*0.08)}full();break}
-    case "parking":{ln(x0,y0,x0,y1);ln(x1,y0,x1,y1);ln(x0,v?y0:y1,x1,v?y0:y1);dash(()=>ln(x0,v?y1:y0,x1,v?y1:y0));lbl("P",0.6);break}
-    case "bins":{ctx.strokeRect(x0,y0,w,h);thin(0.7);const n=Math.max(2,Math.round(w/h));for(let k=0;k<n;k++)ctx.strokeRect(x0+w*k/n+w*0.03,y0+h*0.12,w/n-w*0.06,h*0.76);full();break}
-    case "gsteps":{ctx.strokeRect(x0,y0,w,h);thin(0.7);const n=Math.max(2,Math.round((v?w:h)/R(300,(v?h:w)*0.3)));for(let k=1;k<n;k++){if(v)ln(x0+w*k/n,y0,x0+w*k/n,y1);else ln(x0,y0+h*k/n,x1,y0+h*k/n)}full();if(v)arrow([x0+w*0.1,cy],[x1-w*0.1,cy]);else arrow([cx,y1-h*0.1],[cx,y0+h*0.1]);break}
-    case "elant":{const kb=h*0.25;ctx.strokeRect(x0,y1-kb,w,kb);ctx.beginPath();ctx.moveTo(x0+w*0.02,y1-kb);ctx.lineTo(x0+w*0.3,y0);ctx.lineTo(x1-w*0.3,y0);ctx.lineTo(x1-w*0.02,y1-kb);ctx.stroke();thin(0.5);const n=Math.max(3,Math.round(w/(h*0.5)));for(let k=1;k<n;k++){const xb=x0+w*0.02+(w*0.96)*k/n,xt=x0+w*0.3+(w*0.4)*k/n;ln(xb,y1-kb,Math.min(Math.max(xt,x0+w*0.3),x1-w*0.3),y0)}full();break}
-    case "echim":{const ph=h*0.12;ctx.strokeRect(x0,y0+ph,w,h-ph);clip(()=>{thin(0.4);const ch=R(75,Math.max(h/20,4)),bl=ch*3;let r=0;for(let y=y1;y>y0+ph;y-=ch,r++){ln(x0,y,x1,y);for(let x=x0+(r%2?bl/2:0);x<x1;x+=bl)ln(x,y,x,y-ch)}});full();ctx.lineWidth=lw*1.2;ln(x0-w*0.06,y0+ph,x1+w*0.06,y0+ph);full();
-      const pw=w*0.22;[0.3,0.7].forEach(f=>{ctx.beginPath();ctx.moveTo(x0+w*f-pw/2,y0+ph);ctx.lineTo(x0+w*f-pw*0.35,y0);ctx.lineTo(x0+w*f+pw*0.35,y0);ctx.lineTo(x0+w*f+pw/2,y0+ph);ctx.stroke()});break}
-    case "estairs":{const n=Math.max(4,Math.round(h/R(200,h/12)));const rw=w/n,rh=h/n;ctx.beginPath();ctx.moveTo(x0,y1);for(let k=0;k<n;k++){ctx.lineTo(x0+rw*k,y1-rh*(k+1));ctx.lineTo(x0+rw*(k+1),y1-rh*(k+1))}ctx.stroke();ln(x0+rw*0.5,y1,x1,y0+rh*0.5);
-      thin(0.6);const hr=R(900,h*0.25);ln(x0,y1-hr,x1-rw,y0-hr+rh);full();break}
-    case "efence":case "egate":{if(o.k==="efence"){const pw=Math.max(w*0.04,R(100,4));ctx.strokeRect(x0,y0,pw,h);ctx.strokeRect(x1-pw,y0,pw,h);thin(0.5);const st=R(150,Math.max(h/12,4));for(let y=y0+st;y<y1;y+=st)ln(x0+pw,y,x1-pw,y);full();ctx.strokeRect(x0+pw,y0,w-2*pw,h)}
-      else{ctx.strokeRect(x0,y0,w,h);thin(0.5);const st=R(100,Math.max(w/10,4));for(let x=x0+st;x<x1;x+=st)ln(x,y0,x,y1);full();ln(x0,y0+h*0.15,x1,y0+h*0.15);ln(x0,y1-h*0.15,x1,y1-h*0.15);ln(x0,y1-h*0.15,x1,y0+h*0.15)}break}
-    case "etree":{const th2=w*0.08;ln(cx-th2/2,y1,cx-th2/2,y0+h*0.55);ln(cx+th2/2,y1,cx+th2/2,y0+h*0.55);const n=11;const pts=[];for(let k=0;k<n;k++){const a=2*Math.PI*k/n;pts.push([cx+w/2*0.95*Math.cos(a),y0+h*0.33+h*0.32*Math.sin(a)])}npScallop(ctx,pts,true);break}
-    case "eperson":{const hd=h*0.065;ell(cx,y0+hd,hd*0.85,hd);ln(cx,y0+hd*2,cx,y0+h*0.55);ln(cx,y0+h*0.55,cx-w*0.25,y1);ln(cx,y0+h*0.55,cx+w*0.25,y1);ln(cx,y0+h*0.22,cx-w*0.38,y0+h*0.48);ln(cx,y0+h*0.22,cx+w*0.38,y0+h*0.48);break}}}
-function npDesignLine(ctx,o,P,ln,L,lw){const mm=ctx.__mm||0;switch(o.k){
-  case "hedge":{const g=mm?Math.max(mm*300,lw*3):Math.max(lw*6,14);const n=Math.max(3,Math.round(L/(g*1.2)));[g,-g].forEach(off=>{const pts=[];for(let k=0;k<=n;k++)pts.push(P(L*k/n,off));npScallop(ctx,off>0?pts.reverse():pts,false)});ctx.save();ctx.setLineDash([lw*2,lw*3]);ln(P(0,0),P(L,0));ctx.restore();return true}
-  case "path":{const g=mm?mm*450:Math.max(lw*8,18);ln(P(0,g),P(L,g));ln(P(0,-g),P(L,-g));return true}
-  case "retwall":{const g=mm?mm*100:Math.max(lw*3,8);ctx.save();ctx.lineWidth=lw*1.2;ln(P(0,g),P(L,g));ln(P(0,-g),P(L,-g));ln(P(0,g),P(0,-g));ln(P(L,g),P(L,-g));ctx.restore();const st=Math.max(g*1.4,lw*5);ctx.save();ctx.lineWidth=Math.max(lw*0.5,0.5);for(let t=st;t<L;t+=st)ln(P(t,g),P(t+g*1.2,g*2.4));ctx.restore();return true}
-  case "gate":{ln(P(0,0),P(L,0));ctx.save();ctx.setLineDash([lw*2,lw*2]);ctx.beginPath();const a=P(0,0),an=Math.atan2(P(L,0)[1]-a[1],P(L,0)[0]-a[0]);ctx.arc(a[0],a[1],L,an,an-Math.PI/2,true);ctx.stroke();ctx.restore();ln(P(0,0),P(0,-L));const m2=P(L*0.5,Math.max(10,lw*4));npLbl(ctx,"GATE",m2[0],m2[1],Math.max(10,Math.min(L*0.18,lw*5)));return true}}
-  return false}
-
+      const gx0 = x0 + w * 0.15,
+        gx1 = x1 - w * 0.15;
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(gx0, y1 - t - lw, gx1 - gx0, t + lw * 2);
+      ctx.restore();
+      thin(0.55);
+      ln(gx0, y1 - t * 0.6, gx1, y1 - t * 0.6);
+      ln(gx0, y1 - t * 0.4, gx1, y1 - t * 0.4);
+      full();
+      ln(gx0, y1 - t, gx0, y1);
+      ln(gx1, y1 - t, gx1, y1);
+      const dw = Math.min((gx1 - gx0) * 0.3, R(900, (gx1 - gx0) * 0.3));
+      thin(0.5);
+      dash(() => {
+        ctx.beginPath();
+        ctx.arc(cx - dw, y1 - t, dw, -Math.PI / 2, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + dw, y1 - t, dw, Math.PI, -Math.PI / 2);
+        ctx.stroke();
+      });
+      full();
+      if (o.k === "gardenoffice") {
+        ctx.strokeRect(x0 + t, y0 + t, w * 0.4, h * 0.18);
+        ell(x0 + t + w * 0.2, y0 + t + h * 0.3, m * 0.06, m * 0.06);
+      }
+      if (o.k === "studio") {
+        ctx.strokeRect(x1 - t - w * 0.22, y0 + t, w * 0.22, h * 0.3);
+        thin(0.5);
+        ln(x1 - t - w * 0.22, y0 + t, x1 - t, y0 + t + h * 0.3);
+        full();
+      }
+      lbl(
+        o.k === "studio" ? "STUDIO" : o.k === "gardenroom" ? "GARDEN ROOM" : "OUTSIDE OFFICE",
+        0.45,
+      );
+      break;
+    }
+    case "shed": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.6);
+      ln(x0, y0, x1, y1);
+      ln(x1, y0, x0, y1);
+      full();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(cx - m * 0.32, cy - m * 0.13, m * 0.64, m * 0.26);
+      ctx.restore();
+      lbl("SHED", 0.55);
+      break;
+    }
+    case "car": {
+      rrect(x0, y0, w, h, m * 0.3);
+      thin(0.7);
+      if (v) {
+        const a = x0 + w * 0.3,
+          b = x0 + w * 0.62;
+        ctx.strokeRect(a, y0 + h * 0.12, b - a, h * 0.76);
+        ln(a, y0 + h * 0.12, a - w * 0.08, y0 + h * 0.18);
+        ln(a, y1 - h * 0.12, a - w * 0.08, y1 - h * 0.18);
+        ln(a - w * 0.08, y0 + h * 0.18, a - w * 0.08, y1 - h * 0.18);
+      } else {
+        const a = y0 + h * 0.3,
+          b = y0 + h * 0.62;
+        ctx.strokeRect(x0 + w * 0.12, a, w * 0.76, b - a);
+        ln(x0 + w * 0.12, a, x0 + w * 0.18, a - h * 0.08);
+        ln(x1 - w * 0.12, a, x1 - w * 0.18, a - h * 0.08);
+        ln(x0 + w * 0.18, a - h * 0.08, x1 - w * 0.18, a - h * 0.08);
+      }
+      full();
+      break;
+    }
+    case "parking": {
+      ln(x0, y0, x0, y1);
+      ln(x1, y0, x1, y1);
+      ln(x0, v ? y0 : y1, x1, v ? y0 : y1);
+      dash(() => ln(x0, v ? y1 : y0, x1, v ? y1 : y0));
+      lbl("P", 0.6);
+      break;
+    }
+    case "bins": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      const n = Math.max(2, Math.round(w / h));
+      for (let k = 0; k < n; k++)
+        ctx.strokeRect(x0 + (w * k) / n + w * 0.03, y0 + h * 0.12, w / n - w * 0.06, h * 0.76);
+      full();
+      break;
+    }
+    case "gsteps": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      const n = Math.max(2, Math.round((v ? w : h) / R(300, (v ? h : w) * 0.3)));
+      for (let k = 1; k < n; k++) {
+        if (v) ln(x0 + (w * k) / n, y0, x0 + (w * k) / n, y1);
+        else ln(x0, y0 + (h * k) / n, x1, y0 + (h * k) / n);
+      }
+      full();
+      if (v) arrow([x0 + w * 0.1, cy], [x1 - w * 0.1, cy]);
+      else arrow([cx, y1 - h * 0.1], [cx, y0 + h * 0.1]);
+      break;
+    }
+    case "elant": {
+      const kb = h * 0.25;
+      ctx.strokeRect(x0, y1 - kb, w, kb);
+      ctx.beginPath();
+      ctx.moveTo(x0 + w * 0.02, y1 - kb);
+      ctx.lineTo(x0 + w * 0.3, y0);
+      ctx.lineTo(x1 - w * 0.3, y0);
+      ctx.lineTo(x1 - w * 0.02, y1 - kb);
+      ctx.stroke();
+      thin(0.5);
+      const n = Math.max(3, Math.round(w / (h * 0.5)));
+      for (let k = 1; k < n; k++) {
+        const xb = x0 + w * 0.02 + (w * 0.96 * k) / n,
+          xt = x0 + w * 0.3 + (w * 0.4 * k) / n;
+        ln(xb, y1 - kb, Math.min(Math.max(xt, x0 + w * 0.3), x1 - w * 0.3), y0);
+      }
+      full();
+      break;
+    }
+    case "echim": {
+      const ph = h * 0.12;
+      ctx.strokeRect(x0, y0 + ph, w, h - ph);
+      clip(() => {
+        thin(0.4);
+        const ch = R(75, Math.max(h / 20, 4)),
+          bl = ch * 3;
+        let r = 0;
+        for (let y = y1; y > y0 + ph; y -= ch, r++) {
+          ln(x0, y, x1, y);
+          for (let x = x0 + (r % 2 ? bl / 2 : 0); x < x1; x += bl) ln(x, y, x, y - ch);
+        }
+      });
+      full();
+      ctx.lineWidth = lw * 1.2;
+      ln(x0 - w * 0.06, y0 + ph, x1 + w * 0.06, y0 + ph);
+      full();
+      const pw = w * 0.22;
+      [0.3, 0.7].forEach((f) => {
+        ctx.beginPath();
+        ctx.moveTo(x0 + w * f - pw / 2, y0 + ph);
+        ctx.lineTo(x0 + w * f - pw * 0.35, y0);
+        ctx.lineTo(x0 + w * f + pw * 0.35, y0);
+        ctx.lineTo(x0 + w * f + pw / 2, y0 + ph);
+        ctx.stroke();
+      });
+      break;
+    }
+    case "estairs": {
+      const n = Math.max(4, Math.round(h / R(200, h / 12)));
+      const rw = w / n,
+        rh = h / n;
+      ctx.beginPath();
+      ctx.moveTo(x0, y1);
+      for (let k = 0; k < n; k++) {
+        ctx.lineTo(x0 + rw * k, y1 - rh * (k + 1));
+        ctx.lineTo(x0 + rw * (k + 1), y1 - rh * (k + 1));
+      }
+      ctx.stroke();
+      ln(x0 + rw * 0.5, y1, x1, y0 + rh * 0.5);
+      thin(0.6);
+      const hr = R(900, h * 0.25);
+      ln(x0, y1 - hr, x1 - rw, y0 - hr + rh);
+      full();
+      break;
+    }
+    case "efence":
+    case "egate": {
+      if (o.k === "efence") {
+        const pw = Math.max(w * 0.04, R(100, 4));
+        ctx.strokeRect(x0, y0, pw, h);
+        ctx.strokeRect(x1 - pw, y0, pw, h);
+        thin(0.5);
+        const st = R(150, Math.max(h / 12, 4));
+        for (let y = y0 + st; y < y1; y += st) ln(x0 + pw, y, x1 - pw, y);
+        full();
+        ctx.strokeRect(x0 + pw, y0, w - 2 * pw, h);
+      } else {
+        ctx.strokeRect(x0, y0, w, h);
+        thin(0.5);
+        const st = R(100, Math.max(w / 10, 4));
+        for (let x = x0 + st; x < x1; x += st) ln(x, y0, x, y1);
+        full();
+        ln(x0, y0 + h * 0.15, x1, y0 + h * 0.15);
+        ln(x0, y1 - h * 0.15, x1, y1 - h * 0.15);
+        ln(x0, y1 - h * 0.15, x1, y0 + h * 0.15);
+      }
+      break;
+    }
+    case "etree": {
+      const th2 = w * 0.08;
+      ln(cx - th2 / 2, y1, cx - th2 / 2, y0 + h * 0.55);
+      ln(cx + th2 / 2, y1, cx + th2 / 2, y0 + h * 0.55);
+      const n = 11;
+      const pts = [];
+      for (let k = 0; k < n; k++) {
+        const a = (2 * Math.PI * k) / n;
+        pts.push([cx + (w / 2) * 0.95 * Math.cos(a), y0 + h * 0.33 + h * 0.32 * Math.sin(a)]);
+      }
+      npScallop(ctx, pts, true);
+      break;
+    }
+    case "eperson": {
+      const hd = h * 0.065;
+      ell(cx, y0 + hd, hd * 0.85, hd);
+      ln(cx, y0 + hd * 2, cx, y0 + h * 0.55);
+      ln(cx, y0 + h * 0.55, cx - w * 0.25, y1);
+      ln(cx, y0 + h * 0.55, cx + w * 0.25, y1);
+      ln(cx, y0 + h * 0.22, cx - w * 0.38, y0 + h * 0.48);
+      ln(cx, y0 + h * 0.22, cx + w * 0.38, y0 + h * 0.48);
+      break;
+    }
+  }
+}
+function npDesignLine(ctx, o, P, ln, L, lw) {
+  const mm = ctx.__mm || 0;
+  switch (o.k) {
+    case "hedge": {
+      const g = mm ? Math.max(mm * 300, lw * 3) : Math.max(lw * 6, 14);
+      const n = Math.max(3, Math.round(L / (g * 1.2)));
+      [g, -g].forEach((off) => {
+        const pts = [];
+        for (let k = 0; k <= n; k++) pts.push(P((L * k) / n, off));
+        npScallop(ctx, off > 0 ? pts.reverse() : pts, false);
+      });
+      ctx.save();
+      ctx.setLineDash([lw * 2, lw * 3]);
+      ln(P(0, 0), P(L, 0));
+      ctx.restore();
+      return true;
+    }
+    case "path": {
+      const g = mm ? mm * 450 : Math.max(lw * 8, 18);
+      ln(P(0, g), P(L, g));
+      ln(P(0, -g), P(L, -g));
+      return true;
+    }
+    case "retwall": {
+      const g = mm ? mm * 100 : Math.max(lw * 3, 8);
+      ctx.save();
+      ctx.lineWidth = lw * 1.2;
+      ln(P(0, g), P(L, g));
+      ln(P(0, -g), P(L, -g));
+      ln(P(0, g), P(0, -g));
+      ln(P(L, g), P(L, -g));
+      ctx.restore();
+      const st = Math.max(g * 1.4, lw * 5);
+      ctx.save();
+      ctx.lineWidth = Math.max(lw * 0.5, 0.5);
+      for (let t = st; t < L; t += st) ln(P(t, g), P(t + g * 1.2, g * 2.4));
+      ctx.restore();
+      return true;
+    }
+    case "gate": {
+      ln(P(0, 0), P(L, 0));
+      ctx.save();
+      ctx.setLineDash([lw * 2, lw * 2]);
+      ctx.beginPath();
+      const a = P(0, 0),
+        an = Math.atan2(P(L, 0)[1] - a[1], P(L, 0)[0] - a[0]);
+      ctx.arc(a[0], a[1], L, an, an - Math.PI / 2, true);
+      ctx.stroke();
+      ctx.restore();
+      ln(P(0, 0), P(0, -L));
+      const m2 = P(L * 0.5, Math.max(10, lw * 4));
+      npLbl(ctx, "GATE", m2[0], m2[1], Math.max(10, Math.min(L * 0.18, lw * 5)));
+      return true;
+    }
+  }
+  return false;
+}
