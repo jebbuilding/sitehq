@@ -86,6 +86,20 @@ Status, Nov 2026: the workflows (`.github/workflows/ci.yml`, `promote.yml`), the
 - Replace the catch-all `todos` with separate collections (`clients`, `suppliers`, `surveys`, `wtns`, …) via migration.
 - Reporting, if James needs it: export to a query store rather than changing the main database.
 
+## Future work (noted 5 Nov 2026, not scheduled)
+
+### Admin app to create logins
+A way to create and manage sign-ins without the AWS console: invite a person by email, set their role (owner, trade, client), disable a leaver, resend a code. Today nothing does this – the HTTP function has no permission to create users (`infra/README.md` › Known limits), and Phase 1 step 4 (sign-in screen, invitations, join code) is not built.
+
+To settle when it is picked up: whether this is a screen inside SiteHQ for the firm's owner, a separate operator tool for Jasper that works across organisations, or both (the owner invites their own people; the operator creates an organisation and its first owner).
+
+### More than one organisation, more than one project – open question
+Not needed yet: there is one firm and one app. Recorded so the choice is made deliberately when a second one appears.
+
+- **A stack per organisation** (each firm gets its own table, files bucket, user pool, key and subdomain, from the same CDK app). The config already has `project` and `envName`; an `org` would be a third part of every name, tag and subdomain (`sitehq-<org>-<env>`, `<org>.<domain>`). No change to the app, the server or the rules, which have no idea of a tenant. Each firm is its own data controller, and this keeps their data apart by construction: one firm's export, backup, restore and deletion touch only its stack. Costs a couple of dollars a month per organisation in fixed charges, a deploy per organisation on each release, and some AWS per-account limits (CloudFront distributions, user pools) once there are dozens.
+- **One shared stack for everyone** (an organisation id in every key, rule, token, file path and live-update subscription). Cheaper and simpler to operate at hundreds of organisations, and needed for self-service sign-up. But it has to be threaded through the server, the rules file and the adapter, a single mistake exposes one firm's staff and client data to another, and one bad release reaches every firm at once.
+- **Recommendation: a stack per organisation**, revisited if it ever approaches fifty organisations or needs self-service sign-up. A second *project* (a different app on the same backend) is the same answer: its own stack, with its own rules file and page – `project` is already part of every name.
+
 ## Phase 3 – modernise (only where it pays)
 - [x] Cut `app.js` into files along the existing banners (`src/app/`, Nov 2026) – same script once joined, no behaviour change.
 - [x] Make them real ES modules (Nov 2026): generated imports/exports, one entry point (`core/boot.js`), no work at load outside it, order derived from imports, checked against esbuild on every test run.
@@ -94,4 +108,4 @@ Status, Nov 2026: the workflows (`.github/workflows/ci.yml`, `promote.yml`), the
 - Decoupling features from each other is separate, larger work with no mechanical route (`docs/ARCHITECTURE.md` › What is still coupled); do it per feature when there is a reason. Add JSDoc types / `// @ts-check` before any framework.
 - Component framework screen-by-screen if desired (Svelte/React) behind the same `S`/`render()` contract; don't big-bang rewrite – the tests encode the behaviour.
 - Native wrapper (Capacitor) for App Store/Play only if push notifications / camera integration justify it. Most updates still ship as web content.
-- Multi-tenant (company id on every document) only if SiteHQ is to be sold to other firms.
+- More than one organisation: see *Future work* above (a stack per organisation, not a company id on every document).
