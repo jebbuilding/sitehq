@@ -22,7 +22,7 @@ A single-page app written in **vanilla JavaScript** with **no framework**: `src/
 │  cdnjs: jsPDF 2.5.1, pdf.js 3.11.174, SheetJS 0.18.5, mammoth 1.8.0, JSZip 3.10.1, qrcode-generator 1.4.4
 └───────────────────────────────────────────────────┘
 ```
-The **only place the platform is acquired is the boot IIFE in `src/app/core/boot.js`** (`const use=n=>window.claude.use(n)...; const [db,user,assets,dl]=await Promise.all(...)`), plus `AI.sample` in the "Ask Claude" helper. That boot block is the seam for the production adapter (`docs/ROADMAP.md`).
+The **only place the platform is acquired is the boot IIFE in `src/app/core/boot.js`** (`const use=n=>window.claude.use(n)...; const [db,user,assets,dl]=await Promise.all(...)`), plus `AI.sample` in the "Ask Claude" helper. That boot block is the seam for the production adapter – see *Own hosting* below.
 
 Boot sequence (`src/app/core/boot.js`):
 1. Acquire `db`, `user`, `assets`, `downloads`. If no db/user → "Sign in to use the app".
@@ -31,6 +31,36 @@ Boot sequence (`src/app/core/boot.js`):
 4. `S.owner = await user.isOwner()`.
 5. Subscribe (`onSnapshot`) to shared collections (`sites`, `equipment`, `docs`, `chats`, `settings/*`, `plan`, …) and, for the owner, private ones (`todos` → clients, suppliers, surveys, WTNs, samples, …; `offapp`; `visitinds`; every trade's `sheets/{id}/…` via the TR loader).
 6. Each snapshot updates `S.*` and calls `render()`.
+
+## Own hosting: the adapter and the server
+The same app runs without claude.ai by putting a different `window.claude` underneath it. Nothing in `src/app/` changes or knows.
+
+```
+┌──────────── browser: dist/web/index.html ────────────┐          ┌──────────────── server/ ────────────────┐
+│ src/platform/aws-adapter.js   defines window.claude  │          │ handlers/http.mjs → core/api.mjs        │
+│   use("db")        ── POST /api/db/get|list|set|… ───┼─────────►│   sign-in ─► rules ─► store ─► publish  │
+│   onSnapshot       ── WebSocket: sub ◄── "changed" ──┼─────────►│ handlers/ws.mjs   → core/live.mjs       │
+│   use("assets")    ── /api/assets, then /_blob/<id> ─┼─────────►│   files                                 │
+│   use("user")      ── GET /api/me, POST /api/profiles│          │                                         │
+│   use("downloads") ── <a download> (no server)       │          │ store:  DynamoDB    | in memory         │
+│   use("sample")    ── null (Ask Claude is off)       │          │ files:  S3          | local disk        │
+│ the app, unchanged (same script as dist/index.html)  │          │ sign-in: Cognito JWT | dev tokens       │
+└──────────────────────────────────────────────────────┘          │ push:   API Gateway | local WebSocket   │
+                                                                  └─────────────────────────────────────────┘
+```
+
+- **`src/platform/aws-adapter.js`** is one plain script, not part of `src/app/` (so not bundled by imports, not checked by `npm run modules`, not formatted by Prettier). It provides exactly what the app uses: `db` (`doc`/`collection`, `get`/`set`/`update`/`delete`/`add`/`onSnapshot`, `where`/`orderBy`/`limit`, snapshots `{id, exists, data()}` and `{docs}`), `user` (`id`, `isOwner`, `name`, `profiles`), `assets` (`upload`, `delete`, `list`), `downloads` (`save`). Its header comment says how it is configured and signed in.
+- **`server/`** is the backend: Lambda-style handlers with the database, file store, sign-in and push each behind an interface with two implementations – the AWS one and a local one. `server/README.md` is the reference: layout, HTTP API, WebSocket messages, what the CDK stack needs, and every assumption made about the rules.
+- **Rules**: the server enforces `platform/capabilities.json` – the same file, read by `server/core/rules.mjs`. Owner, trade and client come from the sign-in token. Two things are stricter than on claude.ai: a client is confined to `portal/<their id>`, and a path no rule covers is owner-only (`server/README.md` › Rules).
+- **Live updates** carry no data. `onSnapshot` reads once over HTTP and subscribes; after any accepted write the server tells the subscribers who may read that document "this path changed", and each reads it again. State only ever comes from a read, so late or out-of-order messages cannot leave a page stale. After a page's own write the adapter re-reads straight away rather than waiting to be told.
+- **Files** keep the address `/_blob/<id>`, on the page's own origin – the app draws them onto canvases, which a cross-origin image would lock.
+- **Run it**: `npm run local` → `localhost:4322/owner|trade|client`: page, API, WebSocket and files in one process on the in-memory store with the tests' seed. Data survives reloads and is shared between tabs until the server stops. No AWS account involved. (`npm run dev` remains the quick one: the fake platform inside the page, no rules, reset on reload.)
+- **Tests**: `npm run test:backend`, also the last step of `npm test` – see `server/README.md` › Tests. The crawl was pointed at the backend by giving `tests/crawl.js` an address (`SITEHQ_URL`); owner matches the fake tab for tab, and so do trade and client apart from two things that come from being served from a real address rather than `setContent` (below).
+- **Not there yet**: the sign-in screen (the adapter takes a token from `window.SITEHQ_AUTH.token()` when one exists), a deployment (the CDK stack in `infra/` is separate work), the data import. Nothing here has run on AWS. `docs/ROADMAP.md` Phase 1.
+
+Differences seen when the same crawl runs on the backend instead of the fake, both explained:
+- A page served from `http://127.0.0.1` has working `localStorage`; a page loaded with `setContent` does not. So the trade's "Save JEB to your computer" card goes away when dismissed, which shifts which buttons the crawl reaches (it checks in, so the Sign in tab then shows "Signed in").
+- A client's "About us" shows a different owner/contact name: the client can no longer read `settings/app` (confinement), so the app falls back to the signed-in user's own name. Cosmetic here, but it is the visible edge of a real change for clients – `server/README.md` › Rules, assumption 2.
 
 ## Source layout (`src/`)
 Until November 2026 all the logic was one file, `src/app.js`. It is now ES modules under `src/app/`, one per section, grouped into folders by area. `docs/MODULES.md` (generated) lists every file with what it exports, what it imports and who uses it.
@@ -121,11 +151,13 @@ src/app/core/boot.js ─► follow the imports: each file is placed after the fi
                      ─► "(function(){" + file + file + … + "})();"   one scope, source text unchanged
 src/styles/index.css ─► the files it imports, joined in that order, text unchanged
 src/shell.html       ─► shell with that stylesheet inlined + <script> + the app + </script>  =  dist/index.html
+src/platform/aws-adapter.js ─► <!doctype html>…<body> + <script> + adapter + </script> + dist/index.html + </body></html>  =  dist/web/index.html
 ```
 
 - **Why not esbuild or Vite?** They would work – `npm run check` bundles the modules with esbuild on every run and fails unless it accepts them and evaluates them in exactly the order above. But a real bundler re-prints the code, and until the claude.ai artifact is frozen the published script has to stay the source text, so that a version published from somewhere else can be cut back into files (`scripts/split.mjs`, `docs/PLATFORM.md` › Publishing). After cutover, replacing `bundle.mjs` with esbuild is a small change.
 - The build refuses to run if a file under `src/app/` is not reachable from `core/boot.js` through imports (it would be left out), if an import points at a missing file, or if a file does not parse on its own.
 - `dist/index.html` is the single file that gets published; the platform wraps it in its own `<html>` skeleton. `npm run dev` serves the same assembly with the tests' fake backend.
+- `dist/web/index.html` is the page for our own hosting: a complete document with the adapter in a script of its own ahead of the very same fragment (`webPage` in `bundle.mjs`). Adding it left `dist/index.html` byte-for-byte unchanged (same SHA-256 before and after). `npm run local` serves this assembly from the local backend.
 
 ## Structure checks
 `npm run check` (also run by `npm test` and CI) parses every file with acorn + eslint-scope and fails if:
@@ -138,7 +170,7 @@ src/shell.html       ─► shell with that stylesheet inlined + <script> + the 
 - a file is not formatted the way Prettier would format it (`npm run format` fixes it);
 - esbuild rejects the modules (for example an assignment to an import), or would evaluate them in a different order from `bundle.mjs`.
 
-`npm run build` and `npm run dev` need no `npm install`; the checks do.
+`npm run build` and `npm run dev` need no `npm install`; the checks, `npm run local` and the backend tests do.
 
 ## How the restructuring was verified
 Each step either left the built page provably unchanged or was compared against the original:
