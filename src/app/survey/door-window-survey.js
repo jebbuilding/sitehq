@@ -2184,75 +2184,6 @@ const DWS = (() => {
     S.winSurveys = L;
   }
 
-  /* ---- styles ---- */
-  function css() {
-    if (document.getElementById("ws-css")) return;
-    const st = document.createElement("style");
-    st.id = "ws-css";
-    st.textContent = `
-.wsov{--wsglass:#d9e7f0;--wsframe:#3b3532;--wsdim:#b42318;--wsaddon:#f1dcbf;--wssoft:#f7f4f1;position:fixed;inset:0;z-index:110;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch;color:var(--ink)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wsov{--wsglass:#2c4250;--wsframe:#d8d0cb;--wsdim:#ff7b6e;--wsaddon:#5a4630;--wssoft:#2a2523}}
-:root[data-theme="dark"] .wsov{--wsglass:#2c4250;--wsframe:#d8d0cb;--wsdim:#ff7b6e;--wsaddon:#5a4630;--wssoft:#2a2523}
-.wsbar{position:sticky;top:0;z-index:3;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px max(16px,env(safe-area-inset-left,0px));padding-top:max(10px,env(safe-area-inset-top,0px));background:var(--surface);border-bottom:1px solid var(--line)}
-.wsbar b{font-family:var(--f-display);font-size:18px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wssv{font-size:12px;color:var(--muted)}
-.wsbody{max-width:1280px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 90px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
-.wsgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
-@media (max-width:960px){.wsgrid{grid-template-columns:1fr}}
-.wspanel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.wspanel h2{font-family:var(--f-display);font-size:19px;margin:0;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.wslbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.wsrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.wsov label.wf{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
-.wsov input,.wsov select,.wsov textarea{width:100%;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:15px}
-.wsov input.mm{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
-.wsseg{display:flex;flex-wrap:wrap;gap:6px}
-.wsseg button{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-weight:600;font-size:14px}
-.wsseg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.wsov .btn.wssm{padding:6px 10px;font-size:13px;min-height:36px}
-.wsgal{border:1px solid var(--line);border-radius:10px;background:var(--bg)}
-.wsgal summary{cursor:pointer;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none}
-.wsgal summary::-webkit-details-marker{display:none}
-.wsgal summary b{font-family:var(--f-display);font-size:17px}
-.wsgal summary .wschev{margin-left:auto;color:var(--muted);font-size:13px}
-.wsgallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px;max-height:380px;overflow:auto;padding:4px 10px 12px}
-.wsgb{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;line-height:1.2;text-align:center}
-.wsgb[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
-.wsgb svg{width:100%;height:auto}
-.wsmeasure{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:12px;align-items:start}
-@media (max-width:600px){.wsmeasure{grid-template-columns:1fr}}
-.wssketch{background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:6px}
-.wssketch svg{width:100%;max-width:400px;height:auto}
-.wscalc{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
-.wscalc b{color:var(--ink)}
-.wsdz{display:flex;flex-direction:column;gap:8px}
-.wsprow,.wsfhd{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
-.wsfhd{background:transparent;border-style:dashed}
-.wsprow label.wf,.wsfhd label.wf{flex:1 1 112px;font-size:12px}
-.wsdz input,.wsdz select{min-height:38px;font-size:14px;padding:6px 8px;background:var(--surface)}
-.wspn{font-family:var(--f-display);font-size:16px;color:var(--accent);align-self:center;min-width:26px}
-.wschips{display:flex;flex-wrap:wrap;gap:6px}
-.wsov label.wschip{flex-direction:row;}.wschip{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);cursor:pointer}
-.wschip input{width:auto!important;min-height:0!important}
-.wslist{display:flex;flex-direction:column;gap:8px}
-.wsitem{display:grid;grid-template-columns:44px 60px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);text-align:left;width:100%}
-.wsitem[aria-current="true"]{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
-.wsitem .r{font-family:var(--f-display);font-size:18px;color:var(--accent)}
-.wsitem svg{width:60px;height:auto}
-.wsitem .z{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
-.wsitem small{color:var(--muted);display:block}
-.wsphb{position:relative;overflow:hidden;cursor:pointer}.wsov .wsphb input{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;cursor:pointer;font-size:0;padding:0;border:0}
-.wsph{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:100%}.wsph:empty{display:none}.wsph button{padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#000;width:72px;height:72px}.wsph img{width:100%;height:100%;object-fit:cover;display:block}
-.wsfoot{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.wsov [hidden]{display:none!important}
-.wshand{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}.wshand:empty{display:none}.wshand .wsht{flex:1 1 100%;font-size:13px;color:var(--muted)}.wshand .wsht b{color:var(--ink)}
-.wscl{display:flex;flex-direction:column;gap:6px}
-.wscl .wsrec{display:flex;gap:8px;align-items:center}
-.wscl .wsrec>button:first-child{flex:1;min-width:0;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-`;
-    document.head.appendChild(st);
-  }
-
   /* ---- editor ---- */
   let R = null,
     cur = 0,
@@ -2825,7 +2756,6 @@ const DWS = (() => {
       toast("Only the owner can do surveys");
       return;
     }
-    css();
     opts = o || {};
     const c = opts.client;
     const today = iso(new Date());
@@ -4686,7 +4616,6 @@ const DWS = (() => {
   function wireClient(c) {
     const el = document.getElementById("ws-cl");
     if (!el) return;
-    css();
     wireRows(el, { client: c });
     const b = document.getElementById("ws-cnew");
     if (b)
@@ -4698,7 +4627,6 @@ const DWS = (() => {
   function jobsHtml() {
     if (!ownerMode()) return "";
     const L = recs();
-    css();
     return `<div class="day"><div class="dayh"><span>🪟 Door &amp; window surveys</span><span class="sum">${L.length}</span></div><div class="wscl" id="ws-jl" style="padding:8px 0">${
       L.length
         ? L.slice(0, 30)

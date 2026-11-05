@@ -59,23 +59,6 @@ const WTN = (() => {
       );
   let R = null,
     saveT = null;
-  function css() {
-    if (document.getElementById("wt-css")) return;
-    const st = document.createElement("style");
-    st.id = "wt-css";
-    st.textContent = `
-.wt{display:flex;flex-direction:column;gap:10px}.wt h4{margin:12px 0 2px;font-size:15px;font-family:var(--f-display);color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:3px}.wt h5{margin:6px 0 0;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.wt .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.wt label.wf{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
-.wt input,.wt select,.wt textarea{width:100%;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:15px}
-.wt .ck{display:flex;align-items:center;gap:8px;font-size:14px;padding:6px 0}.wt .ck input{width:22px;height:22px;min-height:0;margin:0;accent-color:var(--accent)}
-.wt .line{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 36px;gap:6px;align-items:end;padding:8px;border:1px solid var(--line);border-radius:8px}
-.wt .sigbox{border:1px dashed var(--line);border-radius:10px;padding:10px;background:var(--bg)}.wt .sigbox canvas{width:100%;height:150px;background:#fff;border-radius:8px;touch-action:none;display:block}
-.wt .sigbox img{max-width:100%;max-height:150px;background:#fff;border-radius:8px;display:block}.wt .done{color:var(--ok,#2e7d4f);font-weight:600;font-size:13px}
-.wt .warn{background:#fbe9e7;color:#8a2e20;border-radius:8px;padding:8px 10px;font-size:13px}.wt .ok{background:var(--soft);border-radius:8px;padding:8px 10px;font-size:13px}
-.wt .seg button{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-weight:600;font-size:14px}.wt .seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.wtl{display:flex;flex-direction:column;gap:6px}.wtl .wtr{display:flex;gap:8px;align-items:center}.wtl .wtr>button:first-child{flex:1;min-width:0;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}`;
-    document.head.appendChild(st);
-  }
   const today = () => iso(new Date()),
     nowHM = () => {
       const d = new Date();
@@ -280,7 +263,6 @@ const WTN = (() => {
       toast("Only the owner can do waste transfer notes");
       return;
     }
-    css();
     R = rec ? upgrade(JSON.parse(JSON.stringify(rec))) : blank();
     draw();
   }
@@ -1208,7 +1190,6 @@ const WTN = (() => {
     <div class="who">The tips, transfer stations and skip yards you use, with their permit and carrier numbers. On a waste transfer note, pick one and Section C (or B) and the transfer address fill themselves.</div>
     <div class="actions" style="margin:10px 0"><button type="button" class="btn primary" id="wsv-add">+ Add a site</button></div>
     <div class="wtl">${L.length ? L.map((w) => `<div class="wtr"><button type="button" class="wsv-edit" data-id="${esc(w.id)}"><b>♻️ ${esc(w.name)}</b> · ${esc(w.company)}<br><span class="who">${esc([w.addr, w.postcode].filter(Boolean).join(", "))}${w.permitNo ? " · permit " + esc(w.permitNo) : " · <i>no permit number yet</i>"}${w.carrierNo ? " · carrier " + esc(w.carrierNo) : ""}</span></button></div>`).join("") : '<div class="nothing">None yet. Add the tip or transfer station you use most.</div>'}</div>`);
-    css();
     $("wsv-add").onclick = () => siteForm(null, sitesView);
     document.querySelectorAll(".wsv-edit").forEach(
       (b) =>
@@ -1251,7 +1232,6 @@ const WTN = (() => {
   }
   function jobsHtml() {
     if (!ownerMode()) return "";
-    css();
     const L = recs();
     return `<div class="day"><div class="dayh"><span>♻️ Waste transfer notes</span><span class="sum">${L.length}</span></div><div class="wtl" style="padding:8px 0">${L.length ? L.slice(0, 30).map(rowHtml).join("") : '<div class="nothing">None yet. Tap ♻️ Waste transfer note above when waste changes hands.</div>'}</div></div>`;
   }

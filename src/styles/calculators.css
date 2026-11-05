@@ -1,0 +1,12 @@
+/* ===== styles: calculators – used only by src/app/calculators/ ===== */
+.scrim{position:fixed;inset:0;background:rgba(8,12,20,.5);z-index:30}
+.calcmodes{margin-bottom:4px}.calcrow:last-child{border-bottom:0}.cfoot{display:flex;justify-content:space-between;align-items:center}.ctotal>div:not(.who){display:flex;justify-content:space-between;align-items:baseline;gap:12px}.mcsimple #mc-amt{font-size:22px;font-family:var(--f-mono)}.mce-line{display:grid;grid-template-columns:1fr 80px 96px auto;gap:6px;align-items:center}
+.ms-clear{margin-top:10px}
+.topfabs{position:fixed;top:12px;right:12px;z-index:24;display:flex;gap:8px;align-items:center}
+.rfgrid{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}.rftots .tot .n{font-size:20px}
+.cshist{margin-top:14px}.cshrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
+.flchips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}.flchips .chip[aria-pressed=true]{background:var(--brand);color:#fff;border-color:var(--brand)}.flchips .chip[data-r=pct][aria-pressed=true],.flchips .chip[data-r=other][aria-pressed=true]{background:var(--surface);color:var(--ink);border:2px solid var(--ink)}
+.fltbl{width:100%;border-collapse:collapse;font-size:14px}.fltbl tr.on td{background:var(--brandsoft,rgba(127,25,29,.08))}
+.tblwrap{overflow-x:auto;max-width:100%}.flsteps{display:flex;flex-wrap:wrap;gap:6px}
+.calcwork{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6;margin-bottom:8px}
+.mmm{display:block;font-size:13px;font-weight:600;color:var(--muted)}

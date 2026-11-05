@@ -1,7 +1,7 @@
 # Architecture
 
 ## In one paragraph
-A single-page app written in **vanilla JavaScript** with **no framework**: `src/shell.html` (CSS + static skeleton) and `src/app/` (all logic: ~130 ES modules, 2.1 MB, joined into one inline script by `scripts/build.mjs`) – see *Source layout* and *Build* below. It renders by writing template-literal HTML into `#main` and wiring event handlers afterwards. All persistence, files and identity come from the host platform through `window.claude.use(...)` (today: claude.ai Artifacts). Third-party libraries are loaded lazily from cdnjs at pinned versions only when a feature needs them.
+A single-page app written in **vanilla JavaScript** with **no framework**: `src/shell.html` (static skeleton), `src/styles/` (CSS) and `src/app/` (all logic: ~130 ES modules, 2.1 MB, joined into one inline script by `scripts/build.mjs`) – see *Source layout* and *Build* below. It renders by writing template-literal HTML into `#main` and wiring event handlers afterwards. All persistence, files and identity come from the host platform through `window.claude.use(...)` (today: claude.ai Artifacts). Third-party libraries are loaded lazily from cdnjs at pinned versions only when a feature needs them.
 
 ## How it was built (philosophy)
 - Built conversationally with Claude, one request at a time, by the owner on site. Features were added in small increments and shipped immediately (~320 versions).
@@ -74,6 +74,35 @@ Three conventions follow from being real modules:
 - **Feature modules**: eleven newer features are self-contained IIFEs that expose a few functions – `DWS`, `LEADS`, `WTN`, `SENDTO`, `SIGNIN`, `SIGNSHEET`, `CUT`, `SUBAG`, `SAMPLES`, `CJOBS`, `QRSITE`. Everything else is top-level functions.
 - **Folders and file names are a filing system, not layers.** Shared helpers still sit in whichever section first needed them (`loadJsPdf` in `safety/site-inductions.js`, `BRGB` and `pdfLogo` in `photos/photos.js`, `nameOf` in `owner/owner.js`). The imports tell you where a name really lives.
 
+## Styling (`src/styles/`)
+The stylesheet used to be one 127 KB `<style>` block inside `src/shell.html`, plus two blocks that the door & window survey and the waste transfer note injected from script. It is now plain CSS files, and `src/shell.html` is just the static markup with a placeholder comment where the build puts the stylesheet.
+
+| File | What is in it |
+|---|---|
+| `index.css` | Nothing but the list of files, as `@import` lines. **This is the order they are joined in.** |
+| `base.css` (3 KB) | Colour variables for light and dark, page defaults, keyframes – rules with no class in them |
+| `shared.css` (66 KB) | The app frame (header, tabs, sheet, viewers), classes used by more than one feature, and feature rules that have to stay ahead of a later shared rule (see below) |
+| `calculators.css` … `timesheets.css` (67 KB in 14 files) | One file per folder of `src/app/`: rules that can only apply inside that feature |
+
+**What goes in a feature file.** A rule belongs in `<folder>.css` when every one of its selectors needs a class (or id) that only that folder's code uses – `.wsov .btn` is the survey's, because `.wsov` exists nowhere else, even though `.btn` is everywhere. Anything else goes in `shared.css`. `npm run check` enforces this, and that every file starts with its banner (`/* ===== styles: name – … ===== */`).
+
+**Order matters, and that is why `shared.css` is big.** When two rules of equal weight set the same property on the same element, the later one wins. The original stylesheet was written in the order features were built, not grouped, so moving a feature's rules to a later file could flip a result. The regroup kept the original relative order of every pair of rules that *could* clash (same specificity, an overlapping property, and classes that can sit on one element). About 400 feature rules stay in `shared.css` for that reason, at their original position. So:
+- inside any file, **do not reorder existing rules**;
+- new feature rules go at the end of that feature's file; new shared rules go in `shared.css` just before the last line (the `@media (prefers-reduced-motion:no-preference)` block);
+- give a new feature's classes a prefix of their own, so its rules qualify for its own file.
+
+**Build.** `scripts/bundle.mjs` joins the files in `index.css` order, text unchanged, and inlines them as the page's one `<style>`. It refuses to build if a `.css` file is not imported or an import is missing. `scripts/split.mjs` reverses it (it cuts a published page's stylesheet at the banners).
+
+**What is still not in CSS files** (deliberately):
+- ~890 inline `style="…"` attributes in the HTML templates, mostly spacing (`margin-top:8px`); 46 of them hard-code a colour instead of a variable and are worth checking in dark mode;
+- sizes and positions set from script (`el.style.…`);
+- the tiny stylesheet of the print iframe in `files/print.js` (a separate document);
+- PDF and canvas drawing colours, which are code, not CSS.
+
+**How the regroup was verified.** Moving the block out of `shell.html` left `dist/index.html` byte-for-byte identical. For the regroup, the old and new pages were driven side by side through the same clicks and the computed style of every element and its `::before`/`::after` compared after each step. Every tab and up to 45 buttons per tab were pressed as owner, trade and client at phone width in light mode and as owner at 1100 px in dark mode; every tab was also compared at 390, 600 and 1100 px in light, dark and forced-dark; and the survey editor and the waste transfer note were opened directly. About 1,200 states and 420,000 element checks, with no difference.
+
+One assumption to know about: the survey and waste-note CSS used to be added to `<head>` the first time those screens opened, which put it *before* the page's own stylesheet in the test wrapper (where the page sits in `<body>`). It is now placed first to match. If claude.ai puts the page's `<style>` in `<head>` instead, 66 of those 87 rules could in principle change precedence against a shared rule; none did in any state compared.
+
 ## Start-up: `core/boot.js`
 `core/boot.js` is the entry point and the only file with statements that run at load. In order, it:
 1. calls the 20 `init…()` functions (event wiring on the static shell, document-level handlers, timers, and the drawing tools' symbol tables), in a fixed order written out in the file;
@@ -90,7 +119,8 @@ src/app/core/boot.js ─► follow the imports: each file is placed after the fi
                         (the order ES modules are evaluated in; nothing is listed by hand)
                      ─► drop each file's import/export block; each file must parse on its own
                      ─► "(function(){" + file + file + … + "})();"   one scope, source text unchanged
-src/shell.html       ─► shell + <script> + that + </script>  =  dist/index.html
+src/styles/index.css ─► the files it imports, joined in that order, text unchanged
+src/shell.html       ─► shell with that stylesheet inlined + <script> + the app + </script>  =  dist/index.html
 ```
 
 - **Why not esbuild or Vite?** They would work – `npm run check` bundles the modules with esbuild on every run and fails unless it accepts them and evaluates them in exactly the order above. But a real bundler re-prints the code, and until the claude.ai artifact is frozen the published script has to stay the source text, so that a version published from somewhere else can be cut back into files (`scripts/split.mjs`, `docs/PLATFORM.md` › Publishing). After cutover, replacing `bundle.mjs` with esbuild is a small change.
@@ -104,6 +134,7 @@ src/shell.html       ─► shell + <script> + that + </script>  =  dist/index.h
 - any file other than `core/boot.js` has a statement that runs at load;
 - a file uses another file's `const`/`let` *while it is being loaded* (for example in an initialiser) and that other file imports it back, directly or through other files – in a loop like that the value may not be ready;
 - an import/export block, or `docs/MODULES.md`, is not what `npm run modules` would write;
+- a rule in a feature's CSS file could apply outside that feature, or a CSS file lacks its banner (*Styling*, above);
 - a file is not formatted the way Prettier would format it (`npm run format` fixes it);
 - esbuild rejects the modules (for example an assignment to an import), or would evaluate them in a different order from `bundle.mjs`.
 

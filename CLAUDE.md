@@ -34,7 +34,7 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ROADMAP.md`.
 - Files: `uploadFile(blob,name)` → asset id; show with `blobUrl(id)`; fetch with `getFileBlob(id)`; images shrink with `shrinkImage(file,maxPx)`.
 - PDFs: jsPDF via `loadJsPdf()`, brand colour `BRGB()`, company `coData()`, logo `pdfLogo(doc,x,y,w,h)`. Every saved PDF can be printed (`printBlob`), and `S.dl.save` shows a "Print" bar.
 - UK English, plain words, emoji tab icons; tap targets ≥ 44px; must work on an iPad in Safari (file inputs must not be `hidden`/`display:none` – use opacity:0 overlays; iPad won't open hidden pickers).
-- CSS: lives in `src/styles/` (inlined into the page by the build); add rules before `@media (prefers-reduced-motion:no-preference)` in `src/styles/app.css`; use the CSS variables (`--ink`, `--line`, `--surface`, `--soft`, `--accent`, `--danger`); dark mode must keep working.
+- CSS: lives in `src/styles/` (inlined into the page by the build; `docs/ARCHITECTURE.md` › Styling). Rules that only apply inside one feature go at the end of `src/styles/<folder>.css` – every selector must include a class only that folder uses, so give new classes the feature's prefix. Everything else goes in `shared.css`, just before its last line (`@media (prefers-reduced-motion:no-preference)`). **Never reorder existing rules**: a later rule beats an earlier one of equal weight. Don't inject `<style>` from script; use the CSS variables (`--ink`, `--line`, `--surface`, `--soft`, `--accent`, `--danger`); dark mode must keep working.
 
 ## Rules that must not be broken
 - **Never commit real data** (exports, screenshots of live data, the `template.json` letter template). Test data is synthetic only.

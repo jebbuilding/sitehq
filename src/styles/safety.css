@@ -1,0 +1,11 @@
+/* ===== styles: safety – used only by src/app/safety/ ===== */
+.seg button.isdefect{background:var(--danger)!important;border-color:var(--danger)!important;color:var(--surface)!important}
+.indcard.todo{border-color:var(--danger);box-shadow:inset 4px 0 0 var(--danger)}.incblock{gap:8px}
+.duesoon{border-left:5px solid var(--hivis)}
+.privbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.rahead{display:flex;gap:8px;align-items:center}.r-low{background:#e3f4ea;color:#1d6b3f}.r-medium{background:#fdf1cf;color:#7a5600}.r-high{background:#fde2d6;color:#9a3412}
+.p-cv.on{background:#1d8a4a;color:#fff;border-color:#1d8a4a}
+.dsgo{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;text-align:left;background:none;border:0;border-top:1px solid var(--line);font:inherit;color:inherit;cursor:pointer;padding:8px 2px}.dsgo:hover{background:rgba(0,0,0,.04)}.dsr{display:flex;align-items:center;gap:6px;flex:none}
+.ppk{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}.ppk-chips{display:flex;flex-wrap:wrap;gap:6px}.ppk-chip{display:inline-flex;align-items:center;gap:4px;background:var(--soft,#f4eeee);border:1px solid var(--line);border-radius:16px;padding:4px 4px 4px 10px;font-size:14px}
+.ppk-q{width:100%}.ppk-list{border:1px solid var(--line);border-radius:10px;max-height:240px;overflow:auto;background:var(--card,#fff);display:flex;flex-direction:column}.ppk-opt{display:flex;align-items:center;gap:8px;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:10px;font-size:15px;color:var(--ink);cursor:pointer}.ppk-opt[aria-pressed="true"]{background:rgba(127,25,29,.07);font-weight:600}.ppk-tick{font-size:18px}.ppk-add{color:var(--brand);font-weight:600}.ppk-done{border:0;background:var(--brand);color:#fff;padding:10px;font-weight:700;cursor:pointer}.cdm-risks{display:flex;flex-direction:column}
+.eqshow{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 10px}

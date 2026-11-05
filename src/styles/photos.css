@@ -1,0 +1,13 @@
+/* ===== styles: photos – used only by src/app/photos/ ===== */
+.mk-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.mk-col[aria-pressed=true]{outline:3px solid #fff;outline-offset:2px}
+#markup .mk-top .btn:not(.primary){background:#221c1c;color:#fff;border-color:#4a3f40}#mk-cv{max-width:100%;max-height:100%;touch-action:none;border-radius:6px;background:#222}
+.mk-load{position:absolute;color:#ccc}.mk-hint{color:#c9bcbc;text-align:center}.mkitem{display:flex;gap:10px;align-items:flex-start}.mkbadge.skb.sk-change{background:#b3261e}.mkbadge.skb.sk-open{background:#a86b00}
+.phsel{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.brandrow{display:flex;align-items:center;gap:10px}
+.mk-bar{display:flex;flex-direction:column;gap:6px}.mk-row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.mk-t[aria-pressed=true]{background:var(--brand);border-color:#e3868a}
+.mk-ws{display:flex;gap:4px}.mk-wb[aria-pressed=true]{outline:2px solid #fff}
+.mk-stage{overflow:hidden}#mk-cv{max-width:none;max-height:none;border-radius:0;background:#0d0b0b;display:block}
+@media (max-width:639px){.mk-hint{font-size:12px}}
+#mk-snap[aria-pressed=true]{background:#2f5fb3;border-color:#2f5fb3}
+.ptst{display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid var(--line);border-radius:10px}
+.iconbtn.vrec-on{width:auto;padding:0 10px;font-size:13px;font-weight:700;border-radius:18px}

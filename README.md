@@ -29,7 +29,7 @@ Run one feature test: `cd tests && node features/h412.js`.
 
 ```
 src/shell.html        static HTML (header, tab bar, sheets, viewers) – everything before the <script>
-src/styles/           the stylesheet; index.css lists the files in order and the build inlines them into the page
+src/styles/           the stylesheet: base.css, shared.css and one file per folder of src/app/; index.css lists them in order and the build inlines them into the page
 src/app/              the whole application (~13k lines, vanilla JS, no framework): ES modules, one per section, in folders by area
 src/app/core/boot.js  the entry point: the only file that runs anything at load
 scripts/bundle.mjs    joins the modules into the one app script, in the order their imports imply (used by build, dev and split)

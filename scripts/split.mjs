@@ -1,4 +1,5 @@
-// The reverse of bundle.mjs: cuts an assembled app back into the files under src/app/.
+// The reverse of bundle.mjs: cuts an assembled app back into the files under src/app/, and the page's stylesheet
+// back into the files under src/styles/ (each starts with a /* ===== styles: name – … ===== */ banner).
 //   node scripts/split.mjs <file>      <file> = a built/published page (index.html) or just its app script
 // Use it to merge a version that was published to the artifact from somewhere else (docs/PLATFORM.md › Publishing):
 // run it on that version, then review `git diff`.
@@ -7,7 +8,7 @@
 // there are deleted (they stay in git history). The order of the sections is not recorded: it comes from the imports.
 import fs from "node:fs";
 import path from "node:path";
-import { root, APP_DIR, OPEN, CLOSE, BANNER, appFiles, parts } from "./bundle.mjs";
+import { root, APP_DIR, STYLES_DIR, OPEN, CLOSE, BANNER, appFiles, parts, styleFiles } from "./bundle.mjs";
 
 const arg = process.argv[2];
 if (!arg) { console.error("usage: node scripts/split.mjs <index.html | app.js>"); process.exit(1); }
@@ -15,7 +16,26 @@ const fail = m => { console.error("split: " + m); process.exit(1); };
 
 let app = fs.readFileSync(arg, "utf8");
 const a = app.lastIndexOf("<script>\n"), b = app.lastIndexOf("</script>");
-if (a >= 0 && b > a) app = app.slice(a + 9, b); // a whole page: the app is its last inline script
+if (a >= 0 && b > a) {
+  // a whole page: first its stylesheet (the <style> before the script)…
+  const head = app.slice(0, a), s0 = head.indexOf("<style>\n"), s1 = head.indexOf("</style>");
+  if (s0 >= 0 && s1 > s0) {
+    const css = head.slice(s0 + 8, s1), re = /^\/\* ===== styles: ([\w-]+) – .*? ===== \*\/$/gm, cuts = [];
+    for (let m; (m = re.exec(css)); ) cuts.push({ name: m[1], at: m.index });
+    if (!cuts.length || cuts[0].at !== 0) fail("the page's stylesheet does not start with a /* ===== styles: name – … ===== */ banner (a version from before the stylesheet was split?)");
+    const known = styleFiles(), seen = [];
+    cuts.forEach((c, i) => {
+      const file = c.name + ".css", text = css.slice(c.at, i + 1 < cuts.length ? cuts[i + 1].at : css.length), p = path.join(root, STYLES_DIR, file);
+      seen.push(file);
+      if (fs.existsSync(p) && fs.readFileSync(p, "utf8") === text) return;
+      fs.writeFileSync(p, text);
+      console.log((known.includes(file) ? "  changed  " : "  new      ") + STYLES_DIR + "/" + file + (known.includes(file) ? "" : "   (add it to index.css in the right place)"));
+    });
+    known.filter(f => !seen.includes(f)).forEach(f => console.log("  missing  " + STYLES_DIR + "/" + f + "   (not in this page's stylesheet – check before deleting it)"));
+    console.log(`${cuts.length} stylesheet files checked`);
+  }
+  app = app.slice(a + 9, b); // …then the app: its last inline script
+}
 if (!app.startsWith(OPEN) || !app.endsWith(CLOSE)) fail("this does not look like the app: expected it to start with (function(){ and end with })();");
 
 const lines = app.slice(OPEN.length, app.length - CLOSE.length).split("\n");

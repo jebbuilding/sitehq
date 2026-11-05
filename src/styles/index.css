@@ -1,3 +1,19 @@
 /* The app's stylesheet: the files below, joined in this order and inlined into the page by scripts/bundle.mjs.
-   Only comments and @import lines belong in this file. Order matters: a later rule beats an earlier one of equal weight. */
-@import "./app.css";
+   Only comments and @import lines belong in this file. Order matters: a later rule beats an earlier one of equal weight,
+   so base comes first, then the frame, then what features share, then one file per folder of src/app/. */
+@import "./base.css";
+@import "./shared.css";
+@import "./calculators.css";
+@import "./chat.css";
+@import "./clients.css";
+@import "./drawing.css";
+@import "./files.css";
+@import "./owner.css";
+@import "./people.css";
+@import "./photos.css";
+@import "./planner.css";
+@import "./purchasing.css";
+@import "./safety.css";
+@import "./sites.css";
+@import "./survey.css";
+@import "./timesheets.css";

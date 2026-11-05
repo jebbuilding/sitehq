@@ -9,7 +9,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
-import { root, APP_DIR, ENTRY, parts, order } from "./bundle.mjs";
+import { root, APP_DIR, ENTRY, STYLES_DIR, parts, order, styleFiles } from "./bundle.mjs";
 import { analyzeApp, BROWSER } from "./analyze.mjs";
 
 // Globals created by the libraries the app loads from the CDN on demand (docs/ARCHITECTURE.md › Runtime).
@@ -79,6 +79,50 @@ try {
 } catch (e) {
   (e.errors || [{ text: e.message }]).forEach(x => problems.push(`${x.location ? `${x.location.file}:${x.location.line} ` : ""}${x.text}`));
 }
+
+// ---- styles: in a file named after a folder of src/app/, every selector must need a class (or id) that only that
+// folder uses, so the rule can only apply inside that feature. Anything else belongs in shared.css.
+try {
+  const folders = new Set(files.map(f => f.file.split("/")[0]));
+  const shellHtml = fs.readFileSync(path.join(root, "src/shell.html"), "utf8");
+  const text = new Map(); // app folder -> all its source
+  for (const f of files) { const k = f.file.split("/")[0]; text.set(k, (text.get(k) || "") + f.src + "\n"); }
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
+  const seen = new Map();
+  const usersOf = name => { // which folders mention this class or id; null if nothing does
+    if (seen.has(name)) return seen.get(name);
+    const re = new RegExp("(^|[^A-Za-z0-9_-])" + esc(name) + "($|[^A-Za-z0-9_-])");
+    let out = [...text].filter(([, s]) => re.test(s)).map(([k]) => k);
+    if (!out.length && name.includes("-")) { // built at run time, e.g. "t-" + type
+      const dyn = new RegExp("(^|[^A-Za-z0-9_-])" + esc(name.slice(0, name.indexOf("-") + 1)) + "(\\$\\{|[\"'`]\\s*\\+)");
+      out = [...text].filter(([, s]) => dyn.test(s)).map(([k]) => k);
+    }
+    const r = out.length || re.test(shellHtml) ? out.filter(k => k !== "core") : null;
+    seen.set(name, r);
+    return r;
+  };
+  const rulesIn = css => { // selector lists of every rule, looking inside @media
+    const out = []; let depth = 0, start = 0, prelude = "";
+    for (let i = 0; i < css.length; i++) {
+      if (css[i] === "{") { if (depth === 0) prelude = css.slice(start, i).trim(); depth++; if (depth === 1 && prelude.startsWith("@media")) { depth = 0; start = i + 1; } }
+      else if (css[i] === "}") { if (depth === 0) { start = i + 1; continue; } depth--; if (depth === 0) { if (!prelude.startsWith("@")) out.push(prelude); start = i + 1; } }
+    }
+    return out;
+  };
+  const splitList = sel => { const out = []; let d = 0, s0 = 0; for (let i = 0; i < sel.length; i++) { if (sel[i] === "(" || sel[i] === "[") d++; else if (sel[i] === ")" || sel[i] === "]") d--; else if (sel[i] === "," && d === 0) { out.push(sel.slice(s0, i)); s0 = i + 1; } } out.push(sel.slice(s0)); return out.map(x => x.trim()).filter(Boolean); };
+  for (const file of styleFiles()) {
+    const css = fs.readFileSync(path.join(root, STYLES_DIR, file), "utf8"), name = file.replace(/\.css$/, "");
+    if (!/^\/\* ===== styles: /.test(css)) problems.push(`${STYLES_DIR}/${file} must start with its banner: /* ===== styles: ${name} – what it is for ===== */`);
+    if (!folders.has(name)) continue; // base.css, shared.css: anything goes
+    for (const list of rulesIn(css.replace(/\/\*[\s\S]*?\*\//g, ""))) for (const sel of splitList(list)) {
+      const names = (sel.replace(/\[[^\]]*\]/g, "").match(/[.#]-?[A-Za-z_][\w-]*/g) || []).map(c => c.slice(1));
+      const users = names.map(usersOf);
+      if (users.some(u => u && u.length === 1 && u[0] === name)) continue; // needs something only this folder has
+      if (names.length && users.every(u => u === null)) continue; // mentioned nowhere: unused, harmless where it is
+      problems.push(`${STYLES_DIR}/${file}: "${sel.slice(0, 60)}" does not need any class that only src/app/${name}/ uses, so it can apply elsewhere. Move the rule to shared.css (keeping its place in the order)`);
+    }
+  }
+} catch (e) { problems.push(e.message); }
 
 // ---- cycles: strongly connected groups of files (Tarjan)
 function cycles() {

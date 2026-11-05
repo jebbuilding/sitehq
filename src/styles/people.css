@@ -1,0 +1,5 @@
+/* ===== styles: people – used only by src/app/people/ ===== */
+.notice.install{border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}.pp-coL{margin-left:6px;gap:6px}
+.pphint{display:block;font-size:12px;color:var(--accent);font-weight:600;margin-top:2px}
+.mefill{margin:2px 0 0;align-self:flex-start}
+.ctbox{border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:10px;padding:10px 12px;margin:8px 0}.ctbox.missing{border-left-color:var(--danger)}.pmav-s .pmavcam{width:20px;height:20px;font-size:10px}
