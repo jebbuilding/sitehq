@@ -7,7 +7,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import zlib from "node:zlib";
-import { bundleApp, root } from "./bundle.mjs";
+import { bundleApp, pageFragment, root } from "./bundle.mjs";
 
 const read = f => fs.readFileSync(path.join(root, f), "utf8");
 const PORT = Number(process.env.PORT) || 4321, HOST = process.env.HOST || "127.0.0.1";
@@ -66,7 +66,7 @@ function page(role, onboarding) {
   }
   // The platform supplies the <html> skeleton (and viewport) around the published fragment; so do we.
   return '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>'
-    + fakePlatform(role === "owner") + overlay(role) + read("src/shell.html") + "<script>\n" + app + "</script>\n</body></html>";
+    + fakePlatform(role === "owner") + overlay(role) + pageFragment(app) + "</body></html>";
 }
 
 // Uploaded files, plus stand-ins for the asset ids the seed data points at.

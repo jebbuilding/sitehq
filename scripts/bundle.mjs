@@ -71,7 +71,33 @@ export function bundleApp() {
   return app;
 }
 
-/** The page fragment that is published: static shell, then the app in one inline script. */
+export const STYLES_DIR = "src/styles", STYLES_ENTRY = "index.css";
+const STYLE_SLOT = "<!-- styles: src/styles/index.css and the files it imports are inlined here by scripts/bundle.mjs -->";
+
+/** The stylesheet files, in the order src/styles/index.css imports them. */
+export function styleFiles() {
+  const dir = path.join(root, STYLES_DIR), files = [];
+  const entry = fs.readFileSync(path.join(dir, STYLES_ENTRY), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const line of entry.split("\n").map(l => l.trim()).filter(Boolean)) {
+    const m = /^@import "\.\/([^"]+\.css)";$/.exec(line);
+    if (!m) throw new Error(`${STYLES_DIR}/${STYLES_ENTRY} may only contain comments and lines like @import "./name.css"; – found: ${line.slice(0, 60)}`);
+    if (files.includes(m[1])) throw new Error(`${STYLES_DIR}/${STYLES_ENTRY} imports ${m[1]} twice`);
+    if (!fs.existsSync(path.join(dir, m[1]))) throw new Error(`${STYLES_DIR}/${STYLES_ENTRY} imports ${m[1]}, which does not exist`);
+    files.push(m[1]);
+  }
+  const unlisted = fs.readdirSync(dir).filter(f => f.endsWith(".css") && f !== STYLES_ENTRY && !files.includes(f));
+  if (unlisted.length) throw new Error(`Not imported by ${STYLES_DIR}/${STYLES_ENTRY}, so they would be left out of the page: ${unlisted.join(", ")}`);
+  return files;
+}
+
+/** The stylesheet: the imported files joined in order, text unchanged. */
+export function bundleCss() {
+  return styleFiles().map(f => { const s = fs.readFileSync(path.join(root, STYLES_DIR, f), "utf8"); return s.endsWith("\n") ? s : s + "\n"; }).join("");
+}
+
+/** The page fragment that is published: static shell with the stylesheet inlined, then the app in one inline script. */
 export function pageFragment(app = bundleApp()) {
-  return fs.readFileSync(path.join(root, "src/shell.html"), "utf8") + "<script>\n" + app + "</script>\n";
+  const shell = fs.readFileSync(path.join(root, "src/shell.html"), "utf8");
+  if (shell.split(STYLE_SLOT).length !== 2) throw new Error("src/shell.html must contain the styles placeholder comment exactly once");
+  return shell.replace(STYLE_SLOT, () => "<style>\n" + bundleCss() + "</style>") + "<script>\n" + app + "</script>\n";
 }

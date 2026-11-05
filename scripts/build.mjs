@@ -1,4 +1,4 @@
-// Builds dist/index.html = src/shell.html + <script> + the app assembled from src/app/ (see bundle.mjs) + </script>
+// Builds dist/index.html = src/shell.html with src/styles/ inlined + <script> + the app assembled from src/app/ + </script> (see bundle.mjs)
 // This is exactly the file published to the claude.ai artifact (the platform wraps it in its own <html> skeleton).
 import fs from "node:fs";
 import path from "node:path";

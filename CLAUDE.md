@@ -14,7 +14,7 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ROADMAP.md`.
 - **This repo is now the source of truth for code.** Never edit the live artifact from another copy without merging here first.
 
 ## How to make a change
-1. Edit the file under `src/app/` (and `src/shell.html` for CSS/static markup). Find code by searching `src/app/` for the function name or the banner – folder names are a filing system, and shared helpers are not always where the name suggests. Keep the existing style (see below). **Never write `import`/`export` lines by hand**: just use the name, then run step 4.
+1. Edit the file under `src/app/` (`src/shell.html` for static markup, `src/styles/` for CSS). Find code by searching `src/app/` for the function name or the banner – folder names are a filing system, and shared helpers are not always where the name suggests. Keep the existing style (see below). **Never write `import`/`export` lines by hand**: just use the name, then run step 4.
 2. `npm run build` – syntax-checks each file and the whole, and writes `dist/index.html` + `tests/timesheets.html`. `npm run dev` serves the app at `localhost:4321/owner|trade|client` on the fake backend for a look by hand.
 3. Write or update a Playwright test in `tests/features/` that exercises the change through the UI against the fake backend (copy the header of a recent one, e.g. `h412.js` for owner-side, `h395.js` for a seeded owner session, `h400.js` if pdf.js is needed). Run it from `tests/`.
 4. `npm run format` – formats `src/app/` with Prettier, then rewrites each file's import/export block to match the code, regenerates `docs/MODULES.md`, and runs the structure checks (`docs/ARCHITECTURE.md` › Structure checks). Commit what it changes. (`npm run modules` does the same without formatting.)
@@ -34,7 +34,7 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ROADMAP.md`.
 - Files: `uploadFile(blob,name)` → asset id; show with `blobUrl(id)`; fetch with `getFileBlob(id)`; images shrink with `shrinkImage(file,maxPx)`.
 - PDFs: jsPDF via `loadJsPdf()`, brand colour `BRGB()`, company `coData()`, logo `pdfLogo(doc,x,y,w,h)`. Every saved PDF can be printed (`printBlob`), and `S.dl.save` shows a "Print" bar.
 - UK English, plain words, emoji tab icons; tap targets ≥ 44px; must work on an iPad in Safari (file inputs must not be `hidden`/`display:none` – use opacity:0 overlays; iPad won't open hidden pickers).
-- CSS: add rules before `@media (prefers-reduced-motion:no-preference)` in `src/shell.html`; use the CSS variables (`--ink`, `--line`, `--surface`, `--soft`, `--accent`, `--danger`); dark mode must keep working.
+- CSS: lives in `src/styles/` (inlined into the page by the build); add rules before `@media (prefers-reduced-motion:no-preference)` in `src/styles/app.css`; use the CSS variables (`--ink`, `--line`, `--surface`, `--soft`, `--accent`, `--danger`); dark mode must keep working.
 
 ## Rules that must not be broken
 - **Never commit real data** (exports, screenshots of live data, the `template.json` letter template). Test data is synthetic only.
