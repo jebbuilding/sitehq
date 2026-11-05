@@ -1,4 +1,23 @@
 /* ================= PROFILE PHOTOS ================= */
+import { initials, openDM } from "../chat/chat.js";
+import { $, dayLine, esc, shortDay, stamp, toast } from "../core/helpers.js";
+import { privacyBlock } from "../core/privacy-notice.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { personPhotoDlg, personPhotoSet } from "../files/cut-outs.js";
+import { blobUrl, csvSave, uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { companyOf, nameOf, roleOf, roleTag, teamIds } from "../owner/owner.js";
+import { EMP_TYPES } from "./employment-types.js";
+import { accessNotice, leaversBlock, openLeaver, wireLeavers } from "./leavers.js";
+import { DET_SECTIONS, detailsDone, myDetails, openDetails } from "./personal-details.js";
+import { PDOC_TYPES, myPdocsBlock, openPdoc, pdocRow, pdocsOf, wireMyPdocs, wirePdocs } from "./personal-documents.js";
+import { openPromptSender, remindersPanel, wireReminders } from "./reminders.js";
+import { SUBAG } from "./subcontractor-agreement.js";
+import { loadImage } from "../photos/photos.js";
+import { myName } from "../survey/door-window-survey.js";
+import { dayFor, openMyDay } from "../timesheets/working-day.js";
+export { avatarHtml, myDetailsView, peopleView, personPhoto };
 const personPhoto=id=>{const t=(S.team||{})[id];if(t&&t.photo)return t.photo;if(id===S.me&&S.myProfile&&S.myProfile.photo)return S.myProfile.photo;return ""};
 function avatarHtml(id,size,name){size=size||40;const p=personPhoto(id);const n=name||nameOf(id);
   return p?`<img class="pav" src="${blobUrl(p)}" alt="${esc(n)}" style="width:${size}px;height:${size}px" loading="lazy">`:`<span class="pav pavi" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px" aria-hidden="true">${esc(initials(n))}</span>`}

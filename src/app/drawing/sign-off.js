@@ -1,4 +1,14 @@
 /* ===== Drawing sign-off (owner sends to client and/or trades) ===== */
+import { ptKind, ptOf, ptSrc } from "../clients/portal.js";
+import { $, esc, iso, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, clActive } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { SK_CAT } from "./trade-drawings.js";
+import { newId } from "../files/outbox.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { siteClient } from "../sites/summary.js";
+export { dwSendForSign, dwSignStatus };
 function dwSignStatus(p){if(!p||!p.signSent)return [];return allTeam("photos").filter(x=>x.signOf===p.id&&x.who!==S.me).map(x=>({name:nameOf(x.who),s:x.signReq||"open",note:x.signNote||"",at:x.signedAt}))}
 function dwSendForSign(p,upd){const ids=teamIds();const cls=(S.clients||[]).filter(clActive);const sc=p.site?siteClient(p.site):null;
   openSheet(`<h3 id="sheettitle">📤 Send "${esc(p.title||"Drawing")}"</h3>${p.site?`<div class="who">Job: <b>${esc(p.site)}</b></div>`:""}

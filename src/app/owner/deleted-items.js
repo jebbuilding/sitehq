@@ -1,4 +1,20 @@
 /* ===== DELETED ITEMS: photos and files the owner deletes go here first, come off everywhere they were used, and are removed for good after 30 days (or straight away from Setup) ===== */
+import { saveClient } from "../clients/clients.js";
+import { ptCl, ptOf } from "../clients/portal.js";
+import { mapDocs } from "../core/data.js";
+import { askOwnerPin } from "../core/dictation.js";
+import { $, esc, stamp, toast } from "../core/helpers.js";
+import { TR, queueTrade } from "../core/live-feed.js";
+import { RAW, S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { blobUrl } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId, sphotoPut, sphotoWanted } from "../files/outbox.js";
+import { auditFirst } from "./deletion-record.js";
+import { nameOf } from "./owner.js";
+import { myName } from "../survey/door-window-survey.js";
+export { BIN_DAYS, binAutoPurge, binDelete, binFromViewer, binIsImg, binRecord, binView, noBin };
 const BIN_DAYS=30;
 /* every record James deletes goes to Deleted items first (records put back with ↩, gone for good after BIN_DAYS or when he purges with his PIN) */
 const BIN_SKIP=/^(todos\/bin-|todos\/audit|sphotos\/|wfiles\/|data\/users\/|settings\/|portal\/[^/]+\/uploads\/|.*\/parts\/|.*\/_$)/;

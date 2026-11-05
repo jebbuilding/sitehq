@@ -1,4 +1,7 @@
 /* ===== Photo test: plain phone file boxes, to tell an app/phone problem from a SiteHQ one ===== */
+import { APP_LINK } from "../clients/portal.js";
+import { esc } from "../core/helpers.js";
+export { initPhotoTest };
 function photoTest(){const d=document.createElement("div");d.className="dimask";d.style.zIndex="90";
   d.innerHTML=`<div class="dimbox" style="max-width:440px;max-height:90vh;overflow:auto"><b>📷 Photo test</b><div class="who">These are your phone's own plain buttons, with nothing from SiteHQ around them. Tap each one.</div>
     <div class="ptst"><b>1. Camera</b><input type="file" accept="image/*" capture="environment" id="pt1" data-cam="1"><span id="pt1r" class="who">Not tried</span></div>
@@ -8,5 +11,8 @@ function photoTest(){const d=document.createElement("div");d.className="dimask";
     <div class="dimbtns"><button type="button" class="btn primary ptx">Close</button></div></div>`;
   document.body.appendChild(d);d.querySelector(".ptx").onclick=()=>d.remove();
   [1,2,3].forEach(n=>{const i=d.querySelector("#pt"+n),r=d.querySelector("#pt"+n+"r");i.addEventListener("click",()=>{r.textContent="Tapped… waiting for your phone";r.style.color=""});i.onchange=()=>{const f=i.files[0];r.textContent=f?`✓ Worked: ${f.name||"photo"} (${Math.round((f.size||0)/1024)} KB)`:"Opened but nothing chosen";r.style.color=f?"var(--ok)":""}})}
-window.__photoTest=photoTest;
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initPhotoTest(){
+window.__photoTest=photoTest;
+}

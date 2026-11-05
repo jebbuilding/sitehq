@@ -1,4 +1,15 @@
 /* ================= CHECKS ================= */
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, monday, parse, shortDay, toast } from "../core/helpers.js";
+import { armDelete, closeForm, editing, formFoot, myDoc, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, equipOf, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl, uploadErr } from "../files/files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { nameOf, roleShort } from "../owner/owner.js";
+import { exifDate, readExif, stampPhoto } from "../photos/photos.js";
+import { KINDS, ck, defectsOf, hasProblem } from "./checklists.js";
+export { checkCard, openCheck };
 function checkCard(c0,owner,who){
   const c=ck(c0), d=defectsOf(c), K=KINDS[c.kind]||KINDS.vehicle;
   const st=c.safe===false?'<span class="tag bad">Not safe to use</span>':d.length?'<span class="tag day">Defects</span>':'<span class="tag ok">All OK</span>';
@@ -11,7 +22,7 @@ function checkCard(c0,owner,who){
 let checkVals={};
 function openCheck(kind,c0,presetAsset){
   const c=c0?ck(c0):null, K=KINDS[kind];
-  editing=c0||null; formType="check";
+  setEditing(c0||null); setFormType("check");
   checkVals=Object.assign({},c&&c.items||{});
   const last=presetAsset||lastOf(S.mine.checks.map(ck),x=>x.kind===kind,"asset");
   openSheet(`<h3 id="sheettitle">${K.name} ${K.inspect?"inspection":"check"}</h3>

@@ -1,4 +1,16 @@
 /* ================= CLIENT STAGES <-> PLANNER ================= */
+import { clStage, saveClient } from "./clients.js";
+import { VISIT_REMIND_MIN, viewClient } from "./quick-enquiry.js";
+import { $, addDays, dayLabel, esc, gbp, iso, parse, shortDay, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer } from "../core/viewer.js";
+import { newId } from "../files/outbox.js";
+import { openPlanEditor } from "../planner/board.js";
+import { toHM } from "../planner/diary.js";
+import { siteFromClient, sjMaster } from "../sites/job-details.js";
+export { clAddPlan, clAddr, clNextPlan, clPlanListHtml, clPlans, clStepsHtml, wireClSteps };
 const CL_FLOW=["enquiry","visit","quote","won","onsite","done","lost"];
 function clPlans(c){return (S.plan||[]).concat(S.planPrivate||[]).filter(p=>p.clientId===c.id).sort((a,b)=>(a.from+(a.time||"")).localeCompare(b.from+(b.time||"")))}
 function clNextPlan(c){const t=iso(new Date());return clPlans(c).find(p=>(p.to||p.from)>=t)}

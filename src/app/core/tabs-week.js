@@ -1,4 +1,51 @@
 /* ================= TABS & WEEK ================= */
+import { calcView } from "../calculators/calculator.js";
+import { chatView, unread, visibleChats } from "../chat/chat.js";
+import { clientsView } from "../clients/address-book.js";
+import { portalTab } from "../clients/portal-calendar.js";
+import { renderClient, renderClientJoin, renderWelcomeChoice } from "../clients/portal.js";
+import { signoffsTab } from "../clients/sign-offs.js";
+import { $, addDays, esc, iso, monday, store, toast } from "./helpers.js";
+import { drawNowBar } from "./now-bar.js";
+import { issueBadge } from "./report-issue.js";
+import { S, ownerMode } from "./state.js";
+import { drawView } from "../drawing/drawings-tab.js";
+import { SIGNSHEET } from "../drawing/sign-off-sheet.js";
+import { isSketch } from "../drawing/trade-drawings.js";
+import { flushOutbox, outboxBanner } from "../files/outbox.js";
+import { nfCounts, nfMarkSeenSoon } from "../owner/alerts.js";
+import { LEADS } from "../owner/leads.js";
+import { allTeam, ownerInvoices, ownerPhotos, ownerSetup, ownerTime, startPreview, teamIds } from "../owner/owner.js";
+import { empChecks, ownerChecks } from "../owner/reports-home.js";
+import { sentTodosHTML, todoView, todosOf, tradeTodosHTML, wireSentTodos, wireTradeTodos } from "../owner/todo-lists.js";
+import { whatsNewHTML, wireWhatsNew, wnCapture } from "../owner/whats-new.js";
+import { amForeman, foremanView } from "../people/foreman.js";
+import { detailsDone, myDetails, renderDetailsNeeded } from "../people/personal-details.js";
+import { myDetailsView, peopleView } from "../people/profile-photos.js";
+import { PROMPT_FORMS, installCard, maybePopPrompts, myOpenPrompts, mySchedDue, openPromptSender, promptBanner, schedBanner, wireInstall, wirePromptBanner, wireSched } from "../people/reminders.js";
+import { empPhotos } from "../photos/photos.js";
+import { enhancePhotoGrids } from "../photos/select-zip.js";
+import { plannerView } from "../planner/board.js";
+import { empInvoices } from "../purchasing/invoices.js";
+import { isInv, materialsView, receiptsView } from "../purchasing/materials-receipts.js";
+import { SAMPLES } from "../purchasing/samples.js";
+import { suppliersView } from "../purchasing/suppliers.js";
+import { hasProblem } from "../safety/checklists.js";
+import { myVehIns } from "../safety/expiry-dates.js";
+import { myPolTodo, policiesView } from "../safety/policies-insurance.js";
+import { empIndTodo, indFor } from "../safety/site-inductions.js";
+import { expiryState, myTalkTodo, trainingView } from "../safety/training.js";
+import { hsView } from "../sites/doc-visibility.js";
+import { jobProgress, myJobs } from "../sites/job-sheets.js";
+import { autoPins } from "../sites/maps-pins.js";
+import { plansView, unsignedRams } from "../sites/plans-specs.js";
+import { ownerProjects } from "../sites/project-pages.js";
+import { SIGNIN, signOnly } from "../sites/sign-in-book.js";
+import { arcMigrate } from "../sites/storage.js";
+import { jobsView, renderJobDetail } from "../survey/door-window-survey.js";
+import { dayworkView, myDayworkView } from "../timesheets/day-work.js";
+import { empTime } from "../timesheets/time.js";
+export { EMP_TABS, OWN_TABS, curTab, empTabs, initTabsWeek, refreshJobDetail, render, renderTabs };
 const TAB_SVG={calc:`<svg class="tabico" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="1" width="11" height="14" rx="2" fill="#5b6b7a"/><rect x="4" y="2.6" width="8" height="3.2" rx=".6" fill="#cfe8d6"/><g fill="#fff"><rect x="4" y="7" width="2.2" height="1.8" rx=".4"/><rect x="6.9" y="7" width="2.2" height="1.8" rx=".4"/><rect x="9.8" y="7" width="2.2" height="1.8" rx=".4"/><rect x="4" y="9.6" width="2.2" height="1.8" rx=".4"/><rect x="6.9" y="9.6" width="2.2" height="1.8" rx=".4"/><rect x="4" y="12.2" width="2.2" height="1.8" rx=".4"/><rect x="6.9" y="12.2" width="2.2" height="1.8" rx=".4"/></g><rect x="9.8" y="9.6" width="2.2" height="4.4" rx=".4" fill="#f2a33a"/></svg>`,
   invoices:`<svg class="tabico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1h7l3 3v11H3z" fill="#fff" stroke="#5b6b7a" stroke-width="1.1" stroke-linejoin="round"/><path d="M10 1v3h3" fill="#e6ecf1" stroke="#5b6b7a" stroke-width="1.1" stroke-linejoin="round"/><text x="4.4" y="8.6" font-size="6" font-weight="800" fill="#1d8a4a" font-family="system-ui,sans-serif">£</text><g stroke="#9aa7b3" stroke-width="1" stroke-linecap="round"><path d="M8 6.4h3M8 8.2h3M4.6 10.6h6.4M4.6 12.6h4"/></g></svg>`};
 const EMP_TABS=[["time","⏱️ Timesheets"],["mydw","🧱 Day work"],["chat","💬 Chat"],["planner","🗓️ Planner"],["jobs","🔨 Jobs & to-dos"],["plans","🏗️ Sites"],["checks","📋 Reports"],["photos","📷 Photos"],["materials","🧰 Materials & tools"],["suppliers","🏪 Merchants"],["receipts","🧾 Receipts"],["invoices","Invoices"],["training","🎓 Training"],["policies","🛡️ Policies & insurance"],["calc","Calculator"],["draw","✏️ Drawings"],["details","🪪 My details"]];
@@ -36,9 +83,6 @@ function renderWeek(){
   $("wk").textContent="Week of "+S.week.getDate()+(sameM?"":" "+S.week.toLocaleDateString("en-GB",{month:"short"}))+" – "+e.getDate()+" "+e.toLocaleDateString("en-GB",{month:"short",year:"numeric"});
   $("thisweek").hidden=iso(S.week)===iso(monday(new Date()));
 }
-$("prev").onclick=()=>{S.week=addDays(S.week,-7);render()};
-$("next").onclick=()=>{S.week=addDays(S.week,7);render()};
-$("thisweek").onclick=()=>{S.week=monday(new Date());render()};
 
 function render(){
   const m0=$("main"); if(m0){const keep=window.scrollY+window.innerHeight-m0.getBoundingClientRect().top-window.scrollY;m0.style.minHeight=Math.max(0,Math.round(keep))+"px"}
@@ -78,11 +122,8 @@ function render(){
     if(S.preview){$("main").insertAdjacentHTML("afterbegin",`<div class="notice me-bar"><span><b>My forms.</b> You're filling in forms as yourself. Anything you save is recorded under your name and shows in your team views.</span><button class="btn primary backbtn" id="endprev" type="button">‹ Back to team view</button></div>`);$("endprev").onclick=()=>{S.preview=false;render()}}
   }
 }
-const _render0=render;render=function(){_render0.apply(this,arguments);try{if(!S.pending)enhancePhotoGrids($("main"))}catch(e){}};
-{let lastY=window.scrollY;window.addEventListener("scroll",()=>{const y=window.scrollY;if(y<lastY-40){const m=$("main");if(m&&m.style.minHeight)m.style.minHeight=""}lastY=y},{passive:true})}
+const _render0=render;
 function refreshJobDetail(){const a=document.activeElement;if(S.openJob&&!$("viewer").hidden&&!(a&&$("viewer").contains(a)&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.type!=="checkbox"))renderJobDetail()}
-$("main").addEventListener("focusout",e=>{const nx=e.relatedTarget;const wait=nx&&$("main").contains(nx)&&/^(BUTTON|A|LABEL)$/.test(nx.tagName)?400:0;
-  setTimeout(()=>{const a=document.activeElement;if(S.pending&&!(a&&$("main").contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&a.type!=="checkbox"))render()},wait)});
 
 function renderWelcome(){
   $("h1").textContent="Welcome";
@@ -94,3 +135,13 @@ function renderWelcome(){
     try{await S.db.doc("sheets/"+S.me).set({name:n,joined:Date.now(),updated:Date.now()})}catch(err){toast("Couldn't save. Ask James to make you an Editor on this page.")}};
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initTabsWeek(){
+$("prev").onclick=()=>{S.week=addDays(S.week,-7);render()};
+$("next").onclick=()=>{S.week=addDays(S.week,7);render()};
+$("thisweek").onclick=()=>{S.week=monday(new Date());render()};
+render=function(){_render0.apply(this,arguments);try{if(!S.pending)enhancePhotoGrids($("main"))}catch(e){}};
+{let lastY=window.scrollY;window.addEventListener("scroll",()=>{const y=window.scrollY;if(y<lastY-40){const m=$("main");if(m&&m.style.minHeight)m.style.minHeight=""}lastY=y},{passive:true})}
+$("main").addEventListener("focusout",e=>{const nx=e.relatedTarget;const wait=nx&&$("main").contains(nx)&&/^(BUTTON|A|LABEL)$/.test(nx.tagName)?400:0;
+  setTimeout(()=>{const a=document.activeElement;if(S.pending&&!(a&&$("main").contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&a.type!=="checkbox"))render()},wait)});
+}

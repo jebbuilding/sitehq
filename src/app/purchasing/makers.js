@@ -1,4 +1,14 @@
 /* ================= SUPPLIERS (manufacturers): company details + their brochures, shown in Merchants › Suppliers and in the survey's 📖 Brochures ================= */
+import { $, esc, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { scheduleMkSync, whoSeesDlg } from "./merchants.js";
+import { DWS } from "../survey/door-window-survey.js";
+export { makersAll, makersView, wireMakers };
 const MK_CATS=["Window & door systems","Composite doors","Aluminium systems","Garage doors","Timber windows & doors","Glass","Kitchens","Bathrooms","Roofing","Other"];
 const MK_DEFCAT={profile22:"Window & door systems",deceuninck:"Window & door systems",rehau:"Window & door systems",cortizo:"Aluminium systems",origin:"Aluminium systems",aluk:"Aluminium systems",distinction:"Composite doors",visage:"Composite doors",royale:"Composite doors",ews:"Window & door systems",hormann:"Garage doors",garador:"Garage doors",sws:"Garage doors",gliderol:"Garage doors",cardale:"Garage doors",carteck:"Garage doors",novoferm:"Garage doors",ryterna:"Garage doors",jeldwen:"Timber windows & doors",mumfordwood:"Timber windows & doors",accoya:"Timber windows & doors"};
 /* every maker: the built-in list plus James's own, with any details he's saved */

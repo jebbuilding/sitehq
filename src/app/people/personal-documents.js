@@ -1,4 +1,16 @@
 /* ================= PERSONAL DOCUMENTS (driving licence etc.) ================= */
+import { $, esc, shortDay, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { isImg, saveAsset, uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { nameOf } from "../owner/owner.js";
+import { myDetails } from "./personal-details.js";
+import { daysTo, dueTagN } from "../safety/expiry-dates.js";
+import { shrinkImage } from "../safety/training.js";
+export { PDOC_TYPES, myPdocsBlock, openPdoc, pdocRow, pdocsOf, wireMyPdocs, wirePdocs };
 const PDOC_TYPES={contract:"Employment contract",subagree:"Subcontractor agreement",licence:"Driving licence (front and back)",passport:"Passport",photoid:"Other photo ID",rtw:"Right to work (share code or visa)",address:"Proof of address",ni:"National Insurance letter or card",medical:"Medical note or fit note",other:"Other personal document"};
 const pdocsOf=list=>(list||[]).filter(x=>x.type==="persdoc").sort((a,b)=>(b.created||0)-(a.created||0));
 function pdocRow(x,owner){const n=x.expires?daysTo(x.expires):null;
@@ -14,7 +26,7 @@ function wirePdocs(root,list,who,owner){
       try{await S.db.doc("sheets/"+who+"/signoffs/"+x.id).delete();(x.photos||[]).forEach(id=>S.assets&&S.assets.delete(id).catch(()=>{}));toast("Removed");render()}catch(e){toast("Couldn't remove")}}});
 }
 function openPdoc(kind,forWho){
-  const owner=!!forWho; formType="pdoc"; editing=null;
+  const owner=!!forWho; setFormType("pdoc"); setEditing(null);
   openSheet(`<h3 id="sheettitle">Add a personal document${owner?" for "+esc(nameOf(forWho)):""}</h3>
     <label for="pd-kind">What is it?<select id="pd-kind">${Object.entries(PDOC_TYPES).map(([k,l])=>`<option value="${k}" ${k===(kind||"licence")?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
     <label for="pd-label" id="pd-labell" hidden>Name of the document<input id="pd-label" maxlength="80" placeholder="e.g. Marriage certificate (name change)"></label>

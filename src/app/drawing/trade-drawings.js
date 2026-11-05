@@ -1,4 +1,19 @@
 /* ================= DRAWINGS: trades draw it out (with photos and writing), send to James to check ================= */
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
+import { S, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { openNotePage } from "./paving.js";
+import { blobUrl, saveAsset, uploadErr } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { binFromViewer } from "../owner/deleted-items.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { markPrompt, myOpenPrompts } from "../people/reminders.js";
+import { markupBlock, markupSend } from "../photos/mark-up.js";
+import { myTrade, photoTile } from "../photos/photos.js";
+export { SK_CAT, isSketch, newDrawing, ownerDrawing, skState, sketchStrip, sketchViewer };
 const SK_CAT="Drawings & sketches";
 const isSketch=p=>p&&p.kind==="sketch";
 function skState(p){if(p.mine)return["none","My drawing"];if(p.fromOwner&&!p.check)return["none","Drawing from James"];if(p.check==="ok")return["ok","✓ James says it's right"];if(p.check==="change")return["change","✗ Needs changing"];if(p.check==="open")return["open","Waiting for James to check"];return["none","Drawing"]}

@@ -1,4 +1,15 @@
 /* ================= IN-APP FILES (kept inside the app, not in the phone's downloads) ================= */
+import { $, esc, toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { CUT } from "./cut-outs.js";
+import { assetBlob, isWord, loadMammoth, saveAsset } from "./files.js";
+import { printAsset } from "./print.js";
+import { FVM, fvmClick, fvmDetectScale, fvmDraw, fvmHover, fvmLoad, fvmToggle, fvmVec } from "./scale-ruler.js";
+import { SENDTO } from "./send-to.js";
+import { binFromViewer, binIsImg } from "../owner/deleted-items.js";
+import { audTag } from "../photos/photos.js";
+export { FC, FV, closeFile, fcOpen, fcPut, fvHostAt, getFileBlob, initInAppFiles, keepFolder, loadPdfJs, loadScript, openFile };
 const FC={db:null,ids:new Set(),ready:null};
 function fcOpen(){if(FC.ready)return FC.ready;FC.ready=new Promise(res=>{try{const r=indexedDB.open("jeb-files",1);r.onupgradeneeded=()=>r.result.createObjectStore("f");
   r.onsuccess=()=>{FC.db=r.result;try{const q=FC.db.transaction("f").objectStore("f").getAllKeys();q.onsuccess=()=>{(q.result||[]).forEach(k=>FC.ids.add(k));res()};q.onerror=()=>res()}catch(e){res()}};r.onerror=()=>res()}catch(e){res()}});return FC.ready}
@@ -107,6 +118,20 @@ function fvSetZoom(z,cx,cy,tx,ty){
   if(host){const nr=host.getBoundingClientRect();body.scrollLeft+=(nr.left+fx*nr.width)-tx;body.scrollTop+=(nr.top+fy*nr.height)-ty}
   if(FVM.on)fvmDraw();fvDetailSoon(60)}
 function applyZoom(){fvLayout();requestAnimationFrame(()=>{if(FVM.on)fvmDraw();fvDetailSoon(60)})}
+
+function closeFileInner(){if(FV.obs){FV.obs.disconnect();FV.obs=null}if(FV.pdf){try{FV.pdf.destroy()}catch(e){}FV.pdf=null}if(FV.url){URL.revokeObjectURL(FV.url);FV.url=null}FV.pages=[];$("fv-body").innerHTML=""}
+function closeFile(){FV.gen++;closeFileInner();$("fileview").hidden=true;$("fileview").style.zIndex=""}
+  
+async function keepFolder(list){
+  await fcOpen(); const todo=list.filter(d=>!FC.ids.has(d.assetId));
+  if(!todo.length){toast("Everything in this folder is already kept in the app");return}
+  if(navigator.onLine===false){toast("You need signal to keep files in the app");return}
+  let n=0; for(const d of todo){toast(`Keeping ${n+1} of ${todo.length} in the app…`);try{await getFileBlob(d.assetId);n++}catch(e){}}
+  toast(n===todo.length?`Done. ${n} file${n===1?"":"s"} will open without signal.`:`Kept ${n} of ${todo.length}. Try again with better signal.`); render();
+}
+
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initInAppFiles(){
 window.addEventListener("resize",()=>{if(FVM.on&&!$("fileview").hidden)requestAnimationFrame(fvmDraw)});
 window.fvSetZoom=fvSetZoom;
 $("fv-in").onclick=()=>fvSetZoom(FV.zoom*1.6);
@@ -125,18 +150,15 @@ $("fv-fit").onclick=()=>{const w=fvWholeZ();fvSetZoom(Math.abs(FV.zoom-w)<0.002|
   body.addEventListener("dblclick",e=>{if(FVM.on)return;fvSetZoom(FV.zoom<2.5&&FV.zoom>=0.999?FV.zoom*3:FV.zoom<0.999?1:fvWholeZ(),e.clientX,e.clientY)});
   body.addEventListener("scroll",()=>fvDetailSoon(),{passive:true});
 })();
-$("fv-save").onclick=()=>{if(FV.id)saveAsset(FV.id,FV.name)};if($("fv-cut"))$("fv-cut").onclick=()=>CUT.start();if($("fv-print"))$("fv-print").onclick=()=>{if(FV.id)printAsset(FV.id,FV.name)};if($("fv-send"))$("fv-send").onclick=()=>{if(!FV.id)return;SENDTO.open({assetId:FV.id,name:FV.name,type:FV.blobType||"application/pdf",title:String(FV.name||"").replace(/\.[^.]+$/,"")})};if($("fv-del"))$("fv-del").onclick=()=>{if(!FV.id)return;const id=FV.id,nm=FV.name;const blobT=(FV.blobType||"");binFromViewer({assets:[id],title:nm,type:blobT||"application/pdf",thumb:binIsImg(blobT)?id:""},()=>{try{$("fv-close").click()}catch(e){}render()})};
-function closeFileInner(){if(FV.obs){FV.obs.disconnect();FV.obs=null}if(FV.pdf){try{FV.pdf.destroy()}catch(e){}FV.pdf=null}if(FV.url){URL.revokeObjectURL(FV.url);FV.url=null}FV.pages=[];$("fv-body").innerHTML=""}
-function closeFile(){FV.gen++;closeFileInner();$("fileview").hidden=true;$("fileview").style.zIndex=""}
+$("fv-save").onclick=()=>{if(FV.id)saveAsset(FV.id,FV.name)};
+if($("fv-cut"))$("fv-cut").onclick=()=>CUT.start();
+if($("fv-print"))$("fv-print").onclick=()=>{if(FV.id)printAsset(FV.id,FV.name)};
+if($("fv-send"))$("fv-send").onclick=()=>{if(!FV.id)return;SENDTO.open({assetId:FV.id,name:FV.name,type:FV.blobType||"application/pdf",title:String(FV.name||"").replace(/\.[^.]+$/,"")})};
+if($("fv-del"))$("fv-del").onclick=()=>{if(!FV.id)return;const id=FV.id,nm=FV.name;const blobT=(FV.blobType||"");binFromViewer({assets:[id],title:nm,type:blobT||"application/pdf",thumb:binIsImg(blobT)?id:""},()=>{try{$("fv-close").click()}catch(e){}render()})};
 $("fv-close").onclick=closeFile;
-$("fv-ruler").onclick=fvmToggle; $("fv-body").addEventListener("click",e=>fvmClick(e)); $("fv-body").addEventListener("pointermove",e=>fvmHover(e));
+$("fv-ruler").onclick=fvmToggle;
+$("fv-body").addEventListener("click",e=>fvmClick(e));
+$("fv-body").addEventListener("pointermove",e=>fvmHover(e));
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("fileview").hidden){e.stopImmediatePropagation();closeFile()}},true);
 window.addEventListener("resize",()=>{if(!$("fileview").hidden)applyZoom()});
-async function keepFolder(list){
-  await fcOpen(); const todo=list.filter(d=>!FC.ids.has(d.assetId));
-  if(!todo.length){toast("Everything in this folder is already kept in the app");return}
-  if(navigator.onLine===false){toast("You need signal to keep files in the app");return}
-  let n=0; for(const d of todo){toast(`Keeping ${n+1} of ${todo.length} in the app…`);try{await getFileBlob(d.assetId);n++}catch(e){}}
-  toast(n===todo.length?`Done. ${n} file${n===1?"":"s"} will open without signal.`:`Kept ${n} of ${todo.length}. Try again with better signal.`); render();
 }
-

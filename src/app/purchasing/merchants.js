@@ -1,4 +1,14 @@
 /* ================= MERCHANTS: who sees what (merchants and suppliers/brochures), and copies of suppliers sent to the trades allowed to see them ================= */
+import { $, esc, toast } from "../core/helpers.js";
+import { TR } from "../core/live-feed.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { noBin } from "../owner/deleted-items.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { makersAll } from "./makers.js";
+import { scheduleSupSync, supMaster } from "./suppliers.js";
+export { mkCopies, scheduleMkSync, syncMakers, tradeMakersHtml, whoSeesDlg };
 const mkAllowed=(r,id)=>r&&(r.vis==="all"?true:r.vis==="some"?(r.people||[]).includes(id):false);
 const mkCopies=list=>(list||[]).filter(x=>x.type==="makercopy").sort((a,b)=>(a.name||"").localeCompare(b.name||""));
 let mkSyncing=false;

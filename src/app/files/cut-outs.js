@@ -1,4 +1,18 @@
 /* ================= CUT-OUTS: drag a box over part of any PDF page or photo and keep it, to put on a client go-ahead / sign-off sheet ================= */
+import { ptAskSign } from "../clients/portal.js";
+import { $, esc, toast } from "../core/helpers.js";
+import { S, clActive, ownerMode } from "../core/state.js";
+import { SIGNSHEET } from "../drawing/sign-off-sheet.js";
+import { SK_CAT } from "../drawing/trade-drawings.js";
+import { blobUrl, saveAsset, uploadErr, uploadFile } from "./files.js";
+import { FV, closeFile, getFileBlob, loadPdfJs } from "./in-app-files.js";
+import { newId } from "./outbox.js";
+import { nameOf } from "../owner/owner.js";
+import { avatarHtml, personPhoto } from "../people/profile-photos.js";
+import { loadImage } from "../photos/photos.js";
+import { shrinkImage } from "../safety/training.js";
+import { same } from "../sites/project-pages.js";
+export { CUT, personPhotoClear, personPhotoDlg, personPhotoSet };
 const CUT=(()=>{
 const clips=()=>(S.clips||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0));
 async function sourceCanvas(pageNo,X){const cv=document.createElement("canvas");X=X||{pdf:FV.pdf,img:$("fv-img")};

@@ -1,4 +1,12 @@
 /* ================= PHOTO MULTI-SELECT + DOWNLOAD AS ZIP ================= */
+import { iso, toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl } from "../files/files.js";
+import { loadZip } from "../owner/backup.js";
+import { BIN_DAYS, binDelete } from "../owner/deleted-items.js";
+import { photoDelete } from "../sites/tiles.js";
+export { enhancePhotoGrids, initSelectZip };
 const PS={on:new Set(),sel:new Set()};
 function enhancePhotoGrids(root){if(!root)return;
   root.querySelectorAll(".phgrid").forEach((g,gi)=>{const tiles=[...g.querySelectorAll(".ph[data-a]")];if(tiles.length<2||g.previousElementSibling&&g.previousElementSibling.classList.contains("phsel"))return;
@@ -18,8 +26,6 @@ function enhancePhotoGrids(root){if(!root)return;
         del.disabled=true;let ok=0;for(const t of pick){try{if(ownerMode()){if(await binDelete({assets:[t.dataset.a],title:(t.dataset.n||"Photo").replace(/\.\w+$/,""),type:"image/jpeg",thumb:t.dataset.a}))ok++}else{await photoDelete(t.dataset.p,t.dataset.w||S.me,t.dataset.a);ok++}PS.sel.delete(t.dataset.a)}catch(e){}}
         PS.on.delete(key);toast(`${ok} photo${ok===1?"":"s"} deleted`+(ownerMode()?` · in Setup › Deleted items for ${BIN_DAYS} days`:""));render()}};
     g._draw=draw;draw()})}
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest(".phgrid.selmode .ph[data-a]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();
-  const a=t.dataset.a;if(PS.sel.has(a))PS.sel.delete(a);else PS.sel.add(a);t.classList.toggle("picked",PS.sel.has(a));const g=t.closest(".phgrid");if(g&&g._draw)g._draw()},true);
 async function downloadPhotos(items,btn){
   if(!S.dl){toast("Downloads only work when the page is opened in claude.ai");return}if(!items.length)return;
   const lab=btn.textContent;btn.disabled=true;
@@ -31,3 +37,8 @@ async function downloadPhotos(items,btn){
   catch(e){if(!(e&&e.code==="declined"))toast(e&&e.message==="load"?"Couldn't load the zip tool. Check your connection.":"Download didn't go through")}
   finally{btn.disabled=false;btn.textContent=lab}}
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initSelectZip(){
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest(".phgrid.selmode .ph[data-a]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();
+  const a=t.dataset.a;if(PS.sel.has(a))PS.sel.delete(a);else PS.sel.add(a);t.classList.toggle("picked",PS.sel.has(a));const g=t.closest(".phgrid");if(g&&g._draw)g._draw()},true);
+}

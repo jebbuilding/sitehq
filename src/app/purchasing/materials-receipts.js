@@ -1,4 +1,18 @@
 /* ================= MATERIALS & RECEIPTS (stored in the invoices collection with a kind) ================= */
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, addDays, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
+import { S, equipOf, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { csvSave, isImg, uploadErr } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { shrinkImage } from "../safety/training.js";
+import { myJobs } from "../sites/job-sheets.js";
+import { myName } from "../survey/door-window-survey.js";
+export { MAT_ST, UNITS, isInv, matCard, matCount, materialsView, openMat, openMatEditor, openReceipt, rcRow, receiptsView, wireReceipts };
 const isInv=v=>!v.kind||v.kind==="invoice";
 const RC_TYPES={fuel:"Fuel",materials:"Materials",tools:"Tools & hire",parking:"Parking & tolls",other:"Other"};
 const PAID_BY={card:"Company card",account:"Company account",own:"My own money (pay me back)"};

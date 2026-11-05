@@ -1,4 +1,15 @@
 /* ================= BACKUP ================= */
+import { mapDocs } from "../core/data.js";
+import { $, iso, stamp, toast } from "../core/helpers.js";
+import { TR_COLLS, fetchTrade } from "../core/live-feed.js";
+import { S } from "../core/state.js";
+import { blobUrl } from "../files/files.js";
+import { allIds, nameOf } from "./owner.js";
+import { EMP_TYPES } from "../people/employment-types.js";
+import { DET_SECTIONS } from "../people/personal-details.js";
+import { INC_KINDS } from "../safety/accidents.js";
+import { KINDS, ck, defectsOf } from "../safety/checklists.js";
+export { backupCard, loadZip, wireBackup };
 let zipP=null;
 function loadZip(){if(window.JSZip)return Promise.resolve();if(zipP)return zipP;zipP=new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=()=>{zipP=null;rej(new Error("load"))};document.head.appendChild(s)});return zipP}
 const csvText=rows=>rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");

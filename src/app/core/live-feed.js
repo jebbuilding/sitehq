@@ -1,4 +1,10 @@
 /* ================= SCALING: one live feed, fetch each trade on change ================= */
+import { mapDocs } from "./data.js";
+import { S } from "./state.js";
+import { refreshJobDetail, render } from "./tabs-week.js";
+import { binRecord } from "../owner/deleted-items.js";
+import { scheduleSupSync } from "../purchasing/suppliers.js";
+export { TR, TR_COLLS, fetchTrade, queueTrade, refreshAllTrades, syncTradeFetches, wrapDb };
 const TR_COLLS=["entries","checks","photos","invoices","signoffs","signins"];
 const TR={stamp:{},queue:[],busy:0,want:{}};
 function wrapRef(ref,path,hook){return new Proxy({},{get:(_,k)=>{

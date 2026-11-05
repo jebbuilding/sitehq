@@ -1,4 +1,18 @@
 /* ===== Day work spreadsheet (.xlsx, falls back to .csv) ===== */
+import { clAddr } from "../clients/stages-planner.js";
+import { $, esc, gbp, hrs, iso, parse, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { csvSave } from "../files/files.js";
+import { coData } from "../owner/company-details.js";
+import { nameOf } from "../owner/owner.js";
+import { EMP_TYPES } from "../people/employment-types.js";
+import { avatarHtml } from "../people/profile-photos.js";
+import { empTypeOf } from "../sites/job-details.js";
+import { siteClient } from "../sites/summary.js";
+import { dwRate } from "./day-work.js";
+import { sumH } from "./time.js";
+export { dwXlsPick };
 let xlsxP=null;
 function loadXlsx(){if(window.XLSX)return Promise.resolve();if(xlsxP)return xlsxP;xlsxP=new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=res;s.onerror=()=>{xlsxP=null;rej(new Error("load"))};document.head.appendChild(s)});return xlsxP}
 function dwXlsPick(site,items,money,pre){const ppl=[...new Set(items.filter(e=>!e.line).map(e=>e.who))].sort((a,b)=>nameOf(a).localeCompare(nameOf(b)));const hasLines=items.some(e=>e.line);

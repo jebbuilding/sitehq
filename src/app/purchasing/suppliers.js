@@ -1,4 +1,17 @@
 /* ================= SUPPLIERS (owner list, copies sent only to chosen trades) ================= */
+import { $, esc, toast } from "../core/helpers.js";
+import { TR } from "../core/live-feed.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { noBin } from "../owner/deleted-items.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { makersView, wireMakers } from "./makers.js";
+import { mkCopies, syncMakers, tradeMakersHtml, whoSeesDlg } from "./merchants.js";
+import { syncSiteJobs } from "../sites/job-details.js";
+export { scheduleSupSync, supMaster, suppliersView };
 const SUP_CATS=["Builders merchant","Timber","Plumbing and heating","Electrical","Plant and tool hire","Skips and waste","Scaffolding","Concrete and aggregates","Roofing","Fuel","Other"];
 const SUP_FIELDS=[["accountName","Account name"],["accountNo","Account number"],["branch","Address"],["phone","Phone"],["email","Email"],["website","Website"],["contact","Contact name"],["pin","PIN / password for the counter"],["hours","Opening hours"],["notes","Notes"]];
 const supMaster=()=>(S.suppliers||[]).slice().sort((a,b)=>(a.name||"").localeCompare(b.name||""));

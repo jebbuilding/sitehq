@@ -1,4 +1,20 @@
 /* ================= EXPIRY DATES ================= */
+import { viewClient } from "../clients/quick-enquiry.js";
+import { $, esc, iso, parse, shortDay, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { isImg, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { allTeam, nameOf } from "../owner/owner.js";
+import { wnJump } from "../owner/whats-new.js";
+import { PDOC_TYPES } from "../people/personal-documents.js";
+import { KINDS } from "./checklists.js";
+import { ukDate } from "./rams-maker.js";
+import { shrinkImage } from "./training.js";
+import { openPersonMonth } from "../timesheets/monthly-sheet.js";
+export { EQ_DATES, daysTo, dueSoonCard, dueSoonItems, dueTagN, eqWarn, initExpiryDates, myVehIns, openEqDates };
 const EQ_DATES={vehicle:[["mot","MOT"],["service","Service"],["insurance","Insurance renewal"],["tax","Road tax"],["breakdown","Breakdown cover renewal"],["tacho","Tachograph calibration (if fitted)"],["lease","Lease / finance ends"]],digger:[["loler","LOLER thorough examination"],["service","Service"],["insurance","Insurance"]],
   trailer:[["service","Service"]],machine:[["pat","PAT test / inspection"],["service","Service"]],ladder:[["inspect","Detailed inspection"]],scaffold:[["tag","Scaffold tag / handover inspection"]],excavation:[]};
 function daysTo(d){return Math.round((parse(d)-parse(iso(new Date())))/864e5)}
@@ -12,7 +28,7 @@ function dueSoonItems(scope){
   if(scope!=="mine"){const lb=S.settings&&S.settings.lastBackup;if(!lb||Date.now()-lb>30*864e5)out.push({what:"Back up the app (Setup › Backup)",date:iso(new Date()),n:lb?-Math.floor((Date.now()-lb)/864e5-30):0,go:()=>{S.otab="setup";store.set("jeb.otab","setup");render();setTimeout(()=>{const b=$("bk-go");if(b){b.scrollIntoView({behavior:"smooth",block:"center"});b.classList.add("wnflash");setTimeout(()=>b.classList.remove("wnflash"),2200)}},150)}})}
   return out.sort((a,b)=>a.n-b.n);
 }
-const DS={go:[]};document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".dsgo");if(!b)return;const f=DS.go[+b.dataset.g];if(f)try{f()}catch(x){toast("Couldn't open that")}});
+const DS={go:[]};
 function dueTagN(n){return n<0?`<span class="tag bad">${-n} day${n===-1?"":"s"} overdue</span>`:n===0?'<span class="tag bad">Today</span>':`<span class="tag ${n<=7?"bad":"day"}">In ${n} day${n===1?"":"s"}</span>`}
 function dueSoonCard(scope){
   const items=dueSoonItems(scope); if(!items.length) return "";
@@ -74,3 +90,7 @@ function openEqDates(eq){
     ["el-what","el-miles","el-cost","el-by"].forEach(id=>$(id).value="");$("el-list").innerHTML=logRows();wire();toast("Added. Tap Save to keep it.")};
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initExpiryDates(){
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".dsgo");if(!b)return;const f=DS.go[+b.dataset.g];if(f)try{f()}catch(x){toast("Couldn't open that")}});
+}

@@ -1,4 +1,29 @@
 /* ===== paving & driveways: an area drawn corner by corner, filled with the material at real size ===== */
+import { appPhotoChoices } from "../chat/contacts.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { pickField, pickVal, wirePicks } from "../core/fields.js";
+import { esc, iso, parse, toast } from "../core/helpers.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { NP_BLD_BOX, NP_LIB } from "./components.js";
+import { NP_COLS, NP_DET_BOX, NP_ELEV_BOX, NP_LINE, NP_MORECOLS, NP_SCALES, NP_SHAPES, NP_SIZES, NP_SYM, NP_U, drawShape, npKeyEntries, npLbl, npStairN, npSymLabel, npUnit } from "./construction-details.js";
+import { npDxf } from "./dxf-export.js";
+import { askLabel, askMeasure, drawDim } from "./notebook.js";
+import { NP_ANNO_BOX, NP_TEXTSYM } from "./symbols-annotation.js";
+import { NP_DES_BOX, npScallop } from "./symbols-design.js";
+import { NP_BASIC, NP_XLAB, NP_XREAL, NP_XSHAPES } from "./symbols-more.js";
+import { NP_TIMB_BOX, NP_TIMB_DEF, NP_TIMB_SIZES, npRunAxis } from "./timber.js";
+import { NP_LIN, NP_LINOPTS, NP_OPENK, NP_WALLK, npDrawAll, npHexMix, npIsWall, npWallT } from "./walls.js";
+import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
+import { loadPdfJs } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { printBlob } from "../files/print.js";
+import { coData } from "../owner/company-details.js";
+import { brandHex, loadImage, logoId } from "../photos/photos.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+import { shrinkImage } from "../safety/training.js";
+import { siteClient } from "../sites/summary.js";
+import { DWS, myName, siteFilePicker } from "../survey/door-window-survey.js";
+export { NP_BATHNICE, NP_NICE, NP_REAL, NP_SCX, initPaving, npBath, npCanopy, npNice, openNotePage, pdfShow, setNpScx };
 const NP_PAVE={slabs:["Paving slabs 600×600","#e7e5e4","grid",600,600,0],sandstone:["Sandstone 600×900 (random)","#ead9bd","grid",900,600,0.33],porcelain:["Porcelain 900×600","#dedede","grid",900,600,0.5],
   block:["Block paving 200×100","#c98a7c","grid",200,100,0.5],herring:["Block paving, herringbone","#c98a7c","herring",200,100,0],setts:["Granite setts 100×100","#bdbdbd","grid",100,100,0.5],
   tarmac:["Tarmac","#7a7a7a","stip",0,0,0],gravel:["Gravel","#ece0c4","stip",0,0,0],resin:["Resin bound","#dcbc93","stip",0,0,0],concrete:["Concrete","#dad7d3","stip",0,0,0],
@@ -58,7 +83,7 @@ function pdfShow(blob,fn){const u=URL.createObjectURL(blob);const d=document.cre
 function npBendCp(o){const mx=(o.a[0]+o.b[0])/2,my=(o.a[1]+o.b[1])/2,dx=o.b[0]-o.a[0],dy=o.b[1]-o.a[1],L=Math.hypot(dx,dy)||1;return [mx-dy/L*o.bend*L,my+dx/L*o.bend*L]}
 function npBendApex(o){const cp=npBendCp(o),mx=(o.a[0]+o.b[0])/2,my=(o.a[1]+o.b[1])/2;return [(mx+cp[0])/2,(my+cp[1])/2]}
 /* scaled areas: a frame on the page with its own scale (e.g. a 1:10 detail next to a 1:50 plan). NP_SCX is the scale in use right now */
-let NP_SCX=0;
+let NP_SCX=0;function setNpScx(v){NP_SCX=v}
 const npDims=(size,orient)=>{const [L,Sh]=NP_SIZES[size]||NP_SIZES.A3;return orient==="port"?[Sh*NP_U,L*NP_U]:[L*NP_U,Sh*NP_U]};
 const npLineShape=o=>o&&o.t==="shape"&&(NP_LINE.has(o.k)||o.k==="door");
 const npBoxy=o=>o&&(["rect","circle","text","img"].includes(o.t)||(o.t==="shape"&&!npLineShape(o)));
@@ -74,7 +99,7 @@ const NP_REAL={ewCav:[1200,2700],ewBrick:[1200,2700],ewSolid:[1000,2700],ewStud:
 const NP_TYPES=["Sketch","Site visit notes","Existing floor plan","Proposed floor plan","Existing and proposed plan","Site / location plan","Elevations","Section","Roof plan","Foundation plan","Electrical layout","Plumbing and heating layout","Drainage layout","Kitchen layout","Bathroom layout","Structural / steel details","Detail drawing","Setting out","As built"];
 const NP_LAYERS=[["walls","🧱 Walls & structure"],["openings","🚪 Doors & windows"],["struct","🪵 Timber & floors"],["elec","⚡ Electrics"],["heat","🔥 Heating & ventilation"],["drain","💧 Drainage & plumbing"],["fittings","🛁 Kitchen, bathroom & furniture"],["land","🌳 Landscaping"],["elev","🏡 Elevation & section"],["rooms","⬠ Rooms"],["dims","📏 Dimensions"],["notes","📝 Notes & text"],["imports","📥 Imported drawings & photos"],["general","✏️ Lines & sketching"]];
 let NP_KLAY=null;
-NP_SHAPES.push(...NP_XSHAPES,["ductsup","═ MVHR supply duct (blue)","Heating & ventilation","pro"],["ductext","═ MVHR extract duct (red)","Heating & ventilation","pro"],["contour","∿ Contour line (type the height)","Survey & existing site","pro"],["bndry","─·─ Site boundary","Survey & existing site","pro"],["redline","▬ Red line boundary","Survey & existing site","pro"],["hedgerem","✕ Hedge to be removed","Survey & existing site","pro"],["fencerem","✕ Fence to be removed","Survey & existing site","pro"],["swale","≈ Swale","Drainage","pro"],["easement","┄ Easement corridor (type the name)","Services","pro"],["treefence","╪ Tree protection fencing","Construction phase","pro"],["walkway","┅ Pedestrian walkway","Construction phase","pro"],["lintelp","┅ Lintel over opening (plan)","Walls & structure","pro"],["steelub","━ Steel beam with size (type it)","Walls & structure","pro"],["movjoint","‖ Movement joint","Walls & structure","pro"],["firewall","▧ Fire-rated wall","Walls & structure","pro"],["kerb","▭ Kerb (raised)","External works","pro"],["kerbdrop","▭ Dropped kerb","External works","pro"],["kerbflush","▭ Flush kerb / edging","External works","pro"],["retweep","▭ Retaining wall with weep holes","External works","pro"],["gabion","▦ Gabion wall","External works","pro"],["secline","A─A Section line (type the letter)","Notes & details","pro"],["matchline","─·─ Match line","Notes & details","pro"],["lvlline","─ 134.270 Level line (type the level)","Landscaping","pro"],["embank","╤ Top of bank / embankment","Landscaping","pro"],["ubt","┅ Telecoms underground cable (purple)","Bridges, poles & cables","pro"],["fibre","┅ Fibre optic cable (orange)","Bridges, poles & cables","pro"],["ohl","─·─ Overhead power line","Bridges, poles & cables","pro"],["ohbt","─·─ Overhead telecoms line","Bridges, poles & cables","pro"],["landdrain","┅ Perforated land drain","Drainage","pro"]);Object.assign(NP_REAL,NP_XREAL,{ductsup:[3000],ductext:[3000],contour:[5000],bndry:[5000],redline:[5000],hedgerem:[4000],fencerem:[4000],swale:[5000],easement:[6000],treefence:[5000],walkway:[5000],lintelp:[1500],steelub:[4000],movjoint:[3000],firewall:[3000],kerb:[4000],kerbdrop:[3000],kerbflush:[4000],retweep:[4000],gabion:[4000],secline:[6000],matchline:[6000],lvlline:[5000],embank:[5000],ubt:[5000],fibre:[5000],ohl:[10000],ohbt:[10000],landdrain:[5000]});
+
 function npLayerOf(o){if(o.ly)return o.ly;if(o.t==="dim"||o.t==="ang")return "dims";if(o.t==="room")return "rooms";if(o.t==="img")return "imports";if(o.t==="text"||o.t==="arrow")return "notes";if(o.t!=="shape")return "general";
   if(!NP_KLAY){NP_KLAY={};const m={"Walls & structure":"walls","Stairs":"walls","Doors & windows":"openings","Kitchen & bathroom":"fittings","Furniture":"fittings","Electrics":"elec","Heating & ventilation":"heat","Drainage":"drain","Floors":"struct","Timber framing":"struct","Stud wall connections":"struct","Roof plan":"struct","Landscaping":"land","Notes & details":"notes","Shapes":"general","Site set-up":"land","Site plant & equipment":"land","Fire safety":"elec","Accessibility & lifts":"fittings","Garden buildings":"land","Foundations":"struct","Bridges, poles & cables":"elec","Outside lights, gates & CCTV":"elec","Survey & existing site":"land","Services":"elec","Construction phase":"land","External works":"land"};
     NP_LIB.forEach(([v,c,ks])=>ks.forEach(k=>{if(!NP_KLAY[k])NP_KLAY[k]=v==="elev"?"elev":(m[c]||"general")}))}
@@ -1235,3 +1260,8 @@ async function openNotePage(opts){
     doc.objs.push({t:"img",x:100,y:100,w,h,src:pend});if(!sized()&&h+200>doc.h)doc.h=Math.ceil((h+600)/100)*100;draw()}catch(e){}})()}
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initPaving(){
+NP_SHAPES.push(...NP_XSHAPES,["ductsup","═ MVHR supply duct (blue)","Heating & ventilation","pro"],["ductext","═ MVHR extract duct (red)","Heating & ventilation","pro"],["contour","∿ Contour line (type the height)","Survey & existing site","pro"],["bndry","─·─ Site boundary","Survey & existing site","pro"],["redline","▬ Red line boundary","Survey & existing site","pro"],["hedgerem","✕ Hedge to be removed","Survey & existing site","pro"],["fencerem","✕ Fence to be removed","Survey & existing site","pro"],["swale","≈ Swale","Drainage","pro"],["easement","┄ Easement corridor (type the name)","Services","pro"],["treefence","╪ Tree protection fencing","Construction phase","pro"],["walkway","┅ Pedestrian walkway","Construction phase","pro"],["lintelp","┅ Lintel over opening (plan)","Walls & structure","pro"],["steelub","━ Steel beam with size (type it)","Walls & structure","pro"],["movjoint","‖ Movement joint","Walls & structure","pro"],["firewall","▧ Fire-rated wall","Walls & structure","pro"],["kerb","▭ Kerb (raised)","External works","pro"],["kerbdrop","▭ Dropped kerb","External works","pro"],["kerbflush","▭ Flush kerb / edging","External works","pro"],["retweep","▭ Retaining wall with weep holes","External works","pro"],["gabion","▦ Gabion wall","External works","pro"],["secline","A─A Section line (type the letter)","Notes & details","pro"],["matchline","─·─ Match line","Notes & details","pro"],["lvlline","─ 134.270 Level line (type the level)","Landscaping","pro"],["embank","╤ Top of bank / embankment","Landscaping","pro"],["ubt","┅ Telecoms underground cable (purple)","Bridges, poles & cables","pro"],["fibre","┅ Fibre optic cable (orange)","Bridges, poles & cables","pro"],["ohl","─·─ Overhead power line","Bridges, poles & cables","pro"],["ohbt","─·─ Overhead telecoms line","Bridges, poles & cables","pro"],["landdrain","┅ Perforated land drain","Drainage","pro"]);
+Object.assign(NP_REAL,NP_XREAL,{ductsup:[3000],ductext:[3000],contour:[5000],bndry:[5000],redline:[5000],hedgerem:[4000],fencerem:[4000],swale:[5000],easement:[6000],treefence:[5000],walkway:[5000],lintelp:[1500],steelub:[4000],movjoint:[3000],firewall:[3000],kerb:[4000],kerbdrop:[3000],kerbflush:[4000],retweep:[4000],gabion:[4000],secline:[6000],matchline:[6000],lvlline:[5000],embank:[5000],ubt:[5000],fibre:[5000],ohl:[10000],ohbt:[10000],landdrain:[5000]});
+}

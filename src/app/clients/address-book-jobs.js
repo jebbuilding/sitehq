@@ -1,4 +1,14 @@
 /* ================= ADDRESS BOOK JOBS: every enquiry / job a client has had, and one page per job with everything from that time ================= */
+import { clStage, openClientForm } from "./clients.js";
+import { viewClient } from "./quick-enquiry.js";
+import { clPlans } from "./stages-planner.js";
+import { $, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
+import { S } from "../core/state.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { blobUrl } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { DWS } from "../survey/door-window-survey.js";
+export { CJOBS };
 const CJOBS=(()=>{
 const tsOf=x=>x?(typeof x==="number"?x:Date.parse(x)||0):0;
 function jobsOf(c){const P=(c.pastJobs||[]).slice().sort((a,b)=>(a.at||0)-(b.at||0));const out=[];let prevEnd=0;

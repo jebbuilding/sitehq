@@ -1,4 +1,10 @@
 /* ================= WHO'S ON SITE NOW (roll call) ================= */
+import { $, esc, iso, stamp } from "../core/helpers.js";
+import { S } from "../core/state.js";
+import { openViewer } from "../core/viewer.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { SIGNIN } from "./sign-in-book.js";
+export { onSiteNow, openRollCall };
 function onSiteNow(){
   const today=iso(new Date()); const rows=[];
   teamIds().concat(S.owner&&S.mine.entries.length?[S.me]:[]).forEach(id=>((id===S.me?S.mine.entries:S.data.entries[id])||[]).filter(e=>e.open&&e.date===today).forEach(e=>rows.push(Object.assign({who:id},e))));

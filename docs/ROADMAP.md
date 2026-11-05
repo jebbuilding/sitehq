@@ -46,7 +46,9 @@ Alternatives considered: **AWS** (S3+CloudFront hosting is fine, but DynamoDB/Ap
 
 ## Phase 3 – modernise (only where it pays)
 - [x] Cut `app.js` into files along the existing banners (`src/app/`, Nov 2026) – same script once joined, no behaviour change.
-- Turn those files into real ES modules (explicit imports, a tab registry instead of load-time wiring, esbuild/Vite producing the same single page). Only after the artifact is frozen: until then artifact-side versions must merge back as plain text. Add JSDoc types / `// @ts-check` before any framework.
+- [x] Make them real ES modules (Nov 2026): generated imports/exports, one entry point (`core/boot.js`), no work at load outside it, order derived from imports, checked against esbuild on every test run.
+- After the artifact is frozen: replace `scripts/bundle.mjs` with esbuild/Vite (small change – the modules are already valid), then consider strict mode and lazy-loading the drawing tools.
+- Decoupling features from each other is separate, larger work with no mechanical route (`docs/ARCHITECTURE.md` › What is still coupled); do it per feature when there is a reason. Add JSDoc types / `// @ts-check` before any framework.
 - Component framework screen-by-screen if desired (Svelte/React) behind the same `S`/`render()` contract; don't big-bang rewrite – the tests encode the behaviour.
 - Native wrapper (Capacitor) for App Store/Play only if push notifications / camera integration justify it. Most updates still ship as web content.
 - Multi-tenant (company id on every document) only if SiteHQ is to be sold to other firms.

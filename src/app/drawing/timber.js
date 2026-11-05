@@ -1,4 +1,6 @@
 /* ===== timber layouts: floor joists, rafters, trusses (plan) and truss / cut-roof sections ===== */
+import { npHexMix } from "./walls.js";
+export { NP_TIMB_BOX, NP_TIMB_DEF, NP_TIMB_SIZES, npRunAxis, npTimberSym };
 const NP_TIMB_BOX=new Set(["bblay","jlay","rlay","tlay","truss","cutroof"]);
 const NP_TIMB_SIZES={tstud:[["100","100×50"],["150","150×50"]],jlay:[["47x150","47×150"],["47x175","47×175"],["47x200","47×200"],["47x225","47×225"]],rlay:[["47x100","47×100"],["47x125","47×125"],["47x150","47×150"],["47x175","47×175"]],cutroof:[["47x100","47×100"],["47x125","47×125"],["47x150","47×150"],["47x175","47×175"]]};
 const NP_TIMB_DEF={jlay:"47x200",rlay:"47x150",cutroof:"47x150"};

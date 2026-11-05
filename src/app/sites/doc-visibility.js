@@ -1,4 +1,23 @@
 /* ===== who can see a site document or drawing, and which folder it lives in ===== */
+import { clientSites } from "../clients/address-book.js";
+import { ptSrc } from "../clients/portal.js";
+import { pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, clActive, docRef, liveSite, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { drawPdfFile } from "../files/attachment-picker.js";
+import { uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { noBin } from "../owner/deleted-items.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { cdmMaker, cdmSignState } from "../safety/cdm.js";
+import { ramsMaker, ramsTemplates, ukDate } from "../safety/rams-maker.js";
+import { raBlock, wireRa } from "../safety/rams.js";
+import { indFor } from "../safety/site-inductions.js";
+import { same } from "./project-pages.js";
+export { cdmShare, docFolders, docMove, drawShare, hsView };
 const docFolders=(site,cat)=>{const set=new Set();(S.docs||[]).filter(d=>same(d.site||"General",site||"General")&&(!cat||(d.cat||"other")===cat||(cat==="specs"&&["specs","other"].includes(d.cat||"other")))).forEach(d=>{let p=String(d.path||"");while(p){set.add(p);p=p.includes("/")?p.slice(0,p.lastIndexOf("/")):""}});return [...set].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}))};
 function folderPick(id,site,cat,cur){const fs=docFolders(site,cat);if(cur&&!fs.includes(cur))fs.push(cur);const top=({plans:"Plans & drawings",rams:"RAMS",specs:"Specs & documents"})[cat]||"the site";
   return `<label for="${id}">Folder<select id="${id}" class="fldsel"><option value="">Top of ${esc(top)}</option>${fs.map(f=>`<option value="${esc(f)}" ${f===cur?"selected":""}>📁 ${esc(f.split("/").join(" › "))}</option>`).join("")}<option value="__new">+ New folder…</option></select></label><input id="${id}-new" class="fldnew" maxlength="80" placeholder="New folder name, e.g. Structural (use / for a folder inside a folder)" hidden>`}

@@ -1,4 +1,19 @@
 /* ================= CONTACTS (WhatsApp-style): search, then chat / call / video ================= */
+import { intlNum, isApple, phoneOf } from "./calls.js";
+import { chatPeople, initials, openClientChat, openDM } from "./chat.js";
+import { clStage } from "../clients/clients.js";
+import { PT } from "../clients/portal.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { $, esc, shortDay, toast } from "../core/helpers.js";
+import { openSheet } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { isSketch } from "../drawing/trade-drawings.js";
+import { blobUrl, isImg } from "../files/files.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { EMP_TYPES } from "../people/employment-types.js";
+import { avatarHtml } from "../people/profile-photos.js";
+import { empTypeOf } from "../sites/job-details.js";
+export { appPhotoChoices, contactsHtml, wireChatSearch, wireContactButtons, wireContacts };
 function contactList(){const owner=ownerMode();const out=[];
   if(owner){teamIds().forEach(id=>{const d=(S.team[id]&&S.team[id].details)||{};out.push({key:"t:"+id,id,name:nameOf(id),sub:[EMP_TYPES[empTypeOf(id)]||"",d.trade||""].filter(Boolean).join(" · "),tel:phoneOf(id),kind:"trade"})});
     (S.clients||[]).filter(c=>c.stage!=="lost").forEach(c=>out.push({key:"c:"+c.id,c,name:c.name,sub:"Client · "+clStage(c.stage)+(clAddr(c)?" · "+clAddr(c):""),tel:c.phone||"",kind:"client",photo:c.frontPhoto||""}))}

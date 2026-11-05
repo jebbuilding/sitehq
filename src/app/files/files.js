@@ -1,4 +1,9 @@
 /* ================= FILES ================= */
+import { toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { loadScript } from "./in-app-files.js";
+import { newId } from "./outbox.js";
+export { assetBlob, blobUrl, csvSave, isImg, isWord, isWordId, loadMammoth, saveAsset, uploadErr, uploadFile, wordType, wrapAssets };
 async function uploadFile(blob,name){
   if(!S.assets) throw {code:"not_granted"};
   if(isWord(blob,name))return wordStore(blob,name||blob.name);

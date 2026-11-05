@@ -1,7 +1,7 @@
 # Architecture
 
 ## In one paragraph
-A single-page app written in **vanilla JavaScript** with **no framework and no bundler**: `src/shell.html` (CSS + static skeleton) and `src/app/` (all logic: 126 files, ~13k lines / 2.1 MB, joined end to end into one script by `scripts/build.mjs`). The files are slices of one program that share one scope, not modules – see *Source layout* below. It renders by writing template-literal HTML into `#main` and wiring event handlers afterwards. All persistence, files and identity come from the host platform through `window.claude.use(...)` (today: claude.ai Artifacts). Third-party libraries are loaded lazily from cdnjs at pinned versions only when a feature needs them.
+A single-page app written in **vanilla JavaScript** with **no framework**: `src/shell.html` (CSS + static skeleton) and `src/app/` (all logic: ~130 ES modules, 2.1 MB, joined into one inline script by `scripts/build.mjs`) – see *Source layout* and *Build* below. It renders by writing template-literal HTML into `#main` and wiring event handlers afterwards. All persistence, files and identity come from the host platform through `window.claude.use(...)` (today: claude.ai Artifacts). Third-party libraries are loaded lazily from cdnjs at pinned versions only when a feature needs them.
 
 ## How it was built (philosophy)
 - Built conversationally with Claude, one request at a time, by the owner on site. Features were added in small increments and shipped immediately (~320 versions).
@@ -33,70 +33,96 @@ Boot sequence (`src/app/core/boot.js`):
 6. Each snapshot updates `S.*` and calls `render()`.
 
 ## Source layout (`src/`)
-Until November 2026 all the logic was one file, `src/app.js`. It is now cut into one file per section under `src/app/`, grouped into folders by area. **Nothing about how the code runs changed**: the build joins the files back together in a fixed order and the result is the same script as before (see *Build* for how that was proved).
+Until November 2026 all the logic was one file, `src/app.js`. It is now ES modules under `src/app/`, one per section, grouped into folders by area. `docs/MODULES.md` (generated) lists every file with what it exports, what it imports and who uses it.
 
-| Folder | Files | Size | What is in it |
-|---|---|---|---|
-| `core/` | 16 | 73 KB | Helpers (`$`, `esc`, dates, `store`), state `S`, form fields, tabs + `render()`, pop-up sheet (`openSheet`), full-page viewer (`openViewer`), `wrapDb` and the live feed, date/weather bar, Ask Claude, report an issue, spell check, dictation, **boot**, back button |
-| `files/` | 8 | 91 KB | Upload/download (`uploadFile`, `blobUrl`, `getFileBlob`), offline outbox (`submitJob`), in-app file viewer + scale ruler, printing (`printBlob`), cut-outs, Send to…, attachment picker |
-| `timesheets/` | 6 | 69 KB | Trade timesheets, paper-style monthly sheet, day work (+ xlsx), weekly pay summary, person/site filters |
-| `safety/` | 11 | 245 KB | Check lists and daily checks, site inductions, training & toolbox talks, accidents, expiry dates, policies & insurance, RAMS and the RAMS maker, CDM 2015 documents, waste transfer notes |
-| `sites/` | 13 | 151 KB | Plans & specs, the trades' site pages, job sheets, owner site project pages, job details, site tiles and storage, who can see a document, sign-in book, QR sign-in, roll call, maps & pins |
-| `clients/` | 13 | 216 KB | Clients and enquiries, address book and job history, client record PDF, GDPR consent, client documents, sketches, the client portal (uploads, shared calendar, sign-offs), stages ↔ planner |
-| `owner/` | 13 | 163 KB | Owner tabs and setup, reports, to-do lists, alerts and what's-new, company details, PIN, deletion record, deleted items, delete a client or site, backup, planning leads |
-| `people/` | 7 | 73 KB | Personal details, profile photos, personal documents, reminders, leavers, foreman access, subcontractor agreement |
-| `purchasing/` | 7 | 97 KB | Invoices, materials & receipts, merchants, suppliers and makers, brochures, samples |
-| `planner/` | 4 | 80 KB | Time off, the planner board, list/day views and import, diary board |
-| `chat/` | 3 | 40 KB | Chat, calls, contacts |
-| `photos/` | 4 | 51 KB | Photos, mark-up, multi-select + zip, photo test |
-| `drawing/` | 15 | 492 KB | Notebook page, walls, symbols, building components, timber layouts, construction details, paving, DXF export, trades' drawings, drawings tab, drawing sign-off and sign-off sheets |
-| `survey/` | 1 | 162 KB | Door & window survey (`DWS`) |
-| `calculators/` | 5 | 59 KB | Sums and areas, materials, roofing, falls, stairs/plasterboard/timber/aggregates |
+| Folder | What is in it |
+|---|---|
+| `core/` | Helpers (`$`, `esc`, dates, `store`) – the one file that imports nothing; state `S`; form fields; tabs + `render()`; pop-up sheet (`openSheet`); full-page viewer (`openViewer`); `wrapDb` and the live feed; date/weather bar; Ask Claude; report an issue; spell check; dictation; back button; **`boot.js`, the entry point** |
+| `files/` | Upload/download (`uploadFile`, `blobUrl`, `getFileBlob`), offline outbox (`submitJob`), in-app file viewer + scale ruler, printing (`printBlob`), cut-outs, Send to…, attachment picker |
+| `timesheets/` | Trade timesheets, working day, paper-style monthly sheet, day work (+ xlsx), weekly pay summary, person/site filters |
+| `safety/` | Check lists and daily checks, site inductions, training & toolbox talks, accidents, expiry dates, policies & insurance, RAMS and the RAMS maker, CDM 2015 documents, waste transfer notes |
+| `sites/` | Plans & specs, the trades' site pages, job sheets, owner site project pages, job details, site tiles and storage, who can see a document, sign-in book, QR sign-in, roll call, maps & pins |
+| `clients/` | Clients and enquiries, address book and job history, client record PDF, GDPR consent, client documents, sketches, the client portal (uploads, shared calendar, sign-offs), stages ↔ planner |
+| `owner/` | Owner tabs and setup, reports, to-do lists, alerts and what's-new, company details, PIN, deletion record, deleted items, delete a client or site, backup, planning leads |
+| `people/` | Personal details, employment types, profile photos, personal documents, reminders, leavers, foreman access, subcontractor agreement |
+| `purchasing/` | Invoices, materials & receipts, merchants, suppliers and makers, brochures, samples |
+| `planner/` | Time off, the planner board, list/day views and import, diary board |
+| `chat/` | Chat, calls, contacts |
+| `photos/` | Photos, mark-up, multi-select + zip, photo test |
+| `drawing/` | Notebook page, walls, symbols, building components, timber layouts, construction details, paving, DXF export, trades' drawings, drawings tab, drawing sign-off and sign-off sheets |
+| `survey/` | Door & window survey (`DWS`) |
+| `calculators/` | Sums and areas, materials, roofing, falls, stairs/plasterboard/timber/aggregates |
 
-How to find things:
-- **Every file starts with a banner** – `/* ================= NAME: what it does ================= */` – written when the feature was built. The banner is the file's description; `src/app/manifest.txt` lists every file in load order.
-- **`docs/MODULES.md` is the generated map**: for every file, the names it declares that other files use, the files it depends on, and what it runs at load. It also lists the most widely used names and every variable assigned from another file.
-- **Folders and file names are a filing system, not boundaries.** A file can use anything declared in any other file – 117 of the 126 files sit in one dependency loop. Shared helpers still sit in whichever section first needed them: for example `loadJsPdf` is in `safety/site-inductions.js`, and `BRGB` and `pdfLogo` are in `photos/photos.js`. Search `src/app/` for a name rather than guessing from the folder.
-- **Feature modules**: eleven newer features are self-contained IIFEs that expose a few functions – `DWS`, `LEADS`, `WTN`, `SENDTO`, `SIGNIN`, `SIGNSHEET`, `CUT`, `SUBAG`, `SAMPLES`, `CJOBS`, `QRSITE`. Everything else is top-level functions in the shared scope.
-- `docs/FEATURES.md` maps tabs to the function or module that draws them.
+## Anatomy of a file
+Every file under `src/app/` has the same three parts, in this order:
+
+```js
+/* ================= CALLS FROM CHAT ================= */     ← 1. banner: what the file is
+import { CH } from "./chat.js";                                 ← 2. import/export block – GENERATED
+import { esc } from "../core/helpers.js";
+export { intlNum, isApple, openCallSheet, phoneOf };
+const intlNum=n=>{…};                                           ← 3. the code
+function phoneOf(id){…}
+```
+
+1. **Banner** – one comment line, written when the feature was built. It is the file's description, and `scripts/split.mjs` matches sections to files by it, so don't reword one casually.
+2. **Import/export block** – written by `npm run modules`, never by hand. Every top-level name in the app is unique (checked), so "which file declares this name" has exactly one answer: use a name from another file, run `npm run modules`, and the import and the matching export appear. A name nothing else uses is not exported.
+3. **Code** – top-level declarations only (functions, `const`, `let`). **A file does nothing when it is loaded.** If it needs to wire up part of the page at start-up, it declares an `initSomething()` function and `core/boot.js` calls it.
+
+Three conventions follow from being real modules:
+- **A variable can only be assigned in the file that declares it.** Other files go through a setter (`setEditing`, `setFormType`, `setKindVal`, `setProxyFor`, `setNpScx`, `setPinFails`, `setPinLockUntil`). Reading an imported variable always gives its current value.
+- **Feature modules**: eleven newer features are self-contained IIFEs that expose a few functions – `DWS`, `LEADS`, `WTN`, `SENDTO`, `SIGNIN`, `SIGNSHEET`, `CUT`, `SUBAG`, `SAMPLES`, `CJOBS`, `QRSITE`. Everything else is top-level functions.
+- **Folders and file names are a filing system, not layers.** Shared helpers still sit in whichever section first needed them (`loadJsPdf` in `safety/site-inductions.js`, `BRGB` and `pdfLogo` in `photos/photos.js`, `nameOf` in `owner/owner.js`). The imports tell you where a name really lives.
+
+## Start-up: `core/boot.js`
+`core/boot.js` is the entry point and the only file with statements that run at load. In order, it:
+1. calls the 20 `init…()` functions (event wiring on the static shell, document-level handlers, timers, and the drawing tools' symbol tables), in a fixed order written out in the file;
+2. starts the asynchronous boot (*Boot sequence*, above);
+3. calls `initBackButton()`.
+
+The order of the init calls is the order those statements ran in when the app was a single file; keep it. One of them, `initTabsWeek()`, wraps `render` once (`render=function(){_render0.apply(…)…}`) to enhance photo grids after each draw. There is one `render`; this is its only wrapper.
 
 ## Build
 `scripts/bundle.mjs` is the one place that knows how the app is assembled; `build.mjs`, `dev.mjs` and `split.mjs` all use it.
 
 ```
-src/app/manifest.txt ─► read each listed file, in order
-                        └─ each must parse on its own (an error names the file)
-                     ─► "(function(){" + file 1 + file 2 + … + "})();"
-                        └─ the whole must parse (catches a name declared in two files)
+src/app/core/boot.js ─► follow the imports: each file is placed after the files it imports
+                        (the order ES modules are evaluated in; nothing is listed by hand)
+                     ─► drop each file's import/export block; each file must parse on its own
+                     ─► "(function(){" + file + file + … + "})();"   one scope, source text unchanged
 src/shell.html       ─► shell + <script> + that + </script>  =  dist/index.html
 ```
 
-- The build refuses to run if the manifest lists a file that is missing, lists one twice, or if a `.js` file under `src/app/` is not in the manifest (so code cannot be left out by accident).
+- **Why not esbuild or Vite?** They would work – `npm run check` bundles the modules with esbuild on every run and fails unless it accepts them and evaluates them in exactly the order above. But a real bundler re-prints the code, and until the claude.ai artifact is frozen the published script has to stay the source text, so that a version published from somewhere else can be cut back into files (`scripts/split.mjs`, `docs/PLATFORM.md` › Publishing). After cutover, replacing `bundle.mjs` with esbuild is a small change.
+- The build refuses to run if a file under `src/app/` is not reachable from `core/boot.js` through imports (it would be left out), if an import points at a missing file, or if a file does not parse on its own.
 - `dist/index.html` is the single file that gets published; the platform wraps it in its own `<html>` skeleton. `npm run dev` serves the same assembly with the tests' fake backend.
-- **How the split was verified**: cutting `app.js` at its existing banners gave a build byte-for-byte identical to the one before (same SHA-256). Three banner comments were then added so that helpers, boot, planning leads and deleted items each have their own file; with banner lines ignored the build is still identical to the original.
-- `scripts/split.mjs <page or script>` is the reverse: it cuts an assembled app back into these files by matching banners. It is how a version published to the artifact from somewhere else is merged (`docs/PLATFORM.md` › Publishing).
 
 ## Structure checks
-`scripts/modules.mjs` parses every file (acorn + eslint-scope, dev dependencies) and fails `npm test` if:
-- a name is declared at the top level of two files (for functions the later one would silently win);
+`npm run check` (also run by `npm test` and CI) parses every file with acorn + eslint-scope and fails if:
+- a name is declared at the top level of two files;
 - a name is used that is declared nowhere in `src/app/` and is not a browser or CDN-library global;
-- a file uses another file's `const`/`let` while the page loads, and that file comes later in the manifest;
-- `docs/MODULES.md` is not what the script would generate now.
+- any file other than `core/boot.js` has a statement that runs at load;
+- a file uses another file's `const`/`let` *while it is being loaded* (for example in an initialiser) and that other file imports it back, directly or through other files – in a loop like that the value may not be ready;
+- an import/export block, or `docs/MODULES.md`, is not what `npm run modules` would write;
+- esbuild rejects the modules (for example an assignment to an import), or would evaluate them in a different order from `bundle.mjs`.
 
-`npm run build` and `npm run dev` do not need these dependencies.
+`npm run build` and `npm run dev` need no `npm install`; the checks do.
 
-## Load order
-The files share **one function scope**, exactly as when they were one file. That has three consequences, and they are the only rules about order:
-1. **Functions declared with `function` can be called from any file**, earlier or later – the declaration is hoisted to the top of the shared scope.
-2. **`const` and `let` only exist once their file has run.** Code inside a function that runs later (a tap, a render) can use anything. Code that runs *while the page loads* can only use `const`/`let` from files earlier in the manifest. About 40 statements run at load, in 14 files: event wiring on the static shell (`core/tabs-week.js`, `core/sheet.js`, `core/viewer.js`, `chat/chat.js`, `files/in-app-files.js`…), document-level click handlers, timers, and every `const NAME=(()=>{…})()` module body.
-3. **`core/boot.js` and `core/back-button.js` stay last.** Boot starts the app; by then everything must be declared.
+## How the restructuring was verified
+Each step either left the built page provably unchanged or was compared against the original:
+1. **Cut into files**: `dist/index.html` byte-for-byte identical to the build from the single `app.js` (same SHA-256); then three banner comments added (identical with banner lines ignored).
+2. **Import/export blocks added**: build byte-for-byte identical again (the blocks are dropped when joining).
+3. **Setters** for the 39 assignments made from another file, **`init` functions** for the 93 statements that ran at load, two small files split out so the low-level helpers import nothing (`timesheets/working-day.js`, `people/employment-types.js`), and **order derived from imports**: here the text does change, so the original and new pages were both loaded with the fake backend and the value of every top-level name compared straight after load. All 1,244 names present in both were identical (data tables, state, the wrapped `render`), apart from the 17 functions containing the setter edits and one timestamp.
+4. The full suite (35 flows, owner/trade/client crawls) at each step.
 
-One more thing depends on order: `core/tabs-week.js` wraps `render` once at load (`const _render0=render;render=function(){…}`) to enhance photo grids after each draw. There is one `render`; this is its only wrapper.
+## What is still coupled
+Being modules makes the coupling explicit; it does not remove it. `docs/MODULES.md` has the numbers: about 1,430 file-to-file imports, and 116 of the 128 files import each other in one loop.
 
-So: **a new file goes immediately before `core/boot.js` in the manifest** unless there is a reason to put it elsewhere, and existing lines are not reordered.
+Two obvious restructurings were measured before deciding not to do them:
+- **A tab registry** (features register their tabs so `core/` stops importing features): even with *every* import from `core/` to other folders removed, the loop only shrinks from 116 files to 95.
+- **Moving widely shared helpers into `core/`** (`nameOf`, `teamIds`, `blobUrl`, `coData`…): the loop stays at 116 files; only the number of imports drops (by about 15%).
 
-## What the split did not change
-The coupling is exactly what it was: about 1,500 names in one scope, one state object `S` with ~96 properties, and `render()` called from ~390 places. Splitting made the code findable and reviewable; it did not create boundaries. Real modules (explicit imports, a tab registry instead of load-time wiring, a bundler) are planned for after the claude.ai artifact is frozen – `docs/ROADMAP.md` Phase 3 – because until then a version published from the artifact has to be mergeable back as plain text.
+The loop is feature-to-feature: 646 imports between files in different feature folders. Undoing that means redesigning how features call each other, one feature at a time, when there is a reason to touch it – not a mechanical step. The state object `S` (~96 properties, imported by 104 files) and `render()` (78 files) are the centre of it.
 
 ## Roles & permissions
 - **Owner**: `user.isOwner()` (the artifact's owner). Sees everything; owner-only collections.

@@ -1,4 +1,5 @@
 /* ================= PRIVACY NOTICE ================= */
+export { privacyBlock };
 function privacyHtml(){return `<div class="privacy">
   <p><b>Who we are.</b> JEB Building Services (James Bray) is responsible for the information in this app.</p>
   <p><b>What we keep.</b> Your name, contact details, address, date of birth, next of kin, work details (trade, NI number, UTR, CSCS), and any health information you choose to give. Also your timesheets and check-ins, vehicle and plant checks, photos (with time and location), invoices, receipts, signatures, training records, accident reports and any personal documents you upload, such as a driving licence or passport.</p>

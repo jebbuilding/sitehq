@@ -1,4 +1,23 @@
 /* ================= SITE INDUCTIONS ================= */
+import { phoneOf } from "../chat/calls.js";
+import { $, addDays, esc, iso, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { allVisitInds } from "../people/foreman.js";
+import { meInfo, myDetails } from "../people/personal-details.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { shrinkImage } from "./training.js";
+import { RAMS_SIGN } from "../sites/plans-specs.js";
+import { same } from "../sites/project-pages.js";
+import { QRSITE } from "../sites/qr-sign-in.js";
+import { myName } from "../survey/door-window-survey.js";
+export { IND_DETAILS, empIndTodo, indFor, indSectionWithId, loadJsPdf, myInd, openIndEditor, openInduction, sigPad, wireInduction };
 const IND_DETAILS=[
   ["pc","Principal contractor","JEB Building Services"],
   ["manager","Site manager / supervisor and phone","James Bray · 07917 646970"],
@@ -110,7 +129,7 @@ function wirePplPick(root){root.querySelectorAll(".ppk").forEach(w=>{const hid=w
 function openIndEditor(site){
   const ind=indFor(site);
   const det=ind?ind.details||{}:{};
-  formType="indedit"; editing=ind||null;
+  setFormType("indedit"); setEditing(ind||null);
   openSheet(`<h3 id="sheettitle">${ind?"Edit":"Set up"} site induction</h3>
     <div class="who">${esc(site)}</div>
     ${IND_DETAILS.map(([k,l,def])=>{const v=ind?(det[k]||""):(k==="hospital"||k==="hours"||k==="ppe"||k==="rules"||k==="pc"||k==="manager"?def:"");
@@ -150,7 +169,7 @@ function openIndEditor(site){
 function detailsHtml(det){return IND_DETAILS.filter(([k])=>det&&det[k]).map(([k,l])=>`<div class="drow"><span>${esc(l)}</span><span>${esc(det[k])}</span></div>`).join("")}
 const VIS_ROLES=["Visitor","Subcontractor","Client","Delivery driver","Building control / inspector","Other"];
 function openInduction(ind,onDevice,count){
-  formType="induction"; editing=null; count=count||0;
+  setFormType("induction"); setEditing(null); count=count||0;
   if(!RAMS_SIGN&&(ind.items||[]).some(t=>/read and understood the RAMS/i.test(t)))ind=Object.assign({},ind,{items:ind.items.filter(t=>!/read and understood the RAMS/i.test(t))});
   const ticks=new Array(ind.items.length).fill(false);
   const last=onDevice?{}:sigsOf(S.mine.signoffs).sort((a,b)=>b.signedAt-a.signedAt)[0]||{};

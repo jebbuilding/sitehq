@@ -1,4 +1,16 @@
 /* ================= MAPS & PINS: tap any address to open it in maps, drop a pin and send it ================= */
+import { CH, canPost, chatTitle, visibleChats } from "../chat/chat.js";
+import { clientSites } from "../clients/address-book.js";
+import { saveClient } from "../clients/clients.js";
+import { viewClient } from "../clients/quick-enquiry.js";
+import { $, esc, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { siteRec } from "../photos/photos.js";
+import { myName } from "../survey/door-window-survey.js";
+export { autoPins, dropPin, enhanceAddrs, gmapDir, hereNow, initMapsPins, miniMap, parseLatLon };
 const ADDR_LABELS=["Address","Site","Property","Site address","Where","Location of site","Branch"];
 /* Maps can't find house names ("Little Arce, Kennford") so when there's no pin, search by the postcode instead */
 const UKPC=/\b([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})\b/i;
@@ -106,6 +118,9 @@ function dropPin(o){o=o||{};const s=o.site||null;const cl=o.client||null;const o
 function enhanceAddrs(root){if(!root)return;
   root.querySelectorAll(".drow").forEach(r=>{const sp=r.children;if(sp.length<2||sp[1].querySelector(".maplink"))return;const l=sp[0].textContent.trim();if(!ADDR_LABELS.includes(l))return;const v=sp[1].textContent.trim();if(!v||/^No site$/i.test(v))return;
     sp[1].innerHTML=`<button type="button" class="maplink" data-addr="${esc(v)}">📍 ${esc(v)}</button>`});}
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".maplink");if(!b)return;e.preventDefault();e.stopPropagation();openPlace(b.dataset.addr,b.dataset.lat||null,b.dataset.lon||null,b.dataset.label||"",b.dataset.client||"")},true);
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initMapsPins(){
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".maplink");if(!b)return;e.preventDefault();e.stopPropagation();openPlace(b.dataset.addr,b.dataset.lat||null,b.dataset.lon||null,b.dataset.label||"",b.dataset.client||"")},true);
 if($("cm-pin"))$("cm-pin").onclick=()=>{const c=S.chats.find(x=>x.id===CH.open);dropPin({chatId:CH.open,site:c&&c.kind==="site"?siteRec(c.site):null,addr:c&&c.kind==="site"?c.site:""})};
+}

@@ -1,4 +1,17 @@
 /* ================= DIARY / SCHEDULER BOARD (people down the side, hours across) ================= */
+import { pdClientDatesOn } from "../clients/portal-calendar.js";
+import { viewClient } from "../clients/quick-enquiry.js";
+import { $, addDays, dayLabel, esc, iso, monday, parse, toMin, toast } from "../core/helpers.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { nameOf, roleTag, teamIds } from "../owner/owner.js";
+import { openPlanEditor } from "./board.js";
+import { onDay } from "./time-off.js";
+import { openPlanDetail } from "./views.js";
+import { dueSoonItems } from "../safety/expiry-dates.js";
+import { onSiteNow } from "../sites/roll-call.js";
+import { WE } from "../timesheets/working-day.js";
+export { diaryHtml, diaryRows, toHM, wireDiary };
 const DY={h0:6,h1:19,px:84};
 const toHM=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(Math.round(m%60)).padStart(2,"0");
 function diaryRows(owner){const ids=owner?[S.me].concat(teamIds()):[S.me];return ids.map(id=>({id,name:id===S.me?(owner?(S.ownerName||"James")+" (you)":"You"):nameOf(id)}))}

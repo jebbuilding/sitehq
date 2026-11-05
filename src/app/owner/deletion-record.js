@@ -1,4 +1,14 @@
 /* ===== permanent deletion record: every PIN-unlocked delete is written here first, chained so any change or removal shows up. The app has no way to edit or delete it. ===== */
+import { $, esc, iso, stamp, toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { openViewer } from "../core/viewer.js";
+import { pdfShow } from "../drawing/paving.js";
+import { coData } from "./company-details.js";
+import { hashHex } from "./pin.js";
+import { BRGB } from "../photos/photos.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+import { myName } from "../survey/door-window-survey.js";
+export { auditFirst, auditLog, auditView };
 const AUDIT_FIELDS=e=>[e.seq,e.at,e.by,e.action,e.title,e.details,e.snap,e.prev].join("|");
 async function auditLog(action,title,details,snap){const L=(S.audit||[]).slice().sort((a,b)=>(a.seq||0)-(b.seq||0));const last=L[L.length-1];const seq=(last?last.seq:0)+1;
   let sj="null";try{sj=JSON.stringify(snap==null?null:snap)}catch(e){}

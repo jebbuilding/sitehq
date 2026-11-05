@@ -1,4 +1,11 @@
 /* ================= CALCULATOR (sums, m², m³) ================= */
+import { calcFalls } from "./falls.js";
+import { calcMat } from "./materials.js";
+import { calcAgg, calcBoard, calcStairs, calcTimber } from "./more.js";
+import { calcRoof } from "./roofing.js";
+import { $, esc, store, toast } from "../core/helpers.js";
+import { S } from "../core/state.js";
+export { calcSave, calcState, calcView, fmtN, mmM, mmMt, numv };
 const DENS=[["","Just the volume",0],["concrete","Concrete",2.4],["type1","MOT Type 1 (compacted)",2.1],["ballast","Ballast / gravel",1.7],["sand","Sharp or building sand",1.6],["topsoil","Topsoil",1.4],["spoil","Dug spoil (bulked, approx.)",1.8]];
 function calcState(){
   if(!S.calc) S.calc=store.get("jeb.calc",null)||{mode:"area",expr:"",area:[{l:"",w:"",minus:false,label:""}],vol:[{l:"",w:"",d:"",label:""}],waste:"0",dunit:"mm",mat:"",mmv:1};

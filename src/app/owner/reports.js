@@ -1,4 +1,10 @@
 /* ================= OWNER: REPORTS ================= */
+import { $, addDays, esc, iso } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { csvSave } from "../files/files.js";
+import { allTeam, nameOf } from "./owner.js";
+import { KINDS, ck, defectsOf, hasProblem } from "../safety/checklists.js";
+export { openCheckHistory, openMonthly };
 function openMonthly(){
   openSheet(`<h3 id="sheettitle">Monthly report by site</h3>
     <label for="m-month">Month<input id="m-month" type="month" required value="${iso(new Date()).slice(0,7)}"></label>

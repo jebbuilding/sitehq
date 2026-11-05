@@ -1,4 +1,34 @@
 /* ================= OWNER ================= */
+import { startEmployee } from "../core/data.js";
+import { askOwnerPin } from "../core/dictation.js";
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, addDays, calcHours, esc, gbp, hrs, iso, lunchBreak, monday, nowHM, parse, shortDay, toMin, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, equipOf, inWeek, siteGone, siteNames } from "../core/state.js";
+import { empTabs, render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { isSketch, ownerDrawing } from "../drawing/trade-drawings.js";
+import { blobUrl, saveAsset } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { backupCard, wireBackup } from "./backup.js";
+import { companyCard, wireCompany } from "./company-details.js";
+import { auditFirst } from "./deletion-record.js";
+import { openMonthly } from "./reports.js";
+import { detailsDone, myDetails, openDetails } from "../people/personal-details.js";
+import { DOW, openPromptSender } from "../people/reminders.js";
+import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
+import { invCard, wireInvoices } from "../purchasing/invoices.js";
+import { isInv } from "../purchasing/materials-receipts.js";
+import { KINDS, ck } from "../safety/checklists.js";
+import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
+import { openRollCall } from "../sites/roll-call.js";
+import { pickPersonFor } from "../timesheets/day-work.js";
+import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
+import { openPersonMonth } from "../timesheets/monthly-sheet.js";
+import { openPaySummary } from "../timesheets/pay-summary.js";
+import { openEntry, sumH, typeTag } from "../timesheets/time.js";
+import { WE, WS, dayFor } from "../timesheets/working-day.js";
+export { allIds, allTeam, checkDetail, companyOf, nameOf, ownerInvoices, ownerPhotos, ownerSetup, ownerTime, roleOf, roleShort, roleTag, startPreview, teamIds, teamPlusMe, weekEntries };
 function teamIds(){return Object.keys(S.team).filter(id=>id!==S.me&&!(S.team[id]||{}).left).sort((a,b)=>nameOf(a).localeCompare(nameOf(b)))}
 function allIds(){return Object.keys(S.team).filter(id=>id!==S.me)}
 function nameOf(id){if(id&&String(id).startsWith("px:"))return String(id).slice(3);if(id&&String(id).startsWith("off:")){const o=S.offapp.find(x=>"off:"+x.id===id);return (o&&o.details&&o.details.fullName)||"Trade"}if(id&&id===S.me&&S.owner)return (S.myProfile&&S.myProfile.name)||S.ownerName||"James";return (S.team[id]&&S.team[id].name)||S.names[id]||"New employee"}

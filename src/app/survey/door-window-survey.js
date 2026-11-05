@@ -1,4 +1,41 @@
 /* ================= DOOR & WINDOW SURVEY: designs, sizes, add-ons → schedule / order request PDF ================= */
+import { clientSites } from "../clients/address-book.js";
+import { clStage, saveClient } from "../clients/clients.js";
+import { ptCl } from "../clients/portal.js";
+import { viewClient } from "../clients/quick-enquiry.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { pickField, pickVal } from "../core/fields.js";
+import { $, esc, fsize, gbp, hrs, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, editing, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { myDrawings } from "../drawing/drawings-tab.js";
+import { openNotePage, pdfShow } from "../drawing/paving.js";
+import { isSketch } from "../drawing/trade-drawings.js";
+import { CUT } from "../files/cut-outs.js";
+import { blobUrl, isImg, isWord, saveAsset, uploadErr, uploadFile } from "../files/files.js";
+import { FC, getFileBlob, keepFolder, openFile } from "../files/in-app-files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { printBlob } from "../files/print.js";
+import { SENDTO } from "../files/send-to.js";
+import { coData } from "../owner/company-details.js";
+import { binFromViewer } from "../owner/deleted-items.js";
+import { allTeam, nameOf, roleShort, teamIds } from "../owner/owner.js";
+import { BRGB, exifDate, isVid, pdfLogo, readExif, siteRec, stampPhoto } from "../photos/photos.js";
+import { keyDatesFor, keyTimeline, openPlanEditor, openPlanView } from "../planner/board.js";
+import { planEntries } from "../planner/time-off.js";
+import { makersAll } from "../purchasing/makers.js";
+import { MAT_ST, matCount } from "../purchasing/materials-receipts.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+import { shrinkImage } from "../safety/training.js";
+import { WTN } from "../safety/waste-transfer-note.js";
+import { JOB_DET, JOB_KINDS, doneKey, jobCard, jobDetRead, jobProgress, myJobs, taskDone } from "../sites/job-sheets.js";
+import { docPath } from "../sites/plans-specs.js";
+import { same } from "../sites/project-pages.js";
+import { siteClient } from "../sites/summary.js";
+import { typeFor } from "../sites/trade-sites.js";
+export { DWS, jobDraft, jobsView, myName, openJob, openJobEditor, renderJobDetail, siteFilePicker };
 const DWS=(()=>{
 const g=id=>document.getElementById("wsx-"+id);
 const CV={frame:"var(--wsframe)",glass:"var(--wsglass)",dim:"var(--wsdim)",ink:"var(--ink)",panel:"var(--wssoft)",add:"var(--wsaddon)",bg:"var(--surface)"};
@@ -764,7 +801,7 @@ async function setTask(j,t,patch,files){
 }
 function openTaskExtra(j,t){
   const cur=taskDone(j,t)||{};
-  formType="taskextra"; editing=null;
+  setFormType("taskextra"); setEditing(null);
   openSheet(`<h3 id="sheettitle">Add photo or note</h3>
     <div class="who">${esc(t.text)}</div>
     <label for="te-photos">Photos (optional)<input id="te-photos" type="file" accept="image/*" multiple></label>
@@ -789,7 +826,7 @@ let jobDraft=null;
 function openJobEditor(kind,j){
   const ids=teamIds();
   jobDraft={tasks:(j?j.tasks:[{id:newId(),text:""}]).map(t=>Object.assign({},t)),files:(j&&j.files||[]).map(f=>Object.assign({},f)),newFiles:[]};
-  formType="jobedit"; editing=j||null;
+  setFormType("jobedit"); setEditing(j||null);
   const defSite=j?j.site:(S.f.proj||"");
   openSheet(`<h3 id="sheettitle">${j?"Edit":"New"} ${JOB_KINDS[kind].toLowerCase()}</h3>
     <label for="je-title">Title<input id="je-title" required maxlength="100" placeholder="${kind==="snag"?"e.g. Final snags before handover":"e.g. First fix – kitchen and utility"}" value="${esc(j?j.title:"")}"></label>

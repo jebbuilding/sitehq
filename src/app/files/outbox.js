@@ -1,4 +1,11 @@
 /* ================= SENDING (keeps work when signal drops) ================= */
+import { esc, shortDay, toast } from "../core/helpers.js";
+import { touch } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { uploadErr, uploadFile } from "./files.js";
+import { autoClearPrompts, promptForJob } from "../people/reminders.js";
+export { OB, flushOutbox, initOutbox, isNetErr, newId, obOpen, outboxBanner, refreshOutbox, sentToast, sphotoPut, sphotoWanted, submitJob };
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,10);
 const PERM=new Set(["invalid_argument","quota_exceeded","not_granted","capability_disabled","capability_removed","transform_error","revoked","too_large","unsupported_type","quota_or_state","not_uploader","upstream_auth"]);
 const isNetErr=e=>!(e&&PERM.has(e.code));
@@ -52,8 +59,11 @@ function outboxBanner(){
     <button type="button" class="pillbtn" id="ob-send" style="margin-top:8px">Try sending now</button></div>`;
 }
 function sentToast(r,what){what=what.replace(/:$/,"");toast(r==="queued"?what+" kept on this phone. It will send when you have signal.":what+(what==="Saved"?"":" sent"))}
+
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initOutbox(){
 window.addEventListener("online",()=>{flushOutbox();render()});
 window.addEventListener("offline",()=>render());
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")flushOutbox()});
 setInterval(()=>{if(S.outbox&&S.outbox.length)flushOutbox()},30000);
-
+}

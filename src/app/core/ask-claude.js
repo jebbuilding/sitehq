@@ -1,4 +1,10 @@
 /* ================= ASK CLAUDE (helper in the top corner) ================= */
+import { $, esc, nowHM, toast } from "./helpers.js";
+import { S, ownerMode, siteNames } from "./state.js";
+import { EMP_TABS, OWN_TABS, curTab, empTabs } from "./tabs-week.js";
+import { myTrade } from "../photos/photos.js";
+import { WE, WS } from "../timesheets/working-day.js";
+export { aiClose, startAi };
 const AI={sample:null,turns:[],busy:false,ctl:null};
 const TAB_HELP={signin:"sign in and out of site (the site sign-in book; timesheet check-ins fill it automatically)",time:"check in and out of site, add timesheet days and job time",chat:"team, group, direct and site chats; phone button to call",planner:"key dates, holiday requests, week/month/year views",jobs:"job sheets, snag lists and to-dos to tick off with photos",checks:"Reports: vehicle, digger, trailer, machinery checks, scaffold/excavation/ladder inspections, accident and near-miss reports",photos:"take or add site photos, stamped with address, GPS, date, weather, trade",materials:"ask for materials or tools for a job",suppliers:"supplier phone numbers and account details",receipts:"fuel and material receipts",invoices:"self-employed invoices",plans:"Sites tab: each site has Plans & drawings, RAMS to read and sign, Specs & docs, the site induction and the site chat",training:"toolbox talks, training, cards and certificates",policies:"company policies and insurance to read",calc:"area m², volume m³, materials needed, normal calculator",details:"personal details, next of kin, personal documents (licence, passport)",todo:"James's private to-do list",projects:"each site's page: photos, documents, key dates, site chat",people:"everyone's details, documents, leavers",setup:"sites, vehicles and plant, dates, working day, backup",me:"fill in forms as yourself"};
 function aiRules(){

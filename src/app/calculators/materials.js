@@ -1,4 +1,12 @@
 /* ================= MATERIAL CALCULATOR (owner sets rates, anyone works out quantities) ================= */
+import { calcSave, calcState, fmtN, numv } from "./calculator.js";
+import { $, esc, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { newId } from "../files/outbox.js";
+import { UNITS } from "../purchasing/materials-receipts.js";
+export { calcMat, looseSave };
 const MC_BASIS={m2:"m²",m3:"m³",m:"metre run"};
 const MC_CONT=["m","m²","m³","litres","kg","tonnes","days hire","weeks hire"];
 const MC_EXAMPLES=[

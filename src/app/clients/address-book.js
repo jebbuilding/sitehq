@@ -1,4 +1,20 @@
 /* ================= CLIENTS ADDRESS BOOK + JOB HISTORY ================= */
+import { CJOBS } from "./address-book-jobs.js";
+import { clInitials, clList, clStage, newEnquiryFor, nmParts, nmSortKey, openClientForm, saveClient } from "./clients.js";
+import { quickEnquiry, viewClient } from "./quick-enquiry.js";
+import { clNextPlan } from "./stages-planner.js";
+import { $, esc, gbp, hrs, iso, parse, shortDay, store, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer } from "../core/viewer.js";
+import { blobUrl, csvSave } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { allTeam } from "../owner/owner.js";
+import { JOB_KINDS, jobProgress } from "../sites/job-sheets.js";
+import { same } from "../sites/project-pages.js";
+import { openJob } from "../survey/door-window-survey.js";
+export { clConCard, clContactsHtml, clInvHtml, clMainHtml, clientSites, clientsView, histHtml, wireHist };
 function clConCard(x){const t=String(x.phone||"").replace(/\s+/g,"");return `<div class="clcon"><b>${esc(x.name||"Contact")}</b>${x.role?` <span class="who">${esc(x.role)}</span>`:""}<div class="clconl">${x.phone?`<a href="tel:${esc(t)}">📞 ${esc(x.phone)}</a><a href="sms:${esc(t)}">💬 Text</a>`:""}${x.email?`<a href="mailto:${esc(x.email)}">✉ ${esc(x.email)}</a>`:""}</div></div>`}
 function clMainHtml(c){return `<div class="flabel" style="margin-top:10px">Main contact</div><div class="clcons">${clConCard({name:c.name,role:"Main contact",phone:c.phone,email:c.email})}</div>`}
 function clContactsHtml(c){const cs=(c.contacts||[]).filter(x=>x.name||x.phone||x.email);if(!cs.length)return "";

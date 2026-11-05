@@ -1,4 +1,17 @@
 /* ================= RISK ASSESSMENTS / RAMS (from James's CDM 2015 pack, 4.1) ================= */
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, shortDay, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { allTeam, nameOf } from "../owner/owner.js";
+import { meBtn, meInfo } from "../people/personal-details.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "./site-inductions.js";
+export { openRaForm, raAll, raBlock, viewRa, wireRa };
 const RA_HAZARDS=[["Work at height (scaffold, roof, loft)","Scaffold by competent erector, inspected every 7 days; edge protection; no ladders as workplaces except short-duration"],
  ["Excavations / foundations","Services scanned; sides battered or supported; barriers; inspected each shift"],
  ["Structural alterations / temporary works","Engineer's design; props installed before removal; temporary works coordinator named"],

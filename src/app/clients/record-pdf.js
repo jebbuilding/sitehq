@@ -1,4 +1,18 @@
 /* ================= CLIENT RECORD → PDF ================= */
+import { clientSites } from "./address-book.js";
+import { clStage, saveClient } from "./clients.js";
+import { pdfToPages } from "./documents.js";
+import { ptCl } from "./portal.js";
+import { viewClient } from "./quick-enquiry.js";
+import { $, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
+import { S } from "../core/state.js";
+import { openNotePage, pdfShow } from "../drawing/paving.js";
+import { isSketch } from "../drawing/trade-drawings.js";
+import { blobUrl, uploadFile } from "../files/files.js";
+import { BRGB, logoId } from "../photos/photos.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+import { same } from "../sites/project-pages.js";
+export { clientPdf };
 async function clientPdf(c,btn,o){o=o||{};const dl=o.download!==false;
   if(dl&&!S.dl){toast("Downloads only work when the page is opened in claude.ai");return}
   const lab=btn&&btn.textContent; if(btn){btn.disabled=true;btn.textContent="Making the PDF…"}

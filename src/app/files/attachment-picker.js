@@ -1,4 +1,11 @@
 /* ===== Simple attachment picker: separate Take photo / Photos / PDF-file buttons (each with one file type, which phones handle best) ===== */
+import { esc, stamp, toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { myDrawings } from "../drawing/drawings-tab.js";
+import { openNotePage } from "../drawing/paving.js";
+import { assetBlob, blobUrl } from "./files.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+export { attachPicker, drawPdfFile };
 /* a drawing as a PDF (all pages) so it can go into a sign-off */
 async function drawPdfFile(p){const nm=(p.title||"Drawing").replace(/[^\w\s-]/g,"").trim()||"Drawing";
   const asJpg=async()=>{const b=await assetBlob(p.assetId);return new File([b],nm+".jpg",{type:"image/jpeg"})};

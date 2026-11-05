@@ -1,4 +1,9 @@
 /* ===== Person + site filter drop-downs (Timesheets and Day work) ===== */
+import { $, esc } from "../core/helpers.js";
+import { S, liveSite } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { nameOf } from "../owner/owner.js";
+export { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt };
 const fltNorm=t=>String(t||"").trim().toLowerCase();
 const fltSiteOk=e=>!S.f.fltSite||fltNorm(e.job||e.site)===S.f.fltSite;
 const fltWhos=()=>Array.isArray(S.f.fltWho)?S.f.fltWho:(S.f.fltWho?[S.f.fltWho]:[]);

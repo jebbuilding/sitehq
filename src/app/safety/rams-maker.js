@@ -1,4 +1,16 @@
 /* ===== 📝 RAMS maker: copy your existing Word RAMS to a new site, filling in the blanks ===== */
+import { clAddr } from "../clients/stages-planner.js";
+import { $, esc, iso, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { assetBlob, isWordId, uploadErr, uploadFile } from "../files/files.js";
+import { loadZip } from "../owner/backup.js";
+import { indFor } from "./site-inductions.js";
+import { sjMaster } from "../sites/job-details.js";
+import { same } from "../sites/project-pages.js";
+import { siteClient } from "../sites/summary.js";
+export { ramsMaker, ramsTemplates, ukDate };
 const RAMS_FIELDS=[["project","Project name"],["address","Site address"],["client","Client"],["planning","Planning / Building Control ref"],["prepared","Prepared by"],["datePrep","Date prepared"],["start","Start date"],["review","Review date"],["rev","Revision"],
   ["giveAs","Give the site to 999 as"],["w3w","what3words"],["hospital","Nearest A&E"],["manager","Site Manager"],["firstAid","First aider / first aid kit"],["fire","Fire extinguisher / assembly point"]];
 const RAMS_LABEL={"project name":"project","site address":"address","client":"client","planning / building control ref":"planning","prepared by":"prepared","date prepared":"datePrep","start date":"start","review date":"review","revision":"rev","nearest a&e":"hospital","site manager":"manager","first aider / first aid kit":"firstAid","fire extinguisher / assembly point":"fire"};

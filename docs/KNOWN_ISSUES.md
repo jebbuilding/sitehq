@@ -11,7 +11,9 @@
 - Key-safe and alarm codes are stored in client records (owner-only, but plaintext).
 
 ## Code
-- The app is 2.1 MB of JavaScript in one shared scope (~1,500 names, one state object `S`), now filed as 126 files under `src/app/` but not decoupled (`docs/ARCHITECTURE.md` › What the split did not change). Long one-line functions; no types; HTML built with string templates (`esc()` must be used on all user data – audit when touching code).
+- The app is 2.1 MB of JavaScript, now ~130 ES modules under `src/app/` with explicit imports, but still tightly coupled: 116 files import each other in one loop, around one state object `S` (`docs/ARCHITECTURE.md` › What is still coupled). No types; HTML built with string templates (`esc()` must be used on all user data – audit when touching code).
+- The published script is joined in sloppy mode, as it always was; the modules have not been run in strict mode (which a real bundler's ES-module output or native modules would use). esbuild accepts them, but strict-only runtime differences are untested.
+- `BROCH` in `survey/door-window-survey.js` (the brochure list) has the key `other` twice; the later entry ("Other makers", with links) wins and the first ("Other makers / my own", empty) is dead. esbuild flags it; behaviour unchanged since before the split.
 - Shared helpers live in whichever section first needed them (e.g. `loadJsPdf` in `safety/site-inductions.js`, `BRGB`/`pdfLogo` in `photos/photos.js`). File names follow the banners, which were not checked against every line of content.
 - `todos` is a schemaless catch-all keyed by `kind`; `signoffs` subcollection likewise by `type`.
 - Some older features predate the IIFE module pattern and share globals.

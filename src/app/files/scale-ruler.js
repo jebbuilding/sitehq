@@ -1,4 +1,7 @@
 /* ================= SCALE RULER for drawings in the file viewer ================= */
+import { $, esc, store, toast } from "../core/helpers.js";
+import { FV, fvHostAt } from "./in-app-files.js";
+export { FVM, fvmClick, fvmDetectScale, fvmDraw, fvmHover, fvmLoad, fvmToggle, fvmVec, initScaleRuler };
 const FVM={on:false,a:null,list:[],cal:null,calMode:false,pend:null};
 const FVM_SCALES=[1,5,10,20,25,50,100,200,250,500,1000,1250,2500];
 function fvmKey(){return "jeb.fvm."+(FV.id||"")}
@@ -181,9 +184,6 @@ function fvmMoveStart(e,hl,host,ov){
   const up=()=>{hl.removeEventListener("pointermove",move);hl.removeEventListener("pointerup",up);hl.removeEventListener("pointercancel",up);FVM.skipAt=Date.now();
     if(moved){setTimeout(()=>{FVM.dragging=false},60);fvmBar()}else{FVM.sel=FVM.sel===i?null:i;fvmDraw();fvmBar()}};
   hl.addEventListener("pointermove",move);hl.addEventListener("pointerup",up);hl.addEventListener("pointercancel",up)}
-document.addEventListener("keydown",e=>{if(!FVM.on||$("fileview").hidden||/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||""))return;
-  if((e.key==="Delete"||e.key==="Backspace")&&FVM.sel!=null){e.preventDefault();fvmPush();FVM.list.splice(FVM.sel,1);FVM.sel=null;fvmDraw();fvmBar();fvmOut()}
-  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?fvmRedo():fvmUndo()}});
 function fvmBar(){
   const pdf=FV.pages.length>0, img=!!$("fv-img"); const D=FVM.detected||{};
   const scaleSel=pdf?`<label class="fvm-l"><span class="sr">Scale</span><select id="fvm-den" aria-label="Scale">${FVM_SCALES.map(d=>`<option value="${d}" ${d===FVM.den&&!FVM.cal?"selected":""}>1:${d}</option>`).join("")}${FVM.cal?`<option value="cal" selected>Set from a length</option>`:""}</select></label>`:"";
@@ -238,3 +238,9 @@ function fvmClick(e){
   fvmBar();fvmDraw();fvmOut();
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initScaleRuler(){
+document.addEventListener("keydown",e=>{if(!FVM.on||$("fileview").hidden||/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||""))return;
+  if((e.key==="Delete"||e.key==="Backspace")&&FVM.sel!=null){e.preventDefault();fvmPush();FVM.list.splice(FVM.sel,1);FVM.sel=null;fvmDraw();fvmBar();fvmOut()}
+  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?fvmRedo():fvmUndo()}});
+}

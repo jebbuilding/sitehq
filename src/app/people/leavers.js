@@ -1,4 +1,11 @@
 /* ================= LEAVERS ================= */
+import { $, esc, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { nameOf } from "../owner/owner.js";
+export { accessNotice, leaversBlock, openLeaver, wireLeavers };
 function openLeaver(id){
   const name=nameOf(id), sd=S.data.signoffs[id]||[], pd=sd.filter(x=>x.type==="persdoc"), ph=S.data.photos[id]||[];
   openSheet(`<h3 id="sheettitle">${esc(name)} has left</h3>

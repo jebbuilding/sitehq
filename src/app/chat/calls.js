@@ -1,4 +1,10 @@
 /* ================= CALLS FROM CHAT ================= */
+import { CH } from "./chat.js";
+import { esc } from "../core/helpers.js";
+import { openSheet } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+export { intlNum, isApple, openCallSheet, phoneOf };
 const intlNum=n=>{let d=String(n||"").replace(/[^\d+]/g,"");if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(d.startsWith("0"))return "44"+d.slice(1);return d};
 const isApple=()=>/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent||"");
 function phoneOf(id){if(id===(S.settings||{}).ownerId||(S.owner&&id===S.me))return (S.settings||{}).ownerPhone||"";const d=(S.team[id]&&S.team[id].details)||{};return d.mobile||""}

@@ -1,4 +1,14 @@
 /* ================= PHOTO MARK-UP (owner draws / writes and sends back) ================= */
+import { $, esc, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { askMeasure, drawDim } from "../drawing/notebook.js";
+import { blobUrl, uploadErr } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { nameOf } from "../owner/owner.js";
+import { loadImage, photoViewer } from "./photos.js";
+export { markupBlock, markupSend, openMarkup };
 const MK_COLS=["#e11d2a","#f2c230","#ffffff","#111111","#2f5fb3"];
 function openMarkup(src,onDone,title,opts){opts=opts||{};
   const ov=$("markup"); ov.hidden=false; document.body.style.overflow="hidden";

@@ -1,4 +1,19 @@
 /* ===== Sites: a tile for every site first, tap one to open it ===== */
+import { initials } from "../chat/chat.js";
+import { $, esc, hrs, iso, shortDay } from "../core/helpers.js";
+import { myDoc } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl } from "../files/files.js";
+import { deleteSitesPicker } from "../owner/delete-client-site.js";
+import { allTeam } from "../owner/owner.js";
+import { siteRec } from "../photos/photos.js";
+import { siteFront } from "./job-details.js";
+import { same } from "./project-pages.js";
+import { storageHtml, wireStorage } from "./storage.js";
+import { siteClient } from "./summary.js";
+import { sumH } from "../timesheets/time.js";
+export { photoDelete, siteTiles };
 function siteTiles(sites){const mon=iso(new Date()).slice(0,7);const ents=allTeam("entries"),phs=allTeam("photos");const today=iso(new Date());
   const tile=n=>{const sr=siteRec(n)||{};const c=siteClient(n);const e=ents.filter(x=>same(x.job,n));const hm=sumH(e.filter(x=>(x.date||"").startsWith(mon)),()=>true);
     const on=e.filter(x=>x.open&&x.date===today);const last=e.reduce((a,x)=>Math.max(a,x.created||0),0);const ph=phs.filter(p=>same(p.site,n)).sort((a,b)=>(b.takenAt||0)-(a.takenAt||0))[0];const img=siteFront(n);

@@ -1,4 +1,7 @@
 /* ===== building components: roof parts, claddings, render, walls, floors, foundations, drainage, electrics ===== */
+import { npLbl } from "./construction-details.js";
+import { npHexMix, npPattern } from "./walls.js";
+export { NP_BLD_BOX, NP_BLD_LINE, NP_LIB, npBldLine, npBldSym };
 const NP_BLD_BOX=new Set(["roofhip","roofgable","wplate","ridgeb","purlin","eaves","flatroof","lintel","weep","wtie","closer","airbrick","fdn","trenchfill","bblock","gslab","tfloor","screed","evclad","epanel","etilehang","estone","esoldier","re","ic","soakaway","rwp","aav","fan","fspur","ckr","olight","dlight","heat","coal","tvp","stat","towel"]);
 const NP_BLD_LINE=new Set(["ductsup","ductext","contour","bndry","redline","hedgerem","fencerem","swale","easement","treefence","walkway","lintelp","steelub","movjoint","firewall","kerb","kerbdrop","kerbflush","retweep","gabion","secline","matchline","lvlline","embank","ubt","fibre","ohl","ohbt","landdrain","ch8","heras","herasgate","uelec","uwater","ugas","rafter","joistl","rooftile","batfelt","lead","pboard","renderl","cladsec","ctray","foul","storm","fall"]);
 function npBldSym(ctx,o,x0,y0,w,h,cx,cy){const lw=ctx.lineWidth,mm=ctx.__mm||0,c=ctx.strokeStyle,m=Math.min(w,h),v=w>=h,x1=x0+w,y1=y0+h;

@@ -1,4 +1,12 @@
 /* ================= Setup › Brochures: save makers' brochures in one place (also used in the door & window survey) ================= */
+import { $, esc, toast } from "../core/helpers.js";
+import { S } from "../core/state.js";
+import { openViewer } from "../core/viewer.js";
+import { uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { makersAll } from "./makers.js";
+export { brochSetup };
 function brochSetup(){const B=makersAll();const draw=()=>{const L=(S.brochures||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0));const keys=Object.keys(B).sort((a,b)=>a==="other"?1:b==="other"?-1:B[a].m.localeCompare(B[b].m));
   openViewer(`<span class="tag">📖 Setup</span><h3 style="font-family:var(--f-display);font-size:24px;margin:6px 0 8px;color:var(--accent)">Brochures</h3>
     <div class="who">Save the makers' brochures here (PDFs or photos). They show in the door &amp; window survey under <b>📖 Brochures</b> when you pick that maker, where you can open them or ✂️ cut a design onto an opening.</div>

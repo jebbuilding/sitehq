@@ -29,12 +29,12 @@ Run one feature test: `cd tests && node features/h412.js`.
 
 ```
 src/shell.html        <style> + static HTML (header, tab bar, sheets, viewers) – everything before the <script>
-src/app/              the whole application (~13k lines, vanilla JS, no framework): one file per section, in folders by area
-src/app/manifest.txt  the order the files are joined in (they share one scope – see docs/ARCHITECTURE.md)
-scripts/bundle.mjs    joins src/app/ into the one app script (used by build, dev and split)
+src/app/              the whole application (~13k lines, vanilla JS, no framework): ES modules, one per section, in folders by area
+src/app/core/boot.js  the entry point: the only file that runs anything at load
+scripts/bundle.mjs    joins the modules into the one app script, in the order their imports imply (used by build, dev and split)
 scripts/build.mjs     shell + app → dist/index.html (+ syntax check); copies to tests/timesheets.html
 scripts/analyze.mjs   parses src/app/ (acorn + eslint-scope): what each file declares and uses
-scripts/modules.mjs    structure checks + writes docs/MODULES.md (`npm run modules`; `npm run check` verifies)
+scripts/modules.mjs   writes each file's import/export block and docs/MODULES.md, runs the structure checks (`npm run modules`; `npm run check` only verifies)
 scripts/split.mjs     the reverse: cuts a built or published page back into src/app/ (for merging artifact-side versions)
 scripts/dev.mjs       local dev server: src/ + the tests' fake backend, at localhost:4321/owner|trade|client
 scripts/vendor.sh     npm-packs jsPDF, pdf.js, SheetJS, mammoth, qrcode-generator into tests/ for offline tests

@@ -1,4 +1,22 @@
 /* ================= EMPLOYEE: TIME ================= */
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, calcHours, dayLabel, dayLine, esc, hrs, iso, lunchBreak, monday, nowHM, parse, shortDay, toMin, toast } from "../core/helpers.js";
+import { armDelete, closeForm, editing, formFoot, formType, kindVal, myDoc, openSheet, setEditing, setFormType, setKindVal, showErr } from "../core/sheet.js";
+import { S, inWeek, siteNames, weekDays } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
+import { newId, sentToast, submitJob } from "../files/outbox.js";
+import { nameOf } from "../owner/owner.js";
+import { proxyFor, setProxyFor } from "../people/foreman.js";
+import { myTrade, siteRec } from "../photos/photos.js";
+import { dueSoonCard } from "../safety/expiry-dates.js";
+import { empIndTodo, openInduction } from "../safety/site-inductions.js";
+import { shrinkImage } from "../safety/training.js";
+import { myName } from "../survey/door-window-survey.js";
+import { dwTradeSheet } from "./day-work.js";
+import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
+import { dayFor, openMyDay } from "./working-day.js";
+export { checkIn, checkOut, empTime, entrySub, openEntry, sumH, typeTag };
 function typeTag(e){return e.open?'<span class="tag ok">On site now</span>':e.type==="hours"?'<span class="tag">Timesheet</span>':e.kind==="extra"?'<span class="tag day">Extra work</span>':'<span class="tag">Job time</span>'}
 function entrySub(e){const p=[];if(e.type==="hours")p.push(e.open?`Checked in at ${esc(e.start)}`:`${esc(e.start)}–${esc(e.finish)}${+e.breakMin?` · ${e.breakMin} min unpaid lunch`:""}${e.checkIn?" · checked in":""}${(e.actualIn&&e.actualIn!==e.start)||(e.actualOut&&e.actualOut!==e.finish)?` (on site ${esc(e.actualIn||e.start)}–${esc(e.actualOut||e.finish)})`:""}`);else if(e.task)p.push(esc(e.task));if(e.notes)p.push(esc(e.notes));return p.join(" · ")}
 function sumH(list,f){return list.filter(f).reduce((a,e)=>a+(+e.hours||0),0)}
@@ -69,10 +87,10 @@ function empTime(){
 }
 let entryWho=null;
 function openEntry(type,e,forWho){
-  editing=e||null; formType=type; kindVal=e&&e.kind?e.kind:"extra"; entryWho=(e&&e._src)||forWho||null;
+  setEditing(e||null); setFormType(type); setKindVal(e&&e.kind?e.kind:"extra"); entryWho=(e&&e._src)||forWho||null;
   const srcEntries=forWho?(S.data.entries[forWho]||[]):S.mine.entries;const ED=dayFor(forWho||S.me);
   const defDate=e?e.date:S.entryDatePreset?(()=>{const d=S.entryDatePreset;S.entryDatePreset=null;return d})():(inWeek({date:iso(new Date())})?iso(new Date()):iso(S.week));
-  const px=!e&&!forWho?proxyFor:null; proxyFor=null; S.entryProxy=px;
+  const px=!e&&!forWho?proxyFor:null; setProxyFor(null); S.entryProxy=px;
   openSheet(`<h3 id="sheettitle">${e?"Edit":"Add"} ${type==="hours"?"timesheet day":"day work / job time"}</h3>${px?`<div class="notice" style="margin:0">For <b>${esc(px.name)}</b>, filled in by you.</div>`:""}${forWho?`<div class="who">For <b>${esc(nameOf(forWho))}</b>. They'll see the change straight away.</div>`:""}
     <label for="f-date">Date<input id="f-date" type="date" required value="${esc(defDate)}"></label>
     ${pickField("f-job","Site",siteNames(),e?e.job:lastOf(srcEntries,()=>true,"job"),"e.g. 12 Marine Way, Exmouth")}
@@ -101,7 +119,7 @@ function openEntry(type,e,forWho){
     const fo=$("f-open"); if(fo){const so=()=>{$("f-finish").disabled=fo.checked;$("f-finish").required=!fo.checked;$("f-calc").hidden=fo.checked};fo.onchange=so;so()}
     upd()}
   else{const fp=$("f-ph");if(fp)fp.onchange=()=>{const n=fp.files.length;$("f-phn").textContent=n?` ${n} photo${n===1?"":"s"} ready to save`:""}}
-  if(type!=="hours")$("f-seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{kindVal=b.dataset.v;$("f-seg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+  if(type!=="hours")$("f-seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{setKindVal(b.dataset.v);$("f-seg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
   armDelete(()=>entryWho?S.db.doc("sheets/"+entryWho+"/entries/"+editing.id).delete():myDoc("entries",editing.id).delete());
 }
 async function saveEntry(){

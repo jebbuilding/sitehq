@@ -1,4 +1,15 @@
 /* ================= POLICIES & INSURANCE ================= */
+import { $, esc, fsize, shortDay, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, docRef, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { saveAsset, uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { companyCard, wireCompany } from "../owner/company-details.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { daysTo, dueTagN } from "./expiry-dates.js";
+export { isPolDoc, myPolTodo, policiesView };
 const POL_CATS={policy:"Company policies",insurance:"Insurance",companydoc:"Other company documents",folder:"Folder"};
 const polFolderKey=d=>d.cat==="folder"?"f:"+(d.folder||""):d.cat;
 function polFolders(){const out=[["policy","Company policies"],["insurance","Insurance"]];

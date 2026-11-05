@@ -1,4 +1,31 @@
 /* ===== PLANNER v2: full-screen board (people × days), job timeline, tidy menu, day sheet for trades ===== */
+import { initials } from "../chat/chat.js";
+import { clientSites } from "../clients/address-book.js";
+import { clStage } from "../clients/clients.js";
+import { viewClient } from "../clients/quick-enquiry.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { pickField, pickVal } from "../core/fields.js";
+import { $, addDays, dayLabel, esc, iso, monday, parse, shortDay, stamp, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
+import { S, inWeek, liveSite, ownerMode, siteNames, weekDays } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { isImg, uploadFile } from "../files/files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { noBin } from "../owner/deleted-items.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { avatarHtml } from "../people/profile-photos.js";
+import { siteRec } from "../photos/photos.js";
+import { diaryHtml, diaryRows, wireDiary } from "./diary.js";
+import { LEAVE_TYPES, PTYPES, VIS, entryChip, leaveOf, onDay, planEntries, workDays } from "./time-off.js";
+import { openDayPlan, openPlanDetail, openPlanImport, planListHtml, planMatch } from "./views.js";
+import { shrinkImage } from "../safety/training.js";
+import { myJobs } from "../sites/job-sheets.js";
+import { same } from "../sites/project-pages.js";
+import { onSiteNow } from "../sites/roll-call.js";
+import { myName } from "../survey/door-window-survey.js";
+export { answerLeave, keyDatesFor, keyTimeline, openKeyDates, openPlanEditor, openPlanView, plannerView };
 const PB_HUES=[210,150,25,285,0,190,60,330,110,245];
 function siteHue(site){const all=[...new Set((S.plan||[]).concat(S.planPrivate||[]).map(pbSiteOf).filter(Boolean).map(x=>x.toLowerCase()))].sort();let i=all.indexOf(String(site||"").toLowerCase());if(i<0){let h=0;for(const ch of String(site||""))h=(h*31+ch.charCodeAt(0))>>>0;i=h}return PB_HUES[i%PB_HUES.length]}
 const pbShort=t=>String(t||"").replace(/^(Visit|Due|Work|Meeting|Delivery):\s*/i,"").split(/,|·|\(/)[0].trim();

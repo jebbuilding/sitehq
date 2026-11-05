@@ -1,4 +1,27 @@
 /* ===== "What's new" panel: when a tab shows a number, opening the tab says what it is ===== */
+import { chatTitle, openChat, unread, visibleChats } from "../chat/chat.js";
+import { ptManager } from "../clients/portal.js";
+import { viewClient } from "../clients/quick-enquiry.js";
+import { $, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { curTab } from "../core/tabs-week.js";
+import { isSketch } from "../drawing/trade-drawings.js";
+import { openFile } from "../files/in-app-files.js";
+import { nfSeenAt, ownerFeed } from "./alerts.js";
+import { allTeam, checkDetail, nameOf, teamIds } from "./owner.js";
+import { detailsDone } from "../people/personal-details.js";
+import { photoViewer } from "../photos/photos.js";
+import { answerLeave } from "../planner/board.js";
+import { invDetail } from "../purchasing/invoices.js";
+import { isInv, openMat } from "../purchasing/materials-receipts.js";
+import { viewIncident } from "../safety/accidents.js";
+import { hasProblem } from "../safety/checklists.js";
+import { viewRa } from "../safety/rams.js";
+import { expiryState } from "../safety/training.js";
+import { jobProgress } from "../sites/job-sheets.js";
+import { openJob } from "../survey/door-window-survey.js";
+import { openPersonMonth } from "../timesheets/monthly-sheet.js";
+export { whatsNewHTML, wireWhatsNew, wnCapture, wnJump };
 const WN={tab:null,items:[],shut:{}};
 function wnCapture(t){if(!ownerMode()||S.preview){return}let fresh=[];try{fresh=ownerFeed().filter(f=>f.tab===t&&f.ts>nfSeenAt(t))}catch(e){}
   if(WN.tab!==t){WN.tab=t;WN.items=fresh.sort((a,b)=>b.ts-a.ts);WN.shut[t]=false;return}

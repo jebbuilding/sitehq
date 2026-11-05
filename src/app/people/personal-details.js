@@ -1,5 +1,15 @@
 /* ================= PERSONAL DETAILS & NEXT OF KIN ================= */
-const EMP_TYPES={employed:"Employed (PAYE)",cis:"Self-employed (CIS)",selfemp:"Self-employed (not CIS)",company:"From another company",agency:"Agency",other:"Other"};
+import { $, esc, toast } from "../core/helpers.js";
+import { privacyBlock } from "../core/privacy-notice.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { nameOf } from "../owner/owner.js";
+import { EMP_TYPES } from "./employment-types.js";
+import { autoClearPrompts, markPrompt, promptsOf } from "./reminders.js";
+export { DET_SECTIONS, detailsDone, meBtn, meInfo, myDetails, openDetails, renderDetailsNeeded };
 const DET_SECTIONS=[
   ["About you",[["fullName","Full name",1],["dob","Date of birth",1,"date"],["mobile","Mobile number",1,"tel"],["email","Email address",0,"email"],["address","Home address",1,"area"],["postcode","Postcode",1]]],
   ["Work",[["empType","Employed or self-employed",1,"emptype"],["trade","Trade",1],["company","Company name (if self-employed or from another company)",0],["ni","National Insurance number",0],["utr","UTR (if self-employed)",0],["cscs","CSCS card number",0],["driving","Do you hold a UK driving licence?",0,"yesno"]]],

@@ -1,4 +1,23 @@
 /* ================= CHAT ================= */
+import { openCallSheet } from "./calls.js";
+import { contactsHtml, wireChatSearch, wireContactButtons, wireContacts } from "./contacts.js";
+import { ptChatMembers } from "../clients/portal-calendar.js";
+import { ptChatId, ptOf } from "../clients/portal.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { mapDocs } from "../core/data.js";
+import { pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, liveSite, ownerMode, siteNames } from "../core/state.js";
+import { render, renderTabs } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { blobUrl, saveAsset, uploadErr } from "../files/files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { VID_MAX, audExt, audTag, exifDate, isAud, readExif, stampPhoto, vidExt, wireVoice } from "../photos/photos.js";
+import { myJobs } from "../sites/job-sheets.js";
+import { myName } from "../survey/door-window-survey.js";
+export { CH, canPost, chatPeople, chatTitle, chatView, closeChat, ensureSiteChat, initChat, initials, openChat, openClientChat, openDM, renderChatHead, siteChatId, siteMessages, syncSettings, unread, visibleChats };
 const CH={unsub:null,open:null,msgs:[],pending:{},tag:null,photo:null,readTimer:null,sel:null};
 function chatPeople(){
   if(ownerMode()) return teamIds().map(id=>({id,name:nameOf(id)})).concat([{id:S.me,name:S.ownerName||"James"}]);
@@ -167,7 +186,6 @@ function openChat(id){
   markRead(id);
 }
 function closeChat(){if(CH.unsub){CH.unsub();CH.unsub=null}CH.open=null;$("chatwin").hidden=true;render()}
-$("chat-back").onclick=closeChat;
 function markRead(id){
   clearTimeout(CH.readTimer);
   CH.readTimer=setTimeout(()=>{if(!S.db)return;const r=Object.assign({},myReads(),{[id]:Date.now()});
@@ -187,9 +205,6 @@ function renderChatHead(){
   $("chat-closed").hidden=can;
   $("chat-closed").textContent=c.archived?"This chat has been closed by James. You can still read it.":"Only James can post in this chat.";
 }
-$("chat-gear").onclick=()=>{const c=S.chats.find(x=>x.id===CH.open);if(!c)return;
-  if(c.kind==="client"){const cl=(S.clients||[]).find(x=>x.id===c.clientId);const p=cl&&ptOf(cl);if(cl&&p){ptChatMembers(cl,p,c,()=>renderChatHead());return}}openChatEditor(c)};
-$("chat-call").onclick=()=>openCallSheet();
 function renderMsgs(){
   const box=$("chat-msgs"); const c=S.chats.find(x=>x.id===CH.open); if(!c) return;
   const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<120;
@@ -231,21 +246,6 @@ function tagOptions(){
   const sites=[...new Set(siteNames().concat(jobs.map(j=>j.site)).filter(liveSite))].sort();
   return {jobs,sites};
 }
-$("cm-tag").onclick=()=>{
-  const {jobs,sites}=tagOptions();
-  openSheet(`<h3 id="sheettitle">Tag a job</h3>
-    ${jobs.length?`<div class="flabel">Job sheets and snag lists</div><div class="chatlist">${jobs.map(j=>`<button type="button" class="chatrow tagpick" data-j="${esc(j.id)}"><span class="cmain"><b>${esc(j.title)}</b><span class="clast">${esc(j.site)}</span></span></button>`).join("")}</div>`:""}
-    <div class="flabel">Sites</div><div class="chatlist">${sites.map(s=>`<button type="button" class="chatrow tagpick" data-s="${esc(s)}"><span class="cmain"><b>${esc(s)}</b></span></button>`).join("")||'<div class="nothing">No sites set up yet.</div>'}</div>
-    <div class="formactions"><span>${CH.tag?'<button type="button" class="linkdanger" id="tg-clear">Remove tag</button>':""}</span><button type="button" class="btn" id="f-cancel">Cancel</button></div>`,()=>{},null);
-  $("form").querySelectorAll(".tagpick").forEach(b=>b.onclick=()=>{
-    if(b.dataset.j){const j=S.jobs.find(x=>x.id===b.dataset.j);CH.tag={site:j.site,jobId:j.id,jobTitle:j.title}}else CH.tag={site:b.dataset.s,jobId:"",jobTitle:""};
-    closeForm();renderComposerExtras();$("cm-text").focus()});
-  if($("tg-clear")) $("tg-clear").onclick=()=>{CH.tag=null;closeForm();renderComposerExtras()};
-};
-$("cm-cam").onchange=e=>{const f=e.target.files[0];if(!f)return;if(!S.assets){toast("You don't have permission to send photos. Ask James to make you an Editor on this page.");return}CH.photo=f;e.target.value="";renderComposerExtras()};
-if($("cm-voice"))wireVoice($("cm-voice"),f=>{if(!S.assets){toast("You don't have permission to send voice notes. Ask James to make you an Editor on this page.");return}if(f.size>VID_MAX){toast("That recording is too big. Keep voice notes under about 10 minutes.");return}CH.photo=f;renderComposerExtras();toast("Voice note ready. Tap send ➤")});
-if($("cm-vid2"))$("cm-vid2").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;if(!S.assets){toast("You don't have permission to send videos. Ask James to make you an Editor on this page.");return}if(f.size>VID_MAX){toast(`That video is too big (${(f.size/1048576).toFixed(0)} MB). Keep it to about 20 seconds.`);return}CH.photo=f;renderComposerExtras()};
-$("cm-file").onchange=e=>{const f=e.target.files[0];if(!f)return;if(!S.assets){toast("You don't have permission to send photos. Ask James to make you an Editor on this page.");return}CH.photo=f;e.target.value="";renderComposerExtras()};
 function renderComposerExtras(){
   const t=CH.tag, p=CH.photo;
   $("cm-extras").hidden=!t&&!p;
@@ -255,9 +255,6 @@ function renderComposerExtras(){
   if($("cm-unphoto")) $("cm-unphoto").onclick=()=>{CH.photo=null;renderComposerExtras()};
   $("cm-tag").classList.toggle("on",!!t);
 }
-$("cm-text").addEventListener("input",()=>{const t=$("cm-text");t.style.height="auto";t.style.height=Math.min(140,t.scrollHeight)+"px"});
-$("cm-text").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&window.matchMedia("(pointer:fine)").matches){e.preventDefault();sendMsg()}});
-$("composer").addEventListener("submit",e=>{e.preventDefault();sendMsg()});
 async function sendMsg(){
   const c=S.chats.find(x=>x.id===CH.open); if(!c||!canPost(c)) return;
   const text=$("cm-text").value.trim(); const photo=CH.photo, tag=CH.tag;
@@ -299,3 +296,28 @@ async function siteMessages(site){
   return out.sort((a,b)=>b.at-a.at);
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initChat(){
+$("chat-back").onclick=closeChat;
+$("chat-gear").onclick=()=>{const c=S.chats.find(x=>x.id===CH.open);if(!c)return;
+  if(c.kind==="client"){const cl=(S.clients||[]).find(x=>x.id===c.clientId);const p=cl&&ptOf(cl);if(cl&&p){ptChatMembers(cl,p,c,()=>renderChatHead());return}}openChatEditor(c)};
+$("chat-call").onclick=()=>openCallSheet();
+$("cm-tag").onclick=()=>{
+  const {jobs,sites}=tagOptions();
+  openSheet(`<h3 id="sheettitle">Tag a job</h3>
+    ${jobs.length?`<div class="flabel">Job sheets and snag lists</div><div class="chatlist">${jobs.map(j=>`<button type="button" class="chatrow tagpick" data-j="${esc(j.id)}"><span class="cmain"><b>${esc(j.title)}</b><span class="clast">${esc(j.site)}</span></span></button>`).join("")}</div>`:""}
+    <div class="flabel">Sites</div><div class="chatlist">${sites.map(s=>`<button type="button" class="chatrow tagpick" data-s="${esc(s)}"><span class="cmain"><b>${esc(s)}</b></span></button>`).join("")||'<div class="nothing">No sites set up yet.</div>'}</div>
+    <div class="formactions"><span>${CH.tag?'<button type="button" class="linkdanger" id="tg-clear">Remove tag</button>':""}</span><button type="button" class="btn" id="f-cancel">Cancel</button></div>`,()=>{},null);
+  $("form").querySelectorAll(".tagpick").forEach(b=>b.onclick=()=>{
+    if(b.dataset.j){const j=S.jobs.find(x=>x.id===b.dataset.j);CH.tag={site:j.site,jobId:j.id,jobTitle:j.title}}else CH.tag={site:b.dataset.s,jobId:"",jobTitle:""};
+    closeForm();renderComposerExtras();$("cm-text").focus()});
+  if($("tg-clear")) $("tg-clear").onclick=()=>{CH.tag=null;closeForm();renderComposerExtras()};
+};
+$("cm-cam").onchange=e=>{const f=e.target.files[0];if(!f)return;if(!S.assets){toast("You don't have permission to send photos. Ask James to make you an Editor on this page.");return}CH.photo=f;e.target.value="";renderComposerExtras()};
+if($("cm-voice"))wireVoice($("cm-voice"),f=>{if(!S.assets){toast("You don't have permission to send voice notes. Ask James to make you an Editor on this page.");return}if(f.size>VID_MAX){toast("That recording is too big. Keep voice notes under about 10 minutes.");return}CH.photo=f;renderComposerExtras();toast("Voice note ready. Tap send ➤")});
+if($("cm-vid2"))$("cm-vid2").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;if(!S.assets){toast("You don't have permission to send videos. Ask James to make you an Editor on this page.");return}if(f.size>VID_MAX){toast(`That video is too big (${(f.size/1048576).toFixed(0)} MB). Keep it to about 20 seconds.`);return}CH.photo=f;renderComposerExtras()};
+$("cm-file").onchange=e=>{const f=e.target.files[0];if(!f)return;if(!S.assets){toast("You don't have permission to send photos. Ask James to make you an Editor on this page.");return}CH.photo=f;e.target.value="";renderComposerExtras()};
+$("cm-text").addEventListener("input",()=>{const t=$("cm-text");t.style.height="auto";t.style.height=Math.min(140,t.scrollHeight)+"px"});
+$("cm-text").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&window.matchMedia("(pointer:fine)").matches){e.preventDefault();sendMsg()}});
+$("composer").addEventListener("submit",e=>{e.preventDefault();sendMsg()});
+}

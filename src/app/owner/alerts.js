@@ -1,4 +1,12 @@
 /* ================= NEW-ITEM ALERTS for James: a "new" count on each tab + a pop-up when something arrives ================= */
+import { $, esc, gbp, store } from "../core/helpers.js";
+import { tabName } from "../core/report-issue.js";
+import { S, ownerMode } from "../core/state.js";
+import { curTab, render } from "../core/tabs-week.js";
+import { allTeam, nameOf } from "./owner.js";
+import { isInv } from "../purchasing/materials-receipts.js";
+import { KINDS, hasProblem } from "../safety/checklists.js";
+export { nfCounts, nfMarkSeenSoon, nfSeenAt, ownerFeed };
 const NF={known:null,startAt:Date.now(),t:null,queue:[],seen:null,saveT:null};
 const nfTs=x=>x.created||x.sentAt||x.signedAt||x.requestedAt||x.submittedAt||x.at||x.takenAt||0;
 function ownerFeed(){const out=[];const add=(tab,x,what,coll)=>{const ts=nfTs(x);if(!ts||x.who===S.me)return;

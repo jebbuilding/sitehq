@@ -1,4 +1,15 @@
 /* ===== Client documents: add PDFs / photos of paperwork, choose which go into the client PDF ===== */
+import { saveClient } from "./clients.js";
+import { ptCl } from "./portal.js";
+import { viewClient } from "./quick-enquiry.js";
+import { $, esc, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { closeViewer } from "../core/viewer.js";
+import { blobUrl, saveAsset, uploadErr, uploadFile } from "../files/files.js";
+import { loadPdfJs, openFile } from "../files/in-app-files.js";
+import { shrinkImage } from "../safety/training.js";
+export { clDocsHtml, docPicker, pdfToPages, wireClDocs };
 function docPicker(host,existing){const items=(existing||[]).map(d=>({existing:d,inPdf:d.inPdf!==false}));
   host.innerHTML=`<div class="apk"><label class="btn fhpickbtn">📄 PDF / Word<input type="file" accept="application/pdf,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple data-cam="1"></label><label class="btn fhpickbtn">📷 Photo of a document<input type="file" accept="image/*" capture="environment" data-cam="1"></label><label class="btn fhpickbtn">🖼 Choose photos<input type="file" accept="image/*" multiple data-cam="1"></label></div><div class="apklist"></div>`;
   const list=host.querySelector(".apklist");

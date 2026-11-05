@@ -1,4 +1,22 @@
 /* ================= JOB DETAILS FOR TRADES (kept on the site record, which trades can read) ================= */
+import { clConCard, clContactsHtml, clMainHtml } from "../clients/address-book.js";
+import { CL_WORK, clList, openClientForm, saveClient } from "../clients/clients.js";
+import { viewClient } from "../clients/quick-enquiry.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { $, esc, gbp, shortDay, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { nameOf, roleOf, teamIds } from "../owner/owner.js";
+import { EMP_TYPES } from "../people/employment-types.js";
+import { siteRec } from "../photos/photos.js";
+import { shrinkImage } from "../safety/training.js";
+import { gmapDir } from "./maps-pins.js";
+import { same } from "./project-pages.js";
+import { siteClient } from "./summary.js";
+export { clientJobCard, editSiteJob, editSiteVis, empTypeOf, siteFromClient, siteFront, siteJobCard, siteSumHtml, sjClientOK, sjCopy, sjMaster, sjPayload, syncSiteJobs, wireSiteSum, wireSjPhotos };
 const SJ_FIELDS=[["work","Type of work","e.g. Single-storey rear extension"],["scope","What's being done","e.g. Strip out kitchen, knock through to dining room, new steel, re-plaster",1],["start","Start date","",0,"date"],["finish","Finish date (planned)","",0,"date"],
   ["hours","Site working hours","e.g. 8am to 5pm, no noisy work before 9am"],["contactName","Site contact","e.g. Mrs Smith, or site manager"],["contactPhone","Site contact phone","",0,"tel"],["otherContacts","Other contacts","e.g. Bob Jones (husband) · 07700 900456",1],
   ["access","Access, parking & keys","e.g. Park on the drive, key in the key safe 1234, side gate",1],["welfare","Toilet, welfare, power & water","e.g. Use the downstairs WC, power in garage",1],

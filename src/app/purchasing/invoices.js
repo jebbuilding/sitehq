@@ -1,4 +1,16 @@
 /* ================= INVOICES ================= */
+import { pickField, pickVal } from "../core/fields.js";
+import { $, addDays, esc, gbp, iso, monday, shortDay, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl, isImg, uploadErr } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { nameOf } from "../owner/owner.js";
+import { isInv } from "./materials-receipts.js";
+import { shrinkImage } from "../safety/training.js";
+export { empInvoices, invCard, invDetail, openInvoice, wireInvoices };
 const INV_ST={sent:["Sent","day"],received:["Received",""],approved:["Approved","warn"],query:["Query","bad"],paid:["Paid","ok"]};
 const INV_FLOW=[["sent","Sent","Sent by the trade"],["received","Received","You've got it"],["approved","Approved","Checked and OK to pay"],["paid","Paid","Money sent"]];
 function invCard(v,owner,who){
@@ -64,7 +76,7 @@ function empInvoices(){
 }
 function openInvoice(){
   if(!S.assets){toast("You don't have permission to upload. Ask James to make you an Editor on this page.");return}
-  formType="invoice"; editing=null;
+  setFormType("invoice"); setEditing(null);
   const mon=monday(new Date());
   openSheet(`<h3 id="sheettitle">Send an invoice</h3>
     <div class="grid2"><label for="i-num">Invoice number<input id="i-num" required maxlength="40" placeholder="e.g. 0042"></label>

@@ -1,4 +1,19 @@
 /* ================= SKETCHES & PHOTO PAGES (clients) ================= */
+import { saveClient } from "./clients.js";
+import { ptCl } from "./portal.js";
+import { viewClient } from "./quick-enquiry.js";
+import { clAddr } from "./stages-planner.js";
+import { $, esc, iso, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { openNotePage } from "../drawing/paving.js";
+import { blobUrl, saveAsset, uploadFile } from "../files/files.js";
+import { BIN_DAYS, binDelete, binFromViewer } from "../owner/deleted-items.js";
+import { openMarkup } from "../photos/mark-up.js";
+import { VID_MAX, audExt, audTag, isAud, vidExt, vidTag, wireVoice } from "../photos/photos.js";
+import { shrinkImage } from "../safety/training.js";
+export { clMediaHtml, wireClMedia };
 function blankSketch(paper){return new Promise(res=>{const cv=document.createElement("canvas");cv.width=1600;cv.height=1200;const g=cv.getContext("2d");
   g.fillStyle="#ffffff";g.fillRect(0,0,cv.width,cv.height);
   if(paper!=="plain"){const step=paper==="grid"?40:50;g.strokeStyle=paper==="grid"?"#dfe6ee":"#e6eef6";g.lineWidth=1;

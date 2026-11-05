@@ -1,4 +1,19 @@
 /* ================= TRAINING & TOOLBOX TALKS ================= */
+import { pickField, pickVal } from "../core/fields.js";
+import { $, esc, parse, shortDay, stamp, toast } from "../core/helpers.js";
+import { closeForm, editing, formFoot, myDoc, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { blobUrl, isImg, uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { meBtn, meInfo } from "../people/personal-details.js";
+import { BRGB, loadImage, pdfLogo, readExif } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "./site-inductions.js";
+export { expiryState, myTalkTodo, openCert, openTalk, shrinkImage, trainingView };
 const TALK_TEMPLATES=[
  ["Working at height","Falls from height are one of the biggest causes of death and serious injury in building work.\n\n• Avoid working at height if the job can be done from the ground.\n• Ladders are for short jobs (under 30 minutes) and light work only. Check the stiles, rungs and feet before every use, set at about 1 in 4, and keep three points of contact.\n• Only use a scaffold that has been inspected and tagged. Never remove guard rails, toe boards or ties. Report any damage straight away.\n• Mobile towers must be put up by someone PASMA trained. Lock the wheels and use the guard rails.\n• Cover or guard holes and open edges, and mark the covers.\n• Don't overreach. Move the ladder or platform.\n• Keep tools and materials secure so nothing can fall on people below.\n• If you're unsure whether the access equipment is safe, stop and ask."],
  ["Manual handling","Back injuries and strains are common and often last for life.\n\n• Think before you lift. Can you use a trolley, sack truck or hoist, or split the load?\n• Check the route is clear and you know where the load is going.\n• Feet apart, bend your knees, keep a straight back and hold the load close to your waist.\n• Don't twist while lifting. Turn your feet instead.\n• Get help with heavy or awkward loads. Plasterboard, glass and kerbs are two-person lifts.\n• Watch for sharp edges and wear gloves.\n• Tell the site manager about any pain or injury straight away."],
@@ -67,7 +82,7 @@ function trainingView(){
   $("main").querySelectorAll(".talkc").forEach(b=>b.onclick=()=>openTalk(b.dataset.t));
 }
 function openCert(){
-  formType="cert"; editing=null;
+  setFormType("cert"); setEditing(null);
   openSheet(`<h3 id="sheettitle">Add card or certificate</h3>
     <label for="ce-name">What is it?<input id="ce-name" list="ce-types" required maxlength="80" placeholder="e.g. CSCS card"><datalist id="ce-types">${CERT_TYPES.map(t=>`<option value="${esc(t)}">`).join("")}</datalist></label>
     <div class="grid2"><label for="ce-num">Card or certificate number<input id="ce-num" maxlength="60"></label>
@@ -89,7 +104,7 @@ function openCert(){
 }
 async function shrinkImage(f,max){const img=await loadImage(f);const sc=Math.min(1,(max||1800)/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement("canvas");cv.width=Math.round(img.naturalWidth*sc);cv.height=Math.round(img.naturalHeight*sc);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);return await new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error("encode")),"image/jpeg",0.85))}
 function openTalkEditor(kind,t){
-  const ids=teamIds(); formType="talkedit"; editing=t||null;
+  const ids=teamIds(); setFormType("talkedit"); setEditing(t||null);
   const assignAll=!t||t.assignees==="all";
   openSheet(`<h3 id="sheettitle">${t?"Edit":"New"} ${kind==="training"?"training":"toolbox talk"}</h3>
     ${!t&&kind==="toolbox"?`<label for="tk-tpl">Start from a ready-made talk<select id="tk-tpl"><option value="">Write my own</option>${TALK_TEMPLATES.map((x,i)=>`<option value="${i}">${esc(x[0])}</option>`).join("")}</select></label>`:""}
@@ -155,7 +170,7 @@ function openTalk(id){
   const del=$("tv-del"); if(del){let a=false;del.onclick=async()=>{if(!a){a=true;del.textContent="Tap again to delete";return}try{await S.db.doc("talks/"+t.id).delete();closeViewer();toast("Deleted")}catch(e){toast("Couldn't delete")}}}
 }
 function openTalkSign(t,onsite){
-  formType="talksign"; editing=null;
+  setFormType("talksign"); setEditing(null);
   openSheet(`<h3 id="sheettitle">${onsite?"Sign in":"Sign"}: ${esc(t.title)}</h3>
     ${onsite?`<div class="notice">Pass the phone to each person in turn. After each signature the form clears for the next person.</div>`:""}
     <div class="grid2"><label for="ts-name">Full name<input id="ts-name" required maxlength="80" value="${onsite?"":esc(meInfo().name)}"></label>

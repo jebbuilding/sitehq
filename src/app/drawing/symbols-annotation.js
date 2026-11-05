@@ -1,4 +1,6 @@
 /* ===== annotation & detail symbols for full design drawings ===== */
+import { NP_U } from "./construction-details.js";
+export { NP_ANNO_BOX, NP_MEMBR, NP_TEXTSYM, npAnnoLine, npAnnoSym, npFrame };
 /* stud wall framing seen from the side: sole and head plates, studs at centres, noggins */
 function npFrame(ctx,o,x0,y0,w,h){const lw=ctx.lineWidth,mm=ctx.__mm||0;const sw=mm?50*mm:Math.max(w*0.02,3),cc=mm?(o.cc||400)*mm:Math.max(w/8,sw*3);const fill=(x,y,ww,hh)=>{ctx.save();ctx.fillStyle="#f3e2c4";ctx.fillRect(x,y,ww,hh);ctx.restore();ctx.strokeRect(x,y,ww,hh)};
   ctx.save();ctx.lineWidth=Math.max(lw*0.6,0.5);fill(x0,y0+h-sw,w,sw);fill(x0,y0,w,sw);if(o.dh)fill(x0,y0+sw,w,sw);const top=y0+sw*(o.dh?2:1),bot=y0+h-sw;const xs=[x0];for(let x=x0+cc;x<x0+w-sw;x+=cc)xs.push(x);xs.push(x0+w-sw);

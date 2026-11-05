@@ -1,4 +1,13 @@
 /* ================= DATA ================= */
+import { syncSettings } from "../chat/chat.js";
+import { $ } from "./helpers.js";
+import { refreshAllTrades, syncTradeFetches } from "./live-feed.js";
+import { myColl } from "./sheet.js";
+import { S, ownerMode } from "./state.js";
+import { render } from "./tabs-week.js";
+import { sphotoPut, sphotoWanted } from "../files/outbox.js";
+import { allTeam } from "../owner/owner.js";
+export { mapDocs, startEmployee, startOwner };
 const mapDocs=snap=>snap.docs.map(d=>Object.assign({},d.data(),{id:d.id}));
 function startEmployee(){
   S.db.doc("sheets/"+S.me).onSnapshot(s=>{if(S.client)return;S.myProfile=s.exists?s.data():null;render()},()=>{});

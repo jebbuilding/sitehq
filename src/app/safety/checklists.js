@@ -1,4 +1,5 @@
 /* ================= CHECKLISTS ================= */
+export { KINDS, ck, defectsOf, hasProblem };
 const KINDS={
   vehicle:{name:"Vehicle",plural:"Vehicles",reading:"Mileage",ph:"e.g. WK21 JEB – Ford Transit Custom",items:[
     ["tyres","Tyres: tread, pressure, no cuts or bulges"],["wheels","Wheel nuts secure"],["lights","Lights, indicators and brake lights"],

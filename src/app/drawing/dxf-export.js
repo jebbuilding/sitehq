@@ -1,4 +1,8 @@
 /* ===== DXF export: draws the page through a recording canvas, so everything (walls, symbols, text, dimensions) comes out as CAD lines and text in real mm ===== */
+import { NP_U } from "./construction-details.js";
+import { NP_SCX, setNpScx } from "./paving.js";
+import { npDrawAll } from "./walls.js";
+export { npDxf };
 function npDxf(doc,pg,visObjs,drawObj,layerOf){const base=doc.baseScale||0,U=NP_U;const ents=[];const lays=new Set(["0"]);let curLayer="0";
   const aci=col=>{const h=String(col||"#000").replace("#","");if(!/^[0-9a-f]{6}$/i.test(h))return 7;const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);const P=[[1,255,0,0],[2,255,255,0],[3,0,255,0],[4,0,255,255],[5,0,0,255],[6,255,0,255],[7,0,0,0],[8,128,128,128],[30,255,127,0],[9,192,192,192]];let best=7,bd=1e9;P.forEach(([n,R,G,B])=>{const d=(R-r)**2+(G-g)**2+(B-b)**2;if(d<bd){bd=d;best=n}});return best};
   const real=(x,y,ctx)=>{let X=x,Y=y;const vo=ctx.__vpo;if(vo&&NP_SCX&&base){X=vo[0]+(x-vo[0])*NP_SCX/base;Y=vo[1]+(y-vo[1])*NP_SCX/base}const f=base?base/U:1/U;return [X*f,-Y*f]};
@@ -23,9 +27,9 @@ function npDxf(doc,pg,visObjs,drawObj,layerOf){const base=doc.baseScale||0,U=NP_
     fillText(t,x,y){t=String(t||"").replace(/[\r\n]+/g," ");if(!t.trim())return;const px=parseFloat((String(R.font).match(/([\d.]+)px/)||[])[1])||10;const sc=Math.hypot(M[0],M[1]);const P=tp(x,y);const a=real(P[0],P[1],R);const f=base?base/U:1/U;const vf=(R.__vpo&&NP_SCX&&base)?NP_SCX/base:1;const hgt=px*sc*f*vf*0.72;
       const rot=-Math.atan2(M[1],M[0])*180/Math.PI;const hj=R.textAlign==="center"?1:(R.textAlign==="right"||R.textAlign==="end")?2:0;const vj=R.textBaseline==="middle"?2:R.textBaseline==="top"?3:R.textBaseline==="bottom"?1:0;
       ents.push(`0\nTEXT\n8\n${curLayer}\n62\n${aci(R.fillStyle)}\n10\n${num(a[0])}\n20\n${num(a[1])}\n30\n0\n40\n${num(Math.max(hgt,0.1))}\n1\n${t.replace(/[^\x20-\x7E£°×]/g,"")}\n50\n${num(rot)}${hj||vj?`\n72\n${hj}\n11\n${num(a[0])}\n21\n${num(a[1])}\n31\n0\n73\n${vj}`:""}`)},strokeText(t,x,y){R.fillText(t,x,y)}});
-  const objs=visObjs(doc.pages[pg].objs||doc.objs);const keep=NP_SCX;NP_SCX=0;
+  const objs=visObjs(doc.pages[pg].objs||doc.objs);const keep=NP_SCX;setNpScx(0);
   const lname=o=>String(layerOf(o)||"0").replace(/[^A-Za-z0-9_-]/g,"_").toUpperCase();
-  try{curLayer="WALLS";lays.add(curLayer);npDrawAll(R,objs,(c,o)=>{const pl=curLayer;curLayer=lname(o);lays.add(curLayer);try{drawObj(c,o)}catch(e){}curLayer=pl})}finally{NP_SCX=keep}
+  try{curLayer="WALLS";lays.add(curLayer);npDrawAll(R,objs,(c,o)=>{const pl=curLayer;curLayer=lname(o);lays.add(curLayer);try{drawObj(c,o)}catch(e){}curLayer=pl})}finally{setNpScx(keep)}
   const head=`0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n9\n$INSUNITS\n70\n4\n0\nENDSEC`;
   const tables=`0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n${lays.size}\n${[...lays].map(l=>`0\nLAYER\n2\n${l}\n70\n0\n62\n7\n6\nCONTINUOUS`).join("\n")}\n0\nENDTAB\n0\nENDSEC`;
   return head+"\n"+tables+"\n0\nSECTION\n2\nENTITIES\n"+ents.join("\n")+"\n0\nENDSEC\n0\nEOF\n"}

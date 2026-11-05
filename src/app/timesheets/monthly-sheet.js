@@ -1,4 +1,22 @@
 /* ================= PAPER-STYLE MONTHLY TIMESHEET (trades) ================= */
+import { openDM } from "../chat/chat.js";
+import { $, esc, hrs, iso, parse, toast } from "../core/helpers.js";
+import { closeForm, openSheet } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { personPhotoClear, personPhotoDlg, personPhotoSet } from "../files/cut-outs.js";
+import { uploadErr, uploadFile } from "../files/files.js";
+import { allIds, nameOf } from "../owner/owner.js";
+import { EMP_TYPES } from "../people/employment-types.js";
+import { avatarHtml, personPhoto } from "../people/profile-photos.js";
+import { loadImage } from "../photos/photos.js";
+import { LEAVE_TYPES, leaveOf } from "../planner/time-off.js";
+import { empTypeOf } from "../sites/job-details.js";
+import { signOnly } from "../sites/sign-in-book.js";
+import { myName } from "../survey/door-window-survey.js";
+import { entrySub, openEntry, sumH, typeTag } from "./time.js";
+export { openPersonMonth, personEntries, tsPaper, wireTsPaper };
 function tsLeave(di,who){const out=[];const me=who||S.me;leaveOf(who&&who!==S.me?(S.data.signoffs[who]||[]):S.mine.signoffs).filter(l=>l.status!=="declined"&&l.status!=="cancelled"&&l.from<=di&&(l.to||l.from)>=di).forEach(l=>out.push({pending:l.status==="pending",kind:LEAVE_TYPES[l.leaveType]||"Time off",half:l.half,why:l.note||""}));
   if(!out.length)(S.plan||[]).filter(p=>p.type==="holiday"&&Array.isArray(p.people)&&p.people.includes(me)&&p.from<=di&&(p.to||p.from)>=di).forEach(p=>out.push({pending:false,why:p.notes||""}));return out[0]||null}
 function tsPaper(ym,ents,who){const [Y,M]=ym.split("-").map(Number);const first=new Date(Y,M-1,1),days=new Date(Y,M,0).getDate();const today=iso(new Date());

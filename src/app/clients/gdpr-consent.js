@@ -1,4 +1,22 @@
 /* ===== Client GDPR / privacy consent: link to the policy + e-signature (in person or in their portal) ===== */
+import { saveClient } from "./clients.js";
+import { ptCl, ptOf, ptSrc } from "./portal.js";
+import { viewClient } from "./quick-enquiry.js";
+import { clAddr } from "./stages-planner.js";
+import { askOwnerPin } from "../core/dictation.js";
+import { $, esc, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer } from "../core/viewer.js";
+import { uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { auditFirst } from "../owner/deletion-record.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
+export { clGdprHtml, wireClGdpr };
 const GDPR_TXT="I have read and accept the privacy (GDPR) policy, and I agree to my details being kept and used to carry out my job.";
 function gdprPolicy(){const ps=(S.policies||[]).filter(d=>d.assetId);const pick=(S.settings||{}).gdprPolicyId;return ps.find(d=>d.id===pick)||ps.find(d=>/gdpr|privacy|data protection/i.test((d.title||"")+" "+(d.fileName||"")))||null}
 function clGdprHtml(c){const g=c.gdpr,pol=gdprPolicy(),req=c.gdprReq;

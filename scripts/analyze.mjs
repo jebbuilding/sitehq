@@ -6,7 +6,7 @@ import path from "node:path";
 import * as acorn from "acorn";
 import { analyze } from "eslint-scope";
 import globals from "globals";
-import { root, APP_DIR, manifest } from "./bundle.mjs";
+import { root, APP_DIR, appFiles, parts } from "./bundle.mjs";
 
 // Names the browser provides. Anything used that is neither declared in src/app/ nor in here is reported.
 export const BROWSER = new Set([...Object.keys(globals.browser), ...Object.keys(globals.es2025 || globals.es2021), "webkitSpeechRecognition", "webkitAudioContext"]);
@@ -15,7 +15,9 @@ const isFunction = n => n && (n.type === "FunctionExpression" || n.type === "Arr
 
 /** One file: its top-level declarations and its unresolved ("free") references. */
 export function analyzeFile(file) {
-  const src = fs.readFileSync(path.join(root, APP_DIR, file), "utf8");
+  const raw = fs.readFileSync(path.join(root, APP_DIR, file), "utf8");
+  // Analyse the code without its import/export block (that block is generated from this analysis), keeping line numbers true.
+  const p = parts(raw), src = p.banner + p.header.replace(/[^\n]/g, "") + p.body;
   const ast = acorn.parse(src, { ecmaVersion: "latest", sourceType: "script", allowReturnOutsideFunction: true, ranges: true, locations: true });
   // parent links, to tell a function that is called on the spot (an IIFE, which runs while the page loads) from one that runs later
   (function link(n, parent) {
@@ -53,12 +55,12 @@ export function analyzeFile(file) {
   // statements at the top level that are not declarations: they do something while the page loads
   const loadStatements = ast.body.filter(n => !/Declaration$/.test(n.type) && n.type !== "EmptyStatement").map(n => ({ line: n.loc.start.line, type: n.type, text: src.slice(n.start, Math.min(n.end, n.start + 90)).replace(/\s+/g, " ") }));
   const banner = src.split("\n")[0].replace(/^\/\* =+ | =+ \*\/\s*$/g, "");
-  return { file, banner, bytes: Buffer.byteLength(src), lines: src.split("\n").length - 1, defs, uses, loadStatements, ast, src };
+  return { file, banner, bytes: Buffer.byteLength(raw), lines: raw.split("\n").length - 1, defs, uses, loadStatements, ast, src, raw, header: p.header };
 }
 
 /** All files, plus where every top-level name is declared. */
 export function analyzeApp() {
-  const files = manifest().map(analyzeFile);
+  const files = appFiles().map(analyzeFile);
   const owner = new Map(), duplicates = [];
   for (const f of files) for (const [name, d] of f.defs) {
     if (d.count > 1) duplicates.push({ name, files: [f.file, f.file] });

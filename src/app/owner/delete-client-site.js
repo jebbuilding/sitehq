@@ -1,4 +1,18 @@
 /* ===== Delete a client or a site (PIN protected) ===== */
+import { clientSites } from "../clients/address-book.js";
+import { ptCl, ptOf } from "../clients/portal.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { askOwnerPin } from "../core/dictation.js";
+import { $, esc, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { RAW, S, applyGone, archivedSites, docRef, isArchivedSite } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer } from "../core/viewer.js";
+import { auditFirst } from "./deletion-record.js";
+import { siteRec } from "../photos/photos.js";
+import { projectSites, same } from "../sites/project-pages.js";
+import { siteClient } from "../sites/summary.js";
+export { deleteClientFlow, deleteSiteFlow, deleteSitesPicker };
 function deleteClientFlow(c){c=ptCl(c);const sites=clientSites(c).filter(n=>siteRec(n));const p=ptOf(c);
   openSheet(`<h3 id="sheettitle">🗑 Delete ${esc(c.name)}?</h3><div class="notice warn" style="margin:0">This permanently removes the client: their details, notes, photos list, sign-off history${c.gdpr?", GDPR consent record":""}. It can't be undone.${c.gdpr?" Download the GDPR record first if you need to keep it.":""}</div>
     ${p?`<div class="who">Their portal will be closed, so they can no longer log in to it.</div>`:""}

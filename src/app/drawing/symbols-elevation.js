@@ -1,4 +1,7 @@
 /* ===== elevation and section symbols ===== */
+import { npLbl } from "./construction-details.js";
+import { npPattern } from "./walls.js";
+export { npElevLine, npElevSym };
 function npElevSym(ctx,o,x0,y0,w,h,cx,cy){const lw=ctx.lineWidth,mm=ctx.__mm||0,c=ctx.strokeStyle;const ln=(a,b,cc,d)=>{ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(cc,d);ctx.stroke()};const thin=f=>{ctx.lineWidth=Math.max(lw*(f||0.5),0.5)};const full=()=>{ctx.lineWidth=lw};
   const clip=fn=>{ctx.save();ctx.beginPath();ctx.rect(x0,y0,w,h);ctx.clip();fn();ctx.restore()};const mmu=v=>mm?v*mm:0;
   const glaze=(x,y,ww,hh)=>{ctx.strokeRect(x,y,ww,hh);ctx.save();thin(0.4);ln(x+ww*0.15,y+hh*0.25,x+ww*0.35,y+hh*0.08);ln(x+ww*0.2,y+hh*0.45,x+ww*0.55,y+hh*0.12);ctx.restore()};

@@ -1,4 +1,8 @@
 /* ===== DICTATION: a 🎤 Speak button under every notes box; talk and it types for you (uses the phone's own speech recognition) ===== */
+import { esc, store, toast } from "./helpers.js";
+import { ownerMode } from "./state.js";
+import { pinFails, pinLockUntil, pinOk, setPinFails, setPinLockUntil } from "../owner/pin.js";
+export { askOwnerPin, initDictation };
 const DICT={SR:window.SpeechRecognition||window.webkitSpeechRecognition||null,cur:null};
 function dictClean(t){return String(t||"").replace(/\s*\b(full stop|period)\b\s*/gi,". ").replace(/\s*\bcomma\b\s*/gi,", ").replace(/\s*\bquestion mark\b\s*/gi,"? ").replace(/\s*\bexclamation mark\b\s*/gi,"! ").replace(/\s*\bnew line\b\s*/gi,"\n").replace(/\s*\bnew paragraph\b\s*/gi,"\n\n").replace(/[ \t]+([.,?!])/g,"$1").replace(/([.!?]\s+|^\s*|\n\s*)([a-z])/g,(m,a,b)=>a+b.toUpperCase()).replace(/[ \t]{2,}/g," ")}
 function dictStop(){const d=DICT.cur;if(!d)return;d.want=false;try{d.rec.stop()}catch(e){}d.btn.classList.remove("on");d.btn.innerHTML=d.label;d.btn.setAttribute("aria-pressed","false");DICT.cur=null}
@@ -17,13 +21,16 @@ function dictStart(el,btn){if(DICT.cur){const same=DICT.cur.el===el;dictStop();i
 function dictEnhance(root){(root||document).querySelectorAll('textarea:not([data-nodict]):not([data-dict]),.np-text input:not([data-dict])').forEach(el=>{el.dataset.dict="1";if(el.closest(".np")&&!el.closest(".np-text"))return;
   const mini=!!el.closest(".crow")||!!el.closest(".np-text");const b=document.createElement("button");b.type="button";b.className=mini?"iconbtn dictbtn mini":"dictbtn";b.innerHTML=mini?"🎤":"🎤 Speak";b.setAttribute("aria-pressed","false");b.title="Speak and it types for you";b.onclick=e=>{e.preventDefault();e.stopPropagation();dictStart(el,b)};
   if(mini){el.insertAdjacentElement("beforebegin",b);return}const lab=el.closest("label");if(lab&&lab.lastElementChild===el)lab.appendChild(b);else el.insertAdjacentElement("afterend",b)})}
-try{new MutationObserver(ms=>{let hit=false;for(const m of ms)if(m.addedNodes&&m.addedNodes.length){hit=true;break}if(hit){clearTimeout(window.__dictT);window.__dictT=setTimeout(()=>dictEnhance(document),60)}}).observe(document.body,{childList:true,subtree:true});setTimeout(()=>dictEnhance(document),500)}catch(e){}
-document.addEventListener("click",e=>{if(DICT.cur&&!e.target.closest(".dictbtn")&&e.target!==DICT.cur.el&&(e.target.closest("button,[type=submit]")))dictStop()},true);
 function askOwnerPin(msg,ok){if(!ownerMode()){toast("Only James can unlock this");return}
   const d=document.createElement("div");d.className="dimask";d.style.zIndex="80";
   d.innerHTML=`<form class="dimbox"><b>🔒 Enter your PIN</b><div class="who" style="margin:4px 0 8px">${esc(msg)}</div><input type="password" inputmode="numeric" autocomplete="off" maxlength="12" class="pinin" aria-label="PIN" style="font-size:22px;letter-spacing:6px;text-align:center"><div class="err pinerr" hidden></div>
     <div class="dimbtns"><button type="button" class="btn pinx">Cancel</button><button type="submit" class="btn primary">Unlock</button></div></form>`;
   document.body.appendChild(d);const inp=d.querySelector(".pinin");setTimeout(()=>inp.focus(),30);d.querySelector(".pinx").onclick=()=>d.remove();d.addEventListener("click",e=>{if(e.target===d)d.remove()});d.addEventListener("keydown",e=>{if(e.key==="Escape")d.remove()});
   d.querySelector("form").onsubmit=async e=>{e.preventDefault();const er=d.querySelector(".pinerr");if(Date.now()<pinLockUntil){er.hidden=false;er.textContent="Too many tries. Wait a minute.";return}
-    if(await pinOk(inp.value)){pinFails=0;d.remove();ok()}else{pinFails++;if(pinFails>=5){pinLockUntil=Date.now()+60000;pinFails=0}er.hidden=false;er.textContent="Wrong PIN";inp.value="";inp.focus()}}}
+    if(await pinOk(inp.value)){setPinFails(0);d.remove();ok()}else{setPinFails(pinFails+1);if(pinFails>=5){setPinLockUntil(Date.now()+60000);setPinFails(0)}er.hidden=false;er.textContent="Wrong PIN";inp.value="";inp.focus()}}}
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initDictation(){
+try{new MutationObserver(ms=>{let hit=false;for(const m of ms)if(m.addedNodes&&m.addedNodes.length){hit=true;break}if(hit){clearTimeout(window.__dictT);window.__dictT=setTimeout(()=>dictEnhance(document),60)}}).observe(document.body,{childList:true,subtree:true});setTimeout(()=>dictEnhance(document),500)}catch(e){}
+document.addEventListener("click",e=>{if(DICT.cur&&!e.target.closest(".dictbtn")&&e.target!==DICT.cur.el&&(e.target.closest("button,[type=submit]")))dictStop()},true);
+}

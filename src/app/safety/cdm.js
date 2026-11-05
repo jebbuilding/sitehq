@@ -1,4 +1,21 @@
 /* ===== 🏛️ CDM 2015 documents: duty holder appointments, pre-construction information, construction phase plan, CDM checklist, F10 check, H&S file index ===== */
+import { ptSrc } from "../clients/portal.js";
+import { soAll } from "../clients/sign-offs.js";
+import { clAddr } from "../clients/stages-planner.js";
+import { $, esc, iso, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, liveSite, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { uploadFile } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
+import { ukDate } from "./rams-maker.js";
+import { indFor, loadJsPdf } from "./site-inductions.js";
+import { sjMaster } from "../sites/job-details.js";
+import { same } from "../sites/project-pages.js";
+import { siteClient } from "../sites/summary.js";
+export { cdmMaker, cdmSignState };
 const CDM_RISKS=[["asb","Asbestos (building built before 2000: survey needed before any refurbishment or demolition)"],["svc","Existing services: buried / overhead cables, gas, water, drains"],["wah","Work at height: scaffolding, roofs, ladders, edges"],["fragile","Fragile roofs or roof lights"],["exc","Excavations, trenches and foundations (collapse, services, falls)"],["struct","Structural alterations, temporary works and propping"],["demo","Demolition or soft strip"],["occ","Working in or next to an occupied home"],["public","Public, neighbours, children or pets near the works"],["traffic","Deliveries, vehicles, plant and reversing"],["lift","Lifting operations (steels, materials, telehandler / crane)"],["hot","Hot works (cutting, grinding, torch-on roofing)"],["dust","Dust and silica (cutting blocks, slabs, chasing)"],["noise","Noise and vibration (breakers, hand tools)"],["coshh","Hazardous substances (cement, solvents, resins, fuel)"],["manual","Manual handling (blocks, bags, steels, plasterboard)"],["confined","Confined spaces (drains, manholes, tanks)"],["ground","Contaminated ground, Japanese knotweed, radon"],["water","Working near water, soakaways, open chambers"],["fire","Fire during the works (timber frame, stored materials, hot works)"],["elec","Electrical work and temporary supplies"],["eco","Trees, bats, birds and ecology restrictions"]];
 const CDM_DOCS=[["appoint","CDM duty holder appointments (client letter & acknowledgement)"],["pci","Pre-construction information (PCI)"],["cpp","Construction phase plan (CPP)"],["check","CDM 2015 compliance checklist"],["f10","F10 notification check"],["hsf","Health & safety file (contents and handover list)"],["dominfo","Letter to a domestic client: CDM explained and what we need from them"],["subcon","Contractor appointment & competence checks (reg. 15)"],["welfare","Welfare facilities check (Schedule 2)"],["emerg","Emergency, fire & first aid plan"],["drr","Design risk register"],["tw","Temporary works register"],["log","Site inspection & CPP review log"],["welfarepack","Welfare unit notices: site details & contacts, fire notice, emergency procedures, emergency numbers and site rules (stand-alone, to put up in the welfare unit)"],["notice","Site notice board poster (who's who, emergency numbers, site rules)"],["hotpermit","Hot works permit"],["dig","Permit to dig (services check before excavating)"]];
 const CDM_GROUPS=[["Before you start",["appoint","dominfo","pci","f10","drr"]],["Running the job",["welfarepack","cpp","emerg","welfare","notice","subcon","tw","log","check"]],["Permits",["hotpermit","dig"]],["At handover",["hsf"]]];

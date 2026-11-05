@@ -1,4 +1,7 @@
 /* ================= ROOFING READY RECKONER ================= */
+import { calcSave, calcState, fmtN, mmM, mmMt, numv } from "./calculator.js";
+import { $, esc, toast } from "../core/helpers.js";
+export { calcRoof, initRoofing };
 const RF_TILES=[["interlock","Concrete interlocking (e.g. Marley Modern, Redland 49)",10,345,17.5,"ridge"],["droman","Double Roman concrete",9.7,343,22.5,"ridge"],["plain","Plain tiles 265×165 (100 mm gauge)",60,100,35,"ridge"],
   ["slate500","Natural slate 500×250 (75 mm headlap)",18.8,212.5,22.5,"ridge"],["slate600","Natural slate 600×300 (75 mm headlap)",12.7,262.5,22.5,"ridge"],["custom","Other: enter your own figures",0,0,0,"ridge"]];
 function rfState(){const C=calcState();if(!C.roof)C.roof={type:"gable",L:"",W:"",pmode:"deg",pitch:"35",rise:"",eaves:"300",gable:"150",sp:"400",tile:"interlock",perM2:"10",gauge:"345",waste:"10",ridgeEff:"450"};return C.roof}
@@ -53,4 +56,7 @@ function calcRoof(){
   out();
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initRoofing(){
 {const tf=document.querySelector(".topfabs");if(tf)window.addEventListener("scroll",()=>tf.classList.toggle("mini",window.scrollY>90),{passive:true})}
+}

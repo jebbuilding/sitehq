@@ -1,4 +1,8 @@
 /* ===== design symbols: roof lights, stairs, furniture, landscaping, more elevation items ===== */
+import { npLbl, npStairs } from "./construction-details.js";
+import { NP_X, npXSym } from "./symbols-more.js";
+import { npHexMix } from "./walls.js";
+export { NP_DES_BOX, npDesignLine, npDesignSym, npScallop };
 const NP_DES_BOX=new Set(["firepoint","elecpoint","stopcock","gaspoint","canteen","dryroom","fireassembly","fireext","portaloo","container","siteoffice","sauna","studio","gardenroom","gardenoffice","stairsu","rooflight","lantern","stairsl","spiral","column","chimney","dbed","sbed","sofa","table","wardrobe","island","desk","patio","decking","lawn","gravel","blockpave","planting","shrub","pond","shed","car","parking","bins","gsteps","elant","echim","estairs","efence","egate","etree","eperson","ehedge"]);
 function npScallop(ctx,pts,closed,amp){const n=pts.length;ctx.beginPath();for(let i=0;i<(closed?n:n-1);i++){const p=pts[i],q=pts[(i+1)%n];const mx=(p[0]+q[0])/2,my=(p[1]+q[1])/2,r=Math.hypot(q[0]-p[0],q[1]-p[1])/2,an=Math.atan2(q[1]-p[1],q[0]-p[0]);if(i===0)ctx.moveTo(p[0],p[1]);ctx.arc(mx,my,r,an+Math.PI,an,false)}ctx.stroke()}
 function npDesignSym(ctx,o,x0,y0,w,h,cx,cy){if(NP_X.has(o.k)){npXSym(ctx,o,x0,y0,w,h,cx,cy);return}if(o.k==="stairsl"||o.k==="stairsu"){npStairs(ctx,o,x0,y0,w,h);return}const lw=ctx.lineWidth,mm=ctx.__mm||0,c=ctx.strokeStyle;const m=Math.min(w,h),v=w>=h,x1=x0+w,y1=y0+h;

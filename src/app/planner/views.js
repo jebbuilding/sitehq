@@ -1,4 +1,20 @@
 /* ================= PLANNER: more detail, list view, day view, import ================= */
+import { chatPeople } from "../chat/chat.js";
+import { $, addDays, dayLabel, esc, iso, monday, parse, shortDay, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { csvSave } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { myOpenPrompts } from "../people/reminders.js";
+import { openPlanEditor } from "./board.js";
+import { PTYPES, VIS, entryChip, onDay, planEntries } from "./time-off.js";
+import { same } from "../sites/project-pages.js";
+import { openJob } from "../survey/door-window-survey.js";
+export { openDayPlan, openPlanDetail, openPlanImport, planListHtml, planMatch, planPeopleNames, planSeen, planTimeTxt };
 function planPeopleNames(p,owner){return (p.people||[]).map(id=>owner?nameOf(id):(id===S.me?"You":(chatPeople().find(x=>x.id===id)||{}).name||"")).filter(Boolean)}
 function planTimeTxt(p){return p.time?(p.time+(p.endTime?"–"+p.endTime:"")):""}
 function planMatch(p,q){if(!q)return true;q=q.toLowerCase();return [p.title,p.notes,p.site,p.jobTitle,p.contact,PTYPES[p.type]].join(" ").toLowerCase().includes(q)}

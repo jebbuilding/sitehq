@@ -1,4 +1,34 @@
 /* ================= SIGN-OFF SHEET from a drawing: printable with signature boxes, or signed in the app by client / trades / everyone on a site ================= */
+import { clientSites } from "../clients/address-book.js";
+import { clAddNote, saveClient } from "../clients/clients.js";
+import { signHere } from "../clients/portal-calendar.js";
+import { PT_KINDS, ptCl, ptKind, ptOf, ptSrc } from "../clients/portal.js";
+import { SO } from "../clients/sign-offs.js";
+import { pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, clActive, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer } from "../core/viewer.js";
+import { drawOpen } from "./drawings-tab.js";
+import { pdfShow } from "./paving.js";
+import { SK_CAT } from "./trade-drawings.js";
+import { CUT } from "../files/cut-outs.js";
+import { uploadFile } from "../files/files.js";
+import { getFileBlob } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { printAsset, printBlob } from "../files/print.js";
+import { SENDTO } from "../files/send-to.js";
+import { coData } from "../owner/company-details.js";
+import { auditLog } from "../owner/deletion-record.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
+import { mySign, openSign } from "../sites/plans-specs.js";
+import { same } from "../sites/project-pages.js";
+import { siteClient } from "../sites/summary.js";
+import { myName } from "../survey/door-window-survey.js";
+export { SIGNSHEET };
 const SIGNSHEET=(()=>{
 const DEF_STMT="I approve this and give the go-ahead for the work to go ahead as shown.";
 const SS_KINDS=["design","materials","goahead","variation","stage"];

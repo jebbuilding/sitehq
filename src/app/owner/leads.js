@@ -1,4 +1,10 @@
 /* ================= PLANNING LEADS (owner only): moved in from the Devon Planning Leads page ================= */
+import { $, esc, iso, store, toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { curTab, render } from "../core/tabs-week.js";
+import { loadZip } from "./backup.js";
+import { coData } from "./company-details.js";
+export { LEADS };
 const LEADS=(()=>{
 const CATS=[
   ["two","Two-storey & big remodels","Homeowner. Biggest jobs; usually choosing a builder now."],

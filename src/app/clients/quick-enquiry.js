@@ -1,4 +1,33 @@
 /* ===== quick enquiry: a few details + the visit time, into the planner, with a reminder an hour before ===== */
+import { openClientChat } from "../chat/chat.js";
+import { CJOBS } from "./address-book-jobs.js";
+import { clContactsHtml, clInvHtml, clMainHtml, clientSites, histHtml, wireHist } from "./address-book.js";
+import { CL_STAGES, clStage, openClientForm, saveClient } from "./clients.js";
+import { clDocsHtml, wireClDocs } from "./documents.js";
+import { clGdprHtml, wireClGdpr } from "./gdpr-consent.js";
+import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
+import { clientPdf } from "./record-pdf.js";
+import { clMediaHtml, wireClMedia } from "./sketches.js";
+import { clAddPlan, clAddr, clPlanListHtml, clStepsHtml, wireClSteps } from "./stages-planner.js";
+import { $, addDays, esc, gbp, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { RAW, S, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { blobUrl, saveAsset, uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { deleteClientFlow } from "../owner/delete-client-site.js";
+import { BIN_DAYS, binDelete } from "../owner/deleted-items.js";
+import { openPlanEditor } from "../planner/board.js";
+import { toHM } from "../planner/diary.js";
+import { SAMPLES } from "../purchasing/samples.js";
+import { shrinkImage } from "../safety/training.js";
+import { editSiteJob, syncSiteJobs } from "../sites/job-details.js";
+import { dropPin, miniMap } from "../sites/maps-pins.js";
+import { same } from "../sites/project-pages.js";
+import { DWS } from "../survey/door-window-survey.js";
+export { VISIT_REMIND_MIN, initQuickEnquiry, quickEnquiry, viewClient };
 const VISIT_REMIND_MIN=60;
 function icsFor(o){const p=n=>String(n).padStart(2,"0");const dt=(d,t)=>{const [y,mo,da]=d.split("-");const [h,mi]=(t||"10:00").split(":");return `${y}${mo}${da}T${p(h)}${p(mi)}00`};const escI=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/([,;])/g,"\\$1");
   const now=new Date(),stampU=now.getUTCFullYear()+p(now.getUTCMonth()+1)+p(now.getUTCDate())+"T"+p(now.getUTCHours())+p(now.getUTCMinutes())+"00Z";
@@ -31,7 +60,6 @@ function visitWatch(){if(!ownerMode())return;const now=Date.now();const all=(RAW
     const d=document.createElement("div");d.className="dimask";d.style.zIndex="130";d.innerHTML=`<div class="dimbox" role="alertdialog" aria-label="Visit reminder"><b>⏰ ${esc(p.title)}</b><div style="margin:6px 0">${mins?`In about ${mins>=60?"an hour":mins+" minutes"}, at <b>${esc(p.time)}</b>`:`Now, at <b>${esc(p.time)}</b>`}</div>${c?`<div class="who">${esc(clAddr(c))}${c.phone?" · "+esc(c.phone):""}</div>`:""}
       <div class="dimbtns" style="flex-wrap:wrap">${c&&clAddr(c)?`<button type="button" class="btn maplink" data-addr="${esc(clAddr(c))}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Directions</button>`:""}${c&&c.phone?`<a class="btn" href="tel:${esc(String(c.phone).replace(/\s+/g,""))}" style="text-decoration:none;color:var(--ink)">📞 Call</a>`:""}${c?`<button type="button" class="btn vr-open">Open client</button>`:""}<button type="button" class="btn primary vr-x">OK</button></div></div>`;
     document.body.appendChild(d);d.querySelector(".vr-x").onclick=()=>d.remove();const o=d.querySelector(".vr-open");if(o)o.onclick=()=>{d.remove();viewClient(c)};break}}
-if(!window.__visitTimer)window.__visitTimer=setInterval(()=>{try{visitWatch()}catch(e){}},30000);
 function viewClient(c){
   const tel=(c.phone||"").replace(/\s+/g,""); const addr=[c.address,c.postcode].filter(Boolean).join(", ");
   const rows=[["Property",addr],["Work",c.work],["Budget",c.budget],["Timescale",c.timescale],["Found you through",c.source],["Planning / drawings",c.planning],["Quote",c.quote?gbp(+c.quote):""],["Follow up",c.follow?shortDay(c.follow):""],["Site in the app",c.site],["Added",c.created?stamp(c.created):""]].filter(r=>r[1]);
@@ -94,3 +122,7 @@ ${clMediaHtml(c)}
   if($("cv-gosite")) $("cv-gosite").onclick=()=>{closeViewer();S.f.proj=c.site;S.f.projList=false;S.otab="projects";store.set("jeb.otab","projects");render()};
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initQuickEnquiry(){
+if(!window.__visitTimer)window.__visitTimer=setInterval(()=>{try{visitWatch()}catch(e){}},30000);
+}

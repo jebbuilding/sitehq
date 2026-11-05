@@ -1,10 +1,24 @@
 /* ================= ACCIDENT & NEAR-MISS REPORTS ================= */
+import { startEmployee } from "../core/data.js";
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, nowHM, shortDay, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { blobUrl, csvSave } from "../files/files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { allTeam, nameOf } from "../owner/owner.js";
+import { meBtn, meInfo } from "../people/personal-details.js";
+import { BRGB, exifDate, loadImage, pdfLogo, readExif, siteRec, stampPhoto } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "./site-inductions.js";
+export { INC_KINDS, incidentsBlock, viewIncident, wireIncidents };
 const INC_KINDS={injury:"Accident (someone hurt)",nearmiss:"Near miss (nobody hurt)",dangerous:"Dangerous occurrence",damage:"Damage to property or plant"};
 const incOf=list=>(list||[]).filter(s=>s.type==="incident");
 const riddorFlag=d=>d.kind==="dangerous"||!!d.specified||d.hospital==="yes"||d.off7==="yes";
 function openIncident(){
   if(ownerMode()&&!S.employeeStarted){S.employeeStarted=true;startEmployee()}
-  formType="incident"; editing=null;
+  setFormType("incident"); setEditing(null);
   const yn=(id,l,opts)=>`<div><div class="flabel">${l}</div><div class="seg" id="${id}">${(opts||[["yes","Yes"],["no","No"]]).map(([v,t])=>`<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div></div>`;
   openSheet(`<h3 id="sheettitle">Report an accident or near miss</h3>
     <div class="notice warn" style="margin:0"><b>If someone is badly hurt, call 999 first.</b> Fill this in once everyone is safe.</div>

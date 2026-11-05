@@ -1,4 +1,15 @@
 /* ================= REPORTS HOME (category tiles) ================= */
+import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
+import { S, equipOf, inWeek } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { allTeam, checkDetail, nameOf, teamIds } from "./owner.js";
+import { openCheckHistory } from "./reports.js";
+import { DOW, mySchedDue, schedStatus } from "../people/reminders.js";
+import { incidentsBlock, wireIncidents } from "../safety/accidents.js";
+import { KINDS, ck, hasProblem } from "../safety/checklists.js";
+import { checkCard, openCheck } from "../safety/checks.js";
+import { raAll, raBlock, wireRa } from "../safety/rams.js";
+export { empChecks, ownerChecks };
 const REP_ICON={ra:"📋",vehicle:'<svg class="digsvg" viewBox="0 0 64 48" width="1.25em" height="1em"><path d="M4 14a3 3 0 0 1 3-3h31v26H4z" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/><path d="M38 15h10c2 0 3.5 1 4.5 2.5L58 26c1 1.5 1.5 3 1.5 4.5V37H38z" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/><path d="M41 18h7l5 8H41z" fill="#bfe3f5" stroke="#555" stroke-width="1"/><rect x="4" y="27" width="55.5" height="4" fill="#7F191D"/><rect x="2" y="35" width="59" height="3" rx="1.5" fill="#3b3b3b"/><circle cx="15" cy="38" r="5.5" fill="#2b2b2b"/><circle cx="15" cy="38" r="2.2" fill="#aaa"/><circle cx="49" cy="38" r="5.5" fill="#2b2b2b"/><circle cx="49" cy="38" r="2.2" fill="#aaa"/><rect x="56" y="31" width="3.5" height="2.5" fill="#ffd36b"/></svg>',digger:'<svg class="digsvg" viewBox="0 0 64 48" width="1.25em" height="1em"><rect x="4" y="36" width="34" height="9" rx="4.5" fill="#3b3b3b"/><circle cx="9" cy="40.5" r="2.6" fill="#9a9a9a"/><circle cx="21" cy="40.5" r="2.6" fill="#9a9a9a"/><circle cx="33" cy="40.5" r="2.6" fill="#9a9a9a"/><rect x="6" y="27" width="30" height="9" rx="2" fill="#f2b705"/><path d="M12 27V15a2 2 0 0 1 2-2h11l4 8v6z" fill="#f2b705"/><path d="M15 16h8.5l2.8 5.5H15z" fill="#bfe3f5"/><path d="M33 27 47 9l3 2-12 18z" fill="#e0a100"/><path d="M47 9l9 13-3 2-8-12z" fill="#e0a100"/><path d="M52 22l8 3-2 11c-5 1-9-2-10-6z" fill="#555"/></svg>',trailer:'<svg class="digsvg" viewBox="0 0 64 48" width="1.25em" height="1em"><path d="M2 31h12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/><circle cx="3" cy="31" r="2.2" fill="#555"/><rect x="12" y="20" width="48" height="12" rx="1.5" fill="#9aa3ab" stroke="#4a5158" stroke-width="1.5"/><path d="M12 24h48M12 28h48" stroke="#7d868e" stroke-width="1"/><path d="M57 20l5-8" stroke="#4a5158" stroke-width="2.5" stroke-linecap="round"/><path d="M28 32h20v3H28z" fill="#3b3b3b"/><circle cx="33" cy="37" r="5.5" fill="#2b2b2b"/><circle cx="33" cy="37" r="2.2" fill="#aaa"/><circle cx="45" cy="37" r="5.5" fill="#2b2b2b"/><circle cx="45" cy="37" r="2.2" fill="#aaa"/><rect x="58" y="29" width="3" height="3" fill="#e11d2a"/></svg>',machine:"⚙️",scaffold:"🏗️",excavation:"🕳️",ladder:"🪜",incidents:"⚠️"};
 function reportCats(){return Object.entries(KINDS).map(([k,K])=>[k,K.name+(K.inspect?" inspections":" checks")]).concat([["ra","Risk assessments (RAMS)"],["incidents","Accidents & near misses"]])}
 function reportsHome(owner){

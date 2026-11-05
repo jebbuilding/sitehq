@@ -1,4 +1,17 @@
 /* ================= SEND TO…: one dialog to send any file to trades and/or clients, tell them, and keep a copy on the job ================= */
+import { PT_FOLDERS, ptOf, ptSrc } from "../clients/portal.js";
+import { $, esc, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { getFileBlob, openFile } from "./in-app-files.js";
+import { newId } from "./outbox.js";
+import { coData } from "../owner/company-details.js";
+import { auditLog } from "../owner/deletion-record.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { photoViewer } from "../photos/photos.js";
+import { myName, openJob } from "../survey/door-window-survey.js";
+export { SENDTO };
 const SENDTO=(()=>{
 /* tell a trade something has been sent to them: shows in their banner / pop-up like a reminder, opens the thing when tapped */
 async function notifyTrade(who,ref,refLabel,note){try{await S.db.doc("sheets/"+who+"/signoffs/pr-"+newId()).set({type:"prompt",form:"sent",ref,refLabel:String(refLabel||"").slice(0,80),note:String(note||"").slice(0,300),status:"open",created:Date.now()});return true}catch(e){return false}}

@@ -1,4 +1,19 @@
 /* ================= SAMPLES: James's sample library (set up with photos) and a book-out log linked to clients ================= */
+import { clAddNote } from "../clients/clients.js";
+import { $, addDays, esc, iso, shortDay, stamp, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { curTab, render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { pdfShow } from "../drawing/paving.js";
+import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+import { shrinkImage } from "../safety/training.js";
+import { myName } from "../survey/door-window-survey.js";
+export { SAMPLES };
 const SAMPLES=(()=>{
 const CATS=["Doors","Windows / profiles","Worktops","Kitchen doors","Tiles","Flooring","Bricks / stone","Roof tiles / slates","Cladding","Paint / colour cards","Glass","Handles / hardware","Brochures / books","Other"];
 const all=()=>(S.samples||[]).slice().sort((a,b)=>(a.cat||"").localeCompare(b.cat||"")||(a.name||"").localeCompare(b.name||""));

@@ -1,7 +1,14 @@
 /* ================= FOREMAN (extra access) ================= */
+import { $, esc, hrs, shortDay, stamp } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, inWeek, ownerMode } from "../core/state.js";
+import { allTeam, nameOf } from "../owner/owner.js";
+import { openInduction } from "../safety/site-inductions.js";
+import { openEntry } from "../timesheets/time.js";
+export { allVisitInds, amForeman, foremanView, initForeman, proxyFor, setProxyFor };
 const isForeman=id=>!!((id===S.me&&!S.owner?S.myProfile:S.team[id])||{}).foreman;
 const amForeman=()=>!ownerMode()&&!!(S.myProfile&&S.myProfile.foreman);
-let proxyFor=null;
+let proxyFor=null;function setProxyFor(v){proxyFor=v}
 function allVisitInds(){return (S.visitInds||[]).concat(allTeam("signoffs").filter(x=>x.type==="visitind").map(x=>Object.assign({},x,{recordedBy:x.recordedBy||nameOf(x.who)})))}
 function proxyPeople(){return (S.settings.people||[]).filter(p=>p.id!==S.me)}
 function openProxyPick(type){
@@ -35,5 +42,9 @@ function foremanView(){
 
 /* red back buttons: any button whose label starts with ‹ */
 function markBack(root){(root||document).querySelectorAll("button").forEach(b=>{if(!b.classList.contains("backbtn")&&/^\s*‹/.test(b.textContent||""))b.classList.add("backbtn")})}
-let mbT=null; new MutationObserver(()=>{clearTimeout(mbT);mbT=setTimeout(()=>markBack(),30)}).observe(document.body,{childList:true,subtree:true});
+let mbT=null; 
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initForeman(){
+new MutationObserver(()=>{clearTimeout(mbT);mbT=setTimeout(()=>markBack(),30)}).observe(document.body,{childList:true,subtree:true});
+}

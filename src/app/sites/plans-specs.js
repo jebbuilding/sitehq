@@ -1,4 +1,18 @@
 /* ================= PLANS & SPECS ================= */
+import { $, esc, fsize, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, docRef, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { saveAsset } from "../files/files.js";
+import { FC, openFile } from "../files/in-app-files.js";
+import { submitJob } from "../files/outbox.js";
+import { BIN_DAYS, binDelete, binIsImg } from "../owner/deleted-items.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { sigPad } from "../safety/site-inductions.js";
+import { cdmShare, docMove } from "./doc-visibility.js";
+import { empSitesView, plansView0 } from "./trade-sites.js";
+export { DOC_CATS, RAMS_SIGN, docPath, docRow, docSite, mySign, openSign, plansView, unsignedRams, wireDocs };
 const DOC_CATS=[["plans","Plans"],["specs","Specs"],["rams","RAMS & inductions"],["other","Other"]];
 const catName=k=>(DOC_CATS.find(c=>c[0]===k)||DOC_CATS[3])[1];
 function mySign(docId){return S.mine.signoffs.find(s=>s.docId===docId)}
@@ -46,7 +60,7 @@ function docVersions(d,owner){const vs=(d.versions||[]).slice().sort((a,b)=>(b.u
     const rest=(d.versions||[]).filter(x=>x.assetId!==v.assetId).concat([cur]);const patch={assetId:v.assetId,fileName:v.fileName,contentType:v.contentType,size:v.size||0,uploaded:Date.now(),versions:rest};
     try{await docRef(d).update(patch);Object.assign(d,patch);toast("That version is now the current one");docVersions(d,owner);render()}catch(e){toast("Couldn't change it")}})}
 function openSign(d){
-  formType="sign"; editing=null;
+  setFormType("sign"); setEditing(null);
   openSheet(`<h3 id="sheettitle">Read and sign</h3>
     <div><b>${esc(d.title)}</b><div class="who">${esc(d.site||"General")} · ${esc(catName(d.cat))}</div></div>
     <div class="notice">Open and read the whole document before you sign.</div>

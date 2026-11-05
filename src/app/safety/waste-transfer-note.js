@@ -1,4 +1,22 @@
 /* ================= WASTE TRANSFER NOTE (WMC2A layout): sections A–D, signed on the tab, one-page PDF, sent on ================= */
+import { clAddr } from "../clients/stages-planner.js";
+import { askOwnerPin } from "../core/dictation.js";
+import { $, esc, iso, pad, stamp, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { pdfShow } from "../drawing/paving.js";
+import { uploadFile } from "../files/files.js";
+import { getFileBlob } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { SENDTO } from "../files/send-to.js";
+import { coData } from "../owner/company-details.js";
+import { BIN_DAYS } from "../owner/deleted-items.js";
+import { auditFirst } from "../owner/deletion-record.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "./site-inductions.js";
+export { WTN };
 const WTN=(()=>{
 const q=id=>document.getElementById("wt-"+id);
 const EWC=[["17 09 04","Mixed construction & demolition waste"],["17 01 01","Concrete"],["17 01 02","Bricks"],["17 01 03","Tiles & ceramics"],["17 01 07","Mixed concrete, bricks, tiles"],["17 05 04","Soil & stones"],["17 02 01","Wood"],["17 02 02","Glass"],["17 02 03","Plastic"],["17 04 05","Iron & steel"],["17 04 07","Mixed metals"],["17 04 11","Cables"],["17 03 02","Tarmac / bituminous (no coal tar)"],["17 06 04","Insulation (non-hazardous)"],["17 08 02","Plasterboard / gypsum"],["20 03 01","Mixed general waste"],["20 02 01","Green waste"],["20 03 07","Bulky waste"],["15 01 01","Paper & card packaging"],["15 01 02","Plastic packaging"],["15 01 06","Mixed packaging"],["17 06 05*","Asbestos – HAZARDOUS, consignment note needed"],["17 09 03*","Contaminated C&D waste – HAZARDOUS"],["17 03 01*","Coal-tar tarmac – HAZARDOUS"]];

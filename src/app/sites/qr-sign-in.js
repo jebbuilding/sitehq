@@ -1,4 +1,14 @@
 /* ================= QR SITE SIGN-IN: a public page (the user's own Google Sheet + script) for induction and sign in / out by QR code ================= */
+import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { pdfShow } from "../drawing/paving.js";
+import { coData } from "../owner/company-details.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { IND_DETAILS, indFor, loadJsPdf, openIndEditor } from "../safety/site-inductions.js";
+import { same } from "./project-pages.js";
+export { QRSITE };
 const QRSITE=(()=>{
 const cfg=()=>(S.qrCfg||{});
 const sid=site=>{const s=(S.sites||[]).find(x=>same(x.name,site));return String(s&&s.id||site).replace(/[^\w-]/g,"").slice(0,40)||"site"};

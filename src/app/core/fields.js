@@ -1,4 +1,8 @@
 /* ================= GENERIC FIELDS ================= */
+import { $, esc } from "./helpers.js";
+import { liveSite } from "./state.js";
+import { same } from "../sites/project-pages.js";
+export { lastOf, pickField, pickVal, wirePicks };
 function pickField(id,label,names,val,ph,required=true){names=(names||[]).filter(n=>liveSite(n)||same(n,val));
   if(!names.length) return `<label for="${id}">${label}<input id="${id}" maxlength="100" ${required?"required":""} placeholder="${esc(ph)}" value="${esc(val)}"></label>`;
   const other=val&&!names.includes(val);

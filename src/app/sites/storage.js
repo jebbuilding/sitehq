@@ -1,4 +1,12 @@
 /* ===== Site storage: completed or rejected jobs move out of Sites into storage ===== */
+import { clientSites } from "../clients/address-book.js";
+import { esc, stamp, toast } from "../core/helpers.js";
+import { S, archivedSites, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { deleteSiteFlow } from "../owner/delete-client-site.js";
+import { siteRec } from "../photos/photos.js";
+import { siteClient } from "./summary.js";
+export { arcMigrate, arcWhy, siteArchive, siteArchiveForClient, siteRestore, storageHtml, wireStorage };
 const ARC_STAGES=["done","lost"];
 function arcWhy(site){const sr=siteRec(site)||{};return sr.archivedWhy||"finished"}
 async function siteArchive(site,manual,why){const sr=siteRec(site);if(!sr||!sr.id)return;const d={archived:true,archivedAt:Date.now(),archivedBy:manual?"you":"auto",archivedWhy:why||(manual?"put away":"finished")};

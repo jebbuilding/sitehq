@@ -1,4 +1,9 @@
 /* ===== Owner PIN (stored only as a hash) ===== */
+import { toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { newId } from "../files/outbox.js";
+export { changePinFlow, hashHex, pinFails, pinLockUntil, pinOk, setPinFails, setPinLockUntil };
 const OWNER_PIN_HASH="4bab2c18b37ef6b0032a2c7e2db7cd95f2dd0465237f1ee230423b5ef1fdc613";
 function sha256hex(str){const b=new TextEncoder().encode(str);const K=[],H=[];let n=2,c=0;const isP=x=>{for(let i=2;i*i<=x;i++)if(x%i===0)return false;return true};while(c<64){if(isP(n)){if(c<8)H[c]=(Math.pow(n,1/2)*4294967296)|0;K[c]=(Math.pow(n,1/3)*4294967296)|0;c++}n++}
   const l=b.length,words=[];for(let i=0;i<l;i++)words[i>>2]|=b[i]<<(24-(i%4)*8);words[l>>2]|=0x80<<(24-(l%4)*8);const tot=(((l+8)>>6)+1)*16;for(let i=words.length;i<tot;i++)words[i]=words[i]|0;words[tot-1]=l*8;
@@ -29,4 +34,4 @@ function changePinFlow(){if(!ownerMode()){toast("Only James can change the PIN")
     if(n!==n2){q(".pc-new2").value="";q(".pc-new2").focus();return bad("The two new PINs don't match")}
     const salt=newId();const rec={salt,hash:await hashHex("sitehq-pin:"+salt+":"+n),at:Date.now()};
     try{await S.db.doc(pinPath()).set(rec);S.pinRec=rec;d.remove();toast("PIN changed. Use your new PIN from now on.");render()}catch(x){bad("Couldn't save the PIN. Check your connection.")}}}
-let pinFails=0,pinLockUntil=0;
+let pinFails=0,pinLockUntil=0;function setPinFails(v){pinFails=v}function setPinLockUntil(v){pinLockUntil=v}

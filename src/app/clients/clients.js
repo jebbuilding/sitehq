@@ -1,4 +1,22 @@
 /* ================= CLIENTS (owner only, stored in the private todos collection as kind:"client") ================= */
+import { initials } from "../chat/chat.js";
+import { docPicker } from "./documents.js";
+import { ptCl } from "./portal.js";
+import { viewClient } from "./quick-enquiry.js";
+import { clientPdf } from "./record-pdf.js";
+import { $, esc, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, applyGone, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openNotePage } from "../drawing/paving.js";
+import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { VID_MAX, audExt, audTag, vidExt, wireVoice } from "../photos/photos.js";
+import { shrinkImage } from "../safety/training.js";
+import { syncSiteJobs } from "../sites/job-details.js";
+import { hereNow, miniMap, parseLatLon } from "../sites/maps-pins.js";
+import { siteArchiveForClient } from "../sites/storage.js";
+export { CL_STAGES, CL_WORK, clAddNote, clInitials, clList, clStage, newEnquiryFor, nmParts, nmSortKey, openClientForm, saveClient };
 const CL_STAGES=[["enquiry","Job to see"],["visit","Job to cost"],["quote","Estimate sent"],["won","Accepted"],["onsite","On site"],["done","Completed"],["lost","Rejected"],["contact","📒 Address book (no job yet)"]];
 const CL_WORK=["Extension","Loft conversion","Kitchen","Bathroom","Renovation","New build","Garage conversion","Groundworks / drainage","Landscaping","Repairs / maintenance","Other"];
 const CL_SOURCE=["Recommendation","Website","Facebook / Instagram","Google","Checkatrade / MyBuilder","Planning lead","Repeat client","Sign board","Other"];

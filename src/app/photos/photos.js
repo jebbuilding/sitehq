@@ -1,4 +1,25 @@
 /* ================= PHOTOS ================= */
+import { ptExitPreview } from "../clients/portal-calendar.js";
+import { PT } from "../clients/portal.js";
+import { lastOf, pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, monday, pad, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, inWeek, ownerMode, siteNames } from "../core/state.js";
+import { empTabs, render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { isSketch, newDrawing, skState, sketchStrip, sketchViewer } from "../drawing/trade-drawings.js";
+import { blobUrl, saveAsset, uploadErr } from "../files/files.js";
+import { closeFile, getFileBlob } from "../files/in-app-files.js";
+import { newId, sphotoPut, sphotoWanted, submitJob } from "../files/outbox.js";
+import { binFromViewer } from "../owner/deleted-items.js";
+import { nameOf } from "../owner/owner.js";
+import { markPrompt, myOpenPrompts } from "../people/reminders.js";
+import { markupBlock, markupSend } from "./mark-up.js";
+import { hereNow } from "../sites/maps-pins.js";
+import { same } from "../sites/project-pages.js";
+import { photoDelete } from "../sites/tiles.js";
+import { loadSitePhotos } from "../sites/trade-sites.js";
+export { BRAND_COLS, BRAND_DEF, BRGB, LOGO_ID, VID_MAX, applyBrand, applyColour, audExt, audTag, brandHex, empPhotos, exifDate, feedNear, isAud, isVid, loadImage, logoId, myTrade, openAddFolder, openEditFolders, openPhoto, pdfLogo, photoTile, photoViewer, readExif, siteFolders, siteRec, stampPhoto, vidExt, vidTag, wireVoice };
 function readExif(buf){
   const v=new DataView(buf); const out={};
   try{
@@ -205,7 +226,7 @@ function empPhotos(){
 const siteRec=n=>S.sites.find(x=>same(x.name,n));
 function openPhoto(){
   if(!S.assets){toast("You don't have permission to upload. Ask James to make you an Editor on this page.");return}
-  formType="photo"; editing=null;
+  setFormType("photo"); setEditing(null);
   const lastSite=lastOf(S.mine.photos,()=>true,"site")||lastOf(S.mine.entries,()=>true,"job");
   openSheet(`<h3 id="sheettitle">Add photos</h3>
     <label for="p-file">Photos or videos<input id="p-file" type="file" accept="image/*,video/*" multiple required></label><div class="who">Videos: keep them short (about 20 seconds) so they upload quickly.</div>

@@ -1,4 +1,23 @@
 /* ================= SITE SIGN-IN BOOK: timesheet check-ins fill it automatically; other-company / agency people sign in and out here instead ================= */
+import { lastOf, pickField, pickVal, wirePicks } from "../core/fields.js";
+import { $, esc, iso, pad, shortDay, stamp, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { pdfShow } from "../drawing/paving.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
+import { BIN_DAYS } from "../owner/deleted-items.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { EMP_TYPES } from "../people/employment-types.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+import { empTypeOf } from "./job-details.js";
+import { QRSITE } from "./qr-sign-in.js";
+import { openRollCall } from "./roll-call.js";
+import { myName } from "../survey/door-window-survey.js";
+import { checkIn, checkOut, openEntry } from "../timesheets/time.js";
+export { SIGNIN, signOnly };
 const signOnly=id=>{if(id===S.me&&!ownerMode())return !!(S.myProfile&&S.myProfile.signInOnly);return !!((S.team||{})[id]&&S.team[id].signInOnly)};
 const SIGNIN=(()=>{
 const nowHM2=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes())};

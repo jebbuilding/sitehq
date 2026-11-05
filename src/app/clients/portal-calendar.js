@@ -1,4 +1,27 @@
 /* ================= CLIENT PORTAL: SHARED JOB CALENDAR ================= */
+import { clientSites } from "./address-book.js";
+import { clAddNote, clList, clStage, saveClient } from "./clients.js";
+import { PT, newCode, ptAttach, ptChatId, ptCl, ptInvite, ptKind, ptManager, ptMgrSubscribe, ptOf, ptSrc, wireAttDl } from "./portal.js";
+import { clAddPlan, clAddr } from "./stages-planner.js";
+import { mapDocs } from "../core/data.js";
+import { askOwnerPin } from "../core/dictation.js";
+import { $, addDays, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { getFileBlob, openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { printBlob } from "../files/print.js";
+import { coData } from "../owner/company-details.js";
+import { auditFirst } from "../owner/deletion-record.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
+import { sjClientOK, sjMaster, sjPayload } from "../sites/job-details.js";
+import { same } from "../sites/project-pages.js";
+import { myName } from "../survey/door-window-survey.js";
+export { pdClientDatesOn, pdClientTab, pdOwnerSection, pdSorted, pdWatchAll, pdWhen, portalTab, ptChatMembers, ptExitPreview, ptOwnerSign, ptPreview, ptSignPdf, signHere, wirePdClient, wirePdOwner };
 const PD_KINDS=[["date","Important date"],["visit","Visit / appointment"],["delivery","Delivery"],["work","Work on site"],["away","We're away / not available"],["other","Other"]];
 const pdKind=k=>(PD_KINDS.find(x=>x[0]===k)||PD_KINDS[0])[1];
 const pdWhen=d=>shortDay(d.from)+(d.to&&d.to!==d.from?" – "+shortDay(d.to):"")+(d.time?" · "+d.time:"");

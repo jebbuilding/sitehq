@@ -1,4 +1,62 @@
 /* ================= BOOT: get the platform (database, user, files, downloads), work out who is signed in, start the app ================= */
+import { initRoofing } from "../calculators/roofing.js";
+import { CH, initChat, renderChatHead, syncSettings } from "../chat/chat.js";
+import { startClient, startPortalOwner } from "../clients/portal.js";
+import { initQuickEnquiry } from "../clients/quick-enquiry.js";
+import { soWatch } from "../clients/sign-offs.js";
+import { startAi } from "./ask-claude.js";
+import { initBackButton } from "./back-button.js";
+import { mapDocs, startEmployee, startOwner } from "./data.js";
+import { initDictation } from "./dictation.js";
+import { $ } from "./helpers.js";
+import { wrapDb } from "./live-feed.js";
+import { refreshNowWx, startNowBar } from "./now-bar.js";
+import { initReportIssue } from "./report-issue.js";
+import { initSheet } from "./sheet.js";
+import { initSpellCheck } from "./spell-check.js";
+import { RAW, S, applyGone } from "./state.js";
+import { curTab, initTabsWeek, refreshJobDetail, render } from "./tabs-week.js";
+import { initViewer } from "./viewer.js";
+import { initConstructionDetails } from "../drawing/construction-details.js";
+import { initPaving } from "../drawing/paving.js";
+import { initSymbolsMore } from "../drawing/symbols-more.js";
+import { wrapAssets } from "../files/files.js";
+import { fcOpen, initInAppFiles } from "../files/in-app-files.js";
+import { OB, flushOutbox, initOutbox, obOpen, refreshOutbox } from "../files/outbox.js";
+import { pdfSavedBar } from "../files/print.js";
+import { initScaleRuler } from "../files/scale-ruler.js";
+import { binAutoPurge } from "../owner/deleted-items.js";
+import { initForeman } from "../people/foreman.js";
+import { initPhotoTest } from "../photos/photo-test.js";
+import { applyBrand } from "../photos/photos.js";
+import { initSelectZip } from "../photos/select-zip.js";
+import { scheduleSupSync } from "../purchasing/suppliers.js";
+import { initExpiryDates } from "../safety/expiry-dates.js";
+import { initMapsPins } from "../sites/maps-pins.js";
+/* Everything that happens when the page loads, in this order. Each init wires up the part of the page that its
+   file owns. This is the only file with statements that run at load (npm run check enforces that). */
+initTabsWeek();
+initSheet();
+initOutbox();
+initViewer();
+initChat();
+initInAppFiles();
+initExpiryDates();
+initForeman();
+initQuickEnquiry();
+initSymbolsMore();
+initConstructionDetails();
+initPaving();
+initScaleRuler();
+initMapsPins();
+initReportIssue();
+initSelectZip();
+initRoofing();
+initSpellCheck();
+initDictation();
+initPhotoTest();
+
+/* get the platform, work out who is signed in, start the app */
 (async()=>{
   const use=n=>window.claude&&window.claude.use?window.claude.use(n).catch(()=>null):Promise.resolve(null);
   const [db,user,assets,dl]=await Promise.all([use("db"),use("user"),use("assets"),use("downloads")]);
@@ -34,3 +92,4 @@
     if(pd&&pd.exists)startClient(pd.data());else{S.employeeStarted=true;startEmployee()}}
   render(); startNowBar(); startAi();
 })();
+initBackButton();

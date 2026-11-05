@@ -1,4 +1,7 @@
 /* ================= PRINT: every PDF can be printed (share sheet on the tab, print dialog on a computer) ================= */
+import { esc, toast } from "../core/helpers.js";
+import { getFileBlob, loadPdfJs } from "./in-app-files.js";
+export { pdfSavedBar, printAsset, printBlob };
 const isTouch=()=>/iPad|iPhone|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 async function printBlob(blob,name){if(!blob){toast("Nothing to print");return}name=name||"document.pdf";
   const file=new File([blob],name,{type:blob.type||"application/pdf"});

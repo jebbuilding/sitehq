@@ -1,4 +1,16 @@
 /* ===== phone / browser Back button: steps back through the app (closes the top pop-up, then the open page, then the previous tab) ===== */
+import { closeChat } from "../chat/chat.js";
+import { PT } from "../clients/portal.js";
+import { aiClose } from "./ask-claude.js";
+import { store, toast } from "./helpers.js";
+import { closeForm } from "./sheet.js";
+import { S, ownerMode } from "./state.js";
+import { curTab, render } from "./tabs-week.js";
+import { closeViewer } from "./viewer.js";
+import { closeFile } from "../files/in-app-files.js";
+export { initBackButton };
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initBackButton(){
 (function(){const vis=id=>{const e=document.getElementById(id);return !!(e&&!e.hidden)};
   const sig=()=>{try{const f=S.f||{};return JSON.stringify([document.querySelectorAll(".dimask").length,!!document.querySelector(".np"),vis("markup"),vis("fileview"),vis("sheet"),vis("chatwin"),vis("viewer"),vis("aipanel"),
     curTab(),(typeof PT!=="undefined"&&PT&&PT.tab)||"",f.projList===false?f.proj:"",f.pjtab||"",f.folder||"",f.stab||"",f.dwperson||"",!!S.preview])}catch(e){return ""}};
@@ -25,3 +37,4 @@
     stack.push(s2);if(stack.length>60)stack.shift();try{history.pushState({jeb:stack.length},"")}catch(e){}};
   window.addEventListener("popstate",()=>{if(ignore>0){ignore--;return}const before=sig();stack.pop();back();setTimeout(()=>{const now=sig();if(now===before){/* nothing closed (e.g. "Discard?" asked): stay put */try{history.pushState({jeb:stack.length+1},"")}catch(e){}stack.push(now)}else{stack[stack.length-1]=now;if(!stack.length)stack=[now]}},60)});
   setInterval(tick,250)})();
+}

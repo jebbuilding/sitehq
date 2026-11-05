@@ -1,4 +1,6 @@
 /* ================= NOTEBOOK PAGE (OneNote-style): big zoomable page, pen tools, photos you can move and resize ================= */
+import { esc } from "../core/helpers.js";
+export { askLabel, askMeasure, drawDim };
 /* pop-up box asking for a measurement; calls done(text) or done(null) */
 function askLabel(host,title,cur,done){const old=host.querySelector(".dimask");if(old)old.remove();const d=document.createElement("div");d.className="dimask";
   d.innerHTML=`<form class="dimbox"><b>✎ ${esc(title)}</b><input maxlength="60" value="${esc(cur||"")}" aria-label="${esc(title)}"><div class="dimbtns"><button type="button" class="btn dim-skip">Cancel</button><button type="submit" class="btn primary">OK</button></div></form>`;

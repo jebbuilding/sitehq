@@ -1,4 +1,18 @@
 /* ================= CLIENT UPLOADS (photos & documents from the client to James), stored in chunks in their own portal area ================= */
+import { PT, ptManager } from "./portal.js";
+import { $, esc, fsize, iso, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openViewer } from "../core/viewer.js";
+import { openNotePage } from "../drawing/paving.js";
+import { attachPicker } from "../files/attachment-picker.js";
+import { uploadErr, uploadFile } from "../files/files.js";
+import { fcOpen, fcPut, openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { audExt, audTag, loadImage, vidExt } from "../photos/photos.js";
+import { shrinkImage } from "../safety/training.js";
+export { cuDraw, cuListHtml, cuOpen, cuQuickPhoto, cuQuickVideo, cuQuickVoice, cuSend };
 const CU_CHUNK=450000, CU_MAX=15*1048576;
 const b64of=blob=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]||"");fr.onerror=rej;fr.readAsDataURL(blob)});
 async function cuThumb(blob){try{const img=await loadImage(blob);const sc=Math.min(1,220/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement("canvas");cv.width=Math.round(img.naturalWidth*sc);cv.height=Math.round(img.naturalHeight*sc);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);return cv.toDataURL("image/jpeg",.7)}catch(e){return ""}}

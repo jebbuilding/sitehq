@@ -1,4 +1,5 @@
 /* ===== walls that join themselves: mitred corners, T-junctions, layered cavity walls, doors and windows cut into walls ===== */
+export { NP_LIN, NP_LINOPTS, NP_OPENK, NP_WALLK, npDrawAll, npDrawWalls, npHexMix, npIsWall, npPattern, npWallInfo, npWallT };
 const NP_LIN={pb12:["Plasterboard 12.5mm",12.5,0,"pb"],pb15:["Plasterboard 15mm",15,0,"pb"],pbmr:["Moisture resistant plasterboard 12.5mm",12.5,0,"pb"],pbfr:["Fire board 15mm",15,0,"pb"],pbsnd:["Sound board 15mm",15,0,"pb"],
  dd12:["Plasterboard 12.5mm on dot & dab",12.5,12,"dd"],dd15:["Plasterboard 15mm on dot & dab",15,12,"dd"],ddins38:["Insulated plasterboard 37.5mm on dot & dab",37.5,12,"dd"],ddins52:["Insulated plasterboard 52.5mm on dot & dab",52.5,12,"dd"],ddins62:["Insulated plasterboard 62.5mm on dot & dab",62.5,12,"dd"],
  bat25pb:["Battens 25×38 + plasterboard 12.5mm",12.5,25,"bat"],bat50pb:["Battens 25×50 + plasterboard 12.5mm",12.5,25,"bat"],bat47pb:["Battens 47×50 + plasterboard 12.5mm",12.5,47,"bat"],bat25:["Battens 25×38 only",0,25,"batonly"],bat47:["Battens 47×50 only",0,47,"batonly"],

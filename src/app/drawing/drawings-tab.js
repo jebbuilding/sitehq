@@ -1,4 +1,29 @@
 /* ================= DRAWINGS TAB (everyone): draw, save, open again, save to phone, send ================= */
+import { clientSites } from "../clients/address-book.js";
+import { nmSortKey } from "../clients/clients.js";
+import { ptAskSign } from "../clients/portal.js";
+import { pickField, pickVal } from "../core/fields.js";
+import { $, esc, iso, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
+import { S, clActive, ownerMode, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
+import { openNotePage } from "./paving.js";
+import { SIGNSHEET } from "./sign-off-sheet.js";
+import { dwSendForSign, dwSignStatus } from "./sign-off.js";
+import { SK_CAT, isSketch } from "./trade-drawings.js";
+import { drawPdfFile } from "../files/attachment-picker.js";
+import { blobUrl, saveAsset, uploadErr, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { SENDTO } from "../files/send-to.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { myTrade } from "../photos/photos.js";
+import { sigPad } from "../safety/site-inductions.js";
+import { drawShare } from "../sites/doc-visibility.js";
+import { same } from "../sites/project-pages.js";
+import { jobDraft, myName, openJobEditor } from "../survey/door-window-survey.js";
+export { drawOpen, drawView, myDrawings };
 const myDrawings=()=>(S.mine.photos||[]).filter(p=>isSketch(p)&&p.assetId).sort((a,b)=>(b.editedAt||b.created||0)-(a.editedAt||a.created||0));
 function drawView(){const own=ownerMode();const list=myDrawings();
   $("main").innerHTML=`<button type="button" class="btn primary drawnew" id="dw-new">✏️ Start a new drawing</button>

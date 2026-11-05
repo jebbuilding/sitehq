@@ -1,4 +1,17 @@
 /* ===== Owner tab: every client sign-off in one place ===== */
+import { ptOwnerSign, ptSignPdf } from "./portal-calendar.js";
+import { PT, ptAskSign, ptKind, ptMgrSubscribe, ptOf } from "./portal.js";
+import { mapDocs } from "../core/data.js";
+import { $, esc, stamp, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet } from "../core/sheet.js";
+import { S, clActive } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { closeViewer } from "../core/viewer.js";
+import { drawOpen } from "../drawing/drawings-tab.js";
+import { SIGNSHEET } from "../drawing/sign-off-sheet.js";
+import { uploadFile } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+export { SO, signoffsTab, soAll, soWatch };
 const SO={subs:{},signs:{},docs:{}};
 /* a CDM document the client has signed in their portal is filed automatically in the site's CDM folder */
 const CDM_FILING=new Set();

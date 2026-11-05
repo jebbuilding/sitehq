@@ -1,4 +1,7 @@
 /* ================= FALLS / GRADIENTS ================= */
+import { calcSave, calcState, fmtN, mmMt, numv } from "./calculator.js";
+import { $, esc } from "../core/helpers.js";
+export { calcFalls };
 const FL_RATIOS=[10,20,30,40,50,60,80];
 function flState(){const C=calcState();if(!C.falls)C.falls={r:"40",other:"",L:"",start:"",mL:"",mD:""};return C.falls}
 function calcFalls(){

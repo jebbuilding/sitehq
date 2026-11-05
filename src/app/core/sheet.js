@@ -1,5 +1,17 @@
 /* ================= SHEET (forms) ================= */
+import { wirePicks } from "./fields.js";
+import { $, esc, toast } from "./helpers.js";
+import { S, ownerMode } from "./state.js";
+import { render } from "./tabs-week.js";
+import { closeViewer } from "./viewer.js";
+import { isWord } from "../files/files.js";
+import { VID_MAX } from "../photos/photos.js";
+export { armDelete, closeForm, editing, formFoot, formType, initSheet, kindVal, myColl, myDoc, openSheet, setEditing, setFormType, setKindVal, showErr, touch };
 let editing=null, delArmed=false, formType="hours", kindVal="extra", formSubmit=null;
+/* other files set these through here: a variable can only be assigned in the file that declares it */
+function setEditing(v){editing=v}
+function setFormType(v){formType=v}
+function setKindVal(v){kindVal=v}
 function openSheet(html,submit,focusId){
   formSubmit=submit; delArmed=false;
   $("form").innerHTML=html; wirePicks($("form")); enhanceCamera($("form"));
@@ -7,13 +19,6 @@ function openSheet(html,submit,focusId){
   const c=$("f-cancel"); if(c) c.onclick=closeForm;
   if(focusId) setTimeout(()=>{const el=$(focusId);if(el)el.focus()},60);
 }
-/* call / text / email links: open them outside the app, so the app page never turns blank (on a computer a "tel:" link has nowhere to go) */
-document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest('a[href^="tel:"],a[href^="sms:"],a[href^="mailto:"]');if(!a)return;e.preventDefault();e.stopPropagation();
-  const href=a.getAttribute("href");const num=decodeURIComponent(href.replace(/^(tel|sms|mailto):/i,"").split("?")[0]);const isMail=/^mailto:/i.test(href);
-  const desk=window.matchMedia&&window.matchMedia("(pointer:fine)").matches&&!/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-  if(desk){try{navigator.clipboard&&navigator.clipboard.writeText(num)}catch(x){}toast((isMail?"Email address":"Number")+" copied: "+num+(isMail?"":". Call it from your phone."))
-    if(isMail){try{window.open(href,"_blank","noopener")}catch(x){}}return}
-  try{const w=window.open(href,"_blank");if(!w){const l=document.createElement("a");l.href=href;l.target="_top";l.rel="noopener";document.body.appendChild(l);l.click();l.remove()}}catch(x){toast((isMail?"Email: ":"Number: ")+num)}},true);
 function enhanceCamera(root){
   root.querySelectorAll('input[type=file]').forEach(inp=>{
     if(inp.dataset.cam||inp.hidden||inp.hasAttribute("capture")||!/image/.test(inp.accept||""))return; inp.dataset.cam="1";
@@ -54,14 +59,6 @@ function enhanceCamera(root){
 }
 function showErr(t){const el=$("f-err");if(el){el.textContent=t;el.hidden=false}}
 function closeForm(){$("scrim").hidden=true;$("sheet").hidden=true;editing=null;formSubmit=null;if(S.pending)render()}
-$("scrim").onclick=closeForm;
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("viewer").hidden)closeViewer();else if(!$("sheet").hidden)closeForm()}});
-$("form").addEventListener("submit",ev=>{ev.preventDefault();if(formSubmit)formSubmit()});
-/* phones' app views often don't show the browser's "fill this in" bubble, so say what's missing ourselves */
-$("form").addEventListener("invalid",ev=>{const el=ev.target;if($("form")._invT)return;$("form")._invT=setTimeout(()=>{$("form")._invT=null},300);
-  const lab=(el.closest("label")&&el.closest("label").childNodes[0]&&el.closest("label").childNodes[0].textContent.trim())||el.getAttribute("aria-label")||el.placeholder||"a required box";
-  const msg=el.type==="file"?"Add a photo or file first":`Please fill in: ${lab.replace(/\s*\(.*?\)\s*$/,"")}`;try{showErr(msg)}catch(e){toast(msg)}
-  const v=el.type==="file"&&el.closest("label")&&el.closest("label").style.position==="absolute"?el.closest("form").querySelector(".camrow")||el:el;try{v.scrollIntoView({behavior:"smooth",block:"center"})}catch(e){}if(el.type!=="file")setTimeout(()=>{try{el.focus()}catch(e){}},300)},true);
 const formFoot=(del,save="Save")=>`<div class="err" id="f-err" hidden></div>
   <div class="formactions"><span>${del?`<button type="button" class="linkdanger" id="f-del">Delete</button>`:""}</span>
   <span style="display:flex;gap:10px"><button type="button" class="btn" id="f-cancel">Cancel</button><button type="submit" class="btn primary" id="f-save">${save}</button></span></div>`;
@@ -70,3 +67,21 @@ function touch(){if(S.me&&!ownerMode()&&!S.client)S.db.doc("sheets/"+S.me).updat
 const myColl=c=>S.db.collection("sheets/"+S.me+"/"+c);
 const myDoc=(c,id)=>S.db.doc("sheets/"+S.me+"/"+c+"/"+id);
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initSheet(){
+/* call / text / email links: open them outside the app, so the app page never turns blank (on a computer a "tel:" link has nowhere to go) */
+document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest('a[href^="tel:"],a[href^="sms:"],a[href^="mailto:"]');if(!a)return;e.preventDefault();e.stopPropagation();
+  const href=a.getAttribute("href");const num=decodeURIComponent(href.replace(/^(tel|sms|mailto):/i,"").split("?")[0]);const isMail=/^mailto:/i.test(href);
+  const desk=window.matchMedia&&window.matchMedia("(pointer:fine)").matches&&!/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+  if(desk){try{navigator.clipboard&&navigator.clipboard.writeText(num)}catch(x){}toast((isMail?"Email address":"Number")+" copied: "+num+(isMail?"":". Call it from your phone."))
+    if(isMail){try{window.open(href,"_blank","noopener")}catch(x){}}return}
+  try{const w=window.open(href,"_blank");if(!w){const l=document.createElement("a");l.href=href;l.target="_top";l.rel="noopener";document.body.appendChild(l);l.click();l.remove()}}catch(x){toast((isMail?"Email: ":"Number: ")+num)}},true);
+$("scrim").onclick=closeForm;
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("viewer").hidden)closeViewer();else if(!$("sheet").hidden)closeForm()}});
+$("form").addEventListener("submit",ev=>{ev.preventDefault();if(formSubmit)formSubmit()});
+/* phones' app views often don't show the browser's "fill this in" bubble, so say what's missing ourselves */
+$("form").addEventListener("invalid",ev=>{const el=ev.target;if($("form")._invT)return;$("form")._invT=setTimeout(()=>{$("form")._invT=null},300);
+  const lab=(el.closest("label")&&el.closest("label").childNodes[0]&&el.closest("label").childNodes[0].textContent.trim())||el.getAttribute("aria-label")||el.placeholder||"a required box";
+  const msg=el.type==="file"?"Add a photo or file first":`Please fill in: ${lab.replace(/\s*\(.*?\)\s*$/,"")}`;try{showErr(msg)}catch(e){toast(msg)}
+  const v=el.type==="file"&&el.closest("label")&&el.closest("label").style.position==="absolute"?el.closest("form").querySelector(".camrow")||el:el;try{v.scrollIntoView({behavior:"smooth",block:"center"})}catch(e){}if(el.type!=="file")setTimeout(()=>{try{el.focus()}catch(e){}},300)},true);
+}

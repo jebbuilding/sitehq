@@ -1,4 +1,20 @@
 /* ================= COMPANY DETAILS card (Policies & insurance, seen by everyone) ================= */
+import { $, esc, shortDay, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
+import { binView } from "./deleted-items.js";
+import { auditView } from "./deletion-record.js";
+import { changePinFlow } from "./pin.js";
+import { BRAND_COLS, BRAND_DEF, LOGO_ID, applyColour, brandHex, loadImage, logoId } from "../photos/photos.js";
+import { brochSetup } from "../purchasing/brochures.js";
+import { SAMPLES } from "../purchasing/samples.js";
+import { daysTo } from "../safety/expiry-dates.js";
+import { shrinkImage } from "../safety/training.js";
+import { WTN } from "../safety/waste-transfer-note.js";
+import { QRSITE } from "../sites/qr-sign-in.js";
+export { coData, companyCard, wireCompany };
 const CO_FIELDS=[["name","Company name","JEB Building Services"],["owner","Owner / contact","James Bray"],["address","Business address","e.g. 1 High St, Exmouth EX8 1AA"],["mobile","Mobile",""],["phone","Office phone",""],["email","Email",""],["website","Website",""],
   ["companyNo","Company number",""],["vatNo","VAT number",""],["plInsurer","Public liability insurer",""],["plPolicy","Public liability policy no.",""],["plCover","Public liability cover","e.g. £5,000,000"],["plExpiry","Public liability renewal date",""],
   ["elInsurer","Employer's liability insurer",""],["elPolicy","Employer's liability policy no.",""],["elExpiry","Employer's liability renewal date",""],["other","Other details","e.g. CHAS / Constructionline numbers, bank details for invoices"]];

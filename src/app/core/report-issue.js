@@ -1,4 +1,15 @@
 /* ================= REPORT AN ISSUE with the app ================= */
+import { $, esc, stamp, toast } from "./helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "./sheet.js";
+import { S, ownerMode } from "./state.js";
+import { OWN_TABS, curTab, empTabs, render } from "./tabs-week.js";
+import { closeViewer, openViewer } from "./viewer.js";
+import { blobUrl, uploadErr } from "../files/files.js";
+import { newId, submitJob } from "../files/outbox.js";
+import { allTeam, nameOf } from "../owner/owner.js";
+import { shrinkImage } from "../safety/training.js";
+import { myName } from "../survey/door-window-survey.js";
+export { initReportIssue, issueBadge, tabName };
 const ISS_SEV=[["stuck","I can't do my work"],["bug","Something's wrong, but I can work round it"],["idea","A suggestion"]];
 const issuesAll=()=>allTeam("signoffs").filter(x=>x.type==="issue").concat(ownerMode()?[]:(S.mine.signoffs||[]).filter(x=>x.type==="issue").map(x=>Object.assign({who:S.me},x)));
 function issueBadge(){const b=$("issbtn");if(!b)return;b.hidden=!S.me;const own=ownerMode();
@@ -59,4 +70,7 @@ function openIssues(){
   all.filter(x=>x.status==="open"&&x.who!==S.me).forEach(x=>{S.db.doc(path(x)).update({status:"seen"}).catch(()=>{})});
 }
 
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initReportIssue(){
 if($("issbtn"))$("issbtn").onclick=openIssues;
+}

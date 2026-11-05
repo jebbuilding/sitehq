@@ -1,4 +1,28 @@
 /* ================= REMINDERS (owner asks someone to fill in a form) ================= */
+import { $, addDays, esc, iso, monday, shortDay, stamp, store, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { openFile } from "../files/in-app-files.js";
+import { newId } from "../files/outbox.js";
+import { SENDTO } from "../files/send-to.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { openDetails } from "./personal-details.js";
+import { PDOC_TYPES, openPdoc } from "./personal-documents.js";
+import { openPhoto, photoViewer } from "../photos/photos.js";
+import { planEntries } from "../planner/time-off.js";
+import { openPlanDetail } from "../planner/views.js";
+import { openInvoice } from "../purchasing/invoices.js";
+import { openMatEditor, openReceipt } from "../purchasing/materials-receipts.js";
+import { KINDS, ck } from "../safety/checklists.js";
+import { openCheck } from "../safety/checks.js";
+import { openRaForm } from "../safety/rams.js";
+import { openInduction } from "../safety/site-inductions.js";
+import { openCert, openTalk } from "../safety/training.js";
+import { openSign } from "../sites/plans-specs.js";
+import { same } from "../sites/project-pages.js";
+import { openEntry } from "../timesheets/time.js";
+export { DOW, PROMPT_FORMS, autoClearPrompts, installCard, markPrompt, maybePopPrompts, myOpenPrompts, mySchedDue, openPromptSender, promptBanner, promptForJob, promptsOf, remindersPanel, schedBanner, schedStatus, wireInstall, wirePromptBanner, wireReminders, wireSched };
 const PROMPT_FORMS={
   timesheet:["Fill in your timesheet","time",()=>openEntry("hours")],
   jobtime:["Log your day work / job time","time",()=>openEntry("job")],

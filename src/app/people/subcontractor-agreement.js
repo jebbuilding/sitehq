@@ -1,4 +1,19 @@
 /* ================= SUBCONTRACTOR AGREEMENT: fill in, both sign on the device (or print to sign), saved in their personal documents ================= */
+import { $, esc, iso, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { pdfShow } from "../drawing/paving.js";
+import { uploadFile } from "../files/files.js";
+import { newId } from "../files/outbox.js";
+import { pdfSavedBar, printBlob } from "../files/print.js";
+import { coData } from "../owner/company-details.js";
+import { auditLog } from "../owner/deletion-record.js";
+import { nameOf } from "../owner/owner.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
+import { myName } from "../survey/door-window-survey.js";
+export { SUBAG };
 const SUBAG=(()=>{
 const CIS_OPTS=[["20","CIS registered – 20% deduction"],["30","Not CIS verified – 30% deduction"],["0","Gross payment status – no deduction"],["na","Not CIS (not construction work / limited company paid gross)"]];
 const RATE_OPTS=[["day","Day rate"],["hour","Hourly rate"],["price","Agreed price per job (quoted each job)"],["mixed","Price per job, day rate for extras"]];

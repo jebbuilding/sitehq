@@ -8,16 +8,16 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ROADMAP.md`.
 - End users: James (owner), his trades (employees, CIS subcontractors, agency/other-company workers), and his clients (portal).
 
 ## Current state (Nov 2026)
-- The app is **one HTML page** (`src/shell.html` + the files under `src/app/`), vanilla JS, no framework, no bundler. `src/app/` is one program cut into ~126 files that **share one scope** – they are not modules. `scripts/build.mjs` joins them in the order given by `src/app/manifest.txt`. See `docs/ARCHITECTURE.md` › Source layout, Build, Load order.
+- The app is **one HTML page** (`src/shell.html` + the ES modules under `src/app/`), vanilla JS, no framework. `scripts/build.mjs` joins the modules into one inline script, in the order their imports imply, starting from `src/app/core/boot.js`. See `docs/ARCHITECTURE.md` › Source layout, Anatomy of a file, Start-up, Build.
 - It currently runs as a **claude.ai Artifact** and gets its backend from `window.claude.use("db" | "assets" | "user" | "downloads" | "sample")`. See `docs/PLATFORM.md`. Outside claude.ai those calls return `null` and the app shows "Sign in to use the app".
 - The plan is to run it on our own hosting behind an **adapter** that implements the same API (`docs/ROADMAP.md`). Until cutover, the claude.ai artifact is the live system.
 - **This repo is now the source of truth for code.** Never edit the live artifact from another copy without merging here first.
 
 ## How to make a change
-1. Edit the file under `src/app/` (and `src/shell.html` for CSS/static markup). Find code by searching `src/app/` for the function name or the banner – folder names are a filing system, and shared helpers are not always where the name suggests. Keep the existing style (see below).
+1. Edit the file under `src/app/` (and `src/shell.html` for CSS/static markup). Find code by searching `src/app/` for the function name or the banner – folder names are a filing system, and shared helpers are not always where the name suggests. Keep the existing style (see below). **Never write `import`/`export` lines by hand**: just use the name, then run step 4.
 2. `npm run build` – syntax-checks each file and the whole, and writes `dist/index.html` + `tests/timesheets.html`. `npm run dev` serves the app at `localhost:4321/owner|trade|client` on the fake backend for a look by hand.
 3. Write or update a Playwright test in `tests/features/` that exercises the change through the UI against the fake backend (copy the header of a recent one, e.g. `h412.js` for owner-side, `h395.js` for a seeded owner session, `h400.js` if pdf.js is needed). Run it from `tests/`.
-4. `npm run modules` – regenerates `docs/MODULES.md` (the map of what each file declares and uses) and runs the structure checks: no name declared twice, no name used that is declared nowhere, nothing used at load before the file that declares it. Commit the regenerated file.
+4. `npm run modules` – rewrites each file's import/export block to match the code, regenerates `docs/MODULES.md`, and runs the structure checks (`docs/ARCHITECTURE.md` › Structure checks). Commit what it changes.
 5. `npm test` – runs the same checks (and fails if `docs/MODULES.md` is stale), and must stay at `flows: N passed, 0 failed` and `ERRORS (0)` for owner, trade and client crawls.
 6. Look at generated PDFs/screens (tests write PNG/PDF outputs into `tests/`, git-ignored) – PDF layout bugs (overlaps, text running into lines) only show visually.
 7. Publish (only while still on claude.ai): see `docs/PLATFORM.md` › Publishing. Capabilities are carried forward; never pass `capabilities` unless deliberately changing rules, and then pass the **full** declaration from `platform/capabilities.json`.
@@ -25,7 +25,10 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ROADMAP.md`.
 ## Code conventions (match them)
 - Global state object `S`; `render()` redraws the current tab into `#main`. Owner tab = `S.otab`, trade tab = `S.tab`, per-view filters in `S.f`.
 - Views return/insert **template-literal HTML**; wire handlers right after (`$("id").onclick=...`, `querySelectorAll(...).forEach(b=>b.onclick=...)`). Always `esc()` user data in HTML.
-- Feature modules are IIFEs: `const NAME=(()=>{ ... return {publicFns}; })();`. A new feature is a **new file** in the right folder under `src/app/`, whose first line is a banner `/* ================= NAME: what it does ================= */`, plus a line in `src/app/manifest.txt` **immediately before `core/boot.js`**. Don't reorder existing manifest lines (code that runs at load depends on the order).
+- Feature modules are IIFEs: `const NAME=(()=>{ ... return {publicFns}; })();`. A new feature is a **new file** in the right folder under `src/app/`, whose first line is a banner `/* ================= NAME: what it does ================= */`. There is no list of files to update: once something uses a name from it, `npm run modules` adds the import and the file is in the build.
+- **Top-level names are unique across the whole app** (the check fails otherwise) – pick a name nothing else uses, usually with the feature's prefix.
+- **A file does nothing when loaded.** Only declarations at the top level. If a feature must wire up the page at start-up (a document-level listener, a timer), put that in `function initFeature(){…}` and add the call to the list in `src/app/core/boot.js`.
+- **Assign a top-level variable only in the file that declares it.** From another file, call a setter declared next to it (like `setEditing`, `setFormType` in `core/sheet.js`).
 - Forms use `openSheet(html, onSubmit, focusId)` + `formFoot(canDelete, saveLabel)` + `showErr()` / `closeForm()`. Dialogs use a `div.dimask > div.dimbox`. Full-page views use `openViewer(html)`.
 - Data: `S.db.doc(path).set/update/delete`, `S.db.collection(path).onSnapshot`. Owner-private records live in `todos/*` with a `kind` (see `docs/DATA_MODEL.md`). Trades write to `sheets/{uid}/{entries|checks|photos|invoices|signoffs|signins}`; offline-safe writes go through `submitJob()` (IndexedDB outbox).
 - Files: `uploadFile(blob,name)` → asset id; show with `blobUrl(id)`; fetch with `getFileBlob(id)`; images shrink with `shrinkImage(file,maxPx)`.
@@ -43,7 +46,7 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ROADMAP.md`.
 
 ## Gotchas
 - The files under `src/app/` have very long lines; patch with exact-string replacement and confirm the match count is 1 (a failed or double match silently breaks things). Prefer small, anchored edits.
-- Every file under `src/app/` must start with its banner line and parse on its own; never let a statement or template string run from one file into the next. The banner text is how `scripts/split.mjs` matches a section to its file – rewording a banner makes it look like a new section.
+- Every file under `src/app/` must start with its banner line, then the generated import/export block, and parse on its own. The banner text is how `scripts/split.mjs` matches a section to its file – rewording a banner makes it look like a new section.
 - The fake backend in `tests/harness8src.js` approximates the platform (no rules enforcement, no real latency). Seed overwrites: it seeds `sheets/emp1` after injected extras – set flags through the app's db instead.
 - Use a fresh `ctx.newPage()` per role in tests – the back-button history tracker misfires across `setContent` loads in one tab.
 - A pop-up sheet can cover buttons in tests; close with `#f-cancel` or the viewer close button.

@@ -1,4 +1,12 @@
 /* ================= MORE CALCULATORS: stairs, plasterboard, timber, aggregates ================= */
+import { calcSave, calcState, fmtN, mmM, mmMt, numv } from "./calculator.js";
+import { looseSave } from "./materials.js";
+import { $, esc, toast } from "../core/helpers.js";
+import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { newId } from "../files/outbox.js";
+export { calcAgg, calcBoard, calcStairs, calcTimber };
 const cCard=(n,l,hi)=>`<div class="tot ${hi?"hi":""}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
 function cBind(B,O,again,out){B.querySelectorAll("[data-k]").forEach(el=>{const k=el.dataset.k;const sel=el.tagName==="SELECT"||el.type==="checkbox";
   el.addEventListener(sel?"change":"input",()=>{O[k]=el.type==="checkbox"?el.checked:el.value;calcSave();if(sel)again();else out()})})}

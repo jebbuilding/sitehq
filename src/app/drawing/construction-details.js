@@ -1,4 +1,12 @@
 /* ===== construction details: stud wall connections, framing, headers, ground floor and floor details ===== */
+import { NP_BLD_BOX, NP_BLD_LINE, npBldLine, npBldSym } from "./components.js";
+import { NP_BATHNICE, NP_NICE, NP_REAL, npBath, npNice } from "./paving.js";
+import { NP_ANNO_BOX, NP_MEMBR, npAnnoLine, npAnnoSym, npFrame } from "./symbols-annotation.js";
+import { NP_DES_BOX, npDesignLine, npDesignSym } from "./symbols-design.js";
+import { npElevLine, npElevSym } from "./symbols-elevation.js";
+import { NP_TIMB_BOX, npTimberSym } from "./timber.js";
+import { NP_WALLK, npDrawWalls, npHexMix, npPattern, npWallInfo } from "./walls.js";
+export { NP_COLS, NP_DET_BOX, NP_ELEV_BOX, NP_LINE, NP_MORECOLS, NP_SCALES, NP_SHAPES, NP_SIZES, NP_SYM, NP_U, drawShape, initConstructionDetails, npKeyEntries, npLbl, npStairN, npStairs, npSymLabel, npUnit };
 const NP_DET_BOX=new Set(["sdTlad","sdT3","sdTbk","sdL3","sdLcal","sdLblk","sfDoor","sfPlain","sfPlat","sfWin","sfBrace","sfBlock","shFull","shIns","shVert","shSingle","gfSlab","gfBB","gfTimber","jhanger","jtrim","jstrap","ewCav","ewBrick","ewSolid","ewStud","ewBlock","ewBrk","fdnsec"]);
 function npDetailSym(ctx,o,x0,y0,w,h){const lw=ctx.lineWidth,c=ctx.strokeStyle,x1=x0+w,y1=y0+h,m=Math.min(w,h);const T="#f3e2c4",B=npHexMix(c,0.82);
   const R=(x,y,ww,hh,f)=>{if(ww<0){x+=ww;ww=-ww}if(hh<0){y+=hh;hh=-hh}ctx.save();ctx.fillStyle=f||T;ctx.fillRect(x,y,ww,hh);ctx.restore();ctx.strokeRect(x,y,ww,hh)};
@@ -123,7 +131,7 @@ function npUnit(o){const def=o.k==="ewBrk"?"brick":"block";const u=o.unit||{};co
 const NP_ELEV_BOX=new Set(["ewin","edoor","efrench","ebifold","egarage","eroofl","eroof","elean","edp","ebrick","erender","eclad","etile","einsul","econc","ehard","elevel"]);
 const NP_SYM=new Set(["wc","basin","bath","shower","sink","hob","fridge","wm","boiler","cyl","socket","switch","light","smoke","cu","mh","gully","svp","tap","tree","north","rad","units","stairs"]);
 const NP_LINE=new Set(["wall","dline","stud","cavity","door","door2","sdoor","bifold","opening","beam","pipe","fence","eground","edpc","egutter"]);
-NP_ELEV_BOX.forEach(k=>NP_SYM.add(k));NP_DES_BOX.forEach(k=>NP_SYM.add(k));NP_ANNO_BOX.forEach(k=>NP_SYM.add(k));NP_BLD_BOX.forEach(k=>NP_SYM.add(k));NP_SYM.add("legend");NP_SYM.add("eframe");NP_TIMB_BOX.forEach(k=>NP_SYM.add(k));NP_DET_BOX.forEach(k=>NP_SYM.add(k));NP_BLD_LINE.forEach(k=>NP_LINE.add(k));Object.keys(NP_MEMBR).forEach(k=>NP_LINE.add(k));["hedge","path","retwall","gate"].forEach(k=>NP_LINE.add(k));
+
 function drawShape(ctx,o){const x0=Math.min(o.a[0],o.b[0]),y0=Math.min(o.a[1],o.b[1]),x1=Math.max(o.a[0],o.b[0]),y1=Math.max(o.a[1],o.b[1]),w=x1-x0,h=y1-y0,cx=(x0+x1)/2,cy=(y0+y1)/2;if(NP_NICE.has(o.k)&&!o.plain){npNice(ctx,o,x0,y0,w,h,cx,cy);return}if(NP_BATHNICE.has(o.k)&&!o.plain){npBath(ctx,o,x0,y0,w,h,cx,cy);return}
   if(!(NP_LINE.has(o.k)||o.k==="door")&&(w<3||h<3)){ctx.strokeRect(x0,y0,Math.max(w,0.5),Math.max(h,0.5));return}
   const poly=pts=>{ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.stroke()};
@@ -235,3 +243,17 @@ function npLegend(ctx,o,objs,x0,y0,w,h){const lw=ctx.lineWidth;const ents=npKeyE
 const NP_U=5;/* drawing units per mm of paper */
 const NP_SIZES={A4:[297,210],A3:[420,297],A2:[594,420],A1:[841,594]};
 const NP_SCALES=[0,5,10,20,25,50,100,200,500,1250];
+/* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
+function initConstructionDetails(){
+NP_ELEV_BOX.forEach(k=>NP_SYM.add(k));
+NP_DES_BOX.forEach(k=>NP_SYM.add(k));
+NP_ANNO_BOX.forEach(k=>NP_SYM.add(k));
+NP_BLD_BOX.forEach(k=>NP_SYM.add(k));
+NP_SYM.add("legend");
+NP_SYM.add("eframe");
+NP_TIMB_BOX.forEach(k=>NP_SYM.add(k));
+NP_DET_BOX.forEach(k=>NP_SYM.add(k));
+NP_BLD_LINE.forEach(k=>NP_LINE.add(k));
+Object.keys(NP_MEMBR).forEach(k=>NP_LINE.add(k));
+["hedge","path","retwall","gate"].forEach(k=>NP_LINE.add(k));
+}

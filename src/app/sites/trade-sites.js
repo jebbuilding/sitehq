@@ -1,4 +1,26 @@
 /* ================= TRADES: SITES (plans, RAMS, specs, induction, chat per site) ================= */
+import { openChat, siteChatId } from "../chat/chat.js";
+import { mapDocs } from "../core/data.js";
+import { pickField, pickVal } from "../core/fields.js";
+import { $, esc, shortDay, toast } from "../core/helpers.js";
+import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
+import { S, docRef, ownerMode, siteGone, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
+import { blobUrl, isWord, uploadErr, wordType } from "../files/files.js";
+import { keepFolder, openFile } from "../files/in-app-files.js";
+import { isNetErr } from "../files/outbox.js";
+import { nameOf, teamIds } from "../owner/owner.js";
+import { openPhoto, siteRec, vidExt, vidTag } from "../photos/photos.js";
+import { keyDatesFor, keyTimeline } from "../planner/board.js";
+import { empIndTodo, indFor, indSectionWithId, myInd, wireInduction } from "../safety/site-inductions.js";
+import { docFolders } from "./doc-visibility.js";
+import { siteJobCard, sjCopy, wireSjPhotos } from "./job-details.js";
+import { jobCard, myJobs } from "./job-sheets.js";
+import { gmapDir, miniMap } from "./maps-pins.js";
+import { DOC_CATS, RAMS_SIGN, docPath, docRow, docSite, mySign, unsignedRams, wireDocs } from "./plans-specs.js";
+import { same } from "./project-pages.js";
+import { openJob } from "../survey/door-window-survey.js";
+export { empSitesView, folderIcon, loadSitePhotos, openDoc, plansView0, typeFor };
 function sitePhotosFor(site){if(!S.sph||!S.sph.loaded)return null;const own=ownerMode(),oid=(S.settings||{}).ownerId;const onlyJ=!own&&(S.settings||{}).tradePhotos==="james";
   return S.sph.list.filter(p=>same(p.site,site)&&(!onlyJ||p.who===S.me||p.who===oid)).sort((a,b)=>(b.takenAt||0)-(a.takenAt||0))}
 async function loadSitePhotos(force){if(S.sph&&(S.sph.busy||(!force&&Date.now()-S.sph.at<60000)))return;S.sph=Object.assign(S.sph||{list:[]},{busy:true,at:Date.now()});
@@ -119,7 +141,7 @@ function typeFor(f){
 }
 function openDoc(folder,path,cat0){
   if(!S.assets){toast("Uploads aren't available here. Open the page in claude.ai.");return}
-  formType="doc"; editing=null;
+  setFormType("doc"); setEditing(null);
   const canDir="webkitdirectory" in document.createElement("input");
   openSheet(`<h3 id="sheettitle">Upload plans, specs or RAMS</h3>
     ${pickField("d-site","Site folder",["General"].concat(siteNames()),folder||"","e.g. 12 Marine Way, Exmouth")}
