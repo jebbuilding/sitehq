@@ -14,7 +14,8 @@
     "vendor": "bash scripts/vendor.sh",
     "test": "bash scripts/test.sh",
     "test:backend": "node scripts/test-backend.mjs",
-    "test:feature": "cd tests && node"
+    "test:feature": "cd tests && node",
+    "test:infra": "([ -d infra/node_modules ] || npm ci --prefix infra) && npm run check --prefix infra"
   },
   "devDependencies": {
     "acorn": "^8.19.0",

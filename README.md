@@ -59,6 +59,8 @@ tests/fixtures/       synthetic images/PDFs used by tests (no real data)
 apps-script/          Google Apps Script for the public QR site sign-in page (+ a mock test)
 platform/capabilities.json   the database access rules + capabilities declared on the claude.ai artifact
 platform/types/       the claude.ai artifact runtime type definitions (contract 0.2.90) the app is written against
+infra/                AWS CDK app for our own hosting (dev and prod from one config) + its tests: `npm run test:infra`; guide in infra/README.md – not deployed yet
+.github/              CI (tests + infra checks, deploys main to dev), the manual "promote" to production, CODEOWNERS
 docs/                 architecture, data model, platform notes, roadmap, known issues, privacy
 CLAUDE.md             working instructions for Claude Code in this repo
 ```
