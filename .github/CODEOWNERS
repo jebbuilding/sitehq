@@ -1,0 +1,14 @@
+# Who must approve a pull request, by path. Takes effect once the `main` branch rule
+# "Require review from Code Owners" is switched on (infra/README.md › GitHub settings).
+#
+# TODO(Jasper): replace @JASPER-GITHUB-HANDLE below (five lines) with your GitHub username.
+#
+# Anything that decides who can see or change data, or how code reaches production, needs
+# Jasper's review. Feature code – src/app/ and src/styles/ – is deliberately not listed:
+# it needs green CI only. (A later matching line wins, so keep specific paths below general ones.)
+
+/platform/capabilities.json   @JASPER-GITHUB-HANDLE
+/infra/                       @JASPER-GITHUB-HANDLE
+/server/                      @JASPER-GITHUB-HANDLE
+/scripts/                     @JASPER-GITHUB-HANDLE
+/.github/                     @JASPER-GITHUB-HANDLE

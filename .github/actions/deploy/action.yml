@@ -1,0 +1,122 @@
+# The steps that put one environment live, shared by ci.yml (dev) and promote.yml (prod).
+# It deploys whatever commit is checked out: infrastructure, API code and page together.
+#
+# The calling job must: check the repository out first; have `id-token: write`; and set the
+# SITEHQ_* environment variables that infra/config.ts reads (domain, account, hosted zone).
+name: Deploy SiteHQ
+description: Build the page, deploy one environment's stacks with CDK, upload the page, refresh CloudFront.
+
+inputs:
+  environment:
+    description: Which environment in infra/config.ts to deploy (dev or prod)
+    required: true
+  role-arn:
+    description: ARN of that environment's GitHub deploy role (output of its bootstrap stack)
+    required: true
+  aws-region:
+    description: Region of the main stack
+    required: false
+    default: eu-west-2
+  page-file:
+    description: The built page to publish as index.html
+    required: false
+    default: dist/web/index.html
+
+outputs:
+  url:
+    description: Address of the deployed site
+    value: ${{ steps.stack.outputs.url }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with: { node-version: 22 }
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        npm ci
+        npm ci --prefix infra
+
+    - name: Build the page
+      shell: bash
+      env:
+        PAGE_FILE: ${{ inputs.page-file }}
+      run: |
+        npm run build
+        if [ ! -f "$PAGE_FILE" ]; then
+          echo "::error::npm run build did not produce $PAGE_FILE (the page for our own hosting)"
+          exit 1
+        fi
+
+    - name: Sign in to AWS (short-lived role, no stored keys)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.role-arn }}
+        aws-region: ${{ inputs.aws-region }}
+        role-session-name: sitehq-${{ inputs.environment }}-${{ github.run_id }}
+
+    - name: Deploy the infrastructure and API (CDK)
+      shell: bash
+      working-directory: infra
+      env:
+        DEPLOY_ENV: ${{ inputs.environment }}
+      run: |
+        npx cdk deploy "sitehq-$DEPLOY_ENV" \
+          --context "deployEnv=$DEPLOY_ENV" \
+          --require-approval never \
+          --outputs-file "$RUNNER_TEMP/cdk-outputs.json"
+
+    - name: Read what was deployed
+      id: stack
+      shell: bash
+      env:
+        DEPLOY_ENV: ${{ inputs.environment }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        commit=$(git rev-parse HEAD)
+        export COMMIT="$commit"
+        node --input-type=module -e '
+          import { readFileSync, writeFileSync, appendFileSync } from "node:fs";
+          const { RUNNER_TEMP, DEPLOY_ENV, GITHUB_OUTPUT, COMMIT, RUN_URL } = process.env;
+          const out = JSON.parse(readFileSync(`${RUNNER_TEMP}/cdk-outputs.json`, "utf8"))[`sitehq-${DEPLOY_ENV}`];
+          for (const key of ["PageBucketName", "DistributionId", "SiteUrl", "PageConfig"])
+            if (!out?.[key]) throw new Error(`stack output ${key} is missing`);
+          JSON.parse(out.PageConfig); // must be valid JSON before it is published
+          writeFileSync(`${RUNNER_TEMP}/config.json`, out.PageConfig);
+          writeFileSync(`${RUNNER_TEMP}/version.json`,
+            JSON.stringify({ env: DEPLOY_ENV, commit: COMMIT, deployedAt: new Date().toISOString(), run: RUN_URL }));
+          appendFileSync(GITHUB_OUTPUT, `bucket=${out.PageBucketName}\ndistribution=${out.DistributionId}\nurl=${out.SiteUrl}\n`);
+        '
+
+    - name: Upload the page
+      shell: bash
+      env:
+        PAGE_FILE: ${{ inputs.page-file }}
+        BUCKET: ${{ steps.stack.outputs.bucket }}
+      run: |
+        # no-cache = "check with the server before using a stored copy", so a new version shows at once
+        aws s3 cp "$PAGE_FILE" "s3://$BUCKET/index.html" \
+          --content-type "text/html; charset=utf-8" --cache-control "no-cache"
+        aws s3 cp "$RUNNER_TEMP/config.json" "s3://$BUCKET/config.json" \
+          --content-type "application/json" --cache-control "no-cache"
+        aws s3 cp "$RUNNER_TEMP/version.json" "s3://$BUCKET/version.json" \
+          --content-type "application/json" --cache-control "no-cache"
+
+    - name: Refresh CloudFront
+      shell: bash
+      env:
+        DISTRIBUTION: ${{ steps.stack.outputs.distribution }}
+      run: |
+        id=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths "/*" \
+          --query Invalidation.Id --output text)
+        aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION" --id "$id"
+
+    - name: Summary
+      shell: bash
+      env:
+        DEPLOY_ENV: ${{ inputs.environment }}
+        URL: ${{ steps.stack.outputs.url }}
+      run: |
+        echo "Deployed \`$(git rev-parse --short HEAD)\` to **$DEPLOY_ENV**: $URL (\`$URL/version.json\` says what is live)" >> "$GITHUB_STEP_SUMMARY"

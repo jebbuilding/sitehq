@@ -37,7 +37,7 @@ Why not the alternatives: **Firebase** would be less code (rules, live updates a
 
 ### Steps
 1. Backend code in `server/`: the API with the rules interpreter, WebSocket handlers, file upload. Rules tests that mirror the matrix in `docs/DATA_MODEL.md`, run against DynamoDB Local.
-2. Infrastructure in `infra/` as an **AWS CDK** app (see *Infrastructure* below): table, API, WebSocket, buckets, CloudFront, Cognito, DNS.
+2. ✅ *Written and tested without AWS (Nov 2026); not yet deployed.* Infrastructure in `infra/` as an **AWS CDK** app (see *Infrastructure* below): table, API, WebSocket, buckets, CloudFront, Cognito, DNS.
 3. `src/platform/aws-adapter.js` exposing `window.claude = { use(name) }` with the same shapes as `platform/types/*.d.ts` (only the members the app uses). The build produces a second page with the adapter in front of the app.
 4. Sign-in screen (emailed code); invite flow for trades; the client portal's join-code flow.
 5. Point the existing Playwright suite at the adapter + local backend, alongside the fake – the UI tests should pass unchanged.
@@ -47,20 +47,24 @@ Why not the alternatives: **Firebase** would be less code (rules, live updates a
 9. Cutover: freeze the artifact (read-only banner), final export, import, verify, invite people by email, "Add to home screen". Then delete the data from claude.ai, and the build chats that contain it.
 
 ### Infrastructure: AWS CDK (`infra/`)
-- **One CDK app, one stack definition, instantiated once per environment** (`dev`, `prod`) from a small config file: environment name, AWS account and region, domain. Nothing about an environment is hard-coded in the stack.
-- **Every resource is told apart by environment** three ways: its **name** carries it (`sitehq-dev-…`, `sitehq-prod-…`), it is **tagged** (`project=sitehq`, `env=dev|prod`, applied to the whole stack), and each environment has its own **subdomain** (for example `dev.<domain>` and `app.<domain>`, with certificates and DNS records created by the stack).
-- Because names, tags and subdomains carry the environment, both can live in one AWS account or in two. Two accounts is the stronger separation for production personal data (a mistake with dev credentials cannot reach it); the config decides, the stack does not change.
-- Production-only settings are switches in the config, not a different stack: deletion protection and point-in-time recovery on the table, bucket versioning, retained resources on stack deletion, tighter CORS and sign-in settings.
-- `cdk synth` for both environments runs in CI on every pull request; `cdk deploy` runs only from the release workflows below.
-- Still to supply: the domain name and hosted zone, and the AWS account id(s).
+Status, Nov 2026: **built, not deployed.** The CDK app, its tests and the release workflows are in the repo and pass `npm run test:infra` (`cdk synth` for both environments, assertion tests, workflow lint) with placeholder account ids and domain. `infra/README.md` is the guide: what to fill in, bootstrap, first deploy, promote and roll back, cost. The points below are the design; a ✅ means the repo now does it.
+- ✅ **One CDK app, one stack definition, instantiated once per environment** (`dev`, `prod`) from a small config file: environment name, AWS account and region, domain. Nothing about an environment is hard-coded in the stack.
+- ✅ **Every resource is told apart by environment** three ways: its **name** carries it (`sitehq-dev-…`, `sitehq-prod-…`), it is **tagged** (`project=sitehq`, `env=dev|prod`, applied to the whole stack), and each environment has its own **subdomain** (for example `dev.<domain>` and `app.<domain>`, with certificates and DNS records created by the stack).
+- ✅ Because names, tags and subdomains carry the environment, both can live in one AWS account or in two. Two accounts is the stronger separation for production personal data (a mistake with dev credentials cannot reach it); the config decides, the stack does not change.
+- ✅ Production-only settings are switches in the config, not a different stack: deletion protection and point-in-time recovery on the table, bucket versioning, retained resources on stack deletion, tighter CORS and sign-in settings.
+- ✅ `cdk synth` for both environments runs in CI on every pull request; `cdk deploy` runs only from the release workflows below.
+- As built, where it differs from the table above: `/_blob/<id>` goes through CloudFront to the **API**, not straight to the bucket – the server checks the sign-in before sending a file, and the files bucket is reachable by nothing else. Live updates are at `wss://ws.<subdomain>.<domain>`. Sign-in emails go through **SES**, which emailed-code sign-in requires. A small hand-deployed **bootstrap stack** per environment holds what must exist first: the GitHub deploy role and the email identity.
+- Open: Cognito does not allow a second factor together with emailed-code sign-in, so GDPR decision 9 ("a second factor for the owner") needs a different sign-in method for the owner. The connections table is not yet used by `server/` (`infra/README.md` › Known limits).
+- Still to supply: the domain name and hosted zone, and the AWS account id(s) – as GitHub variables (`infra/README.md` › What you need to fill in).
 
 ### Release flow
+Status, Nov 2026: the workflows (`.github/workflows/ci.yml`, `promote.yml`), the shared deploy steps and `CODEOWNERS` are written and lint clean; none has run against AWS, and the GitHub side (variables, the `production` environment and its reviewer, branch rules) is still to set up – `infra/README.md` › GitHub settings.
 - **Two environments**, `dev` (synthetic data only, ever) and `prod`, both deployed by CDK from GitHub Actions.
-- **`main` → dev**: every merge runs the tests and deploys to dev. James builds features through Claude on a branch, opens a pull request, and tries the result on his iPad at the dev address.
-- **`production` branch → prod**: a manually run "promote" GitHub Action fast-forwards `production` to a chosen, tested `main` commit and deploys it (page, API and any infrastructure change together). It needs Jasper's approval each time (GitHub Environment protection). Nobody pushes to `production` directly.
-- **Review gates** (CODEOWNERS): changes to `platform/capabilities.json`, `infra/`, `server/`, sign-in, `scripts/` and `.github/` need Jasper's review before merge. Feature code under `src/app/` and `src/styles/` needs green CI only.
-- **Credentials**: GitHub deploys through short-lived AWS roles (OIDC); no long-lived keys in GitHub.
-- **Rollback**: promote the previous commit. Data: DynamoDB point-in-time recovery, S3 versioning.
+- ✅ **`main` → dev**: every merge runs the tests and deploys to dev. James builds features through Claude on a branch, opens a pull request, and tries the result on his iPad at the dev address.
+- ✅ **`production` branch → prod**: a manually run "promote" GitHub Action fast-forwards `production` to a chosen, tested `main` commit and deploys it (page, API and any infrastructure change together). It needs Jasper's approval each time (GitHub Environment protection). Nobody pushes to `production` directly.
+- ✅ **Review gates** (CODEOWNERS; Jasper's GitHub username still to fill in): changes to `platform/capabilities.json`, `infra/`, `server/`, sign-in, `scripts/` and `.github/` need Jasper's review before merge. Feature code under `src/app/` and `src/styles/` needs green CI only.
+- ✅ **Credentials**: GitHub deploys through short-lived AWS roles (OIDC); no long-lived keys in GitHub. The dev role can be taken only by workflows on `main`, the prod role only by a job in the `production` GitHub Environment.
+- ✅ **Rollback**: promote the previous commit. Because `production` is only ever fast-forwarded, a rollback deploys the earlier commit and leaves the branch where it is: the branch records the newest commit approved for production, `/version.json` on the site records what is live. Data: DynamoDB point-in-time recovery, S3 versioning (old file versions are kept 30 days).
 
 ### GDPR decisions (James is the controller; items 1–4 are his to sign off – this is not legal advice)
 1. **Paperwork**: data protection impact assessment (health information, staff time and location), ICO registration, written terms with anyone who can reach production data (including Jasper), record of what is held and why.

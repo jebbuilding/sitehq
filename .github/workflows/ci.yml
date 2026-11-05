@@ -1,0 +1,64 @@
+# Every push and pull request: the app's tests, and the infrastructure checks.
+# A push to main that passes both is then deployed to the dev environment.
+# How the release flow fits together: infra/README.md.
+name: ci
+on:
+  push:
+    # `production` only ever points at commits that were already tested on main (promote.yml)
+    branches-ignore: [production]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run vendor
+      - run: npm test
+      - run: cd apps-script && node mock_test.js
+
+  infra:
+    # No AWS access: `cdk synth` for dev and prod with the placeholder settings, the assertion
+    # tests on the templates, and a lint of these workflow files.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12 "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: npm install # the Lambda functions are bundled from server/, whose dependencies live here
+      - run: npm run test:infra
+
+  deploy-dev:
+    name: deploy to dev
+    needs: [test, infra]
+    # Skipped (not failed) until the dev deploy role exists and its ARN is set as a variable.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN_DEV != ''
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # lets this job take the dev deploy role; there are no stored AWS keys
+    env:
+      SITEHQ_DOMAIN: ${{ vars.SITEHQ_DOMAIN }}
+      SITEHQ_DEV_ACCOUNT: ${{ vars.SITEHQ_DEV_ACCOUNT }}
+      SITEHQ_DEV_HOSTED_ZONE_ID: ${{ vars.SITEHQ_DEV_HOSTED_ZONE_ID }}
+      SITEHQ_DEV_HOSTED_ZONE_NAME: ${{ vars.SITEHQ_DEV_HOSTED_ZONE_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/deploy
+        with:
+          environment: dev
+          role-arn: ${{ vars.AWS_ROLE_ARN_DEV }}

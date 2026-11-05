@@ -1,0 +1,154 @@
+# Put a tested commit from main live in production. Run by hand: Actions › promote › Run workflow.
+#
+#   1. check   – the commit is on main and its `ci` run on main passed (tests, and the deploy
+#                to dev if dev is set up).
+#   2. deploy  – waits for the reviewer of the `production` GitHub Environment. Once approved,
+#                it fast-forwards the `production` branch to the commit and deploys that commit
+#                (infrastructure, API and page together).
+#
+# Rolling back = running this again with an earlier commit. The `production` branch is only
+# ever fast-forwarded, so for an earlier commit the branch is left where it is and that commit
+# is deployed: `production` records the newest commit ever approved for production, and
+# https://<prod address>/version.json (and this workflow's run list) record what is live.
+# See infra/README.md › Promote and roll back.
+name: promote
+run-name: Promote ${{ inputs.commit || 'the tip of main' }} to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit on main to put live (SHA). Empty = the tip of main. An earlier commit = roll back."
+        type: string
+        required: false
+
+permissions: {}
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: check the commit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      mode: ${{ steps.resolve.outputs.mode }}
+    steps:
+      - name: Must be run from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run this workflow from the main branch (it was run from $GITHUB_REF_NAME)"
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Resolve the commit, check it passed CI, compare it with production
+        id: resolve
+        env:
+          INPUT: ${{ inputs.commit }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+
+          if [ -n "$INPUT" ] && ! [[ "$INPUT" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+            fail "\"$INPUT\" is not a commit SHA (7 to 40 hex characters)"
+          fi
+          sha=$(git rev-parse --verify --quiet "${INPUT:-origin/main}^{commit}") \
+            || fail "No commit $INPUT in this repository"
+          git merge-base --is-ancestor "$sha" origin/main \
+            || fail "$sha is not on main. Only commits on main can be promoted."
+
+          # Passed CI: a successful `ci` run for exactly this commit, from a push to main.
+          passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$sha" \
+            --branch main --event push --status success --json databaseId --jq length)
+          [ "$passed" -gt 0 ] \
+            || fail "$sha has no successful ci run on main. Pick a commit with a green tick in the main branch history."
+
+          # Where it stands relative to the production branch decides whether the branch moves.
+          if ! git rev-parse --verify --quiet origin/production >/dev/null; then
+            mode=first      # no production branch yet: create it
+          elif [ "$(git rev-parse origin/production)" = "$sha" ]; then
+            mode=redeploy   # already the tip: deploy it again, branch stays
+          elif git merge-base --is-ancestor origin/production "$sha"; then
+            mode=forward    # newer than production: fast-forward the branch
+          elif git merge-base --is-ancestor "$sha" origin/production; then
+            mode=rollback   # older than production: branch stays, this commit is deployed
+          else
+            fail "$sha is neither ahead of nor behind the production branch, so it cannot be fast-forwarded to. Promote a commit from the first-parent history of main."
+          fi
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Promote to production"
+            echo "- Commit: \`$sha\` – $(git log -1 --format=%s "$sha")"
+            echo "- Passed ci on main: yes"
+            case "$mode" in
+              first)    echo "- First promotion: the \`production\` branch will be created at this commit." ;;
+              forward)  echo "- Forward: \`production\` will be fast-forwarded from \`$(git rev-parse --short origin/production)\`."
+                        echo "- Commits going live:"; git log --format='  - %h %s' "origin/production..$sha" | head -50 ;;
+              redeploy) echo "- This commit is already the tip of \`production\`: it will be deployed again." ;;
+              rollback) echo "- **Roll back**: this commit is behind \`production\` (\`$(git rev-parse --short origin/production)\`). The branch is not moved; this commit is deployed."
+                        echo "- Commits being taken out of service:"; git log --format='  - %h %s' "$sha..origin/production" | head -50 ;;
+            esac
+            echo "- Waiting for approval in the \`production\` environment."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: deploy to production
+    needs: check
+    runs-on: ubuntu-latest
+    # The gate: this job does not start until a required reviewer of the `production`
+    # environment approves it. Only a job in this environment can take the prod deploy role.
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    permissions:
+      contents: write # to fast-forward the production branch
+      id-token: write # to take the prod deploy role; there are no stored AWS keys
+    env:
+      SITEHQ_DOMAIN: ${{ vars.SITEHQ_DOMAIN }}
+      SITEHQ_PROD_ACCOUNT: ${{ vars.SITEHQ_PROD_ACCOUNT }}
+      SITEHQ_PROD_HOSTED_ZONE_ID: ${{ vars.SITEHQ_PROD_HOSTED_ZONE_ID }}
+      SITEHQ_PROD_HOSTED_ZONE_NAME: ${{ vars.SITEHQ_PROD_HOSTED_ZONE_NAME }}
+      SHA: ${{ needs.check.outputs.sha }}
+    steps:
+      - name: Production must be configured
+        env:
+          ROLE: ${{ vars.AWS_ROLE_ARN_PROD }}
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "::error::The variable AWS_ROLE_ARN_PROD is not set (infra/README.md › GitHub variables)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+          fetch-depth: 0
+          # Optional deploy key (a secret of the `production` environment, so it is only readable
+          # after approval). With it, the push below is not subject to GitHub's rule that its
+          # built-in token may not push changes to workflow files. See infra/README.md.
+          ssh-key: ${{ secrets.PRODUCTION_PUSH_KEY }}
+
+      - name: Fast-forward the production branch
+        if: needs.check.outputs.mode == 'first' || needs.check.outputs.mode == 'forward'
+        run: |
+          # A plain push: git and GitHub refuse it unless it is a fast-forward. Never forced.
+          git push origin "$SHA:refs/heads/production"
+
+      - name: Deploy
+        id: deploy
+        uses: ./.github/actions/deploy
+        with:
+          environment: prod
+          role-arn: ${{ vars.AWS_ROLE_ARN_PROD }}

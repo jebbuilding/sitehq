@@ -127,6 +127,26 @@ src/shell.html       ─► shell with that stylesheet inlined + <script> + the 
 - The build refuses to run if a file under `src/app/` is not reachable from `core/boot.js` through imports (it would be left out), if an import points at a missing file, or if a file does not parse on its own.
 - `dist/index.html` is the single file that gets published; the platform wraps it in its own `<html>` skeleton. `npm run dev` serves the same assembly with the tests' fake backend.
 
+## Infrastructure and release (`infra/`, `.github/`)
+Not part of the page and not deployed yet (Nov 2026): what SiteHQ will run on in AWS (`docs/ROADMAP.md` › Phase 1), as an **AWS CDK** app in TypeScript with its own `package.json`. `infra/README.md` is the guide; this is the map.
+
+```
+infra/config.ts ─► one entry per environment (dev, prod): account, region, domain, subdomain,
+                   hosted zone, and the production switches. Nothing else knows an environment.
+lib/app.ts      ─► for each environment, three stacks named sitehq-<env>…
+   …-bootstrap     GitHub's sign-in provider, the deploy role, the email identity (by hand, once)
+   …-edge          the CloudFront certificate, in us-east-1 because CloudFront requires it
+   sitehq-<env>    data table, connections table, page and files buckets, HTTP API and WebSocket API
+                   with a Node 22 Lambda each, Cognito user pool, KMS key, log groups, CloudFront,
+                   DNS – everything in eu-west-2
+```
+
+- Every resource carries its environment in its name (`sitehq-dev-…`), its tags (`project`, `env`) and its address (`dev.<domain>`, `app.<domain>`), so dev and prod can share an AWS account or have one each.
+- One address serves everything: CloudFront sends `/api/*` and `/_blob/*` to the API (never cached) and the rest to the page bucket. The page finds its backend from `/config.json`, written at deploy time, so the same built page runs in every environment.
+- The Lambda code is `server/handlers/http.mjs` and `ws.mjs`, bundled by `infra/lib/bundle.ts` (esbuild). While `server/` does not exist the stack uses `infra/placeholder/handler.mjs`, marked as such; production refuses to deploy it.
+- **Release**: `.github/workflows/ci.yml` runs the app's tests and `npm run test:infra` on every push and pull request, and deploys `main` to dev when both pass. `promote.yml` is run by hand: it checks the chosen commit passed CI on `main`, waits for the reviewer of the `production` GitHub Environment, fast-forwards the `production` branch and deploys prod. Both use `.github/actions/deploy` (CDK deploy → upload the page → refresh CloudFront). GitHub reaches AWS through short-lived roles; there are no stored AWS keys.
+- **Checks without AWS**: `npm run test:infra` – type check, `cdk synth` of every stack, assertion tests on the templates and workflow files (`infra/test/`), `actionlint`.
+
 ## Structure checks
 `npm run check` (also run by `npm test` and CI) parses every file with acorn + eslint-scope and fails if:
 - a name is declared at the top level of two files;

@@ -1,0 +1,27 @@
+{
+  "name": "sitehq-infra",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AWS CDK app for SiteHQ: one stack definition, one instance per environment (dev, prod). See README.md.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "synth": "cdk synth --quiet",
+    "test": "node --import tsx --test test/*.test.ts",
+    "lint:workflows": "bash scripts/lint-workflows.sh",
+    "check": "npm run typecheck && npm run synth && npm test && npm run lint:workflows",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "aws-cdk": "2.1148.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.0",
+    "typescript": "~5.9.0",
+    "yaml": "^2.9.1"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.275.0",
+    "constructs": "^10.5.0"
+  }
+}
