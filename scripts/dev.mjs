@@ -56,7 +56,9 @@ window.claude={use:async name=>{
 let logoId = null; // read from the app each time a page is built
 function page(role, onboarding) {
   let app = bundleApp();
-  logoId = between(app, 'const LOGO_ID="', '"', "LOGO_ID in the app");
+  const logo = /const LOGO_ID\s*=\s*"([^"]+)"/.exec(app);
+  if (!logo) throw new Error("dev: cannot find LOGO_ID in the app – has it changed shape?");
+  logoId = logo[1];
   if (role === "trade" && !onboarding) { // as the crawl does: skip the "fill in your details" gate
     const gate = "function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}";
     if (!app.includes(gate)) throw new Error("dev: cannot find detailsDone in the app – has it changed shape?");

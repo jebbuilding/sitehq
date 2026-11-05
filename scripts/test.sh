@@ -6,6 +6,9 @@ cd "$(dirname "$0")/.."
 node scripts/build.mjs
 node scripts/modules.mjs --check   # structure checks + docs/MODULES.md is current
 npx prettier --check src/app --log-level warn   # formatting (fix with: npm run format)
+# the dev server finds a few things in the app by their source text: make sure it still builds a page for each role
+PORT=4399 node scripts/dev.mjs >/dev/null & devpid=$!; sleep 1
+for r in owner trade client; do curl -sf -o /dev/null "http://127.0.0.1:4399/$r" || { echo "dev server: /$r failed"; kill $devpid; exit 1; }; done; kill $devpid
 cd tests
 [ -d jspdfpkg ] || ../scripts/vendor.sh
 out=$(node flows.js 2>&1 || true)
