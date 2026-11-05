@@ -45,7 +45,8 @@ Alternatives considered: **AWS** (S3+CloudFront hosting is fine, but DynamoDB/Ap
 - Replace the catch-all `todos` with proper collections (`clients`, `suppliers`, `surveys`, `wtns`, …) via migration.
 
 ## Phase 3 – modernise (only where it pays)
-- Split `app.js` into ES modules along the existing banners/IIFEs (mechanical; Vite build). Add JSDoc types / `// @ts-check` before any framework.
+- [x] Cut `app.js` into files along the existing banners (`src/app/`, Nov 2026) – same script once joined, no behaviour change.
+- Turn those files into real ES modules (explicit imports, a tab registry instead of load-time wiring, esbuild/Vite producing the same single page). Only after the artifact is frozen: until then artifact-side versions must merge back as plain text. Add JSDoc types / `// @ts-check` before any framework.
 - Component framework screen-by-screen if desired (Svelte/React) behind the same `S`/`render()` contract; don't big-bang rewrite – the tests encode the behaviour.
 - Native wrapper (Capacitor) for App Store/Play only if push notifications / camera integration justify it. Most updates still ship as web content.
 - Multi-tenant (company id on every document) only if SiteHQ is to be sold to other firms.

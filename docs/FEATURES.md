@@ -1,6 +1,6 @@
 # Feature inventory
 
-Where to look: search `src/app.js` for the banner (`/* ================= NAME`) or the function named.
+Where to look: search `src/app/` for the function or module named; each file's first line is its banner (`/* ================= NAME`). Folders are described in `docs/ARCHITECTURE.md` › Source layout.
 
 ## Owner tabs (`OWN_TABS`, dispatcher in `render()`)
 | Tab | Function / module | Highlights |

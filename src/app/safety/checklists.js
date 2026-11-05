@@ -1,0 +1,50 @@
+/* ================= CHECKLISTS ================= */
+const KINDS={
+  vehicle:{name:"Vehicle",plural:"Vehicles",reading:"Mileage",ph:"e.g. WK21 JEB – Ford Transit Custom",items:[
+    ["tyres","Tyres: tread, pressure, no cuts or bulges"],["wheels","Wheel nuts secure"],["lights","Lights, indicators and brake lights"],
+    ["brakes","Brakes and handbrake"],["steering","Steering"],["mirrors","Mirrors, windscreen and windows"],["wipers","Wipers and washer fluid"],
+    ["fluids","Oil and coolant levels"],["warning","No dashboard warning lights"],["horn","Horn"],["belts","Seat belts"],
+    ["body","Bodywork: no new damage"],["plates","Number plates clean and readable"],["load","Load and roof rack secure"],
+    ["kit","First aid kit and fire extinguisher"],["fuel","Fuel and AdBlue enough for the day"]]},
+  digger:{name:"Digger",plural:"Diggers",reading:"Hour meter",ph:"e.g. Kubota KX057 mini digger",items:[
+    ["tracks","Tracks, rollers and sprockets: tension, no damage"],["bucket","Bucket and teeth: secure, not worn"],
+    ["hitch","Quick hitch locked and safety pin fitted"],["pins","Boom, dipper and pins: no cracks, pins secure"],
+    ["hoses","Hydraulic hoses and rams: no leaks or damage"],["oil","Engine oil, coolant and hydraulic oil levels"],
+    ["grease","Pins and bushes greased"],["fuel","Fuel level"],["cab","Cab, glass and mirrors: clean, undamaged"],
+    ["belt","Seat belt"],["isolator","Controls and isolation (safety) lever work"],["alarm","Travel alarm, horn and beacon"],
+    ["lights","Work lights"],["slew","Slew brake and slew lock"],["blade","Dozer blade"],["checkvalve","Hose burst check valves (if lifting)"],
+    ["warning","No warning lights after start-up"],["extinguisher","Fire extinguisher"]]},
+  trailer:{name:"Trailer",plural:"Trailers",reading:null,ph:"e.g. Ifor Williams plant trailer",items:[
+    ["hitch","Coupling locked onto the tow ball, no damage"],["breakaway","Breakaway cable clipped to the vehicle (not the tow ball)"],
+    ["plug","Electrical plug connected, cable not dragging"],["lights","Lights: indicators, brake, side and fog lights"],
+    ["plate","Number plate fitted, matches the towing vehicle, and lit"],["tyres","Tyres: tread, pressure, no cuts or bulges"],
+    ["wheels","Wheel nuts secure"],["brakes","Brakes work and handbrake released before towing"],
+    ["jockey","Jockey wheel raised and locked, prop stands up"],["ramps","Ramps or tailgate secured"],
+    ["load","Load strapped down and evenly spread"],["weight","Not overloaded (within trailer and vehicle limits)"],
+    ["body","Floor, sides and mudguards undamaged and secure"],["chassis","Chassis and suspension: no visible damage"]]},
+  machine:{name:"Machinery",plural:"Machinery & small plant",reading:null,ph:"e.g. Belle cement mixer, Stihl TS410 cut-off saw",items:[
+    ["guards","Guards fitted and secure"],["casing","Casing and handles undamaged"],["lead","Power lead, plug and hoses: no damage"],
+    ["pat","PAT test or inspection in date"],["switch","On/off switch and emergency stop work"],["blades","Blades, discs or bits: correct and undamaged"],
+    ["levels","Fuel and oil levels"],["leaks","No fuel or oil leaks"],["caps","Fuel cap and exhaust secure"],
+    ["ppe","Right PPE available (eye, ear, dust)"],["hav","Vibration (HAV) label readable"],["runs","Runs with no unusual noise or vibration"]]},
+  scaffold:{name:"Scaffold",plural:"Scaffolds",inspect:true,sites:true,asset:"Scaffold or site",reading:null,ph:"e.g. 12 Marine Way – rear elevation scaffold",items:[
+    ["tag","Scaffold tag in place and in date (inspected in the last 7 days)"],["base","Base plates and sole boards on firm, level ground"],
+    ["standards","Uprights straight and plumb, ledgers and transoms secure"],["ties","Ties and bracing in place, none removed"],
+    ["boards","Platform fully boarded, boards secure, no gaps or trip hazards"],["guards","Top and middle guardrails and toe boards on every open edge"],
+    ["access","Ladder access tied, and sticks up at least 1 m above the platform"],["brick","Brick guards or netting where materials could fall"],
+    ["load","Not overloaded, materials spread out"],["altered","No changes made by anyone other than the scaffolder"],["weather","No damage after high wind or bad weather"]]},
+  excavation:{name:"Excavation",plural:"Excavations",inspect:true,sites:true,asset:"Excavation or site",reading:null,ph:"e.g. 12 Marine Way – foundation trench",items:[
+    ["support","Sides supported, stepped or battered back: no sign of collapse"],["edge","Barriers or edge protection round the excavation"],
+    ["spoil","Spoil and materials kept back from the edge"],["vehicles","Vehicles and plant kept back, stop blocks where needed"],
+    ["access","Safe way in and out (ladder tied and sticking up 1 m)"],["water","No flooding or water building up"],
+    ["services","Underground services found, marked and protected"],["air","No fumes or bad air (exhaust, gas)"],
+    ["nearby","Nearby walls, footings and paths not being undermined"],["signs","Signs and lighting, and fenced off from the public"]]},
+  ladder:{name:"Ladder",plural:"Ladders & steps",inspect:true,reading:null,ph:"e.g. Youngman 3-section ladder",items:[
+    ["stiles","Stiles not bent, split or damaged"],["rungs","Rungs or treads sound, none loose or missing"],["feet","Feet in place and in good condition"],
+    ["locks","Locks, hinges and stays work (steps and combination ladders)"],["clean","Clean: no paint, oil, mud or ice"],
+    ["label","Label readable and rated for trade use (EN 131 Professional)"],["setup","Set up at the right angle (1 out for 4 up) and tied or footed"],["top","Sticks up 1 m above the landing, or something to hold on to"]]}
+};
+const ck=c=>Object.assign({kind:"vehicle"},c,{asset:c.asset||c.reg||"",reading:c.reading??c.mileage??""});
+function defectsOf(c){const k=KINDS[ck(c).kind]||KINDS.vehicle;return k.items.filter(([key])=>c.items&&c.items[key]==="defect").map(([,l])=>l.split(":")[0])}
+const hasProblem=c=>defectsOf(c).length>0||c.safe===false;
+

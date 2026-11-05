@@ -1,15 +1,14 @@
 // Local dev server: the app wrapped in the test suite's fake platform, so it can be used in a real browser.
 //   npm run dev  →  http://localhost:4321/owner | /trade | /client     (PORT and HOST env vars override)
-// Sources are re-read on every request: edit src/, reload the page.
+// Sources are re-read and re-assembled (scripts/bundle.mjs) on every request: edit src/, reload the page.
 // The database is the in-memory fake from tests/harness8src.js with the seed from tests/crawl.js – it lives in the
 // page, so a reload resets it, tabs do not share data, and no access rules are enforced. Synthetic data only.
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import zlib from "node:zlib";
-import { fileURLToPath } from "node:url";
+import { bundleApp, root } from "./bundle.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = f => fs.readFileSync(path.join(root, f), "utf8");
 const PORT = Number(process.env.PORT) || 4321, HOST = process.env.HOST || "127.0.0.1";
 const ROLES = ["owner", "trade", "client"];
@@ -54,12 +53,13 @@ window.claude={use:async name=>{
 })();
 </script>`;
 
+let logoId = null; // read from the app each time a page is built
 function page(role, onboarding) {
-  let app = read("src/app.js");
-  try { new Function(app); } catch (e) { throw new Error("Syntax error in src/app.js: " + e.message); }
+  let app = bundleApp();
+  logoId = between(app, 'const LOGO_ID="', '"', "LOGO_ID in the app");
   if (role === "trade" && !onboarding) { // as the crawl does: skip the "fill in your details" gate
     const gate = "function detailsDone(d){return !!(d&&d.confirmedAt)}";
-    if (!app.includes(gate)) throw new Error("dev: cannot find detailsDone in src/app.js – has it changed shape?");
+    if (!app.includes(gate)) throw new Error("dev: cannot find detailsDone in the app – has it changed shape?");
     app = app.replace(gate, () => "function detailsDone(d){return true}");
   }
   // The platform supplies the <html> skeleton (and viewport) around the published fragment; so do we.
@@ -69,7 +69,7 @@ function page(role, onboarding) {
 
 // Uploaded files, plus stand-ins for the asset ids the seed data points at.
 const blobs = new Map();
-// The real company logo exists only as an asset on the live artifact (src/app.js LOGO_ID). Stand in a plain grey
+// The real company logo exists only as an asset on the live artifact (LOGO_ID in the app). Stand in a plain grey
 // block so the header and PDFs have something in the logo slot.
 function greyPng(w, h) {
   const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]), out = Buffer.alloc(body.length + 8); out.writeUInt32BE(data.length, 0); body.copy(out, 4); out.writeUInt32BE(zlib.crc32(body), out.length - 4); return out; };
@@ -77,7 +77,7 @@ function greyPng(w, h) {
   const rows = Buffer.alloc((w + 1) * h, 0x9a); for (let y = 0; y < h; y++) rows[y * (w + 1)] = 0; // filter byte per row
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", head), chunk("IDAT", zlib.deflateSync(rows)), chunk("IEND", Buffer.alloc(0))]);
 }
-blobs.set(between(read("src/app.js"), 'const LOGO_ID="', '"', "LOGO_ID in src/app.js"), { type: "image/png", body: greyPng(240, 80) });
+const LOGO = { type: "image/png", body: greyPng(240, 80) };
 const SEEDED = { a1: ["clip_sheet.pdf", "application/pdf"], a3: ["clip_sheet.pdf", "application/pdf"], a9: ["clip_sheet.pdf", "application/pdf"], a2: ["test.jpg", "image/jpeg"], img1: ["ld1.png", "image/png"] };
 
 function blob(req, res, id) {
@@ -94,6 +94,7 @@ function blob(req, res, id) {
   }
   if (req.method === "DELETE") { blobs.delete(id); res.writeHead(204); return res.end(); }
   let b = blobs.get(id);
+  if (!b && id === logoId) b = LOGO;
   if (!b && SEEDED[id]) b = { type: SEEDED[id][1], body: fs.readFileSync(path.join(root, "tests/fixtures", SEEDED[id][0])) };
   if (!b) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { "content-type": b.type, "content-length": b.body.length, "cache-control": "no-store", "x-content-type-options": "nosniff" });

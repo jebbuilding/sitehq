@@ -8,7 +8,7 @@
 Publishing is done from a Claude session with the Artifact tool:
 1. `npm run build`
 2. Publish `dist/index.html` to the artifact URL above **without** a `capabilities` argument (the stored declaration carries forward). Passing a non-empty `capabilities` object replaces the whole declaration – if rules must change, pass the full contents of `platform/capabilities.json` (edited) and commit the change here.
-3. If the publish is refused because a newer version is live (another session published), merge that version's changes into `src/` first, then publish.
+3. If the publish is refused because a newer version is live (another session published), merge that version's changes into `src/` first, then publish: save the live page to a file, run `node scripts/split.mjs <that file>` (it cuts the page's script back into `src/app/` by its section banners) and review `git diff`; `src/shell.html` is merged by hand. This only works on versions that descend from a build of this repo made after the November 2026 split – v323 and earlier have code before the first banner and no banner on boot, and `split.mjs` stops with an error on them.
 
 ## Sharing & access (important)
 - Trades and clients need a **claude.ai account** and must be **invited to the artifact** (artifact's own Share menu, not a chat's "Share session"), with an access level that can write (**Can edit**; asset uploads are editor-only on this platform). Access is per email; signing in with a different email gives "Forbidden" or a blank new profile.

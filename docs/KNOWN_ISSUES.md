@@ -11,7 +11,8 @@
 - Key-safe and alarm codes are stored in client records (owner-only, but plaintext).
 
 ## Code
-- `app.js` is one 2.1 MB file with long one-line functions; no types; HTML built with string templates (`esc()` must be used on all user data – audit when touching code).
+- The app is 2.1 MB of JavaScript in one shared scope (~1,500 names, one state object `S`), now filed as 126 files under `src/app/` but not decoupled (`docs/ARCHITECTURE.md` › What the split did not change). Long one-line functions; no types; HTML built with string templates (`esc()` must be used on all user data – audit when touching code).
+- Shared helpers live in whichever section first needed them (e.g. `loadJsPdf` in `safety/site-inductions.js`, `BRGB`/`pdfLogo` in `photos/photos.js`). File names follow the banners, which were not checked against every line of content.
 - `todos` is a schemaless catch-all keyed by `kind`; `signoffs` subcollection likewise by `type`.
 - Some older features predate the IIFE module pattern and share globals.
 - Tests run against a fake backend that doesn't enforce rules; ~50 feature scripts are kept (older ones dropped), they print results rather than assert in a framework.
