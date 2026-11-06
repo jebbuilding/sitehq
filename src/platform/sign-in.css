@@ -1,0 +1,31 @@
+/* ===== sign-in screen (src/platform/sign-in.js) – only in the page for our own hosting; put there by scripts/bundle.mjs › webPage =====
+   Every selector starts with .signin, so nothing here can touch the app. Colours and fonts are the app's own
+   variables (src/styles/base.css), which also carry dark mode; the values after the commas are only used if a
+   variable is ever renamed. The app's stylesheet has rules for bare h1, label and input, and they reach in here:
+   everything those set is set again below, so this screen does not change when they do. */
+.signin{position:fixed;inset:0;z-index:2147483000;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:var(--bg,#f5f2f2);color:var(--ink,#1c1a1a);font-family:var(--f-body,system-ui,sans-serif);font-size:16px;line-height:1.45}
+.signin[hidden]{display:none}
+.signin *{box-sizing:border-box}
+.signin-card{width:100%;max-width:420px;margin:auto;display:flex;flex-direction:column;gap:14px;padding:24px 20px;background:var(--surface,#fff);border:1px solid var(--line,#e3dada);border-radius:14px}
+.signin-brand{align-self:flex-start;font-size:14px;font-weight:600;letter-spacing:.02em;color:var(--muted,#5f5757);border:1px solid var(--line,#e3dada);border-radius:999px;padding:3px 10px}
+.signin-brand b{color:var(--accent,#7f191d)}
+.signin h1{margin:0;font-family:var(--f-display,system-ui,sans-serif);font-size:26px;line-height:1.2;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--accent,#7f191d)}
+.signin p{margin:0}
+.signin-lead b{overflow-wrap:anywhere}
+.signin-note{padding:10px 12px;border-radius:10px;background:var(--soft,#f4e9e9);font-size:15px}
+.signin .signin-field{display:flex;flex-direction:column;gap:6px;font-size:16px;font-weight:600;color:var(--ink,#1c1a1a)}
+.signin .signin-field input{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line,#e3dada);border-radius:10px;background:var(--bg,#f5f2f2);color:var(--ink,#1c1a1a);font:inherit;font-weight:400;font-size:17px}
+.signin .signin-field input.signin-code{font-family:var(--f-mono,ui-monospace,monospace);font-size:22px;letter-spacing:.18em}
+.signin .signin-keep{display:flex;flex-direction:row;gap:12px;align-items:flex-start;min-height:48px;padding:6px 0;font-size:16px;font-weight:600;color:var(--ink,#1c1a1a);cursor:pointer}
+.signin .signin-keep input{flex:none;width:26px;height:26px;margin:0;padding:0;accent-color:var(--accent,#7f191d)}
+.signin .signin-keep small{display:block;font-size:14px;font-weight:400;color:var(--muted,#5f5757)}
+.signin-error{padding:10px 12px;border-radius:10px;border:1px solid var(--danger,#c2410c);color:var(--danger,#c2410c);font-weight:600}
+.signin-error:empty{display:none}
+.signin-go,.signin-alt{width:100%;min-height:48px;padding:11px 16px;border-radius:10px;font:inherit;font-weight:600;font-size:17px;cursor:pointer}
+.signin-go{border:1px solid var(--accent,#7f191d);background:var(--accent,#7f191d);color:var(--accent-ink,#fff)}
+.signin-alt{border:1px solid var(--line,#e3dada);background:var(--surface,#fff);color:var(--ink,#1c1a1a)}
+.signin-go:disabled,.signin-alt:disabled{opacity:.55;cursor:default}
+.signin-help{font-size:15px;color:var(--muted,#5f5757)}
+.signin input:focus-visible,.signin button:focus-visible{outline:2px solid var(--accent,#7f191d);outline-offset:2px}

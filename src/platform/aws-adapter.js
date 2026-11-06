@@ -9,8 +9,11 @@
      api        where the API is, default "/api"
      ws         where the WebSocket is, default "/ws" (a path on this host, or a full ws:// or wss:// address)
      devToken   local development only: the sign-in token to use (the local server puts it in the page)
-   Sign-in: if window.SITEHQ_AUTH.token is a function it is asked for the token before every request (the sign-in
-   screen will provide it). With no token, use() resolves null and the app shows its "Sign in" message.
+   Sign-in: if window.SITEHQ_AUTH.token is a function it is asked for the token before every request. The sign-in
+   screen (sign-in.js, ahead of this file in the page) provides it: its token() does not resolve until somebody
+   has signed in, so use() simply waits. If the server then will not have the token, or cannot be reached, the
+   screen is told (SITEHQ_AUTH.failed) and deals with it. Without a sign-in screen (the local dev pages) and with
+   no token, use() resolves null and the app shows its "Sign in" message.
 
    How live updates work: onSnapshot reads the document or collection once over HTTP and subscribes on the
    WebSocket. The server then sends "this path changed" – never the data – and the adapter reads it again. So what
@@ -44,7 +47,7 @@
     cfg = Object.assign(cfg, c || {});
   })();
 
-  let lastToken = "";
+  let lastToken = "", cookieVersion = 0;
   async function token() {
     const a = W.SITEHQ_AUTH;
     let t = "";
@@ -58,9 +61,22 @@
       try {
         document.cookie = "sitehq_token=" + encodeURIComponent(t) + "; path=/_blob; SameSite=Strict" + (location.protocol === "https:" ? "; Secure" : "") + (t ? "" : "; Max-Age=0");
       } catch (e) {}
+      cookieVersion++;
     }
     return t;
   }
+  // A file's <img> that was asked for before the cookie was current fails: the logo in the page's own markup is
+  // requested before anybody has signed in, or with yesterday's token. Ask for it again once there is a token –
+  // once per cookie, so a file that is really missing is not asked for for ever.
+  document.addEventListener("error", (ev) => {
+    const img = ev.target;
+    if (!img || img.tagName !== "IMG" || !/^\/_blob\//.test(img.getAttribute("src") || "")) return;
+    token().then((t) => {
+      if (!t || img.dataset.sitehqRetried === String(cookieVersion)) return;
+      img.dataset.sitehqRetried = String(cookieVersion);
+      img.src = img.getAttribute("src");
+    });
+  }, true);
 
   /* ---------- HTTP ---------- */
   // Resolves the parsed reply, or rejects { status, code, message } (status 0 = the server could not be reached).
@@ -218,14 +234,16 @@
   }
   // Without a working socket fall back to re-reading every 30 seconds; with one, keep it from idling out.
   const tick = setInterval(() => {
-    if (!subs.size || document.visibilityState === "hidden") return;
+    if (document.visibilityState === "hidden") return;
+    token(); // gives the sign-in screen the chance to renew a token that is running out, and keeps the /_blob cookie current
+    if (!subs.size) return;
     if (sockReady) say({ t: "ping" });
     else subs.forEach((sub) => refresh(sub));
   }, 30000);
   if (tick && tick.unref) tick.unref(); // only when run outside a browser (tests)
   const wake = () => { if (!sock && subs.size) { retries = 0; connect(); } };
   W.addEventListener("online", wake);
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState !== "hidden") wake(); });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState !== "hidden") { token(); wake(); } });
 
   /* ---------- db ---------- */
   function docRef(path) {
@@ -341,6 +359,10 @@
     try {
       return await http("GET", "/me");
     } catch (e) {
+      // With a sign-in screen in the page, it takes over: it signs out a token the server refuses, or says the
+      // server cannot be reached. Either way the page starts again, so the app is left waiting, not told "nobody".
+      const a = W.SITEHQ_AUTH;
+      if (a && typeof a.failed === "function" && a.failed(e.status === 401 ? "refused" : "unreachable")) return new Promise(() => {});
       return null;
     }
   });

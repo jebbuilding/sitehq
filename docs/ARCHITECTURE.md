@@ -25,7 +25,7 @@ A single-page app written in **vanilla JavaScript** with **no framework**: `src/
 The **only place the platform is acquired is the boot IIFE in `src/app/core/boot.js`** (`const use=n=>window.claude.use(n)...; const [db,user,assets,dl]=await Promise.all(...)`), plus `AI.sample` in the "Ask Claude" helper. That boot block is the seam for the production adapter – see *Own hosting* below.
 
 Boot sequence (`src/app/core/boot.js`):
-1. Acquire `db`, `user`, `assets`, `downloads`. If no db/user → "Sign in to use the app".
+1. Acquire `db`, `user`, `assets`, `downloads`. If no db/user → "Sign in to use the app". (On our own hosting the sign-in screen holds this step back until somebody has signed in – see below.)
 2. Wrap them (`wrapDb` – routes owner deletes to the bin; `wrapAssets`; `S.dl` adds a Print bar after any PDF save).
 3. Open IndexedDB: `jeb-files` (in-app file cache) and `jeb-outbox` (offline write queue), flush the outbox.
 4. `S.owner = await user.isOwner()`.
@@ -37,6 +37,7 @@ The same app runs without claude.ai by putting a different `window.claude` under
 
 ```
 ┌──────────── browser: dist/web/index.html ────────────┐          ┌──────────────── server/ ────────────────┐
+│ src/platform/sign-in.js   defines window.SITEHQ_AUTH │ ◄──────► Cognito (emailed code; called straight from the browser)
 │ src/platform/aws-adapter.js   defines window.claude  │          │ handlers/http.mjs → core/api.mjs        │
 │   use("db")        ── POST /api/db/get|list|set|… ───┼─────────►│   sign-in ─► rules ─► store ─► publish  │
 │   onSnapshot       ── WebSocket: sub ◄── "changed" ──┼─────────►│ handlers/ws.mjs   → core/live.mjs       │
@@ -50,13 +51,15 @@ The same app runs without claude.ai by putting a different `window.claude` under
 ```
 
 - **`src/platform/aws-adapter.js`** is one plain script, not part of `src/app/` (so not bundled by imports, not checked by `npm run modules`, not formatted by Prettier). It provides exactly what the app uses: `db` (`doc`/`collection`, `get`/`set`/`update`/`delete`/`add`/`onSnapshot`, `where`/`orderBy`/`limit`, snapshots `{id, exists, data()}` and `{docs}`), `user` (`id`, `isOwner`, `name`, `profiles`), `assets` (`upload`, `delete`, `list`), `downloads` (`save`). Its header comment says how it is configured and signed in.
+- **`src/platform/sign-in.js`** (with `sign-in.css`) is the sign-in screen, in the page ahead of the adapter. It is the only thing that talks to Cognito from the browser: email address → emailed one-time code → tokens, by `fetch`, no SDK. It gives the page `window.SITEHQ_AUTH`: `token()` (the Cognito access token; it shows the screen and does not resolve until somebody has signed in, and renews a token that is running out), `signOut()` and `failed()`. The adapter asks `token()` before every request, so the app's start-up simply waits behind the screen and the app's own "Sign in to use the app" is never reached. The sign-in is kept in `sessionStorage` (this tab, and at most 8 hours unused) unless the person ticks "Keep me signed in on this device" (`localStorage`, up to 30 days) – the reasoning, the messages, and what has not been tried against the real Cognito are in `server/README.md` › Sign-in. A page whose settings have no `userPoolClientId` (the local dev pages) has no sign-in and the file does nothing.
 - **`server/`** is the backend: Lambda-style handlers with the database, file store, sign-in and push each behind an interface with two implementations – the AWS one and a local one. `server/README.md` is the reference: layout, HTTP API, WebSocket messages, what the CDK stack needs, and every assumption made about the rules.
 - **Rules**: the server enforces `platform/capabilities.json` – the same file, read by `server/core/rules.mjs`. Owner, trade and client come from the sign-in token. Two things are stricter than on claude.ai: a client is confined to `portal/<their id>`, and a path no rule covers is owner-only (`server/README.md` › Rules).
 - **Live updates** carry no data. `onSnapshot` reads once over HTTP and subscribes; after any accepted write the server tells the subscribers who may read that document "this path changed", and each reads it again. State only ever comes from a read, so late or out-of-order messages cannot leave a page stale. After a page's own write the adapter re-reads straight away rather than waiting to be told.
 - **Files** keep the address `/_blob/<id>`, on the page's own origin – the app draws them onto canvases, which a cross-origin image would lock.
-- **Run it**: `npm run local` → `localhost:4322/owner|trade|client`: page, API, WebSocket and files in one process on the in-memory store with the tests' seed. Data survives reloads and is shared between tabs until the server stops. No AWS account involved. (`npm run dev` remains the quick one: the fake platform inside the page, no rules, reset on reload.)
+- **Run it**: `npm run local` → `localhost:4322/owner|trade|client`: page, API, WebSocket and files in one process on the in-memory store with the tests' seed. Data survives reloads and is shared between tabs until the server stops. No AWS account involved. `localhost:4322/app` is the page as deployed, starting at the sign-in screen, with a stand-in for Cognito in the same process (`server/auth/local-cognito.mjs`; the code is printed in the terminal instead of emailed). (`npm run dev` remains the quick one: the fake platform inside the page, no rules, reset on reload.)
 - **Tests**: `npm run test:backend`, also the last step of `npm test` – see `server/README.md` › Tests. The crawl was pointed at the backend by giving `tests/crawl.js` an address (`SITEHQ_URL`); owner matches the fake tab for tab, and so do trade and client apart from two things that come from being served from a real address rather than `setContent` (below).
-- **Not there yet**: the sign-in screen (the adapter takes a token from `window.SITEHQ_AUTH.token()` when one exists), a deployment (the CDK stack in `infra/` is separate work), the data import. Nothing here has run on AWS. `docs/ROADMAP.md` Phase 1.
+- **Seeding a deployed dev environment**: `npm run seed:dev -- --env dev` writes the tests' made-up data into the dev table and files bucket through the server's own store code (`scripts/seed-dev.mjs`; `infra/README.md` › First deploy). It refuses any environment but dev.
+- **Not there yet**: a deployment (the CDK stack in `infra/` is written, not deployed), invitations and the client join-code flow, a sign-out button in the app, the data import. Nothing here has run on AWS – the sign-in screen included, which has only met the local stand-in. `docs/ROADMAP.md` Phase 1.
 
 Differences seen when the same crawl runs on the backend instead of the fake, both explained:
 - A page served from `http://127.0.0.1` has working `localStorage`; a page loaded with `setContent` does not. So the trade's "Save JEB to your computer" card goes away when dismissed, which shifts which buttons the crawl reaches (it checks in, so the Sign in tab then shows "Signed in").
@@ -151,13 +154,15 @@ src/app/core/boot.js ─► follow the imports: each file is placed after the fi
                      ─► "(function(){" + file + file + … + "})();"   one scope, source text unchanged
 src/styles/index.css ─► the files it imports, joined in that order, text unchanged
 src/shell.html       ─► shell with that stylesheet inlined + <script> + the app + </script>  =  dist/index.html
-src/platform/aws-adapter.js ─► <!doctype html>…<body> + <script> + adapter + </script> + dist/index.html + </body></html>  =  dist/web/index.html
+src/platform/sign-in.css, sign-in.js, aws-adapter.js
+                     ─► <!doctype html>…<style> sign-in.css </style>…<body> + <script> sign-in.js </script> + <script> adapter </script>
+                        + dist/index.html + </body></html>  =  dist/web/index.html
 ```
 
 - **Why not esbuild or Vite?** They would work – `npm run check` bundles the modules with esbuild on every run and fails unless it accepts them and evaluates them in exactly the order above. But a real bundler re-prints the code, and until the claude.ai artifact is frozen the published script has to stay the source text, so that a version published from somewhere else can be cut back into files (`scripts/split.mjs`, `docs/PLATFORM.md` › Publishing). After cutover, replacing `bundle.mjs` with esbuild is a small change.
 - The build refuses to run if a file under `src/app/` is not reachable from `core/boot.js` through imports (it would be left out), if an import points at a missing file, or if a file does not parse on its own.
 - `dist/index.html` is the single file that gets published; the platform wraps it in its own `<html>` skeleton. `npm run dev` serves the same assembly with the tests' fake backend.
-- `dist/web/index.html` is the page for our own hosting: a complete document with the adapter in a script of its own ahead of the very same fragment (`webPage` in `bundle.mjs`). Adding it left `dist/index.html` byte-for-byte unchanged (same SHA-256 before and after). `npm run local` serves this assembly from the local backend.
+- `dist/web/index.html` is the page for our own hosting: a complete document with the sign-in screen and then the adapter, each in a script of its own, ahead of the very same fragment (`webPage` in `bundle.mjs`). Adding them left `dist/index.html` byte-for-byte unchanged (same SHA-256 before and after, checked again when the sign-in screen went in). `npm run local` serves this assembly from the local backend.
 
 ## Infrastructure and release (`infra/`, `.github/`)
 Not part of the page and not deployed yet (Nov 2026): what SiteHQ will run on in AWS (`docs/ROADMAP.md` › Phase 1), as an **AWS CDK** app in TypeScript with its own `package.json`. `infra/README.md` is the guide; this is the map.

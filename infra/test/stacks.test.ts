@@ -534,6 +534,13 @@ test("sign-in: invite only, emailed one-time code, public browser client, three 
     assert.ok(client.ExplicitAuthFlows.includes("ALLOW_USER_AUTH"));
     assert.ok(!client.ExplicitAuthFlows.some((f: string) => /PASSWORD|SRP/.test(f)), "no password flows");
     assert.equal(client.AllowedOAuthFlows, undefined);
+    // what the sign-in screen (src/platform/sign-in.js) relies on
+    assert.deepEqual([...client.ExplicitAuthFlows].sort(), ["ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_AUTH"], "the emailed code, and renewing the token – nothing else");
+    assert.equal(client.PreventUserExistenceErrors, "ENABLED", "never says whether an address has an account");
+    assert.equal(client.EnableTokenRevocation, true, "signing out can revoke the refresh token");
+    assert.equal(client.AuthSessionValidity, 15, "15 minutes to type the emailed code in");
+    assert.equal(client.RefreshTokenRotation, undefined, "the screen renews with REFRESH_TOKEN_AUTH, which rotation would switch off");
+    assert.deepEqual([client.AccessTokenValidity, client.TokenValidityUnits.AccessToken, client.RefreshTokenValidity, client.TokenValidityUnits.RefreshToken], [60, "minutes", 43200, "minutes"]);
 
     const groups = resources(env.main, "AWS::Cognito::UserPoolGroup").map(([, g]) => g.Properties.GroupName);
     assert.deepEqual(groups.sort(), ["client", "owner", "trade"]);
@@ -609,8 +616,10 @@ test("outputs: what the deploy workflow reads, and the page's /config.json", () 
       assert.ok(env.main.Outputs[key], `output ${key}`);
     assert.equal(env.main.Outputs.SiteUrl.Value, `https://${env.site}`);
     const pageConfig = JSON.stringify(env.main.Outputs.PageConfig.Value);
-    for (const expected of [`"ws\\":\\"wss://${env.ws}`, `"api\\":\\"/api`, "userPoolId", "userPoolClientId", "eu-west-2"])
+    for (const expected of [`"ws\\":\\"wss://${env.ws}`, `"api\\":\\"/api`, "userPoolId", `"userPoolClientId\\":`, `"region\\":\\"eu-west-2`, `"env\\":\\"`])
       assert.ok(pageConfig.includes(expected), `PageConfig mentions ${expected}`);
+    // local development only: a deployed page must always talk to the real Cognito
+    assert.ok(!/cognitoEndpoint|devToken/.test(pageConfig), "no local-development settings in a deployed /config.json");
     assert.ok(env.bootstrap.Outputs.DeployRoleArn);
   }
 });

@@ -112,14 +112,15 @@ test("deploy action: CDK deploy of one environment, then the page, then CloudFro
   assert.doesNotMatch(cdk, /bootstrap/, "the bootstrap stack is never deployed from a workflow");
 });
 
-test("CODEOWNERS: Jasper reviews rules, infrastructure, server, scripts and workflows – not feature code", () => {
+test("CODEOWNERS: Jasper reviews rules, infrastructure, server, scripts, workflows and sign-in – not feature code", () => {
   const lines = text("CODEOWNERS")
     .split("\n")
     .filter((l) => l.trim() && !l.startsWith("#"))
     .map((l) => l.trim().split(/\s+/));
   const paths = lines.map(([path]) => path);
-  assert.deepEqual(paths.sort(), ["/.github/", "/infra/", "/platform/capabilities.json", "/scripts/", "/server/"]);
+  assert.deepEqual(paths.sort(), ["/.github/", "/infra/", "/platform/capabilities.json", "/scripts/", "/server/", "/src/platform/"]);
   for (const [path, ...owners] of lines) assert.equal(owners.length, 1, `${path} has one owner`);
   assert.equal(new Set(lines.map(([, owner]) => owner)).size, 1, "the same owner on every line");
-  assert.ok(!paths.some((p) => p.startsWith("/src") || p === "*"), "src/app and src/styles need green CI only");
+  // of src/, only the platform files (the adapter and the sign-in screen) are gated
+  assert.ok(!paths.some((p) => (p.startsWith("/src") && p !== "/src/platform/") || p === "*"), "src/app and src/styles need green CI only");
 });

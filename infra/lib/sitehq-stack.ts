@@ -202,10 +202,16 @@ export class SiteHqStack extends Stack {
     const webClient = userPool.addClient("WebClient", {
       userPoolClientName: names.resource("web"),
       generateSecret: false, // it runs in a browser; there is nowhere to keep a secret
-      authFlows: { user: true }, // choice-based sign-in: the emailed code
+      // Choice-based sign-in: the emailed code. CDK adds the refresh-token flow to any list of flows;
+      // the sign-in screen (src/platform/sign-in.js) renews the hourly token with it.
+      authFlows: { user: true },
       disableOAuth: true,
+      // An address with no account is answered like one with: the screen never says which.
       preventUserExistenceErrors: true,
-      enableTokenRevocation: true,
+      enableTokenRevocation: true, // signing out revokes the refresh token
+      // How long a person has to type the emailed code in. Cognito's default is 3 minutes, which
+      // email on a building site does not always manage; 15 is the most it allows.
+      authSessionValidity: Duration.minutes(15),
       accessTokenValidity: Duration.minutes(sw.accessTokenMinutes),
       idTokenValidity: Duration.minutes(sw.accessTokenMinutes),
       refreshTokenValidity: Duration.days(sw.refreshTokenDays),
@@ -457,8 +463,9 @@ export class SiteHqStack extends Stack {
     out("FilesBucketName", filesBucket.bucketName, "Uploaded files");
     out("UserPoolId", userPool.userPoolId, "Sign-in");
     // Everything the page needs to find its backend (src/platform/aws-adapter.js reads `api`
-    // and `ws`; the sign-in screen needs the rest). The deploy writes it to /config.json, so the
-    // same built page works in every environment.
+    // and `ws`; the sign-in screen, src/platform/sign-in.js, reads `region` and
+    // `userPoolClientId`). The deploy writes it to /config.json, so the same built page works in
+    // every environment.
     out(
       "PageConfig",
       this.toJsonString({
