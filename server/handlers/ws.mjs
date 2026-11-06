@@ -8,7 +8,7 @@
 // be logged. The first message must be { t: "auth", token }; until then the connection can subscribe to nothing.
 import { createLive } from "../core/live.mjs";
 import { createApiGatewayTransport } from "../transport/apigw-ws.mjs";
-import { base } from "./env.mjs";
+import { base, liveStore } from "./env.mjs";
 
 /** Turn a live layer factory into a Lambda handler. `liveFor(event)` → the live layer. Exported for tests. */
 export function lambdaWs(liveFor) {
@@ -26,7 +26,7 @@ function production(event) {
   if (!live) {
     const { domainName, stage } = event.requestContext;
     const endpoint = process.env.WS_ENDPOINT || `https://${domainName}/${stage}`; // set WS_ENDPOINT if the API has a custom domain
-    live = createLive({ ...base(), transport: createApiGatewayTransport({ endpoint }) });
+    live = createLive({ ...base(), store: liveStore(), transport: createApiGatewayTransport({ endpoint }) });
   }
   return live;
 }

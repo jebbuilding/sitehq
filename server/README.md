@@ -56,6 +56,7 @@ node scripts/test-backend.mjs unit | crawl [owner|trade|client] | live     # one
    `api` – every route, the refusals, the limits, and the Lambda event wrapper;
    `live` – who is told about a write, over a recording transport, a real WebSocket and the API Gateway wrapper;
    `auth-blobs` – dev tokens, Cognito JWTs (signed with a key made in the test), disk files, S3 pre-signed links;
+   `env` – the production wiring from environment variables: which table documents and live-update records go in;
    `adapter` – a contract run against both the tests' fake platform and the adapter on the local backend, then what
    only a real backend has (rules, other people's writes arriving, files, sign-in).
 2. The existing crawl, `tests/crawl.js`, as owner, trade and client with `SITEHQ_URL` pointing at a local backend:
@@ -89,7 +90,8 @@ root – `NodejsFunction`/esbuild with `format: ESM` picks it up. Dependencies a
 
 | Variable | Used by | Value |
 |---|---|---|
-| `TABLE_NAME` | both | the DynamoDB table |
+| `TABLE_NAME` | http (ws only if the next one is unset) | the DynamoDB table for the documents and file records |
+| `CONNECTIONS_TABLE_NAME` | both, optional | a second table, same keys and TTL attribute, for the live-update records (`$conn`, `$sub:<path>`, `$cs:<connection>`). Unset: they go in `TABLE_NAME` |
 | `USER_POOL_ID` | both | Cognito user pool id |
 | `USER_POOL_CLIENT_ID` | both | app client id (comma-separated if several) |
 | `TOKEN_USE` | both | `access` (default) or `id` – which Cognito token the page sends |
@@ -101,15 +103,17 @@ There is no setting that selects the dev sign-in or the in-memory store; only `l
 
 ### Resources and permissions
 
-- **Table**: partition key `pk` (String), sort key `sk` (String), on-demand, **TTL on attribute `ttl`**. No indexes.
-  `pk` is the collection path, `sk` the document id, `d` the document as JSON text. The server's own records share
-  the table under `pk` values starting `$` (`$conn`, `$sub:<path>`, `$cs:<connection>`, `$assets`), which no client
-  path can spell.
-- **HTTP function**: `dynamodb:GetItem, PutItem, DeleteItem, Query` on the table; `s3:GetObject, PutObject,
+- **Tables**: both have partition key `pk` (String), sort key `sk` (String), on-demand, **TTL on attribute `ttl`**,
+  no indexes. In the data table `pk` is the collection path, `sk` the document id, `d` the document as JSON text;
+  the file records share it under `pk` = `$assets`, which no client path can spell. The connections table holds
+  only the live-update records (`$conn`, `$sub:<path>`, `$cs:<connection>`), all short-lived, so it needs no
+  backups or point-in-time recovery.
+- **HTTP function**: `dynamodb:GetItem, PutItem, DeleteItem, Query` on both tables; `s3:GetObject, PutObject,
   DeleteObject` on `arn:…:<bucket>/<prefix>*` and `s3:ListBucket` on the bucket (without it S3 answers 403, not
   404, for an object that is not there, and finishing an upload that never arrived becomes a 500);
   `execute-api:ManageConnections` on the WebSocket API.
-- **WebSocket function**: the same DynamoDB actions; `execute-api:ManageConnections`.
+- **WebSocket function**: the same DynamoDB actions on the **connections table only** – it never reads a
+  document; `execute-api:ManageConnections`.
 - **Bucket**: private. CORS allowing `PUT` and `GET` from the app's origin with the `content-type` header – the
   browser uploads straight to a pre-signed URL, and is redirected to one for PDFs, videos and large images.
 - **Cognito**: three groups named exactly `owner`, `trade`, `client`. A user must be in exactly one; the function
@@ -177,7 +181,8 @@ collection it is in, **who is allowed to read that document** – the path only,
 the new state over HTTP. Because state only ever comes from a read, messages arriving late, twice or out of order
 (separate Lambda invocations give no ordering) cannot leave a page showing something stale.
 
-Connections and subscriptions are records in the store, so any invocation can find who to tell. A connection whose
+Connections and subscriptions are records in a store (in production the connections table), so any invocation can
+find who to tell. A connection whose
 sign-in has expired is sent `{ t: "expired" }` and dropped; one that has gone is dropped the first time a message to
 it fails.
 

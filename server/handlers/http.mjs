@@ -6,7 +6,7 @@
 import { createApi } from "../core/api.mjs";
 import { createLive } from "../core/live.mjs";
 import { createApiGatewayTransport } from "../transport/apigw-ws.mjs";
-import { base, blobsFromEnv } from "./env.mjs";
+import { base, blobsFromEnv, dataStore, liveStore } from "./env.mjs";
 
 /** Turn an API function (core/api.mjs) into a Lambda handler. Exported for tests. */
 export function lambdaHttp(api) {
@@ -27,10 +27,10 @@ export function lambdaHttp(api) {
 
 let ready = null;
 function production() {
-  const { store, rules, auth } = base();
+  const { rules, auth } = base(), store = dataStore();
   // Without WS_ENDPOINT writes still work; nobody is told about them (pages then refresh on a timer).
   const live = process.env.WS_ENDPOINT
-    ? createLive({ store, rules, auth, transport: createApiGatewayTransport({ endpoint: process.env.WS_ENDPOINT }) })
+    ? createLive({ store: liveStore(), rules, auth, transport: createApiGatewayTransport({ endpoint: process.env.WS_ENDPOINT }) })
     : null;
   return lambdaHttp(createApi({ store, rules, auth, blobs: blobsFromEnv(), live }));
 }
