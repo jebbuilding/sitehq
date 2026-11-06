@@ -3,7 +3,7 @@
 Everything SiteHQ runs on in AWS, and how code gets there. Written for Jasper; you should not
 need to read the code to deploy. The decisions behind it are in `docs/ROADMAP.md` › Phase 1.
 
-**Status (5 Nov 2026): nothing has been deployed.** `cdk synth`, 32 tests on the synthesised
+**Status (6 Nov 2026): nothing has been deployed.** `cdk synth`, 32 tests on the synthesised
 templates and workflow files, and a workflow lint all pass without AWS access. Whether AWS and
 GitHub accept it all is unproven until the first deploy – see [Not yet verified](#not-yet-verified).
 
@@ -25,7 +25,8 @@ One stack definition (`lib/sitehq-stack.ts`), built once per environment from `c
               │                               │     and by short-lived signed links it hands out)
    WebSocket API → Lambda "ws" ───────────────├── KMS key for the sensitive fields
               └── DynamoDB "connections"      └── pushes "this changed" to connected browsers
-   Cognito user pool: invite only, sign in with an emailed one-time code (sent through SES)
+   Cognito user pool: invite only, sign in with an emailed one-time code (sent through SES).
+     The page's sign-in screen talks to Cognito's own public address directly, not through CloudFront.
    CloudWatch log groups with a fixed retention · one IAM role per function
 ```
 
@@ -63,7 +64,7 @@ What differs between dev and prod is only the `switches` block in `config.ts`:
 | Route 53 hosted zone id, per environment | `Z0000000PLACEHOLDER` | GitHub variables `SITEHQ_DEV_HOSTED_ZONE_ID`, `SITEHQ_PROD_HOSTED_ZONE_ID` |
 | Hosted zone name, only if it is not the domain itself | (the domain) | GitHub variables `SITEHQ_DEV_HOSTED_ZONE_NAME`, `SITEHQ_PROD_HOSTED_ZONE_NAME` |
 | Deploy role ARNs | (none) | GitHub variables `AWS_ROLE_ARN_DEV`, `AWS_ROLE_ARN_PROD` – printed by the bootstrap stacks |
-| Your GitHub username | `@JASPER-GITHUB-HANDLE` | `.github/CODEOWNERS` (five lines) |
+| Your GitHub username | `@JASPER-GITHUB-HANDLE` | `.github/CODEOWNERS` (six lines) |
 | GitHub repository | `jebbuilding/sitehq` (from the git remote – check it) | `GITHUB_REPO` in `config.ts` |
 | Subdomains | `dev`, `app` | `config.ts`, if you want different ones |
 
@@ -164,8 +165,9 @@ skipped and CI stays green.
   *Deploy keys* (if you added the key above – otherwise leave updates unrestricted and keep
   "block force pushes" and "restrict deletions"). Nobody pushes to it by hand.
 
-**CODEOWNERS**: put your username in `.github/CODEOWNERS`. Consider adding `/src/platform/` (the
-browser adapter and, later, the sign-in screen) – it was not in the agreed list.
+**CODEOWNERS**: put your username in `.github/CODEOWNERS`. `/src/platform/` (the browser adapter
+and the sign-in screen) was added to the list when the sign-in screen was written – the agreed
+list said "sign-in" without naming a path.
 
 ## 4. First deploy
 
@@ -175,7 +177,8 @@ browser adapter and, later, the sign-in screen) – it was not in the agreed lis
    run takes 10–20 minutes (certificates, CloudFront).
 2. Open `https://dev.<domain>/version.json` – it shows the commit that is live.
 3. **First people.** Nobody can sign up; accounts are created by an administrator until the
-   server has an invite flow. For each person (role is `owner`, `trade` or `client` – exactly one):
+   server has an invite flow. For each person (role is `owner`, `trade` or `client` – exactly one;
+   in dev, while SES is in its sandbox, only addresses you verified there receive the code):
 
    ```bash
    aws cognito-idp admin-create-user --user-pool-id <UserPoolId output> --username <email> --user-attributes Name=email,Value=<email> Name=email_verified,Value=true --message-action SUPPRESS
@@ -184,6 +187,31 @@ browser adapter and, later, the sign-in screen) – it was not in the agreed lis
    ```bash
    aws cognito-idp admin-add-user-to-group --user-pool-id <UserPoolId output> --username <email> --group-name owner
    ```
+
+   The first command prints the person's `Username` – a long id like `3f0e6a52-…`. That is their
+   id everywhere in SiteHQ (the token's `sub`); note it for the next step. A person in no group, or
+   in two, can receive a code but is then told their account is not finished being set up.
+
+4. **Made-up data for dev** (optional, dev only). Loads the same synthetic data the tests use into
+   the dev table and files bucket, using your own AWS profile:
+
+   ```bash
+   npm run seed:dev -- --env dev --profile <dev admin profile> --person owner=<owner's id> --person emp1=<a trade's id> --person u9=<a client's id>
+   ```
+
+   The seed's people are `owner`, `emp1` (a trade, "Sam Test") and `u9` (a client, "Sue Jones").
+   Each `--person` hands one of them to a real sign-in, so that person finds the seeded timesheets
+   or portal as their own; leave one out and its data stays under the made-up id, visible to the
+   owner only. The command finds the table and bucket from the outputs of the stack `sitehq-dev`,
+   prints what it wrote, **refuses any environment but `dev`** (there is no option that points it
+   elsewhere), and refuses a table that already has documents unless you add `--replace`, which
+   deletes every document and recorded file first. It needs `cloudformation:DescribeStacks`,
+   read/write on the table (including `Scan`) and put/delete on the files bucket.
+
+5. **Sign in.** Open `https://dev.<domain>`: enter the email address, type in the code from the
+   email, tick "Keep me signed in on this device" only on your own device. The app has no sign-out
+   button yet – open `https://dev.<domain>/#signout`. How it works, where the sign-in is kept and
+   what has not been tried against the real Cognito: `server/README.md` › Sign-in.
 
 Until `server/` and the web build (`dist/web/index.html`) are merged, a dev deploy stops at "Build
 the page"; with `server/` missing but the page present, dev would get a clearly marked placeholder
@@ -273,7 +301,12 @@ Nothing here has met AWS or GitHub. Specifically untested:
   the London stack to the us-east-1 certificate.
 - **Cognito behaviour**: that a person created with `admin-create-user` and no password can sign
   in by emailed code, and that the pool is refused if the SES identity is not yet verified (the
-  reason the identity is in the bootstrap stack).
+  reason the identity is in the bootstrap stack). The sign-in screen has only ever talked to a
+  local stand-in written from Cognito's documentation: the full list of what that assumes is in
+  `server/README.md` › Sign-in. The first sign-in on dev is the test; if it fails, the browser
+  console shows the name of the error Cognito returned.
+- **`npm run seed:dev`** has run against an emulator and a stand-in for S3, never against the real
+  table, bucket or stack outputs.
 - **IAM being sufficient, not just minimal**: the deploy role (CDK's role names, and invalidating
   CloudFront by tag); the WebSocket function's restriction to `$…` records in the data table.
 - **CloudFront → API**: sign-in header and cookie arriving intact; files over 4 MB redirecting to
@@ -293,6 +326,15 @@ Expect a couple of fix-and-retry rounds on the first dev deploy.
   access to the data table) or the table should be removed from the stack.
 - **The HTTP function cannot create or manage users** yet. The invite flow will need
   `cognito-idp:AdminCreateUser` and friends added in `lib/sitehq-stack.ts`.
+- **The app client, as the sign-in screen needs it**: emailed code and refresh-token flows only;
+  15 minutes to type the code in (`authSessionValidity`; Cognito's default of 3 is short for email
+  on a building site); refresh-token rotation off (the screen renews with `REFRESH_TOKEN_AUTH`,
+  which rotation would disable – turning rotation on means changing the screen to
+  `GetTokensFromRefreshToken` first). The tests assert all three.
+- **No Content-Security-Policy** is sent with the page. The sign-in is kept in browser storage, so
+  a script injected into the page could read it; a policy limiting where scripts may come from is
+  worth adding once the page's inline script can be given a hash.
+- **The sign-in email is Cognito's default wording.** Not yet written in SiteHQ's own words.
 - **Anyone can open a WebSocket connection** (the server authenticates on the first message). It
   can do nothing until then, and the API is throttled, but it is an unauthenticated endpoint.
 - In dev only, CDK adds a helper function that empties the buckets when the stack is deleted.

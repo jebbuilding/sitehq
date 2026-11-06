@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "local": "node scripts/local.mjs",
+    "seed:dev": "node scripts/seed-dev.mjs",
     "build": "node scripts/build.mjs",
     "modules": "node scripts/modules.mjs",
     "check": "node scripts/modules.mjs --check && prettier --check src/app --log-level warn",
@@ -18,6 +19,7 @@
     "test:infra": "([ -d infra/node_modules ] || npm ci --prefix infra) && npm run check --prefix infra"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudformation": "^3.1163.0",
     "acorn": "^8.19.0",
     "dynalite": "^4.0.0",
     "esbuild": "^0.28.2",

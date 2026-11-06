@@ -103,17 +103,24 @@ export function pageFragment(app = bundleApp()) {
   return shell.replace(STYLE_SLOT, () => "<style>\n" + bundleCss() + "</style>") + "<script>\n" + app + "</script>\n";
 }
 
-export const ADAPTER = "src/platform/aws-adapter.js";
+export const ADAPTER = "src/platform/aws-adapter.js", SIGN_IN = "src/platform/sign-in.js", SIGN_IN_CSS = "src/platform/sign-in.css";
+
+/** A file from src/platform/, checked for being put in the page inline: as a script (it must parse) or a stylesheet. */
+function platformFile(file, tag) {
+  const src = fs.readFileSync(path.join(root, file), "utf8");
+  if (tag === "script") try { new Function(src); } catch (e) { throw new Error(`Syntax error in ${file}: ${e.message}`); }
+  if (new RegExp("</" + tag, "i").test(src)) throw new Error(`${file} must not contain "</${tag}" – it is put in the page inline`);
+  return src.endsWith("\n") ? src : src + "\n";
+}
 
 /**
- * The page for our own hosting: a complete HTML document with the platform adapter (window.claude on SiteHQ's own
- * backend, server/) in a script of its own ahead of the published fragment. `before` is extra markup put ahead of
- * the adapter – the local server uses it to tell the adapter where the API is and who is signed in.
+ * The page for our own hosting: a complete HTML document with, ahead of the published fragment and each in a
+ * script of its own, the sign-in screen (window.SITEHQ_AUTH, with its stylesheet in the head) and then the platform
+ * adapter (window.claude on SiteHQ's own backend, server/). `before` is extra markup put ahead of both – the local
+ * server uses it to say where the API is and who is signed in.
  */
 export function webPage(app = bundleApp(), before = "") {
-  const adapter = fs.readFileSync(path.join(root, ADAPTER), "utf8");
-  try { new Function(adapter); } catch (e) { throw new Error(`Syntax error in ${ADAPTER}: ${e.message}`); }
-  if (/<\/script/i.test(adapter)) throw new Error(`${ADAPTER} must not contain "</script" – it is put in the page as an inline script`);
-  return '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>SiteHQ</title></head><body>\n'
-    + before + "<script>\n" + (adapter.endsWith("\n") ? adapter : adapter + "\n") + "</script>\n" + pageFragment(app) + "</body></html>\n";
+  return '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>SiteHQ</title>\n'
+    + "<style>\n" + platformFile(SIGN_IN_CSS, "style") + "</style>\n</head><body>\n"
+    + before + "<script>\n" + platformFile(SIGN_IN, "script") + "</script>\n<script>\n" + platformFile(ADAPTER, "script") + "</script>\n" + pageFragment(app) + "</body></html>\n";
 }
