@@ -896,6 +896,17 @@ const NP_SHAPES = [
   ["roofhip", "◇ Hipped roof (plan)", "Roof plan", "pro"],
   ["roofgable", "▭ Gable roof (plan)", "Roof plan", "pro"],
   ["fall", "➝ Roof / ground fall arrow", "Roof plan", "pro"],
+  ["ridgel", "━ Ridge line (roof plan)", "Roof plan", "pro"],
+  ["hipl", "╱ Hip line (roof plan)", "Roof plan", "pro"],
+  ["valleyl", "╲ Valley line (roof plan)", "Roof plan", "pro"],
+  ["solarpv", "▦ Solar panels (drag to size the array)", "Energy & wildlife", "pro"],
+  ["battery", "▮ Battery storage", "Energy & wildlife", "pro"],
+  ["inverter", "∿ Inverter", "Energy & wildlife", "pro"],
+  ["evcharger", "⏻ EV charger", "Energy & wildlife", "pro"],
+  ["beebrick", "⁘ Bee brick", "Energy & wildlife", "pro"],
+  ["batbox", "▭ Bat box", "Energy & wildlife", "pro"],
+  ["birdbox", "◘ Bird box", "Energy & wildlife", "pro"],
+  ["swiftbox", "◖ Swift brick / box", "Energy & wildlife", "pro"],
   ["re", "Ⓡ Rodding eye (RE)", "Drains & outside", "pro"],
   ["ic", "⊠ Inspection chamber (IC)", "Drains & outside", "pro"],
   ["soakaway", "▩ Soakaway", "Drains & outside", "pro"],
@@ -915,6 +926,9 @@ const NP_SHAPES = [
   ["towel", "▥ Towel rail", "Heating & electrics", "pro"],
   ["rafter", "▱ Rafter (section)", "Section: roof parts"],
   ["joistl", "▱ Joist (section, along)", "Section: roof parts"],
+  ["cjoist", "▱ Ceiling joist (section)", "Section: roof parts"],
+  ["collar", "▱ Collar tie (section)", "Section: roof parts"],
+  ["strut", "▱ Strut (section)", "Section: roof parts"],
   ["rooftile", "⟋ Roof tiles / slates (section)", "Section: roof parts"],
   ["batfelt", "┄ Battens & felt (section)", "Section: roof parts"],
   ["lead", "━ Lead flashing", "Section: roof parts"],
@@ -1035,17 +1049,19 @@ const NP_UNITS = {
   block140: { name: "Blockwork", L: 440, H: 140, J: 10 },
   bigblock: { name: "Blockwork", L: 620, H: 215, J: 10 },
   dense: { name: "Blockwork", L: 440, H: 215, J: 10 },
+  brickimp: { name: "Brickwork", L: 228, H: 73, J: 10, brick: 1 },
+  thinjoint: { name: "Blockwork", L: 440, H: 215, J: 3 },
 };
 function npUnit(o) {
   const def = o.k === "ewBrk" ? "brick" : "block";
   const u = o.unit || {};
   const p = NP_UNITS[u.p || def] || NP_UNITS[def];
   return {
-    name: u.L ? ((u.p || def) === "brick" ? "Brickwork" : "Blockwork") : p.name,
+    name: u.L ? (p.brick ? "Brickwork" : "Blockwork") : p.name,
     L: +u.L || p.L,
     H: +u.H || p.H,
     J: u.J != null && u.J !== "" ? +u.J : p.J,
-    brick: (u.p || def) === "brick",
+    brick: !!p.brick,
     p: u.p || def,
   };
 }

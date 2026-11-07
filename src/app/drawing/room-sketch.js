@@ -19,6 +19,7 @@ export {
   rsRoomOf,
   rsStatus,
   rsWallsAsShapes,
+  rsWallsFromRoom,
 };
 /* Spec: docs/specs/room-sketch.md. The room is kept as JSON (an asset, `roomSrc` on the drawing): the sketch corners
    (screen units, only the shape matters), one entry per wall (typed length in mm + chimney breasts etc.), and the
@@ -1254,7 +1255,7 @@ async function openRoomSketch(opts) {
 
 /* the form for one wall (tap a wall): length, corner angle, overall length of a split side, chimney breasts etc.,
    split / remove a corner. Changes `room` in place, then calls paint(). Used by the room sketch page and the drawing tool. */
-function rsWallForm(room, i, paint, onDelete, toPts) {
+function rsWallForm(room, i, paint, onDelete, toPts, onWalls) {
   /* the corners as the sketch keeps them (the drawing tool passes its own, in page units) */
   const corners = toPts || ((r) => rsGeom(r).walls.map((x) => x.a.slice()));
   const w = room.walls[i],
@@ -1321,6 +1322,14 @@ function rsWallForm(room, i, paint, onDelete, toPts) {
       ${n > 3 ? `<button type="button" class="btn" id="rs-join">Remove corner ${i + 1}</button>` : ""}
     </div>
     <div class="who">Split adds a corner halfway along, for a step or a nib. The overall length of the side is kept.</div>
+    ${
+      onWalls
+        ? `<div class="flabel">Turn into real walls</div>
+    <div class="who">Swaps the sketch for proper walls drawn round the inside of the room, with their measurements, so doors and windows cut in and the wall tools, schedules and quantities all work. ${room.walls.every((x) => x.len > 0) ? "" : "<b>Measure every wall first.</b>"}</div>
+    <label for="rs-wth">Wall<select id="rs-wth">${RS_WALLS.map((x, k) => `<option value="${k}">${x[0]}</option>`).join("")}</select></label>
+    <div class="rs-bar"><button type="button" class="btn" id="rs-walls"${room.walls.every((x) => x.len > 0) ? "" : " disabled"}>🧱 Turn into real walls</button></div>`
+        : ""
+    }
     ${onDelete ? `<div class="rs-bar"><button type="button" class="linkdanger" id="rs-del">Delete the whole room</button></div>` : ""}
     ${formFoot(false, "Save")}`,
     () => {
@@ -1367,6 +1376,12 @@ function rsWallForm(room, i, paint, onDelete, toPts) {
     "rs-len",
   );
   rows();
+  if (onWalls && $("rs-walls"))
+    $("rs-walls").onclick = () => {
+      const wt = RS_WALLS[+$("rs-wth").value] || RS_WALLS[0];
+      closeForm();
+      onWalls(wt[1], wt[2]);
+    };
   if (onDelete && $("rs-del"))
     $("rs-del").onclick = () => {
       closeForm();
@@ -1549,7 +1564,7 @@ function rsHitDrawing(objs, p, tol) {
   return best;
 }
 /* open wall i's form over the drawing; done(status) after a change, onDelete() to remove the room */
-function rsEditInDrawing(o, i, done, onDelete, doc) {
+function rsEditInDrawing(o, i, done, onDelete, doc, onWalls) {
   const room = rsRoomOf(o, doc),
     xf = rsXf(o, doc);
   /* measured corners are in mm: put them back on the page where the room is drawn now */
@@ -1568,6 +1583,7 @@ function rsEditInDrawing(o, i, done, onDelete, doc) {
     },
     onDelete,
     toPts,
+    onWalls,
   );
 }
 /* the walls of the room sketches on a page as the drawing tool's own wall shapes (not saved; for doors and windows
@@ -1601,4 +1617,84 @@ function rsBestScale(objs, w, h, scales) {
       .sort((x, y) => x - y)
       .find((s) => bw / s + 2 * A <= w - 20 && bh / s + 2 * A <= h - 20 - 40) || 0
   );
+}
+/* wall build-ups offered when a room becomes real walls: [name, thickness mm, drawing tool wall kind] */
+const RS_WALLS = [
+  ["100 mm block (internal)", 100, "wall"],
+  ["140 mm block", 140, "wall"],
+  ["215 mm block", 215, "wall"],
+  ["Brick, half (102.5 mm)", 102.5, "wall"],
+  ["Cavity wall (300 mm: block, 100 cavity, brick)", 300, "cavity"],
+  ["Timber stud (100 mm + boards)", 125, "tstud"],
+];
+/* a measured room as real walls round its inside face (page units): the wall centre lines (the room outline moved
+   out by half the thickness, corners mitred) and its measurements as the drawing tool's own dimensions */
+function rsWallsFromRoom(o, doc, thMm) {
+  const { r, g, t } = rsXf(o, doc),
+    dims = [],
+    txt = RS_TXT * NP_U;
+  const pen = {
+    px: (p) => p,
+    line() {},
+    poly() {},
+    rect() {},
+    circle() {},
+    text() {},
+    dim(A, B, out, off, label, tx, c) {
+      const L = rsLen(rsSub(B, A)) || 1,
+        n = [-(B[1] - A[1]) / L, (B[0] - A[0]) / L],
+        sg = out[0] * n[0] + out[1] * n[1] >= 0 ? 1 : -1;
+      dims.push({
+        t: "dim",
+        a: A,
+        b: B,
+        off: off * sg,
+        s: label,
+        c: "#111111",
+        w: 1.5,
+        size: Math.round(tx * 0.95),
+      });
+    },
+  };
+  const th = doc.scale > 0 ? (thMm * NP_U) / doc.scale : thMm * g;
+  /* the measurements sit outside the new walls */
+  const res = rsRender(pen, r, {
+    W: doc.w,
+    H: doc.h,
+    frame: false,
+    fit: false,
+    inDrawing: true,
+    fixT: { g, t },
+    kf: NP_U,
+    scale: doc.scale || 1,
+    txt: txt,
+    lw: 3,
+  });
+  dims.forEach((d) => (d.off += (d.off >= 0 ? 1 : -1) * th));
+  const O = res.G.outline.map(res.T).filter((q, k, A) => !k || rsLen(rsSub(q, A[k - 1])) > 1e-6);
+  const n = O.length;
+  if (n < 3) return { walls: [], dims };
+  /* which way is outside, from the middle of the longest side */
+  let li = 0;
+  O.forEach((q, k) => {
+    if (rsLen(rsSub(O[(k + 1) % n], q)) > rsLen(rsSub(O[(li + 1) % n], O[li]))) li = k;
+  });
+  const ul = rsNorm(rsSub(O[(li + 1) % n], O[li])),
+    nl = [-ul[1], ul[0]],
+    m = [(O[li][0] + O[(li + 1) % n][0]) / 2, (O[li][1] + O[(li + 1) % n][1]) / 2],
+    out = rsInside(rsAdd(m, nl, 0.5), O) ? -1 : 1;
+  const sideOff = (k) => {
+    const u = rsNorm(rsSub(O[(k + 1) % n], O[k])),
+      nn = [-u[1] * out, u[0] * out];
+    return { a: rsAdd(O[k], nn, th / 2), u };
+  };
+  const S = O.map((q, k) => sideOff(k));
+  const C = O.map((q, k) => {
+    const p = S[(k - 1 + n) % n],
+      c = S[k],
+      cr = rsCross(p.u, c.u);
+    if (Math.abs(cr) < 1e-9) return c.a;
+    return rsAdd(p.a, p.u, rsCross(rsSub(c.a, p.a), c.u) / cr);
+  });
+  return { walls: C.map((a, k) => ({ a, b: C[(k + 1) % n] })), dims };
 }

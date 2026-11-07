@@ -34,11 +34,13 @@ import {
   rsRoomOf,
   rsStatus,
   rsWallsAsShapes,
+  rsWallsFromRoom,
 } from "./room-sketch.js";
 import { NP_ANNO_BOX, NP_TEXTSYM } from "./symbols-annotation.js";
 import { NP_DES_BOX, npScallop } from "./symbols-design.js";
 import { NP_BASIC, NP_XLAB, NP_XREAL, NP_XSHAPES } from "./symbols-more.js";
 import { NP_TIMB_BOX, NP_TIMB_DEF, NP_TIMB_SIZES, npRunAxis } from "./timber.js";
+import { WB, WB_BRICKS, wbHasBrick, wbMaterials, wbName, wbThick } from "./wall-buildups.js";
 import {
   NP_LIN,
   NP_LINOPTS,
@@ -797,6 +799,20 @@ const NP_REAL = {
   estone: [3000, 1500],
   esoldier: [3000, 215],
   airbrick: [215, 140],
+  solarpv: [3402, 1722],
+  battery: [750, 1150],
+  inverter: [450, 550],
+  evcharger: [250, 400],
+  beebrick: [215, 65],
+  batbox: [250, 350],
+  birdbox: [150, 250],
+  swiftbox: [340, 150],
+  ridgel: [4000],
+  hipl: [3000],
+  valleyl: [3000],
+  collar: [2400],
+  strut: [1500],
+  cjoist: [3600],
   secmark: [700, 1100],
   tagbox: [700, 320],
   tagcirc: [420, 420],
@@ -991,6 +1007,8 @@ function npLayerOf(o) {
       "Timber framing": "struct",
       "Stud wall connections": "struct",
       "Roof plan": "struct",
+      "Energy": "elec",
+      "Energy & wildlife": "elec",
       "Landscaping": "land",
       "Notes & details": "notes",
       "Shapes": "general",
@@ -1402,13 +1420,24 @@ async function openNotePage(opts) {
             .join("")}</div></div>
           <div class="nfrow nflsrow"><span class="nfl">Line</span><div class="seg nfseg nfls"><button type="button" data-v="">━ Solid</button><button type="button" data-v="dash">╍ Dashed</button><button type="button" data-v="dot">┈ Dotted</button><button type="button" data-v="dashdot">─·─ Centre</button><button type="button" data-v="long">— — Long dash</button><button type="button" data-v="dashdotdot">─··─ Dash dot dot</button><button type="button" data-v="fine">⋯ Fine dots</button><button type="button" data-v="heavy">▬ ▬ Heavy dash</button></div></div>
           <div class="nfrow nfwkrow"><span class="nfl">Wall type</span><select class="nfwk"><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option></select><input class="nfwth" inputmode="numeric" style="width:70px" aria-label="Wall thickness mm"><span class="who">mm</span></div>
+          <div class="nfrow nfburow" style="flex-wrap:wrap"><span class="nfl">Build-up</span><select class="nfbu" aria-label="Wall build-up" style="flex:1 1 220px"><option value="">Custom (set it below)</option>${Object.entries(
+            WB,
+          )
+            .map(([k, b]) => `<option value="${k}">${b.name}</option>`)
+            .join(
+              "",
+            )}</select><select class="nfbrk" aria-label="Brick size" style="flex:1 1 180px">${Object.entries(
+            WB_BRICKS,
+          )
+            .map(([k, b]) => `<option value="${k}">${b.name}</option>`)
+            .join("")}</select></div>
           <div class="nfrow nflinrow" style="flex-wrap:wrap"><span class="nfl">Linings</span><label style="flex:1 1 220px;display:flex;flex-direction:column;gap:3px;font-size:12px">Side 1<select class="nflin" data-s="1" style="min-height:40px;height:auto;font-size:14px;padding:6px 8px;width:100%;line-height:1.3">${NP_LINOPTS()}</select></label><label style="flex:1 1 220px;display:flex;flex-direction:column;gap:3px;font-size:12px">Side 2<select class="nflin" data-s="2" style="min-height:40px;height:auto;font-size:14px;padding:6px 8px;width:100%;line-height:1.3">${NP_LINOPTS()}</select></label><button type="button" class="nfb nflinsw">⇄ Swap sides</button></div>
           <div class="nfrow nfcallrow"><span class="nfl">Pointer</span><select class="nfc-lead"><option value="none">No arrow</option><option value="arrow">➜ Arrow</option><option value="dot">● Dot</option><option value="line">— Line</option></select><select class="nfc-box"><option value="">No box</option><option value="box">▭ Box</option><option value="round">▢ Rounded</option><option value="cloud">☁ Cloud</option><option value="under">_ Underline</option></select></div>
           <div class="nfrow nfbendrow"><span class="nfl">Curve</span><input type="range" class="nfbend" min="-100" max="100" step="1" style="flex:1"><button type="button" class="nfb nfbend0">Straight</button></div>
           <form class="nfrow nftxrow"><span class="nfl">Text</span><input class="nftx" style="flex:1;min-width:120px"><input class="nftxs" inputmode="numeric" style="width:56px" aria-label="Text size"><button type="submit" class="btn primary">Set</button></form>
           <div class="nfrow nflyrow"><span class="nfl">Layer</span><select class="nfly">${NP_LAYERS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></div>
-          <div class="nfrow nflvrow" style="flex-wrap:wrap"><span class="nfl">Leaves (mm)</span><label class="nflv" data-f="a">Outer leaf<select data-f="a">${[75, 90, 100, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="cav">Cavity<select data-f="cav">${[0, 25, 50, 75, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="ins">Insulation<select data-f="ins">${[0, 50, 75, 90, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="b">Inner leaf<select data-f="b">${[75, 90, 100, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label></div>
-          <div class="nfrow nfunrow" style="flex-wrap:wrap"><span class="nfl">Bricks / blocks</span><label class="nflv">Type<select class="nfun-p"><option value="block">Block 440×215</option><option value="block140">Block 440×140</option><option value="bigblock">Large block 620×215</option><option value="brick">Brick 215×65</option></select></label><label class="nflv">Length<input class="nfun-L" inputmode="numeric" style="width:70px"></label><label class="nflv">Height<input class="nfun-H" inputmode="numeric" style="width:70px"></label><label class="nflv">Joint<input class="nfun-J" inputmode="numeric" style="width:56px"></label></div>
+          <div class="nfrow nflvrow" style="flex-wrap:wrap"><span class="nfl">Leaves (mm)</span><label class="nflv" data-f="a">Outer leaf<select data-f="a">${[75, 90, 100, 102.5, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="cav">Cavity<select data-f="cav">${[0, 25, 50, 75, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="ins">Insulation<select data-f="ins">${[0, 50, 75, 90, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="b">Inner leaf<select data-f="b">${[75, 90, 100, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label></div>
+          <div class="nfrow nfunrow" style="flex-wrap:wrap"><span class="nfl">Bricks / blocks</span><label class="nflv">Type<select class="nfun-p"><option value="block">Block 440×215</option><option value="block140">Block 440×140</option><option value="bigblock">Large block 620×215</option><option value="brick">Brick 215×65</option><option value="brickimp">Brick 9″ × 2⅞″ (imperial, 228×73)</option><option value="thinjoint">Block 440×215, thin joint (3 mm)</option></select></label><label class="nflv">Length<input class="nfun-L" inputmode="numeric" style="width:70px"></label><label class="nflv">Height<input class="nfun-H" inputmode="numeric" style="width:70px"></label><label class="nflv">Joint<input class="nfun-J" inputmode="numeric" style="width:56px"></label></div>
           <div class="nfrow nffdrow" style="flex-wrap:wrap"><span class="nfl">Footing (mm)</span><label class="nflv">Width<input class="nffd-w" inputmode="numeric" style="width:70px"></label><label class="nflv">Thickness<input class="nffd-d" inputmode="numeric" style="width:70px"></label><label class="nflv">Ground to underside<input class="nffd-dep" inputmode="numeric" style="width:80px"></label></div>
           <div class="nfrow nfpvrow"><span class="nfl">Material</span><select class="nfpv">${Object.entries(
             NP_PAVE,
@@ -3114,6 +3143,31 @@ async function openNotePage(opts) {
             draw();
           },
           doc,
+          /* 🧱 turn the measured room into the drawing tool's own walls (and dimensions) */
+          (thMm, kind) => {
+            const r = rsWallsFromRoom(hit.o, doc, thMm);
+            if (!r.walls.length) return;
+            const k = doc.objs.indexOf(hit.o);
+            if (k >= 0) doc.objs.splice(k, 1);
+            const th = doc.scale ? toUnits(thMm) : Math.max(12, thMm / 10);
+            const ws = r.walls.map((x) => ({
+              t: "shape",
+              k: kind,
+              a: x.a,
+              b: x.b,
+              c: "#111111",
+              w: pwFor(wid),
+              th,
+            }));
+            ws.forEach((x) => doc.objs.push(x));
+            r.dims.forEach((x) => doc.objs.push(x));
+            ws.forEach((x) => {
+              weldWall(x);
+              orientCavity(x);
+            });
+            draw();
+            toast("Room turned into " + ws.length + " walls. Tap a wall with Select to change it.");
+          },
         );
         return;
       }
@@ -5126,9 +5180,11 @@ async function openNotePage(opts) {
               lins[k].A += (L * H) / 1000;
               lins[k].L += L;
             });
-          walls[o.k] = walls[o.k] || { L: 0, n: 0, cc: o.cc || 400, sd: o.sd || 100 };
-          walls[o.k].L += L;
-          walls[o.k].n++;
+          /* walls with a build-up are counted by build-up (and brick size), the rest by kind */
+          const wk = WB[o.bu] ? "bu:" + o.bu + ":" + (o.brk || "metric") : o.k;
+          walls[wk] = walls[wk] || { L: 0, n: 0, cc: o.cc || 400, sd: o.sd || 100 };
+          walls[wk].L += L;
+          walls[wk].n++;
         } else if (o.t === "shape") {
           const lab = libLabel(o.k).replace(/^[^A-Za-z0-9]+\s*/, "");
           sym[lab] = (sym[lab] || 0) + 1;
@@ -5178,6 +5234,13 @@ async function openNotePage(opts) {
         };
         wl.forEach(([k, w]) => {
           const a = share(k);
+          const wm = /^bu:/.test(k)
+            ? wbMaterials(k.split(":")[1], k.split(":")[2], a, up, f2)
+            : null;
+          if (wm) {
+            mat.push(...wm);
+            return;
+          }
           if (k === "cavity") {
             mat.push(
               [
@@ -5266,7 +5329,7 @@ async function openNotePage(opts) {
         d.innerHTML = `<div class="dimbox qtybox"><b>🧮 Quantities (all pages)</b><div class="who">Worked out from what's drawn at 1:${doc.scale}. They're estimates to check before ordering.</div>
         <label class="inl">Wall height <input type="number" class="qh" value="${H}" style="width:100px"> mm</label><label class="inl">Strip footing <input type="number" class="qfw" value="${doc.fdnW || 600}" style="width:80px"> wide × <input type="number" class="qfd" value="${doc.fdnD || 225}" style="width:80px"> deep (mm)</label>
         <div class="flabel">Rooms</div>${r.rooms.length ? `<div class="tablewrap"><table><thead><tr><th>Room</th><th class="num">Floor m²</th><th class="num">Perimeter m</th><th class="num">Wall m²</th><th class="num">Volume m³</th></tr></thead><tbody>${r.rooms.map((x) => `<tr><td>${esc(x.n)}${doc.pages.length > 1 ? ` <span class="who">${esc(x.pg)}</span>` : ""}</td><td class="num">${f2(x.A)}</td><td class="num">${f2(x.P)}</td><td class="num">${f2(x.wall)}</td><td class="num">${f2(x.vol)}</td></tr>`).join("")}<tr><td><b>Total</b></td><td class="num"><b>${f2(totA)}</b></td><td></td><td class="num"><b>${f2(r.rooms.reduce((a, x) => a + x.wall, 0))}</b></td><td class="num"><b>${f2(r.rooms.reduce((a, x) => a + x.vol, 0))}</b></td></tr></tbody></table></div>` : `<div class="who">No rooms yet. Use the ⬠ Room tool and tap the corners of each room.</div>`}
-        <div class="flabel">Walls</div>${wl.length ? `<div class="tablewrap"><table><thead><tr><th>Wall type</th><th class="num">Length m</th><th class="num">Area m²</th></tr></thead><tbody>${wl.map(([k, w]) => `<tr><td>${esc(QTY_WALL[k])}</td><td class="num">${f2(w.L)}</td><td class="num">${f2((w.L * H) / 1000)}</td></tr>`).join("")}<tr><td>Less doors & windows (approx.)</td><td></td><td class="num">−${f2(r.opn)}</td></tr><tr><td><b>Net wall area</b></td><td></td><td class="num"><b>${f2(net)}</b></td></tr></tbody></table></div>` : `<div class="who">No walls drawn.</div>`}
+        <div class="flabel">Walls</div>${wl.length ? `<div class="tablewrap"><table><thead><tr><th>Wall type</th><th class="num">Length m</th><th class="num">Area m²</th></tr></thead><tbody>${wl.map(([k, w]) => `<tr><td>${esc(QTY_WALL[k] || wbName(k.split(":")[1], k.split(":")[2]))}</td><td class="num">${f2(w.L)}</td><td class="num">${f2((w.L * H) / 1000)}</td></tr>`).join("")}<tr><td>Less doors & windows (approx.)</td><td></td><td class="num">−${f2(r.opn)}</td></tr><tr><td><b>Net wall area</b></td><td></td><td class="num"><b>${f2(net)}</b></td></tr></tbody></table></div>` : `<div class="who">No walls drawn.</div>`}
         ${mat.length ? `<div class="flabel">Materials (estimate)</div><div class="tablewrap"><table><tbody>${mat.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="num"><b>${esc(b)}</b></td></tr>`).join("")}</tbody></table></div>` : ""}
         ${
           Object.keys(r.sym).length
@@ -7384,6 +7447,12 @@ async function openNotePage(opts) {
       );
       const wall = npIsWall(o);
       fb.querySelector(".nfwkrow").hidden = !wall;
+      fb.querySelector(".nfburow").hidden = !wall || !doc.scale;
+      if (wall) {
+        fb.querySelector(".nfbu").value = WB[o.bu] ? o.bu : "";
+        fb.querySelector(".nfbrk").value = o.brk || "metric";
+        fb.querySelector(".nfbrk").hidden = !wbHasBrick(WB[o.bu]);
+      }
       fb.querySelector(".nflinrow").hidden = !wall;
       if (wall)
         fb.querySelectorAll(".nflin").forEach((sl) => {
@@ -7717,6 +7786,7 @@ async function openNotePage(opts) {
     fb.querySelector(".nfwk").onchange = (e) =>
       upd((o) => {
         o.k = e.target.value;
+        delete o.bu;
         if (doc.scale)
           o.th = Math.max(
             6,
@@ -7742,9 +7812,33 @@ async function openNotePage(opts) {
       if (v > 0 && doc.scale)
         upd((o) => {
           o.th = toUnits(v);
+          delete o.bu;
           if (o.k === "tstud") o.sd = v;
         });
     };
+    /* a build-up sets the wall kind, thickness and cavity leaves together (wall-buildups.js) */
+    fb.querySelector(".nfbu").onchange = (e) =>
+      upd((o) => {
+        const b = WB[e.target.value];
+        if (!b) {
+          delete o.bu;
+          return;
+        }
+        o.bu = e.target.value;
+        o.k = b.k;
+        if (b.lv) o.lv = Object.assign({}, b.lv);
+        if (b.k === "tstud") {
+          o.sd = b.sd || 100;
+          o.cc = o.cc || 400;
+        }
+        if (doc.scale) o.th = Math.max(6, toUnits(wbThick(b)));
+        weldWall(o);
+        orientCavity(o);
+      });
+    fb.querySelector(".nfbrk").onchange = (e) =>
+      upd((o) => {
+        o.brk = e.target.value;
+      });
     fb.querySelector(".nftxrow").onsubmit = (e) => {
       e.preventDefault();
       upd((o) => {
@@ -7801,6 +7895,7 @@ async function openNotePage(opts) {
               o.lv || {},
             );
             o.lv[sl.dataset.f] = +sl.value;
+            delete o.bu;
             if (o.k === "cavity") {
               const t = o.lv.a + o.lv.cav + o.lv.ins + o.lv.b;
               if (doc.scale) o.th = Math.max(6, toUnits(t));

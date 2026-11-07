@@ -41,6 +41,15 @@ const NP_BLD_BOX = new Set([
   "tvp",
   "stat",
   "towel",
+  /* energy and wildlife */
+  "solarpv",
+  "battery",
+  "inverter",
+  "evcharger",
+  "beebrick",
+  "batbox",
+  "birdbox",
+  "swiftbox",
 ]);
 const NP_BLD_LINE = new Set([
   "ductsup",
@@ -90,6 +99,13 @@ const NP_BLD_LINE = new Set([
   "foul",
   "storm",
   "fall",
+  /* roof: plan lines and section timbers */
+  "hipl",
+  "valleyl",
+  "ridgel",
+  "collar",
+  "strut",
+  "cjoist",
 ]);
 function npBldSym(ctx, o, x0, y0, w, h, cx, cy) {
   const lw = ctx.lineWidth,
@@ -569,6 +585,115 @@ function npBldSym(ctx, o, x0, y0, w, h, cx, cy) {
     case "stat":
       circTxt("T");
       break;
+    /* ===== energy and wildlife ===== */
+    case "solarpv": {
+      /* an array of portrait panels about 1,134 × 1,722 mm (at real size when there is a scale) */
+      const pw = R(1134, Math.max(h * 0.62, 12)),
+        ph = R(1722, Math.max(h, 18)),
+        nc = Math.max(1, Math.round(w / pw)),
+        nr = Math.max(1, Math.round(h / ph));
+      fillR(x0, y0, w, h, "#dbeafe");
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.5);
+      for (let i = 1; i < nc; i++) ln(x0 + (w * i) / nc, y0, x0 + (w * i) / nc, y1);
+      for (let j = 1; j < nr; j++) ln(x0, y0 + (h * j) / nr, x1, y0 + (h * j) / nr);
+      /* cell lines in each panel */
+      ctx.globalAlpha = 0.35;
+      for (let i = 0; i < nc; i++)
+        for (let j = 0; j < nr; j++) {
+          const cx0 = x0 + (w * i) / nc,
+            cy0 = y0 + (h * j) / nr,
+            cw = w / nc,
+            ch = h / nr;
+          for (let k = 1; k < 3; k++) ln(cx0 + (cw * k) / 3, cy0, cx0 + (cw * k) / 3, cy0 + ch);
+          for (let k = 1; k < 6; k++) ln(cx0, cy0 + (ch * k) / 6, cx0 + cw, cy0 + (ch * k) / 6);
+        }
+      ctx.globalAlpha = 1;
+      full();
+      lbl("PV", 0.5);
+      break;
+    }
+    case "battery": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      const bw = w * 0.5,
+        bh = h * 0.28,
+        bx = cx - bw / 2,
+        by = y0 + h * 0.18;
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.strokeRect(bx + bw, by + bh * 0.3, bw * 0.08, bh * 0.4);
+      fillR(bx + bw * 0.08, by + bh * 0.15, bw * 0.55, bh * 0.7, "#86efac");
+      full();
+      npLbl(ctx, "BATTERY", cx, y0 + h * 0.72, Math.min(h * 0.14, w / 5.2));
+      break;
+    }
+    case "inverter": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      ctx.beginPath();
+      for (let i = 0; i <= 24; i++) {
+        const t = i / 24,
+          x = x0 + w * 0.2 + w * 0.6 * t,
+          y = y0 + h * 0.35 - Math.sin(t * Math.PI * 2) * h * 0.1;
+        if (i) ctx.lineTo(x, y);
+        else ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+      full();
+      npLbl(ctx, "INV", cx, y0 + h * 0.7, Math.min(h * 0.22, w / 2.6));
+      break;
+    }
+    case "evcharger": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      ell(cx, y0 + h * 0.38, m * 0.22, m * 0.22);
+      ln(cx - m * 0.08, y0 + h * 0.3, cx - m * 0.08, y0 + h * 0.38);
+      ln(cx + m * 0.08, y0 + h * 0.3, cx + m * 0.08, y0 + h * 0.38);
+      full();
+      npLbl(ctx, "EV", cx, y0 + h * 0.78, Math.min(h * 0.2, w / 2.2));
+      break;
+    }
+    case "beebrick": {
+      fillR(x0, y0, w, h, "#fde68a");
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.6);
+      const nx = Math.max(4, Math.round(w / (h * 0.35))),
+        ny = 2;
+      for (let i = 0; i < nx; i++)
+        for (let j = 0; j < ny; j++)
+          ell(
+            x0 + (w * (i + 0.5)) / nx,
+            y0 + (h * (j + 0.5)) / ny,
+            Math.min(w / nx, h / ny) * 0.22,
+            Math.min(w / nx, h / ny) * 0.22,
+          );
+      full();
+      break;
+    }
+    case "batbox": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      ln(x0 + w * 0.15, y1 - h * 0.12, x1 - w * 0.15, y1 - h * 0.12);
+      full();
+      lbl("BAT", 0.6);
+      break;
+    }
+    case "birdbox": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      ell(cx, y0 + h * 0.3, m * 0.14, m * 0.14);
+      full();
+      npLbl(ctx, "BIRD", cx, y0 + h * 0.7, Math.min(h * 0.16, w / 3.2));
+      break;
+    }
+    case "swiftbox": {
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.7);
+      ell(x0 + w * 0.2, y1 - h * 0.28, w * 0.09, h * 0.14);
+      full();
+      npLbl(ctx, "SWIFT", x0 + w * 0.62, cy, Math.min(h * 0.32, w / 4.6));
+      break;
+    }
     case "tvp": {
       ctx.strokeRect(x0, y0, w, h);
       lbl("TV", 0.7);
@@ -611,6 +736,35 @@ function npBldLine(ctx, o, P, ln, L, lw) {
     case "rafter":
     case "joistl": {
       const d = R(o.k === "rafter" ? 150 : 200, Math.max(lw * 6, 14));
+      band(d, "#f3e2c4");
+      return true;
+    }
+    /* roof plan lines: hip, valley, ridge */
+    case "hipl":
+    case "valleyl":
+    case "ridgel": {
+      ctx.save();
+      ctx.setLineDash(
+        o.k === "ridgel" ? [lw * 10, lw * 3] : [lw * 8, lw * 2.5, lw * 1.5, lw * 2.5],
+      );
+      ln(P(0, 0), P(L, 0));
+      ctx.setLineDash([]);
+      const m = P(L / 2, -Math.max(10, lw * 5));
+      npLbl(
+        ctx,
+        { hipl: "HIP", valleyl: "VALLEY", ridgel: "RIDGE" }[o.k],
+        m[0],
+        m[1],
+        Math.max(8, lw * 3.2),
+      );
+      ctx.restore();
+      return true;
+    }
+    /* roof section timbers */
+    case "collar":
+    case "strut":
+    case "cjoist": {
+      const d = R(o.k === "cjoist" ? 150 : 100, Math.max(lw * 5, 12));
       band(d, "#f3e2c4");
       return true;
     }
@@ -1249,7 +1403,24 @@ const NP_LIB = [
   ["plan", "Floors", ["bblay", "jlay", "jtrim", "jstrap"]],
   ["plan", "Timber framing", ["tstud", "jlay", "rlay", "tlay", "jtrim", "jstrap"]],
   ["plan", "Stud wall connections", ["sdT3", "sdTlad", "sdTbk", "sdL3", "sdLcal", "sdLblk"]],
-  ["plan", "Roof plan", ["roofhip", "roofgable", "rlay", "tlay", "fall"]],
+  [
+    "plan",
+    "Roof plan",
+    [
+      "roofhip",
+      "roofgable",
+      "ridgel",
+      "hipl",
+      "valleyl",
+      "rlay",
+      "tlay",
+      "fall",
+      "rooflight",
+      "lantern",
+      "solarpv",
+    ],
+  ],
+  ["plan", "Energy", ["solarpv", "battery", "inverter", "evcharger"]],
   [
     "plan",
     "Site set-up",
@@ -1334,12 +1505,20 @@ const NP_LIB = [
   ],
   [
     "elev",
+    "Energy & wildlife",
+    ["solarpv", "evcharger", "beebrick", "batbox", "birdbox", "swiftbox"],
+  ],
+  [
+    "elev",
     "Section: roof",
     [
       "truss",
       "cutroof",
       "rafter",
       "joistl",
+      "cjoist",
+      "collar",
+      "strut",
       "rooftile",
       "batfelt",
       "lead",
