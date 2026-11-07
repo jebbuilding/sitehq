@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Where today's tabs go</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&amp;family=Barlow:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1330px; height: 844px; box-sizing: border-box; padding: 56px; background: #f5f2f2; color: #1c1a1a; font-family: Barlow, system-ui, sans-serif; font-size: 17px; line-height: 1.4; display: flex; flex-direction: column; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: Oswald, sans-serif; font-weight: 600; font-size: 44px; line-height: 1.1">Where today's 26 tabs go</h1>
+<p style="margin: 0; font-size: 20px; color: #5f5757">Nothing is taken away. Every tab moves into one of five sections along the bottom.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; flex: 1">
+
+<div style="background: #ffffff; border: 1px solid #e3dada; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0 0 6px; font-family: Oswald, sans-serif; font-weight: 600; font-size: 26px; color: #7F191D">Today</h2>
+<span>My to-do</span>
+<p style="margin: 8px 0 0; font-size: 15px; color: #5f5757">Plus a summary from the other sections: who's on site, today's jobs, new enquiries, things to sign, samples out, time off.</p>
+</div>
+
+<div style="background: #ffffff; border: 1px solid #e3dada; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0 0 6px; font-family: Oswald, sans-serif; font-weight: 600; font-size: 26px; color: #7F191D">Jobs &amp; clients</h2>
+<span>Sites</span>
+<span>Clients</span>
+<span>Leads <span style="color: #5f5757">(now "Enquiries")</span></span>
+<span>Planner</span>
+<span>Client portal</span>
+<span>Photos</span>
+<span>Drawings</span>
+<span>Day work</span>
+<span>Samples</span>
+<span>Calculator</span>
+</div>
+
+<div style="background: #ffffff; border: 1px solid #e3dada; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0 0 6px; font-family: Oswald, sans-serif; font-weight: 600; font-size: 26px; color: #7F191D">People</h2>
+<span>Employees</span>
+<span>Timesheets</span>
+<span>Sign-in book</span>
+<span>Training</span>
+<span>Chat</span>
+</div>
+
+<div style="background: #ffffff; border: 1px solid #e3dada; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0 0 6px; font-family: Oswald, sans-serif; font-weight: 600; font-size: 26px; color: #7F191D">Paperwork</h2>
+<span>Forms</span>
+<span>My forms</span>
+<span>Health &amp; safety</span>
+<span>Policies &amp; insurance</span>
+<span>Receipts</span>
+<span>Invoices</span>
+<span>Reports</span>
+<span>Merchants</span>
+<span>Materials &amp; tools</span>
+</div>
+
+<div style="background: #ffffff; border: 1px solid #e3dada; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0 0 6px; font-family: Oswald, sans-serif; font-weight: 600; font-size: 26px; color: #7F191D">Setup</h2>
+<span>Setup</span>
+<p style="margin: 8px 0 0; font-size: 15px; color: #5f5757">Also where light or dark mode and phone notifications are switched on and off.</p>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

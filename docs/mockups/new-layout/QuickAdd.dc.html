@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>SiteHQ – Quick add</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&amp;family=Barlow:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="--bg:#f5f2f2;--surface:#ffffff;--ink:#1c1a1a;--muted:#5f5757;--line:#e3dada;--brand:#7F191D;--accent:#7F191D;--soft:#f4e9e9; width: 390px; height: 844px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: #5b5555; color: var(--ink); font-family: Barlow, system-ui, sans-serif; font-size: 15px; line-height: 1.4">
+
+<a href="Main.dc.html" aria-label="Close" style="flex: 1; display: block"></a>
+
+<div role="dialog" aria-label="Quick add" style="background: var(--surface); border-radius: 24px 24px 0 0; padding: 10px 16px 32px; display: flex; flex-direction: column; gap: 14px">
+<span style="align-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--line)"></span>
+<div style="display: flex; align-items: center">
+<h2 style="flex: 1; margin: 0; font-family: Oswald, sans-serif; font-weight: 600; font-size: 22px">Add</h2>
+<a href="Main.dc.html" aria-label="Close" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: var(--muted); background: var(--bg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<button style="min-height: 96px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7F191D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Enquiry</button>
+<button style="min-height: 96px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7F191D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h4l2-3h6l2 3h4v12H3z"></path><circle cx="12" cy="13" r="4"></circle></svg>Photo</button>
+<button style="min-height: 96px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7F191D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Receipt</button>
+<button style="min-height: 96px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7F191D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 12l3 3 5-6"></path></svg>To-do</button>
+<button style="min-height: 96px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7F191D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Day work</button>
+<button style="min-height: 96px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7F191D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg>Note</button>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

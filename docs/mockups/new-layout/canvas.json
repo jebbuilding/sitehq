@@ -1,0 +1,27 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-07T12:45:00Z"},
+  "title": "SiteHQ new layout",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 390, "h": 844, "title": "Today (opens first)", "is_interactive": true, "radius": 28},
+    "Jobs.dc.html": {"x": 470, "y": 0, "w": 390, "h": 844, "title": "Jobs & clients", "is_interactive": true, "radius": 28},
+    "People.dc.html": {"x": 940, "y": 0, "w": 390, "h": 844, "title": "People", "is_interactive": true, "radius": 28},
+    "Paperwork.dc.html": {"x": 1410, "y": 0, "w": 390, "h": 844, "title": "Paperwork", "is_interactive": true, "radius": 28},
+    "Setup.dc.html": {"x": 1880, "y": 0, "w": 390, "h": 844, "title": "Setup", "is_interactive": true, "radius": 28},
+    "QuickAdd.dc.html": {"x": 0, "y": 1264, "w": 390, "h": 844, "title": "Quick add (the + button)", "is_interactive": true, "radius": 28},
+    "TodayDark.dc.html": {"x": 470, "y": 1264, "w": 390, "h": 844, "title": "Today in dark mode", "radius": 28},
+    "Map.dc.html": {"x": 940, "y": 1264, "w": 1330, "h": 844, "title": "Where today's tabs go"},
+    "DeskToday.dc.html": {"x": 0, "y": 2528, "w": 1440, "h": 900, "title": "Today on a computer or iPad", "expand": "fill", "is_interactive": true},
+    "DeskJobs.dc.html": {"x": 1520, "y": 2528, "w": 1440, "h": 900, "title": "Jobs & clients on a computer or iPad", "expand": "fill", "is_interactive": true}
+  },
+  "order": ["Main.dc.html", "Jobs.dc.html", "People.dc.html", "Paperwork.dc.html", "Setup.dc.html", "QuickAdd.dc.html", "TodayDark.dc.html", "Map.dc.html", "DeskToday.dc.html", "DeskJobs.dc.html"],
+  "notes": {
+    "t1": {"x": 0, "y": -300, "text": "Five sections instead of 26 tabs", "kind": "title1", "maxW": 2270},
+    "t2": {"x": 0, "y": 964, "text": "Quick add, dark mode, and where everything went", "kind": "title1", "maxW": 2270},
+    "t3": {"x": 0, "y": 2228, "text": "On a computer or iPad: the sections move to the left", "kind": "title1", "maxW": 2960},
+    "s1": {"x": -540, "y": 0, "w": 440, "size": "l", "fill": "orange", "text": "James: this is only a picture of the new layout. Nothing in the app has changed.\n\nPress Play on any phone and tap the bar along the bottom to move between sections.\n\nAll names, jobs and numbers are made up.\n\nLeave a comment on anything you like or don't like."}
+  },
+  "designSystems": []
+}
