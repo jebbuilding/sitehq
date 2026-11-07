@@ -49,6 +49,7 @@ Subcollections (`TR_COLLS`):
 | `dwrates`, `dwline` | day-work rates and lines |
 | `cdm` | CDM 2015 documents |
 | `nptpl` | notebook page templates |
+| `npsym` | drawing symbols James saved from his own drawings (`name`, `objs` around their middle, `scale` drawn at) |
 | `qrcfg`, `qrsite` | QR sign-in config (web-app URL + key) and per-site state |
 | `audit` | tamper-evident deletion record (hash-chained) |
 | `bin` | deleted items (30-day bin) |

@@ -24,6 +24,7 @@ import {
   npUnit,
 } from "./construction-details.js";
 import { npDxf } from "./dxf-export.js";
+import { npDxfImport } from "./dxf-import.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
 import {
@@ -1349,7 +1350,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t" data-t="roomsk" data-g="draw measure" title="Room sketch: draw the room in one line, it straightens the walls, then tap each wall to type its length" aria-label="Room sketch">✍️<small>Room sketch</small></button>
       ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button>` : ""}
       <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" accept="image/*" multiple hidden></label>
-      <button type="button" class="np-t np-apppic" data-g="insert" title="Photos already in the app" aria-label="Photos already in the app">🖼<small>App photos</small></button><button type="button" class="np-t np-import" data-g="insert" title="Bring in a drawing or plan at its own scale" aria-label="Import a drawing">📥<small>Import drawing</small></button>${opts.pro ? `<button type="button" class="np-t np-qty" data-g="measure" title="Areas, lengths and materials from this drawing" aria-label="Quantities">🧮<small>Quantities</small></button><button type="button" class="np-t np-layers" data-g="page" title="Show, hide or lock groups of things, and show another floor underneath" aria-label="Layers and floors">🗂<small>Layers</small></button>` : ""}${
+      <button type="button" class="np-t np-apppic" data-g="insert" title="Photos already in the app" aria-label="Photos already in the app">🖼<small>App photos</small></button><button type="button" class="np-t np-mysym" data-g="insert" title="Symbols you have saved from your own drawings" aria-label="My symbols"${opts.pro ? "" : " hidden"}>⭐<small>My symbols</small></button><button type="button" class="np-t np-import" data-g="insert" title="Bring in a drawing or plan at its own scale" aria-label="Import a drawing">📥<small>Import drawing</small></button>${opts.pro ? `<button type="button" class="np-t np-qty" data-g="measure" title="Areas, lengths and materials from this drawing" aria-label="Quantities">🧮<small>Quantities</small></button><button type="button" class="np-t np-layers" data-g="page" title="Show, hide or lock groups of things, and show another floor underneath" aria-label="Layers and floors">🗂<small>Layers</small></button>` : ""}${
         opts.pro
           ? `<span class="np-build" style="display:contents">${[
               ["beam", "🔩", "Steel beam"],
@@ -1407,7 +1408,7 @@ async function openNotePage(opts) {
       .join(
         "",
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
-      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button><button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
+      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
       <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
       <div class="np-finebox" hidden><div class="nfrow"><b>⚙ <span class="nfwhatis">Properties</span></b><button type="button" class="nfx" aria-label="Close">✕</button></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
@@ -4898,6 +4899,10 @@ async function openNotePage(opts) {
           undo.pop();
           repeatDlg(o);
           return;
+        } else if (a === "mysym") {
+          undo.pop();
+          mySymSave(msel.size ? [...msel].map((k) => doc.objs[k]).filter(Boolean) : [o]);
+          return;
         } else if (a === "lock") {
           o.lk = !o.lk;
           if (!o.lk) delete o.lk;
@@ -6894,6 +6899,116 @@ async function openNotePage(opts) {
     draw();
     toast("Corner made");
   }
+  /* ⭐ my symbols: something drawn, saved by name (owner-private, todos kind "npsym") to drop into any drawing */
+  function mySymSave(list) {
+    if (!list.length) return;
+    const d = document.createElement("div");
+    d.className = "dimask";
+    d.innerHTML = `<form class="dimbox"><b>⭐ Save as my symbol</b><div class="who">Saves ${list.length === 1 ? "this" : "these " + list.length + " things"} so you can drop ${list.length === 1 ? "it" : "them"} into any drawing from ⭐ My symbols (Insert).</div>
+      <label>Name<input class="msn" maxlength="60" placeholder="e.g. Standard kitchen run, 100 mm wall detail"></label>
+      <div class="dimbtns"><button type="button" class="btn msx">Cancel</button><button type="submit" class="btn primary">Save</button></div></form>`;
+    ov.appendChild(d);
+    d.querySelector(".msx").onclick = () => d.remove();
+    setTimeout(() => d.querySelector(".msn").focus(), 60);
+    d.querySelector("form").onsubmit = async (e) => {
+      e.preventDefault();
+      const name = d.querySelector(".msn").value.trim();
+      if (!name) return toast("Give it a name");
+      /* stored around its own middle, with the scale it was drawn at */
+      const B = list.map((x) => bbox(x));
+      const x0 = Math.min(...B.map((b) => b[0])),
+        y0 = Math.min(...B.map((b) => b[1])),
+        x1 = Math.max(...B.map((b) => b[0] + b[2])),
+        y1 = Math.max(...B.map((b) => b[1] + b[3])),
+        c = [(x0 + x1) / 2, (y0 + y1) / 2];
+      const objs = list.map((x) => {
+        const k = JSON.parse(JSON.stringify(x));
+        delete k.lk;
+        moveObj(k, -c[0], -c[1]);
+        return k;
+      });
+      const rec = { kind: "npsym", name, objs, scale: doc.scale || 0, created: Date.now() };
+      const js = JSON.stringify(rec);
+      if (js.length > 300000)
+        return toast("That's too much to save as one symbol. Try fewer things.");
+      try {
+        const id = "sym-" + newId();
+        await S.db.doc("todos/" + id).set(JSON.parse(js));
+        toast("Saved to ⭐ My symbols: " + name);
+        d.remove();
+      } catch (er) {
+        toast("Couldn't save the symbol");
+      }
+    };
+  }
+  /* scale a copied object by f about the origin (a symbol drawn at another scale) */
+  const scaleObj = (o2, f) => {
+    if (f === 1) return;
+    ["a", "b", "v"].forEach((k) => {
+      if (Array.isArray(o2[k])) o2[k] = [o2[k][0] * f, o2[k][1] * f];
+    });
+    if (Array.isArray(o2.p)) o2.p = o2.p.map((q) => [q[0] * f, q[1] * f]);
+    if (o2.x != null) {
+      o2.x *= f;
+      o2.y *= f;
+    }
+    if (o2.th) o2.th *= f;
+    if (o2.off) o2.off *= f;
+  };
+  if (q(".np-mysym"))
+    q(".np-mysym").onclick = () => {
+      const syms = (S.npSyms || [])
+        .slice()
+        .sort((x, y) => (x.name || "").localeCompare(y.name || ""));
+      const d = document.createElement("div");
+      d.className = "dimask";
+      d.innerHTML = `<div class="dimbox"><b>⭐ My symbols</b>${
+        syms.length
+          ? `<div class="who">Tap one to drop it in the middle of the page, then drag it where you want it.</div>${syms.map((m, k) => `<div class="msrow"><button type="button" class="btn msi" data-k="${k}" style="flex:1;text-align:left">${esc(m.name || "Symbol")}</button><button type="button" class="btn msd" data-k="${k}" aria-label="Remove ${esc(m.name || "symbol")}">✕</button></div>`).join("")}`
+          : `<div class="who">None yet. Pick something you've drawn (or several things with ⬚ Pick several) and tap ⭐ Save as my symbol.</div>`
+      }<div class="dimbtns"><button type="button" class="btn msx">Close</button></div></div>`;
+      ov.appendChild(d);
+      d.querySelector(".msx").onclick = () => d.remove();
+      d.querySelectorAll(".msi").forEach(
+        (b) =>
+          (b.onclick = () => {
+            const m = syms[+b.dataset.k];
+            const f = m.scale && doc.scale ? m.scale / doc.scale : 1,
+              c = [doc.w / 2, doc.h / 2];
+            snap();
+            msel.clear();
+            (m.objs || []).forEach((x) => {
+              const k = JSON.parse(JSON.stringify(x));
+              scaleObj(k, f);
+              moveObj(k, c[0], c[1]);
+              doc.objs.push(k);
+              msel.add(doc.objs.length - 1);
+            });
+            dirty = true;
+            d.remove();
+            setTool("box");
+            draw();
+            toast(
+              m.name +
+                " added" +
+                (f !== 1 ? " (resized from 1:" + m.scale + " to 1:" + doc.scale + ")" : ""),
+            );
+          }),
+      );
+      d.querySelectorAll(".msd").forEach(
+        (b) =>
+          (b.onclick = async () => {
+            const m = syms[+b.dataset.k];
+            try {
+              await S.db.doc("todos/" + m.id).delete();
+              toast("Removed " + (m.name || "symbol") + " (it's in Deleted items for 30 days)");
+              b.closest(".msrow").remove();
+            } catch (er) {
+              toast("Couldn't remove it");
+            }
+          }),
+      );
+    };
   /* ⋯ copy in a row: n copies at a set spacing (e.g. joists at 400 centres, posts every 1.8 m) */
   function repeatDlg(o) {
     const d = document.createElement("div");
@@ -9104,16 +9219,33 @@ async function openNotePage(opts) {
   q(".np-import").onclick = () => {
     const d = document.createElement("div");
     d.className = "dimask";
-    d.innerHTML = `<div class="dimbox"><b>📥 Import a drawing</b><div class="who">Bring in a plan or drawing (PDF or picture). Tell it the scale, or measure a length you know, and it goes in at the right size for this drawing. Then crop away what you don't need.</div>
-      <label class="btn primary" style="text-align:center">📁 From my files<input type="file" accept="application/pdf,.pdf,image/*" hidden></label>
+    d.innerHTML = `<div class="dimbox"><b>📥 Import a drawing</b><div class="who">Bring in a plan or drawing (PDF or picture). Tell it the scale, or measure a length you know, and it goes in at the right size for this drawing. Then crop away what you don't need. <b>CAD files:</b> ask for a DXF (in AutoCAD: Save As › DXF) and it comes in as real lines at real size, ready to draw over.</div>
+      <label class="btn primary" style="text-align:center">📁 From my files<input type="file" accept="application/pdf,.pdf,image/*,.dxf" hidden></label>
       <button type="button" class="btn npiapp">🏗️ From the app (site plans & drawings)</button>
       <div class="dimbtns"><button type="button" class="btn npx3">Cancel</button></div></div>`;
     ov.appendChild(d);
     d.querySelector(".npx3").onclick = () => d.remove();
-    d.querySelector("input").onchange = (e) => {
+    d.querySelector("input").onchange = async (e) => {
       const f = e.target.files[0];
       d.remove();
-      if (f) impFromBlob(f, f.type, f.name);
+      if (!f) return;
+      /* a CAD file (dxf-import.js): real lines, circles and text at real size */
+      if (/.dxf$/i.test(f.name || "")) {
+        try {
+          const r = npDxfImport(await f.text(), doc, NP_U);
+          if (r.objs.length) {
+            snap();
+            r.objs.forEach((o) => doc.objs.push(o));
+            dirty = true;
+            draw();
+          }
+          toast(r.msg);
+        } catch (er) {
+          toast("Couldn't read that DXF file. Try saving it again as DXF (AutoCAD 2010 or later).");
+        }
+        return;
+      }
+      impFromBlob(f, f.type, f.name);
     };
     d.querySelector(".npiapp").onclick = () => {
       d.remove();

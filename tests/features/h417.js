@@ -18,7 +18,7 @@ const drawRoom=async(x0,y0)=>{await p.evaluate(()=>document.querySelector('.np .
 await drawRoom(300,200);
 /* a second room, fully measured, so both states are on the page */
 await drawRoom(650,200);
-for(const [x,y,l] of [[770,201,'4000'],[889,280,'3000'],[770,359,'4000'],[651,280,'3000']]){await p.mouse.click(X(x),Y(y));await p.waitForTimeout(150);if(!(await p.isHidden('#sheet'))){await p.fill('#rs-len',l);await p.click('#f-save');await p.waitForTimeout(120);}}
+for(const [x,y,l] of [[770,201,'4000'],[889,280,'3000'],[770,359,'4000'],[651,280,'3000']]){await p.mouse.click(X(x),Y(y));await p.waitForTimeout(150);if(!(await p.isHidden('#sheet'))){await p.fill('#rs-len',l);await p.evaluate(()=>document.getElementById('f-save').click());await p.waitForTimeout(120);}}
 const groups=await p.$$eval('.np .np-gt',x=>x.map(b=>b.dataset.gt));
 const destructive=/start again|cancel|delete|clear/i;
 for(const g of groups){
