@@ -188,6 +188,8 @@ initPhotoTest();
         S.gosheets = all.filter((t) => t.kind === "gosheet" && t.signSheet);
         S.npTpls = all.filter((t) => t.kind === "nptpl");
         S.npSyms = all.filter((t) => t.kind === "npsym");
+        S.wageCalcs = all.filter((t) => t.kind === "wagecalc");
+        S.bizCosts = all.find((t) => t.kind === "bizcosts") || null;
         S.audit = all.filter((t) => t.kind === "audit");
         S.bin = all.filter((t) => t.kind === "bin");
         if (!window.__binPurgeT)

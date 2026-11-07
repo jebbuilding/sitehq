@@ -436,5 +436,7 @@ button.pmav{background:none;border:0;padding:0;min-height:0;min-width:0;box-shad
 body:has(.np) .scrim{z-index:37}body:has(.np) .sheet{z-index:38}
 /* pop-up messages are only words: taps go through them to the button underneath (e.g. a form's Save) */
 .toast{pointer-events:none}
+/* money tables (wage calculator, business costings) */
+.wc-t{width:100%;border-collapse:collapse}.wc-t td,.wc-t th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}.wc-t .num{text-align:right;white-space:nowrap}.wc-t .wc-tot td{font-weight:700}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}

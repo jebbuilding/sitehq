@@ -12,7 +12,7 @@ import { empTypeOf } from "../sites/job-details.js";
 import { siteClient } from "../sites/summary.js";
 import { dwRate } from "./day-work.js";
 import { sumH } from "./time.js";
-export { dwXlsPick };
+export { dwXlsPick, loadXlsx };
 let xlsxP = null;
 function loadXlsx() {
   if (window.XLSX) return Promise.resolve();

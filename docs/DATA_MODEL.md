@@ -49,6 +49,8 @@ Subcollections (`TR_COLLS`):
 | `dwrates`, `dwline` | day-work rates and lines |
 | `cdm` | CDM 2015 documents |
 | `nptpl` | notebook page templates |
+| `wagecalc` | a wage calculation for a person or role (salary, van, pensions, holiday, hours, charge-out rate, optional tax-rate overrides) |
+| `bizcosts` | the one business costings record (`todos/bizcosts`): overheads, people from the wage calculator, James's pay and hours, profit %, materials markup |
 | `npsym` | drawing symbols James saved from his own drawings (`name`, `objs` around their middle, `scale` drawn at) |
 | `qrcfg`, `qrsite` | QR sign-in config (web-app URL + key) and per-site state |
 | `audit` | tamper-evident deletion record (hash-chained) |

@@ -79,3 +79,21 @@ body.nl-on .card{border-radius:18px}
 body.nl-on .btn{border-radius:12px;min-height:44px}
 body.nl-on .notice{border-radius:14px}
 body.nl-on input,body.nl-on select,body.nl-on textarea{border-radius:12px}
+
+/* business costings (owner/biz-costs.js) */
+.bc-hero .bc-kicker{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.bc-hero .bc-year{font-family:var(--f-display);font-size:40px;font-weight:600;color:var(--accent);line-height:1.1}.bc-year small{font-family:var(--f-body);font-size:16px;color:var(--muted);font-weight:500}
+.bc-bars{display:flex;flex-direction:column;gap:6px;margin:14px 0 4px}
+.bc-bar{display:grid;grid-template-columns:minmax(120px,1.2fr) 2fr auto;gap:8px;align-items:center;font-size:14px}
+.bc-bar .bc-bt{height:12px;border-radius:6px;background:var(--soft);overflow:hidden}.bc-bar .bc-bt span{display:block;height:100%;border-radius:6px;background:var(--accent)}
+.bc-bar .bc-bv{font-weight:700;white-space:nowrap}.bc-bar .bc-bv small{color:var(--muted);font-weight:500;margin-left:4px}
+.bc-hero .bc-set{margin:12px 0 0}
+#bc-xl{position:relative;overflow:hidden}#bc-xl .bc-file{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.bc-wcpick{width:auto;max-width:100%}
+.bc-group{margin:14px 0}.bc-gh{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;padding:6px 2px;border-bottom:2px solid var(--line);margin-bottom:6px}
+.bc-cost{display:grid;grid-template-columns:minmax(160px,2fr) minmax(110px,1fr) minmax(120px,1fr) minmax(160px,1.4fr) auto auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.bc-cost .bc-amt{display:flex;align-items:center;gap:4px;margin:0}
+.bc-cost .bc-y{font-weight:700;white-space:nowrap;text-align:right}.bc-cost .bc-y small{color:var(--muted);font-weight:500}
+@media (max-width:760px){.bc-cost{grid-template-columns:1fr 1fr;padding:10px 0}.bc-cost .bc-name{grid-column:1/-1}.bc-cost .bc-y{text-align:left}.bc-cost .bc-x{justify-self:end}}
+.bc-price{margin-top:16px}.bc-price summary{cursor:pointer;font-weight:700;min-height:48px;display:flex;align-items:center;padding:0 14px}
+.bc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 12px;margin-bottom:10px}
