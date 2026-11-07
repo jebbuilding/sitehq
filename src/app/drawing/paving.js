@@ -2,7 +2,7 @@
 import { appPhotoChoices } from "../chat/contacts.js";
 import { clAddr } from "../clients/stages-planner.js";
 import { pickField, pickVal, wirePicks } from "../core/fields.js";
-import { esc, iso, parse, toast } from "../core/helpers.js";
+import { $, esc, iso, parse, toast } from "../core/helpers.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
 import { NP_BLD_BOX, NP_LIB } from "./components.js";
 import {
@@ -24,6 +24,7 @@ import {
   npUnit,
 } from "./construction-details.js";
 import { npDxf } from "./dxf-export.js";
+import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
 import {
   rsBestScale,
@@ -1321,6 +1322,7 @@ async function openNotePage(opts) {
         ["dim", "↔", "Measure line"],
         ["dimc", "⟷", "Chain dimensions"],
         ["dima", "∠", "Angle"],
+        ["tape", "📐", "Tape measure"],
         ["room", "⬠", "Room"],
         ["pave", "▦", "Patio / drive"],
         ["pstrip", "⫴", "Path round building"],
@@ -1337,7 +1339,7 @@ async function openNotePage(opts) {
       ]
         .map(
           ([k, i, l]) =>
-            `<button type="button" class="np-t" data-t="${k}" ${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k] ? `data-g="${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k]}"` : ""} aria-pressed="${k === "pen"}" title="${l}" aria-label="${l}">${i}<small>${l.split(" ")[0]}</small></button>`,
+            `<button type="button" class="np-t" data-t="${k}" ${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k] ? `data-g="${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k]}"` : ""} aria-pressed="${k === "pen"}" title="${l}" aria-label="${l}">${i}<small>${l.split(" ")[0]}</small></button>`,
         )
         .join("")}
       <button type="button" class="np-t np-view" data-g="${opts.pro ? "none" : "draw insert"}" title="Switch symbols between plan (looking down) and elevation (looking at the front)" aria-label="Plan or elevation symbols">🏠<small>Plan</small></button>
@@ -1386,7 +1388,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
-    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
+    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
       NP_PAVE,
     )
       .map(([k, v]) => `<option value="${k}">${v[0]}</option>`)
@@ -1405,7 +1407,7 @@ async function openNotePage(opts) {
       .join(
         "",
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
-      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
+      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button><button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
       <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
       <div class="np-finebox" hidden><div class="nfrow"><b>⚙ <span class="nfwhatis">Properties</span></b><button type="button" class="nfx" aria-label="Close">✕</button></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
@@ -2179,6 +2181,8 @@ async function openNotePage(opts) {
       ctx.rotate(-an);
       ctx.translate(-o.a[0], -o.a[1]);
     }
+    /* section hatching (hatch.js), at a fixed size on paper */
+    if (o.hatch) npHatch(ctx, o, NP_U);
     if (o.fill && o.t !== "img" && o.t !== "room") {
       ctx.save();
       ctx.fillStyle = o.fill;
@@ -3581,20 +3585,22 @@ async function openNotePage(opts) {
     const pw = pwFor(wid);
     const sp = tool === "pen" || tool === "hl" || tool === "roomsk" ? p : snapPt(p);
     cur =
-      tool === "roomsk"
-        ? { t: "stroke", p: [p], c: "#c2410c", w: pw, rsk: true }
-        : tool === "pen" || tool === "hl"
-          ? { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" }
-          : Object.assign(
-              {
-                t: tool,
-                a: sp,
-                b: sp,
-                c: tool === "dim" ? "#e11d2a" : col,
-                w: tool === "dim" ? Math.max(pw, sized() ? 2 : pw) : pw,
-              },
-              tool === "shape" ? { k: shapeKind } : {},
-            );
+      tool === "tape"
+        ? { t: "dim", a: sp, b: sp, c: "#2563eb", w: Math.max(pw, 2), tape: true }
+        : tool === "roomsk"
+          ? { t: "stroke", p: [p], c: "#c2410c", w: pw, rsk: true }
+          : tool === "pen" || tool === "hl"
+            ? { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" }
+            : Object.assign(
+                {
+                  t: tool,
+                  a: sp,
+                  b: sp,
+                  c: tool === "dim" ? "#e11d2a" : col,
+                  w: tool === "dim" ? Math.max(pw, sized() ? 2 : pw) : pw,
+                },
+                tool === "shape" ? { k: shapeKind } : {},
+              );
     if (
       cur.t === "shape" &&
       doc.scale &&
@@ -3861,6 +3867,23 @@ async function openNotePage(opts) {
     if (ptrs.size === 0) snapMark = null;
     if (cur && ptrs.size === 0) {
       live = null;
+      /* tape measure: the real distance, nothing drawn */
+      if (cur.tape) {
+        const Lt = lenOf(cur.a, cur.b);
+        cur = null;
+        draw();
+        if (Lt > 2 / s)
+          toast(
+            doc.scale
+              ? "Tape: " +
+                  npFmtLen(realMm(Lt)) +
+                  " (" +
+                  Math.round(realMm(Lt)).toLocaleString("en-GB") +
+                  " mm)"
+              : "Set a scale in 📐 Paper to measure real distances.",
+          );
+        return;
+      }
       /* room sketch: the hand-drawn line becomes a room with straight walls, where it was drawn */
       if (cur.rsk) {
         const o = rsFromStroke(cur.p);
@@ -4409,8 +4432,26 @@ async function openNotePage(opts) {
     d.innerHTML = `<div class="ncrow"><b>${mode === "fill" ? "🪣 Block colour" : "🎨 Line colour"}</b><button type="button" class="ncx" aria-label="Close">✕</button></div>
       ${mode === "fill" ? `<div class="seg ncop"><button type="button" data-a="0.35" aria-pressed="${!(o && o.fa >= 0.99)}">See-through</button><button type="button" data-a="1" aria-pressed="${!!(o && o.fa >= 0.99)}">Solid</button></div>` : ""}
       <div class="ncgrid">${mode === "fill" ? `<button type="button" class="ncs ncnone" data-c="" aria-label="No fill">✕</button>` : ""}${[...new Set(NP_MOREC_ALL().concat(recent))].map((c) => `<button type="button" class="ncs" data-c="${c}" style="background:${c}" aria-pressed="${String(c).toLowerCase() === String(cur).toLowerCase()}" aria-label="${c}"></button>`).join("")}</div>
-      <label class="ncown">Your own colour <input type="color" value="${/^#[0-9a-f]{6}$/i.test(cur) ? cur : "#7f191d"}"></label>`;
+      <label class="ncown">Your own colour <input type="color" value="${/^#[0-9a-f]{6}$/i.test(cur) ? cur : "#7f191d"}"></label>${
+        mode === "fill" && npHatchable(o)
+          ? `<label class="ncown">Hatch <select class="nc-hatch"><option value="">None</option>${Object.entries(
+              NP_HATCH,
+            )
+              .map(
+                ([k, l]) => `<option value="${k}"${o.hatch === k ? " selected" : ""}>${l}</option>`,
+              )
+              .join("")}</select></label>`
+          : ""
+      }`;
     ov.appendChild(d);
+    if (d.querySelector(".nc-hatch"))
+      d.querySelector(".nc-hatch").onchange = (e) => {
+        snap();
+        if (e.target.value) o.hatch = e.target.value;
+        else delete o.hatch;
+        dirty = true;
+        draw();
+      };
     let fa = o && o.fa >= 0.99 ? 1 : 0.35;
     const apply = (c) => {
       if (c && !NP_MOREC_ALL().includes(c)) {
@@ -4852,6 +4893,10 @@ async function openNotePage(opts) {
         } else if (a === "offset") {
           undo.pop();
           offsetDlg(o);
+          return;
+        } else if (a === "repeat") {
+          undo.pop();
+          repeatDlg(o);
           return;
         } else if (a === "lock") {
           o.lk = !o.lk;
@@ -6599,8 +6644,26 @@ async function openNotePage(opts) {
     lb.hidden = false;
   }
   lb.querySelector(".nlb-x").onclick = () => {
+    /* a "Next" one that never got a length is taken away again */
+    if (lenObj && lenOf(lenObj.a, lenObj.b) < 1e-6) {
+      const k = doc.objs.indexOf(lenObj);
+      if (k >= 0) doc.objs.splice(k, 1);
+      draw();
+    }
     lb.hidden = true;
     lenObj = null;
+  };
+  /* set the line / wall being typed to length L mm at angle A° (anticlockwise from pointing right) */
+  const setLen = (o, L, A) => {
+    snap();
+    const r = ((A || 0) * Math.PI) / 180;
+    const U = toUnits(L);
+    o.b = [o.a[0] + Math.cos(r) * U, o.a[1] - Math.sin(r) * U];
+    if (npIsWall(o)) {
+      weldWall(o);
+      orientCavity(o);
+    }
+    dirty = true;
   };
   lb.onsubmit = (e) => {
     e.preventDefault();
@@ -6612,18 +6675,32 @@ async function openNotePage(opts) {
     const L = parseFloat(lb.querySelector(".nlb-l").value),
       A = parseFloat(lb.querySelector(".nlb-a").value);
     if (!(L > 0)) return;
-    snap();
-    const r = ((A || 0) * Math.PI) / 180;
-    const U = toUnits(L);
-    o.b = [o.a[0] + Math.cos(r) * U, o.a[1] - Math.sin(r) * U];
-    if (npIsWall(o)) {
-      weldWall(o);
-      orientCavity(o);
-    }
-    dirty = true;
+    setLen(o, L, A);
     draw();
     lb.hidden = true;
     toast("Set to " + npFmtLen(L));
+  };
+  /* Next ➜: set this one, then start another of the same kind from its end (type a whole room from a laser measure) */
+  lb.querySelector(".nlb-next").onclick = () => {
+    const o = lenObj;
+    if (!o || doc.objs.indexOf(o) < 0) return;
+    const L = parseFloat(lb.querySelector(".nlb-l").value),
+      A = parseFloat(lb.querySelector(".nlb-a").value);
+    if (!(L > 0)) {
+      toast("Type the length first");
+      return;
+    }
+    setLen(o, L, A);
+    const n = JSON.parse(JSON.stringify(o));
+    n.a = o.b.slice();
+    n.b = o.b.slice();
+    delete n.lab;
+    doc.objs.push(n);
+    lenObj = n;
+    lb.querySelector(".nlb-l").value = "";
+    draw();
+    lb.querySelector(".nlb-l").focus();
+    toast(npFmtLen(L) + " set. Type the next length and angle.");
   };
   /* CAD drafting: wall runs, trim, extend, corner and offset */
   let pwk = "wall";
@@ -6816,6 +6893,52 @@ async function openNotePage(opts) {
     dirty = true;
     draw();
     toast("Corner made");
+  }
+  /* ⋯ copy in a row: n copies at a set spacing (e.g. joists at 400 centres, posts every 1.8 m) */
+  function repeatDlg(o) {
+    const d = document.createElement("div");
+    d.className = "dimask";
+    const unit = doc.scale ? "mm, real" : "mm on paper";
+    d.innerHTML = `<form class="dimbox"><b>⋯ Copy in a row</b><div class="who">Makes copies one after another at the same spacing, measured from one to the next (centres).</div>
+      <label>How many copies<input class="rpn" type="number" inputmode="numeric" min="1" max="200" value="5"></label>
+      <label>Spacing (${unit})<input class="rps" type="number" inputmode="decimal" value="${doc.scale ? 400 : 10}"></label>
+      <div class="seg rpd"><button type="button" data-d="0" aria-pressed="true">→ Right</button><button type="button" data-d="270" aria-pressed="false">↓ Down</button><button type="button" data-d="180" aria-pressed="false">← Left</button><button type="button" data-d="90" aria-pressed="false">↑ Up</button></div>
+      <label>Or an angle (°)<input class="rpa" type="number" inputmode="decimal" placeholder="e.g. 45"></label>
+      <div class="dimbtns"><button type="button" class="btn rpx">Cancel</button><button type="submit" class="btn primary">Make copies</button></div></form>`;
+    ov.appendChild(d);
+    let dir = 0;
+    d.querySelectorAll(".rpd button").forEach(
+      (b) =>
+        (b.onclick = () => {
+          dir = +b.dataset.d;
+          d.querySelectorAll(".rpd button").forEach((x) =>
+            x.setAttribute("aria-pressed", String(x === b)),
+          );
+        }),
+    );
+    d.querySelector(".rpx").onclick = () => d.remove();
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      const n = Math.min(200, Math.round(+d.querySelector(".rpn").value)),
+        sp = +d.querySelector(".rps").value,
+        an = d.querySelector(".rpa").value !== "" ? +d.querySelector(".rpa").value : dir;
+      if (!(n >= 1) || !(sp > 0)) return;
+      const U = doc.scale ? toUnits(sp) : sp * NP_U,
+        r = (an * Math.PI) / 180,
+        dx = Math.cos(r) * U,
+        dy = -Math.sin(r) * U;
+      snap();
+      for (let i = 1; i <= n; i++) {
+        const c = JSON.parse(JSON.stringify(o));
+        delete c.lk;
+        moveObj(c, dx * i, dy * i);
+        doc.objs.push(c);
+      }
+      dirty = true;
+      d.remove();
+      draw();
+      toast(n + " copies made, " + (doc.scale ? npFmtLen(sp) : sp + " mm") + " apart");
+    };
   }
   function offsetDlg(o) {
     const d = document.createElement("div");
@@ -9415,7 +9538,102 @@ async function openNotePage(opts) {
     tbox(og, i);
     return oc;
   }
+  /* ===== keyboard shortcuts on a computer (ignored while typing in a box, or with a form or dialog open) ===== */
+  const NP_KEYS = {
+    l: "line",
+    w: "pwall",
+    d: "dim",
+    a: "dima",
+    t: "text",
+    b: "rect",
+    c: "circle",
+    p: "pen",
+    e: "erase",
+    v: "move",
+    m: "move",
+    r: "room",
+    k: "roomsk",
+    x: "tape",
+  };
+  const NP_KEYHELP =
+    "Keys: L line · W wall · D measure · A angle · X tape measure · K room sketch · R room · B box · C circle · T text · P pen · E rubber · V select · Esc stop · Delete · arrows nudge (Shift = more) · Ctrl+Z undo · Ctrl+Y redo · Ctrl+D copy · Ctrl+S save";
+  const onKey = (e) => {
+    if (!ov.isConnected) return;
+    const tg = e.target;
+    if (tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable)) return;
+    if (ov.querySelector(".dimask") || !$("sheet").hidden || !$("viewer").hidden) return;
+    const k = e.key || "",
+      lk = k.toLowerCase(),
+      ctl = e.ctrlKey || e.metaKey;
+    const press = (selr) => {
+      const b = q(selr);
+      if (b && !b.disabled && !b.hidden) b.click();
+    };
+    if (ctl && lk === "z") {
+      e.preventDefault();
+      press(e.shiftKey ? ".np-redo" : ".np-undo");
+      return;
+    }
+    if (ctl && lk === "y") {
+      e.preventDefault();
+      press(".np-redo");
+      return;
+    }
+    if (ctl && lk === "d") {
+      e.preventDefault();
+      press('.np-sb[data-a="dup"]');
+      return;
+    }
+    if (ctl && lk === "s") {
+      e.preventDefault();
+      press(".np-save");
+      return;
+    }
+    if (ctl || e.altKey) return;
+    if (k === "Delete" || k === "Backspace") {
+      if (sel != null || msel.size) {
+        e.preventDefault();
+        press('.np-sb[data-a="del"]');
+      }
+      return;
+    }
+    if (k === "Escape") {
+      cur = null;
+      chain = [];
+      sel = null;
+      msel.clear();
+      draw();
+      return;
+    }
+    if (k.startsWith("Arrow") && sel != null && doc.objs[sel]) {
+      e.preventDefault();
+      const step = doc.scale ? toUnits(e.shiftKey ? 100 : 10) : (e.shiftKey ? 10 : 1) / s;
+      const d = {
+        ArrowLeft: [-step, 0],
+        ArrowRight: [step, 0],
+        ArrowUp: [0, -step],
+        ArrowDown: [0, step],
+      }[k];
+      if (!d) return;
+      snap();
+      moveObj(doc.objs[sel], d[0], d[1]);
+      dirty = true;
+      draw();
+      return;
+    }
+    if (k === "?" || (k === "/" && e.shiftKey)) {
+      toast(NP_KEYHELP);
+      return;
+    }
+    const t = NP_KEYS[lk];
+    if (t && q(`.np-t[data-t="${t}"]`)) {
+      e.preventDefault();
+      setTool(t);
+    }
+  };
+  document.addEventListener("keydown", onKey);
   const close = () => {
+    document.removeEventListener("keydown", onKey);
     window.removeEventListener("resize", size);
     ov.remove();
     document.body.style.overflow = "";
