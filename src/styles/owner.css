@@ -52,7 +52,6 @@ body.nl-on .wrap{padding-bottom:110px}
 }
 .nl-tog{align-self:center}
 .nl-today{display:flex;flex-direction:column;gap:12px}
-.nl-date{color:var(--muted);font-size:15px}
 .nl-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px}
 .nl-cardh{display:flex;align-items:baseline;justify-content:space-between}
 .nl-cardh h2,.nl-h{margin:0;font-family:var(--f-display);font-weight:500;font-size:19px}.nl-h{margin:6px 2px 0}
@@ -63,4 +62,20 @@ body.nl-on .wrap{padding-bottom:110px}
 .nl-tile{min-height:88px;text-align:left;padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;display:flex;flex-direction:column;gap:4px;cursor:pointer;position:relative}
 .nl-n{font-family:var(--f-display);font-size:30px;font-weight:600;line-height:1;color:var(--accent)}
 .nl-sec .nl-tile{min-height:72px;justify-content:center;font-size:16px}.nl-sec .badge{position:absolute;top:10px;right:10px}
-body.nl-home #nowbar{display:none}
+/* the date, time, weather and on-site strip lives on Today in the new look, not on every page */
+body.nl-on:not(.nl-home) #nowbar{display:none}
+/* search (owner/search.js) and its box on Today */
+.nl-search{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.sr-box{display:flex;flex-direction:row;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);margin:0}
+.sr-box:focus-within{border-color:var(--accent)}
+.sr-box input{flex:1;width:auto;border:0;box-shadow:none;outline:none;background:transparent;padding:10px 0;margin:0;font-size:17px;min-width:0}
+.sr-list{margin-top:10px}
+.sr-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;min-height:52px;padding:8px 12px;margin:0 0 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+/* the new look on every page: a tidier header (Search / Old look beside the title), rounder cards, buttons and boxes */
+body.nl-on #who{display:none}
+body.nl-on header.top{align-items:center}
+body.nl-on .logo img{height:34px}
+body.nl-on .card{border-radius:18px}
+body.nl-on .btn{border-radius:12px;min-height:44px}
+body.nl-on .notice{border-radius:14px}
+body.nl-on input,body.nl-on select,body.nl-on textarea{border-radius:12px}

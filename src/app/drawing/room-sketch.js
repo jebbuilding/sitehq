@@ -11,6 +11,7 @@ import { loadJsPdf } from "../safety/site-inductions.js";
 export {
   openRoomSketch,
   roomPdfFile,
+  rsBestScale,
   rsDrawInDrawing,
   rsEditInDrawing,
   rsFromStroke,
@@ -1578,4 +1579,26 @@ function rsWallsAsShapes(objs) {
       o.__hit.forEach(([a, b]) => out.push({ t: "shape", k: "wall", a, b, w: 2, th: 10 }));
   });
   return out;
+}
+/* the largest of these scales (smallest number) at which every fully measured room sketch on the page fits paper
+   w × h mm with room for its measurements and the title block; null if there is no measured room, 0 if none fit */
+function rsBestScale(objs, w, h, scales) {
+  const rooms = (objs || []).filter(
+    (o) => o && o.t === "rsk" && o.room.walls.every((x) => x.len > 0),
+  );
+  if (!rooms.length) return null;
+  let bw = 0,
+    bh = 0;
+  rooms.forEach((o) => {
+    const [a, b] = rsBox(Object.assign({}, o.room, { pts: o.p }));
+    bw = Math.max(bw, a);
+    bh = Math.max(bh, b);
+  });
+  const A = rsAllow(RS_TXT);
+  return (
+    scales
+      .slice()
+      .sort((x, y) => x - y)
+      .find((s) => bw / s + 2 * A <= w - 20 && bh / s + 2 * A <= h - 20 - 40) || 0
+  );
 }

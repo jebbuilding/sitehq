@@ -49,6 +49,13 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  for(const w of Object.keys(lens)){t=await wallNear(X(mids[w][0]),Y(mids[w][1]),w);ok(t===w,'tapped '+w+(t!==w?' (got '+t+')':''));if(t){await p.waitForTimeout(100);await p.fill('#rs-len',lens[w]);await p.click('#f-save');await p.waitForTimeout(150);}}
  ok(/out by 15 mm/.test(await lastToast()),'all measured, 15 mm out: '+await lastToast());
  await p.waitForTimeout(300);await (await p.$('.np .np-stage')).screenshot({path:'h415-scaled.png'});
+ /* 📐 Paper: A0 is there, and Best fit picks the scale that fits the measured room (3,250 × 3,215 → 1:20 on A3, 1:50 on A4) */
+ await p.evaluate(()=>document.querySelector('.np .np-setup').click());await p.waitForTimeout(200);
+ ok((await p.$$eval('.np .ps-size option',x=>x.map(o=>o.value))).includes('A0'),'A0 paper is offered');
+ await p.evaluate(()=>document.querySelector('.np .ps-fit').click());let fit=await p.inputValue('.np .ps-scale');
+ await p.selectOption('.np .ps-size','A4');await p.evaluate(()=>document.querySelector('.np .ps-fit').click());const fit4=await p.inputValue('.np .ps-scale');
+ ok(fit==='20'&&fit4==='50','best fit: A3 1:'+fit+', A4 1:'+fit4+' – '+await p.textContent('.np .ps-note'));
+ await p.evaluate(()=>document.querySelector('.np .psx').click());
  /* a second room: a rectangle; corner 2 set to 100°, the top wall split with its overall 4,000 kept */
  await tool('roomsk');
  await drawLine([[X(560),Y(160)],[X(800),Y(160)],[X(800),Y(320)],[X(560),Y(320)],[X(560),Y(162)]],1.5);
@@ -69,6 +76,10 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  t=await wallAt(X(680),Y(160));await p.waitForTimeout(100);await p.evaluate(()=>document.getElementById('rs-split').click());await p.waitForTimeout(150);
  ok(/split into A and B/.test(await lastToast()),'wall A split: '+await lastToast());
  /* save the drawing and look at what was saved */
+ /* the DXF (CAD) download has the rooms in it: walls and their measurements */
+ await p.evaluate(()=>{window.__dl=[];document.querySelector('.np .np-dxf').click()});await p.waitForTimeout(1200);
+ const dxf=await p.evaluate(async()=>{const d=(window.__dl||[]).pop();return d?{fn:d.filename,txt:typeof d.data==='string'?d.data:await d.data.text()}:null});
+ ok(dxf&&/\.dxf$/i.test(dxf.fn)&&dxf.txt.includes('3,250')&&dxf.txt.includes('chimney 1,400')&&dxf.txt.split('\nLINE\n').length>20,'DXF download includes the rooms: '+(dxf&&dxf.fn));
  await p.fill('.np .np-title','Front room');await p.click('.np .np-save');await p.waitForTimeout(2000);
  const saved=await p.evaluate(async()=>{const k=Object.keys(window.__st).find(k=>window.__st[k]&&window.__st[k].kind==='sketch'&&window.__st[k].pageSrc);if(!k)return null;const d=window.__st[k];const pg=JSON.parse(await window.__blobs[d.pageSrc].text());const objs=pg.pages?pg.pages[0].objs:pg.objs;const rooms=objs.filter(o=>o.t==='rsk');return {title:d.title,rooms,others:objs.filter(o=>o.t!=='rsk').map(o=>o.t),door:objs.find(o=>o.t==='shape'&&o.k==='door'),r2top:rooms[1]&&rooms[1].p[0][1]};});
  ok(saved&&saved.title==='Front room'&&saved.rooms.length===2,'the drawing saves with both rooms on it');

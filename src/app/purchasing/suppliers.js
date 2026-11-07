@@ -11,7 +11,7 @@ import { nameOf, teamIds } from "../owner/owner.js";
 import { makersView, wireMakers } from "./makers.js";
 import { mkCopies, syncMakers, tradeMakersHtml, whoSeesDlg } from "./merchants.js";
 import { syncSiteJobs } from "../sites/job-details.js";
-export { scheduleSupSync, supMaster, suppliersView };
+export { openSupplier, scheduleSupSync, supMaster, suppliersView };
 const SUP_CATS = [
   "Builders merchant",
   "Timber",

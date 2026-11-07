@@ -26,6 +26,7 @@ import {
 import { npDxf } from "./dxf-export.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
 import {
+  rsBestScale,
   rsDrawInDrawing,
   rsEditInDrawing,
   rsFromStroke,
@@ -2910,8 +2911,20 @@ async function openNotePage(opts) {
     for (let i = doc.objs.length - 1; i >= 0; i--) {
       const o = doc.objs[i];
       if (doc.layers && lyOff(o)) continue;
-      /* a room sketch is edited with its own tool (tap a wall), not picked up with Select */
-      if (o.t === "rsk") continue;
+      /* a room sketch is picked up (to move it) by a wall or from inside it; its walls are edited with its own tool */
+      if (o.t === "rsk") {
+        const H = o.__hit || [];
+        if (
+          H.length > 2 &&
+          npInPoly(
+            pt,
+            H.map((h) => h[0]),
+          )
+        )
+          return i;
+        if (H.some(([a, b]) => distSeg(pt, a, b) < tol)) return i;
+        continue;
+      }
       if (npBoxy(o)) {
         const b = baseBox(o);
         const c = [b[0] + b[2] / 2, b[1] + b[3] / 2];
@@ -3737,7 +3750,8 @@ async function openNotePage(opts) {
         if (o.t === "img" || o.t === "text") {
           o.x = drag.o.x + dx;
           o.y = drag.o.y + dy;
-        } else if (o.t === "stroke") {
+        } else if (o.t === "stroke" || o.t === "rsk") {
+          /* (a room sketch moves by all its corners) */
           o.p = drag.o.p.map((q) => [q[0] + dx, q[1] + dy]);
         } else {
           o.a = [drag.o.a[0] + dx, drag.o.a[1] + dy];
@@ -8262,6 +8276,7 @@ async function openNotePage(opts) {
         )}${cs === "custom" ? `<option value="custom" selected>Long page (old style)</option>` : ""}</select></label>
       <div class="seg ps-or"><button type="button" data-v="land" aria-pressed="${doc.orient !== "port"}">▭ Landscape</button><button type="button" data-v="port" aria-pressed="${doc.orient === "port"}">▯ Portrait</button></div>
       <label>Scale<select class="ps-scale">${NP_SCALES.map((v) => `<option value="${v}" ${(+doc.scale || 0) === v ? "selected" : ""}>${v ? "1:" + v : "Not to scale (sketch)"}</option>`).join("")}</select></label>
+      ${rsBestScale(doc.objs, 100, 100, [1]) != null ? `<button type="button" class="pillbtn ps-fit">Best fit for the room sketch</button>` : ""}
       <div class="who ps-note"></div>
       <label>Background<select class="ps-paper">${[
         ["plain", "Plain"],
@@ -8282,6 +8297,26 @@ async function openNotePage(opts) {
     };
     d.querySelector(".ps-scale").onchange = note;
     note();
+    /* the largest scale at which the measured room sketches fit the chosen paper */
+    if (d.querySelector(".ps-fit"))
+      d.querySelector(".ps-fit").onclick = () => {
+        const sz = d.querySelector(".ps-size").value,
+          [w, h] = npDims(sz === "custom" ? "A3" : sz, orient).map((v) => v / NP_U),
+          best = rsBestScale(
+            doc.objs,
+            w,
+            h,
+            NP_SCALES.filter((v) => v),
+          );
+        if (best) {
+          d.querySelector(".ps-scale").value = String(best);
+          note();
+          d.querySelector(".ps-note").textContent =
+            `Best fit on ${sz}: 1:${best}. ` + d.querySelector(".ps-note").textContent;
+        } else
+          d.querySelector(".ps-note").textContent =
+            `The room is too big for ${sz} even at 1:${Math.max(...NP_SCALES)}. Try a bigger paper size.`;
+      };
     d.querySelectorAll(".ps-or button").forEach(
       (b) =>
         (b.onclick = () => {

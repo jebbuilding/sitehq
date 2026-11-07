@@ -2095,8 +2095,14 @@ function npLegend(ctx, o, objs, x0, y0, w, h) {
   });
 }
 const NP_U = 5; /* drawing units per mm of paper */
-const NP_SIZES = { A4: [297, 210], A3: [420, 297], A2: [594, 420], A1: [841, 594] };
-const NP_SCALES = [0, 5, 10, 20, 25, 50, 100, 200, 500, 1250];
+const NP_SIZES = {
+  A4: [297, 210],
+  A3: [420, 297],
+  A2: [594, 420],
+  A1: [841, 594],
+  A0: [1189, 841],
+};
+const NP_SCALES = [0, 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1250];
 /* Runs once when the app starts, called from core/boot.js. Nothing else in this file runs at load. */
 function initConstructionDetails() {
   NP_ELEV_BOX.forEach((k) => NP_SYM.add(k));

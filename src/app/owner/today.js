@@ -3,6 +3,7 @@ import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, render } from "../core/tabs-week.js";
 import { nameOf } from "./owner.js";
+import { searchOpen } from "./search.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
 export { nlApply, nlName, nlSectionView, todayView };
@@ -107,7 +108,7 @@ function nlApply() {
   if (on && !nlLanded) S.otab = "today";
   nlLanded = true;
   document.body.classList.toggle("nl-on", on);
-  /* Today has its own date and on-site count, so the strip above it would say them twice */
+  /* the date / weather strip shows on Today only (see owner.css) */
   document.body.classList.toggle("nl-home", on && S.otab === "today");
   const head = document.querySelector("header.top");
   let tog = $("nl-tog");
@@ -126,6 +127,21 @@ function nlApply() {
     tog.hidden = false;
     tog.textContent = on ? "Old look" : "✨ New look";
   } else if (tog) tog.hidden = true;
+  /* 🔍 search everything (owner/search.js), on every owner screen */
+  let srb = $("sr-btn");
+  if (ownerMode() && !S.preview && head) {
+    if (!srb) {
+      srb = document.createElement("button");
+      srb.type = "button";
+      srb.id = "sr-btn";
+      srb.className = "pillbtn nl-tog";
+      srb.textContent = "🔍 Search";
+      srb.setAttribute("aria-label", "Search clients, sites, jobs, people, merchants and drawings");
+      head.insertBefore(srb, tog);
+      srb.onclick = () => searchOpen("");
+    }
+    srb.hidden = false;
+  } else if (srb) srb.hidden = true;
   let bar = $("nlbar");
   if (!on) {
     if (bar) bar.hidden = true;
@@ -165,9 +181,8 @@ function todayView() {
   rows.forEach((r) => (by[r.job || "No site"] = by[r.job || "No site"] || []).push(r));
   const badge = S.badgeNow || {};
   const needs = NL_NEEDS.filter(([k]) => badge[k] > 0);
-  const d = new Date();
   $("main").innerHTML = `<div class="nl-today">
-    <div class="nl-date">${esc(d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}</div>
+    <button type="button" class="nl-search" id="nl-search"><span aria-hidden="true">🔍</span> Search clients, sites, jobs, people, merchants…</button>
     <section class="nl-card">
       <div class="nl-cardh"><h2>On site now</h2><span class="nl-big">${rows.length}</span></div>
       ${
@@ -197,6 +212,7 @@ function todayView() {
     }
     ${dueSoonCard("all")}
   </div>`;
+  $("nl-search").onclick = () => searchOpen("");
   $("nl-roll").onclick = () => (rows.length ? openRollCall() : nlOpenTab("signin"));
   $("main")
     .querySelectorAll(".nl-tile")
