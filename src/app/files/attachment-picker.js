@@ -3,6 +3,7 @@ import { esc, stamp, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { myDrawings } from "../drawing/drawings-tab.js";
 import { openNotePage } from "../drawing/paving.js";
+import { roomPdfFile } from "../drawing/room-sketch.js";
 import { assetBlob, blobUrl } from "./files.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 export { attachPicker, drawPdfFile };
@@ -13,6 +14,13 @@ async function drawPdfFile(p) {
     const b = await assetBlob(p.assetId);
     return new File([b], nm + ".jpg", { type: "image/jpeg" });
   };
+  if (p.roomSrc) {
+    try {
+      return await roomPdfFile(p);
+    } catch (e) {
+      return asJpg();
+    }
+  }
   if (!p.pageSrc) return asJpg();
   let pages = null;
   try {

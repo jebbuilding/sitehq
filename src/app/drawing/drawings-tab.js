@@ -9,6 +9,7 @@ import { S, clActive, ownerMode, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
 import { openNotePage } from "./paving.js";
+import { openRoomSketch } from "./room-sketch.js";
 import { SIGNSHEET } from "./sign-off-sheet.js";
 import { dwSendForSign, dwSignStatus } from "./sign-off.js";
 import { SK_CAT, isSketch } from "./trade-drawings.js";
@@ -33,7 +34,7 @@ function drawView() {
   const list = myDrawings();
   $("main").innerHTML =
     `<button type="button" class="btn primary drawnew" id="dw-new">✏️ Start a new drawing</button>
-    <div class="who" style="margin:6px 0 12px">Starts on A3 at 1:50 (change it with <b>📐 Paper</b>). Walls, doors, kitchen and bathroom symbols drop in at real size, 🧲 snap keeps lines straight and joined, and you can add pages, photos and measurements. Tap <b>📄 PDF</b> for a printable copy with your logo, and <b>Save</b> to keep it here.</div>
+    <div class="who" style="margin:6px 0 12px">Starts on A3 at 1:50 (change it with <b>📐 Paper</b>). To draw a room by hand and measure it, tap <b>✍️ Room sketch</b> in the drawing. Walls, doors, kitchen and bathroom symbols drop in at real size, 🧲 snap keeps lines straight and joined, and you can add pages, photos and measurements. Tap <b>📄 PDF</b> for a printable copy with your logo, and <b>Save</b> to keep it here.</div>
     ${
       list.length
         ? `<div class="flabel">My drawings (${list.length})</div><div class="drawgrid">${list
@@ -96,6 +97,10 @@ async function drawSaveNew(r) {
     created: now,
     editedAt: now,
   };
+  if (r.room) {
+    d.pageSrc = "";
+    d.roomSrc = r.src;
+  }
   try {
     await myDoc("photos", id).set(d);
     S.mine.photos = (S.mine.photos || []).concat([Object.assign({ id }, d)]);
@@ -172,7 +177,7 @@ function drawOpen(p) {
             })()
           : ""
     }
-    <div class="actions" style="margin-top:10px">${p.pageSrc ? `<button type="button" class="btn primary" id="dw-edit">✎ Open and keep drawing</button>` : ""}${own ? `<button type="button" class="btn primary" id="dw-vis">👁 Who can see${p.siteDoc ? ((p.seeWho || []).length ? " · 👤 " + p.seeWho.length + " trade" + (p.seeWho.length === 1 ? "" : "s") : " · 👷 trades") : ""}${p.clientDoc ? " · 🏡 client" : ""}${!p.siteDoc && !p.clientDoc ? " · 🔒 only me" : ""}</button><button type="button" class="btn primary" id="dw-ssheet">✍️ Client go-ahead / sign-off</button><button type="button" class="btn" id="dw-sign">✍️ Quick approval (trade / client)</button><button type="button" class="btn" id="dw-sheet">📋 Add to a client sign-off sheet</button><button type="button" class="btn" id="dw-job">🔨 Add to a job sheet</button>` : ""}<button type="button" class="btn" id="dw-dl">⬇ Save to my phone</button>
+    <div class="actions" style="margin-top:10px">${p.pageSrc || p.roomSrc ? `<button type="button" class="btn primary" id="dw-edit">✎ Open and keep drawing</button>` : ""}${own ? `<button type="button" class="btn primary" id="dw-vis">👁 Who can see${p.siteDoc ? ((p.seeWho || []).length ? " · 👤 " + p.seeWho.length + " trade" + (p.seeWho.length === 1 ? "" : "s") : " · 👷 trades") : ""}${p.clientDoc ? " · 🏡 client" : ""}${!p.siteDoc && !p.clientDoc ? " · 🔒 only me" : ""}</button><button type="button" class="btn primary" id="dw-ssheet">✍️ Client go-ahead / sign-off</button><button type="button" class="btn" id="dw-sign">✍️ Quick approval (trade / client)</button><button type="button" class="btn" id="dw-sheet">📋 Add to a client sign-off sheet</button><button type="button" class="btn" id="dw-job">🔨 Add to a job sheet</button>` : ""}<button type="button" class="btn" id="dw-dl">⬇ Save to my phone</button>
       ${own ? `<button type="button" class="btn" id="dw-send">📤 Send to a trade</button>` : `<button type="button" class="btn" id="dw-send">📤 ${p.check === "open" ? "Sent to James ✓" : "Send to James to check"}</button>`}
       <button type="button" class="btn" id="dw-saveinfo">Save name</button><button type="button" class="linkdanger" id="dw-del">Delete</button></div>`);
   const upd = async (patch) => {
@@ -210,6 +215,30 @@ function drawOpen(p) {
   if ($("dw-edit"))
     $("dw-edit").onclick = () => {
       closeViewer();
+      if (p.roomSrc) {
+        openRoomSketch({
+          srcId: p.roomSrc,
+          title: p.title,
+          site: p.site || "",
+          onSave: async (r) => {
+            try {
+              await upd({
+                assetId: r.preview,
+                roomSrc: r.src,
+                title: r.title || p.title,
+                editedAt: Date.now(),
+              });
+              toast("Drawing saved");
+              render();
+              if (p.siteDoc) drawSiteSync(p);
+              drawOpen(p);
+            } catch (e) {
+              toast("Couldn't save");
+            }
+          },
+        });
+        return;
+      }
       openNotePage({
         srcId: p.pageSrc,
         title: p.title,
@@ -462,6 +491,7 @@ function ownerSendDrawing(p) {
             kind: "sketch",
             assetId: p.assetId,
             pageSrc: p.pageSrc || "",
+            roomSrc: p.roomSrc || "",
             title: p.title || "Drawing",
             site: p.site || "",
             category: SK_CAT,

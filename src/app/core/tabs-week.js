@@ -25,6 +25,7 @@ import {
   teamIds,
 } from "../owner/owner.js";
 import { empChecks, ownerChecks } from "../owner/reports-home.js";
+import { nlApply, nlName, nlSectionView, todayView } from "../owner/today.js";
 import {
   sentTodosHTML,
   todoView,
@@ -358,55 +359,60 @@ function render() {
   $("tabs").hidden = false;
   renderTabs();
   renderWeek();
+  nlApply();
   $("offline").hidden = navigator.onLine !== false;
   const t = curTab();
   if (ownerMode()) {
     $("h1").textContent =
-      t === "daywork"
-        ? "Day work (chargeable hours)"
-        : t === "draw"
-          ? "Drawings"
-          : t === "portal"
-            ? "Client portal"
-            : t === "leads"
-              ? "Planning leads"
-              : t === "samples"
-                ? "Samples"
-                : t === "signin"
-                  ? "Site sign-in book"
-                  : t === "signoffs"
-                    ? "Forms · sign-offs"
-                    : t === "clients"
-                      ? "Clients"
-                      : t === "projects"
-                        ? "Sites"
-                        : t === "suppliers"
-                          ? "Merchants"
-                          : t === "policies"
-                            ? "Policies & insurance"
-                            : t === "hs"
-                              ? "Health & safety"
-                              : t === "checks"
-                                ? "Reports"
-                                : t === "jobs"
-                                  ? "Forms"
-                                  : t === "training"
-                                    ? "Training"
-                                    : t === "chat"
-                                      ? "Chat"
-                                      : t === "planner"
-                                        ? "Planner"
-                                        : t === "materials"
-                                          ? "Materials & tools"
-                                          : t === "receipts"
-                                            ? "Receipts"
-                                            : t === "people"
-                                              ? "Employees"
-                                              : t === "todo"
-                                                ? "To do"
-                                                : t === "calc"
-                                                  ? "Calculator"
-                                                  : "Team";
+      t === "today"
+        ? "Today"
+        : /^sec-/.test(t)
+          ? nlName(t.slice(4))
+          : t === "daywork"
+            ? "Day work (chargeable hours)"
+            : t === "draw"
+              ? "Drawings"
+              : t === "portal"
+                ? "Client portal"
+                : t === "leads"
+                  ? "Planning leads"
+                  : t === "samples"
+                    ? "Samples"
+                    : t === "signin"
+                      ? "Site sign-in book"
+                      : t === "signoffs"
+                        ? "Forms · sign-offs"
+                        : t === "clients"
+                          ? "Clients"
+                          : t === "projects"
+                            ? "Sites"
+                            : t === "suppliers"
+                              ? "Merchants"
+                              : t === "policies"
+                                ? "Policies & insurance"
+                                : t === "hs"
+                                  ? "Health & safety"
+                                  : t === "checks"
+                                    ? "Reports"
+                                    : t === "jobs"
+                                      ? "Forms"
+                                      : t === "training"
+                                        ? "Training"
+                                        : t === "chat"
+                                          ? "Chat"
+                                          : t === "planner"
+                                            ? "Planner"
+                                            : t === "materials"
+                                              ? "Materials & tools"
+                                              : t === "receipts"
+                                                ? "Receipts"
+                                                : t === "people"
+                                                  ? "Employees"
+                                                  : t === "todo"
+                                                    ? "To do"
+                                                    : t === "calc"
+                                                      ? "Calculator"
+                                                      : "Team";
     $("who").textContent = "Owner view · you see everyone";
     const ASK = {
       policies: "policy",
@@ -423,6 +429,11 @@ function render() {
     };
     (
       ({
+        today: todayView,
+        "sec-jobs": () => nlSectionView("jobs"),
+        "sec-people": () => nlSectionView("people"),
+        "sec-paper": () => nlSectionView("paper"),
+        "sec-setup": () => nlSectionView("setup"),
         hs: hsView,
         draw: drawView,
         daywork: dayworkView,

@@ -25,6 +25,15 @@ import {
 } from "./construction-details.js";
 import { npDxf } from "./dxf-export.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
+import {
+  rsDrawInDrawing,
+  rsEditInDrawing,
+  rsFromStroke,
+  rsHitDrawing,
+  rsRoomOf,
+  rsStatus,
+  rsWallsAsShapes,
+} from "./room-sketch.js";
 import { NP_ANNO_BOX, NP_TEXTSYM } from "./symbols-annotation.js";
 import { NP_DES_BOX, npScallop } from "./symbols-design.js";
 import { NP_BASIC, NP_XLAB, NP_XREAL, NP_XSHAPES } from "./symbols-more.js";
@@ -976,6 +985,7 @@ function npLayerOf(o) {
       "Electrics": "elec",
       "Heating & ventilation": "heat",
       "Drainage": "drain",
+      "Drainage & water": "drain",
       "Floors": "struct",
       "Timber framing": "struct",
       "Stud wall connections": "struct",
@@ -1315,6 +1325,7 @@ async function openNotePage(opts) {
       <select class="np-shape" data-g="${opts.pro ? "none" : "draw insert"}" aria-label="More shapes"></select>${opts.pro ? `<button type="button" class="np-libbtn" data-g="draw insert" aria-label="Symbols library">📚 <span>Symbols…</span></button>` : ""}
       <button type="button" class="np-t np-snap" data-g="page edit" aria-pressed="true" title="Snap to grid and line ends" aria-label="Snap to grid">🧲<small>Snap</small></button>
       <button type="button" class="np-t np-setup" data-g="page" title="Paper size, scale and background" aria-label="Paper size and scale">📐<small>Paper</small></button>
+      <button type="button" class="np-t" data-t="roomsk" data-g="draw measure" title="Room sketch: draw the room in one line, it straightens the walls, then tap each wall to type its length" aria-label="Room sketch">✍️<small>Room sketch</small></button>
       ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button>` : ""}
       <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" accept="image/*" multiple hidden></label>
       <button type="button" class="np-t np-apppic" data-g="insert" title="Photos already in the app" aria-label="Photos already in the app">🖼<small>App photos</small></button><button type="button" class="np-t np-import" data-g="insert" title="Bring in a drawing or plan at its own scale" aria-label="Import a drawing">📥<small>Import drawing</small></button>${opts.pro ? `<button type="button" class="np-t np-qty" data-g="measure" title="Areas, lengths and materials from this drawing" aria-label="Quantities">🧮<small>Quantities</small></button><button type="button" class="np-t np-layers" data-g="page" title="Show, hide or lock groups of things, and show another floor underneath" aria-label="Layers and floors">🗂<small>Layers</small></button>` : ""}${
@@ -1572,6 +1583,14 @@ async function openNotePage(opts) {
         o.p.forEach((q, k) => segs.push([q, o.p[(k + 1) % o.p.length]]));
         return;
       }
+      /* a room sketch: snap to its corners and along its walls as they are drawn now */
+      if (o.t === "rsk") {
+        (o.__hit || []).forEach(([a, b]) => {
+          add(a, "end", 0.8);
+          segs.push([a, b]);
+        });
+        return;
+      }
       if (o.a && o.b && !npBoxy(o) && o.t !== "rect" && o.t !== "circle") {
         add(o.a, "end", 0.8, tw);
         add(o.b, "end", 0.8, tw);
@@ -1810,7 +1829,8 @@ async function openNotePage(opts) {
     const c = [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2];
     let best = null,
       bd = Infinity;
-    doc.objs.forEach((x) => {
+    /* the walls of a room sketch count too, so doors, windows and units sit against them */
+    doc.objs.concat(rsWallsAsShapes(doc.objs)).forEach((x) => {
       if (!npIsWall(x)) return;
       const dx = x.b[0] - x.a[0],
         dy = x.b[1] - x.a[1],
@@ -1872,7 +1892,8 @@ async function openNotePage(opts) {
     }
     let best = null,
       bd = Infinity;
-    doc.objs.forEach((x) => {
+    /* the walls of a room sketch count too, so doors, windows and units sit against them */
+    doc.objs.concat(rsWallsAsShapes(doc.objs)).forEach((x) => {
       if (!npIsWall(x)) return;
       const dx = x.b[0] - x.a[0],
         dy = x.b[1] - x.a[1],
@@ -1973,19 +1994,23 @@ async function openNotePage(opts) {
     const pts =
       o.t === "stroke" || o.t === "room"
         ? o.p
-        : o.t === "ang"
-          ? [o.a, o.b, o.v]
-          : o.t === "dim" && o.off
-            ? (() => {
-                const n = dimN(o);
-                return [
-                  o.a,
-                  o.b,
-                  [o.a[0] + n[0] * o.off, o.a[1] + n[1] * o.off],
-                  [o.b[0] + n[0] * o.off, o.b[1] + n[1] * o.off],
-                ];
-              })()
-            : [o.a, o.b];
+        : o.t === "rsk"
+          ? o.__hit
+            ? o.__hit.map((h) => h[0])
+            : o.p
+          : o.t === "ang"
+            ? [o.a, o.b, o.v]
+            : o.t === "dim" && o.off
+              ? (() => {
+                  const n = dimN(o);
+                  return [
+                    o.a,
+                    o.b,
+                    [o.a[0] + n[0] * o.off, o.a[1] + n[1] * o.off],
+                    [o.b[0] + n[0] * o.off, o.b[1] + n[1] * o.off],
+                  ];
+                })()
+              : [o.a, o.b];
     const xs = pts.map((p) => p[0]),
       ys = pts.map((p) => p[1]);
     const m = (o.w || 6) / 2;
@@ -2081,6 +2106,10 @@ async function openNotePage(opts) {
   function drawObj0(ctx, o) {
     if (vpOf(o)) {
       drawVp(ctx, o);
+      return;
+    }
+    if (o.t === "rsk") {
+      rsDrawInDrawing(ctx, o, doc);
       return;
     }
     ctx.save();
@@ -2881,6 +2910,8 @@ async function openNotePage(opts) {
     for (let i = doc.objs.length - 1; i >= 0; i--) {
       const o = doc.objs[i];
       if (doc.layers && lyOff(o)) continue;
+      /* a room sketch is edited with its own tool (tap a wall), not picked up with Select */
+      if (o.t === "rsk") continue;
       if (npBoxy(o)) {
         const b = baseBox(o);
         const c = [b[0] + b[2] / 2, b[1] + b[3] / 2];
@@ -3050,6 +3081,30 @@ async function openNotePage(opts) {
     downXY = [e.clientX, e.clientY];
     const p = toPage(e.clientX, e.clientY);
     NP_SCX = tool === "vp" ? 0 : vpScaleAt(p);
+    /* room sketch: with its tool picked, tapping one of its walls opens that wall's measurements
+       (other tools work on the drawing as usual, so a door on a room wall can still be picked up and moved) */
+    if (tool === "roomsk") {
+      const hit = rsHitDrawing(doc.objs, p, 14 / s);
+      if (hit) {
+        ptrs.delete(e.pointerId);
+        snap();
+        rsEditInDrawing(
+          hit.o,
+          hit.i,
+          (msg) => {
+            draw();
+            toast(msg);
+          },
+          () => {
+            const k = doc.objs.indexOf(hit.o);
+            if (k >= 0) doc.objs.splice(k, 1);
+            draw();
+          },
+          doc,
+        );
+        return;
+      }
+    }
     if (tool === "curve") {
       sel = null;
       msel.clear();
@@ -3457,20 +3512,22 @@ async function openNotePage(opts) {
     }
     sel = null;
     const pw = pwFor(wid);
-    const sp = tool === "pen" || tool === "hl" ? p : snapPt(p);
+    const sp = tool === "pen" || tool === "hl" || tool === "roomsk" ? p : snapPt(p);
     cur =
-      tool === "pen" || tool === "hl"
-        ? { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" }
-        : Object.assign(
-            {
-              t: tool,
-              a: sp,
-              b: sp,
-              c: tool === "dim" ? "#e11d2a" : col,
-              w: tool === "dim" ? Math.max(pw, sized() ? 2 : pw) : pw,
-            },
-            tool === "shape" ? { k: shapeKind } : {},
-          );
+      tool === "roomsk"
+        ? { t: "stroke", p: [p], c: "#c2410c", w: pw, rsk: true }
+        : tool === "pen" || tool === "hl"
+          ? { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" }
+          : Object.assign(
+              {
+                t: tool,
+                a: sp,
+                b: sp,
+                c: tool === "dim" ? "#e11d2a" : col,
+                w: tool === "dim" ? Math.max(pw, sized() ? 2 : pw) : pw,
+              },
+              tool === "shape" ? { k: shapeKind } : {},
+            );
     if (
       cur.t === "shape" &&
       doc.scale &&
@@ -3736,6 +3793,21 @@ async function openNotePage(opts) {
     if (ptrs.size === 0) snapMark = null;
     if (cur && ptrs.size === 0) {
       live = null;
+      /* room sketch: the hand-drawn line becomes a room with straight walls, where it was drawn */
+      if (cur.rsk) {
+        const o = rsFromStroke(cur.p);
+        cur = null;
+        if (!o) {
+          toast("Draw the whole room in one line, ending back where you started.");
+          draw();
+          return;
+        }
+        snap();
+        doc.objs.push(o);
+        draw();
+        toast(rsStatus(rsRoomOf(o, doc)));
+        return;
+      }
       if (cur.t === "dim" && Math.hypot(cur.b[0] - cur.a[0], cur.b[1] - cur.a[1]) < 8 / s) {
         cur = null;
         draw();
@@ -4236,6 +4308,10 @@ async function openNotePage(opts) {
     if (t === "vp")
       toast(
         "Drag a frame on the page. Then choose its scale. Anything you draw inside it uses that scale",
+      );
+    if (t === "roomsk")
+      toast(
+        "Draw the room in one line, ending back where you started. Then tap each wall to type its length.",
       );
     const sh = q(".np-shape");
     if (t !== "shape") {

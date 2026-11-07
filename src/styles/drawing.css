@@ -54,3 +54,11 @@
 .nflv{display:flex;flex-direction:column;font-size:12px;color:#ccc;gap:2px}
 .np-pwlen{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.np-pwl{width:110px}.np-pwd{min-width:40px;padding:6px 8px;font-size:18px}.np-pwlen[hidden]{display:none}
 .np-pvbox{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}.np-pvbox[hidden]{display:none}.np-pvwl{color:#fff;font-size:13px;display:inline-flex;gap:4px;align-items:center}
+/* room sketch (drawing/room-sketch.js) */
+
+.rs-bar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}.rs-bar .btn{min-height:44px}.rs-bar .btn[hidden]{display:none}
+.rs-msg{font-size:15px;color:var(--muted);min-height:2.6em;margin-bottom:6px}
+.rs-stage{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.rs-stage.rs-paperview{background:#e9e4e4}
+.rs-cv{display:block;touch-action:none;cursor:crosshair}
+.rs-feat{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--soft)}
+.rs-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
