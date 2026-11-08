@@ -29,7 +29,7 @@ const NL_SECTIONS = [
       "calc",
     ],
   ],
-  ["people", "People", ["people", "wages", "time", "signin", "training", "chat"]],
+  ["people", "People", ["people", "inductions", "wages", "time", "signin", "training", "chat"]],
   [
     "paper",
     "Paperwork",

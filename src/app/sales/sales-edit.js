@@ -4,6 +4,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
+import { jfFor, jfOpen } from "./job-file.js";
 import {
   SD_KINDS,
   SD_VATC,
@@ -163,6 +164,10 @@ function sdEdit(d0) {
       <button type="button" class="btn primary" id="sd-save">Save</button>
       <button type="button" class="btn" id="sd-mail">📧 Email</button>
       <button type="button" class="btn" id="sd-pdf">📄 PDF</button>
+      <button type="button" class="btn" id="sd-jf">📁 Job file${(() => {
+        const j = d0.id ? jfFor(d) : null;
+        return j && (j.items || []).length ? ` (${j.items.length})` : "";
+      })()}</button>
       ${
         est
           ? `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-acc">✅ Accepted</button><button type="button" class="btn" id="sd-dec">✖ Declined</button><button type="button" class="btn" id="sd-toinv">🧾 Make an invoice</button>`
@@ -406,6 +411,10 @@ function sdEdit(d0) {
   $("sd-pdf").onclick = async () => {
     const r = await save(null, true);
     if (r) await sdSavePdf(r);
+  };
+  $("sd-jf").onclick = async () => {
+    const r = await save(null, true);
+    if (r) jfOpen(r);
   };
   $("sd-mail").onclick = async () => {
     const r = await save(null, true);

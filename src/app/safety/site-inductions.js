@@ -27,6 +27,7 @@ export {
   openIndEditor,
   openInduction,
   sigPad,
+  viewRecord,
   wireInduction,
 };
 const IND_DETAILS = [

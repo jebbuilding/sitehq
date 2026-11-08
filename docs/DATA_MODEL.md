@@ -58,6 +58,7 @@ Subcollections (`TR_COLLS`):
 | `acct` | the one Accounts record (`todos/acct`): bank accounts (name, bank, last 4 digits, opening balance – no passwords or full numbers) and sorting rules (words → category, VAT %) |
 | `acctx` | a month of one bank account's payments (`todos/atx-{account}-{YYYY-MM}`): date, description, amount (+ in, − out), balance, category, VAT, note, the invoice it was matched to |
 | `acrcpt` | a receipt (`todos/rc-*`): photo (asset id), shop, date, total, VAT, seller's VAT number, category, paid by card/cash/own money, what for, read by Claude then checked (`status`), and the bank payment it matched (`tx`) |
+| `jobfile` | a job file (`todos/jf-*`) for an estimate and its invoices: client, job, site, and files in folders (plans, supplier quotes, subbie quotes, photos, building control, letters, other) with who from, a note and a price |
 | `npsym` | drawing symbols James saved from his own drawings (`name`, `objs` around their middle, `scale` drawn at) |
 | `qrcfg`, `qrsite` | QR sign-in config (web-app URL + key) and per-site state |
 | `audit` | tamper-evident deletion record (hash-chained) |
