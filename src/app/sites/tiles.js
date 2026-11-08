@@ -10,6 +10,7 @@ import { allTeam } from "../owner/owner.js";
 import { siteRec } from "../photos/photos.js";
 import { siteFront } from "./job-details.js";
 import { same } from "./project-pages.js";
+import { smOpen } from "./sites-map.js";
 import { storageHtml, wireStorage } from "./storage.js";
 import { siteClient } from "./summary.js";
 import { sumH } from "../timesheets/time.js";
@@ -38,7 +39,7 @@ function siteTiles(sites) {
   };
   $("main").innerHTML =
     `<input type="search" id="st-q" class="stsearch" placeholder="🔍 Search sites and storage: address, client, job…" aria-label="Search sites" value="${esc(S.f.stq || "")}">
-    <div class="flabel" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Your sites (<span id="st-n">${sites.length}</span>)<button type="button" class="pillbtn" id="st-del" style="margin-left:auto">🗑 Delete sites…</button></div><div class="stgrid">${sites.map(tile).join("")}</div><div class="nothing" id="st-none" hidden>No current sites match. Check Storage below.</div>` +
+    <div class="flabel" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Your sites (<span id="st-n">${sites.length}</span>)<button type="button" class="pillbtn" id="st-map" style="margin-left:auto">🗺️ Map of all sites</button><button type="button" class="pillbtn" id="st-del">🗑 Delete sites…</button></div><div class="stgrid">${sites.map(tile).join("")}</div><div class="nothing" id="st-none" hidden>No current sites match. Check Storage below.</div>` +
     storageHtml();
   $("main")
     .querySelectorAll(".sttile")
@@ -53,6 +54,7 @@ function siteTiles(sites) {
     );
   wireStorage();
   $("st-del").onclick = deleteSitesPicker;
+  $("st-map").onclick = smOpen;
   const qi = $("st-q");
   const filt = () => {
     const q = qi.value.toLowerCase().trim();

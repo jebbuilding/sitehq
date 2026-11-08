@@ -19,6 +19,8 @@ export {
   cisDown,
   cisLab,
   cisMonthOf,
+  cisPayments,
+  cisRange,
   cisRateOf,
   cisRec,
   cisSaveMonth,

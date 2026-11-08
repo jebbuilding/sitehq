@@ -76,6 +76,21 @@ fs.writeFileSync('h428-bank.csv',csv);
  await p.click('#ac-export');await p.waitForTimeout(400);
  const dl=await p.evaluate(()=>(window.__dl||[]).map(r=>r.filename));
  ok(/^Accounts .*\.csv$/.test(dl[dl.length-1]||''),'export for the accountant');
+ /* CSV files for a month, or a year */
+ await p.click('#ac-csv');await p.waitForTimeout(200);
+ const ym=isoD(D(10)).slice(0,7);
+ await p.selectOption('#ax-p','month');await p.fill('#ax-m',ym);
+ await p.click('#f-save');await p.waitForTimeout(1500);
+ const files=await p.evaluate(()=>(window.__dl||[]).slice(-3).map(r=>({n:r.filename,d:typeof r.data==='string'?r.data:''})));
+ const mName=new Date(ym+'-01T12:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+ ok(files.map(f=>f.n).join('|')===`Bank payments ${mName}.csv|Receipts and bills ${mName}.csv|Your invoices ${mName}.csv`,'month: '+files.map(f=>f.n).join(', '));
+ ok(/SCREWFIX DIRECT 1234.*"","120\.00","Materials","20\.00"/.test(files[0].d)&&/Screwfix Exmouth/.test(files[1].d),'the bank file has the Screwfix payment (out £120, Materials, VAT £20); the receipts file has the receipt');
+ await p.click('#ac-csv');await p.waitForTimeout(200);
+ await p.selectOption('#ax-p','year');await p.selectOption('#ax-y',String(D(10).getFullYear()));
+ await p.uncheck('.ax-k[value=rcpt]');await p.uncheck('.ax-k[value=sales]');
+ await p.click('#f-save');await p.waitForTimeout(800);
+ const last=await p.evaluate(()=>window.__dl[window.__dl.length-1].filename);
+ ok(last===`Bank payments ${D(10).getFullYear()}.csv`,'a calendar year: '+last);
  }catch(e){console.log('FAIL',String(e.message).split('\n').slice(0,6).join(' | '));bad++}
  console.log(bad?'h428: '+bad+' FAILED':'h428: all passed');
  await b.close()})();

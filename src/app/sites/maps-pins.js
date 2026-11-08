@@ -10,7 +10,18 @@ import { render } from "../core/tabs-week.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { siteRec } from "../photos/photos.js";
 import { myName } from "../survey/door-window-survey.js";
-export { autoPins, dropPin, enhanceAddrs, gmapDir, hereNow, initMapsPins, miniMap, parseLatLon };
+export {
+  autoPins,
+  dropPin,
+  enhanceAddrs,
+  gmapDir,
+  hereNow,
+  initMapsPins,
+  miniMap,
+  parseLatLon,
+  pcGeo,
+  pcOf,
+};
 const ADDR_LABELS = [
   "Address",
   "Site",
