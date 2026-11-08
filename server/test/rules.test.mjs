@@ -34,13 +34,14 @@ const TABLE = {
   "sphotos/{self}": ["interact", "interact"],
   jobdone: ["interact", "interact"], chats: ["interact", "interact"], msgs: ["interact", "interact"],
   planprivate: ["owner", "owner"], visitinds: ["owner", "owner"], offapp: ["owner", "owner"], todos: ["owner", "owner"],
+  webenq: ["owner", "owner"], webstats: ["owner", "owner"],
   portal: ["owner", "owner"], "portal/{self}": ["interact", "interact"],
 };
 
 test("platform/capabilities.json is the table in docs/DATA_MODEL.md", () => {
   const declared = Object.fromEntries(capabilities.db.rules.map((r) => [r.path, [r.read, r.write]]));
   assert.deepEqual(declared, TABLE);
-  assert.equal(capabilities.db.rules.length, 23);
+  assert.equal(capabilities.db.rules.length, 25);
 });
 
 test("owner: reads and writes everything that is declared", () => {
@@ -51,6 +52,7 @@ test("owner: reads and writes everything that is declared", () => {
     "jobs/j1": "rw", "talks/t1": "rw", "plan/p1": "rw", "sphotos/emp1/p/x": "rw",
     "jobdone/j1": "rw", "chats/team": "rw", "msgs/team/m/a1": "rw",
     "planprivate/p1": "rw", "visitinds/v1": "rw", "offapp/o1": "rw", "todos/c1": "rw",
+    "webenq/w1": "rw", "webstats/2026-11-08": "rw",
     "portal/u9": "rw", "portal/u9/docs/d1": "rw", "portal/u9/uploads/x/parts/0": "rw",
   });
 });
@@ -72,6 +74,7 @@ test("trade: own profile and subcollections, shared reference data read-only, no
     "jobdone/j1": "rw", "chats/team": "rw", "msgs/team/m/a1": "rw",
     // owner-private
     "planprivate/p1": "", "visitinds/v1": "", "offapp/o1": "", "todos/c1": "", "todos/t1": "",
+    "webenq/w1": "", "webstats/2026-11-08": "",
     "portal/u9": "", "portal/u9/docs/d1": "", "portal/emp2": "",
   });
   // a trade's own id under portal is theirs (this is how someone joins as a client before they are one)
@@ -88,6 +91,7 @@ test("client: only portal/<their id>, and nothing else at all", () => {
     "wfiles/u9/f/x": "", "sphotos/u9/p/x": "", "jobs/j1": "", "talks/t1": "", "plan/p1": "",
     "jobdone/j1": "", "chats/team": "", "msgs/team/m/a1": "",
     "planprivate/p1": "", "visitinds/v1": "", "offapp/o1": "", "todos/c1": "", "data/users/u9/pin": "",
+    "webenq/w1": "", "webstats/2026-11-08": "",
   });
   expect("another client", bob, { "portal/u8": "rw", "portal/u9": "", "portal/u9/docs/d1": "" });
 });

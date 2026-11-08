@@ -23,6 +23,7 @@ import {
   npSymLabel,
   npUnit,
 } from "./construction-details.js";
+import { cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
@@ -1359,6 +1360,7 @@ async function openNotePage(opts) {
               ["sched", "📋", "Schedules"],
               ["grid", "#️⃣", "Grid lines"],
               ["elev", "🏠", "Elevation"],
+              ["cupb", "🗄️", "Cupboards"],
               ["check", "✅", "Check"],
               ["rev", "🔖", "Status & revisions"],
             ]
@@ -6316,6 +6318,57 @@ async function openNotePage(opts) {
       "Elevation drawn on a new page. Change the wall height in 🧮 Quantities if it isn't 2400.",
     );
   }
+  /* fitted cupboards and wardrobes: a new page with the views and the cutting list */
+  let cupbLast = null;
+  function cupbDlg() {
+    cbMakeDialog({
+      last: cupbLast,
+      make(sp) {
+        cupbLast = sp;
+        /* the page gets its own scale that fits it (a scaled area over the page), whatever the plan is drawn at */
+        const P0 = cbPlan(sp);
+        const pw = doc.w / NP_U - 40,
+          ph = doc.h / NP_U - 60;
+        /* paper taken by the gaps and the writing (text size); the views must fit in what's left */
+        const zmm = 18 / NP_U;
+        const rows = (P0.cut.length > 9 ? Math.ceil(P0.cut.length / 2) : P0.cut.length) + 4;
+        const freeW = pw - zmm * 17,
+          freeH = ph - zmm * (4 + 10 + 4 + rows * 1.25 + 2);
+        const k =
+          [10, 15, 20, 25, 30, 40, 50, 75, 100].find(
+            (x) =>
+              (2 * sp.W + sp.D) / x <= freeW && (sp.H + sp.D + Math.max(...P0.ws)) / x <= freeH,
+          ) || 100;
+        if (!doc.scale) doc.scale = k;
+        setNpScx(k);
+        let r;
+        try {
+          r = cbDraw(sp, { doc, U: toUnits, mkDim, dimSize, pwFor });
+        } finally {
+          setNpScx(0);
+        }
+        const m = 3 * NP_U;
+        r.objs.unshift({
+          t: "rect",
+          a: [m, m],
+          b: [doc.w - m, doc.h - m],
+          c: "#2f5fb3",
+          w: pwFor(2),
+          vp: k,
+          vpn: sp.name || "Cupboard",
+        });
+        doc.pages[pg].objs = doc.objs;
+        doc.pages.push({
+          name: sp.name || "Cupboard " + (doc.pages.filter((p) => p.type === "Joinery").length + 1),
+          type: "Joinery",
+          objs: r.objs,
+        });
+        dirty = true;
+        goPage(doc.pages.length - 1);
+        toast("Drawn on a new page with the cutting list (" + r.cut.length + " parts)");
+      },
+    });
+  }
   /* check the drawing for common mistakes */
   function checkDlg() {
     const iss = [],
@@ -6626,6 +6679,7 @@ async function openNotePage(opts) {
         } else if (a === "sched") schedDlg();
         else if (a === "grid") gridDlg();
         else if (a === "elev") elevFromWall();
+        else if (a === "cupb") cupbDlg();
         else if (a === "check") checkDlg();
         else if (a === "tpl") tplDlg();
         else if (a === "rev") q(".np-info").click();

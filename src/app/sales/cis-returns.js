@@ -7,6 +7,7 @@ import { uploadFile } from "../files/files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { EMP_TYPES } from "../people/employment-types.js";
 import { BRGB } from "../photos/photos.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
@@ -76,7 +77,7 @@ const cisTeamDet = (w) => (S.team && S.team[w] && S.team[w].details) || {};
 function cisSubList() {
   const cfg = cisCfg();
   const app = teamIds()
-    .filter((w) => cisTeamDet(w).empType === "cis")
+    .filter((w) => cisTeamDet(w).empType === "cis" || (cfg.subs[w] || {}).cis === true)
     .map((w) => {
       const d = cisTeamDet(w);
       return Object.assign(
@@ -87,7 +88,7 @@ function cisSubList() {
           email: d.email || "",
           phone: d.phone || d.mobile || "",
           nino: d.ni || d.nino || "",
-          type: "sole",
+          type: d.empType === "company" ? "company" : "sole",
         },
         cfg.subs[w] || {},
         { app: true },
@@ -565,6 +566,19 @@ function cisSubsView(tabs) {
             .join("")
         : `<div class="empty"><strong>No CIS subcontractors yet</strong>Add each subbie you pay under CIS. People who use the app and are set as Self-employed (CIS) show here by themselves.</div>`
     }
+    ${(() => {
+      const others = teamIds().filter(
+        (w) => !subs.some((x) => x.id === w) && cisTeamDet(w).empType !== "employed",
+      );
+      return others.length
+        ? `<section class="card"><div class="cardbody"><b>Others on the app</b><div class="who">Not set as Self-employed (CIS). If you pay one of them under CIS – for example they're from a CIS-registered Ltd company – add them here.</div>${others
+            .map(
+              (w) =>
+                `<div class="drow"><span>${esc(nameOf(w))} <small class="who">${esc(EMP_TYPES[cisTeamDet(w).empType] || "Type not set")}</small></span><button type="button" class="btn cis-addapp" data-w="${esc(w)}">Add to CIS</button></div>`,
+            )
+            .join("")}</div></section>`
+        : "";
+    })()}
     <section class="card"><div class="cardbody"><b>Your contractor details</b>
       <div class="grid2"><label for="cis-eref">Employer (PAYE) reference<input id="cis-eref" maxlength="20" value="${esc(cfg.empRef || "")}" placeholder="e.g. 123/AB45678"></label><label for="cis-aoref">Accounts Office reference<input id="cis-aoref" maxlength="20" value="${esc(cfg.aoRef || "")}" placeholder="e.g. 123PA00045678"></label></div>
       <label for="cis-cutr">Your UTR<input id="cis-cutr" maxlength="12" value="${esc(cfg.utr || "")}"></label>
@@ -572,6 +586,29 @@ function cisSubsView(tabs) {
     </div></section>
   </div>`;
   $("cis-newsub").onclick = () => cisEditSub(null);
+  document.querySelectorAll("#main .cis-addapp").forEach(
+    (x) =>
+      (x.onclick = async () => {
+        const w = x.dataset.w;
+        try {
+          await cisSaveCfg({
+            subs: Object.assign({}, cfg.subs, {
+              [w]: Object.assign({}, cfg.subs[w] || {}, {
+                cis: true,
+                type:
+                  cisTeamDet(w).empType === "company"
+                    ? "company"
+                    : (cfg.subs[w] || {}).type || "sole",
+              }),
+            }),
+          });
+          toast(nameOf(w) + " added to CIS – check their details and rate");
+          render();
+        } catch (e) {
+          toast("Couldn't save. Check your connection.");
+        }
+      }),
+  );
   document
     .querySelectorAll("#main .cis-edsub")
     .forEach((b) => (b.onclick = () => cisEditSub(cisSub(b.dataset.id))));
@@ -629,6 +666,7 @@ function cisEditSub(s0) {
     <div class="grid2">${inp("cs-pli", "Public liability insurer", s.plInsurer, 'maxlength="60"')}${inp("cs-ple", "Insurance expires", s.plExpiry, 'type="date"')}</div>
     <div class="grid2">${inp("cs-start", "Started working for you", s.start, 'type="date"')}${inp("cs-trade", "Trade", s.trade, 'maxlength="40" placeholder="e.g. Bricklayer"')}</div>
     <label for="cs-notes">Notes<textarea id="cs-notes" rows="2" maxlength="1000">${esc(s.notes || "")}</textarea></label>
+    ${s.app && (cisCfg().subs[s.id] || {}).cis ? `<div class="actions"><button type="button" class="linkdanger" id="cs-uncis">Take off CIS (they were added here)</button></div>` : ""}
     ${formFoot(!!(s0 && !s.app), "Save")}`,
     async () => {
       const name = $("cs-name").value.trim();
@@ -661,7 +699,11 @@ function cisEditSub(s0) {
       };
       const id = s0 ? s0.id : "sub-" + newId();
       try {
-        await cisSaveCfg({ subs: Object.assign({}, cisCfg().subs, { [id]: rec }) });
+        await cisSaveCfg({
+          subs: Object.assign({}, cisCfg().subs, {
+            [id]: Object.assign(rec, (cisCfg().subs[id] || {}).cis ? { cis: true } : {}),
+          }),
+        });
         closeForm();
         toast("Saved");
         render();
@@ -678,6 +720,21 @@ function cisEditSub(s0) {
     document.querySelectorAll(".cs-part").forEach((x) => (x.hidden = t !== "partnership"));
   };
   $("cs-type").onchange = showType;
+  if ($("cs-uncis"))
+    $("cs-uncis").onclick = async () => {
+      try {
+        await cisSaveCfg({
+          subs: Object.assign({}, cisCfg().subs, {
+            [s0.id]: Object.assign({}, cisCfg().subs[s0.id], { cis: false }),
+          }),
+        });
+        closeForm();
+        toast("Taken off CIS");
+        render();
+      } catch (e) {
+        showErr("Couldn't save. Check your connection.");
+      }
+    };
   showType();
   if ($("f-del") && s0 && !s.app)
     $("f-del").onclick = async () => {

@@ -15,6 +15,7 @@ Levels: `view` < `interact` < `admin` < `owner`. `{self}` = the signed-in user's
 | `sphotos/{self}` | interact | interact | site photos by a trade |
 | `jobdone`, `chats`, `msgs` | interact | interact | |
 | `planprivate`, `visitinds`, `offapp`, `todos`, `portal` | owner | owner | owner-private |
+| `webenq`, `webstats` | owner | owner | owner-private; written by the public website through `/api/public/*` (server) |
 | `portal/{self}` | interact | interact | a client's own portal area |
 | `data/users/{uid}/…` | private to that user | | platform-enforced per-user area (owner PIN hash, planning leads) |
 

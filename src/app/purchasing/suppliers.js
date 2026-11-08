@@ -1,5 +1,5 @@
 /* ================= SUPPLIERS (owner list, copies sent only to chosen trades) ================= */
-import { $, esc, toast } from "../core/helpers.js";
+import { $, esc, gbp, toast } from "../core/helpers.js";
 import { TR } from "../core/live-feed.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -11,6 +11,7 @@ import { nameOf, teamIds } from "../owner/owner.js";
 import { makersView, wireMakers } from "./makers.js";
 import { mkCopies, syncMakers, tradeMakersHtml, whoSeesDlg } from "./merchants.js";
 import { supSendSheet } from "./sup-send.js";
+import { acSupKey, acSupSpent } from "../sales/acct-suppliers.js";
 import { syncSiteJobs } from "../sites/job-details.js";
 export { openSupplier, scheduleSupSync, supMaster, suppliersView };
 const SUP_CATS = [
@@ -187,6 +188,12 @@ function supCard(sp, owner) {
     : "";
   return `<details class="card supcard" data-s="${esc(sp.id)}" ${S.open.has("sup" + sp.id) ? "open" : ""}><summary><div class="nm">${esc(sp.name)}${sp.loc ? ` <span class="suploc">${esc(sp.loc)}</span>` : ""}${sp.oh ? " " + ohNow(sp.oh).replace(/ · .*?</, "<") : ""}<small>${esc([sp.cat, sp.branch].filter(Boolean).join(" · "))}${(sp.branches || []).length ? ` · +${sp.branches.length} more branch${sp.branches.length > 1 ? "es" : ""}` : ""}</small></div>${sp.accountNo || sp.cash ? `<div class="figs">${sp.accountNo ? `<span>Acc <b>${esc(sp.accountNo)}</b></span>` : ""}<span class="tag ${sp.cash ? "warn" : "ok"}">${sp.cash ? "Cash" : "Credit"}</span></div>` : ""}</summary>
     <div class="cardbody"><div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a>` : ""}${sp.email ? `<a class="btn" href="mailto:${esc(sp.email)}">✉ Email</a>` : ""}${sp.branch ? `<button class="btn maplink" type="button" data-addr="${esc(sp.name + " " + sp.branch)}" data-label="${esc(sp.name + (sp.loc ? " " + sp.loc : ""))}">📍 Map</button>` : ""}${sp.website ? `<a class="btn" href="${esc(/^https?:/.test(sp.website) ? sp.website : "https://" + sp.website)}" target="_blank" rel="noopener">Website ↗</a>` : ""}</div>
+      ${(() => {
+        const sp2 = owner ? acSupSpent(sp.name) : null;
+        return sp2
+          ? `<div class="who sup-spent">💷 Spent this tax year: <b>${gbp(sp2.gross)}</b> (${sp2.n} receipt${sp2.n === 1 ? "" : "s"}) – <button type="button" class="pillbtn sup-file" data-n="${esc(sp.name)}">Open their file</button></div>`
+          : "";
+      })()}
       ${sp.oh ? `<div class="flabel" style="margin-top:4px">Opening hours ${ohNow(sp.oh)}</div><div class="details">${ohRows(sp.oh)}</div>` : ""}
       <div class="details">${SUP_FIELDS.filter(([k]) => sp[k] && !(k === "hours" && sp.oh))
         .map(
@@ -338,6 +345,17 @@ function suppliersView() {
       if (ed) ed.onclick = () => openSupplier(sp);
       const sn = dt.querySelector(".sup-send");
       if (sn) sn.onclick = () => supSendSheet(sp.name, sp, "merchant", []);
+      const sfl = dt.querySelector(".sup-file");
+      if (sfl)
+        sfl.onclick = () => {
+          S.otab = "accounts";
+          S.f.act = "sup";
+          S.f.acsm = "sup";
+          S.f.acp = "ty";
+          S.f.acsup = acSupKey(sp.name);
+          render();
+          window.scrollTo(0, 0);
+        };
       const vb = dt.querySelector(".sup-vis");
       if (vb) vb.onclick = () => whoSeesDlg("sup", sp.id);
     });

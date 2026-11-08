@@ -12,6 +12,7 @@ import {
 } from "./clients.js";
 import { quickEnquiry, viewClient } from "./quick-enquiry.js";
 import { clNextPlan } from "./stages-planner.js";
+import { webBtnHtml, webView } from "./web-enquiries.js";
 import { $, esc, gbp, hrs, iso, parse, shortDay, store, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -368,7 +369,7 @@ function clientsView() {
       ? [...new Set(shown.map((c) => (String(c.name || "?").trim()[0] || "#").toUpperCase()))]
       : [];
   $("main").innerHTML =
-    `<div class="abtop"><button class="btn primary" id="cl-enq" type="button">📝 New enquiry</button><button class="btn" id="cl-new" type="button">📒 + New client (details only)</button><button class="btn hv" id="cl-quick" type="button">⚡ Quick enquiry</button><input id="cl-q" type="search" placeholder="Search name, phone, address, job…" value="${esc(S.f.clq || "")}" aria-label="Search clients">
+    `<div class="abtop"><button class="btn primary" id="cl-enq" type="button">📝 New enquiry</button><button class="btn" id="cl-new" type="button">📒 + New client (details only)</button><button class="btn hv" id="cl-quick" type="button">⚡ Quick enquiry</button>${webBtnHtml()}<input id="cl-q" type="search" placeholder="Search name, phone, address, job…" value="${esc(S.f.clq || "")}" aria-label="Search clients">
       <select id="cl-s" aria-label="Sort"><option value="az" ${sort === "az" ? "selected" : ""}>A–Z</option><option value="recent" ${sort === "recent" ? "selected" : ""}>Most recent</option></select></div>
     <div class="clper"><span class="who">Added in</span><select id="cl-y" aria-label="Year"><option value="">All years</option>${years.map((y) => `<option value="${y}" ${String(y) === String(cy) ? "selected" : ""}>${y}</option>`).join("")}</select>
       <select id="cl-m" aria-label="Month"><option value="">All months</option>${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => `<option value="${i + 1}" ${String(i + 1) === String(cm) ? "selected" : ""}>${m}</option>`).join("")}</select>
@@ -392,7 +393,8 @@ function clientsView() {
     <div class="who">Only you can see clients.</div>`;
   $("cl-new").onclick = () => openClientForm(null, "contact");
   $("cl-enq").onclick = () => newEnquiryFor();
-  if ($("cl-quick")) $("cl-quick").onclick = quickEnquiry;
+  if ($("cl-quick")) $("cl-quick").onclick = () => quickEnquiry();
+  if ($("cl-web")) $("cl-web").onclick = () => webView();
   $("cl-y").onchange = (e) => {
     S.f.cly = e.target.value;
     e.target.blur();

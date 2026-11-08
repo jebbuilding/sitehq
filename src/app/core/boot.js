@@ -4,6 +4,7 @@ import { CH, initChat, renderChatHead, syncSettings } from "../chat/chat.js";
 import { startClient, startPortalOwner } from "../clients/portal.js";
 import { initQuickEnquiry } from "../clients/quick-enquiry.js";
 import { soWatch } from "../clients/sign-offs.js";
+import { webEnqWatch } from "../clients/web-enquiries.js";
 import { startAi } from "./ask-claude.js";
 import { initBackButton } from "./back-button.js";
 import { mapDocs, startEmployee, startOwner } from "./data.js";
@@ -230,6 +231,23 @@ initPhotoTest();
       },
       () => {},
     );
+  if (S.owner) {
+    /* the public website: enquiries from its contact form, and its page counts (server /api/public/*) */
+    db.collection("webenq").onSnapshot(
+      (snap) => {
+        S.webEnq = mapDocs(snap);
+        webEnqWatch();
+        render();
+      },
+      () => {},
+    );
+    db.collection("webstats").onSnapshot(
+      (snap) => {
+        S.webStats = mapDocs(snap);
+      },
+      () => {},
+    );
+  }
   if (S.owner)
     db.collection("visitinds").onSnapshot(
       (snap) => {

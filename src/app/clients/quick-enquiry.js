@@ -16,6 +16,7 @@ import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
 import { clientPdf } from "./record-pdf.js";
 import { clMediaHtml, wireClMedia } from "./sketches.js";
 import { clAddPlan, clAddr, clPlanListHtml, clStepsHtml, wireClSteps } from "./stages-planner.js";
+import { webEnqFiled } from "./web-enquiries.js";
 import { $, addDays, esc, gbp, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { RAW, S, ownerMode, siteNames } from "../core/state.js";
@@ -103,14 +104,17 @@ async function visitToPhone(o) {
     setTimeout(() => URL.revokeObjectURL(u), 4000);
   }
 }
-function quickEnquiry() {
+/* pre: filled in already (an enquiry from the website: pre.web is it, filed in the job file once saved) */
+function quickEnquiry(pre = {}) {
   const tm = iso(addDays(new Date(), 1));
   openSheet(
     `<h3 id="sheettitle">⚡ Quick enquiry</h3><div class="who">Just the basics and when you're going to see them. It goes in your planner with a reminder ${VISIT_REMIND_MIN / 60} hour before. Fill in the full client form when you're there.</div>
-    <label for="qe-name">Name<input id="qe-name" required maxlength="80" autocomplete="off" placeholder="e.g. Mrs Sarah Jones"></label>
-    <div class="grid2"><label for="qe-phone">Phone<input id="qe-phone" type="tel" maxlength="40" placeholder="07…"></label><label for="qe-pc">Postcode<input id="qe-pc" maxlength="10" autocapitalize="characters"></label></div>
-    <label for="qe-addr">Address<input id="qe-addr" maxlength="200" placeholder="e.g. 14 Church Lane, Topsham"></label>
-    <label for="qe-what">What it's about<textarea id="qe-what" maxlength="600" style="min-height:64px" placeholder="e.g. Wants a quote for a garden room, saw the van"></textarea></label>
+    ${pre.web ? `<div class="notice">🌐 From your website – check it, then book the visit.</div>` : ""}
+    <label for="qe-name">Name<input id="qe-name" required maxlength="80" autocomplete="off" placeholder="e.g. Mrs Sarah Jones" value="${esc(pre.name || "")}"></label>
+    <div class="grid2"><label for="qe-phone">Phone<input id="qe-phone" type="tel" maxlength="40" placeholder="07…" value="${esc(pre.phone || "")}"></label><label for="qe-pc">Postcode<input id="qe-pc" maxlength="10" autocapitalize="characters" value="${esc(((pre.address || "").match(/[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i) || [""])[0].toUpperCase())}"></label></div>
+    ${pre.email ? `<label for="qe-email">Email<input id="qe-email" type="email" maxlength="120" value="${esc(pre.email)}"></label>` : ""}
+    <label for="qe-addr">Address<input id="qe-addr" maxlength="200" placeholder="e.g. 14 Church Lane, Topsham" value="${esc(pre.address || "")}"></label>
+    <label for="qe-what">What it's about<textarea id="qe-what" maxlength="600" style="min-height:64px" placeholder="e.g. Wants a quote for a garden room, saw the van">${esc(pre.what || "")}</textarea></label>
     <div class="grid2"><label for="qe-d">Visit date<input id="qe-d" type="date" value="${tm}" required></label><label for="qe-t">Time<input id="qe-t" type="time" value="10:00" required></label></div>
     <label for="qe-len">How long<select id="qe-len"><option value="30">30 minutes</option><option value="60" selected>1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
     <label class="tick"><input type="checkbox" id="qe-ics" checked> <span>Also add it to my phone's calendar (reminds me ${VISIT_REMIND_MIN / 60} hour before, even when SiteHQ is closed)</span></label>
@@ -141,13 +145,14 @@ function quickEnquiry() {
           postcode: v("qe-pc").toUpperCase(),
           desc: v("qe-what"),
           stage: "enquiry",
-          source: "",
+          source: pre.source || "",
+          email: $("qe-email") ? v("qe-email") : "",
           quick: true,
           follow: d,
           visit: { date: d, time: t, end },
           notes: [
             {
-              text: `⚡ Quick enquiry. Visit booked ${shortDay(d)} ${t}.`,
+              text: `${pre.web ? "🌐 Enquiry from the website. " : "⚡ Quick enquiry. "}Visit booked ${shortDay(d)} ${t}.`,
               at: Date.now(),
               auto: true,
             },
@@ -155,6 +160,7 @@ function quickEnquiry() {
           created: Date.now(),
         };
         const rec = await saveClient(c0);
+        if (pre.web) await webEnqFiled(pre.web, rec);
         const work = v("qe-what").split("\n")[0].slice(0, 60);
         await clAddPlan(rec, {
           title: "Visit: " + name + (work ? " (" + work + ")" : ""),

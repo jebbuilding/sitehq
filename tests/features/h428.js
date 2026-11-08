@@ -51,7 +51,7 @@ fs.writeFileSync('h428-bank.csv',csv);
  ok(await p.evaluate(()=>window.__sampled)===1,'the photo was sent to Claude to read');
  ok(await p.isVisible('#rr-s')&&await p.inputValue('#rr-s')==='Screwfix Exmouth'&&await p.inputValue('#rr-t')==='120'&&await p.inputValue('#rr-v')==='20','shop, total and VAT filled in from the photo');
  ok(/bank payment on/.test(await p.innerText('#rr-m')),'it found the bank payment: '+await p.innerText('#rr-m'));
- await p.click('#f-save');await p.waitForTimeout(600);
+ await p.click('#rr-save');await p.waitForTimeout(600);
  ok(/matched to the bank payment/.test(await lastToast()),'saved and matched: '+await lastToast());
  const rc=Object.values(await st()).find(v=>v&&v.kind==='acrcpt');
  const txr=Object.values(await st()).filter(v=>v&&v.kind==='acctx').flatMap(v=>v.tx).find(t=>t.rcpt);

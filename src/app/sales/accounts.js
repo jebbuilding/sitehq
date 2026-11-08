@@ -22,9 +22,11 @@ import {
   acTradeMatches,
   acUpdateTx,
 } from "./acct-data.js";
-import { acMatchWaiting, acRcptSheet, acRcptView, acReceipts } from "./acct-receipts.js";
+import { acMatchWaiting, acReceipts } from "./acct-receipts.js";
+import { acRcptSheet, acRcptView } from "./acct-review.js";
+import { acSupView } from "./acct-suppliers.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
-export { accountsView };
+export { acPeriod, accountsView };
 /* Two tabs. Overview: money in, money out and profit for the period, bank balances, month-by-month bars, the profit
    and loss by category, a VAT estimate, what customers owe and what's owed to trades, and an export for the
    accountant. Bank: bring in a statement (CSV from any bank), sort each payment into a category (rules do the
@@ -47,6 +49,7 @@ function accountsView() {
     ["over", "Overview"],
     ["bank", "Bank"],
     ["rcpt", "Receipts"],
+    ["sup", "Suppliers & sites"],
   ]
     .map(
       ([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`,
@@ -54,6 +57,7 @@ function accountsView() {
     .join("")}</div>`;
   if (tab === "bank") acBankView(tabs);
   else if (tab === "rcpt") acRcptView(tabs);
+  else if (tab === "sup") acSupView(tabs);
   else acOverView(tabs);
   $("ac-tabs")
     .querySelectorAll("button")

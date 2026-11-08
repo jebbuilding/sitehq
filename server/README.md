@@ -296,6 +296,23 @@ digits and `_ - . ~ : @ +`; a file is at most 20 MiB and one of JPEG, PNG, WebP,
 PDF (no HTML, SVG or scripts – files are served from the app's own origin). An optional `x-sitehq-client` header
 names the page that made a write, and is echoed in the change message so that page can skip it.
 
+### The public website (`core/public.mjs`)
+
+Two routes need no sign-in: the JEB website (jebbuilding.co.uk) calls them from `website/sitehq.js`, which is added
+to every page of the site and does nothing until its `SITEHQ` address is set at go-live.
+
+| Request | Body (JSON, form-encoded or text/plain JSON) | What it does |
+|---|---|---|
+| `POST /api/public/enquiry` | the contact form: `name, email, phone, location, project-type, message, company-website` (honeypot), `page` | `webenq/<id>` `{ name, email, phone, location, type, message, page, at, status: "new" }`; pops up in the owner's app |
+| `POST /api/public/hit` | `{ p: page path, r: referrer host, m: on a phone, n: a new visit }` | adds one to that day's counts in `webstats/<yyyy-mm-dd>` `{ views, visits, enquiries, pages, refs, dev }` |
+
+Both answer `{"ok":true}` (200) whatever happens, read nothing and only write into those two owner-only collections.
+No cookies, IP addresses or anything that identifies a visitor is kept. Junk is dropped quietly: a filled-in
+honeypot, no name, no email or phone, over 16 KiB. Fields are trimmed to set lengths, and at most
+`MAX_ENQUIRIES_A_DAY` (60) enquiries are stored a day. The answers allow any origin. The site sends with
+`sendBeacon` / `no-cors`, so API Gateway's CORS list does not need the website on it. Its stage throttle is the
+rate limit.
+
 ## Live updates
 
 One WebSocket per page. Messages are JSON (`core/live.mjs` has the full list): the page sends

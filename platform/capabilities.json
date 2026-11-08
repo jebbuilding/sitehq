@@ -88,6 +88,16 @@
         "write": "owner"
       },
       {
+        "path": "webenq",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
+        "path": "webstats",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
         "path": "portal",
         "read": "owner",
         "write": "owner"

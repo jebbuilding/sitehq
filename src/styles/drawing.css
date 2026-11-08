@@ -63,3 +63,6 @@
 .rs-feat{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--soft)}
 .rs-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .msrow{display:flex;gap:6px;margin:0 0 6px}
+/* cupboard and wardrobe maker */
+.cb2-bay{display:grid;grid-template-columns:70px 1fr 90px 90px;gap:8px;align-items:end;padding:6px 0;border-bottom:1px dashed var(--line)}
+@media (max-width:560px){.cb2-bay{grid-template-columns:1fr 1fr}.cb2-bay b{grid-column:1/-1}}

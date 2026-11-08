@@ -1,4 +1,5 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
+import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, render } from "../core/tabs-week.js";
@@ -227,8 +228,10 @@ function todayView() {
         : '<div class="nl-card who">Nothing waiting for you. 👍</div>'
     }
     ${dueSoonCard("all")}
+    ${webEnqNew().length ? `<button type="button" class="nl-card nl-web" id="nl-web"><b>🌐 ${webEnqNew().length} new enquir${webEnqNew().length === 1 ? "y" : "ies"} from your website</b><span class="who">Tap to see and make quick enquiries</span></button>` : ""}
   </div>`;
   $("nl-search").onclick = () => searchOpen("");
+  if ($("nl-web")) $("nl-web").onclick = () => webView();
   $("nl-roll").onclick = () => (rows.length ? openRollCall() : nlOpenTab("signin"));
   $("main")
     .querySelectorAll(".nl-tile")

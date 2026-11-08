@@ -2,6 +2,7 @@
 import { S } from "../core/state.js";
 import { allTeam } from "../owner/owner.js";
 import { isInv } from "../purchasing/materials-receipts.js";
+import { acRcptParts } from "./acct-receipts.js";
 import { sdCalc, sdCounts, sdR2, sdSales, sdStatus } from "./sales-calc.js";
 export {
   AC_CATS,
@@ -259,14 +260,19 @@ function acSums(from, to) {
   /* receipts paid in cash or with his own money: costs that never reach the bank statement */
   (S.acRcpts || [])
     .filter(
-      (r) => r.status === "done" && r.paid && r.paid !== "card" && r.date >= from && r.date <= to,
+      (r) =>
+        r.status === "done" &&
+        (r.paid === "cash" || r.paid === "own" || r.type === "credit") &&
+        r.date >= from &&
+        r.date <= to,
     )
-    .forEach((r) => {
-      const net = sdR2((+r.total || 0) - (+r.vat || 0));
-      byCat[r.cat || "oexp"] = sdR2((byCat[r.cat || "oexp"] || 0) - net);
-      exp += net;
-      vatIn += +r.vat || 0;
-    });
+    .forEach((r) =>
+      acRcptParts(r).forEach((p) => {
+        byCat[p.cat] = sdR2((byCat[p.cat] || 0) - p.net);
+        exp += p.net;
+        vatIn += p.vat;
+      }),
+    );
   /* VAT charged: on invoices dated in the range (and not reverse charge) */
   const vatOut = sdSales()
     .filter((d) => sdCounts(d) && d.date >= from && d.date <= to)

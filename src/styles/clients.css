@@ -54,3 +54,21 @@
 .nmrow{display:grid;grid-template-columns:minmax(76px,.75fr) 1fr 1fr;gap:6px}.nmrow input{min-width:0}
 .abjobs{display:flex;flex-direction:column;gap:4px;margin:6px 0 2px;width:100%}.abjob{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;text-align:left;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--soft);font:inherit;color:var(--ink);cursor:pointer;min-height:40px;align-items:center}.bkrow{flex-wrap:wrap}.cjgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}.cjm{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}.cjm img{width:100%;height:84px;object-fit:cover}.cjm span{font-size:11px;padding:2px 4px}.cjv{height:84px;display:flex;align-items:center;justify-content:center;font-size:30px!important}
 .cfsec{display:flex;flex-direction:column;gap:14px}.cfsec[hidden]{display:none}
+/* website enquiries and how the website is doing */
+.we-det .drow{gap:12px}
+.we-msg{white-space:pre-wrap;background:var(--soft);border-radius:8px;padding:10px 12px;margin:8px 0 0}
+.we-pop .dimbox{max-width:520px;max-height:85vh;overflow:auto}
+.we-item{border-top:1px solid var(--line);padding:6px 0}
+.we-item summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.we-item summary small{display:block;color:var(--muted);font-size:12px}
+.we-page .seg{margin:12px 0}
+.we-chart{display:flex;align-items:flex-end;gap:2px;height:120px;margin:10px 0 4px;border-bottom:1px solid var(--line)}
+.we-col{flex:1;height:100%;display:flex;align-items:flex-end}
+.we-col span{display:block;width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px}
+.we-bar{display:grid;grid-template-columns:minmax(0,1.2fr) 2fr auto;gap:10px;align-items:center;padding:6px 0}
+.we-bar > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.we-track{height:10px;background:var(--soft);border-radius:5px;overflow:hidden}
+.we-track span{display:block;height:100%;background:var(--accent)}
+.we-boxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.we-box{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);border-top:4px solid var(--accent)}
+.we-box small{color:var(--muted);font-size:12px}.we-box b{font-size:22px}.we-box span{color:var(--muted);font-size:12px}

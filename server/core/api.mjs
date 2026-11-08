@@ -12,14 +12,16 @@
 //   PUT    /api/assets/<id>/content      send the bytes (only when the file store has no direct upload)
 //   POST   /api/assets/<id>/complete     finish an upload      DELETE /api/assets/<id>   delete a file
 //   GET    /_blob/<id>                   the file itself
+//   POST   /api/public/enquiry|hit       the public website's contact form and page counter (core/public.mjs)
 //
-// Every route needs a signed-in caller. A read the rules refuse answers exactly like a read of something that is
+// Every route but /api/public/* needs a signed-in caller. A read the rules refuse answers exactly like a read of something that is
 // not there (so nothing can be learned by probing); a write the rules refuse is 403 "forbidden".
 // Document paths travel in request bodies, never in URLs, so they do not end up in access logs.
 import { randomBytes } from "node:crypto";
 import { ApiError, forbidden, invalid, notFound, unauthenticated } from "./errors.mjs";
 import { parseCollPath, parseDocPath } from "./paths.mjs";
 import { applyQuery, parseQuery } from "./query.mjs";
+import { createPublic } from "./public.mjs";
 import { callerFor } from "./roles.mjs";
 
 export const MAX_DOC_BYTES = 256 * 1024; // one document, as JSON
@@ -76,7 +78,7 @@ function byteRange(header, size) {
  * @param deps.onRefused  called with { op, path, role } when the rules refuse something – local diagnosis only;
  *                        never wire this to a log in production (paths can contain ids)
  */
-export function createApi({ store, rules, auth, blobs, live, onRefused }) {
+export function createApi({ store, rules, auth, blobs, live, onRefused, now }) {
   const can = (caller, op, segs, action, path) => {
     const ok = rules.decide(caller, segs, action);
     if (!ok && onRefused) onRefused({ op, path, role: caller.role });
@@ -86,6 +88,8 @@ export function createApi({ store, rules, auth, blobs, live, onRefused }) {
     if (!live) return;
     try { await live.publish(path, origin); } catch (e) { console.error("live: publish failed:", e.name); }
   };
+
+  const pub = createPublic({ store, changed: (path) => changed(path, ""), now });
 
   const db = {
     async get(caller, { path }) {
@@ -221,6 +225,7 @@ export function createApi({ store, rules, auth, blobs, live, onRefused }) {
 
   async function route(req) {
     const { method, path, headers } = req;
+    if (path.startsWith("/api/public/")) return pub(req);
     const bearer = /^Bearer (.+)$/.exec(headers.authorization || "");
     const isBlob = path.startsWith("/_blob/");
     const user = await auth.verify(bearer ? bearer[1] : isBlob ? cookie(headers, "sitehq_token") : "");
