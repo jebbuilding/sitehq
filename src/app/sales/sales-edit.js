@@ -20,6 +20,8 @@ import {
   sdLines,
   sdNextNumber,
   sdNo,
+  sdPlain,
+  sdPricedHead,
   sdR2,
   sdSales,
   sdSaveRec,
@@ -56,9 +58,21 @@ const SD_MOVE = (what, i) =>
 function sdLineRow(l, i, set) {
   if (l.h)
     return `<div class="sd-line sd-hrow" data-h="1" data-i="${i}">
-    <div class="sd-lhd"><b>Heading</b>${SD_MOVE("heading", i)}</div>
-    <input class="sd-lhx" maxlength="120" value="${esc(l.d || "")}" placeholder="e.g. Groundworks, or Kitchen" aria-label="Heading">
-    <span class="sd-ltot"></span>
+    <div class="sd-lhd"><b>Section</b>${SD_MOVE("section", i)}</div>
+    <input class="sd-lhx" maxlength="160" value="${esc(l.d || "")}" placeholder="e.g. Alterations + structural works – Ground floor only" aria-label="Section title">
+    <textarea class="sd-hw" rows="4" maxlength="6000" placeholder="The work in this section, one per line (printed as bullet points)" aria-label="Work in this section">${esc(l.w || "")}</textarea>
+    <div class="sd-lrow">
+      <label class="sd-lf sd-lamt">Price for this section £<input class="sd-ha" type="number" inputmode="decimal" step="0.01" value="${esc(l.a != null && l.a !== "" ? l.a : "")}" placeholder="or add priced lines under it"></label>
+      <label class="sd-lf"${set.vatReg === false ? " hidden" : ""}>VAT<select class="sd-hv">${Object.entries(
+        SD_VATC,
+      )
+        .map(
+          ([k, v]) =>
+            `<option value="${k}"${k === (l.vc || set.vc || "S20") ? " selected" : ""}>${esc(v.l)}</option>`,
+        )
+        .join("")}</select></label>
+      <span class="sd-ltot"></span>
+    </div>
   </div>`;
   const qm = l.m === "q";
   const vc = sdVc(l, {});
@@ -106,7 +120,14 @@ function sdEdit(d0) {
     if (d.closing == null) d.closing = set.closing;
     if (d.signoff == null) d.signoff = set.signoff;
     if (!d.inclHead) d.inclHead = set.inclHead;
-    if (!d.bd) d.bd = d.from ? "total" : (d.lines || []).some((l) => l && l.h) ? "head" : "all";
+    if (!d.bd)
+      d.bd = (d.lines || []).some((l) => l && l.h && (l.w || sdPricedHead(l)))
+        ? "sections"
+        : d.from
+          ? "total"
+          : (d.lines || []).some((l) => l && l.h)
+            ? "head"
+            : "all";
   }
   /* older records: a whole-invoice reverse charge becomes each line's VAT code */
   d.lines = (d.lines || []).map((l) => Object.assign({}, l, { vc: sdVc(l, d), k: sdKind(l) }));
@@ -174,13 +195,14 @@ function sdEdit(d0) {
         .join("")}</select></label></div>`
     }
     <div id="sd-lines">${d.lines.map((l, i) => sdLineRow(l, i, set)).join("")}</div>
-    <div class="sd-acts"><button type="button" class="btn" id="sd-addl">+ Add a line</button><button type="button" class="btn" id="sd-addh">+ Add a heading</button></div>
+    <div class="sd-acts"><button type="button" class="btn" id="sd-addl">+ Add a line</button><button type="button" class="btn" id="sd-addh">+ Add a section (job)</button></div>
     ${
       est
         ? `<label for="sd-valid">Valid for (days)<input id="sd-valid" type="number" inputmode="numeric" value="${esc(d.validDays || set.validDays)}"></label>
     <label for="sd-incl">Works included (one per line, numbered on the PDF)<textarea id="sd-incl" rows="7" maxlength="8000">${esc(d.incl || "")}</textarea></label>
     <label for="sd-excl">Works excluded (one per line)<textarea id="sd-excl" rows="6" maxlength="8000">${esc(d.excl || "")}</textarea></label>
-    <label for="sd-bd">On the estimate, show<select id="sd-bd"><option value="total"${d.bd === "total" ? " selected" : ""}>The total only</option><option value="head"${d.bd === "head" ? " selected" : ""}>Each heading's total, then the total</option><option value="all"${d.bd === "all" ? " selected" : ""}>Every line and heading, then the total</option></select></label>
+    <label for="sd-bd">On the estimate, show<select id="sd-bd"><option value="total"${d.bd === "total" ? " selected" : ""}>The total only</option><option value="head"${d.bd === "head" ? " selected" : ""}>Each heading's total, then the total</option><option value="all"${d.bd === "all" ? " selected" : ""}>Every line and heading, then the total</option><option value="sections"${d.bd === "sections" ? " selected" : ""}>Like my Word estimate: each section with its work and its total</option></select></label>
+    <label for="sd-dur">Estimated project duration (optional)<input id="sd-dur" maxlength="40" value="${esc(d.dur || "")}" placeholder="e.g. 7 weeks"></label>
     <label for="sd-ih">Heading for works included<input id="sd-ih" maxlength="120" value="${esc(d.inclHead || "")}"></label>
     <label for="sd-cn">Note under the total (in italics)<textarea id="sd-cn" rows="2" maxlength="1500">${esc(d.costNote || "")}</textarea></label>
     <label for="sd-cw">Closing words<textarea id="sd-cw" rows="5" maxlength="6000">${esc(d.closing || "")}</textarea></label>
@@ -210,7 +232,15 @@ function sdEdit(d0) {
   </div>`);
   const num = (v) => (v === "" || v == null ? "" : sdR2(v));
   const readLine = (r) => {
-    if (r.dataset.h) return { h: 1, d: r.querySelector(".sd-lhx").value.trim() };
+    if (r.dataset.h)
+      return {
+        h: 1,
+        d: r.querySelector(".sd-lhx").value.trim(),
+        w: r.querySelector(".sd-hw").value.trim(),
+        a: num(r.querySelector(".sd-ha").value),
+        vc: r.querySelector(".sd-hv").value,
+        k: "lab",
+      };
     const qm = !r.querySelector(".sd-lqf").hidden;
     const o = {
       d: r.querySelector(".sd-ld").value.trim(),
@@ -243,7 +273,7 @@ function sdEdit(d0) {
       site: $("sd-site").value.trim(),
       notes: $("sd-notes").value.trim(),
       inc: $("sd-inc") ? $("sd-inc").value === "1" : false,
-      lines: lines.filter((l) => (l.h ? l.d : l.d || l.a !== "")),
+      lines: lines.filter((l) => (l.h ? l.d || l.w || l.a !== "" : l.d || l.a !== "")),
     });
     if (est)
       Object.assign(o, {
@@ -253,6 +283,7 @@ function sdEdit(d0) {
         incl: $("sd-incl").value,
         excl: $("sd-excl").value,
         bd: $("sd-bd").value,
+        dur: $("sd-dur").value.trim(),
         inclHead: $("sd-ih").value.trim(),
         costNote: $("sd-cn").value,
         closing: $("sd-cw").value,
@@ -279,7 +310,7 @@ function sdEdit(d0) {
       const l = readLine(r);
       if (l.h) {
         head = r;
-        subOf.set(r, 0);
+        subOf.set(r, sdAmt(l));
         return;
       }
       if (l.m === "q") r.querySelector(".sd-la").value = l.a === "" ? "" : l.a.toFixed(2);
@@ -287,7 +318,7 @@ function sdEdit(d0) {
       if (head) subOf.set(head, subOf.get(head) + sdAmt(l));
     });
     subOf.forEach(
-      (v, r) => (r.querySelector(".sd-ltot").innerHTML = `Heading total <b>${gbp(v)}</b>`),
+      (v, r) => (r.querySelector(".sd-ltot").innerHTML = `Section total <b>${gbp(v)}</b>`),
     );
     const rows = [[o.inc ? "Total before VAT (worked out)" : "Total before VAT", gbp(c.net), 1]];
     if (set.vatReg !== false)
@@ -387,7 +418,10 @@ function sdEdit(d0) {
   };
   $("sd-addh").onclick = () => {
     const n = document.querySelectorAll("#sd-lines .sd-line").length;
-    $("sd-lines").insertAdjacentHTML("beforeend", sdLineRow({ h: 1, d: "" }, n, set));
+    $("sd-lines").insertAdjacentHTML(
+      "beforeend",
+      sdLineRow({ h: 1, d: "", vc: set.vatReg === false ? "NV" : set.vc || "S20" }, n, set),
+    );
     wireLines();
     totals();
     const all = document.querySelectorAll("#sd-lines .sd-lhx");
@@ -748,7 +782,9 @@ function sdToInvoice(e) {
         lines = sdFinalLines(e, "").lines;
       } else {
         lines = JSON.parse(JSON.stringify(e.lines || [])).map((l) =>
-          l.h ? l : Object.assign(l, { vc: sdVc(l, e), k: sdKind(l), a: sdAmt(l) }),
+          l.h && !sdPricedHead(l)
+            ? { h: 1, d: l.d }
+            : Object.assign(sdPlain(l), { vc: sdVc(l, e), k: sdKind(l), a: sdAmt(l) }),
         );
       }
       $("f-save").disabled = true;

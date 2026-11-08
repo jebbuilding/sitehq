@@ -19,6 +19,8 @@ export {
   sdLines,
   sdNextNumber,
   sdNo,
+  sdPlain,
+  sdPricedHead,
   sdR2,
   sdSales,
   sdSaveRec,
@@ -111,7 +113,17 @@ function sdAmt(l) {
   if (l.a != null && l.a !== "") return sdR2(l.a);
   return sdR2((l.q === "" || l.q == null ? 1 : +l.q) * (+l.r || 0));
 }
-const sdLines = (d) => (d.lines || []).filter((l) => l && !l.h && (l.d || sdAmt(l)));
+/* a section's own price (a heading with an amount) counts like a line */
+const sdPricedHead = (l) => !!(l && l.h && l.a !== "" && l.a != null && +l.a !== 0);
+const sdLines = (d) =>
+  (d.lines || []).filter((l) => l && (l.h ? sdPricedHead(l) : l.d || sdAmt(l)));
+/* a line on its own, without the section bits (when copied onto an invoice) */
+const sdPlain = (l) => {
+  const o = Object.assign({}, l);
+  delete o.h;
+  delete o.w;
+  return o;
+};
 /* the lines grouped under their headings: [{ h: heading or "", lines, sub }] */
 function sdGroups(d) {
   const out = [];
@@ -119,7 +131,7 @@ function sdGroups(d) {
   (d.lines || []).forEach((l) => {
     if (!l) return;
     if (l.h) {
-      g = { h: l.d || "", lines: [], sub: 0 };
+      g = { h: l.d || "", w: l.w || "", head: l, lines: [], sub: sdPricedHead(l) ? sdAmt(l) : 0 };
       out.push(g);
       return;
     }
@@ -260,7 +272,7 @@ function sdFinalLines(e, finalId) {
     },
   ];
   sdLines(e).forEach((l) =>
-    lines.push(Object.assign({}, l, { vc: sdVc(l, e), k: sdKind(l), a: sdAmt(l) })),
+    lines.push(Object.assign(sdPlain(l), { vc: sdVc(l, e), k: sdKind(l), a: sdAmt(l) })),
   );
   const held = job.invs.filter(
     (x) => sdIk(x) === "extra" && x.af && (!x.inFinal || x.inFinal === finalId),

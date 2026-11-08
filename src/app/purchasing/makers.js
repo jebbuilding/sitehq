@@ -7,6 +7,7 @@ import { uploadErr, uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { scheduleMkSync, whoSeesDlg } from "./merchants.js";
+import { supSendSheet } from "./sup-send.js";
 import { DWS } from "../survey/door-window-survey.js";
 export { makersAll, makersView, wireMakers };
 const MK_CATS = [
@@ -86,7 +87,7 @@ function makerCard(M) {
   const tel = String(r.phone || "").replace(/\s+/g, "");
   const web = r.website ? (/^https?:/.test(r.website) ? r.website : "https://" + r.website) : "";
   return `<details class="card supcard mkcard" data-k="${esc(M.key)}" ${S.open.has("mk" + M.key) ? "open" : ""}><summary><div class="nm">${esc(M.m)}<small>${esc([M.cat, r.contact ? "Rep: " + r.contact : ""].filter(Boolean).join(" · "))}</small></div><div class="figs"><span class="tag ${r.vis === "all" ? "ok" : r.vis === "some" ? "day" : ""}">${r.vis === "all" ? "👥 Everyone" : r.vis === "some" ? "👥 " + (r.people || []).filter((id) => S.team[id]).length + " trade" + ((r.people || []).length === 1 ? "" : "s") : "🔒 Only me"}</span>${br.length ? `<span class="tag ok">📖 ${br.length}</span>` : ""}${r.accountNo ? `<span>Acc <b>${esc(r.accountNo)}</b></span>` : ""}</div></summary>
-    <div class="cardbody"><div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a>` : ""}${r.email ? `<a class="btn" href="mailto:${esc(r.email)}">✉ Email</a>` : ""}${web ? `<a class="btn" href="${esc(web)}" target="_blank" rel="noopener">Website ↗</a>` : ""}<button type="button" class="btn mk-edit">✎ Details</button><button type="button" class="btn mk-vis">👥 ${r.vis === "all" ? "Everyone can see this" : r.vis === "some" ? "Chosen trades can see this" : "Only you can see this"} – change</button></div>
+    <div class="cardbody"><div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a>` : ""}${r.email ? `<a class="btn" href="mailto:${esc(r.email)}">✉ Email</a>` : ""}${web ? `<a class="btn" href="${esc(web)}" target="_blank" rel="noopener">Website ↗</a>` : ""}<button type="button" class="btn mk-send">📤 Send</button><button type="button" class="btn mk-edit">✎ Details</button><button type="button" class="btn mk-vis">👥 ${r.vis === "all" ? "Everyone can see this" : r.vis === "some" ? "Chosen trades can see this" : "Only you can see this"} – change</button></div>
       <div class="details">${
         [
           ["Phone", r.phone],
@@ -164,6 +165,21 @@ function wireMakers() {
         dt.open ? S.open.add("mk" + M.key) : S.open.delete("mk" + M.key);
       });
       dt.querySelector(".mk-edit").onclick = () => makerEdit(M);
+      dt.querySelector(".mk-send").onclick = () =>
+        supSendSheet(
+          M.m,
+          M.rec || {},
+          "maker",
+          (S.brochures || [])
+            .filter((b) => b.maker === M.key)
+            .map((b) => ({
+              assetId: b.assetId,
+              title: b.title,
+              name: b.fileName || b.title + ".pdf",
+              type: b.contentType || "application/pdf",
+              folder: "designs",
+            })),
+        );
       dt.querySelector(".mk-vis").onclick = () => whoSeesDlg("mk", M.key);
       dt.querySelectorAll(".mk-open").forEach(
         (b) =>

@@ -10,6 +10,7 @@ import { noBin } from "../owner/deleted-items.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { makersView, wireMakers } from "./makers.js";
 import { mkCopies, syncMakers, tradeMakersHtml, whoSeesDlg } from "./merchants.js";
+import { supSendSheet } from "./sup-send.js";
 import { syncSiteJobs } from "../sites/job-details.js";
 export { openSupplier, scheduleSupSync, supMaster, suppliersView };
 const SUP_CATS = [
@@ -207,7 +208,7 @@ function supCard(sp, owner) {
               .join("")}`
           : ""
       }
-      ${owner ? `<div class="actions"><button type="button" class="btn sup-vis" data-id="${esc(sp.id)}">👥 ${esc(vis)} – change</button><button type="button" class="btn sup-edit">Edit</button></div>` : ""}</div></details>`;
+      ${owner ? `<div class="actions"><button type="button" class="btn sup-vis" data-id="${esc(sp.id)}">👥 ${esc(vis)} – change</button><button type="button" class="btn sup-send">📤 Send</button><button type="button" class="btn sup-edit">Edit</button></div>` : ""}</div></details>`;
 }
 function suppliersView() {
   const owner = ownerMode();
@@ -335,6 +336,8 @@ function suppliersView() {
       );
       const ed = dt.querySelector(".sup-edit");
       if (ed) ed.onclick = () => openSupplier(sp);
+      const sn = dt.querySelector(".sup-send");
+      if (sn) sn.onclick = () => supSendSheet(sp.name, sp, "merchant", []);
       const vb = dt.querySelector(".sup-vis");
       if (vb) vb.onclick = () => whoSeesDlg("sup", sp.id);
     });

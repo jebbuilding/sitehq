@@ -235,7 +235,7 @@ async function sdImportWord(file) {
             closing: p.closing || sdSet().closing,
             signoff: p.signoff || sdSet().signoff,
             inclHead: e.inclHead || sdSet().inclHead,
-            bd: "total",
+            bd: e.bd || "total",
             status: "sent",
             sentAt: Date.now(),
             from: file.name,

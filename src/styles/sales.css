@@ -134,3 +134,4 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .se-att{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px}
 .ss-mt summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
 .ss-mt textarea{width:100%}
+.sd-hrow .sd-hw{min-height:80px;resize:vertical}

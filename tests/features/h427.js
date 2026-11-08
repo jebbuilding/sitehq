@@ -119,7 +119,7 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  await p.click('#sd-addh');hl=await p.$$('#sd-lines .sd-line');await (await hl[3].$('.sd-lhx')).fill('Roof');
  await p.click('#sd-addl');hl=await p.$$('#sd-lines .sd-line');await (await hl[4].$('.sd-ld')).fill('Tiles and battens');await (await hl[4].$('.sd-la')).fill('1000');await p.waitForTimeout(150);
  const htot=await p.$$eval('#sd-lines .sd-hrow .sd-ltot',x=>x.map(e=>e.textContent));
- ok(htot[0]==='Heading total £1,200.00'&&htot[1]==='Heading total £1,000.00'&&/Total before VAT\s+£2,200\.00/.test(await p.innerText('#sd-tot')),'headings total their lines: £1,200 + £1,000 = £2,200');
+ ok(htot[0]==='Section total £1,200.00'&&htot[1]==='Section total £1,000.00'&&/Total before VAT\s+£2,200\.00/.test(await p.innerText('#sd-tot')),'headings total their lines: £1,200 + £1,000 = £2,200');
  ok(await p.inputValue('#sd-bd')==='all','new estimate shows every line by default');
  await p.click('#sd-pdf');await p.waitForTimeout(2500);
  await savePdf(p,'h427-est-heads.pdf');

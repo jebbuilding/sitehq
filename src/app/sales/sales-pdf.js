@@ -14,6 +14,7 @@ import {
   sdIk,
   sdIsPf,
   sdNo,
+  sdPricedHead,
   sdSet,
   sdSigned,
   sdVc,
@@ -253,6 +254,7 @@ async function sdPdf(d) {
     };
     if (
       bd !== "total" &&
+      bd !== "sections" &&
       (groups.length > 1 || (groups[0] && (groups[0].h || groups[0].lines.length > 1)))
     ) {
       groups.forEach((g) => {
@@ -292,6 +294,7 @@ async function sdPdf(d) {
         sz: 9.5,
       });
     y += 6;
+    if (d.dur) para("Estimated project duration " + d.dur, { st: "bold", gap: 2.4 });
     para(`Estimate is valid for ${+d.validDays || +set.validDays || 30} Days`, {
       st: "bold",
       gap: 1.4,
@@ -301,7 +304,37 @@ async function sdPdf(d) {
     y += 6;
     const inc = listOf(d.incl),
       exc = listOf(d.excl);
-    if (inc.length) {
+    const secs = groups.filter((g) => g.h);
+    if (bd === "sections" && secs.length) {
+      /* like James's own: "1. Title", the work as bullet points, then that section's total +VAT and Inc VAT */
+      need(24);
+      para(d.inclHead || set.inclHead, { st: "bold", u: 1, gap: 5 });
+      secs.forEach((g, n) => {
+        need(18);
+        para(n + 1 + ". " + g.h, { st: "bold", gap: 2.4 });
+        const items = listOf(g.w).concat(g.lines.map((l) => l.d).filter(Boolean));
+        if (items.length) list(items, { bullet: 1, lh: 5, gap: 1.2 });
+        if (g.sub) {
+          const gc = sdCalc(Object.assign({}, d, { lines: [g.head].concat(g.lines) }));
+          need(14);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10.5);
+          ink();
+          doc.text("Total estimate:", M, y);
+          doc.text(gbp(gc.net) + (gc.vat ? " +VAT" : ""), M + 38, y);
+          y += 5.6;
+          if (gc.vat) {
+            doc.text(gbp(gc.gross) + " Inc VAT", M + 38, y);
+            y += 5.6;
+          }
+        }
+        y += 5;
+      });
+      if (inc.length) {
+        list(inc, { bullet: 1, lh: 5.4, gap: 2.2 });
+      }
+      y += 2;
+    } else if (inc.length) {
       need(20);
       para(d.inclHead || set.inclHead, { st: "bold", u: 1, gap: 5 });
       list(inc, { lh: 5.4, gap: 2.2 });
@@ -370,7 +403,7 @@ async function sdPdf(d) {
     const many = Object.keys(c.byRate).length > 1;
     (d.lines || []).forEach((l) => {
       if (!l) return;
-      if (l.h) {
+      if (l.h && !sdPricedHead(l)) {
         if (l.d) para(l.d, { st: "bold", gap: 1.5 });
         return;
       }

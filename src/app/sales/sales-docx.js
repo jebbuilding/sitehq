@@ -151,6 +151,11 @@ function sdParseEstimate(paras) {
     afterValid = false;
   sum.forEach((p) => {
     const v = sdMoney(p);
+    const du = p.match(/estimated project duration[:\s]*(.+)$/i);
+    if (du) {
+      est.dur = du[1].trim();
+      return;
+    }
     const vd = p.match(/valid for (\d+) days/i);
     if (vd) {
       est.validDays = +vd[1];
@@ -181,6 +186,40 @@ function sdParseEstimate(paras) {
   /* no mention of VAT at all: the prices have none */
   if (sum.length && !sum.some((p) => /vat/i.test(p))) est.lines.forEach((l) => (l.vc = "NV"));
   est.incl = iInc >= 0 ? T.slice(iInc + 1, stop(iInc)).join("\n") : "";
+  /* sections, like "1. Alterations + structural works": a numbered bold line, its bullet points, its own total */
+  if (iInc >= 0) {
+    const secs = [],
+      general = [];
+    let cur = null;
+    paras.slice(iInc + 1, stop(iInc)).forEach((p) => {
+      const t = p.t;
+      if (!p.list && /^\d+\.\s*\S/.test(t) && !/£/.test(t)) {
+        cur = {
+          h: 1,
+          d: t.replace(/^\d+\.\s*/, "").replace(/[\s_]+$/, ""),
+          w: [],
+          a: "",
+          vc: "S20",
+          k: "lab",
+        };
+        secs.push(cur);
+        return;
+      }
+      if (/inc(luding)?\.? vat/i.test(t) && !/total/i.test(t)) return;
+      const v = sdMoney(t);
+      if (/total/i.test(t) && v) {
+        if (cur && cur.a === "") cur.a = v;
+        else if (cur) cur.w.push(t.replace(/\t+/g, " "));
+        return;
+      }
+      (cur ? cur.w : general).push(t);
+    });
+    if (secs.length) {
+      est.lines = secs.map((s) => Object.assign(s, { w: s.w.join("\n") }));
+      est.incl = general.join("\n");
+      est.bd = "sections";
+    }
+  }
   if (iInc >= 0 && /break ?down of costs/i.test(T[iInc])) est.inclHead = T[iInc];
   /* excluded runs until the closing words ("Please note…", "We look forward…") */
   let exc = iExc >= 0 ? T.slice(iExc + 1, stop(iExc)) : [];
