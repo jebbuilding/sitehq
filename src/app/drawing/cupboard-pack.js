@@ -4,6 +4,7 @@ import { openSheet } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { cbaPlan } from "./cupboard-alcove.js";
 import { cbPlan } from "./cupboard-maker.js";
+import { cbsIs, cbsPlan } from "./cupboard-shapes.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
@@ -24,7 +25,7 @@ function cbpEdges(part, note) {
 }
 /* every panel, one by one, with its holes */
 function cbpPanels(sp) {
-  const P = sp.kind && sp.kind !== "full" ? cbaPlan(sp) : cbPlan(sp);
+  const P = cbsIs(sp) ? cbsPlan(sp) : sp.kind && sp.kind !== "full" ? cbaPlan(sp) : cbPlan(sp);
   const shelvesInside =
     sp.kind === "shelves"
       ? false
@@ -42,7 +43,7 @@ function cbpPanels(sp) {
         for (let i = 0; i < n; i++)
           holes.push({ x: 100 + ((L - 200) * i) / (n - 1), y: 22.5, d: 35 });
       }
-      if (/^side$|division/.test(p) && shelvesInside) {
+      if (/(^|– )side$|division/.test(p) && shelvesInside) {
         for (let x = 250; x <= L - 250; x += 32)
           [37, W - 37].forEach((y) => holes.push({ x, y, d: 5 }));
       }
@@ -137,9 +138,9 @@ async function cbpPdf(sp, meta) {
     y,
   );
   doc.setFont("helvetica", "normal");
-  const bought = (sp.kind && sp.kind !== "full" ? cbaPlan(sp) : cbPlan(sp)).cut.filter(
-    (c) => !c.th,
-  );
+  const bought = (
+    cbsIs(sp) ? cbsPlan(sp) : sp.kind && sp.kind !== "full" ? cbaPlan(sp) : cbPlan(sp)
+  ).cut.filter((c) => !c.th);
   if (bought.length) {
     y += 6;
     doc.text("Also: " + bought.map((c) => `${c.qty} × ${c.part} ${c.l} long`).join("; "), 12, y, {

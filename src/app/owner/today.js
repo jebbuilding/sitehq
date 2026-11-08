@@ -180,6 +180,7 @@ function nlApply() {
     srb.hidden = false;
   } else if (srb) srb.hidden = true;
   let bar = $("nlbar");
+  nlCrumb(on);
   if (!on) {
     if (bar) bar.hidden = true;
     return;
@@ -231,6 +232,48 @@ function nlApply() {
         else nlGo("sec-" + s);
       }),
   );
+}
+
+/* inside a section (e.g. Clients, under Jobs & clients): a way back to the section and a row of its other pages,
+   kept above the page so it stays whatever the page draws */
+function nlCrumb(on) {
+  let cr = $("nl-crumb");
+  const t = S.otab || "";
+  const sec =
+    on && t !== "today" && !/^sec-/.test(t) ? NL_SECTIONS.find((x) => x[2].includes(t)) : null;
+  if (!sec || sec[2].length < 2) {
+    if (cr) cr.hidden = true;
+    return;
+  }
+  if (!cr) {
+    cr = document.createElement("nav");
+    cr.id = "nl-crumb";
+    cr.className = "nl-crumb";
+    cr.setAttribute("aria-label", "Pages in this section");
+    const m = $("weekbar") || $("main");
+    m.parentNode.insertBefore(cr, m);
+  }
+  cr.hidden = false;
+  const badge = S.badgeNow || {};
+  cr.innerHTML =
+    `<button type="button" class="nl-cback" data-s="${sec[0]}">‹ ${esc(sec[1])}</button><div class="nl-cpages">` +
+    sec[2]
+      .map(
+        (x) =>
+          `<button type="button" class="nl-cp" data-t="${x}"${x === t ? ' aria-current="page"' : ""}>${esc(nlTabLabel(x))}${badge[x] ? ` <span class="nl-new">${badge[x]}</span>` : ""}</button>`,
+      )
+      .join("") +
+    "</div>";
+  cr.querySelector(".nl-cback").onclick = () => nlGo("sec-" + sec[0]);
+  cr.querySelectorAll(".nl-cp").forEach((b) => (b.onclick = () => nlOpenTab(b.dataset.t)));
+  const curB = cr.querySelector(".nl-cp[aria-current]");
+  if (curB) {
+    const row = cr.querySelector(".nl-cpages");
+    row.scrollLeft = Math.max(
+      0,
+      curB.offsetLeft - row.offsetLeft - (row.clientWidth - curB.offsetWidth) / 2,
+    );
+  }
 }
 
 /* Today: who's on site, what needs James, what's coming up */

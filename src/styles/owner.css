@@ -210,3 +210,10 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .jb-ph img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--soft)}
 .jb-ok{color:var(--ok);font-weight:600}
 @media (min-width:900px){.jb-two{flex-direction:row;align-items:flex-start;gap:20px}.jb-list{flex:1 1 300px;max-width:360px;max-height:none}.jb-job{flex:3 1 480px}}
+.nl-crumb{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+.nl-crumb[hidden]{display:none}
+.nl-cback{flex:0 0 auto;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.nl-cpages{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--soft);overflow-x:auto;scrollbar-width:none;min-width:0}
+.nl-cpages::-webkit-scrollbar{display:none}
+.nl-cp{flex:0 0 auto;min-height:40px;padding:0 14px;border:0;border-radius:11px;background:transparent;color:var(--muted);font:inherit;font-weight:600;white-space:nowrap;cursor:pointer}
+.nl-cp[aria-current]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}

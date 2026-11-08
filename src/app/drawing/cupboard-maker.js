@@ -3,6 +3,7 @@ import { $, esc } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { CBA_KINDS, cbaHasBase } from "./cupboard-alcove.js";
 import { CBP_DOOR, CBP_KIND, cbpPicker } from "./cupboard-pics.js";
+import { CBS_KINDS } from "./cupboard-shapes.js";
 export { CB_BAYS, CB_DOORS, cbBayDoor, cbDraw, cbMakeDialog, cbPlan };
 /* A form for the overall size, board thicknesses, plinth, bays (equal or given widths) and what's in each bay
    (shelves, hanging – single or double – drawers, or a mix), and the doors (none, hinged, pairs or sliding). It
@@ -428,10 +429,22 @@ function cbMakeDialog(api) {
   ]);
   openSheet(
     `<h3 id="sheettitle">🗄️ Cupboards, wardrobes and shelves</h3>
-    <label for="cb2-kind">What are you making?<select id="cb2-kind">${CBA_KINDS.map(([k, l]) => `<option value="${k}"${k === v("kind", "full") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+    <label for="cb2-kind">What are you making?<select id="cb2-kind">${CBA_KINDS.concat(CBS_KINDS)
+      .map(
+        ([k, l]) =>
+          `<option value="${k}"${k === v("kind", "full") ? " selected" : ""}>${l}</option>`,
+      )
+      .join("")}</select></label>
     <label for="cb2-name">Name<input id="cb2-name" maxlength="60" value="${esc(v("name", "Wardrobe"))}" placeholder="e.g. Wardrobe – bedroom 1, Alcove left of the chimney"></label>
     <div class="grid2"><label for="cb2-W"><span class="cb2-wl">Width (mm)</span><input id="cb2-W" type="number" inputmode="numeric" value="${v("W", 1800)}"></label><label for="cb2-H"><span class="cb2-hl">Height (mm)</span><input id="cb2-H" type="number" inputmode="numeric" value="${v("H", 2400)}"></label></div>
-    <div class="grid2"><label for="cb2-D"><span class="cb2-dl">Depth (mm)</span><input id="cb2-D" type="number" inputmode="numeric" value="${v("D", 600)}"></label><label for="cb2-p" class="cb2-g" data-k="full alcove base">Plinth / kickboard height (0 = none)<input id="cb2-p" type="number" inputmode="numeric" value="${v("plinth", 100)}"></label></div>
+    <div class="grid2"><label for="cb2-D"><span class="cb2-dl">Depth (mm)</span><input id="cb2-D" type="number" inputmode="numeric" value="${v("D", 600)}"></label><label for="cb2-p" class="cb2-g" data-k="full alcove base corner stairs eaves bridge window seat bench tv">Plinth / kickboard height (0 = none)<input id="cb2-p" type="number" inputmode="numeric" value="${v("plinth", 100)}"></label></div>
+    <fieldset class="cb2-g od-who" data-k="corner stairs eaves bridge window seat bench tv"><legend>The shape</legend>
+      <label for="cb2-wb" class="cb2-g" data-k="corner">Second run, round the corner (mm, from the corner)<input id="cb2-wb" type="number" inputmode="numeric" value="${v("wB", 1200)}"></label>
+      <label for="cb2-hl" class="cb2-g" data-k="stairs eaves"><span class="cb2-hll">Height at the low end (mm)</span><input id="cb2-hl" type="number" inputmode="numeric" value="${v("hLow", 900)}"></label>
+      <label for="cb2-tw" class="cb2-g" data-k="bridge window tv">Tower width (mm)<input id="cb2-tw" type="number" inputmode="numeric" value="${v("tw", 500)}"></label>
+      <div class="grid2"><label for="cb2-th" class="cb2-g" data-k="bridge window tv bench"><span class="cb2-thl">Unit over the top – height (mm, 0 = none)</span><input id="cb2-th" type="number" inputmode="numeric" value="${v("topH", 500)}"></label><label for="cb2-lh" class="cb2-g" data-k="window tv bench"><span class="cb2-lhl">Unit underneath – height (mm, 0 = none)</span><input id="cb2-lh" type="number" inputmode="numeric" value="${v("lowH", 450)}"></label></div>
+      <label class="inl cb2-g" data-k="window"><input type="checkbox" id="cb2-rad"${v("radiator", false) ? " checked" : ""}> It's round a radiator, not a window</label>
+    </fieldset>
     <label for="cb2-sc" class="cb2-g" data-k="alcove base shelves">Scribe allowance each side (mm, for uneven walls)<input id="cb2-sc" type="number" inputmode="numeric" value="${v("scribe", 10)}"></label>
     <fieldset class="cb2-g od-who" data-k="alcove base"><legend>The cupboard at the bottom</legend>
       <div class="grid2"><label for="cb2-bh">Height to the top of the worktop (mm)<input id="cb2-bh" type="number" inputmode="numeric" value="${v("baseH", 800)}"></label><label for="cb2-tt">Top thickness (mm, 0 = no top)<input id="cb2-tt" type="number" inputmode="numeric" value="${v("topT", 30)}"></label></div>
@@ -449,7 +462,7 @@ function cbMakeDialog(api) {
       <div class="grid2"><label for="cb2-co">Cornice height (mm, 0 = none)<input id="cb2-co" type="number" inputmode="numeric" value="${v("cornice", 0)}"></label><label for="cb2-wt">Width at the top, if not square (mm)<input id="cb2-wt" type="number" inputmode="numeric" value="${v("openTop", "")}" placeholder="same as the bottom"></label></div>
       <div class="who">Width and height above are the whole opening. The fillers, end panels and cornice come off them, and the narrower end of an out-of-square opening is used, with the fillers scribed to fit.</div>
     </fieldset>
-    <div class="cb2-g" data-k="full alcove base">
+    <div class="cb2-g" data-k="full alcove base corner stairs eaves bridge window seat bench tv">
     <div class="grid2"><label for="cb2-t">Board thickness (mm)<input id="cb2-t" type="number" inputmode="numeric" value="${v("t", 18)}"></label><label for="cb2-bt">Back panel thickness (0 = no back)<input id="cb2-bt" type="number" inputmode="numeric" value="${v("bt", 6)}"></label></div>
     <label for="cb2-doors">Doors<select id="cb2-doors">${CB_DOORS.map(([k, l]) => `<option value="${k}"${k === v("doors", "hinged") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
     <div class="grid2"><label for="cb2-n">How many bays (sections)<input id="cb2-n" type="number" inputmode="numeric" min="1" max="8" value="${bays0.length}"></label><label for="cb2-ws">Bay widths inside (optional)<input id="cb2-ws" maxlength="60" value="${esc(v("widths", ""))}" placeholder="e.g. 1000, 728 – or leave for equal"></label></div>
@@ -460,6 +473,12 @@ function cbMakeDialog(api) {
       const num = (id, d) => (isFinite(+$(id).value) && $(id).value !== "" ? +$(id).value : d);
       const sp = {
         kind: $("cb2-kind").value,
+        wB: num("cb2-wb", 1200),
+        hLow: num("cb2-hl", 900),
+        tw: num("cb2-tw", 500),
+        topH: Math.max(0, num("cb2-th", 0)),
+        lowH: Math.max(0, num("cb2-lh", 0)),
+        radiator: $("cb2-rad").checked,
         scribe: Math.max(0, num("cb2-sc", 0)),
         baseH: num("cb2-bh", 800),
         topT: Math.max(0, num("cb2-tt", 0)),
@@ -553,6 +572,19 @@ function cbMakeDialog(api) {
     document.querySelector(".cb2-dl").textContent =
       k === "shelves" ? "Depth of the recess (mm)" : al ? "Cupboard depth (mm)" : "Depth (mm)";
     if (k === "base") $("cb2-H").value = $("cb2-bh").value;
+    if (k === "stairs")
+      document.querySelector(".cb2-hll").textContent = "Height at the low end (mm)";
+    if (k === "eaves")
+      document.querySelector(".cb2-hll").textContent = "Height at the back – the knee wall (mm)";
+    if (k === "stairs")
+      document.querySelector(".cb2-hl").textContent = "Height at the high end (mm)";
+    if (k === "eaves") document.querySelector(".cb2-hl").textContent = "Height at the front (mm)";
+    if (k === "bench") {
+      document.querySelector(".cb2-thl").textContent = "Cubbies at the top – height (mm)";
+      document.querySelector(".cb2-lhl").textContent = "Bench – seat height (mm)";
+    } else if (k === "tv")
+      document.querySelector(".cb2-lhl").textContent = "Media unit – height (mm)";
+    if (k === "seat") document.querySelector(".cb2-hl").textContent = "Seat height (mm)";
   };
   $("cb2-kind").onchange = () => {
     const k = $("cb2-kind").value;
@@ -561,12 +593,22 @@ function cbMakeDialog(api) {
       alcove: [400, 2400, "Alcove unit"],
       base: [400, 800, "Base cupboard"],
       shelves: [300, 2400, "Shelves"],
+      corner: [600, 2400, "Corner wardrobe"],
+      stairs: [700, 2200, "Under-stairs cupboard"],
+      eaves: [800, 1400, "Eaves storage"],
+      bridge: [600, 2400, "Bedroom wall"],
+      window: [450, 2400, "Window surround"],
+      seat: [450, 450, "Window seat"],
+      bench: [400, 2100, "Boot room bench"],
+      tv: [450, 2400, "TV wall"],
     }[k];
     $("cb2-D").value = d[0];
     $("cb2-H").value = d[1];
     if (
       !$("cb2-name").value ||
-      /^(Wardrobe|Alcove unit|Base cupboard|Shelves)$/.test($("cb2-name").value)
+      /^(Wardrobe|Alcove unit|Base cupboard|Shelves|Corner wardrobe|Under-stairs cupboard|Eaves storage|Bedroom wall|Window surround|Window seat|Boot room bench|TV wall)$/.test(
+        $("cb2-name").value,
+      )
     )
       $("cb2-name").value = d[2];
     if (k !== "full") $("cb2-n").value = 1;

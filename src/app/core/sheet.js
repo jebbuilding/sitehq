@@ -46,6 +46,11 @@ function openSheet(html, submit, focusId) {
   enhanceCamera($("form"));
   $("scrim").hidden = false;
   $("sheet").hidden = false;
+  /* a form opened from the notebook / drawing page goes over it; one that was already open (e.g. a new client,
+     whose 📝 Add a notebook page opened the notebook) stays under it */
+  const overNp = !!document.querySelector(".np");
+  $("scrim").classList.toggle("sh-np", overNp);
+  $("sheet").classList.toggle("sh-np", overNp);
   const c = $("f-cancel");
   if (c) c.onclick = closeForm;
   if (focusId)

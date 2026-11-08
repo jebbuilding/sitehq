@@ -5,6 +5,7 @@ import { esc, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { cba3Model } from "./cupboard-alcove.js";
 import { CB_BAYS, CB_DOORS, cbBayDoor, cbPlan } from "./cupboard-maker.js";
+import { cb3ExtFaces, cbs3Model, cbsIs } from "./cupboard-shapes.js";
 import { uploadFile } from "../files/files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
@@ -233,7 +234,11 @@ function cb3Draw(cv, sp, look, open, yaw) {
   const W = sp.W,
     H = sp.H,
     D = sp.D;
-  const boxes = (sp.kind && sp.kind !== "full" ? cba3Model : cb3Model)(sp, look, open).filter(
+  const boxes = (cbsIs(sp) ? cbs3Model : sp.kind && sp.kind !== "full" ? cba3Model : cb3Model)(
+    sp,
+    look,
+    open,
+  ).filter(
     (o) =>
       !o.inner ||
       open ||
@@ -276,10 +281,14 @@ function cb3Draw(cv, sp, look, open, yaw) {
   ];
   const L = nrm([-0.45, 0.75, 0.6]);
   boxes.forEach((o) => {
-    const [x0, y0, z0, x1, y1, z1] = o.b;
+    const xq = o.ext || o.extZ ? cb3ExtFaces(o) : null;
     let pts = [];
-    for (const X of [x0, x1])
-      for (const Y of [y0, y1]) for (const Z of [z0, z1]) pts.push([X, Y, Z]);
+    if (xq) xq.forEach((q) => q.forEach((p) => pts.push(p)));
+    else {
+      const [x0, y0, z0, x1, y1, z1] = o.b;
+      for (const X of [x0, x1])
+        for (const Y of [y0, y1]) for (const Z of [z0, z1]) pts.push([X, Y, Z]);
+    }
     if (o.rot) {
       const c = Math.cos(o.rot.a),
         s = Math.sin(o.rot.a);
@@ -290,13 +299,15 @@ function cb3Draw(cv, sp, look, open, yaw) {
       });
     }
     const ctr = pts.reduce(
-      (a, p) => [a[0] + p[0] / 8, a[1] + p[1] / 8, a[2] + p[2] / 8],
+      (a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length, a[2] + p[2] / pts.length],
       [0, 0, 0],
     );
-    FI.forEach((ix) => {
-      const q = ix.map((i) => pts[i]);
+    (xq || FI.map((ix) => ix.map((i) => pts[i]))).forEach((q) => {
       let n = nrm(cross(sub(q[1], q[0]), sub(q[2], q[0])));
-      const fc = q.reduce((a, p) => [a[0] + p[0] / 4, a[1] + p[1] / 4, a[2] + p[2] / 4], [0, 0, 0]);
+      const fc = q.reduce(
+        (a, p) => [a[0] + p[0] / q.length, a[1] + p[1] / q.length, a[2] + p[2] / q.length],
+        [0, 0, 0],
+      );
       if (dot(n, sub(fc, ctr)) < 0) n = [-n[0], -n[1], -n[2]];
       if (dot(n, sub(cam, fc)) <= 0) return;
       const lit = 0.58 + 0.42 * Math.max(0, dot(n, L));
