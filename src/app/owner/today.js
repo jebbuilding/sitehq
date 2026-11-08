@@ -39,6 +39,7 @@ const NL_SECTIONS = [
       "hs",
       "policies",
       "receipts",
+      "accounts",
       "sales",
       "invoices",
       "cis",

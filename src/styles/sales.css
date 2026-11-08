@@ -82,3 +82,23 @@ button.cis-tr{background:none;border:0;border-bottom:1px solid var(--line);color
 .cis-subgrid small{display:block;color:var(--muted);font-size:12px}
 .cis-warn{margin-top:8px;color:var(--danger);font-size:13px}
 .cis-calcbox{border:1px solid var(--line);border-radius:10px;padding:6px 10px;align-self:end}
+.ac-tabs,.ac-per,.ac-accs{margin-bottom:10px}
+.ac-banks{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px}
+.ac-bankc{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface);display:flex;flex-direction:column}
+.ac-bankc small{color:var(--muted);font-size:12px}
+.ac-bankc span{font-size:20px;font-weight:700}
+.ac-ki,.ac-bi{background:var(--ok)}
+.ac-ko,.ac-bo{background:var(--danger)}
+.ac-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media (max-width:760px){.ac-cols{grid-template-columns:1fr}}
+.ac-uns{color:var(--danger)}
+.ac-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.ac-tx{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.ac-tx:last-child{border-bottom:0}
+.ac-tx.uns{border-left:4px solid var(--hivis)}
+.ac-txh{display:flex;gap:10px;align-items:baseline}
+.ac-txh small{color:var(--muted);min-width:76px}
+.ac-desc{flex:1;min-width:0;overflow-wrap:anywhere}
+.ac-tx.in .ac-amt{color:var(--ok)}
+.ac-txr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ac-cat{max-width:280px;min-height:44px}
