@@ -97,3 +97,11 @@ body.nl-on input,body.nl-on select,body.nl-on textarea{border-radius:12px}
 @media (max-width:760px){.bc-cost{grid-template-columns:1fr 1fr;padding:10px 0}.bc-cost .bc-name{grid-column:1/-1}.bc-cost .bc-y{text-align:left}.bc-cost .bc-x{justify-self:end}}
 .bc-price{margin-top:16px}.bc-price summary{cursor:pointer;font-weight:700;min-height:48px;display:flex;align-items:center;padding:0 14px}
 .bc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 12px;margin-bottom:10px}
+/* chat and sites on Today */
+.td-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.td-row{position:relative;display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:8px 22px 8px 0;color:var(--ink);font:inherit;cursor:pointer;min-height:44px}
+.td-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.td-last{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-new b{color:var(--accent)}
+.td-dot{position:absolute;right:4px;top:50%;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.td-btns{display:flex;gap:8px}.td-btns .btn{flex:1;justify-content:center;min-height:44px}

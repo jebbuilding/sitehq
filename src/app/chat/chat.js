@@ -31,6 +31,7 @@ export {
   CH,
   canPost,
   chatPeople,
+  chatTime,
   chatTitle,
   chatView,
   closeChat,

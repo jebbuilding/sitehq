@@ -5,9 +5,10 @@ import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, render } from "../core/tabs-week.js";
 import { nameOf } from "./owner.js";
 import { searchOpen } from "./search.js";
+import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
-export { nlApply, nlName, nlOn, nlSectionView, todayView };
+export { nlApply, nlGo, nlName, nlOn, nlOpenTab, nlSectionView, todayView };
 /* Switched on per device with the "✨ New look" button in the header (kept in jeb.newlook); off = the app as before.
    The old tab row stays in the page, hidden, and the section pages open a tab by pressing its button, so every tab
    behaves exactly as it does from the tab row. Layout agreed in docs/mockups/new-layout. */
@@ -18,6 +19,7 @@ const NL_SECTIONS = [
     "Jobs & clients",
     [
       "projects",
+      "signin",
       "clients",
       "leads",
       "planner",
@@ -30,7 +32,7 @@ const NL_SECTIONS = [
       "calc",
     ],
   ],
-  ["people", "People", ["people", "inductions", "wages", "time", "signin", "training", "chat"]],
+  ["people", "People", ["people", "inductions", "wages", "time", "training", "chat"]],
   [
     "paper",
     "Paperwork",
@@ -226,10 +228,12 @@ function todayView() {
             .join("")}</div>`
         : '<div class="nl-card who">Nothing waiting for you. 👍</div>'
     }
+    <div class="td-two">${tdChatCard()}${tdSitesCard()}</div>
     ${dueSoonCard("all")}
     ${webEnqNew().length ? `<button type="button" class="nl-card nl-web" id="nl-web"><b>🌐 ${webEnqNew().length} new enquir${webEnqNew().length === 1 ? "y" : "ies"} from your website</b><span class="who">Tap to see and make quick enquiries</span></button>` : ""}
   </div>`;
   $("nl-search").onclick = () => searchOpen("");
+  tdWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   $("nl-roll").onclick = () => (rows.length ? openRollCall() : nlOpenTab("signin"));
   $("main")
