@@ -41,6 +41,7 @@ import { openRollCall } from "../sites/roll-call.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
+import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
 import { openEntry, sumH, typeTag } from "../timesheets/time.js";
 import { WE, WS, dayFor } from "../timesheets/working-day.js";
@@ -400,7 +401,7 @@ function ownerTime() {
                 e,
               ) => `<tr><td style="white-space:nowrap">${parse(e.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}</td><td style="white-space:nowrap">${typeTag(e)}</td>
             <td class="job">${esc(e.job)}${e.task ? `<div>${esc(e.task)}</div>` : ""}${e.notes ? `<div class="who">${esc(e.notes)}</div>` : ""}${e.forName ? `<div class="who">${e.forId ? "" : "<b>For " + esc(e.forName) + "</b> · "}Filled in by ${esc(e.byForeman || nameOf(e._src || id))} (foreman)</div>` : ""}${e.editedBy || e.startedBy || e.stoppedBy ? `<div class="who">${[e.startedBy ? "Started by " + e.startedBy : "", e.stoppedBy ? "Stopped by " + e.stoppedBy : "", e.editedBy ? "Changed by " + e.editedBy : ""].filter(Boolean).map(esc).join(" · ")}</div>` : ""}</td>
-            <td style="white-space:nowrap">${e.type === "hours" ? `${esc(e.start)}–${esc(e.finish)}${+e.breakMin ? `<div class="who">${e.breakMin}m break</div>` : ""}` : "–"}</td>
+            <td style="white-space:nowrap">${e.type === "hours" ? `${esc(e.start)}–${esc(e.finish)}${+e.breakMin ? `<div class="who">${e.breakMin}m break</div>` : ""}` : "–"}${otmLine(e)}${otmButtons(e)}</td>
             <td class="num">${hrs(e.hours)} h</td><td><input type="checkbox" class="appr" data-e="${esc(e.id)}" ${e.approved ? "checked" : ""} data-src="${esc(e._src || "")}" aria-label="Approve" style="width:22px;height:22px"></td><td><button type="button" class="pillbtn te-edit" data-e="${esc(e.id)}">Edit</button></td></tr>`,
             )
             .join("")}
@@ -454,6 +455,7 @@ function ownerTime() {
           }),
       );
       wireTimeControls(dt, id);
+      otmWire(dt, id, () => weekEntries(id));
       const mh = dt.querySelector(".me-addh");
       if (mh) mh.onclick = () => openEntry("hours");
       const mj = dt.querySelector(".me-addj");
@@ -858,7 +860,7 @@ function ownerSetup() {
     ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">Details</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : "Driver & checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
   $("main").innerHTML = `<div class="card"><div class="cardbody" style="border:0"><b>Working day</b>
       <div class="grid2"><label for="wd-s">Paid start<input id="wd-s" type="time" value="${esc(WS())}"></label><label for="wd-e">Paid finish<input id="wd-e" type="time" value="${esc(WE())}"></label></div>
-      <div class="who">People who check in before the start or check out after the finish are paid from the start to the finish. The 1pm half hour is unpaid.</div>
+      <div class="who">People who check in before the start or check out after the finish are paid from the start to the finish, unless they ask for overtime when they check out and you approve it (on Timesheets: ✓ Pay overtime). The 1pm half hour is unpaid. Each person can also set their own usual day.</div>
       <div><button class="btn primary" id="wd-save" type="button">Save working day</button></div></div></div>
     <div class="card"><div class="cardbody" style="border:0"><b>📷 Site photos for trades</b><div class="who">Trades see a <b>Site photos</b> tab on each of their sites.</div>
       <div class="seg" id="tp-seg"><button type="button" data-v="all" aria-pressed="${(S.settings || {}).tradePhotos !== "james"}">Everyone's photos for the site</button><button type="button" data-v="james" aria-pressed="${(S.settings || {}).tradePhotos === "james"}">Only my photos (and their own)</button></div></div></div>

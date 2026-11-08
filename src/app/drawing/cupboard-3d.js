@@ -1,10 +1,15 @@
 /* ================= CUPBOARD 3D: a 3D picture of a fitted cupboard or wardrobe for the client, in their colours ================= */
+import { ptOwnerSign } from "../clients/portal-calendar.js";
+import { ptOf, ptSrc } from "../clients/portal.js";
 import { esc, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { CB_BAYS, CB_DOORS, cbPlan } from "./cupboard-maker.js";
+import { uploadFile } from "../files/files.js";
+import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { jfSave } from "../sales/job-file.js";
 export { cb3Open };
 /* From the sizes on a cupboard page (🗄️ Cupboards): the carcass, plinth, back, divisions, shelves, rails, drawers and
    doors are built as boxes in millimetres and drawn in perspective with light and shade on a canvas – no outside
@@ -377,7 +382,8 @@ function cb3Draw(cv, sp, look, open, yaw) {
   });
 }
 /* --- the screen --- */
-function cb3Open(sp, look0, onLook) {
+function cb3Open(sp, look0, onLook, meta) {
+  meta = meta || {};
   const look = Object.assign(
     {
       type: sp.doors && sp.doors !== "none" ? sp.doors : "hinged",
@@ -404,7 +410,7 @@ function cb3Open(sp, look0, onLook) {
       <label for="cb3-hd">Handles<select id="cb3-hd">${CB3_HANDLES.map(([k, l]) => `<option value="${k}"${k === look.handle ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       <div class="flabel">Door colour <span class="who" id="cb3-dn">${esc(cb3ColName(look.door))}</span></div>${sw("cb3-door", look.door)}
       <div class="flabel">Inside / carcass colour <span class="who" id="cb3-cn">${esc(cb3ColName(look.carcass))}</span></div>${sw("cb3-car", look.carcass)}
-      <div class="actions"><button type="button" class="btn" id="cb3-png">🖼️ Save picture</button><button type="button" class="btn primary" id="cb3-pdf">📄 PDF for the client</button></div>
+      <div class="actions"><button type="button" class="btn" id="cb3-png">🖼️ Save picture</button><button type="button" class="btn primary" id="cb3-pdf">📄 PDF for the client</button><button type="button" class="btn" id="cb3-sign">✍️ Client sign-off</button></div>
       <div class="who">An illustration from your sizes – real colours and finishes vary.</div>
     </div></div>`;
   document.body.appendChild(d);
@@ -460,13 +466,15 @@ function cb3Open(sp, look0, onLook) {
         toast("Couldn't save the picture");
       }
     }, "image/png");
-  q("cb3-pdf").onclick = () => cb3Pdf(sp, look, yaw);
+  q("cb3-pdf").onclick = () => cb3Pdf(sp, look, yaw, meta);
+  q("cb3-sign").onclick = () => cb3SignOff(sp, look, yaw, meta);
   draw();
   return d;
 }
 /* one page for the client: the cupboard shut and open, its sizes and the finishes */
-async function cb3Pdf(sp, look, yaw) {
-  try {
+async function cb3PdfBlob(sp, look, yaw, meta) {
+  meta = meta || {};
+  {
     await loadJsPdf();
     const pic = (open, w, h) => {
       const c = document.createElement("canvas");
@@ -525,18 +533,209 @@ async function cb3Pdf(sp, look, yaw) {
       15,
       162,
     );
-    doc.setDrawColor(r, g, b);
-    doc.line(15, 190, 282, 190);
+    /* client approval, for signing on paper (or it's signed in the portal) */
+    doc.setDrawColor(150, 150, 150);
+    doc.setTextColor(0, 0, 0);
+    doc.rect(15, 168, 165, 30);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("Client approval", 18, 174);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(
+      "I'm happy with the design, sizes and finishes shown and want it made as shown.",
+      18,
+      179,
+    );
+    [
+      ["Name", 18],
+      ["Signed", 75],
+      ["Date", 135],
+    ].forEach(([l, x]) => {
+      doc.text(l, x, 193);
+      doc.line(x + 11, 193, x + (l === "Date" ? 42 : 52), 193);
+    });
+    /* the corner box, as on the drawings */
+    const bx = 187,
+      bw = 95;
+    let by = 160;
+    if (meta.status) {
+      doc.setFillColor(r, g, b);
+      doc.rect(bx, by - 6, bw, 6, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text(String(meta.status).toUpperCase(), bx + bw / 2, by - 2, { align: "center" });
+    }
+    doc.setDrawColor(60, 60, 60);
+    doc.rect(bx, by, bw, 38);
+    doc.setFillColor(r, g, b);
+    doc.rect(bx, by, bw, 1.2, "F");
+    doc.setTextColor(r, g, b);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text(String(coData().name || "").toUpperCase(), bx + 2, by + 4.5);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    doc.text(
+      doc.splitTextToSize("Joinery – " + (sp.name || "Cupboard") + " (3D view)", bw - 4)[0],
+      bx + 2,
+      by + 9,
+    );
+    const cell = (lab, val, x, y, w) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.5);
+      doc.setTextColor(120, 120, 120);
+      doc.text(lab, x + 1.5, y + 2.8);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(17, 17, 17);
+      doc.text(doc.splitTextToSize(String(val || "—"), w - 3)[0], x + 1.5, y + 6.6);
+    };
+    const r1 = by + 11,
+      r2 = r1 + 9,
+      r3 = r2 + 9;
+    doc.setDrawColor(150, 150, 150);
+    [r1, r2, r3].forEach((y2) => doc.line(bx, y2, bx + bw, y2));
+    cell("CLIENT", [meta.client, meta.clientAddr].filter(Boolean).join(" · "), bx, r1, bw);
+    const c3 = bw / 3;
+    doc.line(bx + c3, r2, bx + c3, r3);
+    doc.line(bx + 2 * c3, r2, bx + 2 * c3, r3);
+    cell("SCALE", "3D – not to scale", bx, r2, c3);
+    cell(
+      "DATE",
+      new Date(meta.date ? meta.date + "T12:00:00" : Date.now()).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      bx + c3,
+      r2,
+      c3,
+    );
+    cell("REV", meta.rev, bx + 2 * c3, r2, c3);
+    doc.line(bx + bw / 2, r3, bx + bw / 2, by + 38);
+    cell("SHEET", meta.sheet || "3D view", bx, r3, bw / 2);
+    cell("DRAWN BY", meta.by, bx + bw / 2, r3, bw / 2);
+    doc.setFontSize(7);
+    doc.setTextColor(110, 110, 110);
     doc.text(
       [coData().name, coData().phone, coData().email].filter(Boolean).join("  ·  "),
       15,
-      195,
+      204,
     );
-    await S.dl.save({
-      filename: (sp.name || "Cupboard") + " – 3D for the client.pdf",
-      data: doc.output("blob"),
-    });
+    return doc.output("blob");
+  }
+}
+const cb3FileName = (sp) =>
+  (sp.name || "Cupboard").replace(/[\\/:*?"<>|]+/g, "") + " – 3D for the client.pdf";
+async function cb3Pdf(sp, look, yaw, meta) {
+  try {
+    const blob = await cb3PdfBlob(sp, look, yaw, meta);
+    await S.dl.save({ filename: cb3FileName(sp), data: blob });
   } catch (e) {
     toast("Couldn't make the PDF");
   }
+}
+/* the client signs it off: in their portal, or here on this device; a copy goes in their job file */
+function cb3SignOff(sp, look, yaw, meta) {
+  const clients = (S.clients || [])
+    .slice()
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  if (!clients.length) return toast("Add the client first (Clients), then send it for sign-off");
+  const pre = meta.clientId || "";
+  const box = document.createElement("div");
+  box.className = "dimask cb3-sg";
+  box.innerHTML = `<form class="dimbox"><b>✍️ Client sign-off</b>
+    <div class="who">The 3D PDF with the sizes, finishes and the drawing details goes to the client to sign: "I'm happy with the design, sizes and finishes shown and want it made as shown."</div>
+    <label for="cb3-cl">Client<select id="cb3-cl">${pre ? "" : '<option value="">Choose the client…</option>'}${clients.map((c) => `<option value="${esc(c.id)}"${c.id === pre ? " selected" : ""}>${esc(c.name)}${c.work ? " – " + esc(c.work) : ""}</option>`).join("")}</select></label>
+    <label class="tick"><input type="checkbox" id="cb3-jf" checked> <span>Keep a copy in their job file (Plans & drawings)</span></label>
+    <div class="dimbtns"><button type="button" class="btn" id="cb3-sgx">Cancel</button><button type="button" class="btn" id="cb3-here">✍️ Sign here now</button><button type="submit" class="btn primary" id="cb3-send">📤 Send to their portal</button></div></form>`;
+  document.body.appendChild(box);
+  const q = (id) => box.querySelector("#" + id);
+  q("cb3-sgx").onclick = () => box.remove();
+  const go = async (here) => {
+    const c = clients.find((x) => x.id === q("cb3-cl").value);
+    if (!c) return toast("Choose the client");
+    q("cb3-send").disabled = q("cb3-here").disabled = true;
+    toast("Making the PDF…");
+    try {
+      const blob = await cb3PdfBlob(
+        sp,
+        look,
+        yaw,
+        Object.assign({}, meta, { client: meta.client || c.name }),
+      );
+      const fn = cb3FileName(sp);
+      const a = await uploadFile(new File([blob], fn, { type: "application/pdf" }), fn);
+      if (q("cb3-jf").checked) {
+        const j = (S.jobFiles || []).find((x) => x.clientId === c.id) || {
+          clientId: c.id,
+          estId: "",
+          client: c.name,
+          title: c.work || "",
+          site: c.site || "",
+          items: [],
+        };
+        await jfSave(
+          Object.assign({}, j, {
+            items: (j.items || []).concat([
+              {
+                id: newId(),
+                assetId: a.id,
+                name: fn,
+                type: "application/pdf",
+                folder: "plans",
+                added: Date.now(),
+              },
+            ]),
+          }),
+        );
+      }
+      const src = ptSrc(c);
+      const docId = newId(),
+        signId = newId();
+      const d0 = {
+        title: fn.replace(/\.pdf$/, ""),
+        fileName: fn,
+        assetId: a.id,
+        contentType: "application/pdf",
+        folder: "designs",
+        note: "",
+        sharedAt: Date.now(),
+      };
+      await src.addDoc(docId, d0);
+      const x = {
+        kind: "design",
+        title: (sp.name || "Cupboard") + " – design and finishes",
+        details:
+          "Please look at the 3D view, sizes and finishes, then sign if you're happy for it to be made as shown.",
+        docIds: [docId],
+        status: "open",
+        created: Date.now(),
+      };
+      await src.addSign(signId, x);
+      await src.bump();
+      box.remove();
+      if (here) document.querySelectorAll(".cb3").forEach((v) => v.remove());
+      if (here)
+        ptOwnerSign(c, ptOf(c), Object.assign({ id: signId }, x), [
+          Object.assign({ id: docId }, d0),
+        ]);
+      else
+        toast(
+          src.linked
+            ? `Sent to ${c.name}'s portal to sign`
+            : `Saved for ${c.name}: they'll see it to sign when they join the portal`,
+        );
+    } catch (e) {
+      q("cb3-send").disabled = q("cb3-here").disabled = false;
+      toast("Couldn't send it. Check your connection.");
+    }
+  };
+  box.querySelector("form").onsubmit = (ev) => {
+    ev.preventDefault();
+    go(false);
+  };
+  q("cb3-here").onclick = () => go(true);
 }

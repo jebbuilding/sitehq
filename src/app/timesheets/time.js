@@ -43,6 +43,7 @@ import { shrinkImage } from "../safety/training.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dwTradeSheet } from "./day-work.js";
 import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
+import { otmLine, otmOffer } from "./overtime.js";
 import { dayFor, openMyDay } from "./working-day.js";
 export { checkIn, checkOut, empTime, entrySub, openEntry, sumH, typeTag };
 function typeTag(e) {
@@ -64,7 +65,7 @@ function entrySub(e) {
     );
   else if (e.task) p.push(esc(e.task));
   if (e.notes) p.push(esc(e.notes));
-  return p.join(" · ");
+  return p.join(" · ") + otmLine(e);
 }
 function sumH(list, f) {
   return list.filter(f).reduce((a, e) => a + (+e.hours || 0), 0);
@@ -81,7 +82,7 @@ function clockCard() {
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
     <button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button>
     <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button>
-    <div class="who">Your paid day: ${esc(dayLine(D))}. Arrive early or leave late and you're paid from ${esc(D.s)} to ${esc(D.e)}. The lunch is taken off automatically. <button type="button" class="linkbtn ci-day">Change my usual day</button></div></div>`;
+    <div class="who">Your paid day: ${esc(dayLine(D))}. Arrive early or leave late and you're paid from ${esc(D.s)} to ${esc(D.e)} – or ask for overtime when you check out. The lunch is taken off automatically. <button type="button" class="linkbtn ci-day">Change my usual day</button></div></div>`;
   }
   const done = S.mine.entries.filter((e) => e.date === today && e.type === "hours" && !e.open);
   return `<div class="checkin"><b>Check in to site</b>${pickField(
@@ -161,6 +162,7 @@ async function checkOut(e) {
       `Checked out at ${actual}${finish !== actual ? " · paid to " + finish : ""} · ${hrs(data.hours)} hours` +
         (r === "queued" ? " (sends when you have signal)" : ""),
     );
+    otmOffer(Object.assign({ id: e.id }, data));
   } catch (err) {
     toast("Couldn't check out. Try again.");
   }

@@ -6384,10 +6384,26 @@ async function openNotePage(opts) {
       toast("Draw a cupboard first with 🗄️ Cupboards, then tap 🎨 3D view");
       return;
     }
-    cb3Open(cp.cupb, cp.cupbLook, (look) => {
-      cp.cupbLook = look;
-      dirty = true;
-    });
+    const inf = doc.info || {};
+    const cl = doc.site && ownerMode() ? siteClient(doc.site) : null;
+    cb3Open(
+      cp.cupb,
+      cp.cupbLook,
+      (look) => {
+        cp.cupbLook = look;
+        dirty = true;
+      },
+      {
+        client: inf.client != null ? inf.client : cl ? cl.name : "",
+        clientAddr: inf.clientAddr != null ? inf.clientAddr : cl ? clAddr(cl) : "",
+        clientId: cl ? cl.id : "",
+        date: inf.date || "",
+        rev: inf.rev || "",
+        by: inf.by || myName(),
+        status: inf.status || "",
+        sheet: (doc.title ? doc.title + " · " : "") + (cp.name || "3D view"),
+      },
+    );
   }
   /* check the drawing for common mistakes */
   function checkDlg() {

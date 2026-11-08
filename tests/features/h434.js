@@ -48,6 +48,18 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  dl=await p.evaluate(()=>(window.__dl||[]).map(r=>r.filename));
  ok(dl[dl.length-1]==='Wardrobe – bedroom 1 – 3D for the client.pdf','client PDF: '+dl[dl.length-1]);
  const b64=await p.evaluate(async()=>{const r=window.__dl[window.__dl.length-1];const u=new Uint8Array(await r.data.arrayBuffer());let s='';u.forEach(x=>s+=String.fromCharCode(x));return btoa(s)});fs.writeFileSync('h434-3d.pdf',Buffer.from(b64,'base64'));
+ const pdfTxt=Buffer.from(b64,'base64').toString('latin1');
+ ok(/CLIENT/.test(pdfTxt)&&/DRAWN BY/.test(pdfTxt)&&/SHEET/.test(pdfTxt)&&/Client approval/.test(pdfTxt),'the client PDF has the corner box (client, scale, date, rev, sheet, drawn by) and a client approval box');
+ /* ✍️ client sign-off: to Sue's portal, a copy in her job file */
+ await p.click('#cb3-sign');await p.waitForTimeout(300);
+ await p.selectOption('#cb3-cl','c1');await p.click('#cb3-send');await p.waitForTimeout(2500);
+ ok(/Sue Jones's portal to sign|Saved for Sue Jones/.test(await p.evaluate(()=>{const t=[...document.querySelectorAll('.toast')];return t.length?t[t.length-1].textContent:''})),'sent for sign-off');
+ const st2=await p.evaluate(()=>window.__st);
+ const allv=Object.entries(st2);
+ const signs=allv.filter(([k,v])=>v&&v.kind==='design'&&v.status==='open');
+ const cl1=st2['todos/c1']||{};
+ ok(signs.length||(cl1.ptSigns||[]).some(x=>x.kind==='design'),'a design sign-off is waiting for Sue');
+ ok(allv.some(([k,v])=>v&&v.kind==='jobfile'&&v.clientId==='c1'&&(v.items||[]).some(i=>i.folder==='plans'&&/3D for the client/.test(i.name))),'a copy is in Sue\'s job file (Plans & drawings)');
  await p.click('#cb3-x');await p.waitForTimeout(200);
  await p.evaluate(()=>document.querySelector('.np [data-bt=cupb3d]').click());await p.waitForTimeout(400);
  ok(await p.inputValue('#cb3-style')==='shaker'&&/Navy/.test(await p.innerText('#cb3-dn')),'the look is kept with the page');

@@ -77,3 +77,4 @@
 .cb3-sw button{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
 .cb3-sw button[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
 @media (max-width:800px){.cb3-body{grid-template-columns:1fr}}
+body>.dimask.cb3-sg{z-index:320}
