@@ -63,6 +63,17 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#cb3-x');await p.waitForTimeout(200);
  await p.evaluate(()=>document.querySelector('.np [data-bt=cupb3d]').click());await p.waitForTimeout(400);
  ok(await p.inputValue('#cb3-style')==='shaker'&&/Navy/.test(await p.innerText('#cb3-dn')),'the look is kept with the page');
+ await p.click('#cb3-x');await p.waitForTimeout(200);
+ /* 🪚 workshop pack: every panel, edging and holes, labels; and a DXF */
+ await p.evaluate(()=>document.querySelector('.np [data-bt=cupbpack]').click());await p.waitForTimeout(400);
+ ok(/panels from the cutting list, labelled P1–P\d+/.test(await p.innerText('#form')),'workshop pack: '+(await p.innerText('#form')).split('\n')[1]);
+ await p.click('#cbp-pdf');await p.waitForTimeout(2500);
+ let dl2=await p.evaluate(()=>(window.__dl||[]).map(r=>r.filename));
+ ok(dl2[dl2.length-1]==='Wardrobe – bedroom 1 – workshop pack.pdf','workshop pack PDF: '+dl2[dl2.length-1]);
+ const pk=await p.evaluate(async()=>{const r=window.__dl[window.__dl.length-1];const u=new Uint8Array(await r.data.arrayBuffer());let s='';u.forEach(x=>s+=String.fromCharCode(x));return btoa(s)});fs.writeFileSync('h434-pack.pdf',Buffer.from(pk,'base64'));
+ await p.click('#cbp-dxf');await p.waitForTimeout(800);
+ const dx=await p.evaluate(async()=>{const r=window.__dl[window.__dl.length-1];return {n:r.filename,t:await r.data.text()}});
+ ok(dx.n==='Wardrobe – bedroom 1 – panels.dxf'&&/\nCIRCLE\r?\n/.test(dx.t)&&/P1 Side 2400x600x18/.test(dx.t)&&/\nEOF/.test(dx.t),'panels DXF with the panels, hinge holes and labels at full size');
  }catch(err){console.log('FAIL',String(err.message).split('\n').slice(0,6).join(' | '));bad++}
  console.log(bad?'h434: '+bad+' FAILED':'h434: all passed');
  await b.close()})();

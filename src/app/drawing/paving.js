@@ -26,6 +26,7 @@ import {
 import { cb3Open } from "./cupboard-3d.js";
 import { cbaDraw, cbaPlan } from "./cupboard-alcove.js";
 import { cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
+import { cbpOpen } from "./cupboard-pack.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
@@ -1364,6 +1365,7 @@ async function openNotePage(opts) {
               ["elev", "🏠", "Elevation"],
               ["cupb", "🗄️", "Cupboards"],
               ["cupb3d", "🎨", "3D view"],
+              ["cupbpack", "🪚", "Workshop pack"],
               ["check", "✅", "Check"],
               ["rev", "🔖", "Status & revisions"],
             ]
@@ -6721,7 +6723,12 @@ async function openNotePage(opts) {
         else if (a === "elev") elevFromWall();
         else if (a === "cupb") cupbDlg();
         else if (a === "cupb3d") cupb3d();
-        else if (a === "check") checkDlg();
+        else if (a === "cupbpack") {
+          const cp =
+            doc.pages[pg] && doc.pages[pg].cupb ? doc.pages[pg] : doc.pages.find((x) => x.cupb);
+          if (!cp) toast("Draw a cupboard first with 🗄️ Cupboards, then tap 🪚 Workshop pack");
+          else cbpOpen(cp.cupb, { client: (doc.info || {}).client || "" });
+        } else if (a === "check") checkDlg();
         else if (a === "tpl") tplDlg();
         else if (a === "rev") q(".np-info").click();
       });

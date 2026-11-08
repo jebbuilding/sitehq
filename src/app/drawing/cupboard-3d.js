@@ -4,7 +4,7 @@ import { ptOf, ptSrc } from "../clients/portal.js";
 import { esc, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { cba3Model } from "./cupboard-alcove.js";
-import { CB_BAYS, CB_DOORS, cbPlan } from "./cupboard-maker.js";
+import { CB_BAYS, CB_DOORS, cbBayDoor, cbPlan } from "./cupboard-maker.js";
 import { uploadFile } from "../files/files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
@@ -121,7 +121,7 @@ function cb3Model(sp, look, open) {
   const gap = 3,
     dy0 = PL + 1.5,
     dy1 = H - 1.5;
-  const style = look.style,
+  const style0 = look.style,
     th = t;
   const handle = (hx, cy, z, rot, side) => {
     if (look.handle === "none") return;
@@ -133,7 +133,8 @@ function cb3Model(sp, look, open) {
     void side;
   };
   /* a door leaf from x0 to x1 at the front (z D..D+th), turned about its hinge by `rot` */
-  const leaf = (x0, x1, z0, rot, hingeL) => {
+  const leaf = (x0, x1, z0, rot, hingeL, st) => {
+    const style = st || look.style;
     const z1 = z0 + th;
     const fc = style === "mirror" ? "#cfd8dc" : doorC;
     if (style === "glass") {
@@ -165,14 +166,18 @@ function cb3Model(sp, look, open) {
     handle(hx, Math.min(1050, (dy0 + dy1) / 2), z1 + (style === "shaker" ? 5 : 0), rot, hingeL);
   };
   const type = look.type;
+  /* each bay's own doors, unless a different door type was picked here */
+  const perBay = type === (sp.doors || "hinged") && type !== "sliding";
   if (type === "hinged" || type === "pairs") {
     bx.forEach(([x0, x1], i) => {
+      const bd = perBay ? cbBayDoor(sp, P.bays[i]) : type;
+      if (bd === "none") return;
       const a = x0 - t / 2 + gap / 2,
         b2 = x1 + t / 2 - gap / 2;
       const L0 = i === 0 ? 0 + gap / 2 : a,
         L1 = i === bx.length - 1 ? W - gap / 2 : b2;
       const leaves =
-        type === "pairs"
+        bd === "pairs"
           ? [
               [L0, (L0 + L1) / 2 - gap / 2, true],
               [(L0 + L1) / 2 + gap / 2, L1, false],
@@ -180,7 +185,7 @@ function cb3Model(sp, look, open) {
           : [[L0, L1, i % 2 === 0]];
       leaves.forEach(([u0, u1, hl]) => {
         const rot = open ? { px: hl ? u0 : u1, pz: D, a: hl ? -1.75 : 1.75 } : null;
-        leaf(u0, u1, D, rot, hl);
+        leaf(u0, u1, D, rot, hl, bd === "glass" ? "glass" : null);
       });
     });
   } else if (type === "sliding") {
@@ -200,6 +205,17 @@ function cb3Model(sp, look, open) {
     }
     box(t, H - t - 30, D - 75, W - t, H - t, D - 2, "#9a9ea3");
   }
+  /* fillers, end panels and cornice */
+  const fL = +sp.fillL || 0,
+    fR = +sp.fillR || 0,
+    eL = sp.endL ? t : 0,
+    eR = sp.endR ? t : 0,
+    cH = +sp.cornice || 0;
+  if (eL) box(-eL, 0, 0, 0, H, D + t, doorC);
+  if (eR) box(W, 0, 0, W + eR, H, D + t, doorC);
+  if (fL) box(-eL - fL, 0, D - 20, -eL, H + cH, D + t, doorC);
+  if (fR) box(W + eR, 0, D - 20, W + eR + fR, H + cH, D + t, doorC);
+  if (cH) box(-eL - fL, H, 0, W + eR + fR, H + cH, D + t + 10, doorC);
   return out;
 }
 function shadeHex(hex, k) {
@@ -218,7 +234,12 @@ function cb3Draw(cv, sp, look, open, yaw) {
     H = sp.H,
     D = sp.D;
   const boxes = (sp.kind && sp.kind !== "full" ? cba3Model : cb3Model)(sp, look, open).filter(
-    (o) => !o.inner || open || look.style === "glass" || look.type === "none",
+    (o) =>
+      !o.inner ||
+      open ||
+      look.style === "glass" ||
+      look.type === "none" ||
+      (sp.bays || []).some((b) => b.door === "glass" || b.door === "none"),
   );
   /* camera: eye 1.6 m up, in front, turned by yaw */
   const tgt = [W / 2, H * 0.48, D / 2];

@@ -79,3 +79,10 @@
 @media (max-width:800px){.cb3-body{grid-template-columns:1fr}}
 body>.dimask.cb3-sg{z-index:320}
 .cb2-g[hidden]{display:none!important}
+.cb2-bay .cb2-dr{grid-column:1/-1}
+.cb2-fit{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px}
+/* pictures to pick from in the cupboard form */
+.cb2-picsel select{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.cb2-pics{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:6px 0 10px}
+.cb2-pic{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:96px;padding:8px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer}
+.cb2-pic[aria-checked="true"]{border:2px solid var(--accent);background:var(--soft);color:var(--accent)}
