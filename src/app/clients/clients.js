@@ -16,6 +16,7 @@ import { shrinkImage } from "../safety/training.js";
 import { syncSiteJobs } from "../sites/job-details.js";
 import { hereNow, miniMap, parseLatLon } from "../sites/maps-pins.js";
 import { siteArchiveForClient } from "../sites/storage.js";
+import { DWS } from "../survey/door-window-survey.js";
 export {
   CL_STAGES,
   CL_WORK,
@@ -229,7 +230,8 @@ function openClientForm(c, mode) {
   );
   /* starting a new enquiry for someone already in the address book: keep the last job's details in their history and start fresh */
   let archived = null,
-    fresh = false;
+    fresh = false,
+    goWs = false;
   if (
     mode === "enquiry" &&
     ed &&
@@ -309,11 +311,13 @@ function openClientForm(c, mode) {
     </div>
     <div class="cfmedia"><div class="flabel">Photos &amp; sketches${ed && (c.media || []).length ? ` (${c.media.length} already saved)` : ""}</div>
       <label for="cf-ph">Photos and videos (you can pick several)<input id="cf-ph" type="file" accept="image/*,video/*" multiple></label><button type="button" class="linkbtn" style="align-self:flex-start" onclick="window.__photoTest&&window.__photoTest()">📷 Camera not opening? Test it here</button>
-      <div class="actions" style="margin:0"><button type="button" class="btn hv" id="cf-sk">📝 Add a notebook page</button><button type="button" class="btn vrec" id="cf-voice">🎤 Voice note</button></div>
+      <div class="actions" style="margin:0"><button type="button" class="btn hv" id="cf-sk">📝 Add a notebook page</button><button type="button" class="btn vrec" id="cf-voice">🎤 Voice note</button>${ownerMode() ? `<button type="button" class="btn hv" id="cf-ws">🪟 Door &amp; window survey</button>` : ""}</div>${ownerMode() ? `<div class="who">🪟 Door &amp; window survey saves ${ed ? "the client" : "the new client"} first, then opens a survey linked to them.</div>` : ""}
       <div id="cf-pend" class="cfpend"></div></div>
     <div class="flabel" style="margin-top:8px">📄 Documents</div><div class="who">Plans, quotes, letters or photos of paperwork. Tick the ones you want added to the client PDF.</div><div id="cf-docs"></div>
     ${formFoot(ed && !enqOnly, enqOnly ? (fresh ? "Save enquiry" : "Save") : conOnly && !ed ? "Add to address book" : ed ? "Save" : "Add client")}`,
     async () => {
+      const wantWs = goWs;
+      goWs = false;
       const mp = {
         title: $("cf-main").querySelector(".cfm-t").value.trim(),
         first: $("cf-main").querySelector(".cfm-f").value.trim(),
@@ -542,8 +546,9 @@ function openClientForm(c, mode) {
               : ""),
         );
         render();
-        setTimeout(() => viewClient(rec), 200);
-        if (!ed && (added.length || (rec.docs || []).some((x) => x.inPdf)))
+        if (wantWs) setTimeout(() => DWS.open(null, { client: rec }), 200);
+        else setTimeout(() => viewClient(rec), 200);
+        if (!wantWs && !ed && (added.length || (rec.docs || []).some((x) => x.inPdf)))
           setTimeout(() => clientPdf(rec, null, { download: false }), 900);
       } catch (e) {
         showErr(
@@ -557,6 +562,12 @@ function openClientForm(c, mode) {
     },
     null,
   );
+  if ($("cf-ws"))
+    $("cf-ws").onclick = () => {
+      goWs = true;
+      $("f-save").click();
+      goWs = false;
+    };
   setTimeout(() => {
     const f = $("cf-main") && $("cf-main").querySelector(".cfm-f");
     if (f && !f.value) f.focus();

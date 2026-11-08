@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 174 files, 3496 KB, 90756 lines.
+- 174 files, 3499 KB, 90827 lines.
 - 1739 names declared at the top level (the shared scope); 923 of them are used by a file other than the one that declares them.
-- 1839 file-to-file dependencies (file A uses at least one name from file B).
+- 1840 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 157 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -194,9 +194,9 @@ CLIENTS ADDRESS BOOK + JOB HISTORY
 
 CLIENTS (owner only, stored in the private todos collection as kind:"client")
 
-- 763 lines, 33 KB. Declares 15 names, 11 used elsewhere.
+- 774 lines, 34 KB. Declares 15 names, 11 used elsewhere.
 - **Used elsewhere:** `saveClient` (14), `clStage` (12), `clAddNote` (4), `openClientForm` (4), `clList` (3), `nmSortKey` (2), `CL_STAGES` (1), `CL_WORK` (1), `clInitials` (1), `newEnquiryFor` (1), `nmParts` (1)
-- **Uses names from 17 files:** `core/sheet.js` (5), `photos/photos.js` (5), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/record-pdf.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `files/outbox.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1)
+- **Uses names from 18 files:** `core/sheet.js` (5), `photos/photos.js` (5), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/record-pdf.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `files/outbox.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 21 files**
 
 ### `clients/documents.js`
@@ -1589,10 +1589,10 @@ TRADES: SITES (plans, RAMS, specs, induction, chat per site)
 
 DOOR & WINDOW SURVEY: designs, sizes, add-ons → schedule / order request PDF
 
-- 5797 lines, 218 KB. Declares 15 names, 8 used elsewhere.
-- **Used elsewhere:** `myName` (21), `openJob` (7), `DWS` (4), `jobsView` (2), `jobDraft` (1), `openJobEditor` (1), `renderJobDetail` (1), `siteFilePicker` (1)
+- 5857 lines, 221 KB. Declares 15 names, 8 used elsewhere.
+- **Used elsewhere:** `myName` (21), `openJob` (7), `DWS` (5), `jobsView` (2), `jobDraft` (1), `openJobEditor` (1), `renderJobDetail` (1), `siteFilePicker` (1)
 - **Uses names from 36 files:** `core/helpers.js` (10), `sites/job-sheets.js` (8), `core/sheet.js` (7), `photos/photos.js` (7), `files/files.js` (6), `files/in-app-files.js` (4), `owner/owner.js` (4), `planner/board.js` (4), `core/state.js` (3), `clients/clients.js` (2), `core/fields.js` (2), `core/viewer.js` (2), `drawing/paving.js` (2), `files/outbox.js` (2), `purchasing/materials-receipts.js` (2), `clients/address-book.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/tabs-week.js` (1), `drawing/drawings-tab.js` (1), `drawing/trade-drawings.js` (1), `files/cut-outs.js` (1), `files/print.js` (1), `files/send-to.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `planner/time-off.js` (1), `purchasing/makers.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `safety/waste-transfer-note.js` (1), `sites/plans-specs.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1), `sites/trade-sites.js` (1)
-- **Used by 32 files**
+- **Used by 33 files**
 
 ### `timesheets/day-work-xlsx.js`
 

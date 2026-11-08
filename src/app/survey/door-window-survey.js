@@ -743,6 +743,10 @@ const DWS = (() => {
     ["Box bay corner post 90°", 0, "Between frames"],
     ["Variable angle bay coupler", 0, "Between frames"],
     ["Coupling mullion", 0, "Between frames"],
+    ["Add-on – top", 0, "Head"],
+    ["Add-on – left side", 0, "Left"],
+    ["Add-on – right side", 0, "Right"],
+    ["Add-on – bottom", 0, "Bottom"],
     ["Coupling transom", 0, "Head"],
     ["Cill stubs / horns", 0, "Bottom"],
     ["Cill end caps", 0, "Bottom"],
@@ -2051,7 +2055,7 @@ const DWS = (() => {
       cillH = hasCill(o) ? 4 : 0;
     const planH = bay ? Math.round(H * 0.2) : 0,
       jg = bay ? Math.max(3, W * 0.014) : 0,
-      dimH = dims ? (bay ? fs * 3.1 : fs * 2.1) : 0,
+      dimH = dims ? (bay ? fs * 3.1 : fs * 2.1) + (addMm(o).any ? fs * 1.3 : 0) : 0,
       topH = bay && dims ? fs * 1.1 : 0,
       lw = dims ? fs + 6 : 0;
     const totW = fws.reduce((a, b) => a + b, 0) + A.l + A.r,
@@ -2102,6 +2106,18 @@ const DWS = (() => {
       }
       const ly = by + 3;
       s += `<path d="M${F0} ${ly}H${fx1}M${F0} ${ly - 4}v8M${fx1} ${ly - 4}v8" stroke="${C.dim}" fill="none"/><text x="${(F0 + fx1) / 2}" y="${ly + fs + 1}" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-size="${fs}" fill="${C.dim}">${FW}</text>`;
+      if (A.any) {
+        const sd = [
+          [A.h, "top"],
+          [A.l, "left"],
+          [A.r, "right"],
+          [A.b, "bottom"],
+        ]
+          .filter((x) => x[0])
+          .map((x) => x[1] + " " + x[0])
+          .join(" · ");
+        s += `<text x="${W / 2}" y="${ly + fs * 2.3}" text-anchor="middle" font-family="Arial,sans-serif" font-weight="600" font-size="${fs * 0.8}" fill="${C.ink}">Add-ons: ${sd} → ${FW + A.l + A.r} × ${fh + A.h + A.b}</text>`;
+      }
       const vx = x0 - 5;
       s += `<path d="M${vx} ${fy}V${fy + fpx}M${vx - 4} ${fy}h8M${vx - 4} ${fy + fpx}h8" stroke="${C.dim}" fill="none"/><text transform="translate(${vx - 4} ${fy + fpx / 2}) rotate(-90)" text-anchor="middle" font-family="Menlo,Consolas,monospace" font-size="${fs}" fill="${C.dim}">${fh}</text>`;
     }
@@ -2449,8 +2465,43 @@ const DWS = (() => {
       h += `<div class="wsfoot"><button type="button" class="btn wssm" data-act="addf">+ Frame</button><span class="who">Frame widths are the made sizes. Angles are the inside angle between frames.</span></div>`;
     g("dz").innerHTML = h;
   }
+  /* the four boxes by the measurements: each shows that side's add-ons in total. Typing in one sets the plain
+     add-on for that side (marked q) so the total is what was typed; other add-ons on that side stay as they are. */
+  const AO_SIDE = {
+    h: ["Add-on – top", "Head"],
+    l: ["Add-on – left side", "Left"],
+    r: ["Add-on – right side", "Right"],
+    b: ["Add-on – bottom", "Bottom"],
+  };
+  function aoFill() {
+    const o = items[cur];
+    if (!o || !g("ao-h")) return;
+    const A = addMm(o);
+    ["h", "l", "r", "b"].forEach((k) => {
+      const el = g("ao-" + k);
+      if (el !== document.activeElement) el.value = A[k] ? A[k] : "";
+    });
+  }
+  function aoSet(k, total) {
+    const o = items[cur];
+    o.addons = o.addons || [];
+    let q = o.addons.find((a) => a.q === k);
+    const mine = q ? +q.mm || 0 : 0,
+      other = Math.max(0, addMm(o)[k] - mine),
+      want = Math.max(0, total - other);
+    if (!want) {
+      if (q) o.addons.splice(o.addons.indexOf(q), 1);
+      return;
+    }
+    if (!q) {
+      q = { t: AO_SIDE[k][0], mm: 0, pos: AO_SIDE[k][1], q: k };
+      o.addons.push(q);
+    }
+    q.mm = want;
+  }
   function azRender() {
     const o = items[cur];
+    aoFill();
     g("az").innerHTML =
       o.addons
         .map(
@@ -2989,7 +3040,7 @@ const DWS = (() => {
        <label class="wf"><span id="wsx-sw-l">Structural opening width</span><input class="mm" id="wsx-m-sw" inputmode="numeric"></label>
        <label class="wf">Structural opening height<input class="mm" id="wsx-m-sh" inputmode="numeric"></label>
        <label class="wf">Fitting gap each side (mm)<select id="wsx-m-gap"><option>0</option><option>5</option><option>10</option><option>15</option><option>20</option></select></label>
-       <label class="wf">Wall / reveal depth<input class="mm" id="wsx-m-rev" inputmode="numeric"></label>${sel("m-cill", "Cill", 1)}<label class="wf" id="wsx-m-cillh-l">Cill height (mm)<input class="mm" id="wsx-m-cillh" inputmode="numeric" placeholder="30"></label><label class="wf" id="wsx-m-cilld-l">Projection / depth (mm)<input class="mm" id="wsx-m-cilld" inputmode="numeric"></label><label class="wf" id="wsx-m-cillinc-l" style="grid-column:1/-1">Order size<select id="wsx-m-cillinc"><option value="yes">Includes the cill</option><option value="no">Excludes the cill (cill extra)</option></select></label></div>
+       <label class="wf">Wall / reveal depth<input class="mm" id="wsx-m-rev" inputmode="numeric"></label>${sel("m-cill", "Cill", 1)}<label class="wf" id="wsx-m-cillh-l">Cill height (mm)<input class="mm" id="wsx-m-cillh" inputmode="numeric" placeholder="30"></label><label class="wf" id="wsx-m-cilld-l">Projection / depth (mm)<input class="mm" id="wsx-m-cilld" inputmode="numeric"></label><label class="wf" id="wsx-m-cillinc-l" style="grid-column:1/-1">Order size<select id="wsx-m-cillinc"><option value="yes">Includes the cill</option><option value="no">Excludes the cill (cill extra)</option></select></label><fieldset class="wsao" style="grid-column:1/-1"><legend>Add-ons round the frame (mm, 0 = none)</legend><label class="wf">Top<input class="mm" id="wsx-ao-h" data-side="h" inputmode="numeric" placeholder="0"></label><label class="wf">Left<input class="mm" id="wsx-ao-l" data-side="l" inputmode="numeric" placeholder="0"></label><label class="wf">Right<input class="mm" id="wsx-ao-r" data-side="r" inputmode="numeric" placeholder="0"></label><label class="wf">Bottom<input class="mm" id="wsx-ao-b" data-side="b" inputmode="numeric" placeholder="0"></label><span class="who" style="grid-column:1/-1">Added to the order size and shown on the drawing. To say which profile, change it in Add-ons &amp; extra pieces below.</span></fieldset></div>
       <div class="wssketch"><svg id="wsx-sk" viewBox="0 0 400 330" role="img" aria-label="Elevation sketch, viewed from outside"></svg><div class="wscalc" id="wsx-calc"></div><button type="button" class="btn wssm" id="wsx-draw">✏️ Draw it myself</button><div class="wsph" id="wsx-ph"></div><div class="actions" style="justify-content:center"><label class="btn wssm wsphb">📷 Take a photo<input type="file" accept="image/*" capture="environment" id="wsx-phcam"></label><label class="btn wssm wsphb">🖼 From photos<input type="file" accept="image/*" multiple id="wsx-phpick"></label></div></div></div>
      <div class="wslbl">Rails, mullions &amp; frame sizes</div><div class="wsdz" id="wsx-dz"></div>
      <div class="wslbl">Add-ons &amp; extra pieces</div><div class="wsdz" id="wsx-az"></div>
@@ -3357,6 +3408,14 @@ const DWS = (() => {
         refresh();
       }),
     );
+    ["h", "l", "r", "b"].forEach((k) => {
+      g("ao-" + k).addEventListener("input", (e) => {
+        aoSet(k, Math.max(0, +e.target.value || 0));
+        azRender();
+        refresh();
+      });
+      g("ao-" + k).addEventListener("blur", aoFill);
+    });
     g("extras").addEventListener("change", () => {
       read();
       refresh();
@@ -3480,6 +3539,7 @@ const DWS = (() => {
         k = t.dataset.k;
       if (!k) return;
       const a = items[cur].addons[+t.dataset.i];
+      if (k === "t" || k === "pos") delete a.q;
       if (k === "t") {
         const d = ADD.find((x) => x[0] === t.value);
         a.t = t.value;
