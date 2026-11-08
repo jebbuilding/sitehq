@@ -29,6 +29,7 @@ export {
   clContactsHtml,
   clInvHtml,
   clMainHtml,
+  clShowToSee,
   clientSites,
   clientsView,
   histHtml,
@@ -522,4 +523,8 @@ function clientsView() {
     });
     csvSave("Clients address book.csv", r);
   };
+}
+/* open Clients on the enquiries still to see (from Jobs & clients › Enquiries) */
+function clShowToSee() {
+  S.f.clf = "see";
 }

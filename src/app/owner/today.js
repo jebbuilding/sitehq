@@ -4,6 +4,7 @@ import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, render } from "../core/tabs-week.js";
 import { coData } from "./company-details.js";
+import { jbView } from "./jobs-desk.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
@@ -267,7 +268,9 @@ function todayView() {
 }
 
 /* a section page: one big button per tab in it, with its count */
-function nlSectionView(k) {
+function nlSectionView(k, pre) {
+  /* Jobs & clients: the jobs down the side, as in the picture (its More tab comes back here) */
+  if (k === "jobs" && pre == null) return jbView();
   const sec = NL_SECTIONS.find((x) => x[0] === k) || NL_SECTIONS[1];
   const badge = S.badgeNow || {};
   const groups = (NL_GROUPS[sec[0]] || [[sec[1], sec[2]]]).map(([t, tabs, priv]) => [
@@ -279,7 +282,7 @@ function nlSectionView(k) {
   if (left.length) groups.push(["More", left]);
   const waiting = NL_NEEDS.filter(([t]) => sec[2].includes(t) && badge[t] > 0);
   const nWait = waiting.reduce((a, [t]) => a + badge[t], 0);
-  $("main").innerHTML = `<div class="nl-secpage">
+  $("main").innerHTML = `<div class="nl-secpage">${pre || ""}
     ${nWait ? `<button type="button" class="nl-banner" data-t="${waiting[0][0]}"><span class="nl-bn">${nWait}</span><span><b>${nWait} waiting for you</b><br><small>${waiting.map(([t, l]) => badge[t] + " " + l.toLowerCase()).join(", ")}</small></span><span aria-hidden="true">Open ›</span></button>` : ""}
     <div class="nl-groups">${groups
       .filter((g) => g[1].length)

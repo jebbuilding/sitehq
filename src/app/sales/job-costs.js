@@ -17,7 +17,7 @@ import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
 import { dwRate } from "../timesheets/day-work.js";
-export { jcView };
+export { jcData, jcView };
 /* For each site: labour from the timesheets (hours × what each person costs you an hour), materials and hire from
    receipts and bills booked to the site, subbies from their invoices and CIS bills for the site; against what's
    been invoiced (and, for a fixed-price job, the accepted estimate). A cost-plus job charges labour at each
