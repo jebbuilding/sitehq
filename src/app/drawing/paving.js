@@ -24,6 +24,7 @@ import {
   npUnit,
 } from "./construction-details.js";
 import { cb3Open } from "./cupboard-3d.js";
+import { cbaDraw, cbaPlan } from "./cupboard-alcove.js";
 import { cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
@@ -6328,7 +6329,8 @@ async function openNotePage(opts) {
       make(sp) {
         cupbLast = sp;
         /* the page gets its own scale that fits it (a scaled area over the page), whatever the plan is drawn at */
-        const P0 = cbPlan(sp);
+        const alc = sp.kind && sp.kind !== "full";
+        const P0 = alc ? cbaPlan(sp) : cbPlan(sp);
         const pw = doc.w / NP_U - 40,
           ph = doc.h / NP_U - 60;
         /* paper taken by the gaps and the writing (text size); the views must fit in what's left */
@@ -6337,15 +6339,17 @@ async function openNotePage(opts) {
         const freeW = pw - zmm * 17,
           freeH = ph - zmm * (4 + 10 + 4 + rows * 1.25 + 2);
         const k =
-          [10, 15, 20, 25, 30, 40, 50, 75, 100].find(
-            (x) =>
-              (2 * sp.W + sp.D) / x <= freeW && (sp.H + sp.D + Math.max(...P0.ws)) / x <= freeH,
+          [10, 15, 20, 25, 30, 40, 50, 75, 100].find((x) =>
+            alc
+              ? (sp.W + 800 + Math.max(+sp.D || 0, +sp.shelfD || 0)) / x <= freeW &&
+                (sp.H + Math.max(+sp.D || 0, +sp.shelfD || 0) + 400) / x <= freeH
+              : (2 * sp.W + sp.D) / x <= freeW && (sp.H + sp.D + Math.max(...P0.ws)) / x <= freeH,
           ) || 100;
         if (!doc.scale) doc.scale = k;
         setNpScx(k);
         let r;
         try {
-          r = cbDraw(sp, { doc, U: toUnits, mkDim, dimSize, pwFor });
+          r = (alc ? cbaDraw : cbDraw)(sp, { doc, U: toUnits, mkDim, dimSize, pwFor });
         } finally {
           setNpScx(0);
         }

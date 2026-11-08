@@ -1,6 +1,7 @@
 /* ================= CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting list ================= */
 import { $, esc } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { CBA_KINDS, cbaHasBase } from "./cupboard-alcove.js";
 export { CB_BAYS, CB_DOORS, cbDraw, cbMakeDialog, cbPlan };
 /* A form for the overall size, board thicknesses, plinth, bays (equal or given widths) and what's in each bay
    (shelves, hanging – single or double – drawers, or a mix), and the doors (none, hinged, pairs or sliding). It
@@ -307,19 +308,43 @@ function cbMakeDialog(api) {
     { k: "shelves", s: 4, d: 0 },
   ]);
   openSheet(
-    `<h3 id="sheettitle">🗄️ Cupboard or wardrobe</h3>
-    <label for="cb2-name">Name<input id="cb2-name" maxlength="60" value="${esc(v("name", "Wardrobe"))}" placeholder="e.g. Wardrobe – bedroom 1"></label>
-    <div class="grid2"><label for="cb2-W">Width (mm)<input id="cb2-W" type="number" inputmode="numeric" value="${v("W", 1800)}"></label><label for="cb2-H">Height (mm)<input id="cb2-H" type="number" inputmode="numeric" value="${v("H", 2400)}"></label></div>
-    <div class="grid2"><label for="cb2-D">Depth (mm)<input id="cb2-D" type="number" inputmode="numeric" value="${v("D", 600)}"></label><label for="cb2-p">Plinth / kickboard height (0 = none)<input id="cb2-p" type="number" inputmode="numeric" value="${v("plinth", 100)}"></label></div>
+    `<h3 id="sheettitle">🗄️ Cupboards, wardrobes and shelves</h3>
+    <label for="cb2-kind">What are you making?<select id="cb2-kind">${CBA_KINDS.map(([k, l]) => `<option value="${k}"${k === v("kind", "full") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+    <label for="cb2-name">Name<input id="cb2-name" maxlength="60" value="${esc(v("name", "Wardrobe"))}" placeholder="e.g. Wardrobe – bedroom 1, Alcove left of the chimney"></label>
+    <div class="grid2"><label for="cb2-W"><span class="cb2-wl">Width (mm)</span><input id="cb2-W" type="number" inputmode="numeric" value="${v("W", 1800)}"></label><label for="cb2-H"><span class="cb2-hl">Height (mm)</span><input id="cb2-H" type="number" inputmode="numeric" value="${v("H", 2400)}"></label></div>
+    <div class="grid2"><label for="cb2-D"><span class="cb2-dl">Depth (mm)</span><input id="cb2-D" type="number" inputmode="numeric" value="${v("D", 600)}"></label><label for="cb2-p" class="cb2-g" data-k="full alcove base">Plinth / kickboard height (0 = none)<input id="cb2-p" type="number" inputmode="numeric" value="${v("plinth", 100)}"></label></div>
+    <label for="cb2-sc" class="cb2-g" data-k="alcove base shelves">Scribe allowance each side (mm, for uneven walls)<input id="cb2-sc" type="number" inputmode="numeric" value="${v("scribe", 10)}"></label>
+    <fieldset class="cb2-g od-who" data-k="alcove base"><legend>The cupboard at the bottom</legend>
+      <div class="grid2"><label for="cb2-bh">Height to the top of the worktop (mm)<input id="cb2-bh" type="number" inputmode="numeric" value="${v("baseH", 800)}"></label><label for="cb2-tt">Top thickness (mm, 0 = no top)<input id="cb2-tt" type="number" inputmode="numeric" value="${v("topT", 30)}"></label></div>
+      <label for="cb2-to">Top overhang at the front (mm)<input id="cb2-to" type="number" inputmode="numeric" value="${v("topOver", 20)}"></label>
+    </fieldset>
+    <fieldset class="cb2-g od-who" data-k="alcove shelves"><legend>The shelves</legend>
+      <div class="grid2"><label for="cb2-sn">How many shelves<input id="cb2-sn" type="number" inputmode="numeric" min="0" max="12" value="${v("shelfN", 4)}"></label><label for="cb2-ss">Fixed<select id="cb2-ss"><option value="floating"${v("shelfStyle", "floating") === "floating" ? " selected" : ""}>Floating – on battens to the walls</option><option value="framed"${v("shelfStyle", "floating") === "framed" ? " selected" : ""}>In a frame (two sides and a top)</option></select></label></div>
+      <div class="grid2"><label for="cb2-sd">Shelf depth (mm)<input id="cb2-sd" type="number" inputmode="numeric" value="${v("shelfD", 250)}"></label><label for="cb2-st">Shelf thickness (mm)<input id="cb2-st" type="number" inputmode="numeric" value="${v("shelfT", 30)}"></label></div>
+      <label for="cb2-sg">Gaps between shelves (optional)<input id="cb2-sg" maxlength="60" value="${esc(v("shelfGaps", ""))}" placeholder="e.g. 400, 350, 300 – or leave for even spacing"></label>
+      <label for="cb2-sf" class="cb2-g" data-k="shelves">First shelf height from the floor (mm)<input id="cb2-sf" type="number" inputmode="numeric" value="${v("shelfFrom", 300)}"></label>
+    </fieldset>
+    <div class="cb2-g" data-k="full alcove base">
     <div class="grid2"><label for="cb2-t">Board thickness (mm)<input id="cb2-t" type="number" inputmode="numeric" value="${v("t", 18)}"></label><label for="cb2-bt">Back panel thickness (0 = no back)<input id="cb2-bt" type="number" inputmode="numeric" value="${v("bt", 6)}"></label></div>
     <label for="cb2-doors">Doors<select id="cb2-doors">${CB_DOORS.map(([k, l]) => `<option value="${k}"${k === v("doors", "hinged") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
     <div class="grid2"><label for="cb2-n">How many bays (sections)<input id="cb2-n" type="number" inputmode="numeric" min="1" max="8" value="${bays0.length}"></label><label for="cb2-ws">Bay widths inside (optional)<input id="cb2-ws" maxlength="60" value="${esc(v("widths", ""))}" placeholder="e.g. 1000, 728 – or leave for equal"></label></div>
-    <div id="cb2-bays">${bays0.map((b, i) => bayRow(i, b)).join("")}</div>
+    <div id="cb2-bays">${bays0.map((b, i) => bayRow(i, b)).join("")}</div></div>
     <div class="who">It draws a new page: the front with the doors on and off, the plan, a side section, and the cutting list. Everything can be changed afterwards with the drawing tools.</div>
     ${formFoot(false, "Draw it")}`,
     () => {
       const num = (id, d) => (isFinite(+$(id).value) && $(id).value !== "" ? +$(id).value : d);
       const sp = {
+        kind: $("cb2-kind").value,
+        scribe: Math.max(0, num("cb2-sc", 0)),
+        baseH: num("cb2-bh", 800),
+        topT: Math.max(0, num("cb2-tt", 0)),
+        topOver: Math.max(0, num("cb2-to", 0)),
+        shelfN: Math.max(0, Math.min(12, num("cb2-sn", 0))),
+        shelfStyle: $("cb2-ss").value,
+        shelfD: num("cb2-sd", 250),
+        shelfT: Math.max(6, num("cb2-st", 25)),
+        shelfGaps: $("cb2-sg").value.trim(),
+        shelfFrom: num("cb2-sf", 300),
         name: $("cb2-name").value.trim(),
         W: num("cb2-W", 1800),
         H: num("cb2-H", 2400),
@@ -336,6 +361,9 @@ function cbMakeDialog(api) {
           d: +r.querySelector(".cb2-d").value || 0,
         })),
       };
+      if (sp.kind === "shelves") sp.plinth = 0;
+      if (cbaHasBase(sp) && (sp.baseH < 300 || sp.baseH > sp.H))
+        return showErr("The cupboard at the bottom must be lower than the whole height.");
       if (sp.W < 200 || sp.H < 200 || sp.D < 100)
         return showErr("Check the sizes – they're in millimetres.");
       if (sp.W > 8000 || sp.H > 4000)
@@ -359,4 +387,50 @@ function cbMakeDialog(api) {
       .join("");
   };
   $("cb2-n").oninput = sync;
+  /* only the questions for what's being made */
+  const kindSync = () => {
+    const k = $("cb2-kind").value;
+    document
+      .querySelectorAll(".cb2-g")
+      .forEach((g) => (g.hidden = !g.dataset.k.split(" ").includes(k)));
+    const al = k !== "full";
+    document.querySelector(".cb2-wl").textContent = al ? "Width – wall to wall (mm)" : "Width (mm)";
+    document.querySelector(".cb2-hl").textContent =
+      k === "base"
+        ? "Height (mm, same as the cupboard)"
+        : al
+          ? "Height to the top shelf / ceiling (mm)"
+          : "Height (mm)";
+    document.querySelector(".cb2-dl").textContent =
+      k === "shelves" ? "Depth of the recess (mm)" : al ? "Cupboard depth (mm)" : "Depth (mm)";
+    if (k === "base") $("cb2-H").value = $("cb2-bh").value;
+  };
+  $("cb2-kind").onchange = () => {
+    const k = $("cb2-kind").value;
+    const d = {
+      full: [600, 2400, "Wardrobe"],
+      alcove: [400, 2400, "Alcove unit"],
+      base: [400, 800, "Base cupboard"],
+      shelves: [300, 2400, "Shelves"],
+    }[k];
+    $("cb2-D").value = d[0];
+    $("cb2-H").value = d[1];
+    if (
+      !$("cb2-name").value ||
+      /^(Wardrobe|Alcove unit|Base cupboard|Shelves)$/.test($("cb2-name").value)
+    )
+      $("cb2-name").value = d[2];
+    if (k !== "full") $("cb2-n").value = 1;
+    sync();
+    /* a base cupboard holds shelves, not hanging */
+    if (k !== "full")
+      document.querySelectorAll(".cb2-bay").forEach((r) => {
+        r.querySelector(".cb2-k").value = "shelves";
+        r.querySelector(".cb2-s").value = 1;
+      });
+    kindSync();
+  };
+  $("cb2-bh").oninput = () =>
+    $("cb2-kind").value === "base" && ($("cb2-H").value = $("cb2-bh").value);
+  kindSync();
 }

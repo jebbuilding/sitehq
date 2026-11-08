@@ -3,6 +3,7 @@ import { ptOwnerSign } from "../clients/portal-calendar.js";
 import { ptOf, ptSrc } from "../clients/portal.js";
 import { esc, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
+import { cba3Model } from "./cupboard-alcove.js";
 import { CB_BAYS, CB_DOORS, cbPlan } from "./cupboard-maker.js";
 import { uploadFile } from "../files/files.js";
 import { newId } from "../files/outbox.js";
@@ -10,7 +11,7 @@ import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { jfSave } from "../sales/job-file.js";
-export { cb3Open };
+export { cb3Model, cb3Open, shadeHex };
 /* From the sizes on a cupboard page (🗄️ Cupboards): the carcass, plinth, back, divisions, shelves, rails, drawers and
    doors are built as boxes in millimetres and drawn in perspective with light and shade on a canvas – no outside
    library. Turn it with the slider and open the doors to see inside. Change the door type (hinged, pairs, sliding,
@@ -216,7 +217,7 @@ function cb3Draw(cv, sp, look, open, yaw) {
   const W = sp.W,
     H = sp.H,
     D = sp.D;
-  const boxes = cb3Model(sp, look, open).filter(
+  const boxes = (sp.kind && sp.kind !== "full" ? cba3Model : cb3Model)(sp, look, open).filter(
     (o) => !o.inner || open || look.style === "glass" || look.type === "none",
   );
   /* camera: eye 1.6 m up, in front, turned by yaw */
@@ -391,6 +392,7 @@ function cb3Open(sp, look0, onLook, meta) {
       door: "#f4f4f1",
       carcass: "#f4f4f1",
       handle: "bar",
+      top: "#c9a477",
     },
     look0 || {},
   );
@@ -410,6 +412,7 @@ function cb3Open(sp, look0, onLook, meta) {
       <label for="cb3-hd">Handles<select id="cb3-hd">${CB3_HANDLES.map(([k, l]) => `<option value="${k}"${k === look.handle ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       <div class="flabel">Door colour <span class="who" id="cb3-dn">${esc(cb3ColName(look.door))}</span></div>${sw("cb3-door", look.door)}
       <div class="flabel">Inside / carcass colour <span class="who" id="cb3-cn">${esc(cb3ColName(look.carcass))}</span></div>${sw("cb3-car", look.carcass)}
+      ${sp.kind && sp.kind !== "full" ? `<div class="flabel">Top and shelves colour <span class="who" id="cb3-tn">${esc(cb3ColName(look.top || "#c9a477"))}</span></div>${sw("cb3-top", look.top || "#c9a477")}` : ""}
       <div class="actions"><button type="button" class="btn" id="cb3-png">🖼️ Save picture</button><button type="button" class="btn primary" id="cb3-pdf">📄 PDF for the client</button><button type="button" class="btn" id="cb3-sign">✍️ Client sign-off</button></div>
       <div class="who">An illustration from your sizes – real colours and finishes vary.</div>
     </div></div>`;
@@ -443,21 +446,24 @@ function cb3Open(sp, look0, onLook, meta) {
   [
     ["cb3-door", "door", "cb3-dn"],
     ["cb3-car", "carcass", "cb3-cn"],
-  ].forEach(([id, key, lab]) =>
-    q(id)
-      .querySelectorAll("button")
-      .forEach(
-        (b) =>
-          (b.onclick = () => {
-            look[key] = b.dataset.c;
-            q(id)
-              .querySelectorAll("button")
-              .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-            q(lab).textContent = cb3ColName(b.dataset.c);
-            draw();
-          }),
-      ),
-  );
+    ["cb3-top", "top", "cb3-tn"],
+  ]
+    .filter(([id]) => q(id))
+    .forEach(([id, key, lab]) =>
+      q(id)
+        .querySelectorAll("button")
+        .forEach(
+          (b) =>
+            (b.onclick = () => {
+              look[key] = b.dataset.c;
+              q(id)
+                .querySelectorAll("button")
+                .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+              q(lab).textContent = cb3ColName(b.dataset.c);
+              draw();
+            }),
+        ),
+    );
   q("cb3-png").onclick = () =>
     cv.toBlob(async (b) => {
       try {

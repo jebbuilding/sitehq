@@ -78,3 +78,4 @@
 .cb3-sw button[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
 @media (max-width:800px){.cb3-body{grid-template-columns:1fr}}
 body>.dimask.cb3-sg{z-index:320}
+.cb2-g[hidden]{display:none!important}
