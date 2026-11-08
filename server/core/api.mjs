@@ -30,7 +30,10 @@ export const MAX_FILE_BYTES = 20 * 1024 * 1024; // one uploaded file
 const MAX_JSON_BODY = 1024 * 1024;
 const INLINE_IMAGE_BYTES = 4 * 1024 * 1024; // images up to this size are served by the API itself (same origin)
 // What may be stored as a file. No HTML, SVG or script types: files are served from the app's own origin.
-const FILE_TYPES = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/(mp4|quicktime|webm|3gpp)|application\/pdf)$/;
+// Besides pictures, video and PDFs: voice notes (audio), a drawing's data (JSON), plain text and CSV, and Word and
+// Excel files – none of them is run by a browser, and every file is served with nosniff.
+const FILE_TYPES =
+  /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/(mp4|quicktime|webm|3gpp)|audio\/(mp4|mpeg|webm|ogg|wav|x-m4a|aac)|application\/(pdf|json|msword|vnd\.ms-excel|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet))|text\/(plain|csv))$/;
 const FILE_ID = /^[\w-]{1,64}$/;
 const CLIENT_ID = /^[\w-]{1,40}$/;
 const NO_STORE = { "cache-control": "no-store" };

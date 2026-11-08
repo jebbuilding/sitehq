@@ -293,7 +293,7 @@ A read the rules refuse answers exactly as if nothing were there (`exists: false
 of the platform the app was written on, and it means nothing can be learned by probing. A refused write is 403.
 Limits: a document is a JSON object of at most 256 KiB and 32 levels; a path has at most 16 segments of letters,
 digits and `_ - . ~ : @ +`; a file is at most 20 MiB and one of JPEG, PNG, WebP, GIF, HEIC, MP4, MOV, WebM, 3GP,
-PDF (no HTML, SVG or scripts – files are served from the app's own origin). An optional `x-sitehq-client` header
+PDF, audio (voice notes), JSON (a drawing's data), plain text, CSV, Word or Excel (no HTML, SVG or scripts – files are served from the app's own origin). An optional `x-sitehq-client` header
 names the page that made a write, and is echoed in the change message so that page can skip it.
 
 ### The public website (`core/public.mjs`)

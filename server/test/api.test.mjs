@@ -225,8 +225,11 @@ test("files: what is refused", async () => {
   const t = await setup();
   const start = (token, body) => t.call(token, "POST", "/api/assets", body);
   const code = async (p) => { const r = await p; return [r.status, r.body.error.code]; };
-  for (const type of ["text/html", "image/svg+xml", "application/javascript", "application/zip", "", "image/png; charset=x"])
+  for (const type of ["text/html", "image/svg+xml", "application/javascript", "text/javascript", "application/xhtml+xml", "application/zip", "", "image/png; charset=x"])
     assert.deepEqual(await code(start(OWNER, { contentType: type, size: 10 })), [415, "unsupported_type"], type);
+  /* what the app does store besides pictures, video and PDFs: a drawing's data, voice notes, Word and Excel files, text and CSV */
+  for (const type of ["application/json", "audio/mp4", "audio/webm", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/msword", "text/plain", "text/csv"])
+    assert.equal((await start(OWNER, { contentType: type, size: 10 })).status, 200, type);
   assert.deepEqual(await code(start(OWNER, { contentType: "image/png", size: 20 * 1024 * 1024 + 1 })), [413, "too_large"]);
   assert.deepEqual(await code(start(OWNER, { contentType: "image/png", size: 0 })), [400, "invalid_argument"]);
   assert.deepEqual(await code(start(SUE, { contentType: "image/png", size: 10 })), [403, "forbidden"], "a client cannot store files");

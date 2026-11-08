@@ -3,14 +3,14 @@
   "configurations": [
     {
       "name": "sitehq-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["scripts/dev.mjs"],
       "port": 4321
     },
     {
       "name": "sitehq-local",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "local"],
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["scripts/local.mjs"],
       "port": 4322
     }
   ]
