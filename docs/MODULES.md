@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 175 files, 3526 KB, 91483 lines.
-- 1748 names declared at the top level (the shared scope); 927 of them are used by a file other than the one that declares them.
-- 1843 file-to-file dependencies (file A uses at least one name from file B).
+- 175 files, 3543 KB, 91847 lines.
+- 1752 names declared at the top level (the shared scope); 928 of them are used by a file other than the one that declares them.
+- 1844 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 158 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -464,10 +464,10 @@ construction details: stud wall connections, framing, headers, ground floor and 
 
 CUPBOARD 3D: a 3D picture of a fitted cupboard or wardrobe for the client, in their colours
 
-- 779 lines, 28 KB. Declares 12 names, 3 used elsewhere.
-- **Used elsewhere:** `cb3Model` (2), `shadeHex` (2), `cb3Open` (1)
+- 810 lines, 29 KB. Declares 12 names, 4 used elsewhere.
+- **Used elsewhere:** `cb3Model` (2), `shadeHex` (2), `CB3_COLS` (1), `cb3Open` (1)
 - **Uses names from 13 files:** `drawing/cupboard-maker.js` (4), `drawing/cupboard-shapes.js` (3), `clients/portal.js` (2), `core/helpers.js` (2), `photos/photos.js` (2), `clients/portal-calendar.js` (1), `core/state.js` (1), `drawing/cupboard-alcove.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `sales/job-file.js` (1)
-- **Used by 3 files**
+- **Used by 4 files**
 
 ### `drawing/cupboard-alcove.js`
 
@@ -482,9 +482,9 @@ CUPBOARD ALCOVE: alcove units, base cupboards and shelves – drawing, cutting l
 
 CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting list
 
-- 630 lines, 31 KB. Declares 7 names, 6 used elsewhere.
+- 893 lines, 43 KB. Declares 11 names, 6 used elsewhere.
 - **Used elsewhere:** `cbPlan` (5), `cbBayDoor` (2), `CB_BAYS` (1), `CB_DOORS` (1), `cbDraw` (1), `cbMakeDialog` (1)
-- **Uses names from 5 files:** `core/sheet.js` (4), `drawing/cupboard-pics.js` (3), `core/helpers.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/cupboard-shapes.js` (1)
+- **Uses names from 6 files:** `core/sheet.js` (4), `drawing/cupboard-pics.js` (3), `core/helpers.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/cupboard-3d.js` (1), `drawing/cupboard-shapes.js` (1)
 - **Used by 5 files**
 
 ### `drawing/cupboard-pack.js`
@@ -500,7 +500,7 @@ CUPBOARD PACK: the workshop pack – every panel drawn, edged and drilled, label
 
 CUPBOARD PICS: small pictures to pick what you're making and the doors
 
-- 76 lines, 5.1 KB. Declares 7 names, 3 used elsewhere.
+- 78 lines, 5.5 KB. Declares 7 names, 3 used elsewhere.
 - **Used elsewhere:** `CBP_DOOR` (1), `CBP_KIND` (1), `cbpPicker` (1)
 - **Uses names from 1 files:** `core/helpers.js` (2)
 - **Used by 1 files**
@@ -509,7 +509,7 @@ CUPBOARD PICS: small pictures to pick what you're making and the doors
 
 CUPBOARD SHAPES: corner, under-stairs, eaves, over-bed, window or radiator, window seat, boot bench, TV wall
 
-- 594 lines, 21 KB. Declares 8 names, 6 used elsewhere.
+- 662 lines, 23 KB. Declares 8 names, 6 used elsewhere.
 - **Used elsewhere:** `cbsIs` (3), `cbsPlan` (2), `cb3ExtFaces` (1), `CBS_KINDS` (1), `cbs3Model` (1), `cbsDraw` (1)
 - **Uses names from 2 files:** `drawing/cupboard-3d.js` (2), `drawing/cupboard-maker.js` (2)
 - **Used by 4 files**

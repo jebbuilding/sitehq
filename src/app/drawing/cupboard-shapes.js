@@ -17,6 +17,7 @@ const CBS_KINDS = [
   ["seat", "Window seat"],
   ["bench", "Boot room / utility bench"],
   ["tv", "TV / media wall"],
+  ["chimney", "Both sides of a chimney breast"],
 ];
 const cbsIs = (sp) => CBS_KINDS.some((k) => k[0] === sp.kind);
 /* a unit: a small cupboard of its own, placed at x (from the left) and y (from the floor) */
@@ -43,6 +44,7 @@ function cbsUnit(sp, name, x, y, w, h, d, o) {
       bays,
       widths: "",
       doors: o.doors != null ? o.doors : sp.doors,
+      openUnit: o.doors === "none",
       plinth: y === 0 && o.plinth !== false ? +sp.plinth || 0 : 0,
       bt: sp.bt,
       fillL: 0,
@@ -121,6 +123,23 @@ function cbsUnits(sp) {
         plinth: false,
       }),
     ];
+  }
+  if (k === "chimney") {
+    /* an alcove each side of the breast: a cupboard to the worktop, open shelves above */
+    const aL = +sp.aL || 900,
+      aR = +sp.aR || aL,
+      cw = +sp.cw || 1200,
+      bh = Math.max(300, (+sp.baseH || 800) - (+sp.topT || 0)),
+      sd = Math.min(D, +sp.shelfD || 300);
+    const side = (nm, x, w) => [
+      U(nm + " cupboard", x, 0, w, bh, D, { n: w > 900 ? 2 : 1, s: 1 }),
+      U(nm + " shelves", x, +sp.baseH || 800, w, H - (+sp.baseH || 800), sd, {
+        s: Math.max(0, +sp.shelfN || 3),
+        doors: "none",
+        plinth: false,
+      }),
+    ];
+    return side("Left alcove", 0, aL).concat(side("Right alcove", aL + cw, aR));
   }
   if (k === "corner") {
     const wB = +sp.wB || 1200;
@@ -224,6 +243,20 @@ function cbsPlan(sp) {
     add("Seat cushion (to order)", 1, +sp.W, 0, 0, "");
   }
   if (sp.kind === "seat") add("Seat cushion (to order)", 1, +sp.W, 0, 0, `${sp.D} deep`);
+  if (sp.kind === "chimney" && +sp.topT)
+    [
+      ["Left", +sp.aL],
+      ["Right", +sp.aR],
+    ].forEach(([s, w]) =>
+      add(
+        `${s} alcove – worktop / top`,
+        1,
+        w,
+        +sp.D + (+sp.topOver || 0),
+        +sp.topT,
+        `scribe to the walls; ${+sp.topOver || 0} overhang`,
+      ),
+    );
   return { cut, ws: units.map((u) => u.w), n: units.length, bays: [] };
 }
 /* the drawing: front (all the units), side section, plan, cutting list */
@@ -366,6 +399,20 @@ function cbsDraw(sp, api) {
       rect(x1, fl - bh - U(80), W, U(80), { w: thin, fill: "#d9c7a6" });
     }
     if (sp.kind === "seat") rect(x1, fl - H - U(80), W, U(80), { w: thin, fill: "#d9c7a6" });
+    if (sp.kind === "chimney") {
+      const aL = U(+sp.aL),
+        cw = U(+sp.cw),
+        tt = U(+sp.topT || 0),
+        bh = U(+sp.baseH || 800);
+      rect(x1 + aL, fl - H, cw, H, { w: thin, fill: "#eeeeee" });
+      text(x1 + aL + U(60), fl - H / 2, "Chimney breast", 0.8);
+      if (tt)
+        [
+          [0, +sp.aL],
+          [+sp.aL + +sp.cw, +sp.aR],
+        ].forEach(([x, w]) => rect(x1 + U(x), fl - bh, U(w), tt, { w: thin, fill: "#d9c7a6" }));
+      objs.push(mkDim([x1 + aL, fl - H], [x1 + aL + cw, fl - H], -dimSize() * 1.6));
+    }
     if (sp.kind === "window") {
       const tw = U(Math.min(+sp.W / 2 - 100, +sp.tw || 500));
       const top = U(+sp.topH || 0),
@@ -432,6 +479,7 @@ function cbsDraw(sp, api) {
     cbsUnits(sp).forEach((u) =>
       rect(x1 + U(u.x), y4, U(u.w), U(u.d), { w: u.y > 0 ? thin : lw, dash: u.y > 0 ? 1 : 0 }),
     );
+  if (sp.kind === "chimney") rect(x1 + U(+sp.aL), y4, U(+sp.cw), D, { w: lw, fill: "#eeeeee" });
   /* title and cutting list */
   const yt = y4 + D + wB + Z * 3;
   const kind = (CBS_KINDS.find((k) => k[0] === sp.kind) || ["", ""])[1];
@@ -574,6 +622,26 @@ function cbs3Model(sp, look, open) {
       });
   }
   if (sp.kind === "seat") out.push({ b: [0, +sp.H, 0, +sp.W, +sp.H + 80, +sp.D], c: "#c9a477" });
+  if (sp.kind === "chimney") {
+    const aL = +sp.aL || 900,
+      cw = +sp.cw || 1200,
+      bh = +sp.baseH || 800,
+      tt = +sp.topT || 0;
+    out.push({
+      b: [aL, 0, 0, aL + cw, +sp.H + 200, +sp.D + 10],
+      c: shadeHex(look.wall || "#ece9e4", 0.92),
+    });
+    if (tt)
+      [
+        [0, aL],
+        [aL + cw, +sp.aR || aL],
+      ].forEach(([x, w]) =>
+        out.push({
+          b: [x, bh - tt, 0, x + w, bh, +sp.D + (+sp.topOver || 0)],
+          c: look.top || "#c9a477",
+        }),
+      );
+  }
   if (sp.kind === "corner")
     out.push({ b: [+sp.W - +sp.D, 0, 0, +sp.W, +sp.H, +sp.D], c: look.door });
   return out;

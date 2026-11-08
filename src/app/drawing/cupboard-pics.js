@@ -19,8 +19,10 @@ const CBP_KIND = {
   seat: `<rect x="6" y="34" width="52" height="22" ${CBP_W}/><rect x="6" y="28" width="52" height="6" rx="2" ${CBP_W}/><path d="M24 36v18M40 36v18" ${CBP_W}/><rect x="16" y="6" width="32" height="18" ${CBP_W} opacity=".4"/>`,
   bench: `<rect x="6" y="6" width="52" height="16" ${CBP_W}/><path d="M23 6v16M40 6v16" ${CBP_W}/><path d="M14 28v4M26 28v4M38 28v4M50 28v4" ${CBP_W}/><rect x="6" y="40" width="52" height="4" ${CBP_W}/><path d="M6 44v12M58 44v12M6 50h52" ${CBP_W}/>`,
   tv: `<rect x="4" y="8" width="14" height="48" ${CBP_W}/><rect x="46" y="8" width="14" height="48" ${CBP_W}/><rect x="18" y="44" width="28" height="12" ${CBP_W}/><rect x="21" y="18" width="22" height="14" rx="1" ${CBP_W} opacity=".5"/><path d="M4 22h14M4 34h14M46 22h14M46 34h14" ${CBP_W}/>`,
+  chimney: `<path d="M25 4h14v54H25z" ${CBP_W} opacity=".45"/><rect x="5" y="38" width="20" height="18" ${CBP_W}/><rect x="39" y="38" width="20" height="18" ${CBP_W}/><path d="M4 36h22M38 36h22M5 14h20M5 25h20M39 14h20M39 25h20M15 40v14M49 40v14" ${CBP_W}/>`,
 };
 const CBP_DOOR = {
+  mirror: `<rect x="14" y="6" width="36" height="52" ${CBP_W}/><path d="M20 22l10-10M20 32l18-18" ${CBP_W} opacity=".5"/>`,
   hinged: `<rect x="10" y="6" width="44" height="52" ${CBP_W}/><path d="M32 6v52" ${CBP_W}/><path d="M10 6l22 26M10 58l22-26" ${CBP_W} stroke-dasharray="3 3" opacity=".6"/>`,
   pairs: `<rect x="10" y="6" width="44" height="52" ${CBP_W}/><path d="M21 6v52M32 6v52M43 6v52" ${CBP_W}/><path d="M28 30v4M36 30v4" ${CBP_W}/>`,
   sliding: `<rect x="8" y="6" width="48" height="52" ${CBP_W}/><rect x="10" y="9" width="26" height="46" ${CBP_W}/><rect x="28" y="12" width="26" height="43" ${CBP_W} opacity=".55"/><path d="M14 4h36" ${CBP_W}/>`,

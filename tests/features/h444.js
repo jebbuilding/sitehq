@@ -15,7 +15,7 @@ const SHAPES=[['corner','Corner wardrobe',/Corner blank panel/],['stairs','Under
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  await p.evaluate(()=>document.querySelector('.tab[data-t=draw]').click());await p.waitForTimeout(400);await p.click('#dw-new');await p.waitForTimeout(800);
  await p.evaluate(()=>document.querySelector('.np [data-bt=cupb]').click());await p.waitForTimeout(300);
- ok((await p.$$('.cb2-kpics .cb2-pic')).length===12,'12 pictures to pick what you\'re making ('+(await p.$$('.cb2-kpics .cb2-pic')).length+')');
+ ok((await p.$$('.cb2-kpics .cb2-pic')).length===13,'13 pictures to pick what you\'re making ('+(await p.$$('.cb2-kpics .cb2-pic')).length+')');
  ok((await p.$$('.cb2-dpics .cb2-pic')).length===4,'door pictures');
  await p.click('#f-cancel');await p.waitForTimeout(200);
  for(const [k,name,re] of SHAPES){

@@ -1,6 +1,7 @@
 /* ================= CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting list ================= */
 import { $, esc } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { CB3_COLS } from "./cupboard-3d.js";
 import { CBA_KINDS, cbaHasBase } from "./cupboard-alcove.js";
 import { CBP_DOOR, CBP_KIND, cbpPicker } from "./cupboard-pics.js";
 import { CBS_KINDS } from "./cupboard-shapes.js";
@@ -16,6 +17,8 @@ const CB_BAYS = [
   ["hang2", "Double hanging (two rails)"],
   ["drawers", "Drawers, shelves above"],
   ["drhang", "Drawers, hanging above"],
+  ["desk", "Dressing table / desk gap"],
+  ["basewall", "Cupboard below, open, cupboard above"],
 ];
 const CB_DOORS = [
   ["hinged", "Hinged – one door per bay"],
@@ -29,28 +32,142 @@ const CB_BAYDOORS = [
   ["hinged", "One door"],
   ["pairs", "A pair of doors"],
   ["glass", "Glazed door"],
+  ["mirror", "Mirror door"],
   ["none", "Open – no door"],
 ];
+const CB_HANDLES = [
+  ["bar", "Bar handles – steel"],
+  ["black", "Bar handles – black"],
+  ["knob", "Knobs"],
+  ["none", "Handle-less (push to open)"],
+];
+const CB_EDGES = [
+  ["1 mm ABS edging", "1 mm ABS edging"],
+  ["2 mm ABS on doors and fronts, 1 mm on the carcass", "2 mm ABS on fronts, 1 mm on the carcass"],
+  ["0.4 mm ABS edging", "0.4 mm ABS edging"],
+  ["Real wood veneer edging", "Real wood veneer edging"],
+  ["No edging (painted MDF)", "None – painted MDF"],
+];
 const cbBayDoor = (sp, b) => (sp.doors === "sliding" ? "sliding" : (b && b.door) || sp.doors);
+/* numbers typed with commas, e.g. "300, 700, 1100" */
+const cbNums = (s) =>
+  String(s || "")
+    .split(/[ ,;]+/)
+    .map(Number)
+    .filter((x) => x > 0);
+/* where everything goes in one bay, in mm up from the floor: drawers, shelves, fixed shelves (top box, desk top,
+   worktop), rails, and the door zones (each door covers one zone; a top box splits the door) */
+function cbBayLayout(sp, b, P) {
+  const t = sp.t,
+    st = P.sht,
+    iB = P.iB,
+    iT = P.iT,
+    PL = sp.plinth || 0,
+    H = sp.H;
+  const L = { drawers: [], shelves: [], fixed: [], rails: [], zones: [], labels: [] };
+  let lo = iB,
+    hi = iT;
+  const top = Math.max(0, +b.top || 0);
+  let split = 0;
+  if (top && iT - top - st > iB + 300) {
+    split = iT - top - st / 2;
+    L.fixed.push({ y: split, part: "Fixed shelf", why: "under the top box" });
+    hi = split - st / 2;
+  }
+  const dh = Math.max(80, +b.dh || P.drH);
+  const drawers = (n) => {
+    for (let k = 0; k < n; k++) {
+      L.drawers.push({ y: lo, h: dh });
+      lo += dh;
+    }
+  };
+  const shelves = (a, z, n) => {
+    const hand = cbNums(b.sh).filter((y) => y > a + st && y < z - st);
+    if (hand.length) hand.forEach((y) => L.shelves.push(y));
+    else for (let k = 1; k <= n; k++) L.shelves.push(a + ((z - a) * k) / (n + 1));
+  };
+  const hang = (a, z, two) => {
+    /* the rail hangs 60 under a hat shelf; with a top box the box's shelf is the hat shelf */
+    let hat = split ? z + st / 2 : z - 300;
+    if (+b.rail > a + 200 && +b.rail < z - 40) hat = +b.rail + 60;
+    if (!split || hat < z - 1) L.fixed.push({ y: hat, part: "Hat shelf", why: "" });
+    L.rails.push(hat - 60);
+    if (two) {
+      const mid = a + (hat - a) / 2;
+      L.fixed.push({ y: mid, part: "Hat shelf", why: "lower rail" });
+      L.rails.push(mid - 60);
+    }
+  };
+  const door = (y0, y1) => L.zones.push({ y0, y1 });
+  if (b.k === "desk") {
+    /* a dressing table / desk: a top at 750, a shallow drawer under it, open knee space, shelves above */
+    const dt = Math.min(hi - 200, 750);
+    L.fixed.push({ y: dt - st / 2, part: "Desk / dressing table top", why: "" });
+    L.drawers.push({ y: dt - st - 130, h: 130 });
+    L.labels.push({ y: (iB + dt - st - 130) / 2, s: "knee space" });
+    shelves(dt, hi, b.s == null ? 1 : b.s);
+  } else if (b.k === "basewall") {
+    /* a cupboard to 900, open, a cupboard from 1450 up */
+    const lowTop = Math.min(900, lo + (hi - lo) * 0.4),
+      upBot = Math.max(lowTop + 300, Math.min(1450, hi - 300));
+    L.fixed.push({ y: lowTop, part: "Fixed shelf", why: "top of the cupboard below" });
+    L.fixed.push({ y: upBot, part: "Fixed shelf", why: "bottom of the cupboard above" });
+    drawers(b.d || 0);
+    shelves(lo, lowTop - st / 2, 1);
+    shelves(upBot + st / 2, hi, b.s == null ? 1 : b.s);
+    L.labels.push({ y: (lowTop + upBot) / 2, s: "open" });
+    door(PL, lowTop + st / 2);
+    door(upBot - st / 2, split ? split : H);
+  } else {
+    drawers(b.d || 0);
+    if (b.k === "shelves" || b.k === "drawers") shelves(lo, hi, b.s || 0);
+    else if (b.k === "hang1" || b.k === "drhang") hang(lo, hi, false);
+    else if (b.k === "hang2") hang(lo, hi, true);
+    door(PL, split ? split : H);
+  }
+  if (split) door(split, H);
+  L.split = split;
+  return L;
+}
 /* the boards to cut, and where everything goes, from the sizes */
 function cbPlan(sp) {
   const t = sp.t,
-    bt = sp.bt;
+    bt = sp.bt,
+    dt = Math.max(6, +sp.dt || t),
+    sht = Math.max(6, +sp.sht || t);
   const n = Math.max(1, Math.min(8, sp.n | 0));
   const inner = sp.W - 2 * t - (n - 1) * t;
-  let ws = String(sp.widths || "")
-    .split(/[ ,]+/)
-    .map(Number)
-    .filter((x) => x > 0);
-  /* the bay widths are inside sizes; "equal" (or a list that doesn't add up) shares the room evenly */
+  const src = sp.bays || [];
+  /* bay widths (inside sizes): typed on a bay, or in the list; the rest share what's left evenly */
+  let ws = cbNums(sp.widths);
+  const hand = Array.from({ length: n }, (_, i) => Math.max(0, +(src[i] && src[i].w) || 0));
+  if (hand.some((x) => x > 0)) {
+    const fixed = hand.reduce((a, x) => a + x, 0),
+      free = hand.filter((x) => !x).length;
+    if (free && inner - fixed > free * 100)
+      ws = hand.map((x) => x || Math.round(((inner - fixed) / free) * 10) / 10);
+    else if (!free && Math.abs(fixed - inner) <= 2) ws = hand;
+    else ws = [];
+  }
   if (ws.length !== n || Math.abs(ws.reduce((a, b) => a + b, 0) - inner) > 2)
     ws = Array.from({ length: n }, () => Math.round((inner / n) * 10) / 10);
   const ih = sp.H - sp.plinth - 2 * t; /* inside height */
-  const sd = sp.D - bt - (sp.back ? 0 : 0); /* shelf depth up to the back panel */
-  const bays = ws.map((w, i) => Object.assign({ w }, sp.bays[i] || { k: "shelves", s: 3, d: 0 }));
+  const sd = sp.D - bt; /* shelf depth up to the back panel */
+  const P = { ws, ih, sd, n, drH: 180, dt, sht, iB: (sp.plinth || 0) + t, iT: sp.H - t };
+  const bays = ws.map((w, i) =>
+    Object.assign({ w }, src[i] || { k: "shelves", s: 3, d: 0 }, { w }),
+  );
+  bays.forEach((b) => (b.L = cbBayLayout(sp, b, P)));
   const cut = [];
   const add = (part, qty, l, w, th, note) => {
-    const ex = cut.find((c) => c.part === part && c.l === l && c.w === w && c.th === th);
+    const ex = cut.find(
+      (c) =>
+        c.part === part &&
+        c.l === Math.round(l) &&
+        c.w === Math.round(w) &&
+        c.th === th &&
+        c.note === (note || ""),
+    );
     if (ex) ex.qty += qty;
     else cut.push({ part, qty, l: Math.round(l), w: Math.round(w), th, note: note || "" });
   };
@@ -59,56 +176,77 @@ function cbPlan(sp) {
   add("Bottom", 1, sp.W - 2 * t, sp.D, t);
   if (n > 1) add("Division", n - 1, ih, sp.D - bt, t);
   if (sp.plinth) add("Plinth / kickboard", 1, sp.W, sp.plinth, t);
-  if (bt) add("Back panel", 1, sp.H - sp.plinth, sp.W, bt, "fits into a groove or onto the back");
-  const drH = 180,
-    gap = 3;
+  if (bt)
+    add(
+      "Back panel",
+      1,
+      sp.H - sp.plinth,
+      sp.W,
+      bt,
+      sp.backFix === "pinned"
+        ? "pinned and glued onto the back"
+        : sp.backFix === "screwed"
+          ? "screwed onto the back"
+          : "fits into a groove",
+    );
+  const gap = 3;
+  let fronts = 0,
+    doorsN = 0,
+    hinges = 0;
+  const hingeN = (h) => (h > 1600 ? 4 : h > 900 ? 3 : 2);
   bays.forEach((b, i) => {
-    const sh = b.k === "shelves" ? b.s : b.k === "drawers" ? b.s : 0;
-    if (sh) add("Shelf", sh, b.w - 2, sd - 20, t, "bay " + (i + 1));
-    if (b.k === "hang1" || b.k === "hang2" || b.k === "drhang") {
-      add("Hat shelf", 1, b.w - 2, sd - 20, t, "bay " + (i + 1));
-      add("Hanging rail", b.k === "hang2" ? 2 : 1, b.w - 4, 0, 0, "oval rail, bay " + (i + 1));
-    }
-    if (b.d) add("Drawer front", b.d, b.w - gap, drH - gap, t, "drawer boxes to suit the runners");
-  });
-  /* doors cover the front between the plinth and the top */
-  const dh = sp.H - sp.plinth - gap;
-  bays.forEach((b, i) => {
-    const dt = cbBayDoor(sp, b);
-    if (dt === "hinged") add("Door", 1, dh, b.w + t - gap, t, "bay " + (i + 1));
-    if (dt === "pairs") add("Door", 2, dh, (b.w + t) / 2 - gap, t, "bay " + (i + 1));
-    if (dt === "glass") {
+    const bay = "bay " + (i + 1);
+    const L = b.L;
+    if (L.shelves.length) add("Shelf", L.shelves.length, b.w - 2, sd - 20, sht, bay);
+    L.fixed.forEach((f) =>
       add(
-        "Glazed door frame",
+        f.part,
         1,
-        dh,
-        b.w + t - gap,
-        t,
-        "bay " + (i + 1) + "; rebate for the glass",
-      );
-      add(
-        "Glass panel (toughened, to order)",
-        1,
-        dh - 140,
-        b.w + t - gap - 140,
-        4,
-        "bay " + (i + 1),
-      );
-    }
+        b.w,
+        sd - (f.part === "Desk / dressing table top" ? 0 : 20),
+        sht,
+        bay + (f.why ? "; " + f.why : ""),
+      ),
+    );
+    if (L.rails.length) add("Hanging rail", L.rails.length, b.w - 4, 0, 0, "oval rail, " + bay);
+    L.drawers.forEach((d) => {
+      add("Drawer front", 1, b.w - gap, d.h - gap, dt, bay + "; drawer box to suit the runners");
+      fronts++;
+    });
+    /* doors: one (or a pair) per zone */
+    const dtp = cbBayDoor(sp, b);
+    if (dtp !== "sliding" && dtp !== "none")
+      L.zones.forEach((z) => {
+        const h = z.y1 - z.y0 - gap,
+          w1 = b.w + t - gap;
+        if (dtp === "pairs") {
+          add("Door", 2, h, (b.w + t) / 2 - gap, dt, bay);
+          doorsN += 2;
+          hinges += 2 * hingeN(h);
+        } else {
+          if (dtp === "glass") {
+            add("Glazed door frame", 1, h, w1, dt, bay + "; rebate for the glass");
+            add("Glass panel (toughened, to order)", 1, h - 140, w1 - 140, 4, bay);
+          } else if (dtp === "mirror") {
+            add("Mirror door (backing board)", 1, h, w1, dt, bay + "; mirror glued on");
+            add("Mirror glass (safety-backed, to order)", 1, h - 4, w1 - 4, 4, bay);
+          } else add("Door", 1, h, w1, dt, bay);
+          doorsN++;
+          hinges += hingeN(h);
+        }
+      });
     /* fittings */
-    if (b.shoe)
-      add("Shoe shelf (angled)", 3, b.w - 2, 300, t, "bay " + (i + 1) + "; on angled bearers");
-    if (b.trouser) add("Trouser pull-out (to buy)", 1, b.w, 0, 0, "bay " + (i + 1));
-    if (b.led)
-      add("LED strip and driver (to buy)", 1, b.w, 0, 0, "bay " + (i + 1) + "; under the top");
+    if (b.shoe) add("Shoe shelf (angled)", 3, b.w - 2, 300, sht, bay + "; on angled bearers");
+    if (b.trouser) add("Trouser pull-out (to buy)", 1, b.w, 0, 0, bay);
+    if (b.led) add("LED strip and driver (to buy)", 1, b.w, 0, 0, bay + "; under the top");
   });
   /* finishing: fillers to the walls, end panels, cornice */
   const fL = +sp.fillL || 0,
     fR = +sp.fillR || 0;
   if (fL) add("Filler", 1, sp.H + (+sp.cornice || 0), fL + 20, t, "left; scribe to the wall");
   if (fR) add("Filler", 1, sp.H + (+sp.cornice || 0), fR + 20, t, "right; scribe to the wall");
-  if (sp.endL) add("End panel", 1, sp.H, sp.D + t, t, "left; covers the side");
-  if (sp.endR) add("End panel", 1, sp.H, sp.D + t, t, "right; covers the side");
+  if (sp.endL) add("End panel", 1, sp.H, sp.D + dt, t, "left; covers the side");
+  if (sp.endR) add("End panel", 1, sp.H, sp.D + dt, t, "right; covers the side");
   if (+sp.cornice)
     add(
       "Cornice",
@@ -118,32 +256,48 @@ function cbPlan(sp) {
       t,
       "scribe to the ceiling",
     );
-  /* bought fittings: hinges and shelf pins */
-  const doorsN = bays.reduce((a, b) => {
-    const dt = cbBayDoor(sp, b);
-    return a + (dt === "pairs" ? 2 : dt === "hinged" || dt === "glass" ? 1 : 0);
-  }, 0);
-  if (doorsN)
+  /* bought fittings */
+  if (hinges)
     add(
-      "Soft-close hinges (to buy)",
-      doorsN * (dh > 1600 ? 4 : dh > 900 ? 3 : 2),
+      sp.handle === "none"
+        ? "Soft-close hinges, push-to-open (to buy)"
+        : "Soft-close hinges (to buy)",
+      hinges,
       0,
       0,
       0,
       "35 mm cup",
     );
+  const dh = sp.H - sp.plinth - gap;
+  let slides = 0;
   if (sp.doors === "sliding") {
-    const np = Math.max(2, Math.min(4, n));
+    slides = Math.max(2, Math.min(4, n));
     add(
-      "Sliding door",
-      np,
+      sp.slideMirror ? "Sliding door (mirror)" : "Sliding door",
+      slides,
       dh - 40,
-      (sp.W - 2 * t) / np + 40,
-      t,
+      (sp.W - 2 * t) / slides + 40,
+      dt,
       "overlaps 40 mm; to suit the track",
     );
   }
-  return { ws, bays, ih, sd, cut, drH, n };
+  const hn = doorsN + fronts + slides;
+  if (hn)
+    add(
+      sp.handle === "none"
+        ? "Push-to-open catches (to buy)"
+        : sp.handle === "knob"
+          ? "Knobs (to buy)"
+          : sp.handle === "black"
+            ? "Bar handles, black (to buy)"
+            : "Bar handles, steel (to buy)",
+      sp.handle === "none" ? doorsN + fronts : hn,
+      0,
+      0,
+      0,
+      slides ? "sliding doors take flush pulls" : "",
+    );
+  return Object.assign(P, { bays, cut });
 }
 /* the drawing: four views and the cutting list, as ordinary drawing objects */
 function cbDraw(sp, api) {
@@ -189,10 +343,31 @@ function cbDraw(sp, api) {
     y1 = top;
   rect(x1, y1, W, H);
   if (PL) line(x1, y1 + H - PL, x1 + W, y1 + H - PL, { w: lw });
-  const dTop = y1 + U(1.5),
-    dBot = y1 + H - PL - U(1.5);
-  const door = (dx, dw, hinge) => {
-    rect(dx, dTop, dw, dBot - dTop, { w: thin });
+  /* mm up from the floor → the page, for the front with the doors on */
+  const fy = (yy) => y1 + H - U(yy);
+  const hnd = sp.handle || "bar";
+  const handleAt = (hx, hy) => {
+    if (hnd === "none") return;
+    if (hnd === "knob")
+      objs.push({
+        t: "circle",
+        a: [hx - U(15), hy - U(15)],
+        b: [hx + U(15), hy + U(15)],
+        c: col,
+        w: thin,
+      });
+    else
+      line(hx, hy - U(70), hx, hy + U(70), {
+        w: pwFor(4),
+        c: hnd === "black" ? "#111111" : "#777777",
+      });
+  };
+  const door = (dx, dw, dTop, dBot, hinge, kind) => {
+    rect(dx, dTop, dw, dBot - dTop, {
+      w: thin,
+      fill: kind === "mirror" ? "#e3edf1" : undefined,
+      fa: 0.7,
+    });
     /* the hinge side: lines from the hinge-side corners to the middle of the other side */
     if (hinge) {
       const hx = hinge === "L" ? dx : dx + dw,
@@ -200,47 +375,100 @@ function cbDraw(sp, api) {
       line(hx, dTop, ox, (dTop + dBot) / 2, { dash: 1 });
       line(hx, dBot, ox, (dTop + dBot) / 2, { dash: 1 });
     }
-  };
-  if (sp.doors !== "sliding")
-    bx.forEach(([bxx, bw], i) => {
-      const dt = cbBayDoor(sp, P.bays[i]);
-      if (dt === "hinged" || dt === "glass") {
-        door(x1 + bxx - T / 2 + U(1.5), bw + T - U(3), i % 2 ? "R" : "L");
-        if (dt === "glass") {
-          /* the glass, with glazing bars */
-          const gx = x1 + bxx - T / 2 + U(72),
-            gw = bw + T - U(144),
-            gt = dTop + U(70),
-            gh = dBot - dTop - U(140);
-          rect(gx, gt, gw, gh, { w: thin, fill: "#dcecf2" });
-          line(gx + gw / 2, gt, gx + gw / 2, gt + gh, { w: thin });
+    if (kind === "glass") {
+      /* the glass, with glazing bars */
+      const gx = dx + U(70),
+        gw = dw - U(140),
+        gt = dTop + U(70),
+        gh = dBot - dTop - U(140);
+      if (gw > 0 && gh > 0) {
+        rect(gx, gt, gw, gh, { w: thin, fill: "#dcecf2" });
+        line(gx + gw / 2, gt, gx + gw / 2, gt + gh, { w: thin });
+        if (gh > U(900))
           [1, 2].forEach((k) =>
             line(gx, gt + (gh * k) / 3, gx + gw, gt + (gh * k) / 3, { w: thin }),
           );
-        }
-      } else if (dt === "pairs") {
-        const hw = (bw + T) / 2 - U(3);
-        door(x1 + bxx - T / 2 + U(1.5), hw, "L");
-        door(x1 + bxx - T / 2 + U(1.5) + hw + U(3), hw, "R");
-      } else rect(x1 + bxx, y1 + T, bw, H - PL - 2 * T, { w: thin });
+      }
+    }
+    if (kind === "mirror")
+      [0.2, 0.32].forEach((f) =>
+        line(
+          dx + dw * 0.15,
+          dTop + (dBot - dTop) * (f + 0.12),
+          dx + dw * 0.15 + (dBot - dTop) * 0.12,
+          dTop + (dBot - dTop) * f,
+          { w: thin, c: "#7fa6b5" },
+        ),
+      );
+    /* the handle on the opening side: about 1050 up on a tall door, near the bottom of a high one, else the middle */
+    if (hinge) {
+      const hx = hinge === "L" ? dx + dw - U(45) : dx + U(45);
+      const tall = dBot - dTop > U(1200);
+      const high = dBot < fy(1500);
+      handleAt(
+        hx,
+        tall
+          ? Math.min(Math.max(fy(1050), dTop + U(120)), dBot - U(120))
+          : high
+            ? dBot - U(110)
+            : (dTop + dBot) / 2,
+      );
+    }
+  };
+  if (sp.doors !== "sliding")
+    bx.forEach(([bxx, bw], i) => {
+      const b = P.bays[i],
+        dt = cbBayDoor(sp, b);
+      const dx = x1 + bxx - T / 2 + U(1.5),
+        dw = bw + T - U(3);
+      if (dt === "none") rect(x1 + bxx, y1 + T, bw, H - PL - 2 * T, { w: thin });
+      else
+        b.L.zones.forEach((z) => {
+          const zt = fy(z.y1) + U(1.5),
+            zb = fy(z.y0) - U(1.5);
+          if (dt === "pairs") {
+            const hw = (bw + T) / 2 - U(3);
+            door(dx, hw, zt, zb, "L");
+            door(dx + hw + U(3), hw, zt, zb, "R");
+          } else door(dx, dw, zt, zb, i % 2 ? "R" : "L", dt);
+        });
+      /* the open parts of a dressing table or a cupboard-below-and-above show from the front */
+      if (b.k === "desk" || b.k === "basewall") {
+        b.L.fixed.forEach((f) =>
+          rect(x1 + bxx, fy(f.y) - U(P.sht) / 2, bw, U(P.sht), { w: thin, fill: "#e6e6e6" }),
+        );
+        if (b.k === "desk")
+          b.L.drawers.forEach((d) => {
+            rect(x1 + bxx + U(1.5), fy(d.y + d.h) + U(1.5), bw - U(3), U(d.h) - U(3), { w: thin });
+            handleAt(x1 + bxx + bw / 2, fy(d.y + d.h / 2));
+          });
+      }
     });
   if (sp.doors === "sliding") {
     const np = Math.max(2, Math.min(4, P.n)),
       pw = (W - 2 * T) / np;
+    const dTop = y1 + U(1.5),
+      dBot = y1 + H - PL - U(1.5);
     for (let i = 0; i < np; i++) {
       rect(
         x1 + T + i * pw - (i ? U(20) : 0),
         dTop + U(20),
         pw + (i ? U(20) : 0),
         dBot - dTop - U(40),
-        { w: thin },
+        {
+          w: thin,
+          fill: sp.slideMirror ? "#e3edf1" : undefined,
+          fa: 0.7,
+        },
       );
       line(
         x1 + T + i * pw + pw / 2 - U(150),
         (dTop + dBot) / 2,
         x1 + T + i * pw + pw / 2 + U(150),
         (dTop + dBot) / 2,
-        { arrow: 1 },
+        {
+          arrow: 1,
+        },
       );
     }
   }
@@ -283,43 +511,34 @@ function cbDraw(sp, api) {
   const iTop = y2 + T,
     iBot = y2 + H - PL - T,
     IH = iBot - iTop;
+  /* mm up from the floor → the page, for the inside view */
+  const iy = (yy) => y2 + H - U(yy);
+  const ST = U(P.sht);
   P.bays.forEach((b, i) => {
     const [bxx, bw] = bx[i];
     const lx = x2 + bxx;
+    const L = b.L;
     if (i < P.n - 1) rect(lx + bw, iTop, T, IH, { w: thin });
-    let floor = iBot;
-    /* drawers stack from the bottom */
-    for (let k = 0; k < (b.d || 0); k++) {
-      const dh = U(P.drH);
-      rect(lx + U(1.5), floor - dh + U(1.5), bw - U(3), dh - U(3), { w: thin });
-      line(lx + bw / 2 - U(60), floor - dh / 2, lx + bw / 2 + U(60), floor - dh / 2, {
-        w: pwFor(4),
-      });
-      floor -= dh;
-    }
-    const space = floor - iTop;
-    const shelves = (y0, y1, count) => {
-      for (let k = 1; k <= count; k++) {
-        const yy = y0 + ((y1 - y0) * k) / (count + 1);
-        rect(lx, yy - T / 2, bw, T, { w: thin });
-      }
-    };
-    const rail = (yy) => {
-      line(lx + U(30), yy, lx + bw - U(30), yy, { w: pwFor(6) });
-      text(lx + U(40), yy - U(40), "rail", 0.7);
-    };
-    if (b.k === "shelves" || b.k === "drawers") shelves(iTop, floor, b.s || 0);
-    else {
-      /* hanging: a hat shelf 300 down, one rail under it (or two, the second halfway) */
-      const hat = iTop + U(300);
-      rect(lx, hat - T / 2, bw, T, { w: thin });
-      rail(hat + U(60));
-      if (b.k === "hang2") {
-        const mid = hat + (floor - hat) / 2;
-        rect(lx, mid - T / 2, bw, T, { w: thin });
-        rail(mid + U(60));
-      }
-    }
+    L.drawers.forEach((d) => {
+      const dt = iy(d.y + d.h),
+        db = iy(d.y);
+      rect(lx + U(1.5), dt + U(1.5), bw - U(3), db - dt - U(3), { w: thin });
+      line(lx + bw / 2 - U(60), (dt + db) / 2, lx + bw / 2 + U(60), (dt + db) / 2, { w: pwFor(4) });
+    });
+    L.shelves.forEach((y) => rect(lx, iy(y) - ST / 2, bw, ST, { w: thin }));
+    L.fixed.forEach((f) => rect(lx, iy(f.y) - ST / 2, bw, ST, { w: thin, fill: "#e6e6e6" }));
+    L.rails.forEach((y) => {
+      line(lx + U(30), iy(y), lx + bw - U(30), iy(y), { w: pwFor(6) });
+      text(lx + U(40), iy(y) - U(40), "rail " + Math.round(y), 0.7);
+    });
+    L.labels.forEach((l) => text(lx + U(40), iy(l.y), l.s, 0.7));
+    /* hand-set shelves: their heights from the floor */
+    if (String(b.sh || "").trim())
+      L.shelves.forEach((y) =>
+        text(lx + bw - U(40) - Z * 2.2, iy(y) - ST, String(Math.round(y)), 0.6),
+      );
+    const last = L.drawers[L.drawers.length - 1];
+    const floor = iy(last ? last.y + last.h : P.iB);
     /* fittings */
     if (b.shoe)
       for (let k = 0; k < 3; k++)
@@ -334,8 +553,7 @@ function cbDraw(sp, api) {
         dash: 1,
       });
     objs.push(mkDim([lx, y2], [lx + bw, y2], -dimSize() * 1.6));
-    text(lx + U(40), iBot - U(60) - (b.d || 0) * U(P.drH), String(i + 1), 0.8);
-    void space;
+    text(lx + U(40), floor - U(60), String(i + 1), 0.8);
   });
   objs.push(
     mkDim([x2, y2 + H], [x2 + W, y2 + H], dimSize() * 2.4),
@@ -397,7 +615,21 @@ function cbDraw(sp, api) {
     `${sp.name || "Cupboard"} – ${sp.W} wide × ${sp.H} high × ${sp.D} deep. Boards ${t} mm${sp.bt ? `, back ${sp.bt} mm` : ""}${sp.plinth ? `, plinth ${sp.plinth} mm` : ""}.`,
     1,
   );
-  let yy = yt + Z * 2;
+  /* boards, edging, colours and handles */
+  {
+    const cn = (c) => (c ? (CB3_COLS.find((x) => x[0] === c) || [c, c])[1] : "");
+    const bits = [
+      `Doors and fronts ${P.dt} mm, shelves ${P.sht} mm`,
+      sp.edge || "",
+      sp.colCar ? "carcass " + cn(sp.colCar).toLowerCase() : "",
+      sp.colDoor ? "doors " + cn(sp.colDoor).toLowerCase() : "",
+      sp.colTop ? "shelves and top " + cn(sp.colTop).toLowerCase() : "",
+      (CB_HANDLES.find((h) => h[0] === (sp.handle || "bar")) || ["", ""])[1].toLowerCase(),
+      sp.slideMirror && sp.doors === "sliding" ? "mirror sliding doors" : "",
+    ].filter(Boolean);
+    text(x1, yt + Z * 1.3, bits.join(" · ") + ".", 0.8);
+  }
+  let yy = yt + Z * 3.2;
   text(x1, yy, "CUTTING LIST (length × width × thickness, mm)", 1);
   const half = P.cut.length > 9 ? Math.ceil(P.cut.length / 2) : P.cut.length;
   const y0c = yy;
@@ -417,12 +649,30 @@ function cbDraw(sp, api) {
 function cbMakeDialog(api) {
   const last = api.last || {};
   const v = (k, d) => (last[k] != null ? last[k] : d);
+  if (last.kind === "chimney" && last.aL) {
+    last.W = last.aL;
+    last.wB = last.aR;
+  }
   if (last.open) {
     last.W = last.open;
     last.H = last.Hopen || last.H;
   }
   const bayRow = (i, b) =>
-    `<div class="cb2-bay" data-i="${i}"><b>Bay ${i + 1}</b><select class="cb2-k" aria-label="Bay ${i + 1}: what's in it">${CB_BAYS.map(([k, l]) => `<option value="${k}"${k === b.k ? " selected" : ""}>${l}</option>`).join("")}</select><label>Shelves<input class="cb2-s" type="number" inputmode="numeric" min="0" max="12" value="${b.s}"></label><label>Drawers<input class="cb2-d" type="number" inputmode="numeric" min="0" max="8" value="${b.d}"></label><select class="cb2-dr" aria-label="Bay ${i + 1}: doors">${CB_BAYDOORS.map(([k, l]) => `<option value="${k}"${k === (b.door || "") ? " selected" : ""}>${l}</option>`).join("")}</select><span class="cb2-fit"><label class="inl"><input type="checkbox" class="cb2-shoe"${b.shoe ? " checked" : ""}> Shoe rack</label><label class="inl"><input type="checkbox" class="cb2-tr"${b.trouser ? " checked" : ""}> Trouser pull-out</label><label class="inl"><input type="checkbox" class="cb2-led"${b.led ? " checked" : ""}> LED light</label></span></div>`;
+    `<div class="cb2-bay" data-i="${i}"><b>Bay ${i + 1}</b><select class="cb2-k" aria-label="Bay ${i + 1}: what's in it">${CB_BAYS.map(([k, l]) => `<option value="${k}"${k === b.k ? " selected" : ""}>${l}</option>`).join("")}</select><label>Shelves<input class="cb2-s" type="number" inputmode="numeric" min="0" max="12" value="${b.s}"></label><label>Drawers<input class="cb2-d" type="number" inputmode="numeric" min="0" max="8" value="${b.d}"></label><select class="cb2-dr" aria-label="Bay ${i + 1}: doors">${CB_BAYDOORS.map(([k, l]) => `<option value="${k}"${k === (b.door || "") ? " selected" : ""}>${l}</option>`).join("")}</select><span class="cb2-fit"><label class="inl"><input type="checkbox" class="cb2-shoe"${b.shoe ? " checked" : ""}> Shoe rack</label><label class="inl"><input type="checkbox" class="cb2-tr"${b.trouser ? " checked" : ""}> Trouser pull-out</label><label class="inl"><input type="checkbox" class="cb2-led"${b.led ? " checked" : ""}> LED light</label></span><details class="cb2-adj"${b.w || b.sh || b.dh || b.rail || b.top ? " open" : ""}><summary>Adjust this bay</summary><div class="cb2-adjg"><label>Width inside (mm)<input class="cb2-w" type="number" inputmode="numeric" value="${b.w || ""}" placeholder="share"></label><label>Top box height (mm)<input class="cb2-tb" type="number" inputmode="numeric" value="${b.top || ""}" placeholder="none"></label><label>Drawer height (mm)<input class="cb2-dh" type="number" inputmode="numeric" value="${b.dh || ""}" placeholder="180"></label><label>Rail height from the floor (mm)<input class="cb2-rl" type="number" inputmode="numeric" value="${b.rail || ""}" placeholder="auto"></label><label class="cb2-shl">Shelf heights from the floor (mm)<input class="cb2-sh" maxlength="80" value="${esc(b.sh || "")}" placeholder="e.g. 400, 800, 1200 – or leave for even"></label></div><div class="who">A top box puts a fixed shelf and a separate door at the top. Leave a box empty to let the app work it out.</div></details></div>`;
+  const bayRead = (r) => ({
+    k: r.querySelector(".cb2-k").value,
+    s: +r.querySelector(".cb2-s").value || 0,
+    d: +r.querySelector(".cb2-d").value || 0,
+    door: r.querySelector(".cb2-dr").value,
+    shoe: r.querySelector(".cb2-shoe").checked,
+    trouser: r.querySelector(".cb2-tr").checked,
+    led: r.querySelector(".cb2-led").checked,
+    w: +r.querySelector(".cb2-w").value || 0,
+    top: +r.querySelector(".cb2-tb").value || 0,
+    dh: +r.querySelector(".cb2-dh").value || 0,
+    rail: +r.querySelector(".cb2-rl").value || 0,
+    sh: r.querySelector(".cb2-sh").value.trim(),
+  });
   const bays0 = v("bays", [
     { k: "hang1", s: 0, d: 0 },
     { k: "shelves", s: 4, d: 0 },
@@ -438,19 +688,20 @@ function cbMakeDialog(api) {
     <label for="cb2-name">Name<input id="cb2-name" maxlength="60" value="${esc(v("name", "Wardrobe"))}" placeholder="e.g. Wardrobe – bedroom 1, Alcove left of the chimney"></label>
     <div class="grid2"><label for="cb2-W"><span class="cb2-wl">Width (mm)</span><input id="cb2-W" type="number" inputmode="numeric" value="${v("W", 1800)}"></label><label for="cb2-H"><span class="cb2-hl">Height (mm)</span><input id="cb2-H" type="number" inputmode="numeric" value="${v("H", 2400)}"></label></div>
     <div class="grid2"><label for="cb2-D"><span class="cb2-dl">Depth (mm)</span><input id="cb2-D" type="number" inputmode="numeric" value="${v("D", 600)}"></label><label for="cb2-p" class="cb2-g" data-k="full alcove base corner stairs eaves bridge window seat bench tv">Plinth / kickboard height (0 = none)<input id="cb2-p" type="number" inputmode="numeric" value="${v("plinth", 100)}"></label></div>
-    <fieldset class="cb2-g od-who" data-k="corner stairs eaves bridge window seat bench tv"><legend>The shape</legend>
-      <label for="cb2-wb" class="cb2-g" data-k="corner">Second run, round the corner (mm, from the corner)<input id="cb2-wb" type="number" inputmode="numeric" value="${v("wB", 1200)}"></label>
+    <fieldset class="cb2-g od-who" data-k="corner stairs eaves bridge window seat bench tv chimney"><legend>The shape</legend>
+      <label for="cb2-cw" class="cb2-g" data-k="chimney">Chimney breast width (mm)<input id="cb2-cw" type="number" inputmode="numeric" value="${v("cw", 1200)}"></label>
+      <label for="cb2-wb" class="cb2-g" data-k="corner chimney"><span class="cb2-wbl">Second run, round the corner (mm, from the corner)</span><input id="cb2-wb" type="number" inputmode="numeric" value="${v("wB", 1200)}"></label>
       <label for="cb2-hl" class="cb2-g" data-k="stairs eaves"><span class="cb2-hll">Height at the low end (mm)</span><input id="cb2-hl" type="number" inputmode="numeric" value="${v("hLow", 900)}"></label>
       <label for="cb2-tw" class="cb2-g" data-k="bridge window tv">Tower width (mm)<input id="cb2-tw" type="number" inputmode="numeric" value="${v("tw", 500)}"></label>
       <div class="grid2"><label for="cb2-th" class="cb2-g" data-k="bridge window tv bench"><span class="cb2-thl">Unit over the top – height (mm, 0 = none)</span><input id="cb2-th" type="number" inputmode="numeric" value="${v("topH", 500)}"></label><label for="cb2-lh" class="cb2-g" data-k="window tv bench"><span class="cb2-lhl">Unit underneath – height (mm, 0 = none)</span><input id="cb2-lh" type="number" inputmode="numeric" value="${v("lowH", 450)}"></label></div>
       <label class="inl cb2-g" data-k="window"><input type="checkbox" id="cb2-rad"${v("radiator", false) ? " checked" : ""}> It's round a radiator, not a window</label>
     </fieldset>
     <label for="cb2-sc" class="cb2-g" data-k="alcove base shelves">Scribe allowance each side (mm, for uneven walls)<input id="cb2-sc" type="number" inputmode="numeric" value="${v("scribe", 10)}"></label>
-    <fieldset class="cb2-g od-who" data-k="alcove base"><legend>The cupboard at the bottom</legend>
+    <fieldset class="cb2-g od-who" data-k="alcove base chimney"><legend>The cupboard at the bottom</legend>
       <div class="grid2"><label for="cb2-bh">Height to the top of the worktop (mm)<input id="cb2-bh" type="number" inputmode="numeric" value="${v("baseH", 800)}"></label><label for="cb2-tt">Top thickness (mm, 0 = no top)<input id="cb2-tt" type="number" inputmode="numeric" value="${v("topT", 30)}"></label></div>
       <label for="cb2-to">Top overhang at the front (mm)<input id="cb2-to" type="number" inputmode="numeric" value="${v("topOver", 20)}"></label>
     </fieldset>
-    <fieldset class="cb2-g od-who" data-k="alcove shelves"><legend>The shelves</legend>
+    <fieldset class="cb2-g od-who" data-k="alcove shelves chimney"><legend>The shelves</legend>
       <div class="grid2"><label for="cb2-sn">How many shelves<input id="cb2-sn" type="number" inputmode="numeric" min="0" max="12" value="${v("shelfN", 4)}"></label><label for="cb2-ss">Fixed<select id="cb2-ss"><option value="floating"${v("shelfStyle", "floating") === "floating" ? " selected" : ""}>Floating – on battens to the walls</option><option value="framed"${v("shelfStyle", "floating") === "framed" ? " selected" : ""}>In a frame (two sides and a top)</option></select></label></div>
       <div class="grid2"><label for="cb2-sd">Shelf depth (mm)<input id="cb2-sd" type="number" inputmode="numeric" value="${v("shelfD", 250)}"></label><label for="cb2-st">Shelf thickness (mm)<input id="cb2-st" type="number" inputmode="numeric" value="${v("shelfT", 30)}"></label></div>
       <label for="cb2-sg">Gaps between shelves (optional)<input id="cb2-sg" maxlength="60" value="${esc(v("shelfGaps", ""))}" placeholder="e.g. 400, 350, 300 – or leave for even spacing"></label>
@@ -463,7 +714,14 @@ function cbMakeDialog(api) {
       <div class="who">Width and height above are the whole opening. The fillers, end panels and cornice come off them, and the narrower end of an out-of-square opening is used, with the fillers scribed to fit.</div>
     </fieldset>
     <div class="cb2-g" data-k="full alcove base corner stairs eaves bridge window seat bench tv">
-    <div class="grid2"><label for="cb2-t">Board thickness (mm)<input id="cb2-t" type="number" inputmode="numeric" value="${v("t", 18)}"></label><label for="cb2-bt">Back panel thickness (0 = no back)<input id="cb2-bt" type="number" inputmode="numeric" value="${v("bt", 6)}"></label></div>
+    <details class="cb2-fin"${last.colDoor || last.edge || last.dt ? " open" : ""}><summary>Boards, edging, colours and handles</summary>
+    <div class="grid2"><label for="cb2-t">Carcass board thickness (mm)<input id="cb2-t" type="number" inputmode="numeric" value="${v("t", 18)}"></label><label for="cb2-bt">Back panel thickness (0 = no back)<input id="cb2-bt" type="number" inputmode="numeric" value="${v("bt", 6)}"></label></div>
+    <div class="grid2"><label for="cb2-dt">Doors and drawer fronts (mm)<input id="cb2-dt" type="number" inputmode="numeric" value="${v("dt", "")}" placeholder="same as the carcass"></label><label for="cb2-sht">Shelves (mm)<input id="cb2-sht" type="number" inputmode="numeric" value="${v("sht", "")}" placeholder="same as the carcass"></label></div>
+    <div class="grid2"><label for="cb2-bf">Back panel fixed<select id="cb2-bf"><option value="groove"${v("backFix", "groove") === "groove" ? " selected" : ""}>Into a groove</option><option value="pinned"${v("backFix", "") === "pinned" ? " selected" : ""}>Pinned and glued on</option><option value="screwed"${v("backFix", "") === "screwed" ? " selected" : ""}>Screwed on</option></select></label><label for="cb2-edge">Edging<select id="cb2-edge">${CB_EDGES.map(([k, l]) => `<option value="${k}"${k === v("edge", CB_EDGES[0][0]) ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
+    <div class="grid2"><label for="cb2-cc">Carcass colour<select id="cb2-cc"><option value="">Not chosen</option>${CB3_COLS.map(([k, l]) => `<option value="${k}"${k === v("colCar", "") ? " selected" : ""}>${l}</option>`).join("")}</select></label><label for="cb2-cd">Door colour<select id="cb2-cd"><option value="">Not chosen</option>${CB3_COLS.map(([k, l]) => `<option value="${k}"${k === v("colDoor", "") ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
+    <div class="grid2"><label for="cb2-ct">Shelves and top colour<select id="cb2-ct"><option value="">Not chosen</option>${CB3_COLS.map(([k, l]) => `<option value="${k}"${k === v("colTop", "") ? " selected" : ""}>${l}</option>`).join("")}</select></label><label for="cb2-hd">Handles<select id="cb2-hd">${CB_HANDLES.map(([k, l]) => `<option value="${k}"${k === v("handle", "bar") ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
+    <label class="inl"><input type="checkbox" id="cb2-sm"${v("slideMirror", false) ? " checked" : ""}> Mirror sliding doors</label>
+    <div class="who">The colours and handles go on the drawing and are the starting choice in the 🎨 3D view.</div></details>
     <label for="cb2-doors">Doors<select id="cb2-doors">${CB_DOORS.map(([k, l]) => `<option value="${k}"${k === v("doors", "hinged") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
     <div class="grid2"><label for="cb2-n">How many bays (sections)<input id="cb2-n" type="number" inputmode="numeric" min="1" max="8" value="${bays0.length}"></label><label for="cb2-ws">Bay widths inside (optional)<input id="cb2-ws" maxlength="60" value="${esc(v("widths", ""))}" placeholder="e.g. 1000, 728 – or leave for equal"></label></div>
     <div id="cb2-bays">${bays0.map((b, i) => bayRow(i, b)).join("")}</div></div>
@@ -496,18 +754,19 @@ function cbMakeDialog(api) {
         plinth: Math.max(0, num("cb2-p", 0)),
         t: Math.max(6, num("cb2-t", 18)),
         bt: Math.max(0, num("cb2-bt", 0)),
+        dt: num("cb2-dt", 0) > 0 ? Math.max(6, num("cb2-dt", 0)) : "",
+        sht: num("cb2-sht", 0) > 0 ? Math.max(6, num("cb2-sht", 0)) : "",
+        backFix: $("cb2-bf").value,
+        edge: $("cb2-edge").value,
+        colCar: $("cb2-cc").value,
+        colDoor: $("cb2-cd").value,
+        colTop: $("cb2-ct").value,
+        handle: $("cb2-hd").value,
+        slideMirror: $("cb2-sm").checked,
         doors: $("cb2-doors").value,
         n: Math.max(1, Math.min(8, num("cb2-n", 1))),
         widths: $("cb2-ws").value.trim(),
-        bays: [...document.querySelectorAll(".cb2-bay")].map((r) => ({
-          k: r.querySelector(".cb2-k").value,
-          s: +r.querySelector(".cb2-s").value || 0,
-          d: +r.querySelector(".cb2-d").value || 0,
-          door: r.querySelector(".cb2-dr").value,
-          shoe: r.querySelector(".cb2-shoe").checked,
-          trouser: r.querySelector(".cb2-tr").checked,
-          led: r.querySelector(".cb2-led").checked,
-        })),
+        bays: [...document.querySelectorAll(".cb2-bay")].map(bayRead),
       };
       /* a wardrobe: the opening less the fillers, end panels and cornice is the carcass */
       if (sp.kind === "full") {
@@ -525,6 +784,12 @@ function cbMakeDialog(api) {
         sp.W = narrow - sp.fillL - sp.fillR - (sp.endL ? sp.t : 0) - (sp.endR ? sp.t : 0);
         sp.H = sp.H - sp.cornice;
       }
+      if (sp.kind === "chimney") {
+        sp.aL = sp.W;
+        sp.aR = sp.wB;
+        sp.cw = Math.max(200, num("cb2-cw", 1200));
+        sp.W = sp.aL + sp.cw + sp.aR;
+      }
       if (sp.kind === "shelves") sp.plinth = 0;
       if (cbaHasBase(sp) && (sp.baseH < 300 || sp.baseH > sp.H))
         return showErr("The cupboard at the bottom must be lower than the whole height.");
@@ -539,15 +804,7 @@ function cbMakeDialog(api) {
   );
   const sync = () => {
     const n = Math.max(1, Math.min(8, +$("cb2-n").value || 1));
-    const cur = [...document.querySelectorAll(".cb2-bay")].map((r) => ({
-      k: r.querySelector(".cb2-k").value,
-      s: +r.querySelector(".cb2-s").value || 0,
-      d: +r.querySelector(".cb2-d").value || 0,
-      door: r.querySelector(".cb2-dr").value,
-      shoe: r.querySelector(".cb2-shoe").checked,
-      trouser: r.querySelector(".cb2-tr").checked,
-      led: r.querySelector(".cb2-led").checked,
-    }));
+    const cur = [...document.querySelectorAll(".cb2-bay")].map(bayRead);
     while (cur.length < n) cur.push({ k: "shelves", s: 4, d: 0 });
     $("cb2-bays").innerHTML = cur
       .slice(0, n)
@@ -585,6 +842,11 @@ function cbMakeDialog(api) {
     } else if (k === "tv")
       document.querySelector(".cb2-lhl").textContent = "Media unit – height (mm)";
     if (k === "seat") document.querySelector(".cb2-hl").textContent = "Seat height (mm)";
+    if (k === "chimney") document.querySelector(".cb2-wl").textContent = "Left alcove width (mm)";
+    document.querySelector(".cb2-wbl").textContent =
+      k === "chimney"
+        ? "Right alcove width (mm)"
+        : "Second run, round the corner (mm, from the corner)";
   };
   $("cb2-kind").onchange = () => {
     const k = $("cb2-kind").value;
@@ -601,12 +863,13 @@ function cbMakeDialog(api) {
       seat: [450, 450, "Window seat"],
       bench: [400, 2100, "Boot room bench"],
       tv: [450, 2400, "TV wall"],
+      chimney: [350, 2400, "Chimney alcoves"],
     }[k];
     $("cb2-D").value = d[0];
     $("cb2-H").value = d[1];
     if (
       !$("cb2-name").value ||
-      /^(Wardrobe|Alcove unit|Base cupboard|Shelves|Corner wardrobe|Under-stairs cupboard|Eaves storage|Bedroom wall|Window surround|Window seat|Boot room bench|TV wall)$/.test(
+      /^(Wardrobe|Alcove unit|Base cupboard|Shelves|Corner wardrobe|Under-stairs cupboard|Eaves storage|Bedroom wall|Window surround|Window seat|Boot room bench|TV wall|Chimney alcoves)$/.test(
         $("cb2-name").value,
       )
     )

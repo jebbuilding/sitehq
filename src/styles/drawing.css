@@ -86,3 +86,6 @@ body>.dimask.cb3-sg{z-index:320}
 .cb2-pics{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:6px 0 10px}
 .cb2-pic{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:96px;padding:8px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer}
 .cb2-pic[aria-checked="true"]{border:2px solid var(--accent);background:var(--soft);color:var(--accent)}
+.cb2-adj{grid-column:1/-1}.cb2-adj summary,.cb2-fin summary{cursor:pointer;font-weight:700;color:var(--accent);min-height:36px;display:flex;align-items:center}
+.cb2-adjg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.cb2-adjg .cb2-shl{grid-column:1/-1}
+.cb2-fin{border:1px solid var(--line);border-radius:12px;padding:4px 12px 10px;margin:6px 0}

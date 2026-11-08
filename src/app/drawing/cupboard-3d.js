@@ -12,7 +12,7 @@ import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { jfSave } from "../sales/job-file.js";
-export { cb3Model, cb3Open, shadeHex };
+export { CB3_COLS, cb3Model, cb3Open, shadeHex };
 /* From the sizes on a cupboard page (🗄️ Cupboards): the carcass, plinth, back, divisions, shelves, rails, drawers and
    doors are built as boxes in millimetres and drawn in perspective with light and shade on a canvas – no outside
    library. Turn it with the slider and open the doors to see inside. Change the door type (hinged, pairs, sliding,
@@ -78,115 +78,144 @@ function cb3Model(sp, look, open) {
       x += t;
     }
   });
-  /* inside each bay */
-  const iBot = PL + t,
-    iTop = H - t,
-    dep0 = bt,
+  /* inside each bay: drawers, shelves, fixed shelves, rails – from the bay's layout (cupboard-maker.js) */
+  const dep0 = bt,
     dep1 = D - (look.type === "sliding" ? 90 : 25);
+  const shelfC = look.shelf || car;
+  const dT = P.dt || t;
+  /* a bay with doors over it hides its inside; open bays, desks and open middles always show */
+  const perBay0 = look.type === (sp.doors || "hinged") && look.type !== "sliding";
+  const shut = (b) =>
+    !sp.openUnit &&
+    b.k !== "desk" &&
+    b.k !== "basewall" &&
+    (look.type === "sliding" ||
+      ((look.type === "hinged" || look.type === "pairs") &&
+        (!perBay0 || cbBayDoor(sp, b) !== "none")));
   P.bays.forEach((b, i) => {
     const [x0, x1] = bx[i];
-    let floor = iBot;
-    for (let k = 0; k < (b.d || 0); k++) {
-      const dh = P.drH;
-      box(x0 + 2, floor + 2, dep1 - t, x1 - 2, floor + dh - 2, dep1, doorC, { inner: 1 });
-      box(
-        (x0 + x1) / 2 - 50,
-        floor + dh / 2 - 6,
-        dep1,
-        (x0 + x1) / 2 + 50,
-        floor + dh / 2 + 6,
-        dep1 + 18,
-        steel,
-        { inner: 1 },
-      );
-      floor += dh;
-    }
-    const shelf = (y) => box(x0, y - t / 2, dep0, x1, y + t / 2, dep1 - 10, car, { inner: 1 });
-    const rail = (y) =>
-      box(x0 + 4, y - 9, (D - 20) / 2 - 8, x1 - 4, y + 9, (D - 20) / 2 + 8, steel, { inner: 1 });
-    if (b.k === "shelves" || b.k === "drawers") {
-      const n = b.s || 0;
-      for (let k = 1; k <= n; k++) shelf(floor + ((iTop - floor) * k) / (n + 1));
-    } else {
-      const hat = iTop - 300;
-      shelf(hat);
-      rail(hat - 60);
-      if (b.k === "hang2") {
-        const mid = floor + (hat - floor) / 2;
-        shelf(mid);
-        rail(mid - 60);
-      }
-    }
+    const L = b.L;
+    const inn = shut(b) ? 1 : 0;
+    const front = b.k === "desk";
+    L.drawers.forEach((d) => {
+      const z1 = front ? D : dep1;
+      box(x0 + 2, d.y + 2, z1 - dT, x1 - 2, d.y + d.h - 2, z1, doorC, {
+        inner: front ? 0 : inn,
+        top: front ? 0.5 : 0,
+      });
+      if (look.handle !== "none")
+        box(
+          (x0 + x1) / 2 - 50,
+          d.y + d.h / 2 - 6,
+          z1,
+          (x0 + x1) / 2 + 50,
+          d.y + d.h / 2 + 6,
+          z1 + 18,
+          look.handle === "black" ? "#222222" : steel,
+          {
+            inner: front ? 0 : inn,
+            top: front ? 1 : 0,
+          },
+        );
+    });
+    const shelf = (y, full) =>
+      box(x0, y - P.sht / 2, dep0, x1, y + P.sht / 2, full ? D : dep1 - 10, shelfC, {
+        inner: full ? 0 : inn,
+        top: full ? 0.5 : 0,
+      });
+    L.shelves.forEach((y) => shelf(y));
+    L.fixed.forEach((f) => shelf(f.y, front && /Desk/.test(f.part)));
+    L.rails.forEach((y) =>
+      box(x0 + 4, y - 9, (D - 20) / 2 - 8, x1 - 4, y + 9, (D - 20) / 2 + 8, steel, { inner: inn }),
+    );
   });
   /* doors */
   const gap = 3,
     dy0 = PL + 1.5,
     dy1 = H - 1.5;
-  const style0 = look.style,
-    th = t;
-  const handle = (hx, cy, z, rot, side) => {
+  const th = dT;
+  const handle = (hx, cy, z, rot, ya, yb) => {
     if (look.handle === "none") return;
     const c = look.handle === "black" ? "#222222" : steel;
-    const len = dy1 - dy0 > 1200 ? 320 : 160;
+    const len = yb - ya > 1200 ? 320 : 160;
     if (look.handle === "knob")
       box(hx - 14, cy - 14, z, hx + 14, cy + 14, z + 28, c, { rot, top: 1 });
     else box(hx - 7, cy - len / 2, z + 8, hx + 7, cy + len / 2, z + 26, c, { rot, top: 1 });
-    void side;
   };
-  /* a door leaf from x0 to x1 at the front (z D..D+th), turned about its hinge by `rot` */
-  const leaf = (x0, x1, z0, rot, hingeL, st) => {
+  /* a door leaf from x0 to x1 and ya to yb at the front (z D..D+th), turned about its hinge by `rot` */
+  const leaf = (x0, x1, z0, rot, hingeL, st, ya, yb) => {
+    ya = ya == null ? dy0 : ya;
+    yb = yb == null ? dy1 : yb;
     const style = st || look.style;
     const z1 = z0 + th;
     const fc = style === "mirror" ? "#cfd8dc" : doorC;
     if (style === "glass") {
       const f = 70;
-      box(x0, dy0, z0, x0 + f, dy1, z1, fc, { rot, top: 0.5 });
-      box(x1 - f, dy0, z0, x1, dy1, z1, fc, { rot, top: 0.5 });
-      box(x0 + f, dy1 - f, z0, x1 - f, dy1, z1, fc, { rot, top: 0.5 });
-      box(x0 + f, dy0, z0, x1 - f, dy0 + f, z1, fc, { rot, top: 0.5 });
-      box(x0 + f, dy0 + f, z0 + th / 2 - 2, x1 - f, dy1 - f, z0 + th / 2 + 2, "#bcd6dd", {
+      box(x0, ya, z0, x0 + f, yb, z1, fc, { rot, top: 0.5 });
+      box(x1 - f, ya, z0, x1, yb, z1, fc, { rot, top: 0.5 });
+      box(x0 + f, yb - f, z0, x1 - f, yb, z1, fc, { rot, top: 0.5 });
+      box(x0 + f, ya, z0, x1 - f, ya + f, z1, fc, { rot, top: 0.5 });
+      box(x0 + f, ya + f, z0 + th / 2 - 2, x1 - f, yb - f, z0 + th / 2 + 2, "#bcd6dd", {
         rot,
         glass: 1,
       });
     } else {
-      box(x0, dy0, z0, x1, dy1, z1, fc, { rot, top: 0.5, mirror: style === "mirror" ? 1 : 0 });
+      box(x0, ya, z0, x1, yb, z1, fc, { rot, top: 0.5, mirror: style === "mirror" ? 1 : 0 });
       if (style === "shaker") {
-        const f = 70,
+        const f = Math.min(70, (yb - ya) / 4),
           zf = z1,
           zz = z1 + 5;
-        box(x0, dy0, zf, x0 + f, dy1, zz, fc, { rot, top: 0.5 });
-        box(x1 - f, dy0, zf, x1, dy1, zz, fc, { rot, top: 0.5 });
-        box(x0 + f, dy1 - f, zf, x1 - f, dy1, zz, fc, { rot, top: 0.5 });
-        box(x0 + f, dy0, zf, x1 - f, dy0 + f, zz, fc, { rot, top: 0.5 });
-        const mid = dy0 + (dy1 - dy0) * 0.55;
-        if (dy1 - dy0 > 1400)
+        box(x0, ya, zf, x0 + f, yb, zz, fc, { rot, top: 0.5 });
+        box(x1 - f, ya, zf, x1, yb, zz, fc, { rot, top: 0.5 });
+        box(x0 + f, yb - f, zf, x1 - f, yb, zz, fc, { rot, top: 0.5 });
+        box(x0 + f, ya, zf, x1 - f, ya + f, zz, fc, { rot, top: 0.5 });
+        const mid = ya + (yb - ya) * 0.55;
+        if (yb - ya > 1400)
           box(x0 + f, mid - f / 2, zf, x1 - f, mid + f / 2, zz, fc, { rot, top: 0.5 });
       }
     }
     const hx = hingeL ? x1 - 45 : x0 + 45;
-    handle(hx, Math.min(1050, (dy0 + dy1) / 2), z1 + (style === "shaker" ? 5 : 0), rot, hingeL);
+    const hy =
+      yb - ya > 1200 ? Math.min(1050, (ya + yb) / 2) : ya > 1500 ? ya + 110 : (ya + yb) / 2;
+    handle(hx, hy, z1 + (style === "shaker" ? 5 : 0), rot, ya, yb);
   };
   const type = look.type;
   /* each bay's own doors, unless a different door type was picked here */
   const perBay = type === (sp.doors || "hinged") && type !== "sliding";
-  if (type === "hinged" || type === "pairs") {
+  if (sp.openUnit) {
+    /* an open unit in a shape (shelves, cubbies) never gets doors */
+  } else if (type === "hinged" || type === "pairs") {
     bx.forEach(([x0, x1], i) => {
-      const bd = perBay ? cbBayDoor(sp, P.bays[i]) : type;
+      const b = P.bays[i];
+      const bd = perBay ? cbBayDoor(sp, b) : type;
       if (bd === "none") return;
       const a = x0 - t / 2 + gap / 2,
         b2 = x1 + t / 2 - gap / 2;
       const L0 = i === 0 ? 0 + gap / 2 : a,
         L1 = i === bx.length - 1 ? W - gap / 2 : b2;
-      const leaves =
-        bd === "pairs"
-          ? [
-              [L0, (L0 + L1) / 2 - gap / 2, true],
-              [(L0 + L1) / 2 + gap / 2, L1, false],
-            ]
-          : [[L0, L1, i % 2 === 0]];
-      leaves.forEach(([u0, u1, hl]) => {
-        const rot = open ? { px: hl ? u0 : u1, pz: D, a: hl ? -1.75 : 1.75 } : null;
-        leaf(u0, u1, D, rot, hl, bd === "glass" ? "glass" : null);
+      b.L.zones.forEach((z) => {
+        const ya = z.y0 + 1.5,
+          yb = z.y1 - 1.5;
+        const leaves =
+          bd === "pairs"
+            ? [
+                [L0, (L0 + L1) / 2 - gap / 2, true],
+                [(L0 + L1) / 2 + gap / 2, L1, false],
+              ]
+            : [[L0, L1, i % 2 === 0]];
+        leaves.forEach(([u0, u1, hl]) => {
+          const rot = open ? { px: hl ? u0 : u1, pz: D, a: hl ? -1.75 : 1.75 } : null;
+          leaf(
+            u0,
+            u1,
+            D,
+            rot,
+            hl,
+            bd === "glass" ? "glass" : bd === "mirror" ? "mirror" : null,
+            ya,
+            yb,
+          );
+        });
       });
     });
   } else if (type === "sliding") {
@@ -420,11 +449,12 @@ function cb3Open(sp, look0, onLook, meta) {
   const look = Object.assign(
     {
       type: sp.doors && sp.doors !== "none" ? sp.doors : "hinged",
-      style: "slab",
-      door: "#f4f4f1",
-      carcass: "#f4f4f1",
-      handle: "bar",
-      top: "#c9a477",
+      style: sp.slideMirror && sp.doors === "sliding" ? "mirror" : "slab",
+      door: sp.colDoor || "#f4f4f1",
+      carcass: sp.colCar || "#f4f4f1",
+      handle: sp.handle || "bar",
+      top: sp.colTop || "#c9a477",
+      shelf: sp.colTop || "",
     },
     look0 || {},
   );
@@ -444,7 +474,7 @@ function cb3Open(sp, look0, onLook, meta) {
       <label for="cb3-hd">Handles<select id="cb3-hd">${CB3_HANDLES.map(([k, l]) => `<option value="${k}"${k === look.handle ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       <div class="flabel">Door colour <span class="who" id="cb3-dn">${esc(cb3ColName(look.door))}</span></div>${sw("cb3-door", look.door)}
       <div class="flabel">Inside / carcass colour <span class="who" id="cb3-cn">${esc(cb3ColName(look.carcass))}</span></div>${sw("cb3-car", look.carcass)}
-      ${sp.kind && sp.kind !== "full" ? `<div class="flabel">Top and shelves colour <span class="who" id="cb3-tn">${esc(cb3ColName(look.top || "#c9a477"))}</span></div>${sw("cb3-top", look.top || "#c9a477")}` : ""}
+      <div class="flabel">${sp.kind && sp.kind !== "full" ? "Top and shelves colour" : "Shelves colour"} <span class="who" id="cb3-tn">${esc(cb3ColName(look.shelf || (sp.kind && sp.kind !== "full" ? look.top : look.carcass) || "#c9a477"))}</span></div>${sw("cb3-top", look.shelf || (sp.kind && sp.kind !== "full" ? look.top : look.carcass) || "#c9a477")}
       <div class="actions"><button type="button" class="btn" id="cb3-png">🖼️ Save picture</button><button type="button" class="btn primary" id="cb3-pdf">📄 PDF for the client</button><button type="button" class="btn" id="cb3-sign">✍️ Client sign-off</button></div>
       <div class="who">An illustration from your sizes – real colours and finishes vary.</div>
     </div></div>`;
@@ -488,6 +518,7 @@ function cb3Open(sp, look0, onLook, meta) {
           (b) =>
             (b.onclick = () => {
               look[key] = b.dataset.c;
+              if (key === "top") look.shelf = b.dataset.c;
               q(id)
                 .querySelectorAll("button")
                 .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
