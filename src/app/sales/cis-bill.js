@@ -14,7 +14,7 @@ import {
   cisSubList,
 } from "./cis-returns.js";
 import { SD_VATC, sdR2 } from "./sales-calc.js";
-export { cisBill };
+export { cisBill, cisBillCalc };
 /* From (the subbie), date, due date, their reference, amounts with or without VAT, then lines: description, qty,
    unit price, account (CIS labour, CIS materials, plant hire, other – not CIS) and tax rate (20%, 5%, reverse
    charge 20% or 5%, zero, exempt, no VAT). Totals: subtotal, VAT, total, less the CIS deduction (on the labour lines,

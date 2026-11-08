@@ -34,7 +34,7 @@ import {
 import { sdEmail } from "./sales-email.js";
 import { sdSavePdf } from "./sales-pdf.js";
 import { sdAskSign, sdEstSign, sdReceipt } from "./sales-sign.js";
-export { sdEdit, sdToInvoice };
+export { sdEdit, sdPayment, sdToInvoice };
 /* Each line: what it's for, then its amount in £ (or, with "Price by quantity", qty × unit × rate worked out into
    the amount), its VAT (standard, reduced, zero, reverse charge, exempt, no VAT) and whether it's labour, materials
    or other (CIS is only taken off labour). The page shows each line's total and the totals as they're typed: before

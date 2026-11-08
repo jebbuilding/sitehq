@@ -22,6 +22,7 @@ import {
   acTradeMatches,
   acUpdateTx,
 } from "./acct-data.js";
+import { adView } from "./acct-due.js";
 import { acExportSheet } from "./acct-export.js";
 import { acMatchWaiting, acReceipts } from "./acct-receipts.js";
 import { acRcptSheet, acRcptView } from "./acct-review.js";
@@ -50,6 +51,7 @@ function accountsView() {
   const tabs = `<div class="seg ac-tabs" id="ac-tabs">${[
     ["over", "Overview"],
     ["bank", "Bank"],
+    ["due", "💳 Paid / not paid"],
     ["rcpt", "Receipts"],
     ["sup", "Suppliers & sites"],
     ["jobs", "💷 Job costs"],
@@ -62,6 +64,7 @@ function accountsView() {
     )}</div><div class="ac-exrow"><button type="button" class="pillbtn" id="ac-csv">⬇ Export CSV (month or year)</button></div>`;
   if (tab === "bank") acBankView(tabs);
   else if (tab === "rcpt") acRcptView(tabs);
+  else if (tab === "due") adView(tabs);
   else if (tab === "sup") acSupView(tabs);
   else if (tab === "jobs") jcView(tabs);
   else acOverView(tabs);
