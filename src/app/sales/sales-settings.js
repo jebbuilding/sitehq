@@ -7,6 +7,7 @@ import { blobUrl, uploadFile } from "../files/files.js";
 import { coData } from "../owner/company-details.js";
 import { SD_VATC, sdCalc, sdNextNumber, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdParseEstimate, sdReadDocxAll } from "./sales-docx.js";
+import { SD_MAILT } from "./sales-email.js";
 export { sdImportWord, sdSettings, sdSetupCard, sdWireSetup };
 /* One sheet for everything the estimates and invoices print: the letterhead lines and logo (brought in from James's
    Word letterhead, or typed), his signature, VAT registration, number and the usual rate, numbering, payment days,
@@ -63,6 +64,14 @@ function sdSettings() {
     <div class="who">A line starting <b>#</b> is a heading, <b>##</b> a smaller heading, <b>-</b> a bullet point. Bringing in a Word estimate fills this in for you.</div>
     <div class="flabel">Invoices</div>
     <label for="ss-bank">Bank details<textarea id="ss-bank" rows="3" maxlength="400" placeholder="Account name, sort code, account number">${esc(s.bank)}</textarea></label>
+    <div class="flabel">Email wording</div>
+    <div class="who">Leave a box empty to use the app's wording (shown faintly). Words in {brackets} are filled in for you: {name} {dear} {number} {job} {total} {due} {date} {valid} {ver} {part} {bank}. Your name and phone go at the end.</div>
+    ${Object.entries(SD_MAILT)
+      .map(
+        ([k, [l, def]]) =>
+          `<details class="ss-mt"><summary>${l}</summary><textarea id="ss-mt-${k}" rows="6" maxlength="3000" placeholder="${esc(def)}" aria-label="Email wording: ${l}">${esc((s.mailT || {})[k] || "")}</textarea></details>`,
+      )
+      .join("")}
     <label for="ss-ii">Opening line on invoices<input id="ss-ii" maxlength="300" value="${esc(s.invIntro)}"></label>
     <label for="ss-in">Thank-you line<input id="ss-in" maxlength="200" value="${esc(s.invNote)}"></label>
     ${formFoot(false, "Save")}`,
@@ -92,6 +101,9 @@ function sdSettings() {
           bank: $("ss-bank").value.trim(),
           invNote: $("ss-in").value.trim(),
           invIntro: $("ss-ii").value.trim(),
+          mailT: Object.fromEntries(
+            Object.keys(SD_MAILT).map((k) => [k, $("ss-mt-" + k).value.trim()]),
+          ),
         });
         closeForm();
         toast("Saved");

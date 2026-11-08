@@ -6,25 +6,32 @@ import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
 import { jfFor, jfOpen } from "./job-file.js";
 import {
+  SD_IK,
   SD_KINDS,
   SD_VATC,
   sdAmt,
   sdCalc,
   sdDueDate,
+  sdFinalLines,
+  sdIk,
+  sdIsPf,
+  sdJob,
   sdKind,
   sdLines,
   sdNextNumber,
+  sdNo,
   sdR2,
   sdSales,
   sdSaveRec,
   sdSet,
+  sdSigned,
   sdStatus,
   sdTag,
   sdVc,
 } from "./sales-calc.js";
 import { sdEmail } from "./sales-email.js";
 import { sdSavePdf } from "./sales-pdf.js";
-export { sdEdit };
+export { sdEdit, sdToInvoice };
 /* Each line: what it's for, then its amount in £ (or, with "Price by quantity", qty × unit × rate worked out into
    the amount), its VAT (standard, reduced, zero, reverse charge, exempt, no VAT) and whether it's labour, materials
    or other (CIS is only taken off labour). The page shows each line's total and the totals as they're typed: before
@@ -91,7 +98,7 @@ function sdEdit(d0) {
     },
     JSON.parse(JSON.stringify(d0)),
   );
-  if (!d.number) d.number = String(sdNextNumber(d.type));
+  if (!d.number) d.number = String(sdNextNumber(d.type, sdIsPf(d)));
   if (est) {
     /* everything the estimate says, from its own record (a brought-in Word estimate keeps its own), else the usual */
     if (d.intro == null) d.intro = set.intro;
@@ -108,7 +115,31 @@ function sdEdit(d0) {
     .slice()
     .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   openViewer(`<div class="sd-ed">
-    <div class="sd-edtop"><h3 style="margin:0">${est ? "📝 Estimate" : "🧾 Invoice"} ${esc(d.number)}</h3>${d0.id ? sdTag(d) : ""}</div>
+    <div class="sd-edtop"><h3 style="margin:0">${est ? "📝 Estimate " + esc(d.number) + ((+d.ver || 1) > 1 ? " · version " + d.ver : "") : "🧾 " + esc(SD_IK[sdIk(d)]) + " " + esc(sdNo(d))}</h3>${d0.id ? sdTag(d) : ""}</div>
+    ${est && (d.versions || []).length ? `<div class="who sd-vers">Earlier versions: ${d.versions.map((v, i) => `<button type="button" class="pillbtn sd-vpdf" data-i="${i}">v${v.ver} · ${esc(shortDay(v.date || ""))} · ${gbp(v.net || 0)} 📄</button>`).join(" ")}</div>` : ""}
+    ${
+      !est
+        ? `<div class="grid2"><label for="sd-ik">Type of invoice<select id="sd-ik">${Object.entries(
+            SD_IK,
+          )
+            .map(
+              ([k, l]) => `<option value="${k}"${k === sdIk(d) ? " selected" : ""}>${l}</option>`,
+            )
+            .join("")}</select></label>
+      <label for="sd-from">Part of a job<select id="sd-from"><option value="">Not for an estimate (stand-alone)</option>${sdSales()
+        .filter((x) => x.type === "estimate")
+        .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+        .map(
+          (x) =>
+            `<option value="${esc(x.id)}"${x.id === d.fromId ? " selected" : ""}>EST-${esc(x.number)} · ${esc(x.client || "")}${x.title ? " – " + esc(x.title) : ""}</option>`,
+        )
+        .join("")}</select></label></div>
+      <label class="inl" id="sd-afl"${sdIk(d) === "extra" ? "" : " hidden"}><input type="checkbox" id="sd-af"${d.af ? " checked" : ""}> Add this extra work to the final invoice (don't send it on its own)</label>
+      <div id="sd-finrow"${sdIk(d) === "final" ? "" : " hidden"}><button type="button" class="btn" id="sd-fin">↻ Work out the final invoice from the estimate</button><span class="who"> The estimate, plus extra work saved for the final invoice, less the deposit and instalments already invoiced.</span></div>
+      ${sdIsPf(d) ? `<div class="notice">A pro forma asks for payment before the work. It isn't a VAT invoice and isn't counted as money invoiced. When it's paid, tap ✅ Paid – make the invoice.</div>` : ""}`
+        : ""
+    }
+    ${sdJobHtml(d)}
     <div class="grid2">
       <label for="sd-no">${est ? "Estimate" : "Invoice"} number<input id="sd-no" maxlength="20" value="${esc(d.number)}"></label>
       <label for="sd-date">Date<input id="sd-date" type="date" value="${esc(d.date)}"></label>
@@ -165,13 +196,13 @@ function sdEdit(d0) {
       <button type="button" class="btn" id="sd-mail">📧 Email</button>
       <button type="button" class="btn" id="sd-pdf">📄 PDF</button>
       <button type="button" class="btn" id="sd-jf">📁 Job file${(() => {
-        const j = d0.id ? jfFor(d) : null;
+        const j = jfFor(d);
         return j && (j.items || []).length ? ` (${j.items.length})` : "";
       })()}</button>
       ${
         est
           ? `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-acc">✅ Accepted</button><button type="button" class="btn" id="sd-dec">✖ Declined</button><button type="button" class="btn" id="sd-toinv">🧾 Make an invoice</button>`
-          : `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-pay">💷 Record a payment</button>`
+          : `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-pay">💷 Record a payment</button>${sdIsPf(d) && d0.id && d.status !== "converted" ? `<button type="button" class="btn primary" id="sd-pfconv">✅ Paid – make the invoice</button>` : ""}`
       }
       ${d0.id ? `<button type="button" class="linkdanger" id="sd-del">Delete</button>` : ""}
       <button type="button" class="btn" id="sd-close">Close</button>
@@ -233,6 +264,9 @@ function sdEdit(d0) {
         ref: $("sd-ref").value.trim(),
         cis: $("sd-cis").value,
         ret: num($("sd-ret").value),
+        ik: $("sd-ik").value,
+        fromId: $("sd-from").value,
+        af: $("sd-ik").value === "extra" && $("sd-af").checked,
       });
     return o;
   };
@@ -249,7 +283,7 @@ function sdEdit(d0) {
         return;
       }
       if (l.m === "q") r.querySelector(".sd-la").value = l.a === "" ? "" : l.a.toFixed(2);
-      r.querySelector(".sd-ltot").innerHTML = `Line total <b>${gbp(sdAmt(l))}</b>`;
+      r.querySelector(".sd-ltot").innerHTML = `Line total <b>${sdSigned(sdAmt(l))}</b>`;
       if (head) subOf.set(head, subOf.get(head) + sdAmt(l));
     });
     subOf.forEach(
@@ -363,6 +397,43 @@ function sdEdit(d0) {
   ["sd-cis", "sd-ret", "sd-inc"].forEach(
     (id) => $(id) && ($(id).oninput = $(id).onchange = totals),
   );
+  if ($("sd-ik")) {
+    $("sd-ik").onchange = () => {
+      const k = $("sd-ik").value;
+      $("sd-afl").hidden = k !== "extra";
+      $("sd-finrow").hidden = k !== "final";
+      if (!d0.id) $("sd-no").value = String(sdNextNumber("invoice", k === "proforma"));
+    };
+    $("sd-fin").onclick = () => {
+      const e = sdSales().find((x) => x.id === $("sd-from").value);
+      if (!e) return toast("Choose the estimate it's for (Part of a job)");
+      const fl = sdFinalLines(e, cur ? cur.id : d0.id);
+      $("sd-lines").innerHTML = fl.lines.map((l, i) => sdLineRow(l, i, set)).join("");
+      if (!$("sd-client").value) {
+        $("sd-client").value = e.client || "";
+        $("sd-addr").value = e.address || "";
+        $("sd-email").value = e.email || "";
+        $("sd-title").value = e.title || "";
+      }
+      wireLines();
+      totals();
+      toast(
+        "Worked out: " +
+          (fl.held.length
+            ? fl.held.length +
+              " extra work invoice" +
+              (fl.held.length === 1 ? "" : "s") +
+              " added, "
+            : "") +
+          "earlier invoices taken off",
+      );
+    };
+  }
+  if ($("sd-pfconv"))
+    $("sd-pfconv").onclick = async () => {
+      const r = await save(null, true);
+      if (r) sdPfToInvoice(r);
+    };
   if ($("sd-vall"))
     $("sd-vall").onchange = () => {
       const v = $("sd-vall").value;
@@ -393,6 +464,12 @@ function sdEdit(d0) {
     try {
       cur = await sdSaveRec(Object.assign(o, { id: cur ? cur.id : d0.id }));
       Object.assign(d, cur);
+      if (cur.type === "invoice" && sdIk(cur) === "final" && cur.fromId) {
+        const e = sdSales().find((x) => x.id === cur.fromId);
+        if (e)
+          for (const x of sdFinalLines(e, cur.id).held.filter((x) => !x.inFinal))
+            await sdSaveRec(Object.assign({}, x, { inFinal: cur.id }));
+      }
       if (!quiet) toast("Saved");
       return cur;
     } catch (e) {
@@ -404,9 +481,74 @@ function sdEdit(d0) {
     closeViewer();
     render();
   };
+  const VER_KEYS = [
+    "lines",
+    "intro",
+    "incl",
+    "excl",
+    "costNote",
+    "closing",
+    "bd",
+    "validDays",
+    "title",
+    "notes",
+    "inc",
+    "dear",
+    "address",
+  ];
+  const changed = (o) =>
+    VER_KEYS.some(
+      (k) =>
+        JSON.stringify(o[k] == null ? null : o[k]) !== JSON.stringify(d0[k] == null ? null : d0[k]),
+    );
   $("sd-save").onclick = async () => {
+    const o = read();
+    if (est && d0.id && ["sent", "accepted", "declined"].includes(d0.status) && changed(o)) {
+      const v = +d0.ver || 1;
+      openSheet(
+        `<h3 id="sheettitle">Save as version ${v + 1}?</h3>
+        <div class="who">Estimate ${esc(d0.number)} has already been sent. Save your changes as version ${v + 1} (version ${v} is kept, and you can still open it), or just save over version ${v}.</div>
+        <div class="actions"><button type="button" class="btn primary" id="sv-new">Save as version ${v + 1}</button><button type="button" class="btn" id="sv-over">Save over version ${v}</button><button type="button" class="btn" id="sv-no">Cancel</button></div>`,
+        () => {},
+      );
+      const ff = $("f-save");
+      if (ff) ff.hidden = true;
+      $("sv-no").onclick = closeForm;
+      $("sv-over").onclick = async () => {
+        closeForm();
+        if (await save()) done();
+      };
+      $("sv-new").onclick = async () => {
+        const snap = {};
+        VER_KEYS.concat(["date", "number"]).forEach((k) => (snap[k] = d0[k]));
+        const versions = (d0.versions || []).concat([
+          { ver: v, date: d0.date, net: sdCalc(d0).net, sentAt: d0.sentAt || 0, snap },
+        ]);
+        closeForm();
+        if (
+          await save(
+            { ver: v + 1, versions, status: "draft", sentAt: 0, date: iso(new Date()) },
+            true,
+          )
+        ) {
+          toast("Saved as version " + (v + 1) + " – send it when it's ready");
+          done();
+        }
+      };
+      return;
+    }
     if (await save()) done();
   };
+  document.querySelectorAll(".sd-vpdf").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const v = d.versions[+b.dataset.i];
+        sdSavePdf(Object.assign({}, d, v.snap, { ver: v.ver, versions: [] }));
+      }),
+  );
+  document
+    .querySelectorAll(".sd-jobrow")
+    .forEach((b) => (b.onclick = () => sdEdit(sdSales().find((x) => x.id === b.dataset.id))));
   $("sd-close").onclick = done;
   $("sd-pdf").onclick = async () => {
     const r = await save(null, true);
@@ -521,38 +663,75 @@ function sdPayment(d) {
   );
 }
 
-/* ---------- estimate → invoice (all of it, a deposit, or a stage) ---------- */
+/* ---------- a job's account: the estimate and every invoice for it ---------- */
+function sdJobHtml(d) {
+  const e =
+    d.type === "estimate"
+      ? d.id
+        ? d
+        : null
+      : d.fromId
+        ? sdSales().find((x) => x.id === d.fromId)
+        : null;
+  if (!e) return "";
+  const j = sdJob(e);
+  if (!j.invs.length && d.type === "estimate") return "";
+  return `<section class="card sd-job"><div class="cardbody"><b>Job account – estimate ${esc(e.number)}${(+e.ver || 1) > 1 ? " v" + e.ver : ""}</b>
+    ${j.invs
+      .map(
+        (x) =>
+          `<button type="button" class="drow sd-jobrow${x.id === d.id ? " on" : ""}" data-id="${esc(x.id)}"><span>${esc(sdNo(x))} · ${esc(SD_IK[sdIk(x)])}${x.part && sdIk(x) !== "deposit" ? " – " + esc(x.part) : ""} ${sdTag(x)}</span><span>${gbp(sdCalc(x).net)}</span></button>`,
+      )
+      .join("")}
+    <div class="drow"><span>Estimate (before VAT)</span><span>${gbp(j.net)}</span></div>
+    ${j.extras ? `<div class="drow"><span>Extra work</span><span>${gbp(j.extras)}</span></div>` : ""}
+    <div class="drow"><span>Invoiced so far</span><span>${gbp(j.invoiced)}</span></div>
+    <div class="drow"><span>Paid so far (with VAT)</span><span>${gbp(j.paid)}</span></div>
+    <div class="drow sd-due"><span><b>Still to invoice</b></span><b>${gbp(j.toInvoice)}</b></div>
+  </div></section>`;
+}
+/* ---------- estimate → invoice, of any type ---------- */
 function sdToInvoice(e) {
   const c = sdCalc(e);
-  const done = sdSales().filter((x) => x.type === "invoice" && x.fromId === e.id);
-  const already = done.reduce((a, x) => a + sdCalc(x).net, 0);
+  const job = sdJob(e);
   const vc0 = (sdLines(e)[0] && sdVc(sdLines(e)[0], e)) || sdSet().vc || "S20";
   openSheet(
     `<h3 id="sheettitle">🧾 Invoice for estimate ${esc(e.number)}</h3>
-    <div class="who">Estimate ${gbp(c.net)} before VAT.${done.length ? ` Already invoiced: ${gbp(already)} on ${done.length} invoice${done.length === 1 ? "" : "s"}.` : ""}</div>
-    <label class="inl"><input type="radio" name="sti" value="all" checked> The whole estimate${already ? " (less what's been invoiced)" : ""}</label>
-    <label class="inl"><input type="radio" name="sti" value="pct"> A deposit or stage as a % <input id="sti-pct" type="number" inputmode="decimal" value="25" style="width:80px" aria-label="Percent"> %</label>
-    <label class="inl"><input type="radio" name="sti" value="amt"> A stage of £ <input id="sti-amt" type="number" inputmode="decimal" step="0.01" style="width:120px" aria-label="Amount"> before VAT</label>
-    <label for="sti-lab">Called (for a deposit or stage)<input id="sti-lab" maxlength="80" placeholder="e.g. Deposit, or Stage 2: to wall plate"></label>
+    <div class="who">Estimate ${gbp(c.net)} before VAT · invoiced so far ${gbp(job.invoiced)} · still to invoice ${gbp(job.toInvoice)}</div>
+    <label for="sti-k">What kind of invoice<select id="sti-k">
+      <option value="deposit">Deposit</option><option value="stage">Instalment (stage payment)</option><option value="extra">Extra work</option><option value="final">Final payment (works it all out)</option><option value="oneoff">The whole estimate in one invoice</option><option value="proforma">Pro forma (payment before the work)</option>
+    </select></label>
+    <div id="sti-amt">
+      <label class="inl"><input type="radio" name="sti" value="pct" checked> <input id="sti-pct" type="number" inputmode="decimal" value="25" style="width:80px" aria-label="Percent"> % of the estimate</label>
+      <label class="inl"><input type="radio" name="sti" value="amt"> £ <input id="sti-amt2" type="number" inputmode="decimal" step="0.01" style="width:120px" aria-label="Amount"> before VAT</label>
+      <label for="sti-lab">Called<input id="sti-lab" maxlength="80" placeholder="e.g. Deposit, or Stage 2: to wall plate"></label>
+    </div>
+    <div class="who" id="sti-help"></div>
     ${formFoot(false, "Make the invoice")}`,
     async () => {
-      const how = (document.querySelector('input[name="sti"]:checked') || {}).value;
+      const k = $("sti-k").value;
       let lines,
-        part = "";
+        part = "",
+        pfFor = "";
       const lab = $("sti-lab").value.trim();
-      if (how === "all") {
-        lines = JSON.parse(JSON.stringify(e.lines || [])).map((l) =>
-          Object.assign(l, { vc: sdVc(l, e), k: sdKind(l), a: sdAmt(l) }),
-        );
-        if (already)
-          lines.push({ d: "Less already invoiced", a: -sdR2(already), vc: vc0, k: "lab" });
-      } else {
+      if (["deposit", "stage", "proforma"].includes(k)) {
+        const how = (document.querySelector('input[name="sti"]:checked') || {}).value;
         const amt =
           how === "pct"
             ? sdR2((c.net * (+$("sti-pct").value || 0)) / 100)
-            : sdR2($("sti-amt").value);
+            : sdR2($("sti-amt2").value);
         if (!(amt > 0)) return showErr("Put the % or amount.");
-        part = lab || (how === "pct" ? `Deposit ${+$("sti-pct").value}%` : "Stage payment");
+        part =
+          lab ||
+          (k === "deposit"
+            ? `Deposit ${how === "pct" ? +$("sti-pct").value + "%" : ""}`.trim()
+            : k === "stage"
+              ? "Stage payment"
+              : how === "pct"
+                ? `${+$("sti-pct").value}% of the estimate`
+                : "Payment before the work");
+        pfFor =
+          k === "proforma" ? (/deposit/i.test(part) || how === "pct" ? "deposit" : "stage") : "";
         lines = [
           {
             d: `${part} on estimate ${e.number}${e.title ? " – " + e.title : ""}`,
@@ -561,11 +740,23 @@ function sdToInvoice(e) {
             k: "lab",
           },
         ];
+      } else if (k === "extra") {
+        part = "Extra work";
+        lines = [{ d: "", a: "", vc: vc0, k: "lab" }];
+      } else if (k === "final") {
+        part = "Final payment";
+        lines = sdFinalLines(e, "").lines;
+      } else {
+        lines = JSON.parse(JSON.stringify(e.lines || [])).map((l) =>
+          l.h ? l : Object.assign(l, { vc: sdVc(l, e), k: sdKind(l), a: sdAmt(l) }),
+        );
       }
       $("f-save").disabled = true;
       try {
         const inv = await sdSaveRec({
           type: "invoice",
+          ik: k,
+          pfFor,
           date: iso(new Date()),
           clientId: e.clientId || "",
           client: e.client,
@@ -580,9 +771,19 @@ function sdToInvoice(e) {
           status: "draft",
           cis: "",
         });
-        await sdSaveRec(Object.assign({}, e, { status: how === "all" ? "invoiced" : "accepted" }));
+        if (k === "final")
+          for (const x of sdFinalLines(e, inv.id).held.filter((x) => !x.inFinal))
+            await sdSaveRec(Object.assign({}, x, { inFinal: inv.id }));
+        if (!["accepted", "invoiced"].includes(e.status) || k === "final" || k === "oneoff")
+          await sdSaveRec(
+            Object.assign({}, e, {
+              status: k === "final" || k === "oneoff" ? "invoiced" : "accepted",
+            }),
+          );
         closeForm();
-        toast("Invoice " + inv.number + " made – check it and mark it sent");
+        toast(
+          `${SD_IK[k]} ${sdNo(inv)} made – ${k === "extra" ? "put in the extra work, then" : "check it and"} send it`,
+        );
         S.f.sv = "inv";
         sdEdit(inv);
       } catch (er) {
@@ -591,4 +792,48 @@ function sdToInvoice(e) {
       }
     },
   );
+  const help = {
+    deposit: "A deposit to take before the start date.",
+    stage: "A stage payment as the work goes on – give it a name, e.g. Stage 2: to wall plate.",
+    extra:
+      "Work that wasn't in the estimate. Send it on its own, or tick 'Add this extra work to the final invoice'.",
+    final:
+      "Works it all out: the estimate, plus extra work saved for the final invoice, less the deposit and instalments already invoiced.",
+    oneoff: "The whole estimate on one invoice.",
+    proforma:
+      "Asks for payment before the work. Not a VAT invoice; when it's paid it becomes a proper invoice.",
+  };
+  const show = () => {
+    const k = $("sti-k").value;
+    $("sti-amt").hidden = !["deposit", "stage", "proforma"].includes(k);
+    $("sti-help").textContent = help[k];
+  };
+  $("sti-k").onchange = show;
+  show();
+}
+/* ---------- a paid pro forma becomes a proper invoice (with the next invoice number) ---------- */
+async function sdPfToInvoice(pf) {
+  try {
+    const o = JSON.parse(JSON.stringify(pf));
+    delete o.id;
+    delete o.number;
+    delete o.emails;
+    const inv = await sdSaveRec(
+      Object.assign(o, {
+        ik: pf.pfFor || "oneoff",
+        fromPf: pf.id,
+        date: iso(new Date()),
+        status: "awaiting",
+        sentAt: Date.now(),
+        created: Date.now(),
+      }),
+    );
+    await sdSaveRec(Object.assign({}, pf, { status: "converted", convId: inv.id }));
+    toast(
+      `Invoice ${inv.number} made from pro forma ${pf.number}${sdCalc(inv).paid ? " (payment carried over)" : ""}`,
+    );
+    sdEdit(inv);
+  } catch (e) {
+    toast("Couldn't make it. Check your connection.");
+  }
 }

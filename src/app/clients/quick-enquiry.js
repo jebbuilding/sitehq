@@ -30,6 +30,7 @@ import { openPlanEditor } from "../planner/board.js";
 import { toHM } from "../planner/diary.js";
 import { SAMPLES } from "../purchasing/samples.js";
 import { shrinkImage } from "../safety/training.js";
+import { jfOpenClient } from "../sales/job-file.js";
 import { editSiteJob, syncSiteJobs } from "../sites/job-details.js";
 import { dropPin, miniMap } from "../sites/maps-pins.js";
 import { same } from "../sites/project-pages.js";
@@ -432,7 +433,10 @@ ${clMediaHtml(c)}
         )
         .join("") || '<div class="nothing">No notes yet.</div>'
     }</div>
-    <div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button>${c.site ? `<button class="btn" id="cv-gosite" type="button">Open the site</button>` : `<button class="btn hv" id="cv-site" type="button">Make it a site</button>`}</div>
+    <div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
+      const j = (S.jobFiles || []).find((x) => x.clientId === c.id);
+      return j && (j.items || []).length ? " (" + j.items.length + ")" : "";
+    })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button>${c.site ? `<button class="btn" id="cv-gosite" type="button">Open the site</button>` : `<button class="btn hv" id="cv-site" type="button">Make it a site</button>`}</div>
     ${clDocsHtml(c)}
     ${(c.recordPdfs || []).length ? `<div class="card" style="margin-top:12px;padding:10px 12px"><b>📄 Client PDFs saved to this job</b>${c.recordPdfs.map((r, i) => `<div class="attrow"><button type="button" class="incrow cv-rpo" data-i="${i}"><span class="attic" aria-hidden="true">📄</span><span><b>${esc(r.name)}</b><br><span class="who">${esc(stamp(r.at))}${r.pages ? " · " + r.pages + " page" + (r.pages === 1 ? "" : "s") : ""}</span></span></button><button type="button" class="iconbtn cv-rpd" data-i="${i}" aria-label="Download" title="Download">⬇</button><button type="button" class="iconbtn cv-rpx" data-i="${i}" aria-label="Delete" title="Delete" style="color:var(--danger)">🗑</button></div>`).join("")}</div>` : ""}
     <div class="actions" style="margin-top:18px;justify-content:flex-end"><button class="btn delbtn" id="cv-delete" type="button">🗑 Delete client</button></div>`);
@@ -500,6 +504,7 @@ ${clMediaHtml(c)}
   wirePtClientBlock(c);
   wireHist(c);
   wireClSteps(c);
+  $("cv-jf").onclick = () => jfOpenClient(c);
   $("cv-pdf").onclick = (e) => clientPdf(c, e.currentTarget);
   if ($("cv-msg")) $("cv-msg").onclick = () => openClientChat(c);
   wireClMedia(c);

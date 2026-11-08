@@ -99,7 +99,7 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  ok(inv2&&inv2.number==='2'&&inv2.lines[0].a===2500&&/Deposit 25% on estimate 2001/.test(inv2.lines[0].d),'deposit invoice 2: 25% = £2,500 + VAT');
  /* email it (no share sheet here, so the PDF saves and a new email opens) */
  await p.click('#sd-mail');await p.waitForTimeout(800);
- ok(/Please find attached invoice 2/.test(await p.inputValue('#se-msg'))&&/Garden Room/.test(await p.inputValue('#se-sub')),'email filled in: subject and message');
+ ok(/Please find attached our deposit invoice INV-2 for Garden Room/.test(await p.inputValue('#se-msg'))&&/Garden Room/.test(await p.inputValue('#se-sub')),'email filled in: subject and message');
  await p.fill('#se-to','test.person@example.com');await p.click('#f-save');await p.waitForTimeout(1500);
  const inv2b=(await sales()).find(x=>x.type==='invoice'&&x.fromId);
  ok(inv2b&&(inv2b.emails||[]).length===1&&inv2b.emails[0].to==='test.person@example.com'&&inv2b.status==='awaiting','noted as emailed to them and now awaiting payment');

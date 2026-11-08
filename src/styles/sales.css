@@ -127,3 +127,10 @@ button.cis-tr{background:none;border:0;border-bottom:1px solid var(--line);color
 .jf-nm{flex:1;min-width:0;overflow-wrap:anywhere}
 .jf-nm small{display:block;color:var(--muted);font-size:12px}
 .jf-neg{color:var(--danger)}
+.sd-vers{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sd-job .drow,.jf-money .drow{width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font:inherit;text-align:left;min-height:44px;cursor:default}
+button.sd-jobrow,button.jf-sale{cursor:pointer}
+.sd-jobrow.on{background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.se-att{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+.ss-mt summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.ss-mt textarea{width:100%}

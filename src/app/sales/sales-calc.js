@@ -1,14 +1,20 @@
 /* ================= SALES SUMS: estimates and invoices to clients – totals, VAT, CIS, status, numbers ================= */
-import { addDays, iso, parse } from "../core/helpers.js";
+import { addDays, gbp, iso, parse, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { newId } from "../files/outbox.js";
 export {
+  SD_IK,
   SD_KINDS,
   SD_VATC,
   sdAmt,
   sdCalc,
+  sdCounts,
   sdDueDate,
+  sdFinalLines,
   sdGroups,
+  sdIk,
+  sdIsPf,
+  sdJob,
   sdKind,
   sdLines,
   sdNextNumber,
@@ -17,6 +23,7 @@ export {
   sdSales,
   sdSaveRec,
   sdSet,
+  sdSigned,
   sdStatus,
   sdTag,
   sdTaxYear,
@@ -53,6 +60,9 @@ const SD_INV_ST = {
   part: ["Part paid", "warn"],
   overdue: ["Overdue", "bad"],
   paid: ["Paid", "ok"],
+  held: ["For the final invoice", "day"],
+  included: ["Added to the final invoice", "ok"],
+  converted: ["Turned into an invoice", "ok"],
 };
 const sdR2 = (n) => Math.round((+n || 0) * 100 + (n < 0 ? -1e-9 : 1e-9)) / 100;
 const sdSales = () => S.sales || [];
@@ -182,6 +192,8 @@ function sdDueDate(d) {
 }
 function sdStatus(d) {
   if (d.type === "estimate") return d.status && SD_EST_ST[d.status] ? d.status : "draft";
+  if (d.status === "converted") return "converted";
+  if (d.af) return d.inFinal ? "included" : "held";
   if (!d.status || d.status === "draft") return "draft";
   const c = sdCalc(d);
   if (c.paid >= c.due - 0.005 && c.due > 0) return "paid";
@@ -193,12 +205,99 @@ function sdTag(d) {
   const t = (d.type === "estimate" ? SD_EST_ST : SD_INV_ST)[st];
   return `<span class="tag ${t[1]}">${t[0]}</span>`;
 }
-const sdNo = (d) => (d.type === "estimate" ? "EST-" : "INV-") + (d.number || "?");
+const sdNo = (d) =>
+  d.type === "estimate"
+    ? "EST-" + (d.number || "?") + ((+d.ver || 1) > 1 ? " v" + d.ver : "")
+    : (sdIsPf(d) ? "PF-" : "INV-") + (d.number || "?");
+/* the kinds of invoice; older records are worked out from what they say */
+const SD_IK = {
+  oneoff: "One-off invoice",
+  proforma: "Pro forma",
+  deposit: "Deposit",
+  stage: "Instalment",
+  extra: "Extra work",
+  final: "Final payment",
+};
+function sdIk(d) {
+  if (!d || d.type !== "invoice") return "";
+  if (d.ik && SD_IK[d.ik]) return d.ik;
+  if (/^deposit/i.test(d.part || "")) return "deposit";
+  if (d.part) return "stage";
+  return "oneoff";
+}
+const sdIsPf = (d) => sdIk(d) === "proforma";
+/* an invoice that counts as money invoiced: sent, not a pro forma, not extra work held for the final invoice */
+const sdCounts = (d) =>
+  d.type === "invoice" &&
+  !sdIsPf(d) &&
+  !d.af &&
+  !!d.status &&
+  d.status !== "draft" &&
+  d.status !== "converted";
+/* a job: the estimate and every invoice made for it */
+function sdJob(e) {
+  const invs = sdSales()
+    .filter((x) => x.type === "invoice" && x.fromId === e.id)
+    .sort(
+      (a, b) => (a.date || "").localeCompare(b.date || "") || (+a.number || 0) - (+b.number || 0),
+    );
+  const net = sdCalc(e).net;
+  const extras = sdR2(
+    invs.filter((x) => sdIk(x) === "extra").reduce((a, x) => a + sdCalc(x).net, 0),
+  );
+  const invoiced = sdR2(invs.filter(sdCounts).reduce((a, x) => a + sdCalc(x).net, 0));
+  const paid = sdR2(invs.filter((x) => !sdIsPf(x)).reduce((a, x) => a + sdCalc(x).paid, 0));
+  return { invs, net, extras, invoiced, paid, toInvoice: sdR2(net + extras - invoiced) };
+}
+/* the lines of a final invoice: the estimate's work, extra work held for it, less what's been invoiced already */
+function sdFinalLines(e, finalId) {
+  const job = sdJob(e);
+  const vc0 = (sdLines(e)[0] && sdVc(sdLines(e)[0], e)) || "S20";
+  const lines = [
+    {
+      h: 1,
+      d: `Works as per estimate ${e.number}${(+e.ver || 1) > 1 ? " (version " + e.ver + ")" : ""}${e.title ? " – " + e.title : ""}`,
+    },
+  ];
+  sdLines(e).forEach((l) =>
+    lines.push(Object.assign({}, l, { vc: sdVc(l, e), k: sdKind(l), a: sdAmt(l) })),
+  );
+  const held = job.invs.filter(
+    (x) => sdIk(x) === "extra" && x.af && (!x.inFinal || x.inFinal === finalId),
+  );
+  if (held.length) {
+    lines.push({ h: 1, d: "Extra work" });
+    held.forEach((x) =>
+      sdLines(x).forEach((l) =>
+        lines.push(Object.assign({}, l, { vc: sdVc(l, x), k: sdKind(l), a: sdAmt(l) })),
+      ),
+    );
+  }
+  const before = job.invs.filter(
+    (x) =>
+      x.id !== finalId &&
+      sdCounts(x) &&
+      ["deposit", "stage", "oneoff", "proforma"].includes(sdIk(x)),
+  );
+  if (before.length) {
+    lines.push({ h: 1, d: "Less already invoiced" });
+    before.forEach((x) => {
+      const l0 = sdLines(x)[0];
+      lines.push({
+        d: `${SD_IK[sdIk(x)]} – invoice ${x.number} (${shortDay(x.date)})`,
+        a: -sdCalc(x).net,
+        vc: (l0 && sdVc(l0, x)) || vc0,
+        k: "lab",
+      });
+    });
+  }
+  return { lines, held };
+}
 /* the next free number (never re-uses one already on a record) */
-function sdNextNumber(type) {
-  const k = type === "estimate" ? "nextEst" : "nextInv";
+function sdNextNumber(type, pf) {
+  const k = type === "estimate" ? "nextEst" : pf ? "nextPf" : "nextInv";
   const used = sdSales()
-    .filter((d) => d.type === type)
+    .filter((d) => d.type === type && (type === "estimate" || !!pf === sdIsPf(d)))
     .map((d) => +d.number || 0);
   return Math.max(+sdSet()[k] || 1, used.length ? Math.max(...used) + 1 : 1);
 }
@@ -215,14 +314,16 @@ async function sdSaveRec(d) {
   const rec = Object.assign({}, d, { kind: "sale", updated: Date.now() });
   const id = rec.id || "sd-" + newId();
   delete rec.id;
-  if (!rec.number) rec.number = String(sdNextNumber(rec.type));
+  if (!rec.number) rec.number = String(sdNextNumber(rec.type, sdIsPf(rec)));
   if (!rec.created) rec.created = Date.now();
   await S.db.doc("todos/" + id).set(rec);
   /* keep the next number ahead of every one used */
-  const k = rec.type === "estimate" ? "nextEst" : "nextInv";
+  const k = rec.type === "estimate" ? "nextEst" : sdIsPf(rec) ? "nextPf" : "nextInv";
   if ((+rec.number || 0) >= (+sdSet()[k] || 1))
     await S.db
       .doc("todos/salesset")
       .set(Object.assign({}, S.salesSet || {}, { kind: "salesset", [k]: (+rec.number || 0) + 1 }));
   return Object.assign({ id }, rec);
 }
+/* money with the minus sign before the £ (-£3,000.00, not £-3,000.00) */
+const sdSigned = (n) => (+n < 0 ? "-" + gbp(-n) : gbp(n));

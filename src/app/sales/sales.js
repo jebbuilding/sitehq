@@ -2,7 +2,18 @@
 import { $, addDays, esc, gbp, iso, parse, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { sdCalc, sdDueDate, sdNo, sdSales, sdStatus, sdTag, sdTaxYear } from "./sales-calc.js";
+import {
+  SD_IK,
+  sdCalc,
+  sdDueDate,
+  sdIk,
+  sdIsPf,
+  sdNo,
+  sdSales,
+  sdStatus,
+  sdTag,
+  sdTaxYear,
+} from "./sales-calc.js";
 import { sdEdit } from "./sales-edit.js";
 import { sdImportWord, sdSettings, sdSetupCard, sdWireSetup } from "./sales-settings.js";
 export { salesView };
@@ -18,7 +29,12 @@ function salesView() {
   const f = (est ? S.f.sef : S.f.sif) || "all";
   const q = String(S.f.sq || "").toLowerCase();
   const list = list0
-    .filter((d) => f === "all" || sdStatus(d) === f || (f === "awaiting" && sdStatus(d) === "part"))
+    .filter(
+      (d) =>
+        f === "all" ||
+        (f === "proforma" ? sdIsPf(d) : sdStatus(d) === f) ||
+        (f === "awaiting" && sdStatus(d) === "part"),
+    )
     .filter((d) => !q || [d.number, d.client, d.title, d.site].join(" ").toLowerCase().includes(q))
     .sort(
       (a, b) => (b.date || "").localeCompare(a.date || "") || (+b.number || 0) - (+a.number || 0),
@@ -28,12 +44,17 @@ function salesView() {
   let tiles = "",
     extra = "";
   if (!est) {
-    const by = (st) => list0.filter((d) => sdStatus(d) === st);
+    /* pro formas and extra work held for the final invoice aren't money invoiced */
+    const real = list0.filter((d) => !sdIsPf(d) && !d.af);
+    const pfOut = list0.filter(
+      (d) => sdIsPf(d) && ["awaiting", "part", "overdue"].includes(sdStatus(d)),
+    );
+    const by = (st) => real.filter((d) => sdStatus(d) === st);
     const sum = (arr, k) => arr.reduce((a, d) => a + sdCalc(d)[k], 0);
-    const aw = list0.filter((d) => ["awaiting", "part"].includes(sdStatus(d)));
+    const aw = real.filter((d) => ["awaiting", "part"].includes(sdStatus(d)));
     const od = by("overdue");
     const from30 = iso(addDays(new Date(), -30));
-    const paid30 = list0.reduce(
+    const paid30 = real.reduce(
       (a, d) =>
         a +
         (d.payments || []).filter((p) => p.date >= from30).reduce((x, p) => x + (+p.amt || 0), 0),
@@ -43,7 +64,15 @@ function salesView() {
       box("draft", by("draft").length, gbp(sum(by("draft"), "due")), "Draft") +
       box("awaiting", aw.length, gbp(sum(aw, "balance")), "Awaiting payment") +
       box("overdue", od.length, gbp(sum(od, "balance")), "Overdue", od.length ? "bad" : "") +
-      box("paid", by("paid").length, gbp(paid30), "Paid in last 30 days", "ok");
+      box("paid", by("paid").length, gbp(paid30), "Paid in last 30 days", "ok") +
+      (pfOut.length
+        ? box(
+            "proforma",
+            pfOut.length,
+            gbp(pfOut.reduce((a, d) => a + sdCalc(d).balance, 0)),
+            "Pro formas waiting",
+          )
+        : "");
     /* 6 months: invoiced (by invoice date) and paid (by payment date) */
     const months = Array.from({ length: 6 }, (_, i) => {
       const d = new Date();
@@ -57,7 +86,7 @@ function salesView() {
         .reduce((a, d) => a + sdCalc(d).gross, 0),
     );
     const pd = months.map((m) =>
-      list0.reduce(
+      real.reduce(
         (a, d) =>
           a +
           (d.payments || [])
@@ -75,7 +104,7 @@ function salesView() {
         )
         .join("")}</div></div></div>`;
     const ty = sdTaxYear(today);
-    const inTy = list0.filter((d) => sdStatus(d) !== "draft" && d.date && sdTaxYear(d.date) === ty);
+    const inTy = real.filter((d) => sdStatus(d) !== "draft" && d.date && sdTaxYear(d.date) === ty);
     const tyc = inTy.map(sdCalc);
     extra += `<div class="who sd-ty">This tax year (from 6 April ${ty}): invoiced <b>${gbp(tyc.reduce((a, c) => a + c.net, 0))}</b> before VAT · VAT charged <b>${gbp(tyc.reduce((a, c) => a + c.vat, 0))}</b>${tyc.some((c) => c.cis) ? ` · CIS taken off you <b>${gbp(tyc.reduce((a, c) => a + c.cis, 0))}</b>` : ""}</div>`;
   } else {
@@ -107,6 +136,8 @@ function salesView() {
         ["awaiting", "Awaiting payment"],
         ["overdue", "Overdue"],
         ["paid", "Paid"],
+        ["proforma", "Pro forma"],
+        ["held", "For final invoice"],
       ];
   $("main").innerHTML = `<div class="sd-page">
     <div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="${!est}">Invoices</button><button type="button" data-v="est" aria-pressed="${est}">Estimates</button></div>
@@ -121,7 +152,7 @@ function salesView() {
             .map((d) => {
               const c = sdCalc(d),
                 st = sdStatus(d);
-              return `<button type="button" class="sd-row" data-id="${esc(d.id)}"><span class="sd-no">${esc(sdNo(d))}</span><span class="sd-who"><b>${esc(d.client || "No client yet")}</b><small>${esc([d.title, d.site].filter(Boolean).join(" · "))}</small></span><span class="sd-dt"><small>${d.date ? esc(shortDay(d.date)) : ""}</small>${!est && st !== "draft" && st !== "paid" ? `<small class="${st === "overdue" ? "sd-late" : ""}">due ${esc(shortDay(sdDueDate(d)))}</small>` : ""}</span><span class="sd-amt"><b>${gbp(est ? c.net : st === "paid" || st === "draft" ? c.due : c.balance)}</b>${sdTag(d)}</span></button>`;
+              return `<button type="button" class="sd-row" data-id="${esc(d.id)}"><span class="sd-no">${esc(sdNo(d))}</span><span class="sd-who"><b>${esc(d.client || "No client yet")}</b><small>${esc([!est && sdIk(d) !== "oneoff" ? SD_IK[sdIk(d)] : "", d.title, d.site].filter(Boolean).join(" · "))}</small></span><span class="sd-dt"><small>${d.date ? esc(shortDay(d.date)) : ""}</small>${!est && st !== "draft" && st !== "paid" ? `<small class="${st === "overdue" ? "sd-late" : ""}">due ${esc(shortDay(sdDueDate(d)))}</small>` : ""}</span><span class="sd-amt"><b>${gbp(est ? c.net : st === "paid" || st === "draft" ? c.due : c.balance)}</b>${sdTag(d)}</span></button>`;
             })
             .join("")}</div>`
         : `<div class="empty"><strong>${list0.length ? "Nothing here" : est ? "No estimates yet" : "No invoices yet"}</strong>${list0.length ? "Try another filter." : est ? "Tap + New estimate, or bring in one you wrote in Word." : "Tap + New invoice, or turn an accepted estimate into one."}</div>`

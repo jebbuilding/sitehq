@@ -5,7 +5,19 @@ import { getFileBlob } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { SD_VATC, sdAmt, sdCalc, sdDueDate, sdGroups, sdSet, sdVc } from "./sales-calc.js";
+import {
+  SD_VATC,
+  sdAmt,
+  sdCalc,
+  sdDueDate,
+  sdGroups,
+  sdIk,
+  sdIsPf,
+  sdNo,
+  sdSet,
+  sdSigned,
+  sdVc,
+} from "./sales-calc.js";
 export { sdHeadLines, sdImgData, sdLongDate, sdPdf, sdSavePdf };
 /* Set out like James's own Word estimate: the logo top left and the company's address and contacts top right in the
    brand colour, a full-width line under them; at the foot a line, the job and reference in grey, the trades line,
@@ -210,7 +222,12 @@ async function sdPdf(d) {
   if (est) {
     addrLines.forEach((t) => para(t, { gap: 0, lh: 4.9 }));
     y += 4.3;
-    para("Estimate Number: " + (d.number || ""), { gap: 4.4 });
+    para(
+      "Estimate Number: " +
+        (d.number || "") +
+        ((+d.ver || 1) > 1 ? " (version " + d.ver + ")" : ""),
+      { gap: 4.4 },
+    );
     dateLine(d.date);
     y += 19;
     if (d.title) para("Re: " + d.title, { st: "bold", gap: 4.4 });
@@ -231,7 +248,7 @@ async function sdPdf(d) {
       need(LH * t.length);
       ink();
       t.forEach((ln, i) => doc.text(ln, x, y + i * LH));
-      if (amt != null) doc.text(gbp(amt), R, y, { align: "right" });
+      if (amt != null) doc.text(sdSigned(amt), R, y, { align: "right" });
       y += LH * t.length + (o.gap == null ? 1.2 : o.gap);
     };
     if (
@@ -321,18 +338,31 @@ async function sdPdf(d) {
       sdTermsPages(set, { head: newPage, para, list, rule, at: () => y, set: (v) => (y = v), M });
   } else {
     /* invoice: set out like the estimate letter – address, number, dates, Re:, the costs, totals, how to pay, sign-off */
-    const taxInv = set.vatReg !== false && sdVatNo() && c.vat > 0;
+    const pf = sdIsPf(d);
+    const taxInv = !pf && set.vatReg !== false && sdVatNo() && c.vat > 0;
     addrLines.forEach((t) => para(t, { gap: 0, lh: 4.9 }));
     y += 6;
-    para(taxInv ? "TAX INVOICE" : "INVOICE", { st: "bold", sz: 14, red: 1, gap: 3 });
-    para("Invoice Number: " + (d.number || ""), { gap: 2.2 });
+    para(pf ? "PRO FORMA INVOICE" : taxInv ? "TAX INVOICE" : "INVOICE", {
+      st: "bold",
+      sz: 14,
+      red: 1,
+      gap: 3,
+    });
+    para((pf ? "Pro forma number: " : "Invoice Number: ") + (d.number || ""), { gap: 2.2 });
     dateLine(d.date);
     y += 5.4;
     para("Payment due: " + sdLongDate(sdDueDate(d)), { gap: 2.2 });
     if (d.ref) para("Your order / ref: " + d.ref, { gap: 2.2 });
     if (d.site) para("Site: " + d.site, { gap: 2.2 });
     y += 9;
-    if (d.title) para("Re: " + d.title + (d.part ? " – " + d.part : ""), { st: "bold", gap: 4.4 });
+    const kindLab = { extra: "Extra work", final: "Final payment" }[sdIk(d)] || d.part || "";
+    if (d.title || kindLab)
+      para("Re: " + [d.title, kindLab].filter(Boolean).join(" – "), { st: "bold", gap: 4.4 });
+    if (pf)
+      para(
+        "This is a pro forma invoice, not a VAT invoice. A VAT invoice will follow when payment is received.",
+        { st: "italic", sz: 9.5, gap: 4 },
+      );
     if (set.invIntro) paras(set.invIntro, { gap: 4.4 });
     y += 2;
     need(30);
@@ -359,7 +389,7 @@ async function sdPdf(d) {
       need(LH * t.length + (extra ? 4.6 : 0));
       ink();
       t.forEach((ln, i) => doc.text(ln, M, y + i * LH));
-      doc.text(gbp(sdAmt(l)), R, y, { align: "right" });
+      doc.text(sdSigned(sdAmt(l)), R, y, { align: "right" });
       y += LH * t.length;
       if (extra) {
         doc.setFontSize(9);
@@ -449,9 +479,14 @@ async function sdPdf(d) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(200, 200, 200);
-    doc.text(`${d.title || (est ? "Estimate" : "Invoice")} – Ref:${d.number || ""}`, W / 2, 275.2, {
-      align: "center",
-    });
+    doc.text(
+      `${d.title || (est ? "Estimate" : "Invoice")} – Ref:${est ? (d.number || "") + ((+d.ver || 1) > 1 ? " v" + d.ver : "") : sdNo(d)}`,
+      W / 2,
+      275.2,
+      {
+        align: "center",
+      },
+    );
     red();
     let fy = 279.8;
     if (set.tagline) {
@@ -529,7 +564,7 @@ async function sdSavePdf(d) {
   try {
     const blob = await sdPdf(d);
     const fn =
-      `${d.type === "estimate" ? "Estimate" : "Invoice"} ${d.number || ""} ${d.client || ""}`
+      `${d.type === "estimate" ? "Estimate" : sdIsPf(d) ? "Pro forma" : "Invoice"} ${d.number || ""}${d.type === "estimate" && (+d.ver || 1) > 1 ? " v" + d.ver : ""} ${d.client || ""}`
         .replace(/[\\/:*?"<>|]+/g, "")
         .trim() + ".pdf";
     await S.dl.save({ filename: fn, data: blob });
