@@ -1,0 +1,542 @@
+/* ================= CUPBOARD 3D: a 3D picture of a fitted cupboard or wardrobe for the client, in their colours ================= */
+import { esc, toast } from "../core/helpers.js";
+import { S } from "../core/state.js";
+import { CB_BAYS, CB_DOORS, cbPlan } from "./cupboard-maker.js";
+import { coData } from "../owner/company-details.js";
+import { BRGB, pdfLogo } from "../photos/photos.js";
+import { loadJsPdf } from "../safety/site-inductions.js";
+export { cb3Open };
+/* From the sizes on a cupboard page (🗄️ Cupboards): the carcass, plinth, back, divisions, shelves, rails, drawers and
+   doors are built as boxes in millimetres and drawn in perspective with light and shade on a canvas – no outside
+   library. Turn it with the slider and open the doors to see inside. Change the door type (hinged, pairs, sliding,
+   none), door style (plain, shaker, glass, mirror), handles and the colours of the doors and the carcass. Save the
+   picture, or a one-page PDF for the client with the logo, the views and the finishes. The look chosen is kept
+   with the page. It's an illustration: real finishes vary. */
+const CB3_COLS = [
+  ["#f4f4f1", "Brilliant white"],
+  ["#efe6d2", "Cream"],
+  ["#d9d6cf", "Light grey"],
+  ["#b9ad9a", "Stone"],
+  ["#9aa88f", "Sage green"],
+  ["#8d9fb0", "Dusty blue"],
+  ["#2f3d55", "Navy"],
+  ["#3b3e42", "Anthracite"],
+  ["#1f1f1f", "Black"],
+  ["#c9a477", "Light oak"],
+  ["#6b4a33", "Walnut"],
+];
+const CB3_STYLES = [
+  ["slab", "Plain"],
+  ["shaker", "Shaker"],
+  ["glass", "Glass"],
+  ["mirror", "Mirror"],
+];
+const CB3_HANDLES = [
+  ["bar", "Bar – steel"],
+  ["black", "Bar – black"],
+  ["knob", "Knob"],
+  ["none", "None (push to open)"],
+];
+const cb3ColName = (c) => (CB3_COLS.find((x) => x[0] === c) || [c, c])[1];
+/* --- the model: boxes in mm. x along the front, y up from the floor, z out from the wall --- */
+function cb3Model(sp, look, open) {
+  const P = cbPlan(sp);
+  const t = sp.t,
+    W = sp.W,
+    H = sp.H,
+    D = sp.D,
+    PL = sp.plinth || 0,
+    bt = sp.bt || 0;
+  const car = look.carcass,
+    doorC = look.door;
+  const inside = shadeHex(car, 0.93);
+  const steel = "#b8bcc1";
+  const out = [];
+  const box = (x0, y0, z0, x1, y1, z1, c, o) =>
+    out.push(Object.assign({ b: [x0, y0, z0, x1, y1, z1], c }, o || {}));
+  /* carcass */
+  box(0, 0, 0, t, H, D, car);
+  box(W - t, 0, 0, W, H, D, car);
+  box(t, H - t, 0, W - t, H, D, car);
+  box(t, PL, 0, W - t, PL + t, D, car);
+  if (PL) box(t, 0, 20, W - t, PL, D - 60, shadeHex(car, 0.8));
+  if (bt) box(t, PL + t, 0, W - t, H - t, bt, inside, { inner: 1 });
+  const bx = [];
+  let x = t;
+  P.ws.forEach((w, i) => {
+    bx.push([x, x + w]);
+    x += w;
+    if (i < P.n - 1) {
+      box(x, PL + t, bt, x + t, H - t, D, car, { inner: 1 });
+      x += t;
+    }
+  });
+  /* inside each bay */
+  const iBot = PL + t,
+    iTop = H - t,
+    dep0 = bt,
+    dep1 = D - (look.type === "sliding" ? 90 : 25);
+  P.bays.forEach((b, i) => {
+    const [x0, x1] = bx[i];
+    let floor = iBot;
+    for (let k = 0; k < (b.d || 0); k++) {
+      const dh = P.drH;
+      box(x0 + 2, floor + 2, dep1 - t, x1 - 2, floor + dh - 2, dep1, doorC, { inner: 1 });
+      box(
+        (x0 + x1) / 2 - 50,
+        floor + dh / 2 - 6,
+        dep1,
+        (x0 + x1) / 2 + 50,
+        floor + dh / 2 + 6,
+        dep1 + 18,
+        steel,
+        { inner: 1 },
+      );
+      floor += dh;
+    }
+    const shelf = (y) => box(x0, y - t / 2, dep0, x1, y + t / 2, dep1 - 10, car, { inner: 1 });
+    const rail = (y) =>
+      box(x0 + 4, y - 9, (D - 20) / 2 - 8, x1 - 4, y + 9, (D - 20) / 2 + 8, steel, { inner: 1 });
+    if (b.k === "shelves" || b.k === "drawers") {
+      const n = b.s || 0;
+      for (let k = 1; k <= n; k++) shelf(floor + ((iTop - floor) * k) / (n + 1));
+    } else {
+      const hat = iTop - 300;
+      shelf(hat);
+      rail(hat - 60);
+      if (b.k === "hang2") {
+        const mid = floor + (hat - floor) / 2;
+        shelf(mid);
+        rail(mid - 60);
+      }
+    }
+  });
+  /* doors */
+  const gap = 3,
+    dy0 = PL + 1.5,
+    dy1 = H - 1.5;
+  const style = look.style,
+    th = t;
+  const handle = (hx, cy, z, rot, side) => {
+    if (look.handle === "none") return;
+    const c = look.handle === "black" ? "#222222" : steel;
+    const len = dy1 - dy0 > 1200 ? 320 : 160;
+    if (look.handle === "knob")
+      box(hx - 14, cy - 14, z, hx + 14, cy + 14, z + 28, c, { rot, top: 1 });
+    else box(hx - 7, cy - len / 2, z + 8, hx + 7, cy + len / 2, z + 26, c, { rot, top: 1 });
+    void side;
+  };
+  /* a door leaf from x0 to x1 at the front (z D..D+th), turned about its hinge by `rot` */
+  const leaf = (x0, x1, z0, rot, hingeL) => {
+    const z1 = z0 + th;
+    const fc = style === "mirror" ? "#cfd8dc" : doorC;
+    if (style === "glass") {
+      const f = 70;
+      box(x0, dy0, z0, x0 + f, dy1, z1, fc, { rot, top: 0.5 });
+      box(x1 - f, dy0, z0, x1, dy1, z1, fc, { rot, top: 0.5 });
+      box(x0 + f, dy1 - f, z0, x1 - f, dy1, z1, fc, { rot, top: 0.5 });
+      box(x0 + f, dy0, z0, x1 - f, dy0 + f, z1, fc, { rot, top: 0.5 });
+      box(x0 + f, dy0 + f, z0 + th / 2 - 2, x1 - f, dy1 - f, z0 + th / 2 + 2, "#bcd6dd", {
+        rot,
+        glass: 1,
+      });
+    } else {
+      box(x0, dy0, z0, x1, dy1, z1, fc, { rot, top: 0.5, mirror: style === "mirror" ? 1 : 0 });
+      if (style === "shaker") {
+        const f = 70,
+          zf = z1,
+          zz = z1 + 5;
+        box(x0, dy0, zf, x0 + f, dy1, zz, fc, { rot, top: 0.5 });
+        box(x1 - f, dy0, zf, x1, dy1, zz, fc, { rot, top: 0.5 });
+        box(x0 + f, dy1 - f, zf, x1 - f, dy1, zz, fc, { rot, top: 0.5 });
+        box(x0 + f, dy0, zf, x1 - f, dy0 + f, zz, fc, { rot, top: 0.5 });
+        const mid = dy0 + (dy1 - dy0) * 0.55;
+        if (dy1 - dy0 > 1400)
+          box(x0 + f, mid - f / 2, zf, x1 - f, mid + f / 2, zz, fc, { rot, top: 0.5 });
+      }
+    }
+    const hx = hingeL ? x1 - 45 : x0 + 45;
+    handle(hx, Math.min(1050, (dy0 + dy1) / 2), z1 + (style === "shaker" ? 5 : 0), rot, hingeL);
+  };
+  const type = look.type;
+  if (type === "hinged" || type === "pairs") {
+    bx.forEach(([x0, x1], i) => {
+      const a = x0 - t / 2 + gap / 2,
+        b2 = x1 + t / 2 - gap / 2;
+      const L0 = i === 0 ? 0 + gap / 2 : a,
+        L1 = i === bx.length - 1 ? W - gap / 2 : b2;
+      const leaves =
+        type === "pairs"
+          ? [
+              [L0, (L0 + L1) / 2 - gap / 2, true],
+              [(L0 + L1) / 2 + gap / 2, L1, false],
+            ]
+          : [[L0, L1, i % 2 === 0]];
+      leaves.forEach(([u0, u1, hl]) => {
+        const rot = open ? { px: hl ? u0 : u1, pz: D, a: hl ? -1.75 : 1.75 } : null;
+        leaf(u0, u1, D, rot, hl);
+      });
+    });
+  } else if (type === "sliding") {
+    const np = Math.max(2, Math.min(4, P.n));
+    const span = (W - 2 * t) / np;
+    for (let k = 0; k < np; k++) {
+      const front = k % 2 === 0;
+      let u0 = t + k * span - (k ? 20 : 0),
+        u1 = t + (k + 1) * span + (k < np - 1 ? 20 : 0);
+      if (open && front) {
+        const sh = k < np - 1 ? span - 40 : -(span - 40);
+        u0 += sh;
+        u1 += sh;
+      }
+      const z0 = D - 70 + (front ? 35 : 0);
+      leaf(u0, u1, z0, null, k % 2 === 1);
+    }
+    box(t, H - t - 30, D - 75, W - t, H - t, D - 2, "#9a9ea3");
+  }
+  return out;
+}
+function shadeHex(hex, k) {
+  const n = parseInt(String(hex).slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 255) * k)),
+    g = Math.min(255, Math.round(((n >> 8) & 255) * k)),
+    b = Math.min(255, Math.round((n & 255) * k));
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+/* --- drawing it --- */
+function cb3Draw(cv, sp, look, open, yaw) {
+  const g = cv.getContext("2d");
+  const Wc = cv.width,
+    Hc = cv.height;
+  const W = sp.W,
+    H = sp.H,
+    D = sp.D;
+  const boxes = cb3Model(sp, look, open).filter(
+    (o) => !o.inner || open || look.style === "glass" || look.type === "none",
+  );
+  /* camera: eye 1.6 m up, in front, turned by yaw */
+  const tgt = [W / 2, H * 0.48, D / 2];
+  const R = 1.7 * Math.max(W, H) + D * 2;
+  const cam = [tgt[0] + R * Math.sin(yaw), 1600 + H * 0.15, tgt[2] + R * Math.cos(yaw)];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a, b) => [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+  const nrm = (a) => {
+    const l = Math.hypot(a[0], a[1], a[2]) || 1;
+    return [a[0] / l, a[1] / l, a[2] / l];
+  };
+  const f = nrm(sub(tgt, cam)),
+    r = nrm(cross(f, [0, 1, 0])),
+    u = cross(r, f);
+  const proj0 = (p) => {
+    const v = sub(p, cam);
+    const z = dot(v, f);
+    return [dot(v, r) / z, dot(v, u) / z, z];
+  };
+  /* faces of every box */
+  const faces = [];
+  const FI = [
+    [0, 1, 3, 2],
+    [4, 6, 7, 5],
+    [0, 4, 5, 1],
+    [2, 3, 7, 6],
+    [0, 2, 6, 4],
+    [1, 5, 7, 3],
+  ];
+  const L = nrm([-0.45, 0.75, 0.6]);
+  boxes.forEach((o) => {
+    const [x0, y0, z0, x1, y1, z1] = o.b;
+    let pts = [];
+    for (const X of [x0, x1])
+      for (const Y of [y0, y1]) for (const Z of [z0, z1]) pts.push([X, Y, Z]);
+    if (o.rot) {
+      const c = Math.cos(o.rot.a),
+        s = Math.sin(o.rot.a);
+      pts = pts.map(([X, Y, Z]) => {
+        const dx = X - o.rot.px,
+          dz = Z - o.rot.pz;
+        return [o.rot.px + dx * c + dz * s, Y, o.rot.pz - dx * s + dz * c];
+      });
+    }
+    const ctr = pts.reduce(
+      (a, p) => [a[0] + p[0] / 8, a[1] + p[1] / 8, a[2] + p[2] / 8],
+      [0, 0, 0],
+    );
+    FI.forEach((ix) => {
+      const q = ix.map((i) => pts[i]);
+      let n = nrm(cross(sub(q[1], q[0]), sub(q[2], q[0])));
+      const fc = q.reduce((a, p) => [a[0] + p[0] / 4, a[1] + p[1] / 4, a[2] + p[2] / 4], [0, 0, 0]);
+      if (dot(n, sub(fc, ctr)) < 0) n = [-n[0], -n[1], -n[2]];
+      if (dot(n, sub(cam, fc)) <= 0) return;
+      const lit = 0.58 + 0.42 * Math.max(0, dot(n, L));
+      faces.push({
+        q,
+        d: Math.hypot(...sub(fc, cam)),
+        col: shadeHex(o.c, lit),
+        glass: o.glass,
+        mirror: o.mirror,
+        top: o.top || 0,
+        n,
+      });
+    });
+  });
+  /* fit to the canvas */
+  let mnx = Infinity,
+    mxx = -Infinity,
+    mny = Infinity,
+    mxy = -Infinity;
+  const room = [
+    [-500, 0, D + 500],
+    [W + 500, 0, D + 500],
+    [-500, H + 150, 0],
+    [W + 500, H + 150, 0],
+  ];
+  faces
+    .flatMap((fa) => fa.q)
+    .concat(room)
+    .forEach((p) => {
+      const [x, y] = proj0(p);
+      mnx = Math.min(mnx, x);
+      mxx = Math.max(mxx, x);
+      mny = Math.min(mny, y);
+      mxy = Math.max(mxy, y);
+    });
+  const k = Math.min((Wc * 0.92) / (mxx - mnx), (Hc * 0.92) / (mxy - mny));
+  const ox = Wc / 2 - ((mnx + mxx) / 2) * k,
+    oy = Hc / 2 + ((mny + mxy) / 2) * k;
+  const P2 = (p) => {
+    const [x, y] = proj0(p);
+    return [ox + x * k, oy - y * k];
+  };
+  const poly = (pts, fill, stroke, alpha) => {
+    g.beginPath();
+    pts.forEach((p, i) => {
+      const [x, y] = P2(p);
+      if (i) g.lineTo(x, y);
+      else g.moveTo(x, y);
+    });
+    g.closePath();
+    g.globalAlpha = alpha == null ? 1 : alpha;
+    g.fillStyle = fill;
+    g.fill();
+    g.globalAlpha = 1;
+    if (stroke) {
+      g.strokeStyle = stroke;
+      g.lineWidth = 0.8;
+      g.stroke();
+    }
+  };
+  /* the room: wall and floor, and a soft shadow */
+  g.fillStyle = look.wall || "#ece9e4";
+  g.fillRect(0, 0, Wc, Hc);
+  poly(
+    [
+      [-1500, 0, 0],
+      [W + 1500, 0, 0],
+      [W + 1500, H + 1500, 0],
+      [-1500, H + 1500, 0],
+    ],
+    look.wall || "#ece9e4",
+  );
+  poly(
+    [
+      [-1500, 0, 0],
+      [W + 1500, 0, 0],
+      [W + 1500, 0, D + 1500],
+      [-1500, 0, D + 1500],
+    ],
+    look.floor || "#cdbfa9",
+  );
+  poly(
+    [
+      [-60, 0, 0],
+      [W + 60, 0, 0],
+      [W + 140, 0, D + 140],
+      [-140, 0, D + 140],
+    ],
+    "#000000",
+    null,
+    0.12,
+  );
+  faces.sort((a, b) => a.top - b.top || b.d - a.d);
+  faces.forEach((fa) => {
+    if (fa.glass) poly(fa.q, fa.col, "rgba(0,0,0,.25)", 0.35);
+    else if (fa.mirror && fa.n[2] > 0.5) {
+      const [a0, a1] = [P2(fa.q[0]), P2(fa.q[2])];
+      const gr = g.createLinearGradient(a0[0], a0[1], a1[0], a1[1]);
+      gr.addColorStop(0, "#e8eef0");
+      gr.addColorStop(0.45, "#b9c6cb");
+      gr.addColorStop(0.55, "#dfe7ea");
+      gr.addColorStop(1, "#a9b6bb");
+      poly(fa.q, gr, "rgba(0,0,0,.35)");
+    } else poly(fa.q, fa.col, "rgba(0,0,0,.28)");
+  });
+}
+/* --- the screen --- */
+function cb3Open(sp, look0, onLook) {
+  const look = Object.assign(
+    {
+      type: sp.doors && sp.doors !== "none" ? sp.doors : "hinged",
+      style: "slab",
+      door: "#f4f4f1",
+      carcass: "#f4f4f1",
+      handle: "bar",
+    },
+    look0 || {},
+  );
+  let open = false,
+    yaw = -0.45;
+  const d = document.createElement("div");
+  d.className = "cb3";
+  const sw = (id, v) =>
+    `<div class="cb3-sw" id="${id}" role="group">${CB3_COLS.map(([c, n]) => `<button type="button" data-c="${c}" title="${esc(n)}" aria-label="${esc(n)}" aria-pressed="${c === v}" style="background:${c}"></button>`).join("")}</div>`;
+  d.innerHTML = `<div class="cb3-top"><b>🎨 ${esc(sp.name || "Cupboard")} – 3D view</b><button type="button" class="btn" id="cb3-x">Close</button></div>
+    <div class="cb3-body"><div class="cb3-pic"><canvas id="cb3-cv" width="1400" height="1000" aria-label="3D picture of the cupboard"></canvas>
+      <label class="cb3-turn">Turn it<input id="cb3-yaw" type="range" min="-70" max="70" value="${Math.round((yaw * 180) / Math.PI)}"></label></div>
+    <div class="cb3-side">
+      <div class="seg" id="cb3-open"><button type="button" data-v="0" aria-pressed="true">Doors shut</button><button type="button" data-v="1" aria-pressed="false">Doors open</button></div>
+      <label for="cb3-type">Doors<select id="cb3-type">${CB_DOORS.map(([k, l]) => `<option value="${k}"${k === look.type ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label for="cb3-style">Door style<select id="cb3-style">${CB3_STYLES.map(([k, l]) => `<option value="${k}"${k === look.style ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label for="cb3-hd">Handles<select id="cb3-hd">${CB3_HANDLES.map(([k, l]) => `<option value="${k}"${k === look.handle ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+      <div class="flabel">Door colour <span class="who" id="cb3-dn">${esc(cb3ColName(look.door))}</span></div>${sw("cb3-door", look.door)}
+      <div class="flabel">Inside / carcass colour <span class="who" id="cb3-cn">${esc(cb3ColName(look.carcass))}</span></div>${sw("cb3-car", look.carcass)}
+      <div class="actions"><button type="button" class="btn" id="cb3-png">🖼️ Save picture</button><button type="button" class="btn primary" id="cb3-pdf">📄 PDF for the client</button></div>
+      <div class="who">An illustration from your sizes – real colours and finishes vary.</div>
+    </div></div>`;
+  document.body.appendChild(d);
+  const cv = d.querySelector("#cb3-cv");
+  const q = (id) => d.querySelector("#" + id);
+  const draw = () => {
+    cb3Draw(cv, sp, look, open, yaw);
+    if (onLook) onLook(Object.assign({}, look));
+  };
+  q("cb3-x").onclick = () => d.remove();
+  q("cb3-yaw").oninput = () => {
+    yaw = (+q("cb3-yaw").value * Math.PI) / 180;
+    cb3Draw(cv, sp, look, open, yaw);
+  };
+  q("cb3-open")
+    .querySelectorAll("button")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          open = b.dataset.v === "1";
+          q("cb3-open")
+            .querySelectorAll("button")
+            .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+          draw();
+        }),
+    );
+  q("cb3-type").onchange = () => ((look.type = q("cb3-type").value), draw());
+  q("cb3-style").onchange = () => ((look.style = q("cb3-style").value), draw());
+  q("cb3-hd").onchange = () => ((look.handle = q("cb3-hd").value), draw());
+  [
+    ["cb3-door", "door", "cb3-dn"],
+    ["cb3-car", "carcass", "cb3-cn"],
+  ].forEach(([id, key, lab]) =>
+    q(id)
+      .querySelectorAll("button")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            look[key] = b.dataset.c;
+            q(id)
+              .querySelectorAll("button")
+              .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+            q(lab).textContent = cb3ColName(b.dataset.c);
+            draw();
+          }),
+      ),
+  );
+  q("cb3-png").onclick = () =>
+    cv.toBlob(async (b) => {
+      try {
+        await S.dl.save({ filename: (sp.name || "Cupboard") + " 3D.png", data: b });
+      } catch (e) {
+        toast("Couldn't save the picture");
+      }
+    }, "image/png");
+  q("cb3-pdf").onclick = () => cb3Pdf(sp, look, yaw);
+  draw();
+  return d;
+}
+/* one page for the client: the cupboard shut and open, its sizes and the finishes */
+async function cb3Pdf(sp, look, yaw) {
+  try {
+    await loadJsPdf();
+    const pic = (open, w, h) => {
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      cb3Draw(c, sp, look, open, yaw);
+      return c.toDataURL("image/jpeg", 0.9);
+    };
+    const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+    const [r, g, b] = BRGB();
+    await pdfLogo(doc, 282, 10, 50, 22);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(r, g, b);
+    doc.text(sp.name || "Your new cupboard", 15, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.setFont("helvetica", "normal");
+    doc.text(coData().name || "", 15, 27);
+    doc.addImage(pic(false, 1400, 1000), "JPEG", 15, 34, 168, 120);
+    doc.addImage(pic(true, 1000, 714), "JPEG", 190, 34, 92, 66);
+    doc.setFontSize(9);
+    doc.text("With the doors open", 190, 104);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    let y = 114;
+    const row = (k, v) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(k, 190, y);
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(String(v), 57);
+      doc.text(lines, 225, y);
+      y += 5 * lines.length + 1;
+    };
+    row("Size", `${sp.W} wide × ${sp.H} high × ${sp.D} deep (mm)`);
+    row(
+      "Doors",
+      (CB_DOORS.find((x) => x[0] === look.type) || ["", ""])[1].replace(/ –.*/, "") +
+        ", " +
+        (CB3_STYLES.find((x) => x[0] === look.style) || ["", ""])[1].toLowerCase(),
+    );
+    row("Door colour", look.style === "mirror" ? "Mirror" : cb3ColName(look.door));
+    row("Inside", cb3ColName(look.carcass));
+    row("Handles", (CB3_HANDLES.find((x) => x[0] === look.handle) || ["", ""])[1]);
+    row(
+      "Inside layout",
+      cbPlan(sp)
+        .bays.map((bb) => (CB_BAYS.find((x) => x[0] === bb.k) || ["", ""])[1].replace(/,.*/, ""))
+        .join(" · ")
+        .slice(0, 160),
+    );
+    doc.setFontSize(8);
+    doc.setTextColor(110, 110, 110);
+    doc.text(
+      "Illustration from the measured sizes. Colours on screen and in print vary from the real finish – samples on request.",
+      15,
+      162,
+    );
+    doc.setDrawColor(r, g, b);
+    doc.line(15, 190, 282, 190);
+    doc.text(
+      [coData().name, coData().phone, coData().email].filter(Boolean).join("  ·  "),
+      15,
+      195,
+    );
+    await S.dl.save({
+      filename: (sp.name || "Cupboard") + " – 3D for the client.pdf",
+      data: doc.output("blob"),
+    });
+  } catch (e) {
+    toast("Couldn't make the PDF");
+  }
+}

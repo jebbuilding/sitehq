@@ -170,7 +170,8 @@ function acRcptView(tabs) {
         ACV.rot = 0;
         render();
         const d = document.querySelector("#main .acv-det");
-        if (d && d.getBoundingClientRect().top > window.innerHeight * 0.6) d.scrollIntoView({ block: "start" });
+        if (d && d.getBoundingClientRect().top > window.innerHeight * 0.6)
+          d.scrollIntoView({ block: "start" });
       }),
   );
   document
@@ -436,5 +437,6 @@ function acRcptSheet(r) {
   if (!$("sheet").hidden) closeForm();
   render();
   const d = document.querySelector("#main .acv-det");
-  if (d && d.getBoundingClientRect().top > window.innerHeight * 0.6) d.scrollIntoView({ block: "start" });
+  if (d && d.getBoundingClientRect().top > window.innerHeight * 0.6)
+    d.scrollIntoView({ block: "start" });
 }

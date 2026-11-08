@@ -23,6 +23,7 @@ import {
   npSymLabel,
   npUnit,
 } from "./construction-details.js";
+import { cb3Open } from "./cupboard-3d.js";
 import { cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
@@ -1361,6 +1362,7 @@ async function openNotePage(opts) {
               ["grid", "#️⃣", "Grid lines"],
               ["elev", "🏠", "Elevation"],
               ["cupb", "🗄️", "Cupboards"],
+              ["cupb3d", "🎨", "3D view"],
               ["check", "✅", "Check"],
               ["rev", "🔖", "Status & revisions"],
             ]
@@ -6362,11 +6364,29 @@ async function openNotePage(opts) {
           name: sp.name || "Cupboard " + (doc.pages.filter((p) => p.type === "Joinery").length + 1),
           type: "Joinery",
           objs: r.objs,
+          cupb: sp,
         });
         dirty = true;
         goPage(doc.pages.length - 1);
-        toast("Drawn on a new page with the cutting list (" + r.cut.length + " parts)");
+        toast(
+          "Drawn on a new page with the cutting list (" +
+            r.cut.length +
+            " parts). Tap 🎨 3D view for a picture for the client",
+        );
       },
+    });
+  }
+  /* the 3D view of the cupboard on this page, for the client */
+  function cupb3d() {
+    const p = doc.pages[pg];
+    const cp = p && p.cupb ? p : doc.pages.find((x) => x.cupb);
+    if (!cp) {
+      toast("Draw a cupboard first with 🗄️ Cupboards, then tap 🎨 3D view");
+      return;
+    }
+    cb3Open(cp.cupb, cp.cupbLook, (look) => {
+      cp.cupbLook = look;
+      dirty = true;
     });
   }
   /* check the drawing for common mistakes */
@@ -6680,6 +6700,7 @@ async function openNotePage(opts) {
         else if (a === "grid") gridDlg();
         else if (a === "elev") elevFromWall();
         else if (a === "cupb") cupbDlg();
+        else if (a === "cupb3d") cupb3d();
         else if (a === "check") checkDlg();
         else if (a === "tpl") tplDlg();
         else if (a === "rev") q(".np-info").click();

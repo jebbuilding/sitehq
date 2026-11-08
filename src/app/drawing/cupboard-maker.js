@@ -1,7 +1,7 @@
 /* ================= CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting list ================= */
 import { $, esc } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
-export { cbDraw, cbMakeDialog, cbPlan };
+export { CB_BAYS, CB_DOORS, cbDraw, cbMakeDialog, cbPlan };
 /* A form for the overall size, board thicknesses, plinth, bays (equal or given widths) and what's in each bay
    (shelves, hanging – single or double – drawers, or a mix), and the doors (none, hinged, pairs or sliding). It
    draws a new page in the drawing: the front with doors (hinge side shown), the front with the doors off (inside),
