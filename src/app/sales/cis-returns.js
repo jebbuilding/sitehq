@@ -10,10 +10,21 @@ import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { BRGB } from "../photos/photos.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { cisBill } from "./cis-bill.js";
 import { sdCalc, sdR2, sdSales, sdSet, sdTaxYear } from "./sales-calc.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdHeadLines, sdImgData, sdLongDate } from "./sales-pdf.js";
-export { cisView };
+export {
+  cisDown,
+  cisLab,
+  cisMonthOf,
+  cisRateOf,
+  cisRec,
+  cisSaveMonth,
+  cisSub,
+  cisSubList,
+  cisView,
+};
 /* Three tabs. This month: the tax month (6th–5th), what's due when (return by the 19th, tax paid by the 22nd), the
    return as HMRC asks for it, every payment with its labour, materials and VAT, the statements, and the HMRC link.
    Subcontractors: a full record for each (business type, UTR, NI or company number, verification number and date,
@@ -128,31 +139,39 @@ function cisPayments(key) {
       });
     });
   (rec.extra || []).forEach((x, i) => {
-    /* added by hand: labour + materials (+ VAT) */
+    /* added by hand: a bill (lines) or the older labour + materials (+ VAT); a bill not paid yet isn't on the return */
     const lab = +x.lab || 0,
       mat = +x.mat || 0,
       vat = +x.vat || 0;
     const amt = x.lab != null ? lab + mat + vat : +x.amt || 0;
+    const unpaid = !!x.status && x.status !== "paid";
     out.push({
       k: "x" + i,
       extra: i,
       who: x.who,
-      date: x.date,
+      date: !unpaid && x.paidOn ? x.paidOn : x.date,
       inv: x.inv || "",
       label:
-        [x.inv ? "Invoice " + x.inv : "", x.desc || x.note || "", x.site || ""]
+        [
+          x.inv ? "Invoice " + x.inv : "",
+          x.desc || x.note || "",
+          x.site || "",
+          unpaid ? (x.status === "approved" ? "approved, not paid yet" : "draft") : "",
+        ]
           .filter(Boolean)
           .join(" · ") || "Added by hand",
       amt,
       vat,
       mat,
+      other: +x.other || 0,
+      unpaid,
     });
   });
   out.forEach((p) => {
     p.gross = sdR2(Math.max(0, p.amt - p.vat));
     p.labour = sdR2(Math.max(0, p.gross - p.mat));
-    p.ded = p.skip ? 0 : cisDown((p.labour * +cisRateOf(p.who)) / 100);
-    p.paid = sdR2(p.amt - p.ded);
+    p.ded = p.skip || p.unpaid ? 0 : cisDown((p.labour * +cisRateOf(p.who)) / 100);
+    p.paid = sdR2(p.amt + (p.other || 0) - p.ded);
   });
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -160,7 +179,7 @@ function cisPayments(key) {
 function cisTotals(pays) {
   const by = {};
   pays
-    .filter((p) => !p.skip)
+    .filter((p) => !p.skip && !p.unpaid)
     .forEach((p) => {
       const t = (by[p.who] = by[p.who] || {
         who: p.who,
@@ -318,7 +337,7 @@ function cisMonthView(tabs) {
             .join("")}</div>`
         : `<div class="who">CIS workers' invoices you mark as Paid show here, and any payment you add.</div>`
     }
-    <button type="button" class="btn" id="cis-add">+ Add a payment</button>
+    <button type="button" class="btn primary" id="cis-add">+ New bill</button>
     ${!subs.length ? `<div class="notice">No CIS subcontractors yet. Add them under <b>Subcontractors</b>.</div>` : ""}
     ${suffered ? `<div class="who">CIS taken off your own invoices: if you're a limited company, claim it back through your payroll (EPS); if you're a sole trader it goes on your tax return.</div>` : ""}
   </div>`;
@@ -336,7 +355,7 @@ function cisMonthView(tabs) {
     const p = pays.find((x) => x.k === k);
     if (p.extra != null) {
       row.querySelector(".cis-xedit").onclick = () =>
-        cisAddPayment(key, (rec.extra || [])[p.extra], p.extra);
+        cisBill(key, (rec.extra || [])[p.extra], p.extra);
       row.querySelector(".cis-xdel").onclick = async () => {
         const extra = (rec.extra || []).slice();
         extra.splice(p.extra, 1);
@@ -363,7 +382,7 @@ function cisMonthView(tabs) {
     };
     row.querySelectorAll("input").forEach((x) => (x.onchange = saveRow));
   });
-  $("cis-add").onclick = () => cisAddPayment(key);
+  $("cis-add").onclick = () => cisBill(key);
   if ($("cis-copy"))
     $("cis-copy").onclick = async () => {
       const txt =
@@ -787,6 +806,7 @@ async function cisPdfStart() {
     co = coData(),
     brand = BRGB();
   const logo = await sdImgData(set.logoId || ((S.settings || {}).company || {}).logoId);
+  const sig = await sdImgData(set.sigId);
   const head = (title) => {
     if (logo) {
       const k = Math.min(60 / logo.w, 32 / logo.h);
@@ -830,6 +850,15 @@ async function cisPdfStart() {
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) {
       doc.setPage(i);
+      /* signed for the contractor */
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(90, 90, 90);
+      doc.text("Signed for " + co.name + ": " + co.owner, 20, 262);
+      if (sig) {
+        const k = Math.min(45 / sig.w, 13 / sig.h);
+        doc.addImage(sig.u, sig.f, 20, 264, sig.w * k, sig.h * k, "cissig", "FAST");
+      }
       doc.setDrawColor(...brand);
       doc.setLineWidth(0.5);
       doc.line(3, 280, 207, 280);

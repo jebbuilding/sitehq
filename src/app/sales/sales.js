@@ -16,12 +16,14 @@ import {
 } from "./sales-calc.js";
 import { sdEdit } from "./sales-edit.js";
 import { sdImportWord, sdSettings, sdSetupCard, sdWireSetup } from "./sales-settings.js";
+import { sdSyncSigns } from "./sales-sign.js";
 export { salesView };
 /* The page: tabs Invoices | Estimates. Invoices: boxes for drafts, waiting to be paid, overdue and paid in the last
    30 days, money invoiced and paid over 6 months, this tax year's totals (VAT, CIS taken off), then the list.
    Estimates: drafts, sent, accepted and the win rate. Each opens full screen to edit, make the PDF on the
    letterhead, mark sent, record a payment, or turn an estimate into an invoice (all, a deposit or a stage). */
 function salesView() {
+  sdSyncSigns();
   const all = sdSales();
   const est = (S.f.sv || "inv") === "est";
   const today = iso(new Date());

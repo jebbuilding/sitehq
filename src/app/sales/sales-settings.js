@@ -8,7 +8,7 @@ import { coData } from "../owner/company-details.js";
 import { SD_VATC, sdCalc, sdNextNumber, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdParseEstimate, sdReadDocxAll } from "./sales-docx.js";
 import { SD_MAILT } from "./sales-email.js";
-export { sdImportWord, sdSettings, sdSetupCard, sdWireSetup };
+export { sdImportWord, sdSaveSet, sdSettings, sdSetupCard, sdWireSetup };
 /* One sheet for everything the estimates and invoices print: the letterhead lines and logo (brought in from James's
    Word letterhead, or typed), his signature, VAT registration, number and the usual rate, numbering, payment days,
    the standard wording (opening, cost note, closing, sign-off, list headings), the terms and the bank details.

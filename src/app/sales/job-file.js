@@ -12,7 +12,7 @@ import { newId } from "../files/outbox.js";
 import { shrinkImage } from "../safety/training.js";
 import { SD_IK, sdCalc, sdIk, sdNo, sdR2, sdSales, sdTag } from "./sales-calc.js";
 import { sdEdit, sdToInvoice } from "./sales-edit.js";
-export { jfFolderName, jfFor, jfOpen, jfOpenClient };
+export { JF_FOLDERS, jfFolderName, jfFor, jfOpen, jfOpenClient, jfSave };
 /* One job file per client enquiry, from the moment the enquiry is taken: the enquiry itself (details, the client
    PDFs and documents already on the client card), then folders for plans and drawings, supplier quotes and prices,
    subcontractor quotes, photos and surveys, building control and planning, letters and emails, other. Each file

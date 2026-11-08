@@ -67,7 +67,7 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  let main=await p.innerText('#main');
  ok(/INV-1/.test(main)&&/Big Builder Ltd/.test(main)&&/Awaiting payment/.test(main),'on the list, awaiting payment');
  ok(/Awaiting payment\s+£1,600\.00/i.test(await p.innerText('.sd-boxes')),'Awaiting payment box: £1,600');
- await p.click('.sd-row');await p.waitForTimeout(300);await p.click('#sd-pay');await p.waitForTimeout(200);await p.fill('#sp-amt','600');await p.click('#f-save');await p.waitForTimeout(400);
+ await p.click('.sd-row');await p.waitForTimeout(300);await p.click('#sd-pay');await p.waitForTimeout(200);await p.fill('#sp-amt','600');await p.click('#f-save');await p.waitForTimeout(400);await p.click('#f-cancel').catch(()=>{});await p.waitForTimeout(200);
  main=await p.innerText('#main');
  ok(/Part paid/.test(main)&&/£1,000\.00/.test(main),'part paid: £1,000 left');
  ok(/Paid in last 30 days\s+£600\.00/i.test(await p.innerText('.sd-boxes')),'Paid in last 30 days: £600');
@@ -158,10 +158,13 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  ok(/Sam Test/.test(subs)&&/UTR\s*1234567890/.test(subs)&&/not verified with HMRC/.test(subs),'app worker listed too, flagged as not verified yet');
  /* a payment by hand: labour, materials, VAT – tax worked out at their 30% */
  await p.click('#cis-tabs button[data-v=month]');await p.waitForTimeout(300);
- await p.click('#cis-add');await p.waitForTimeout(200);
- await p.selectOption('#ca-w',{label:'Pat Brick (30%)'});await p.fill('#ca-i','PB-77');await p.fill('#ca-l','1000');await p.fill('#ca-m','200');await p.waitForTimeout(100);
- ok(/Tax at 30% on £1,000\.00\s+-£300\.00/.test(await p.innerText('#ca-calc'))&&/You pay them\s+£900\.00/.test(await p.innerText('#ca-calc')),'tax worked out as it is typed: £300, pay them £900');
- await p.click('#f-save');await p.waitForTimeout(400);
+ await p.click('#cis-add');await p.waitForTimeout(300);
+ await p.selectOption('#cb-who',{label:'Pat Brick (30%)'});await p.fill('#cb-ref','PB-77');await p.fill('#cb-date',payDay);await p.fill('#cb-paid',payDay);
+ {const L=await p.$$('#cb-lines .cb-line');await (await L[0].$('.cb-r')).fill('1000');await (await L[0].$('.cb-v')).selectOption('NV');
+  await p.click('#cb-add');const L2=(await p.$$('#cb-lines .cb-line'))[1];await (await L2.$('.cb-d')).fill('Materials');await (await L2.$('.cb-r')).fill('200');await (await L2.$('.cb-a')).selectOption('mat');await (await L2.$('.cb-v')).selectOption('NV');await p.waitForTimeout(150);}
+ const cbt=await p.innerText('#cb-tot');
+ ok(/Less CIS deduction \(30% of labour £1,000\.00\)\s+-£300\.00/.test(cbt)&&/Amount due to Pat Brick\s+£900\.00/.test(cbt),'tax worked out as it is typed: £300, pay them £900');
+ await p.click('#cb-pay');await p.waitForTimeout(600);
  ok(/Pat Brick[\s\S]*£1,200\.00\s+£200\.00\s+£300\.00/.test(await p.innerText('.cis-tbl')),'on the return: £1,200 paid, £200 materials, £300 tax');
  /* the tax year: month by month, a yearly statement */
  await p.click('#cis-tabs button[data-v=year]');await p.waitForTimeout(300);

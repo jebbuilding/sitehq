@@ -113,6 +113,11 @@ const PT_KINDS = [
   ],
   ["handover", "Final handover", "I confirm the work is complete and I accept the handover."],
   [
+    "estimate",
+    "Estimate acceptance",
+    "I accept this estimate and the terms and conditions, and want the work to go ahead.",
+  ],
+  [
     "gdpr",
     "Privacy policy (GDPR)",
     "I have read and accept the privacy (GDPR) policy, and I agree to my details being kept and used to carry out my job.",

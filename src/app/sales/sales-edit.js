@@ -1,5 +1,5 @@
 /* ================= SALES EDIT: one estimate or invoice, full screen – client, lines with amounts and VAT, totals ================= */
-import { $, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
+import { $, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -33,6 +33,7 @@ import {
 } from "./sales-calc.js";
 import { sdEmail } from "./sales-email.js";
 import { sdSavePdf } from "./sales-pdf.js";
+import { sdAskSign, sdEstSign, sdReceipt } from "./sales-sign.js";
 export { sdEdit, sdToInvoice };
 /* Each line: what it's for, then its amount in £ (or, with "Price by quantity", qty × unit × rate worked out into
    the amount), its VAT (standard, reduced, zero, reverse charge, exempt, no VAT) and whether it's labour, materials
@@ -160,6 +161,16 @@ function sdEdit(d0) {
       ${sdIsPf(d) ? `<div class="notice">A pro forma asks for payment before the work. It isn't a VAT invoice and isn't counted as money invoiced. When it's paid, tap ✅ Paid – make the invoice.</div>` : ""}`
         : ""
     }
+    ${(() => {
+      if (!est || !d0.id) return "";
+      const x = sdEstSign(d);
+      if (!x) return "";
+      return x.status === "signed"
+        ? `<div class="notice ok">✍️ Accepted and signed by ${esc(x.signedName || d.client)} on ${esc(stamp(x.signedAt))}.</div>`
+        : x.status === "changes"
+          ? `<div class="notice warn">The client asked for changes${x.comment ? ": “" + esc(x.comment) + "”" : ""}.</div>`
+          : `<div class="notice">Waiting for ${esc(d.client)} to sign (sent ${esc(stamp(x.created))}).</div>`;
+    })()}
     ${sdJobHtml(d)}
     <div class="grid2">
       <label for="sd-no">${est ? "Estimate" : "Invoice"} number<input id="sd-no" maxlength="20" value="${esc(d.number)}"></label>
@@ -212,7 +223,7 @@ function sdEdit(d0) {
     }
     <label for="sd-notes">Notes on the ${est ? "estimate" : "invoice"} (optional)<textarea id="sd-notes" rows="2" maxlength="2000">${esc(d.notes || "")}</textarea></label>
     <div class="sd-tot" id="sd-tot"></div>
-    ${!est && (d.payments || []).length ? `<div class="flabel">Payments</div>${d.payments.map((p, i) => `<div class="drow"><span>${esc(shortDay(p.date))}${p.note ? " · " + esc(p.note) : ""}</span><span>${gbp(p.amt)} <button type="button" class="linkdanger sd-pdel" data-i="${i}">Remove</button></span></div>`).join("")}` : ""}
+    ${!est && (d.payments || []).length ? `<div class="flabel">Payments</div>${d.payments.map((p, i) => `<div class="drow"><span>${esc(shortDay(p.date))}${p.note ? " · " + esc(p.note) : ""}</span><span>${gbp(p.amt)} <button type="button" class="pillbtn sd-rcpt" data-i="${i}">🧾 ${p.receiptAt ? "Receipt sent" : "Send a receipt"}</button> <button type="button" class="linkdanger sd-pdel" data-i="${i}">Remove</button></span></div>`).join("")}` : ""}
     <div class="sd-edacts">
       <button type="button" class="btn primary" id="sd-save">Save</button>
       <button type="button" class="btn" id="sd-mail">📧 Email</button>
@@ -223,7 +234,7 @@ function sdEdit(d0) {
       })()}</button>
       ${
         est
-          ? `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-acc">✅ Accepted</button><button type="button" class="btn" id="sd-dec">✖ Declined</button><button type="button" class="btn" id="sd-toinv">🧾 Make an invoice</button>`
+          ? `<button type="button" class="btn" id="sd-sign">✍️ Ask the client to sign</button><button type="button" class="btn" id="sd-signhere">✍️ Client signs now on this device</button><button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-acc">✅ Accepted</button><button type="button" class="btn" id="sd-dec">✖ Declined</button><button type="button" class="btn" id="sd-toinv">🧾 Make an invoice</button>`
           : `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-pay">💷 Record a payment</button>${sdIsPf(d) && d0.id && d.status !== "converted" ? `<button type="button" class="btn primary" id="sd-pfconv">✅ Paid – make the invoice</button>` : ""}`
       }
       ${d0.id ? `<button type="button" class="linkdanger" id="sd-del">Delete</button>` : ""}
@@ -631,6 +642,14 @@ function sdEdit(d0) {
     };
     $("sd-acc").onclick = mark("accepted", "Marked as accepted 🎉");
     $("sd-dec").onclick = mark("declined", "Marked as declined");
+    $("sd-sign").onclick = async () => {
+      const r = await save(null, true);
+      if (r) sdAskSign(r, false);
+    };
+    $("sd-signhere").onclick = async () => {
+      const r = await save(null, true);
+      if (r) sdAskSign(r, true);
+    };
     $("sd-toinv").onclick = async () => {
       const r = await save(null, true);
       if (r) sdToInvoice(r);
@@ -640,6 +659,9 @@ function sdEdit(d0) {
       const r = await save(null, true);
       if (r) sdPayment(r);
     };
+    document
+      .querySelectorAll(".sd-rcpt")
+      .forEach((b) => (b.onclick = () => sdReceipt(cur || d, +b.dataset.i)));
     document.querySelectorAll(".sd-pdel").forEach(
       (b) =>
         (b.onclick = async () => {
@@ -688,6 +710,7 @@ function sdPayment(d) {
         closeViewer();
         toast(sdStatus(r) === "paid" ? "Paid in full ✓" : "Payment saved");
         render();
+        sdReceipt(r, (r.payments || []).length - 1);
       } catch (e) {
         showErr("Couldn't save. Check your connection.");
         $("f-save").disabled = false;

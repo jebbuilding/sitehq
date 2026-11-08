@@ -1,5 +1,7 @@
 /* ================= PRINT: every PDF can be printed (share sheet on the tab, print dialog on a computer) ================= */
 import { esc, toast } from "../core/helpers.js";
+import { ownerMode } from "../core/state.js";
+import { fileItSheet } from "./file-it.js";
 import { getFileBlob, loadPdfJs } from "./in-app-files.js";
 export { pdfSavedBar, printAsset, printBlob };
 const isTouch = () =>
@@ -110,14 +112,20 @@ function pdfSavedBar(blob, name) {
   const d = document.createElement("div");
   d.id = "pdfbar";
   d.className = "pdfbar";
-  d.innerHTML = `<span>📄 ${esc(name)}</span><button type="button" class="btn primary" id="pdfbar-p">🖨 Print</button><button type="button" class="iconbtn" id="pdfbar-x" aria-label="Close">✕</button>`;
+  d.innerHTML = `<span>📄 ${esc(name)}</span><button type="button" class="btn primary" id="pdfbar-p">🖨 Print</button>${ownerMode() ? `<button type="button" class="btn" id="pdfbar-f">📁 Save to…</button>` : ""}<button type="button" class="iconbtn" id="pdfbar-x" aria-label="Close">✕</button>`;
   document.body.appendChild(d);
   d.querySelector("#pdfbar-p").onclick = () => {
     printBlob(blob, name);
     d.remove();
   };
+  const fb = d.querySelector("#pdfbar-f");
+  if (fb)
+    fb.onclick = () => {
+      d.remove();
+      fileItSheet(blob, name);
+    };
   d.querySelector("#pdfbar-x").onclick = () => d.remove();
   setTimeout(() => {
     if (d.isConnected) d.remove();
-  }, 15000);
+  }, 25000);
 }

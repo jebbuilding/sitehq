@@ -82,7 +82,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#sd-sent');await p.waitForTimeout(400);
  ok(/PF-1/.test(await p.innerText('#main'))&&/Pro formas waiting\s+£1,200\.00/i.test(await p.innerText('.sd-boxes')),'pro forma sent: PF-1, waiting £1,200, not in money invoiced');
  await p.locator('.sd-row',{hasText:'Mr Pro Forma'}).first().click();await p.waitForTimeout(300);
- await p.click('#sd-pay');await p.waitForTimeout(200);await p.click('#f-save');await p.waitForTimeout(500);
+ await p.click('#sd-pay');await p.waitForTimeout(200);await p.click('#f-save');await p.waitForTimeout(500);await p.click('#f-cancel').catch(()=>{});await p.waitForTimeout(200);
  await p.locator('.sd-row',{hasText:'Mr Pro Forma'}).first().click();await p.waitForTimeout(300);
  await p.click('#sd-pfconv');await p.waitForTimeout(600);
  all=await sales();const pf=all.find(x=>x.ik==='proforma');const conv=all.find(x=>x.fromPf===pf.id);
