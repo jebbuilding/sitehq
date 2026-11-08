@@ -196,6 +196,7 @@ initPhotoTest();
         S.cisMonths = all.filter((t) => t.kind === "cismonth");
         S.acct = all.find((t) => t.kind === "acct") || null;
         S.acctx = all.filter((t) => t.kind === "acctx");
+        S.acRcpts = all.filter((t) => t.kind === "acrcpt");
         S.audit = all.filter((t) => t.kind === "audit");
         S.bin = all.filter((t) => t.kind === "bin");
         if (!window.__binPurgeT)

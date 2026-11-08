@@ -22,6 +22,7 @@ import {
   acTradeMatches,
   acUpdateTx,
 } from "./acct-data.js";
+import { acMatchWaiting, acRcptSheet, acRcptView, acReceipts } from "./acct-receipts.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
 export { accountsView };
 /* Two tabs. Overview: money in, money out and profit for the period, bank balances, month-by-month bars, the profit
@@ -45,12 +46,14 @@ function accountsView() {
   const tabs = `<div class="seg ac-tabs" id="ac-tabs">${[
     ["over", "Overview"],
     ["bank", "Bank"],
+    ["rcpt", "Receipts"],
   ]
     .map(
       ([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`,
     )
     .join("")}</div>`;
   if (tab === "bank") acBankView(tabs);
+  else if (tab === "rcpt") acRcptView(tabs);
   else acOverView(tabs);
   $("ac-tabs")
     .querySelectorAll("button")
@@ -277,7 +280,7 @@ function acBankView(tabs) {
                 : [];
               return `<div class="ac-tx ${t.amt > 0 ? "in" : "out"}${t.cat ? "" : " uns"}" data-k="${esc(t.rec + "|" + t.id)}">
             <div class="ac-txh"><small>${esc(shortDay(t.date))}</small><span class="ac-desc">${esc(t.desc)}</span><b class="ac-amt">${t.amt > 0 ? "+" : "−"}${gbp(Math.abs(t.amt))}</b></div>
-            <div class="ac-txr"><select class="ac-cat" aria-label="Category">${opts(t.cat)}</select>${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
+            <div class="ac-txr"><select class="ac-cat" aria-label="Category">${opts(t.cat)}</select>${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${t.rcpt ? `<button type="button" class="pillbtn ac-rlink" data-id="${esc(t.rcpt)}">📎 Receipt</button>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
           </div>`;
             })
             .join(
@@ -344,6 +347,8 @@ function acBankView(tabs) {
       }
     };
     row.querySelector(".ac-more").onclick = () => acTxSheet(t);
+    const rl = row.querySelector(".ac-rlink");
+    if (rl) rl.onclick = () => acRcptSheet(acReceipts().find((r) => r.id === rl.dataset.id));
     row
       .querySelectorAll(".ac-match")
       .forEach((b) => (b.onclick = () => acMatch(t, b.dataset.t, b.dataset.id, b.dataset.w)));
@@ -419,8 +424,10 @@ async function acImport(acc, file) {
         updated: Date.now(),
       });
     }
+    const rm = await acMatchWaiting();
     toast(
-      `Brought in ${fresh.length} payment${fresh.length === 1 ? "" : "s"}${rows.length > fresh.length ? ` (${rows.length - fresh.length} already there)` : ""}${sorted ? `, ${sorted} sorted by your rules` : ""}`,
+      (rm ? `${rm} receipt${rm === 1 ? "" : "s"} matched · ` : "") +
+        `Brought in ${fresh.length} payment${fresh.length === 1 ? "" : "s"}${rows.length > fresh.length ? ` (${rows.length - fresh.length} already there)` : ""}${sorted ? `, ${sorted} sorted by your rules` : ""}`,
     );
     S.f.acf = fresh.length - sorted ? "sort" : "all";
     render();

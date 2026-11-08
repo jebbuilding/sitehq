@@ -5,7 +5,7 @@ import { getFileBlob } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { SD_VATC, sdAmt, sdCalc, sdDueDate, sdLines, sdSet, sdVc } from "./sales-calc.js";
+import { SD_VATC, sdAmt, sdCalc, sdDueDate, sdGroups, sdSet, sdVc } from "./sales-calc.js";
 export { sdHeadLines, sdImgData, sdLongDate, sdPdf, sdSavePdf };
 /* Set out like James's own Word estimate: the logo top left and the company's address and contacts top right in the
    brand colour, a full-width line under them; at the foot a line, the job and reference in grey, the trades line,
@@ -189,15 +189,9 @@ async function sdPdf(d) {
       .split(/\n+/)
       .map((x) => x.replace(/^\s*(\d+[.)]|[•\-*·])\s*/, "").trim())
       .filter(Boolean);
-  head();
-  ink();
-  const addrLines = [d.client].concat(String(d.address || "").split(/\s*\n\s*/)).filter(Boolean);
-  if (est) {
-    addrLines.forEach((t) => para(t, { gap: 0, lh: 4.9 }));
-    y += 4.3;
-    para("Estimate Number: " + (d.number || ""), { gap: 4.4 });
-    /* the date, with "th" raised like Word does it */
-    const dd = parse(d.date || iso(new Date())),
+  /* a date, with "th" raised like Word does it */
+  const dateLine = (di) => {
+    const dd = parse(di || iso(new Date())),
       n = dd.getDate();
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
@@ -209,6 +203,15 @@ async function sdPdf(d) {
     x += doc.getTextWidth(sdOrd(n)) + 1;
     doc.setFontSize(10.5);
     doc.text(dd.toLocaleDateString("en-GB", { month: "long", year: "numeric" }), x, y);
+  };
+  head();
+  ink();
+  const addrLines = [d.client].concat(String(d.address || "").split(/\s*\n\s*/)).filter(Boolean);
+  if (est) {
+    addrLines.forEach((t) => para(t, { gap: 0, lh: 4.9 }));
+    y += 4.3;
+    para("Estimate Number: " + (d.number || ""), { gap: 4.4 });
+    dateLine(d.date);
     y += 19;
     if (d.title) para("Re: " + d.title, { st: "bold", gap: 4.4 });
     para("Dear " + (d.dear || d.client || "Sir or Madam"), { gap: 4.4 });
@@ -216,19 +219,43 @@ async function sdPdf(d) {
     y += 2;
     need(36);
     para("Summary of Estimated Costs", { st: "bold", u: 1, gap: 4.6 });
-    const lines = sdLines(d);
-    if (lines.length > 1) {
-      lines.forEach((l) => {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10.5);
-        const t = doc.splitTextToSize(l.d || "Item", TW - 42);
-        need(LH * t.length);
-        ink();
-        t.forEach((ln, i) => doc.text(ln, M, y + i * LH));
-        doc.text(gbp(sdAmt(l)), R, y, { align: "right" });
-        y += LH * t.length + 1.2;
+    /* the costs: the total only (like James's own), each heading's total, or every line under its heading */
+    const bd = d.bd || (d.from ? "total" : "all");
+    const groups = sdGroups(d);
+    const costLine = (txt, amt, o) => {
+      o = o || {};
+      doc.setFont("helvetica", o.bold ? "bold" : "normal");
+      doc.setFontSize(o.sz || 10.5);
+      const x = M + (o.ind || 0);
+      const t = doc.splitTextToSize(txt || "Item", R - x - 42);
+      need(LH * t.length);
+      ink();
+      t.forEach((ln, i) => doc.text(ln, x, y + i * LH));
+      if (amt != null) doc.text(gbp(amt), R, y, { align: "right" });
+      y += LH * t.length + (o.gap == null ? 1.2 : o.gap);
+    };
+    if (
+      bd !== "total" &&
+      (groups.length > 1 || (groups[0] && (groups[0].h || groups[0].lines.length > 1)))
+    ) {
+      groups.forEach((g) => {
+        if (bd === "head") return costLine(g.h || "Other works", g.sub);
+        if (g.h) {
+          y += 1.5;
+          costLine(g.h, null, { bold: 1, gap: 0.6 });
+        }
+        g.lines.forEach((l) => {
+          const priced = l.q !== "" && l.q != null && l.r !== "" && l.r != null;
+          costLine(
+            (l.d || "Item") + (priced ? ` (${+l.q}${l.u ? " " + l.u : ""} × ${gbp(l.r)})` : ""),
+            sdAmt(l),
+            { ind: g.h ? 5 : 0 },
+          );
+        });
+        if (g.h && g.lines.length > 1)
+          costLine("Total for " + g.h, g.sub, { bold: 1, ind: 5, gap: 2 });
       });
-      y += 2;
+      y += 3;
     }
     need(16);
     const vatOn = set.vatReg !== false && (c.vat || c.rcVat);
@@ -252,7 +279,8 @@ async function sdPdf(d) {
       st: "bold",
       gap: 1.4,
     });
-    if (set.costNote) paras(set.costNote, { st: "italic", gap: 4 });
+    const cnote = d.costNote != null ? d.costNote : set.costNote;
+    if (cnote) paras(cnote, { st: "italic", gap: 4 });
     y += 6;
     const inc = listOf(d.incl),
       exc = listOf(d.excl);
@@ -269,13 +297,14 @@ async function sdPdf(d) {
       y += 4;
     }
     if (d.notes) paras(d.notes, { gap: 4.4 });
-    paras(set.closing, { gap: 5 });
+    paras(d.closing != null ? d.closing : set.closing, { gap: 5 });
     /* sign-off: e.g. "Yours sincerely," then "Kind Regards", the signature, the name */
-    need(40);
-    y += 4;
-    const so = String(set.signoff || "")
+    const so = String((d.signoff != null ? d.signoff : set.signoff) || "")
       .split("\n")
       .filter((x) => x.trim());
+    /* the whole sign-off stays together (lines, signature, name), as in James's own estimates */
+    need(4 + so.length * 14 + (sig ? 22 : 12) + 6);
+    y += 4;
     so.forEach((t, i) => para(t, { gap: i < so.length - 1 ? 9 : 2 }));
     if (sig) {
       const k = Math.min(55 / sig.w, 16 / sig.h);
@@ -291,143 +320,124 @@ async function sdPdf(d) {
     if (set.terms)
       sdTermsPages(set, { head: newPage, para, list, rule, at: () => y, set: (v) => (y = v), M });
   } else {
-    /* invoice */
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    red();
+    /* invoice: set out like the estimate letter – address, number, dates, Re:, the costs, totals, how to pay, sign-off */
     const taxInv = set.vatReg !== false && sdVatNo() && c.vat > 0;
-    doc.text(taxInv ? "TAX INVOICE" : "INVOICE", M, y);
-    y += 10;
-    const top = y;
-    doc.setFontSize(9);
-    doc.setTextColor(120, 120, 120);
-    doc.text("INVOICE TO", M, y);
-    y += 5;
-    addrLines.forEach((t, i) => {
-      doc.setFont("helvetica", i ? "normal" : "bold");
+    addrLines.forEach((t) => para(t, { gap: 0, lh: 4.9 }));
+    y += 6;
+    para(taxInv ? "TAX INVOICE" : "INVOICE", { st: "bold", sz: 14, red: 1, gap: 3 });
+    para("Invoice Number: " + (d.number || ""), { gap: 2.2 });
+    dateLine(d.date);
+    y += 5.4;
+    para("Payment due: " + sdLongDate(sdDueDate(d)), { gap: 2.2 });
+    if (d.ref) para("Your order / ref: " + d.ref, { gap: 2.2 });
+    if (d.site) para("Site: " + d.site, { gap: 2.2 });
+    y += 9;
+    if (d.title) para("Re: " + d.title + (d.part ? " – " + d.part : ""), { st: "bold", gap: 4.4 });
+    if (set.invIntro) paras(set.invIntro, { gap: 4.4 });
+    y += 2;
+    need(30);
+    para("Summary of Costs", { st: "bold", u: 1, gap: 4.6 });
+    const many = Object.keys(c.byRate).length > 1;
+    (d.lines || []).forEach((l) => {
+      if (!l) return;
+      if (l.h) {
+        if (l.d) para(l.d, { st: "bold", gap: 1.5 });
+        return;
+      }
+      if (!(l.d || sdAmt(l))) return;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      const priced = l.q !== "" && l.q != null && l.r !== "" && l.r != null;
+      const vc = SD_VATC[sdVc(l, d)];
+      const extra = [
+        priced ? `${+l.q}${l.u ? " " + l.u : ""} × ${gbp(l.r)}` : "",
+        many && set.vatReg !== false ? "VAT " + vc.p : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      const t = doc.splitTextToSize(String(l.d || "Item"), TW - 42);
+      need(LH * t.length + (extra ? 4.6 : 0));
+      ink();
+      t.forEach((ln, i) => doc.text(ln, M, y + i * LH));
+      doc.text(gbp(sdAmt(l)), R, y, { align: "right" });
+      y += LH * t.length;
+      if (extra) {
+        doc.setFontSize(9);
+        doc.setTextColor(110, 110, 110);
+        doc.text(extra, M, y - 0.6);
+        y += 4;
+      }
+      y += 1.6;
+    });
+    y += 3;
+    /* the totals, in the estimate's style: label on the left, figures in bold */
+    const tl = (k, v, bold, col) => {
+      need(7);
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(10.5);
       ink();
-      doc.text(t, M, y);
-      y += 4.9;
-    });
-    const facts = [
-      ["Invoice number", String(d.number || "")],
-      ["Invoice date", sdLongDate(d.date)],
-      ["Payment due", sdLongDate(sdDueDate(d))],
-      d.site ? ["Site", d.site] : null,
-      d.ref ? ["Your order / ref", d.ref] : null,
-      taxInv ? ["VAT number", sdVatNo()] : null,
-    ].filter(Boolean);
-    let fy = top;
-    facts.forEach(([k, v]) => {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(120, 120, 120);
-      doc.text(k, 118, fy);
-      ink();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text(doc.splitTextToSize(v, R - 150)[0], R, fy, { align: "right" });
-      fy += 5.4;
-    });
-    y = Math.max(y, fy) + 6;
-    if (d.title) para("Re: " + d.title + (d.part ? " – " + d.part : ""), { st: "bold", gap: 4 });
-    /* the lines */
-    const cols = [
-      [M + 2, "Description", "left"],
-      [128, "Qty", "right"],
-      [150, "Rate", "right"],
-      [166, "VAT", "right"],
-      [R - 2, "Amount", "right"],
-    ];
-    const tableHead = () => {
-      doc.setFillColor(...brand);
-      doc.rect(M, y - 4.6, TW, 7, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      cols.forEach(([x, t, a]) => doc.text(t, x, y, { align: a }));
-      y += 7;
+      doc.text(k, M, y);
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      if (col) red();
+      doc.text(v, M + 52, y);
+      y += 6.4;
     };
-    tableHead();
-    for (const l of sdLines(d)) {
-      const vc = SD_VATC[sdVc(l, d)];
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      const txt = doc.splitTextToSize(String(l.d || ""), 128 - M - 22);
-      if (y + 4.6 * txt.length > BOT) {
-        newPage();
-        tableHead();
-      }
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      ink();
-      txt.forEach((ln, i) => doc.text(ln, M + 2, y + i * 4.4));
-      const priced = l.q !== "" && l.q != null && l.r !== "" && l.r != null;
-      doc.text(priced ? String(+l.q) + (l.u ? " " + l.u : "") : "1", 128, y, { align: "right" });
-      doc.text(gbp(priced ? l.r : sdAmt(l)), 150, y, { align: "right" });
-      doc.text(set.vatReg === false ? "–" : vc.p, 166, y, { align: "right" });
-      doc.text(gbp(sdAmt(l)), R - 2, y, { align: "right" });
-      y += 4.4 * txt.length + 2;
-      doc.setDrawColor(225, 225, 225);
-      doc.setLineWidth(0.2);
-      doc.line(M, y - 3.6, R, y - 3.6);
-    }
-    /* totals, with VAT by rate */
-    const tot = [[d.inc ? "Total before VAT" : "Subtotal", gbp(c.net)]];
+    tl(d.inc ? "Total before VAT:" : "Total:", gbp(c.net) + (c.vat ? " +VAT" : ""), 1);
     if (set.vatReg !== false)
       Object.keys(c.byRate).forEach((k) => {
         const v = SD_VATC[k];
-        if (v.rc) tot.push([`VAT ${v.r}% reverse charge`, "£0.00"]);
-        else if (v.r) tot.push([`VAT at ${v.r}% on ${gbp(c.byRate[k].net)}`, gbp(c.byRate[k].vat)]);
+        if (v.rc) tl(`VAT ${v.r}% (reverse charge):`, "£0.00 – you pay it to HMRC");
+        else if (v.r) tl(`VAT at ${v.r}%:`, gbp(c.byRate[k].vat));
       });
-    tot.push(["Total", gbp(c.gross), 1]);
-    if (c.cis) tot.push([`Less CIS ${d.cis}% on labour of ${gbp(c.lab)}`, "-" + gbp(c.cis)]);
-    if (c.ret) tot.push([`Less retention ${d.ret}%`, "-" + gbp(c.ret)]);
-    if (c.paid) tot.push(["Paid so far", "-" + gbp(c.paid)]);
-    tot.push(["Amount due", gbp(c.balance), 2]);
-    need(7 * tot.length + 8);
-    y += 3;
-    tot.forEach(([k, v, b]) => {
-      if (b === 2) {
-        doc.setFillColor(...brand);
-        doc.rect(108, y - 5, R - 108, 8, "F");
-        doc.setTextColor(255, 255, 255);
-      } else ink();
-      doc.setFont("helvetica", b ? "bold" : "normal");
-      doc.setFontSize(b ? 11 : 9.5);
-      doc.text(doc.splitTextToSize(k, 58)[0], 110, y);
-      doc.text(v, R - 2, y, { align: "right" });
-      y += b === 2 ? 9 : 6;
-    });
+    if (c.vat) tl("Total inc VAT:", gbp(c.gross), 1);
+    if (c.cis) tl(`Less CIS ${d.cis}% on labour:`, "-" + gbp(c.cis));
+    if (c.ret) tl(`Less retention ${d.ret}%:`, "-" + gbp(c.ret));
+    if (c.paid) tl("Paid so far:", "-" + gbp(c.paid));
+    y += 1.5;
+    doc.setFontSize(12.5);
+    tl("Amount due:", gbp(c.balance), 1, 1);
     y += 4;
+    para(`Payment is due by ${sdLongDate(sdDueDate(d))}`, { st: "bold", gap: 1.4 });
     if (c.rcVat)
       para(
         `Reverse charge: customer to account to HMRC for the VAT (VAT Act 1994 Section 55A). VAT the customer pays to HMRC: ${gbp(c.rcVat)}.`,
-        { sz: 9 },
+        { st: "italic", sz: 9.5 },
       );
     if (c.cis)
       para("CIS: please send us a payment and deduction statement for the tax taken off.", {
-        sz: 9,
+        st: "italic",
+        sz: 9.5,
       });
     if (c.ret)
       para(`Retention of ${gbp(c.ret)} to be released at the end of the defects period.`, {
-        sz: 9,
+        st: "italic",
+        sz: 9.5,
       });
+    y += 4;
     if (set.bank) {
-      para("How to pay", { st: "bold", red: 1, sz: 11, gap: 2 });
+      need(30);
+      para("Payment Details", { st: "bold", u: 1, gap: 4.6 });
       String(set.bank)
         .split("\n")
-        .forEach((t) => para(t, { gap: 0.4 }));
+        .forEach((t) => para(t, { gap: 0.6 }));
       para(
         "Please use " +
           (d.number ? "invoice number " + d.number : "the invoice number") +
           " as the reference.",
-        { sz: 9 },
+        { gap: 4 },
       );
     }
-    if (d.notes) paras(d.notes);
-    if (set.invNote) para(set.invNote);
+    if (d.notes) paras(d.notes, { gap: 4.4 });
+    if (set.invNote) paras(set.invNote, { gap: 4 });
+    need(26);
+    y += 4;
+    para("Kind Regards", { gap: 2 });
+    if (sig) {
+      const k = Math.min(55 / sig.w, 16 / sig.h);
+      doc.addImage(sig.u, sig.f, M - 9, y, sig.w * k, sig.h * k, "sdsig", "FAST");
+      y += sig.h * k + 4;
+    } else y += 10;
+    para(co.owner, { gap: 0 });
   }
   /* footer on every page */
   const n = doc.getNumberOfPages();
@@ -498,8 +508,16 @@ function sdTermsPages(set, h) {
         h.rule();
         h.para(t.slice(4), { st: "bold", sz: 11.5, red: 1, gap: 3 });
       } else if (/^>> /.test(t)) h.para(t.slice(3), { center: 1, gap: 2 });
-      else if (/^1\. /.test(t)) h.para(t.slice(3), { x: h.M + 6, gap: 1.5 });
-      else if (/_{5,}/.test(t)) {
+      else if (/^~ /.test(t)) h.para(t.slice(2), { x: h.M + 6, gap: 1.5 });
+      else if (/^\d+\.\d+\.?\s+\S/.test(t) && t.length < 70) {
+        h.set(h.at() + 1.5);
+        if (h.at() > 244) h.head();
+        h.para(t, { sz: 13, red: 1, gap: 2, lh: 6 });
+      } else if (/^\d+\.?\s+[A-Z]/.test(t) && t.length < 70 && !/[.;:]$/.test(t)) {
+        h.set(h.at() + 6);
+        if (h.at() > 236) h.head();
+        h.para(t, { sz: 16, red: 1, gap: 2.5, lh: 7 });
+      } else if (/_{5,}/.test(t)) {
         h.set(h.at() + 6);
         h.para(t, { gap: 4 });
       } else h.para(t, { justify: 1, gap: 2.2 });

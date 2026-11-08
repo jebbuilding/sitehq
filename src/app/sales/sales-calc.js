@@ -8,6 +8,7 @@ export {
   sdAmt,
   sdCalc,
   sdDueDate,
+  sdGroups,
   sdKind,
   sdLines,
   sdNextNumber,
@@ -81,6 +82,7 @@ function sdSet() {
       termsVer: "",
       bank: "",
       invNote: "Thank you for your business.",
+      invIntro: "Please find below our invoice for the works carried out.",
     },
     S.salesSet || {},
   );
@@ -99,7 +101,28 @@ function sdAmt(l) {
   if (l.a != null && l.a !== "") return sdR2(l.a);
   return sdR2((l.q === "" || l.q == null ? 1 : +l.q) * (+l.r || 0));
 }
-const sdLines = (d) => (d.lines || []).filter((l) => l && (l.d || sdAmt(l)));
+const sdLines = (d) => (d.lines || []).filter((l) => l && !l.h && (l.d || sdAmt(l)));
+/* the lines grouped under their headings: [{ h: heading or "", lines, sub }] */
+function sdGroups(d) {
+  const out = [];
+  let g = null;
+  (d.lines || []).forEach((l) => {
+    if (!l) return;
+    if (l.h) {
+      g = { h: l.d || "", lines: [], sub: 0 };
+      out.push(g);
+      return;
+    }
+    if (!(l.d || sdAmt(l))) return;
+    if (!g) {
+      g = { h: "", lines: [], sub: 0 };
+      out.push(g);
+    }
+    g.lines.push(l);
+    g.sub = sdR2(g.sub + sdAmt(l));
+  });
+  return out.filter((x) => x.h || x.lines.length);
+}
 /* the money on one estimate or invoice */
 function sdCalc(d) {
   const inc = !!d.inc;

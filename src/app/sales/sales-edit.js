@@ -43,11 +43,19 @@ const SD_UNITS = [
   "loads",
   "sum",
 ];
+const SD_MOVE = (what, i) =>
+  `<span class="sd-lmv"><button type="button" class="iconbtn sd-lup" aria-label="Move ${what} ${i + 1} up">↑</button><button type="button" class="iconbtn sd-ldn" aria-label="Move ${what} ${i + 1} down">↓</button><button type="button" class="iconbtn sd-ldel" aria-label="Remove ${what} ${i + 1}">✕</button></span>`;
 function sdLineRow(l, i, set) {
+  if (l.h)
+    return `<div class="sd-line sd-hrow" data-h="1" data-i="${i}">
+    <div class="sd-lhd"><b>Heading</b>${SD_MOVE("heading", i)}</div>
+    <input class="sd-lhx" maxlength="120" value="${esc(l.d || "")}" placeholder="e.g. Groundworks, or Kitchen" aria-label="Heading">
+    <span class="sd-ltot"></span>
+  </div>`;
   const qm = l.m === "q";
   const vc = sdVc(l, {});
   return `<div class="sd-line" data-i="${i}">
-    <div class="sd-lhd"><b>Line ${i + 1}</b><button type="button" class="iconbtn sd-ldel" aria-label="Remove line ${i + 1}">✕</button></div>
+    <div class="sd-lhd"><b>Line ${i + 1}</b>${SD_MOVE("line", i)}</div>
     <textarea class="sd-ld" rows="2" maxlength="800" placeholder="What it's for, e.g. Build extension to wall plate" aria-label="Line ${i + 1}: what it's for">${esc(l.d || "")}</textarea>
     <div class="sd-lrow">
       <label class="sd-lf sd-lqf"${qm ? "" : " hidden"}>Quantity<input class="sd-lq" type="number" inputmode="decimal" step="any" value="${esc(qm ? (l.q == null ? "" : l.q) : "")}"></label>
@@ -83,7 +91,15 @@ function sdEdit(d0) {
     JSON.parse(JSON.stringify(d0)),
   );
   if (!d.number) d.number = String(sdNextNumber(d.type));
-  if (est && d.intro == null) d.intro = set.intro;
+  if (est) {
+    /* everything the estimate says, from its own record (a brought-in Word estimate keeps its own), else the usual */
+    if (d.intro == null) d.intro = set.intro;
+    if (d.costNote == null) d.costNote = set.costNote;
+    if (d.closing == null) d.closing = set.closing;
+    if (d.signoff == null) d.signoff = set.signoff;
+    if (!d.inclHead) d.inclHead = set.inclHead;
+    if (!d.bd) d.bd = d.from ? "total" : (d.lines || []).some((l) => l && l.h) ? "head" : "all";
+  }
   /* older records: a whole-invoice reverse charge becomes each line's VAT code */
   d.lines = (d.lines || []).map((l) => Object.assign({}, l, { vc: sdVc(l, d), k: sdKind(l) }));
   delete d.drc;
@@ -126,12 +142,17 @@ function sdEdit(d0) {
         .join("")}</select></label></div>`
     }
     <div id="sd-lines">${d.lines.map((l, i) => sdLineRow(l, i, set)).join("")}</div>
-    <button type="button" class="btn" id="sd-addl">+ Add a line</button>
+    <div class="sd-acts"><button type="button" class="btn" id="sd-addl">+ Add a line</button><button type="button" class="btn" id="sd-addh">+ Add a heading</button></div>
     ${
       est
         ? `<label for="sd-valid">Valid for (days)<input id="sd-valid" type="number" inputmode="numeric" value="${esc(d.validDays || set.validDays)}"></label>
     <label for="sd-incl">Works included (one per line, numbered on the PDF)<textarea id="sd-incl" rows="7" maxlength="8000">${esc(d.incl || "")}</textarea></label>
-    <label for="sd-excl">Works excluded (one per line)<textarea id="sd-excl" rows="6" maxlength="8000">${esc(d.excl || "")}</textarea></label>`
+    <label for="sd-excl">Works excluded (one per line)<textarea id="sd-excl" rows="6" maxlength="8000">${esc(d.excl || "")}</textarea></label>
+    <label for="sd-bd">On the estimate, show<select id="sd-bd"><option value="total"${d.bd === "total" ? " selected" : ""}>The total only</option><option value="head"${d.bd === "head" ? " selected" : ""}>Each heading's total, then the total</option><option value="all"${d.bd === "all" ? " selected" : ""}>Every line and heading, then the total</option></select></label>
+    <label for="sd-ih">Heading for works included<input id="sd-ih" maxlength="120" value="${esc(d.inclHead || "")}"></label>
+    <label for="sd-cn">Note under the total (in italics)<textarea id="sd-cn" rows="2" maxlength="1500">${esc(d.costNote || "")}</textarea></label>
+    <label for="sd-cw">Closing words<textarea id="sd-cw" rows="5" maxlength="6000">${esc(d.closing || "")}</textarea></label>
+    <label for="sd-so">Sign-off (one line each)<textarea id="sd-so" rows="2" maxlength="200">${esc(d.signoff || "")}</textarea></label>`
         : `<div class="grid2"><label for="sd-cis">CIS (when you work for a contractor)<select id="sd-cis"><option value="">No CIS</option><option value="20"${d.cis === "20" ? " selected" : ""}>They take 20% off the labour</option><option value="30"${d.cis === "30" ? " selected" : ""}>They take 30% off the labour</option><option value="0"${d.cis === "0" ? " selected" : ""}>Gross status (nothing taken off)</option></select></label>
       <label for="sd-ret">Retention held back %<input id="sd-ret" type="number" inputmode="decimal" step="0.5" value="${esc(d.ret || "")}" placeholder="e.g. 5"></label></div>`
     }
@@ -153,6 +174,7 @@ function sdEdit(d0) {
   </div>`);
   const num = (v) => (v === "" || v == null ? "" : sdR2(v));
   const readLine = (r) => {
+    if (r.dataset.h) return { h: 1, d: r.querySelector(".sd-lhx").value.trim() };
     const qm = !r.querySelector(".sd-lqf").hidden;
     const o = {
       d: r.querySelector(".sd-ld").value.trim(),
@@ -185,7 +207,7 @@ function sdEdit(d0) {
       site: $("sd-site").value.trim(),
       notes: $("sd-notes").value.trim(),
       inc: $("sd-inc") ? $("sd-inc").value === "1" : false,
-      lines: lines.filter((l) => l.d || l.a !== ""),
+      lines: lines.filter((l) => (l.h ? l.d : l.d || l.a !== "")),
     });
     if (est)
       Object.assign(o, {
@@ -194,6 +216,11 @@ function sdEdit(d0) {
         validDays: +$("sd-valid").value || 30,
         incl: $("sd-incl").value,
         excl: $("sd-excl").value,
+        bd: $("sd-bd").value,
+        inclHead: $("sd-ih").value.trim(),
+        costNote: $("sd-cn").value,
+        closing: $("sd-cw").value,
+        signoff: $("sd-so").value,
       });
     else
       Object.assign(o, {
@@ -207,11 +234,22 @@ function sdEdit(d0) {
   const totals = () => {
     const o = read(),
       c = sdCalc(o);
+    let head = null;
+    const subOf = new Map();
     document.querySelectorAll("#sd-lines .sd-line").forEach((r) => {
       const l = readLine(r);
+      if (l.h) {
+        head = r;
+        subOf.set(r, 0);
+        return;
+      }
       if (l.m === "q") r.querySelector(".sd-la").value = l.a === "" ? "" : l.a.toFixed(2);
       r.querySelector(".sd-ltot").innerHTML = `Line total <b>${gbp(sdAmt(l))}</b>`;
+      if (head) subOf.set(head, subOf.get(head) + sdAmt(l));
     });
+    subOf.forEach(
+      (v, r) => (r.querySelector(".sd-ltot").innerHTML = `Heading total <b>${gbp(v)}</b>`),
+    );
     const rows = [[o.inc ? "Total before VAT (worked out)" : "Total before VAT", gbp(c.net), 1]];
     if (set.vatReg !== false)
       Object.keys(c.byRate).forEach((k) => {
@@ -237,11 +275,13 @@ function sdEdit(d0) {
       )
       .join("");
   };
-  const renumber = () =>
+  const renumber = () => {
+    let n = 0;
     document.querySelectorAll("#sd-lines .sd-line").forEach((r, i) => {
       r.dataset.i = i;
-      r.querySelector(".sd-lhd b").textContent = "Line " + (i + 1);
+      if (!r.dataset.h) r.querySelector(".sd-lhd b").textContent = "Line " + ++n;
     });
+  };
   const wireLines = () => {
     document
       .querySelectorAll("#sd-lines input, #sd-lines select, #sd-lines textarea")
@@ -250,6 +290,18 @@ function sdEdit(d0) {
       (b) =>
         (b.onclick = () => {
           b.closest(".sd-line").remove();
+          renumber();
+          totals();
+        }),
+    );
+    document.querySelectorAll("#sd-lines .sd-lup, #sd-lines .sd-ldn").forEach(
+      (b) =>
+        (b.onclick = () => {
+          const r = b.closest(".sd-line");
+          if (b.classList.contains("sd-lup") && r.previousElementSibling)
+            r.parentNode.insertBefore(r, r.previousElementSibling);
+          else if (b.classList.contains("sd-ldn") && r.nextElementSibling)
+            r.parentNode.insertBefore(r.nextElementSibling, r);
           renumber();
           totals();
         }),
@@ -274,7 +326,8 @@ function sdEdit(d0) {
   };
   $("sd-addl").onclick = () => {
     const n = document.querySelectorAll("#sd-lines .sd-line").length;
-    const last = document.querySelector("#sd-lines .sd-line:last-child");
+    const lines0 = document.querySelectorAll("#sd-lines .sd-line:not(.sd-hrow)");
+    const last = lines0[lines0.length - 1];
     $("sd-lines").insertAdjacentHTML(
       "beforeend",
       sdLineRow(
@@ -291,6 +344,14 @@ function sdEdit(d0) {
     wireLines();
     totals();
     const all = document.querySelectorAll("#sd-lines .sd-ld");
+    all[all.length - 1].focus();
+  };
+  $("sd-addh").onclick = () => {
+    const n = document.querySelectorAll("#sd-lines .sd-line").length;
+    $("sd-lines").insertAdjacentHTML("beforeend", sdLineRow({ h: 1, d: "" }, n, set));
+    wireLines();
+    totals();
+    const all = document.querySelectorAll("#sd-lines .sd-lhx");
     all[all.length - 1].focus();
   };
   wireLines();

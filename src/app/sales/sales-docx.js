@@ -97,7 +97,7 @@ const sdMark = (p) =>
       : p.list === "bullet"
         ? "- "
         : p.list
-          ? "1. "
+          ? "~ "
           : p.center
             ? ">> "
             : p.b && p.t.length < 40 && !/_{3,}/.test(p.t)

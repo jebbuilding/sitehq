@@ -256,6 +256,17 @@ function acSums(from, to) {
     else exp += -net;
     if (t.amt < 0 && t.vat) vatIn += +t.vat;
   });
+  /* receipts paid in cash or with his own money: costs that never reach the bank statement */
+  (S.acRcpts || [])
+    .filter(
+      (r) => r.status === "done" && r.paid && r.paid !== "card" && r.date >= from && r.date <= to,
+    )
+    .forEach((r) => {
+      const net = sdR2((+r.total || 0) - (+r.vat || 0));
+      byCat[r.cat || "oexp"] = sdR2((byCat[r.cat || "oexp"] || 0) - net);
+      exp += net;
+      vatIn += +r.vat || 0;
+    });
   /* VAT charged: on invoices dated in the range (and not reverse charge) */
   const vatOut = sdSales()
     .filter(

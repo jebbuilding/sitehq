@@ -22,6 +22,13 @@ const paras=['Mr Test Person','1 Sample Street','Exmouth','EX8 1AA','Estimate Nu
 const xml='<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+paras.map(P).join('')+'</w:body></w:document>';
 const z=XL.CFB.utils.cfb_new();XL.CFB.utils.cfb_add(z,'/word/document.xml',Buffer.from(xml));XL.CFB.utils.cfb_add(z,'/[Content_Types].xml',Buffer.from('<Types/>'));
 fs.writeFileSync('h427-est.docx',XL.CFB.write(z,{fileType:'zip',type:'buffer'}));
+{const W=t=>'<w:p><w:r><w:t xml:space="preserve">'+t+'</w:t></w:r></w:p>';
+ const z2=XL.CFB.utils.cfb_new();
+ XL.CFB.utils.cfb_add(z2,'/word/document.xml',Buffer.from('<?xml version="1.0"?><w:document xmlns:w="w" xmlns:r="r"><w:body>'+W('')+'<w:sectPr><w:headerReference w:type="default" r:id="rIdH"/><w:footerReference w:type="default" r:id="rIdF"/></w:sectPr></w:body></w:document>'));
+ XL.CFB.utils.cfb_add(z2,'/word/_rels/document.xml.rels',Buffer.from('<?xml version="1.0"?><Relationships><Relationship Id="rIdH" Type="h" Target="header1.xml"/><Relationship Id="rIdF" Type="f" Target="footer1.xml"/></Relationships>'));
+ XL.CFB.utils.cfb_add(z2,'/word/header1.xml',Buffer.from('<w:hdr>'+['Test Builders Ltd','1 Test Street','Exeter','','01234 567890','hello@example.com'].map(W).join('')+'</w:hdr>'));
+ XL.CFB.utils.cfb_add(z2,'/word/footer1.xml',Buffer.from('<w:ftr>'+W('Builds | Extensions | Repairs')+W('VAT Number 123456789')+'</w:ftr>'));
+ fs.writeFileSync('h427-lh.docx',XL.CFB.write(z2,{fileType:'zip',type:'buffer'}));}
 const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=window.__dl[window.__dl.length-1];const u=new Uint8Array(await r.data.arrayBuffer());let s='';u.forEach(x=>s+=String.fromCharCode(x));return btoa(s)});fs.writeFileSync(name,Buffer.from(b64,'base64'));};
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1100,height:1000}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(u.includes('xlsx'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('xlsxpkg/package/dist/xlsx.full.min.js','utf8')});if(u.includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});r.abort()});
@@ -31,6 +38,12 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  ok(await p.isVisible('#tabs .tab[data-t=sales]')&&await p.isVisible('#tabs .tab[data-t=cis]'),'Estimates & invoices and CIS returns tabs');
  await p.click('#tabs .tab[data-t=sales]');await p.waitForTimeout(300);
  ok(/No invoices yet/.test(await p.innerText('#main')),'empty to start');
+ /* the one-off set-up: letterhead first */
+ ok(await p.isVisible('.sd-setup')&&/Bring in your Word letterhead/.test(await p.innerText('.sd-setup')),'set-up card asks for the letterhead and an estimate');
+ await p.setInputFiles('#main .sd-su-lh','h427-lh.docx');await p.waitForTimeout(1500);
+ const lhSet=await p.evaluate(()=>window.__st['todos/salesset']);
+ ok(lhSet&&/Test Builders Ltd\n1 Test Street/.test(lhSet.head)&&lhSet.vatNo==='123456789'&&/Repairs/.test(lhSet.tagline),'letterhead saved: address lines, VAT number, foot line');
+ ok(/✓/.test(await p.innerText('.sd-setup')),'step 1 ticked; terms still to do');
  /* an invoice to a contractor, with CIS */
  await p.click('#sd-new');await p.waitForTimeout(300);
  await p.fill('#sd-client','Big Builder Ltd');await p.fill('#sd-addr','2 Test Road\nExeter');await p.fill('#sd-title','Groundworks');
@@ -72,6 +85,7 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  ok(/Estimate 2001 brought in/.test(await lastToast()),'brought in as estimate 2001: '+await lastToast());
  const set=await p.evaluate(()=>window.__st['todos/salesset']);
  ok(set&&/Payment is due within 14 days/.test(set.terms),'its terms saved as the standard terms');
+ ok(!(await p.$('.sd-setup')),'set-up card gone once letterhead and terms are in');
  const e=(await sales()).find(x=>x.type==='estimate');
  ok(e&&e.address==='1 Sample Street\nExmouth\nEX8 1AA'&&e.date==='2026-10-12'&&e.dear==='Mr Person'&&/Base and footings/.test(e.incl)&&/Electrics/.test(e.excl)&&!/Please note/.test(e.excl),'address, date, Dear, included, excluded all in the right place');
  ok(/Sent, waiting to hear\s+£10,000\.00/i.test(await p.innerText('.sd-boxes')),'Sent box: £10,000');
@@ -91,6 +105,27 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  ok(inv2b&&(inv2b.emails||[]).length===1&&inv2b.emails[0].to==='test.person@example.com'&&inv2b.status==='awaiting','noted as emailed to them and now awaiting payment');
  dl=await p.evaluate(()=>(window.__dl||[]).map(r=>r.filename));ok(/Invoice 2 Mr Test Person.pdf/.test(dl[dl.length-1]),'its PDF saved to attach');
  if(await p.isVisible('#sd-close')){await p.click('#sd-close');await p.waitForTimeout(300);}
+ /* the brought-in estimate keeps its own wording in the editor */
+ await p.click('#sd-tabs button[data-v=est]');await p.waitForTimeout(300);
+ await p.click('.sd-row');await p.waitForTimeout(300);
+ ok(/Please note that changes may alter the price/.test(await p.inputValue('#sd-cw'))&&await p.inputValue('#sd-bd')==='total','a brought-in estimate shows its own closing words, total only like the Word one');
+ await p.click('#sd-close');await p.waitForTimeout(300);
+ /* headings with lines under them, moved into place */
+ await p.click('#sd-new');await p.waitForTimeout(300);
+ await p.fill('#sd-client','Mr Heading Test');
+ let hl=await p.$$('#sd-lines .sd-line');await (await hl[0].$('.sd-ld')).fill('Dig footings');await (await hl[0].$('.sd-la')).fill('800');
+ await p.click('#sd-addh');hl=await p.$$('#sd-lines .sd-line');await (await hl[1].$('.sd-lhx')).fill('Groundworks');await (await hl[1].$('.sd-lup')).click();
+ await p.click('#sd-addl');hl=await p.$$('#sd-lines .sd-line');await (await hl[2].$('.sd-ld')).fill('Concrete');await (await hl[2].$('.sd-la')).fill('400');
+ await p.click('#sd-addh');hl=await p.$$('#sd-lines .sd-line');await (await hl[3].$('.sd-lhx')).fill('Roof');
+ await p.click('#sd-addl');hl=await p.$$('#sd-lines .sd-line');await (await hl[4].$('.sd-ld')).fill('Tiles and battens');await (await hl[4].$('.sd-la')).fill('1000');await p.waitForTimeout(150);
+ const htot=await p.$$eval('#sd-lines .sd-hrow .sd-ltot',x=>x.map(e=>e.textContent));
+ ok(htot[0]==='Heading total £1,200.00'&&htot[1]==='Heading total £1,000.00'&&/Total before VAT\s+£2,200\.00/.test(await p.innerText('#sd-tot')),'headings total their lines: £1,200 + £1,000 = £2,200');
+ ok(await p.inputValue('#sd-bd')==='all','new estimate shows every line by default');
+ await p.click('#sd-pdf');await p.waitForTimeout(2500);
+ await savePdf(p,'h427-est-heads.pdf');
+ const hrec=(await sales()).find(x=>x.client==='Mr Heading Test');
+ ok(hrec&&hrec.lines.length===5&&hrec.lines[0].h===1&&hrec.lines[0].d==='Groundworks'&&hrec.lines[3].h===1,'saved in order: heading, two lines, heading, line');
+ await p.click('#sd-close');await p.waitForTimeout(300);
  /* CIS return */
  await p.click('#tabs .tab[data-t=cis]');await p.waitForTimeout(400);
  main=await p.innerText('#main');

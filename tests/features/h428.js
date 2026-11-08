@@ -9,9 +9,12 @@ const pad=n=>String(n).padStart(2,'0');const isoD=x=>x.getFullYear()+'-'+pad(x.g
 const D=(n)=>{const x=new Date();x.setDate(x.getDate()-n);return x;};
 /* a customer invoice for £1,200 (inc VAT) waiting to be paid, and a trade's approved invoice for £850 */
 src=src.replace('store["sheets/"+E+"/invoices/i"]={number:"0042",invDate:today,sentAt:Date.now(),status:"sent",amount:850,','store["todos/sd-a"]={kind:"sale",type:"invoice",number:"7",date:"'+isoD(D(20))+'",client:"Mrs Test",lines:[{d:"Work",a:1000,vc:"S20",k:"lab"}],status:"awaiting",payments:[]};store["sheets/"+E+"/invoices/i"]={number:"0042",invDate:today,sentAt:Date.now(),status:"approved",amount:850,');
-src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;'+seed);
+src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed);
+src=src.replace('upload:async(b)=>(window.__last=b,','upload:async(b)=>{const id="up"+Math.random().toString(36).slice(2);window.__blobs[id]=b;return {id,url:"",sizeBytes:b.size,contentType:b.type}},_x:async(b)=>(window.__last=b,');
+/* a stand-in for Claude reading the receipt photo: the platform's sample(), with images */
+src=src.replace('downloads:{save:','sample:Object.assign(async()=>({text:""}),{limits:async()=>({maxPromptBytes:65536,images:{maxCount:5,maxInputBytes:5e6,mediaTypes:["image/jpeg","image/png"]}}),json:async(p,o)=>{window.__sampled=(o&&o.images||[]).length;return {supplier:"Screwfix Exmouth",date:window.__rcDate,total:120,vat:20,vatNo:"GB123456789",desc:"Screws and fixings",cat:"mat",paid:"card"}}}),downloads:{save:');
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
-const page_src=fs.readFileSync('timesheets.html','utf8');
+const page_src=fs.readFileSync('timesheets.html','utf8').replace('const blobUrl = (id) => "/_blob/" + id;','const blobUrl=id=>window.__blobs[id]?URL.createObjectURL(window.__blobs[id]):"/_blob/"+id;');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 const csv=['Date,Type,Description,Paid out,Paid in,Balance',
  `${uk(D(10))},DEB,SCREWFIX DIRECT 1234,120.00,,4880.00`,
@@ -41,6 +44,20 @@ fs.writeFileSync('h428-bank.csv',csv);
  ok(/1 more sorted/.test(await lastToast()),'rule saved and the other Screwfix payment sorted: '+await lastToast());
  const s1=await st();const tx=Object.values(s1).filter(v=>v&&v.kind==='acctx').flatMap(v=>v.tx);
  ok(tx.filter(t=>/SCREWFIX/.test(t.desc)&&t.cat==='mat').length===2&&tx.find(t=>/1234/.test(t.desc)).vat===20,'both in Materials, £20 VAT on the £120 receipt');
+ /* a receipt photo: Claude reads it, it's checked, and matched to the second Screwfix payment's twin (£120 on the same week) */
+ await p.evaluate(d=>window.__rcDate=d,isoD(D(10)));
+ await p.click('#ac-tabs button[data-v=rcpt]');await p.waitForTimeout(200);
+ await p.setInputFiles('#main .ac-rfile','fixtures/test.jpg');await p.waitForTimeout(1500);
+ ok(await p.evaluate(()=>window.__sampled)===1,'the photo was sent to Claude to read');
+ ok(await p.isVisible('#rr-s')&&await p.inputValue('#rr-s')==='Screwfix Exmouth'&&await p.inputValue('#rr-t')==='120'&&await p.inputValue('#rr-v')==='20','shop, total and VAT filled in from the photo');
+ ok(/bank payment on/.test(await p.innerText('#rr-m')),'it found the bank payment: '+await p.innerText('#rr-m'));
+ await p.click('#f-save');await p.waitForTimeout(600);
+ ok(/matched to the bank payment/.test(await lastToast()),'saved and matched: '+await lastToast());
+ const rc=Object.values(await st()).find(v=>v&&v.kind==='acrcpt');
+ const txr=Object.values(await st()).filter(v=>v&&v.kind==='acctx').flatMap(v=>v.tx).find(t=>t.rcpt);
+ ok(rc&&rc.status==='done'&&rc.tx&&txr&&/SCREWFIX DIRECT 1234/.test(txr.desc)&&txr.vat===20,'the bank payment holds the receipt and its £20 VAT');
+ await p.click('#ac-tabs button[data-v=bank]');await p.waitForTimeout(300);await p.click('#ac-f button[data-v=all]');await p.waitForTimeout(200);
+ ok((await p.$$('.ac-rlink')).length===1,'📎 Receipt shown on the bank payment');
  /* match money in to the invoice, money out to Sam's invoice */
  await (await row('MRS TEST')).locator('.ac-match').click();await p.waitForTimeout(500);
  const inv=(await st())['todos/sd-a'];

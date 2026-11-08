@@ -57,6 +57,7 @@ Subcollections (`TR_COLLS`):
 | `cismonth` | a CIS tax month (`todos/cis-YYYY-MM`, named by the month it ends on the 5th): VAT and materials per paid invoice, payments added by hand (`extra`: who, date, invoice, site, labour, materials, VAT), when the return was filed (and nil), tax paid to HMRC (`hmrcPaid`), when each person was sent their statement (`stmtSent`); statements go to `sheets/{uid}/signoffs/pd-cis*` as a personal document (kind `cis`) |
 | `acct` | the one Accounts record (`todos/acct`): bank accounts (name, bank, last 4 digits, opening balance – no passwords or full numbers) and sorting rules (words → category, VAT %) |
 | `acctx` | a month of one bank account's payments (`todos/atx-{account}-{YYYY-MM}`): date, description, amount (+ in, − out), balance, category, VAT, note, the invoice it was matched to |
+| `acrcpt` | a receipt (`todos/rc-*`): photo (asset id), shop, date, total, VAT, seller's VAT number, category, paid by card/cash/own money, what for, read by Claude then checked (`status`), and the bank payment it matched (`tx`) |
 | `npsym` | drawing symbols James saved from his own drawings (`name`, `objs` around their middle, `scale` drawn at) |
 | `qrcfg`, `qrsite` | QR sign-in config (web-app URL + key) and per-site state |
 | `audit` | tamper-evident deletion record (hash-chained) |

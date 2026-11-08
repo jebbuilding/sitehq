@@ -7,7 +7,7 @@ import { blobUrl, uploadFile } from "../files/files.js";
 import { coData } from "../owner/company-details.js";
 import { SD_VATC, sdCalc, sdNextNumber, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdParseEstimate, sdReadDocxAll } from "./sales-docx.js";
-export { sdImportWord, sdSettings };
+export { sdImportWord, sdSettings, sdSetupCard, sdWireSetup };
 /* One sheet for everything the estimates and invoices print: the letterhead lines and logo (brought in from James's
    Word letterhead, or typed), his signature, VAT registration, number and the usual rate, numbering, payment days,
    the standard wording (opening, cost note, closing, sign-off, list headings), the terms and the bank details.
@@ -63,6 +63,7 @@ function sdSettings() {
     <div class="who">A line starting <b>#</b> is a heading, <b>##</b> a smaller heading, <b>-</b> a bullet point. Bringing in a Word estimate fills this in for you.</div>
     <div class="flabel">Invoices</div>
     <label for="ss-bank">Bank details<textarea id="ss-bank" rows="3" maxlength="400" placeholder="Account name, sort code, account number">${esc(s.bank)}</textarea></label>
+    <label for="ss-ii">Opening line on invoices<input id="ss-ii" maxlength="300" value="${esc(s.invIntro)}"></label>
     <label for="ss-in">Thank-you line<input id="ss-in" maxlength="200" value="${esc(s.invNote)}"></label>
     ${formFoot(false, "Save")}`,
     async () => {
@@ -90,6 +91,7 @@ function sdSettings() {
           terms: $("ss-terms").value,
           bank: $("ss-bank").value.trim(),
           invNote: $("ss-in").value.trim(),
+          invIntro: $("ss-ii").value.trim(),
         });
         closeForm();
         toast("Saved");
@@ -172,8 +174,8 @@ async function sdImportWord(file) {
     </div>
     ${box("si-est", true, `Add it as an estimate${taken ? " (that number is already used, so it gets the next one)" : ""}`)}
     ${p.terms ? box("si-terms", true, `Use its terms and conditions (${p.terms.split("\n").length} paragraphs) as my standard terms`) : ""}
-    ${p.intro || p.closing ? box("si-words", !(S.salesSet || {}).intro, "Use its wording (opening, note, closing, sign-off) as my standard wording") : ""}
-    ${lh.head || r.logo ? box("si-lh", !(S.salesSet || {}).head, "Use its letterhead (logo, address lines, foot line) as my letterhead") : ""}
+    ${p.intro || p.closing ? box("si-words", !(S.salesSet || {}).wordsFrom, "Use its wording (opening, note, closing, sign-off) as my standard wording") : ""}
+    ${lh.head || r.logo ? box("si-lh", !(S.salesSet || {}).head && !(S.salesSet || {}).logoId, "Use its letterhead (logo, address lines, foot line) as my letterhead") : ""}
     ${sig ? box("si-sig", !(S.salesSet || {}).sigId, "Use the signature in it as my signature") : ""}
     ${lh.vat ? `<div class="who">Its VAT number is ${esc(lh.vat)}. Your VAT number is set in ⚙️ Letterhead, terms & bank.</div>` : ""}
     ${formFoot(false, "Bring it in")}`,
@@ -196,6 +198,7 @@ async function sdImportWord(file) {
             p.closing ? { closing: p.closing } : {},
             p.signoff ? { signoff: p.signoff } : {},
             e.inclHead ? { inclHead: e.inclHead } : {},
+            { wordsFrom: file.name },
           );
         if (on("si-lh")) {
           Object.assign(
@@ -216,6 +219,11 @@ async function sdImportWord(file) {
         if (on("si-est")) {
           const o = Object.assign({}, e, {
             intro: p.intro || sdSet().intro,
+            costNote: p.costNote || sdSet().costNote,
+            closing: p.closing || sdSet().closing,
+            signoff: p.signoff || sdSet().signoff,
+            inclHead: e.inclHead || sdSet().inclHead,
+            bd: "total",
             status: "sent",
             sentAt: Date.now(),
             from: file.name,
@@ -235,4 +243,56 @@ async function sdImportWord(file) {
       }
     },
   );
+}
+
+/* ---------- the one-off set-up card at the top of Estimates & invoices ---------- */
+function sdSetupCard() {
+  const s = S.salesSet || {};
+  const lh = !!(s.head || s.logoId),
+    terms = !!s.terms;
+  if (lh && terms) return "";
+  const step = (done, n, label, cls, help) =>
+    `<div class="sd-step${done ? " done" : ""}"><b>${done ? "✓" : n}</b><span>${label}<small>${help}</small></span>${done ? "" : `<span class="btn primary sd-filebtn">Choose the Word file<input type="file" class="${cls}" accept=".docx" aria-label="${label}"></span>`}</div>`;
+  return `<section class="card sd-setup"><div class="cardbody"><b>Set up your letterhead and terms (once)</b>
+    <div class="who">Then every estimate and invoice comes out on your letterhead, and your terms go on the end of every estimate by themselves.</div>
+    ${step(lh, 1, "Bring in your Word letterhead", "sd-su-lh", "Your logo, address, phone, email, the line at the foot and your VAT number.")}
+    ${step(terms, 2, "Bring in one of your Word estimates", "sd-su-est", "Your terms and conditions, your usual wording and your signature.")}
+  </div></section>`;
+}
+function sdWireSetup() {
+  const a = document.querySelector("#main .sd-su-lh"),
+    b = document.querySelector("#main .sd-su-est");
+  if (a)
+    a.onchange = async () => {
+      const f = a.files[0];
+      a.value = "";
+      if (f) await sdQuickLetterhead(f);
+    };
+  if (b)
+    b.onchange = async () => {
+      const f = b.files[0];
+      b.value = "";
+      if (f) sdImportWord(f);
+    };
+}
+/* a Word letterhead straight in: header lines, logo, foot line and VAT number */
+async function sdQuickLetterhead(file) {
+  toast("Reading " + file.name + "…");
+  try {
+    const r = await sdReadDocxAll(file);
+    const lh = r.letterhead;
+    if (!lh.head && !r.logo)
+      return toast("No letterhead found in that file (it should be in the page header)");
+    const patch = {};
+    if (lh.head) patch.head = lh.head;
+    if (lh.tagline) patch.tagline = lh.tagline;
+    if (lh.vat) patch.vatNo = lh.vat;
+    if (r.logo)
+      patch.logoId = await sdUploadImg(r.logo, "logo." + (r.logo.type.split("/")[1] || "png"));
+    await sdSaveSet(patch);
+    toast("Letterhead saved" + (lh.vat ? " · VAT number " + lh.vat : ""));
+    render();
+  } catch (e) {
+    toast("Couldn't read that file. Is it a Word (.docx) file?");
+  }
 }

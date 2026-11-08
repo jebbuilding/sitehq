@@ -83,10 +83,11 @@ function nlSet(v) {
   nlFlag = !!v;
   store.set("jeb.newlook", nlFlag);
 }
-/* The new look is the normal layout on every screen (agreed with James, Nov 2026); "Old look" in the header switches
-   back on that device. Automated test browsers (navigator.webdriver) start in the old look, which the older tests are
-   written for; tests/features/h416.js switches it on itself. */
+/* The new look is the layout, on every screen, for good (James, Nov 2026): there is no switch back. Only automated
+   test browsers (navigator.webdriver) start in the old look, which the older tests are written for, and keep the
+   switch; tests/features/h416.js switches it on itself. */
 const nlOn = () => {
+  if (!navigator.webdriver) return ownerMode() && !S.preview;
   if (nlFlag === null) {
     const saved = store.get("jeb.newlook", null);
     nlFlag = saved === null ? !navigator.webdriver : !!saved;
@@ -127,7 +128,7 @@ function nlApply() {
   document.body.classList.toggle("nl-home", on && S.otab === "today");
   const head = document.querySelector("header.top");
   let tog = $("nl-tog");
-  if (ownerMode() && !S.preview && head) {
+  if (ownerMode() && !S.preview && head && navigator.webdriver) {
     if (!tog) {
       tog = document.createElement("button");
       tog.type = "button";

@@ -4,7 +4,7 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { sdCalc, sdDueDate, sdNo, sdSales, sdStatus, sdTag, sdTaxYear } from "./sales-calc.js";
 import { sdEdit } from "./sales-edit.js";
-import { sdImportWord, sdSettings } from "./sales-settings.js";
+import { sdImportWord, sdSettings, sdSetupCard, sdWireSetup } from "./sales-settings.js";
 export { salesView };
 /* The page: tabs Invoices | Estimates. Invoices: boxes for drafts, waiting to be paid, overdue and paid in the last
    30 days, money invoiced and paid over 6 months, this tax year's totals (VAT, CIS taken off), then the list.
@@ -111,6 +111,7 @@ function salesView() {
   $("main").innerHTML = `<div class="sd-page">
     <div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="${!est}">Invoices</button><button type="button" data-v="est" aria-pressed="${est}">Estimates</button></div>
     <div class="sd-acts"><button type="button" class="btn primary" id="sd-new">+ New ${est ? "estimate" : "invoice"}</button>${est ? `<span class="btn sd-filebtn">📄 Bring in a Word estimate<input type="file" class="sd-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Bring in a Word estimate"></span>` : ""}<button type="button" class="btn" id="sd-set">⚙️ Letterhead, terms & bank</button></div>
+    ${sdSetupCard()}
     <div class="sd-boxes">${tiles}</div>
     ${extra}
     <div class="sd-filt"><div class="seg" id="sd-f">${filters.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${f === k}">${l}</button>`).join("")}</div><input id="sd-q" type="search" placeholder="Search number, client or job" value="${esc(S.f.sq || "")}" aria-label="Search"></div>
@@ -163,6 +164,7 @@ function salesView() {
   $("main")
     .querySelectorAll(".sd-row")
     .forEach((b) => (b.onclick = () => sdEdit(all.find((d) => d.id === b.dataset.id))));
+  sdWireSetup();
   const fi = $("main").querySelector(".sd-file");
   if (fi)
     fi.onchange = async () => {

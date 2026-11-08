@@ -18,7 +18,7 @@ XL.utils.book_append_sheet(wbk,sheet([['Van payment','Loan, finance & leasing',4
 XL.utils.book_append_sheet(wbk,sheet([['Timber yard','Timber',500,'Weekly','Variable','']]),'Materials');
 XL.writeFile(wbk,'h425-costs.xlsx');
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1100,height:1000}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
- await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(u.includes('xlsx'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('xlsxpkg/package/dist/xlsx.full.min.js','utf8')});r.abort()});
+ await ctx.route(/^https?:\/\//,r=>{const u=r.request().url();if(u.includes('xlsx'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('xlsxpkg/package/dist/xlsx.full.min.js','utf8')});if(u.includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});r.abort()});
  const lastToast=()=>p.evaluate(()=>{const t=[...document.querySelectorAll('.toast')];return t.length?t[t.length-1].textContent:''});
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  ok(await p.isVisible('#tabs .tab[data-t=wages]')&&await p.isVisible('#tabs .tab[data-t=costs]'),'Wage calculator and Business costings tabs (owner)');
@@ -32,6 +32,11 @@ XL.writeFile(wbk,'h425-costs.xlsx');
  ok(/Total cost a year\s+£51,668/.test(out),'costs the business £51,668 a year');
  ok(/An hour actually worked \(1856 hours\)\s+£27\.84/.test(out),'£27.84 an hour actually worked (232 days × 8 hours, holiday taken off)');
  ok(/\+£4\.66/.test(out),'charged at £32.50 that leaves +£4.66 an hour');
+ await p.click('#wc-pdf');await p.waitForTimeout(2500);
+ const wdl=await p.evaluate(()=>(window.__dl||[]).map(r=>[r.filename,r.data.size]));
+ ok(wdl.length&&wdl[wdl.length-1][0]==='Wage calculation Carpenter.pdf'&&wdl[wdl.length-1][1]>3000,'wage calculation as a PDF: '+JSON.stringify(wdl[wdl.length-1]));
+ await p.evaluate(async()=>{const r=window.__dl[window.__dl.length-1];const u=new Uint8Array(await r.data.arrayBuffer());let s='';u.forEach(x=>s+=String.fromCharCode(x));window.__wpdf=btoa(s);});
+ fs.writeFileSync('h425-wage.pdf',Buffer.from(await p.evaluate(()=>window.__wpdf),'base64'));
  await p.click('#wc-save');await p.waitForTimeout(300);
  ok(/Carpenter/.test(await p.innerText('#main'))&&/£27\.84/.test(await p.innerText('#main')),'saved: Carpenter, £27.84 an hour, on the list');
  /* business costings: the yearly overview */

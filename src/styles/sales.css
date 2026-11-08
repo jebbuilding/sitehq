@@ -102,3 +102,18 @@ button.cis-tr{background:none;border:0;border-bottom:1px solid var(--line);color
 .ac-tx.in .ac-amt{color:var(--ok)}
 .ac-txr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ac-cat{max-width:280px;min-height:44px}
+.sd-setup{border:2px solid var(--accent)}
+.sd-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.sd-step>b{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.sd-step.done>b{background:var(--ok)}
+.sd-step>span:not(.btn){flex:1;min-width:180px}
+.sd-step small{display:block;color:var(--muted);font-size:12px}
+.ac-rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
+.ac-rc{display:flex;gap:10px;align-items:center;text-align:left;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;min-height:64px}
+.ac-rc.todo{border-color:var(--hivis);border-width:2px}
+.ac-rc img,.ac-rcph{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:none;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:26px}
+.ac-rc small{display:block;color:var(--muted);font-size:12px}
+.ac-rbig img{display:block;max-width:100%;max-height:320px;margin:0 auto 10px;border-radius:8px;border:1px solid var(--line)}
+.sd-hrow{background:color-mix(in srgb,var(--accent) 7%,var(--surface));border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.sd-hrow .sd-lhx{font-weight:700;font-size:16px}
+.sd-lmv{display:flex;gap:2px}

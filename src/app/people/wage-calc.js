@@ -4,6 +4,7 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
 import { newId } from "../files/outbox.js";
+import { wcPdf } from "./wage-pdf.js";
 export { wagesView, wcCalc, wcMoney };
 /* One saved calculation per person or role (owner-private todos record, kind "wagecalc"). The sums follow James's
    own spreadsheet (UK 2026/27: income tax with the allowance taper, employee and employer Class 1 NI, pensions, a
@@ -179,7 +180,7 @@ function wcOpen(rec) {
     </div>
     <details class="wc-rates"><summary>Tax and NI figures (2026/27 – check gov.uk each April)</summary><div class="wc-grid">${WC_RATE_LABELS.map(([k, l]) => num("wc-r-" + k, l, r.rates[k])).join("")}</div><div class="who">Scottish income tax bands are different; these are the rest-of-UK rates.</div></details>
     <div id="wc-out"></div>
-    <div class="actions"><button type="button" class="btn primary" id="wc-save">Save</button>${rec ? `<button type="button" class="linkdanger" id="wc-del">Delete</button>` : ""}</div>
+    <div class="actions"><button type="button" class="btn primary" id="wc-save">Save</button><button type="button" class="btn" id="wc-pdf">📄 PDF</button>${rec ? `<button type="button" class="linkdanger" id="wc-del">Delete</button>` : ""}</div>
   </div>`);
   const read = () => {
     const v = (id) => parseFloat($(id).value) || 0;
@@ -238,6 +239,20 @@ function wcOpen(rec) {
     .querySelectorAll(".wc-wrap input, .wc-wrap select")
     .forEach((el) => (el.oninput = el.onchange = show));
   show();
+  $("wc-pdf").onclick = async () => {
+    const o = read();
+    toast("Making the PDF…");
+    try {
+      const blob = await wcPdf(o);
+      await S.dl.save({
+        filename:
+          "Wage calculation" + (o.name ? " " + o.name.replace(/[/:*?"<>|]+/g, "") : "") + ".pdf",
+        data: blob,
+      });
+    } catch (e) {
+      toast("Couldn't make the PDF. Check your connection.");
+    }
+  };
   $("wc-save").onclick = async () => {
     const o = read();
     if (!o.name) return toast("Give it a name, e.g. Carpenter");
