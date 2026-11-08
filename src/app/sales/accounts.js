@@ -25,6 +25,7 @@ import {
 import { acMatchWaiting, acReceipts } from "./acct-receipts.js";
 import { acRcptSheet, acRcptView } from "./acct-review.js";
 import { acSupView } from "./acct-suppliers.js";
+import { jcView } from "./job-costs.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
 export { acPeriod, accountsView };
 /* Two tabs. Overview: money in, money out and profit for the period, bank balances, month-by-month bars, the profit
@@ -50,6 +51,7 @@ function accountsView() {
     ["bank", "Bank"],
     ["rcpt", "Receipts"],
     ["sup", "Suppliers & sites"],
+    ["jobs", "💷 Job costs"],
   ]
     .map(
       ([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`,
@@ -58,6 +60,7 @@ function accountsView() {
   if (tab === "bank") acBankView(tabs);
   else if (tab === "rcpt") acRcptView(tabs);
   else if (tab === "sup") acSupView(tabs);
+  else if (tab === "jobs") jcView(tabs);
   else acOverView(tabs);
   $("ac-tabs")
     .querySelectorAll("button")

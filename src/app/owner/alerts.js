@@ -59,7 +59,7 @@ function ownerFeed() {
   });
   allTeam("invoices").forEach((x) => {
     if (x.fromOwner) return;
-    if (x.kind === "receipt") add("receipts", x, "sent a receipt", "i");
+    if (x.kind === "receipt") add("accounts", x, "sent a receipt", "i");
     else if (x.kind === "materials") add("materials", x, "asked for materials or tools", "i");
     else if (isInv(x)) add("invoices", x, "sent an invoice", "i");
   });

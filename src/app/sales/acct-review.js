@@ -177,6 +177,22 @@ function acRcptView(tabs) {
   document
     .querySelectorAll("#main .ac-trf")
     .forEach((x) => (x.onclick = () => acFileTradeRc(x.dataset.k)));
+  document.querySelectorAll("#main .ac-repaid").forEach(
+    (x) =>
+      (x.onclick = async () => {
+        x.disabled = true;
+        try {
+          await S.db
+            .doc("sheets/" + x.dataset.w + "/invoices/" + x.dataset.id)
+            .update({ repaid: true, repaidAt: Date.now() });
+          toast("Marked as paid back");
+          render();
+        } catch (e) {
+          x.disabled = false;
+          toast("Couldn't save. Check your connection.");
+        }
+      }),
+  );
   const fi = document.querySelector("#main .ac-rfile");
   fi.onchange = async () => {
     const files = [...(fi.files || [])];

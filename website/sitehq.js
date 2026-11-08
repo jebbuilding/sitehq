@@ -1,8 +1,8 @@
 /* SiteHQ link for the JEB website.
    1. Every enquiry sent from the contact form also goes to SiteHQ, where it pops up for James (the form still
       sends as it does now, so nothing is lost if SiteHQ can't be reached).
-   2. Counts page views for the "Your website" page in SiteHQ: which page, where the visitor came from (Google,
-      Facebook…) and phone or computer. No cookies, nothing stored on the visitor's device and nothing about who
+   2. Counts page views for the "Your website" page in SiteHQ: which page, how long it was looked at, where the
+      visitor came from (Google, Facebook…) and phone or computer. No cookies, nothing stored on the visitor's device and nothing about who
       they are – so no cookie banner is needed for it.
    It does nothing until SITEHQ is set to SiteHQ's address (done at go-live), and only on jebbuilding.co.uk. */
 (function () {
@@ -25,6 +25,19 @@
     m: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent),
     n: inside ? 0 : 1 /* a new visit: they came from somewhere else, not another page of this site */
   });
+  /* how long they spent on this page (only while it was on screen), sent once as they leave */
+  var shown = 0, since = document.visibilityState === "visible" ? Date.now() : 0, sent = false;
+  function leave() {
+    if (since) { shown += Date.now() - since; since = 0; }
+    if (sent || shown < 1000) return;
+    sent = true;
+    send("hit", { p: location.pathname, s: Math.min(1800, Math.round(shown / 1000)) });
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") leave();
+    else if (!sent) since = Date.now();
+  });
+  window.addEventListener("pagehide", leave);
   var f = document.getElementById("enquiry");
   if (f)
     f.addEventListener("submit", function () {

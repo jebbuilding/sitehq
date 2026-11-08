@@ -91,6 +91,7 @@ test("page views are counted by day, page, where visitors came from and device â
     pages: { "/": 1, "/contact.html": 1, "/services.html": 1, other: 1 },
     dev: { phone: 2, computer: 2 },
     refs: { "google.com": 1, direct: 1 },
+    entry: { "/": 1, "/services.html": 1 },
   });
 });
 
@@ -104,3 +105,32 @@ test("nothing can be read through the public routes, and other methods get the s
   const pre = await post("/api/public/enquiry", null, "", "OPTIONS");
   assert.equal(pre.status, 204);
 });
+
+test("time on a page, the landing page and the town (from the hosting's own header, nothing else kept)", async () => {
+  const { post, store, published } = await setup();
+  const hit = (b, h = {}) => {
+    const raw = Buffer.from(JSON.stringify(b));
+    return createApiFor(store, published)({ method: "POST", path: "/api/public/hit", headers: { "content-type": "text/plain", ...h }, body: raw });
+  };
+  void post;
+  await hit({ p: "/house-extensions.html", r: "google.com", n: 1 }, { "cloudfront-viewer-city": "Exmouth" });
+  await hit({ p: "/contact.html", n: 0 }, { "cloudfront-viewer-city": "Exmouth" });
+  await hit({ p: "/", r: "", n: 1 }, { "cloudfront-viewer-city": "Exeter" });
+  await hit({ p: "/", n: 1 }, { "cloudfront-viewer-city": "<script>" });
+  await hit({ p: "/house-extensions.html", s: 95 });
+  await hit({ p: "/house-extensions.html", s: 25 });
+  await hit({ p: "/contact.html", s: 40 });
+  await hit({ p: "/contact.html", s: 99999 });
+  await hit({ p: "/contact.html", s: 0 });
+  const s = await store.get("webstats", "2026-11-08");
+  assert.deepEqual(s.secs, { "/house-extensions.html": 120, "/contact.html": 40 });
+  assert.deepEqual(s.secsN, { "/house-extensions.html": 2, "/contact.html": 1 });
+  assert.equal(s.visitSecs, 160);
+  assert.deepEqual(s.entry, { "/house-extensions.html": 1, "/": 2 });
+  assert.deepEqual(s.places, { Exmouth: 1, Exeter: 1 });
+  assert.equal(s.views, 4);
+});
+
+function createApiFor(store, published) {
+  return createApi({ store, rules: siteRules(capabilities), auth: createDevAuth(), blobs: createDiskBlobs(os.tmpdir()), live: { publish: async (p) => void published.push(p) }, now: () => NOW });
+}

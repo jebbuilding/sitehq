@@ -67,6 +67,7 @@ import { myPolTodo, policiesView } from "../safety/policies-insurance.js";
 import { empIndTodo, indFor } from "../safety/site-inductions.js";
 import { expiryState, myTalkTodo, trainingView } from "../safety/training.js";
 import { accountsView } from "../sales/accounts.js";
+import { acTradeRcpts } from "../sales/acct-receipts.js";
 import { cisView } from "../sales/cis-returns.js";
 import { salesView } from "../sales/sales.js";
 import { hsView } from "../sites/doc-visibility.js";
@@ -122,7 +123,6 @@ const OWN_TABS = [
   ["photos", "📷 Photos"],
   ["materials", "🧰 Materials & tools"],
   ["suppliers", "🏪 Merchants"],
-  ["receipts", "🧾 Receipts"],
   ["invoices", "📑 Trades' invoices"],
   ["training", "🎓 Training"],
   ["policies", "🛡️ Policies & insurance"],
@@ -227,8 +227,9 @@ function renderTabs() {
       (i) => i.kind === "materials" && !i.fromOwner && (i.status || "sent") === "sent",
     ).length;
     if (mt) badge.materials = mt;
-    const rn = allTeam("invoices").filter((i) => i.kind === "receipt" && !i.checked).length;
-    if (rn) badge.receipts = rn;
+    /* trades' receipts not yet filed into the accounts */
+    const rn = acTradeRcpts().length;
+    if (rn) badge.accounts = (badge.accounts || 0) + rn;
     const cf = (S.clients || []).filter((c) => c.stage === "enquiry").length;
     if (cf) badge.clients = cf;
   }
@@ -486,7 +487,11 @@ function render() {
         chat: chatView,
         planner: plannerView,
         materials: materialsView,
-        receipts: receiptsView,
+        receipts: () => {
+          S.otab = "accounts";
+          S.f.act = "rcpt";
+          accountsView();
+        },
         calc: calcView,
         policies: policiesView,
         suppliers: suppliersView,

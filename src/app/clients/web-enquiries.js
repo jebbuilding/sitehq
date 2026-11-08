@@ -204,6 +204,20 @@ function webView() {
   refs.forEach(([k, v]) => (refMerged[webRefName(k)] = (refMerged[webRefName(k)] || 0) + v));
   const pages = webSum(days, "pages").slice(0, 10);
   const dev = Object.fromEntries(webSum(days, "dev"));
+  /* time on each page (average), landing pages, where they are */
+  const secs = Object.fromEntries(webSum(days, "secs")),
+    secsN = Object.fromEntries(webSum(days, "secsN"));
+  const stay = Object.keys(secs)
+    .filter((k) => secsN[k])
+    .map((k) => [k, Math.round(secs[k] / secsN[k]), secsN[k]])
+    .sort((a, b) => b[2] - a[2])
+    .slice(0, 12);
+  const stayMax = Math.max(1, ...stay.map((x) => x[1]));
+  const visitSecs = days.reduce((a, d) => a + (+d.visitSecs || 0), 0);
+  const entry = webSum(days, "entry").slice(0, 8);
+  const places = webSum(days, "places").slice(0, 10);
+  const mmss = (n) =>
+    (n >= 60 ? Math.floor(n / 60) + " min " + (n % 60 ? (n % 60) + " s" : "") : n + " s").trim();
   const devTot = (dev.phone || 0) + (dev.computer || 0);
   const list = webEnqs();
   const bar = (label, v, of) =>
@@ -235,6 +249,7 @@ function webView() {
       <div class="we-box"><small>Visits</small><b>${visits}</b><span>people coming to the site</span></div>
       <div class="we-box"><small>Pages looked at</small><b>${views}</b><span>${visits ? (views / visits).toFixed(1) + " a visit" : "–"}</span></div>
       <div class="we-box"><small>Enquiries</small><b>${enq}</b><span>${visits ? ((enq / visits) * 100).toFixed(1) + "% of visits" : "–"}</span></div>
+      <div class="we-box"><small>Average visit</small><b>${visits && visitSecs ? esc(mmss(Math.round(visitSecs / visits))) : "–"}</b><span>time on the site</span></div>
       <div class="we-box"><small>On a phone</small><b>${devTot ? Math.round(((dev.phone || 0) / devTot) * 100) + "%" : "–"}</b><span>the rest on a computer</span></div>
     </div>
     ${
@@ -247,7 +262,10 @@ function webView() {
       .slice(0, 8)
       .map(([k, v]) => bar(k, v, visits))
       .join("")}</div></section>
-    <section class="card"><div class="cardbody"><b>Pages looked at most</b>${pages.map(([k, v]) => bar(webPageName(k), v, views)).join("")}</div></section>`
+    <section class="card"><div class="cardbody"><b>Pages looked at most</b>${pages.map(([k, v]) => bar(webPageName(k), v, views)).join("")}</div></section>
+    ${stay.length ? `<section class="card"><div class="cardbody"><b>How long people stay on each page</b><div class="who">The average time a page was on someone's screen.</div>${stay.map(([k, v, n]) => `<div class="we-bar"><span>${esc(webPageName(k))}</span><span class="we-track"><span style="width:${Math.round((v / stayMax) * 100)}%"></span></span><b>${esc(mmss(v))}</b></div>`).join("")}</div></section>` : ""}
+    ${entry.length ? `<section class="card"><div class="cardbody"><b>The first page people land on</b>${entry.map(([k, v]) => bar(webPageName(k), v, visits)).join("")}</div></section>` : ""}
+    ${places.length ? `<section class="card"><div class="cardbody"><b>Where they are</b><div class="who">Town or area, roughly, from their internet connection – nothing about who they are.</div>${places.map(([k, v]) => bar(k, v, visits)).join("")}</div></section>` : ""}`
         : `<div class="nothing">No visits counted yet. The counter starts when the website goes live on jebbuilding.co.uk with the SiteHQ counter switched on (in Jasper's list). It counts visits without cookies and never records who someone is, so there's no cookie banner needed for it.</div>`
     }
   </div>`);

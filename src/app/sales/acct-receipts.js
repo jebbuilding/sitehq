@@ -19,6 +19,7 @@ export {
   acRcptParts,
   acReceipts,
   acSaveRcpt,
+  acTradeRcpts,
   acTradeRcptsHtml,
 };
 /* Like Hubdoc: take a photo (or several), Claude reads the shop, date, total, VAT and VAT number and suggests a
@@ -234,8 +235,21 @@ function acTradeRcpts() {
 }
 function acTradeRcptsHtml() {
   const list = acTradeRcpts();
-  if (!list.length) return "";
-  return `<section class="card ac-trc"><div class="cardbody"><b>From your trades (${list.length})</b>
+  const owed = allTeam("invoices").filter(
+    (v) => v.kind === "receipt" && v.paidBy === "own" && !v.repaid,
+  );
+  const owedHtml = owed.length
+    ? `<section class="card ac-owed"><div class="cardbody"><b>Owed back to your trades: ${gbp(owed.reduce((a, v) => a + (+v.amount || 0), 0))}</b><div class="who">Receipts they paid with their own money. Tap Paid back once you've paid them.</div>${owed
+        .map(
+          (v) =>
+            `<div class="jf-item"><span class="jf-ic">💷</span><span class="jf-nm"><b>${esc(nameOf(v.who))} · ${v.amount != null ? gbp(v.amount) : ""}</b><small>${esc([shortDay(v.date), v.supplier, v.site].filter(Boolean).join(" · "))}</small></span><button type="button" class="btn ac-repaid" data-w="${esc(v.who)}" data-id="${esc(v.id)}">✓ Paid back</button></div>`,
+        )
+        .join("")}</div></section>`
+    : "";
+  if (!list.length) return owedHtml;
+  return (
+    owedHtml +
+    `<section class="card ac-trc"><div class="cardbody"><b>From your trades (${list.length})</b>
     <div class="who">Receipts your trades sent from their app. Tap File it: it goes into the accounts in the right category, Claude reads the VAT off the photo, and it's matched to your bank payment (or noted as owed back if they paid with their own money).</div>
     ${list
       .slice(0, 30)
@@ -244,7 +258,8 @@ function acTradeRcptsHtml() {
           `<div class="jf-item">${v.fileId ? `<img src="${esc(blobUrl(v.fileId))}" alt="" loading="lazy">` : '<span class="jf-ic">🧾</span>'}<span class="jf-nm"><b>${esc(nameOf(v.who))} · ${esc(AC_RC_TYPE[v.type] || "Receipt")}${v.amount != null ? " · " + gbp(v.amount) : ""}</b><small>${esc([shortDay(v.date), v.supplier, v.site, v.paidBy === "own" ? "their own money – pay them back" : "company card / account"].filter(Boolean).join(" · "))}</small></span><button type="button" class="btn primary ac-trf" data-k="${esc(v.who + "|" + v.id)}">File it</button></div>`,
       )
       .join("")}
-  </div></section>`;
+  </div></section>`
+  );
 }
 /* bring one in: a receipt record in the right category, the VAT read from the photo, then checked and matched */
 async function acFileTradeRc(k) {

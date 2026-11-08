@@ -179,3 +179,13 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .acs-site summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;min-height:48px}
 .acs-site summary small{display:block;color:var(--muted);font-size:12px}
 .acs-file h3{margin:0 0 6px}
+/* job costs */
+.jc-tbl{width:100%;border-collapse:collapse}
+.jc-tbl th,.jc-tbl td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.jc-tbl .num{text-align:right;white-space:nowrap}
+.jc-row,.jc-rc{cursor:pointer}.jc-row:hover,.jc-rc:hover{background:var(--soft)}
+.jc-warn{color:var(--danger);font-size:12px;font-weight:600}
+.jc-neg{color:var(--danger)}
+.jc-h{margin:6px 0 2px}
+.jc-set{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}.jc-set label{min-width:150px}
+.jc-loose{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}

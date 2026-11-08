@@ -1,7 +1,8 @@
 // The two routes the public website (jebbuilding.co.uk) calls, with nobody signed in:
 //
 //   POST /api/public/enquiry   the contact form: one document in webenq/<id>, which pops up in the owner's app
-//   POST /api/public/hit       one page view: added to that day's counts in webstats/<yyyy-mm-dd>
+//   POST /api/public/hit       one page view: added to that day's counts in webstats/<yyyy-mm-dd>; or, as they
+//                              leave the page, the seconds they spent on it
 //
 // Both only ever write into owner-only collections (nobody can read anything through them) and answer the same
 // short "ok" whatever happens, so they tell a caller nothing. No cookies, no IP addresses and nothing that
@@ -44,12 +45,25 @@ function readBody(req) {
   }
 }
 
-/** Add `n` to a count in a map, keeping the map to `max` keys (the rest go under "other"). */
-function bump(map, key, max) {
+/** Add `n` (1 unless given) to a count in a map, keeping the map to `max` keys (the rest go under "other"). */
+function bump(map, key, max, n = 1) {
   const m = map && typeof map === "object" ? map : {};
   const k = key in m || Object.keys(m).length < max ? key : "other";
-  m[k] = (m[k] || 0) + 1;
+  m[k] = (m[k] || 0) + n;
   return m;
+}
+/** The visitor's town or area, as the hosting (CloudFront) works it out from the connection – only the name is kept. */
+function placeOf(headers) {
+  let v = "";
+  for (const h of ["cloudfront-viewer-city", "cloudfront-viewer-country-region-name", "cloudfront-viewer-country-name"])
+    if (headers[h]) {
+      v = String(headers[h]);
+      break;
+    }
+  try {
+    v = decodeURIComponent(v);
+  } catch (e) {}
+  return /^[\p{L} .'-]{1,40}$/u.test(v) ? v : "";
 }
 
 /**
@@ -82,8 +96,22 @@ export function createPublic({ store, changed, now = () => Date.now() }) {
     return OK;
   }
 
-  async function hit(b) {
+  async function hit(b, headers) {
     const page = PAGE.test(String(b.p || "")) ? String(b.p).replace(/\/index\.html$/, "/") : "other";
+    /* the time someone spent on a page, sent as they leave it */
+    if (b.s != null) {
+      const secs = Math.round(+b.s);
+      if (!(secs >= 1 && secs <= 1800)) return OK;
+      const day0 = today(now());
+      const s0 = (await store.get("webstats", day0)) || {};
+      await store.update("webstats", day0, {
+        secs: bump(s0.secs, page, 150, secs),
+        secsN: bump(s0.secsN, page, 150),
+        visitSecs: (s0.visitSecs || 0) + secs,
+      });
+      await changed("webstats/" + day0);
+      return OK;
+    }
     const ref = HOST.test(String(b.r || "").toLowerCase()) ? String(b.r).toLowerCase().replace(/^www\./, "") : "";
     const day = today(now());
     const s = (await store.get("webstats", day)) || {};
@@ -93,7 +121,12 @@ export function createPublic({ store, changed, now = () => Date.now() }) {
       pages: bump(s.pages, page, 150),
       dev: bump(s.dev, b.m ? "phone" : "computer", 3),
     };
-    if (b.n) next.refs = bump(s.refs, ref || "direct", 60);
+    if (b.n) {
+      next.refs = bump(s.refs, ref || "direct", 60);
+      next.entry = bump(s.entry, page, 150);
+      const place = placeOf(headers || {});
+      if (place) next.places = bump(s.places, place, 80);
+    }
     await store.update("webstats", day, next);
     await changed("webstats/" + day);
     return OK;
@@ -106,7 +139,7 @@ export function createPublic({ store, changed, now = () => Date.now() }) {
     if (!b) return OK;
     try {
       if (req.path === "/api/public/enquiry") return await enquiry(b);
-      if (req.path === "/api/public/hit") return await hit(b);
+      if (req.path === "/api/public/hit") return await hit(b, req.headers || {});
     } catch (e) {
       console.error("public: failed:", e && e.name);
     }

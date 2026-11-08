@@ -34,6 +34,9 @@ const pdfBytes=Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
  const trc=all.find(v=>v&&v.kind==='acrcpt'&&v.supplier==='Toolstation');
  ok(trc&&trc.site==='4 Rolle Road, Exmouth'&&trc.paid==='own'&&trc.cat==='mat'&&trc.status==='check','filed: Materials, Rolle Road, paid with their own money, to check');
  ok(!(await p.innerText('#main')).includes('From your trades'),'and it leaves the waiting list');
+ ok(/Owed back to your trades: £30.00/.test(await p.innerText('#main')),'Sam paid £30 with his own money: owed back');
+ await p.click('.ac-repaid');await p.waitForTimeout(400);
+ ok((await st())['sheets/emp1/invoices/r1'].repaid===true&&!(await p.isVisible('.ac-repaid')),'marked as paid back');
  ok(await p.isVisible('.acv-list')&&await p.isVisible('.acv-doc')&&await p.isVisible('.acv-det'),'three panes: the list, the receipt, the details');
  ok(await p.inputValue('#rr-s')==='Toolstation','the filed receipt is open beside the list');
  await p.click('#rr-save');await p.waitForTimeout(500);

@@ -15,7 +15,7 @@ Levels: `view` < `interact` < `admin` < `owner`. `{self}` = the signed-in user's
 | `sphotos/{self}` | interact | interact | site photos by a trade |
 | `jobdone`, `chats`, `msgs` | interact | interact | |
 | `planprivate`, `visitinds`, `offapp`, `todos`, `portal` | owner | owner | owner-private |
-| `webenq`, `webstats` | owner | owner | owner-private; written by the public website through `/api/public/*` (server) |
+| `webenq`, `webstats` | owner | owner | owner-private; written by the public website through `/api/public/*` (server): an enquiry, and a day's counts (views, visits, enquiries, pages, refs, dev, entry pages, places, and time on each page: secs, secsN, visitSecs) |
 | `portal/{self}` | interact | interact | a client's own portal area |
 | `data/users/{uid}/…` | private to that user | | platform-enforced per-user area (owner PIN hash, planning leads) |
 
@@ -25,7 +25,7 @@ On our own backend the same file is enforced by `server/core/rules.mjs`, with ow
 Profile: `name`, `joined`, `role` (`employed`/`sub`/…), `details` {fullName, address, postcode, dob, mobile, email, ni, utr, empType (`employed`/`cis`/`selfemp`), trade, company, driving, medical, cscs, nok*}, `photo` (asset id), `reads` (chat read markers), `day` (today's plan), flags (`foreman`, `signOnly`, `left`…).
 
 Subcollections (`TR_COLLS`): 
-- `entries` – timesheet/day-work entries
+- `entries` – timesheet/day-work entries (an hours entry from checking in keeps `actualIn` / `actualOut`; overtime asked for is `ot`: { early, late (minutes), why, status asked | ok | no } – approving moves `start` / `finish` to the actual times)
 - `checks` – reports (vehicle checks, accidents, near misses, inspections…)
 - `photos` – photos, drawings/sketches (`kind:"sketch"`, `signSheet` for go-ahead sheets)
 - `invoices` – invoices, receipts, materials (by `kind`)
@@ -66,6 +66,8 @@ Subcollections (`TR_COLLS`):
 | `bin` | deleted items (30-day bin) |
 | `seen` | "what's new" markers |
 | `sitedoc` | owner-private site documents |
+| `jcset` | job costs settings (`todos/jcset`): what each person costs an hour (`cost`: { id: £/h }, `defCost`) |
+| `jobcost` | one job's costing (`todos/jc-*`): `site`, `mode` (fixed / costplus), `labMode` (rates / markup), `labPct`, `matPct`, `subPct`, and `invoiced` { cost key: sale id } – the costs already on a client invoice |
 | `training` | owner training records |
 
 ## Shared collections

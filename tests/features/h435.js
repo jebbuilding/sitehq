@@ -8,7 +8,7 @@ const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('cons
 const pad=n=>String(n).padStart(2,'0');const isoD=x=>x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate());
 const D=(n)=>{const x=new Date();x.setDate(x.getDate()-n);return x;};
 const extra=`store["webenq/w0"]={name:"Old Test",email:"old@example.com",type:"Small works",message:"Earlier one",at:${Date.now()-864e5*3},status:"done"};
-store["webstats/${isoD(D(1))}"]={views:30,visits:12,enquiries:1,pages:{"/":12,"/contact.html":8,"/house-extensions.html":10},refs:{"google.com":7,"direct":4,"facebook.com":1},dev:{phone:20,computer:10}};
+store["webstats/${isoD(D(1))}"]={views:30,visits:12,enquiries:1,pages:{"/":12,"/contact.html":8,"/house-extensions.html":10},refs:{"google.com":7,"direct":4,"facebook.com":1},dev:{phone:20,computer:10},secs:{"/house-extensions.html":900,"/contact.html":240},secsN:{"/house-extensions.html":10,"/contact.html":8},visitSecs:1140,entry:{"/":8,"/house-extensions.html":4},places:{"Exmouth":7,"Exeter":5}};
 store["webstats/${isoD(D(0))}"]={views:10,visits:4,pages:{"/":4,"/contact.html":6},refs:{"google.com":3,"direct":1},dev:{phone:6,computer:4}};`;
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed+extra);
 src=src.replace('upload:async(b)=>(window.__last=b,','upload:async(b)=>{const id="up"+Math.random().toString(36).slice(2);window.__blobs[id]=b;return {id,url:"",sizeBytes:b.size,contentType:b.type}},_x:async(b)=>(window.__last=b,');
@@ -45,7 +45,9 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/Jo Test/.test(w)&&/Enquiry made/.test(w)&&/Old Test/.test(w),'the enquiries are listed');
  ok(/Visits\s+16/.test(w)&&/Pages looked at\s+40/.test(w)&&/Enquiries\s+1/.test(w)&&/On a phone\s+65%/.test(w),'last 30 days: 16 visits, 40 pages, 1 enquiry, 65% on a phone');
  ok(/Google[\s\S]*10/.test(w)&&/Typed in/.test(w)&&/Home page/.test(w)&&/Contact/.test(w),'where they came from (Google 10) and the pages looked at most');
- await p.screenshot({path:'h435-website.png'});
+ ok(/Average visit\s+1 min 11 s/.test(w)&&/How long people stay on each page[\s\S]*House extensions[\s\S]*1 min 30 s[\s\S]*Contact[\s\S]*30 s/.test(w),'time on each page (house extensions 1 min 30, contact 30 s) and the average visit (1 min 11)');
+ ok(/The first page people land on[\s\S]*Home page/.test(w)&&/Where they are[\s\S]*Exmouth[\s\S]*Exeter/.test(w),'landing pages and where they are (Exmouth, Exeter)');
+ await p.screenshot({path:'h435-website.png',fullPage:true});
  }catch(err){console.log('FAIL',String(err.message).split('\n').slice(0,6).join(' | '));bad++}
  console.log(bad?'h435: '+bad+' FAILED':'h435: all passed');
  await b.close()})();
