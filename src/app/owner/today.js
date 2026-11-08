@@ -3,9 +3,10 @@ import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, render } from "../core/tabs-week.js";
-import { nameOf } from "./owner.js";
+import { coData } from "./company-details.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
+import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
 export { nlApply, nlGo, nlName, nlOn, nlOpenTab, nlSectionView, todayView };
@@ -63,6 +64,23 @@ const NL_ICON = {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>',
   setup:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+};
+/* each section's page: groups of tabs, as in the layout pictures (a third item true = only James sees it) */
+const NL_GROUPS = {
+  jobs: [
+    ["Jobs and sites", ["projects", "signin", "planner", "daywork", "photos", "draw"]],
+    ["Clients", ["clients", "leads", "portal", "samples"]],
+    ["Materials and tools", ["materials", "calc"]],
+  ],
+  people: [
+    ["Your team", ["people", "inductions", "training", "chat"]],
+    ["Time and pay", ["time", "wages"]],
+  ],
+  paper: [
+    ["Health & safety", ["hs", "checks", "jobs", "me"]],
+    ["Money", ["accounts", "sales", "invoices", "cis", "costs"], true],
+    ["Company and suppliers", ["policies", "suppliers", "materials"]],
+  ],
 };
 /* what Today asks James to look at: [tab, words] – shown when that tab has a count */
 const NL_NEEDS = [
@@ -175,10 +193,32 @@ function nlApply() {
   bar.hidden = false;
   const cur = nlSecOf(S.otab),
     badge = S.badgeNow || {};
-  bar.innerHTML = NL_SECTIONS.map(([k, name, tabs]) => {
-    const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
-    return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l">${k === "jobs" ? "Jobs" : name}</span></button>`;
-  }).join("");
+  const coName = (coData().name || "SiteHQ").trim();
+  const tile = (/^[A-Z]{2,4}\b/.exec(coName) || [
+    coName
+      .split(/\s+/)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 3)
+      .toUpperCase(),
+  ])[0];
+  bar.innerHTML =
+    `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(tile)}</span><b>SiteHQ</b></div>` +
+    NL_SECTIONS.map(([k, name, tabs]) => {
+      const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
+      return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${k === "jobs" ? "Jobs" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
+    }).join("") +
+    `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>`;
+  $("nl-add").onclick = qaOpen;
+  /* the page title: the date above it on Today */
+  const hd = document.querySelector("header.top>div");
+  if (hd) hd.dataset.tile = tile;
+  const h1 = $("h1");
+  if (h1)
+    h1.dataset.date =
+      S.otab === "today"
+        ? new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+        : "";
   /* a section with one tab (Setup) opens it straight away */
   bar.querySelectorAll(".nl-b").forEach(
     (b) =>
@@ -194,33 +234,13 @@ function nlApply() {
 
 /* Today: who's on site, what needs James, what's coming up */
 function todayView() {
-  const rows = onSiteNow(),
-    by = {};
-  rows.forEach((r) => (by[r.job || "No site"] = by[r.job || "No site"] || []).push(r));
   const badge = S.badgeNow || {};
   const needs = NL_NEEDS.filter(([k]) => badge[k] > 0);
   $("main").innerHTML = `<div class="nl-today">
-    <button type="button" class="nl-search" id="nl-search"><span aria-hidden="true">🔍</span> Search clients, sites, jobs, people, merchants…</button>
-    <section class="nl-card">
-      <div class="nl-cardh"><h2>On site now</h2><span class="nl-big">${rows.length}</span></div>
-      ${
-        rows.length
-          ? Object.keys(by)
-              .sort()
-              .slice(0, 6)
-              .map(
-                (s) =>
-                  `<div class="nl-row"><b>${esc(s)}</b><span class="who">${by[s].map((r) => esc(nameOf(r.who))).join(", ")}</span></div>`,
-              )
-              .join("")
-          : '<div class="who">Nobody has checked in yet today.</div>'
-      }
-      <button type="button" class="btn nl-wide" id="nl-roll">${rows.length ? "See everyone on site" : "Sign-in book"}</button>
-    </section>
-    <h2 class="nl-h">Needs you</h2>
+    <button type="button" class="nl-search" id="nl-search"><span aria-hidden="true">🔍</span> Search a job, a name, or RAMS, MOT, snags…</button>
     ${
       needs.length
-        ? `<div class="nl-tiles">${needs
+        ? `<div class="nl-tiles nl-needs">${needs
             .map(
               ([k, l]) =>
                 `<button type="button" class="nl-tile" data-t="${k}"><span class="nl-n">${badge[k]}</span><span>${esc(l)}</span></button>`,
@@ -228,33 +248,55 @@ function todayView() {
             .join("")}</div>`
         : '<div class="nl-card who">Nothing waiting for you. 👍</div>'
     }
-    <div class="td-two">${tdChatCard()}${tdSitesCard()}</div>
-    ${dueSoonCard("all")}
+    ${tdwCard()}
+    <div class="nl-cols">
+      <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
+      <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
+    </div>
     ${webEnqNew().length ? `<button type="button" class="nl-card nl-web" id="nl-web"><b>🌐 ${webEnqNew().length} new enquir${webEnqNew().length === 1 ? "y" : "ies"} from your website</b><span class="who">Tap to see and make quick enquiries</span></button>` : ""}
   </div>`;
   $("nl-search").onclick = () => searchOpen("");
   tdWire();
+  tdDeskWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
+  const rows = onSiteNow();
   $("nl-roll").onclick = () => (rows.length ? openRollCall() : nlOpenTab("signin"));
   $("main")
     .querySelectorAll(".nl-tile")
-    .forEach((b) => (b.onclick = () => nlOpenTab(b.dataset.t)));
+    .forEach((x) => (x.onclick = () => nlOpenTab(x.dataset.t)));
 }
 
 /* a section page: one big button per tab in it, with its count */
 function nlSectionView(k) {
   const sec = NL_SECTIONS.find((x) => x[0] === k) || NL_SECTIONS[1];
   const badge = S.badgeNow || {};
-  $("main").innerHTML = `<div class="nl-tiles nl-sec">${sec[2]
-    .map(
-      (t) =>
-        `<button type="button" class="nl-tile nl-go" data-t="${t}"><span class="nl-tl">${esc(nlTabLabel(t))}</span>${badge[t] ? `<span class="badge">${badge[t]}</span>` : ""}</button>`,
-    )
-    .join("")}</div>
-    ${k === "setup" ? `<div class="notice" style="margin-top:14px">This is the new look. <button type="button" class="pillbtn" id="nl-old">Go back to the old look</button></div>` : ""}`;
+  const groups = (NL_GROUPS[sec[0]] || [[sec[1], sec[2]]]).map(([t, tabs, priv]) => [
+    t,
+    tabs.filter((x) => sec[2].includes(x)),
+    priv,
+  ]);
+  const left = sec[2].filter((t) => !groups.some((g) => g[1].includes(t)));
+  if (left.length) groups.push(["More", left]);
+  const waiting = NL_NEEDS.filter(([t]) => sec[2].includes(t) && badge[t] > 0);
+  const nWait = waiting.reduce((a, [t]) => a + badge[t], 0);
+  $("main").innerHTML = `<div class="nl-secpage">
+    ${nWait ? `<button type="button" class="nl-banner" data-t="${waiting[0][0]}"><span class="nl-bn">${nWait}</span><span><b>${nWait} waiting for you</b><br><small>${waiting.map(([t, l]) => badge[t] + " " + l.toLowerCase()).join(", ")}</small></span><span aria-hidden="true">Open ›</span></button>` : ""}
+    <div class="nl-groups">${groups
+      .filter((g) => g[1].length)
+      .map(
+        ([t, tabs, priv]) =>
+          `<section class="nl-grp"><div class="nl-grph"><h2>${esc(t)}</h2>${priv ? '<span class="nl-only">🔒 Only you</span>' : ""}</div>${tabs
+            .map(
+              (x) =>
+                `<button type="button" class="nl-row2 nl-go" data-t="${x}"><span class="nl-rl">${esc(nlTabLabel(x))}</span>${badge[x] ? `<span class="nl-new">${badge[x]} new</span>` : ""}<span class="nl-chev" aria-hidden="true">›</span></button>`,
+            )
+            .join("")}</section>`,
+      )
+      .join("")}</div>
+    ${k === "setup" ? `<div class="notice" style="margin-top:14px">This is the new look. <button type="button" class="pillbtn" id="nl-old">Go back to the old look</button></div>` : ""}</div>`;
   $("main")
-    .querySelectorAll(".nl-go")
-    .forEach((b) => (b.onclick = () => nlOpenTab(b.dataset.t)));
+    .querySelectorAll(".nl-go, .nl-banner")
+    .forEach((x) => (x.onclick = () => nlOpenTab(x.dataset.t)));
   if ($("nl-old"))
     $("nl-old").onclick = () => {
       nlSet(false);

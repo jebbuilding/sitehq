@@ -17,7 +17,20 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const site=await p.getAttribute('.td-s','data-s');
  await p.click('.td-s');await p.waitForTimeout(600);
  ok(!(await p.$('.sttile'))&&/‹ All sites/.test(await p.innerText('#main')),'tapping a site opens its page ('+site+')');
- await p.evaluate(()=>{const t=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='Today');t&&t.click();});await p.waitForTimeout(500);
+ await p.click('.nl-b[data-s=today]');await p.waitForTimeout(500);
+ /* the layout pictures: This week, Today's jobs, On site now, the side menu, + Add, the section pages */
+ ok(await p.isVisible('#tdw')&&/This week/.test(await p.innerText('#tdw'))&&await p.isVisible('.tdo')&&await p.isVisible('.tdj'),"Today has This week, Today's jobs and On site now");
+ ok(await p.isVisible('.nl-brand')&&/Jobs & clients/.test(await p.innerText('#nlbar')),'the side menu has the JEB tile and full names');
+ await p.click('#nl-add');await p.waitForTimeout(300);
+ ok(await p.isVisible('.qa-pop')&&(await p.$$('.qa-b')).length===8,'+ Add offers 8 things to add');
+ await p.click('.qa-b[data-k=enq]');await p.waitForTimeout(400);
+ ok(await p.isVisible('#qe-name'),'Add › Enquiry opens the quick enquiry');
+ await p.click('#f-cancel');await p.waitForTimeout(200);
+ await p.click('.nl-b[data-s=paper]');await p.waitForTimeout(400);
+ const pg=await p.innerText('#main');
+ ok(/Health & safety/.test(pg)&&/Money/.test(pg)&&/Only you/.test(pg)&&/Company and suppliers/.test(pg)&&(await p.$$('.nl-row2')).length>=10,'Paperwork: grouped cards with rows');
+ await p.screenshot({path:'h439-paperwork.png'});
+ await p.click('.nl-b[data-s=today]');await p.waitForTimeout(500);
  await p.click('.td-c');await p.waitForTimeout(600);
  ok(await p.isVisible('#chatwin'),'tapping a chat opens it');
  }catch(err){console.log('FAIL',String(err.message).split('\n').slice(0,6).join(' | '));bad++}

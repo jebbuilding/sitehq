@@ -61,7 +61,6 @@ body.nl-on .wrap{padding-bottom:110px}
 .nl-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .nl-tile{min-height:88px;text-align:left;padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;display:flex;flex-direction:column;gap:4px;cursor:pointer;position:relative}
 .nl-n{font-family:var(--f-display);font-size:30px;font-weight:600;line-height:1;color:var(--accent)}
-.nl-sec .nl-tile{min-height:72px;justify-content:center;font-size:16px}.nl-sec .badge{position:absolute;top:10px;right:10px}
 /* the date, time, weather and on-site strip lives on Today in the new look, not on every page */
 body.nl-on:not(.nl-home) #nowbar{display:none}
 /* search (owner/search.js) and its box on Today */
@@ -105,3 +104,78 @@ body.nl-on input,body.nl-on select,body.nl-on textarea{border-radius:12px}
 .td-new b{color:var(--accent)}
 .td-dot{position:absolute;right:4px;top:50%;width:10px;height:10px;border-radius:50%;background:var(--accent)}
 .td-btns{display:flex;gap:8px}.td-btns .btn{flex:1;justify-content:center;min-height:44px}
+/* the layout pictures: side menu with the JEB tile and + Add, page titles, Today and section pages */
+.nl-brand,.nl-lw{display:none}
+.nl-add{position:fixed;right:18px;bottom:calc(92px + env(safe-area-inset-bottom));z-index:21;width:60px;height:60px;border-radius:30px;border:0;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;font:inherit;font-weight:700}
+.nl-add svg{width:28px;height:28px}
+.qa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.qa-b{min-height:64px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.qa-b span{font-size:22px}
+.tdw-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.tdw-d{display:flex;flex-direction:column;align-items:center;padding:8px 0;border-radius:12px;background:var(--bg)}
+.tdw-d small{font-size:11px;color:var(--muted)}.tdw-d b{font-family:var(--f-display);font-size:20px}
+.tdw-d.bad{background:var(--soft);outline:1px solid var(--accent)}.tdw-d.bad b,.tdw-d.bad small{color:var(--accent);font-weight:700}
+.tdw-wrap{display:none;overflow-x:auto}
+.tdw-t,.tdj-t{width:100%;border-collapse:collapse;font-size:14px}
+.tdw-t th,.tdj-t th{text-align:left;color:var(--muted);font-size:13px;font-weight:600;padding:8px}
+.tdw-t th.now{color:var(--accent);font-weight:700}
+.tdw-t td,.tdj-t td{border-top:1px solid var(--line);padding:12px 8px;vertical-align:top}
+.tdw-job{font-weight:600}.tdw-none,.tdw-free td{color:var(--muted)}
+.tdw-gap,.tdw-clash{background:var(--soft)}.tdw-gap b,.tdw-clash b,.tdw-clash small{color:var(--accent)}
+.tdw-sort{font-size:13px;font-weight:700;padding:4px 10px;border-radius:10px;background:var(--soft);color:var(--accent)}
+.tdw-go{min-height:44px}
+.tdj-h{margin:0;font-family:var(--f-display);font-weight:500;font-size:19px}
+.tdj .tdw-wrap{display:block}
+.tdj-r{cursor:pointer}.tdj-r:hover td{background:var(--bg)}
+.tdj-st{font-size:12px;font-weight:700;padding:4px 10px;border-radius:10px;background:var(--soft);color:var(--accent);white-space:nowrap}
+.tdj-t .num{text-align:right;white-space:nowrap}
+.tdo-r{display:flex;align-items:center;gap:12px;padding:4px 0}
+.tdo-av{width:38px;height:38px;border-radius:19px;background:var(--soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.nl-cols{display:flex;flex-direction:column;gap:12px}
+.nl-colL,.nl-colR{display:flex;flex-direction:column;gap:12px;min-width:0}
+.nl-secpage{display:flex;flex-direction:column;gap:16px}
+.nl-banner{display:flex;align-items:center;gap:16px;min-height:72px;padding:14px 20px;border-radius:18px;border:0;background:var(--accent);color:var(--accent-ink);font:inherit;text-align:left;cursor:pointer}
+.nl-banner span:nth-child(2){flex:1}.nl-banner b{font-size:17px}
+.nl-bn{font-family:var(--f-display);font-size:30px;font-weight:600}
+.nl-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;align-items:start}
+.nl-grp{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 18px}
+.nl-grph{display:flex;align-items:center;gap:8px;margin:12px 0 6px}
+.nl-grph h2{flex:1;margin:0;font-family:var(--f-display);font-weight:500;font-size:20px}
+.nl-only{font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px;background:var(--soft);color:var(--accent)}
+.nl-row2{width:100%;min-height:54px;display:flex;align-items:center;gap:12px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.nl-rl{flex:1}.nl-chev{color:var(--muted);font-size:20px}
+.nl-new{font-size:12px;font-weight:700;padding:3px 9px;border-radius:10px;background:var(--accent);color:var(--accent-ink)}
+body.nl-on #h1::before{content:attr(data-date);display:block;font-family:var(--f-body);font-size:14px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0}
+body.nl-on #h1[data-date=""]::before{display:none}
+@media (min-width:900px){
+  body.nl-on{padding-left:248px}
+  .nlbar{width:248px;padding:20px 14px;gap:6px}
+  .nl-brand{display:flex;align-items:center;gap:10px;padding:0 8px 18px}
+  .nl-brand b{font-family:var(--f-display);font-weight:600;font-size:20px;color:var(--ink)}
+  .nl-tile2{width:40px;height:40px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.04em}
+  .nl-b{color:var(--ink);font-weight:600;gap:12px;padding:0 12px}
+  .nl-b[aria-current]{color:var(--accent);font-weight:700}
+  .nl-ls{display:none}.nl-lw{display:inline}
+  .nl-add{position:static;width:auto;height:auto;min-height:48px;margin-top:14px;border-radius:12px;box-shadow:none}
+  .nl-add svg{width:20px;height:20px}
+  body.nl-on header.top .brandrow{display:none}
+  body.nl-on #h1{font-size:34px;line-height:1.1;color:var(--ink);text-transform:none;letter-spacing:0}
+  body.nl-on .wrap{max-width:1220px;padding-left:32px;padding-right:32px}
+  body.nl-on #sr-btn{min-width:min(420px,40vw);min-height:48px;border-radius:14px;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-weight:500;text-align:left;justify-content:flex-start;padding:0 14px}
+  .nl-today .nl-search{display:none}
+  .nl-needs{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .nl-needs .nl-tile{min-height:96px}
+  .tdw-strip{display:none}.tdw-wrap{display:block}
+  .nl-cols{flex-direction:row;align-items:flex-start;gap:20px}
+  .nl-colL{flex:2 1 480px}.nl-colR{flex:1 1 300px}
+  .nl-today{gap:20px}
+}
+@media (max-width:899px){
+  body.nl-on header.top .brandrow{display:none}
+  body.nl-on header.top>div:first-child{display:flex;align-items:center;gap:12px}
+  body.nl-on header.top>div:first-child::before{content:attr(data-tile);width:44px;height:44px;border-radius:12px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.04em;flex:none}
+  body.nl-on #h1{font-size:28px;color:var(--ink);text-transform:none;letter-spacing:0}
+  body.nl-home #sr-btn{display:none}
+  .nl-cols,.nl-colL,.nl-colR{display:contents}
+  .nl-today>.nl-search{order:1}.nl-today .tdw{order:2}.nl-today .tdo{order:3}.nl-today .nl-needs{order:4}.nl-today .duesoon{order:5}.nl-today .tdj{order:6}.nl-today .td-two{order:7}.nl-today .nl-web{order:8}
+}

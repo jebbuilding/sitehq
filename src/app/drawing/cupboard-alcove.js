@@ -127,18 +127,22 @@ function cbaDraw(sp, api) {
     sT = U(+sp.shelfT || 25),
     PL = U(sp.plinth || 0);
   const depth = Math.max(hasB ? bD + tO : 0, cbaHasShelves(sp) ? sD : 0);
-  const x1 = Math.max(Z * 5 + U(200), (doc.w - (2 * W + depth + gapX)) / 2);
-  const y1 = top,
+  const x1 = Math.max(Z * 9 + U(200), (doc.w - (W + depth + gapX + U(800))) / 2);
+  const wallW = U(200),
+    rise = U(150); /* the walls run a little above the top shelf */
+  const y1 = top + rise + Z,
     fl = y1 + H; /* the floor line */
+  const hatch = (wx, wy, ww, wh) => {
+    rect(wx, wy, ww, wh, { w: thin });
+    const n = Math.max(4, Math.round(wh / (ww * 1.2)));
+    for (let k = 0; k < n; k++)
+      line(wx, wy + (k * wh) / n, wx + ww, wy + ((k + 1) * wh) / n, { w: pwFor(1) });
+  };
   /* --- front --- */
-  text(x1, y1 - Z * 0.8, "FRONT", 1.1);
-  /* the alcove walls (hatched) and the floor */
-  [x1 - U(200), x1 + W].forEach((wx) => {
-    rect(wx, y1 - U(100), U(200), H + U(100), { w: thin });
-    for (let k = 0; k < 8; k++)
-      line(wx, y1 + (k * H) / 8, wx + U(200), y1 + ((k + 1) * H) / 8, { w: pwFor(1) });
-  });
-  line(x1 - U(200), fl, x1 + W + U(200), fl, { w: lw });
+  text(x1, y1 - rise - Z * 0.6, "FRONT", 1.1);
+  hatch(x1 - wallW, y1 - rise, wallW, H + rise);
+  hatch(x1 + W, y1 - rise, wallW, H + rise);
+  line(x1 - wallW, fl, x1 + W + wallW, fl, { w: lw });
   if (hasB) {
     const bx = x1 + sc,
       bw = W - 2 * sc,
@@ -146,25 +150,26 @@ function cbaDraw(sp, api) {
     rect(bx, by, bw, bH - tT);
     if (PL) line(bx, fl - PL, bx + bw, fl - PL, { w: thin });
     rect(x1, fl - bH, W, tT, { fill: "#d9c7a6" });
-    /* doors */
+    /* doors, with the hinge side shown */
     const dTop = by + U(1.5),
       dBot = fl - PL - U(1.5);
-    let xx = bx + T / 2;
+    let xx = bx;
     P.ws.forEach((w, i) => {
-      const dw = U(w) + T;
+      const dw = U(w) + (i === 0 ? T : T / 2) + (i === P.ws.length - 1 ? T : T / 2);
       const leaves = sp.doors === "pairs" ? 2 : sp.doors === "hinged" ? 1 : 0;
       for (let k = 0; k < leaves; k++) {
-        const lx = xx - T / 2 + (k * dw) / leaves;
-        rect(lx, dTop, dw / leaves, dBot - dTop, { w: thin });
+        const lw2 = dw / leaves,
+          lx = xx + k * lw2;
+        rect(lx + U(1.5), dTop, lw2 - U(3), dBot - dTop, { w: thin });
         const hl = leaves === 2 ? k === 0 : i % 2 === 0;
-        const hx = hl ? lx : lx + dw / leaves,
-          ox = hl ? lx + dw / leaves : lx;
+        const hx = hl ? lx + U(1.5) : lx + lw2 - U(1.5),
+          ox = hl ? lx + lw2 - U(1.5) : lx + U(1.5);
         line(hx, dTop, ox, (dTop + dBot) / 2, { dash: 1 });
         line(hx, dBot, ox, (dTop + dBot) / 2, { dash: 1 });
       }
-      xx += U(w) + T;
+      xx += dw;
     });
-    objs.push(mkDim([x1 + W + U(200), fl - bH], [x1 + W + U(200), fl], -dimSize() * 2.4));
+    objs.push(mkDim([x1 + W + wallW, fl - bH], [x1 + W + wallW, fl], -dimSize() * 2.2));
   }
   const ys = P.ys.map((y) => U(y));
   ys.forEach((yy) => {
@@ -178,41 +183,40 @@ function cbaDraw(sp, api) {
     rect(x1 + W - sc - T, y1, T, fy - y1, { w: thin });
     rect(x1 + sc, y1, W - 2 * sc, T, { w: thin });
   }
-  /* shelf heights up the left */
-  /* each shelf's height from the floor (to its top), written beside it */
+  /* each shelf's height from the floor (to its top), written beside it, clear of the wall */
   P.ys.forEach((y, i) =>
     text(
-      x1 - U(200) - Z * 5.5,
+      x1 - wallW - Z * 7.5,
       fl - ys[i] - sT + Z * 0.3,
       "Shelf " + (i + 1) + ": " + (y + (+sp.shelfT || 25)),
       0.8,
     ),
   );
-  if (hasB) text(x1 - U(200) - Z * 5.5, fl - bH + Z * 0.3, "Top: " + sp.baseH, 0.8);
-  objs.push(mkDim([x1, fl + U(150)], [x1 + W, fl + U(150)], dimSize() * 2.4));
+  if (hasB) text(x1 - wallW - Z * 7.5, fl - bH + Z * 0.3, "Top: " + sp.baseH, 0.8);
+  objs.push(mkDim([x1, fl], [x1 + W, fl], dimSize() * 2.2));
   if (!hasB && !ys.length)
-    objs.push(mkDim([x1 + W + U(200), y1], [x1 + W + U(200), fl], -dimSize() * 2.4));
-  /* --- side section --- */
-  const x3 = x1 + W + gapX + U(200);
-  text(x3, y1 - Z * 0.8, "SIDE SECTION", 1.1);
-  line(x3 - U(60), y1 - U(100), x3 - U(60), fl, { w: lw }); /* the back wall */
-  line(x3 - U(60), fl, x3 + depth + U(300), fl, { w: lw });
+    objs.push(mkDim([x1 + W + wallW, y1], [x1 + W + wallW, fl], -dimSize() * 2.2));
+  /* --- side section: the back wall on the left, the room on the right --- */
+  const x3 = x1 + W + gapX + wallW * 2;
+  text(x3 - wallW, y1 - rise - Z * 0.6, "SIDE SECTION", 1.1);
+  hatch(x3 - wallW, y1 - rise, wallW, H + rise);
+  line(x3 - wallW, fl, x3 + depth + U(300), fl, { w: lw });
   if (hasB) {
-    rect(x3, fl - bH + tT, bD, bH - tT);
-    if (PL) rect(x3 + bD - U(60), fl - PL, U(60), PL, { w: thin });
-    rect(x3, fl - bH, bD + tO, tT, { fill: "#d9c7a6" });
-    objs.push(mkDim([x3, fl + U(150)], [x3 + bD, fl + U(150)], dimSize() * 2.4));
+    const cb = fl - bH + tT; /* top of the carcass */
+    rect(x3, cb, bD - T, fl - PL - cb); /* the carcass */
+    rect(x3 + bD - T, cb + U(1.5), T, fl - PL - cb - U(3), { w: thin }); /* a door, shut */
+    if (PL) rect(x3, fl - PL, bD - U(60), PL, { w: thin }); /* the plinth, set back */
+    rect(x3, fl - bH, bD + tO, tT, { fill: "#d9c7a6" }); /* the top, with its overhang */
+    objs.push(mkDim([x3, fl], [x3 + bD, fl], dimSize() * 2.2));
   }
-  ys.forEach((yy) => rect(x3, fl - yy - sT, sD, sT, { w: thin, fill: "#e6e6e6" }));
+  ys.forEach((yy) => {
+    rect(x3, fl - yy - sT, sD, sT, { w: thin, fill: "#e6e6e6" });
+    if (sp.shelfStyle !== "framed")
+      rect(x3, fl - yy, U(25), U(38), { w: thin }); /* the batten under it */
+  });
   if (ys.length)
-    objs.push(
-      mkDim(
-        [x3, fl - ys[ys.length - 1] - sT - U(120)],
-        [x3 + sD, fl - ys[ys.length - 1] - sT - U(120)],
-        -dimSize() * 1.6,
-      ),
-    );
-  objs.push(mkDim([x3 + depth + U(250), y1], [x3 + depth + U(250), fl], -dimSize() * 2.4));
+    text(x3 + sD + Z * 0.6, fl - ys[0] - sT + Z * 0.3, "Shelves " + sp.shelfD + " deep", 0.8);
+  objs.push(mkDim([x3 + depth + U(250), y1], [x3 + depth + U(250), fl], -dimSize() * 2.2));
   /* --- plan --- */
   const y4 = fl + Z * 4 + dimSize() * 3;
   text(x1 - Z * 4.5, y4 + Z, "PLAN", 1.1);
@@ -256,8 +260,9 @@ function cba3Model(sp, look, open) {
     cbaHasBase(sp) ? (+sp.D || 400) + (+sp.topOver || 0) : 0,
     +sp.shelfD || 250,
   );
-  out.push({ b: [-220, 0, -10, 0, sp.H + 200, depth + 160], c: wallC });
-  out.push({ b: [sp.W, 0, -10, sp.W + 220, sp.H + 200, depth + 160], c: wallC });
+  /* the chimney breast and the side wall: full height, as deep as the alcove */
+  out.push({ b: [-300, 0, -10, 0, sp.H + 500, depth + 60], c: wallC });
+  out.push({ b: [sp.W, 0, -10, sp.W + 300, sp.H + 500, depth + 60], c: wallC });
   if (cbaHasBase(sp)) {
     const b = cbaBaseSpec(sp);
     cb3Model(b, look, open).forEach((o) => {
