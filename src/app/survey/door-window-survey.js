@@ -555,7 +555,7 @@ const DWS = (() => {
   ];
   function doorDes(name, X, Y, W, H, C, gl) {
     const k = DOORD.indexOf(name);
-    const st = `stroke="${C.frame}"`;
+    const st = `stroke="${C.det || C.frame}"`;
     let s = `<rect x="${X}" y="${Y}" width="${W}" height="${H}" fill="${C.panel}" ${st} stroke-width=".8"/>`;
     const P = (fx, fy, fw, fh) => {
       const x = X + W * fx,
@@ -1680,6 +1680,124 @@ const DWS = (() => {
   }
 
   /* ---- drawing (SVG, viewed from outside) ---- */
+  /* the frame / door colour as it looks (generic shades for the colour names on the list) */
+  const WS_SHADES = [
+    [/signal white|9016|white/i, "#f7f7f5"],
+    [/cream|ivory/i, "#efe6cf"],
+    [/anthracite|7016/i, "#3d4247"],
+    [/black ash/i, "#2e2723"],
+    [/black.*brown|brown.*black/i, "#2f2520"],
+    [/black|9005|jet/i, "#232323"],
+    [/agate/i, "#b2b3ad"],
+    [/slate/i, "#5b6167"],
+    [/pebble/i, "#bab4a6"],
+    [/basalt/i, "#565c60"],
+    [/buckingham/i, "#6d757a"],
+    [/hazy/i, "#a9aba7"],
+    [/claystone|beige|sand/i, "#cbbfa9"],
+    [/chartwell|duck egg|sage/i, "#b3c4b3"],
+    [/dark green|green/i, "#2f4a3a"],
+    [/wine|dark red|red/i, "#6b1f24"],
+    [/porcelain|steel blue|blue/i, "#4c6680"],
+    [/windsor/i, "#3a443e"],
+    [/light oak/i, "#c99c63"],
+    [/golden oak|honey/i, "#a86a2f"],
+    [/irish oak/i, "#7a4a27"],
+    [/swamp/i, "#6e5a45"],
+    [/anteak|walnut/i, "#5a3f2b"],
+    [/rosewood|mahogany/i, "#5e2a22"],
+    [/pyrite|gold/i, "#a88b4c"],
+    [/silver|9006/i, "#a7aaa8"],
+    [/9007|grey alu/i, "#8e8e8b"],
+    [/bronze|brown/i, "#4a3a2c"],
+    [/oak|wood/i, "#a86a2f"],
+    [/grey|gray/i, "#8d9195"],
+  ];
+  const wsShade = (name) => (WS_SHADES.find(([re]) => re.test(name || "")) || [0, "#f7f7f5"])[1];
+  const WS_HW = {
+    White: "#f4f4f2",
+    Chrome: "#c9ccd0",
+    "Satin chrome": "#b4b7ba",
+    Black: "#222",
+    Gold: "#c9a548",
+    Graphite: "#4a4d50",
+  };
+  const wsLight = (hex) => {
+    const n = parseInt(String(hex).slice(1), 16);
+    return ((n >> 16) & 255) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11 > 140;
+  };
+  /* the palette for one opening: its frame colour (also doors and solid panels), lines that show on it, handles */
+  function wsLook(o, C, sc) {
+    const ff = wsShade(o.out);
+    return {
+      ...C,
+      sc,
+      ff,
+      panel: ff,
+      det: wsLight(ff) ? C.frame : "rgba(255,255,255,.4)",
+      hw: WS_HW[o.hw] || (wsLight(ff) ? "#c9ccd0" : "#e8e8e6"),
+    };
+  }
+  /* a glazing bar: the frame colour with a thin dark edge so it shows on the glass */
+  const wsBar = (x1, y1, x2, y2, w, C) =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${C.frame}" stroke-width="${w + 0.8}" opacity=".55"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${C.ff || C.frame}" stroke-width="${w}"/>`;
+  /* handles (and hinges on doors), on the sash band or the door slab */
+  function wsHandle(op, X, Y, W, H, sw, C) {
+    const sc = C.sc || 0.08,
+      hw = C.hw || C.frame,
+      e = `stroke="${C.frame}" stroke-width=".4"`;
+    if (!C.sc || W < 10 || H < 10) return "";
+    const pw = Math.max(1.4, Math.min(sw * 0.6, 32 * sc)),
+      ph = Math.max(4, Math.min(H * 0.18, 150 * sc)),
+      lw = Math.max(3, Math.min(W * 0.28, 115 * sc)),
+      lt = Math.max(1, 20 * sc);
+    /* a window handle: a plate on the sash with its lever hanging down (or along, for top / bottom) */
+    const win = (cx, cy, along) =>
+      along
+        ? `<rect x="${cx - ph / 2}" y="${cy - pw / 2}" width="${ph}" height="${pw}" rx="${pw / 2}" fill="${hw}" ${e}/><rect x="${cx - ph * 0.3}" y="${cy - lt / 2}" width="${lw}" height="${lt}" rx="${lt / 2}" fill="${hw}" ${e}/>`
+        : `<rect x="${cx - pw / 2}" y="${cy - ph / 2}" width="${pw}" height="${ph}" rx="${pw / 2}" fill="${hw}" ${e}/><rect x="${cx - lt / 2}" y="${cy - ph * 0.3}" width="${lt}" height="${lw}" rx="${lt / 2}" fill="${hw}" ${e}/>`;
+    const MY = Y + H / 2,
+      MX = X + W / 2;
+    switch (op) {
+      case "HL":
+      case "TTL":
+        return win(X + W - sw / 2, MY);
+      case "HR":
+      case "TTR":
+        return win(X + sw / 2, MY);
+      case "TH":
+      case "CP":
+        return win(MX, Y + H - sw / 2, true);
+      case "BH":
+        return win(MX, Y + sw / 2, true);
+      case "SL":
+      case "SR": {
+        const hx = op === "SL" ? X + sw / 2 : X + W - sw / 2;
+        return `<rect x="${hx - pw / 2}" y="${MY - ph}" width="${pw}" height="${ph * 2}" rx="${pw / 2}" fill="${hw}" ${e}/>`;
+      }
+      case "DL":
+      case "DR": {
+        /* lever and plate about 1000 above the bottom, hinges on the other side */
+        const L = op === "DL",
+          hx = L ? X + W - Math.max(sw / 2, 60 * sc) : X + Math.max(sw / 2, 60 * sc),
+          hy = Math.max(Y + H * 0.3, Math.min(Y + H * 0.62, Y + H - 1000 * sc)),
+          dph = Math.max(6, Math.min(H * 0.16, 230 * sc)),
+          dpw = Math.max(1.8, Math.min(sw * 0.7, 40 * sc)),
+          dlw = Math.max(4, Math.min(W * 0.22, 130 * sc)),
+          dir = L ? -1 : 1,
+          hgw = Math.max(1, 14 * sc),
+          hgh = Math.max(3, Math.min(H * 0.06, 100 * sc)),
+          hgx = L ? X - hgw / 2 : X + W - hgw / 2;
+        let q = `<rect x="${hx - dpw / 2}" y="${hy - dph * 0.35}" width="${dpw}" height="${dph}" rx="${dpw / 2}" fill="${hw}" ${e}/><rect x="${dir < 0 ? hx - dlw : hx}" y="${hy - lt}" width="${dlw}" height="${lt * 1.6}" rx="${lt * 0.8}" fill="${hw}" ${e}/><circle cx="${hx}" cy="${hy + dph * 0.38}" r="${dpw * 0.28}" fill="${C.frame}"/>`;
+        [0.08, 0.5, 0.9].forEach(
+          (fy) =>
+            (q += `<rect x="${hgx}" y="${Y + H * fy - hgh / 2}" width="${hgw}" height="${hgh}" fill="${hw}" ${e}/>`),
+        );
+        return q;
+      }
+    }
+    return "";
+  }
   function opSym(x, y, w, h, op, C) {
     const L = x + 3,
       R = x + w - 3,
@@ -1689,31 +1807,23 @@ const DWS = (() => {
       MY = y + h / 2;
     if (w < 8 || h < 8) return "";
     const d = (p, da) =>
-      `<path d="${p}" fill="none" stroke="${C.dim}" stroke-width="1.1" stroke-dasharray="${da || "5 3"}"/>`;
+      `<path d="${p}" fill="none" stroke="${C.dim}" stroke-width=".9" opacity=".8" stroke-dasharray="${da || "5 3"}"/>`;
     const ar = (x1, y1, x2, y2) => {
       const a = Math.atan2(y2 - y1, x2 - x1),
         s = Math.min(6, Math.hypot(x2 - x1, y2 - y1) * 0.35);
       return `<path d="M${x1} ${y1}L${x2} ${y2}M${x2 - s * Math.cos(a - 0.5)} ${y2 - s * Math.sin(a - 0.5)}L${x2} ${y2}L${x2 - s * Math.cos(a + 0.5)} ${y2 - s * Math.sin(a + 0.5)}" fill="none" stroke="${C.dim}" stroke-width="1.2"/>`;
     };
-    const hd = (hx) =>
-      `<circle cx="${hx}" cy="${MY}" r="${Math.max(1.4, Math.min(w, h) * 0.02)}" fill="${C.frame}"/>`;
     const fl = (x1, y1, x2, y2) =>
       `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${C.frame}" stroke-width=".8"/>`;
     switch (op) {
       case "HL":
       case "DL":
       case "FL":
-        return (
-          d(`M${R} ${T}L${L} ${MY}L${R} ${B}`, op === "FL" ? "2 2" : 0) +
-          (op === "DL" ? hd(R - 4) : "")
-        );
+        return d(`M${R} ${T}L${L} ${MY}L${R} ${B}`, op === "FL" ? "2 2" : 0);
       case "HR":
       case "DR":
       case "FR":
-        return (
-          d(`M${L} ${T}L${R} ${MY}L${L} ${B}`, op === "FR" ? "2 2" : 0) +
-          (op === "DR" ? hd(L + 4) : "")
-        );
+        return d(`M${L} ${T}L${R} ${MY}L${L} ${B}`, op === "FR" ? "2 2" : 0);
       case "TH":
         return d(`M${L} ${B}L${MX} ${T}L${R} ${B}`);
       case "BH":
@@ -1756,37 +1866,62 @@ const DWS = (() => {
     return "";
   }
   function cell(x, y, w, h, op, fill, st, C, obs) {
-    const i = Math.max(1.2, Math.min(w, h) * 0.03),
+    /* half a mullion / transom on each side: the frame colour behind shows between the panes */
+    const i = C.sc
+        ? Math.max(1.2, Math.min(32 * C.sc, Math.min(w, h) * 0.12))
+        : Math.max(1.2, Math.min(w, h) * 0.03),
       X = x + i,
       Y = y + i,
       W = w - 2 * i,
       H = h - 2 * i;
     if (W <= 0 || H <= 0) return "";
     let s = "";
-    const gl = (a, b, c, d) =>
-      `<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="${C.glass}" stroke="${C.frame}" stroke-width=".8"/>` +
-      (obs && c > 6 && d > 6
-        ? `<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="url(#wsobs)"/>`
-        : "");
+    const gl = (a, b, c, d) => {
+      const k = Math.min(c, d);
+      let q = `<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="${C.glass}" stroke="${C.frame}" stroke-width=".5"/>`;
+      if (obs && c > 6 && d > 6)
+        q += `<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="url(#wsobs)"/>`;
+      if (C.sc && k > 7) {
+        /* the shadow of the frame along the top and left, and a shine across the glass */
+        q += `<path d="M${a + c} ${b + 0.6}H${a + 0.6}V${b + d}" fill="none" stroke="#000" stroke-width="${Math.max(0.7, k * 0.03)}" opacity=".16"/>`;
+        const sw = Math.max(0.8, k * 0.05);
+        q += `<path d="M${a + c * 0.1} ${b + d * 0.1 + k * 0.34}L${a + c * 0.1 + k * 0.34} ${b + d * 0.1}M${a + c * 0.1} ${b + d * 0.1 + k * 0.52}L${a + c * 0.1 + k * 0.52} ${b + d * 0.1}" stroke="#fff" stroke-width="${sw}" stroke-linecap="round" opacity=".5"/>`;
+      }
+      return q;
+    };
+    const slab = /^Door:/.test(fill),
+      opens = /^(HL|HR|TH|BH|TTL|TTR|SV|SL|SR|DL|DR|FL|FR|CP)$/.test(op);
+    /* anything that opens has its own sash (a door its leaf frame); fixed glass sits in the frame behind a bead */
+    let sw = 0;
+    if (C.sc && opens && !slab) {
+      sw = Math.max(1.4, Math.min((/^D[LR]$/.test(op) ? 95 : 55) * C.sc, Math.min(W, H) * 0.16));
+      s += `<rect x="${X}" y="${Y}" width="${W}" height="${H}" fill="${C.ff}" stroke="${C.frame}" stroke-width=".7"/>`;
+    } else if (C.sc && !slab) sw = Math.max(0.6, Math.min(10 * C.sc, Math.min(W, H) * 0.05));
+    const GX = X + sw,
+      GY = Y + sw,
+      GW = W - 2 * sw,
+      GH = H - 2 * sw;
     const sty = /ribbed/i.test(fill) ? "rib" : /flat/i.test(fill) ? "flat" : "raised";
     const pn = (a, b, c, d) => {
       let r = `<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="${C.panel}" stroke="${C.frame}" stroke-width=".8"/>`;
       if (c > 12 && d > 12) {
         if (sty === "raised")
-          r += `<rect x="${a + c * 0.18}" y="${b + d * 0.12}" width="${c * 0.64}" height="${d * 0.76}" fill="none" stroke="${C.frame}" stroke-width=".5"/><rect x="${a + c * 0.24}" y="${b + d * 0.17}" width="${c * 0.52}" height="${d * 0.66}" fill="none" stroke="${C.frame}" stroke-width=".35"/>`;
+          r += `<rect x="${a + c * 0.18}" y="${b + d * 0.12}" width="${c * 0.64}" height="${d * 0.76}" fill="none" stroke="${C.det || C.frame}" stroke-width=".5"/><rect x="${a + c * 0.24}" y="${b + d * 0.17}" width="${c * 0.52}" height="${d * 0.66}" fill="none" stroke="${C.det || C.frame}" stroke-width=".35"/>`;
         else if (sty === "rib") {
           const n = Math.max(3, Math.round(c / 6));
           for (let k = 1; k < n; k++)
-            r += `<line x1="${a + (c * k) / n}" y1="${b + 2}" x2="${a + (c * k) / n}" y2="${b + d - 2}" stroke="${C.frame}" stroke-width=".4"/>`;
+            r += `<line x1="${a + (c * k) / n}" y1="${b + 2}" x2="${a + (c * k) / n}" y2="${b + d - 2}" stroke="${C.det || C.frame}" stroke-width=".4"/>`;
         }
       }
       return r;
     };
-    if (/^Door:/.test(fill)) s += doorDes(fill, X, Y, W, H, C, gl);
-    else if (/^Solid panel/.test(fill)) s += pn(X, Y, W, H);
-    else if (/^Half glazed/.test(fill)) s += gl(X, Y, W, H * 0.5) + pn(X, Y + H * 0.5, W, H * 0.5);
+    if (slab) s += doorDes(fill, X, Y, W, H, C, gl);
+    else if (/^Solid panel/.test(fill)) s += pn(GX, GY, GW, GH);
+    else if (/^Half glazed/.test(fill))
+      s +=
+        gl(GX, GY, GW, GH * 0.5 - sw / 2) + pn(GX, GY + GH * 0.5 + sw / 2, GW, GH * 0.5 - sw / 2);
     else if (/^Bars:/.test(fill)) {
-      s += gl(X, Y, W, H);
+      s += gl(GX, GY, GW, GH);
       const bm = fill.match(/(\d+) over (\d+)/) || [0, 1, 1];
       const GR = {
         1: [1, 1],
@@ -1801,31 +1936,39 @@ const DWS = (() => {
       const grid = (x0, y0, w0, h0, n) => {
         const [cc, rr] = GR[n] || [1, 1];
         let q = "";
+        const bw = C.sc ? Math.max(0.8, 22 * C.sc) : 0.8;
         for (let i = 1; i < cc; i++)
-          q += `<line x1="${x0 + (w0 * i) / cc}" y1="${y0}" x2="${x0 + (w0 * i) / cc}" y2="${y0 + h0}" stroke="${C.frame}" stroke-width=".8"/>`;
+          q += wsBar(x0 + (w0 * i) / cc, y0, x0 + (w0 * i) / cc, y0 + h0, bw, C);
         for (let j = 1; j < rr; j++)
-          q += `<line x1="${x0}" y1="${y0 + (h0 * j) / rr}" x2="${x0 + w0}" y2="${y0 + (h0 * j) / rr}" stroke="${C.frame}" stroke-width=".8"/>`;
+          q += wsBar(x0, y0 + (h0 * j) / rr, x0 + w0, y0 + (h0 * j) / rr, bw, C);
         return q;
       };
-      if (op === "SV") s += grid(X, Y, W, H / 2, +bm[1]) + grid(X, Y + H / 2, W, H / 2, +bm[2]);
-      else s += grid(X, Y, W, H, +bm[1]);
+      if (op === "SV")
+        s += grid(GX, GY, GW, GH / 2, +bm[1]) + grid(GX, GY + GH / 2, GW, GH / 2, +bm[2]);
+      else s += grid(GX, GY, GW, GH, +bm[1]);
     } else {
-      s += gl(X, Y, W, H);
+      s += gl(GX, GY, GW, GH);
       if (fill === "Georgian bars") {
-        [1 / 3, 2 / 3].forEach(
-          (f) =>
-            (s += `<line x1="${X + W * f}" y1="${Y}" x2="${X + W * f}" y2="${Y + H}" stroke="${C.frame}" stroke-width=".8"/>`),
-        );
-        s += `<line x1="${X}" y1="${Y + H / 2}" x2="${X + W}" y2="${Y + H / 2}" stroke="${C.frame}" stroke-width=".8"/>`;
+        const bw = C.sc ? Math.max(0.8, 22 * C.sc) : 0.8;
+        [1 / 3, 2 / 3].forEach((f) => (s += wsBar(GX + GW * f, GY, GX + GW * f, GY + GH, bw, C)));
+        s += wsBar(GX, GY + GH / 2, GX + GW, GY + GH / 2, bw, C);
       }
     }
     if (st)
-      s += `<line x1="${x}" y1="${y + h / 2}" x2="${x + w}" y2="${y + h / 2}" stroke="${C.frame}" stroke-width="1.8"/>`;
-    return s + opSym(X, Y, W, H, op, C);
+      s += `<line x1="${x}" y1="${y + h / 2}" x2="${x + w}" y2="${y + h / 2}" stroke="${C.frame}" stroke-width="1.4"/>`;
+    return (
+      s +
+      (slab ? wsHandle(op, X, Y, W, H, 0, C) : wsHandle(op, X, Y, W, H, sw, C)) +
+      opSym(GX, GY, GW, GH, op, C)
+    );
   }
   function frameSvg(o, fr, fwmm, x, y, w, h, sc, C) {
-    let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${C.bg}" stroke="${C.frame}" stroke-width="1.8"/>`;
-    const t = Math.max(2.5, Math.min(w, h) * 0.035),
+    let s = C.sc
+      ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${C.ff}" stroke="${C.frame}" stroke-width="1"/>`
+      : `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${C.bg}" stroke="${C.frame}" stroke-width="1.8"/>`;
+    const t = C.sc
+        ? Math.max(1.4, Math.min(40 * sc, Math.min(w, h) * 0.06))
+        : Math.max(2.5, Math.min(w, h) * 0.035),
       cws = colWs(fwmm, fr.cols),
       tot = cws.reduce((a, b) => a + b, 0) || 1,
       inner = w - 2 * t;
@@ -1833,7 +1976,9 @@ const DWS = (() => {
     let RT = y + t,
       RB = y + h - t;
     const rail = (yy) =>
-      `<line x1="${x}" y1="${yy}" x2="${x + w}" y2="${yy}" stroke="${C.frame}" stroke-width="1.8"/>`;
+      C.sc
+        ? ""
+        : `<line x1="${x}" y1="${yy}" x2="${x + w}" y2="${yy}" stroke="${C.frame}" stroke-width="1.8"/>`;
     if (+fr.top > 0) {
       const ty = Math.min(RB - 14, RT + fr.top * sc);
       if (ty > RT + 5) {
@@ -1874,7 +2019,7 @@ const DWS = (() => {
       const cw = (cws[k] / tot) * inner,
         top = RT,
         bot = RB;
-      if (k > 0)
+      if (k > 0 && !C.sc)
         s += `<line x1="${cx}" y1="${top}" x2="${cx}" y2="${bot}" stroke="${C.frame}" stroke-width="1.6"/>`;
       let my = top;
       if (+c.tl > 0) {
@@ -1882,7 +2027,9 @@ const DWS = (() => {
         if (ty > top + 5) {
           s +=
             cell(cx, top, cw, ty - top, c.tlop || "F", "Glass", false, C, isObs(o, c, "tl")) +
-            `<line x1="${cx}" y1="${ty}" x2="${cx + cw}" y2="${ty}" stroke="${C.frame}" stroke-width="1.6"/>`;
+            (C.sc
+              ? ""
+              : `<line x1="${cx}" y1="${ty}" x2="${cx + cw}" y2="${ty}" stroke="${C.frame}" stroke-width="1.6"/>`);
           my = ty;
         }
       }
@@ -1901,7 +2048,7 @@ const DWS = (() => {
       A = addMm(o),
       nf = fws.length,
       bay = nf > 1,
-      cillH = hasCill(o) ? 3 : 0;
+      cillH = hasCill(o) ? 4 : 0;
     const planH = bay ? Math.round(H * 0.2) : 0,
       jg = bay ? Math.max(3, W * 0.014) : 0,
       dimH = dims ? (bay ? fs * 3.1 : fs * 2.1) : 0,
@@ -1916,6 +2063,7 @@ const DWS = (() => {
         (H - 2 * pad - planH - dimH - topH - cillH) / Math.max(totH, 1),
       ),
     );
+    C = wsLook(o, C, sc);
     const ww = totW * sc + jg * (nf - 1),
       hh = totH * sc,
       x0 = (W - ww + lw) / 2,
@@ -1931,9 +2079,9 @@ const DWS = (() => {
       const w = fws[i] * sc;
       s += frameSvg(o, fr, fws[i], fx, fy, w, fpx, sc, C);
       if (cillH)
-        s += `<rect x="${fx - 2}" y="${fy + fpx}" width="${w + 4}" height="${cillH}" fill="${C.frame}"/>`;
+        s += `<rect x="${fx - 2}" y="${fy + fpx + cillH}" width="${w + 4}" height="1.4" fill="#000" opacity=".14"/><rect x="${fx - 2}" y="${fy + fpx}" width="${w + 4}" height="${cillH}" fill="${C.ff}" stroke="${C.frame}" stroke-width=".7"/>`;
       if (i < nf - 1) {
-        s += `<rect x="${fx + w}" y="${fy}" width="${jg}" height="${fpx}" fill="${C.frame}" opacity=".55"/>`;
+        s += `<rect x="${fx + w}" y="${fy}" width="${jg}" height="${fpx}" fill="${C.ff}" stroke="${C.frame}" stroke-width=".7"/>`;
         if (dims)
           s += `<text x="${fx + w + jg / 2}" y="${y0 - 3}" text-anchor="middle" font-family="Arial,sans-serif" font-weight="600" font-size="${fs * 0.85}" fill="${C.ink}">${fr.ang}°</text>`;
       }

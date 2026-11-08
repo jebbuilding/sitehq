@@ -45,6 +45,7 @@ const NL_SECTIONS = [
       "policies",
       "accounts",
       "sales",
+      "estim",
       "invoices",
       "cis",
       "costs",
@@ -79,7 +80,7 @@ const NL_GROUPS = {
   ],
   paper: [
     ["Health & safety", ["hs", "checks", "jobs", "me"]],
-    ["Money", ["accounts", "sales", "invoices", "cis", "costs"], true],
+    ["Money", ["accounts", "sales", "estim", "invoices", "cis", "costs"], true],
     ["Company and suppliers", ["policies", "suppliers", "materials"]],
   ],
 };

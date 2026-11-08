@@ -69,6 +69,7 @@ import { expiryState, myTalkTodo, trainingView } from "../safety/training.js";
 import { accountsView } from "../sales/accounts.js";
 import { acTradeRcpts } from "../sales/acct-receipts.js";
 import { cisView } from "../sales/cis-returns.js";
+import { estView } from "../sales/estimating.js";
 import { salesView } from "../sales/sales.js";
 import { hsView } from "../sites/doc-visibility.js";
 import { jobProgress, myJobs } from "../sites/job-sheets.js";
@@ -131,6 +132,7 @@ const OWN_TABS = [
   ["inductions", "🦺 Site inductions"],
   ["costs", "📊 Business costings"],
   ["sales", "💰 Estimates & invoices"],
+  ["estim", "📐 Estimating"],
   ["cis", "🏗️ CIS returns"],
   ["accounts", "📒 Accounts"],
   ["calc", "🧮 Calculator"],
@@ -435,9 +437,11 @@ function render() {
                                                               ? "Employees"
                                                               : t === "todo"
                                                                 ? "To do"
-                                                                : t === "calc"
-                                                                  ? "Calculator"
-                                                                  : "Team";
+                                                                : t === "estim"
+                                                                  ? "Estimating"
+                                                                  : t === "calc"
+                                                                    ? "Calculator"
+                                                                    : "Team";
     $("who").textContent = "Owner view · you see everyone";
     const ASK = {
       policies: "policy",
@@ -493,6 +497,7 @@ function render() {
           accountsView();
         },
         calc: calcView,
+        estim: estView,
         policies: policiesView,
         suppliers: suppliersView,
         clients: clientsView,
