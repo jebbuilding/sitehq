@@ -32,6 +32,7 @@ import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
+import { rwDialog, rwElev, rwNotes, rwSection } from "./retaining-wall.js";
 import {
   rsBestScale,
   rsDrawInDrawing,
@@ -1367,6 +1368,7 @@ async function openNotePage(opts) {
               ["cupb", "🗄️", "Cupboards"],
               ["cupb3d", "🎨", "3D view"],
               ["cupbpack", "🪚", "Workshop pack"],
+              ["retw", "🧱", "Retaining wall"],
               ["check", "✅", "Check"],
               ["rev", "🔖", "Status & revisions"],
             ]
@@ -6390,6 +6392,120 @@ async function openNotePage(opts) {
       },
     });
   }
+  /* 🧱 Retaining wall (retaining-wall.js): a new page with two scaled areas – the section at a big scale on the
+     left, the elevation and plan on the right – at the biggest scales that fit, and the notes and materials under */
+  let retwLast = null;
+  function retwDlg() {
+    const p = doc.pages[pg];
+    rwDialog({
+      last: (p && p.retw) || retwLast,
+      make(sp) {
+        retwLast = sp;
+        const mm = NP_U,
+          left = 14 * mm,
+          topY = 14 * mm,
+          gap = 10 * mm,
+          right = doc.w - 14 * mm,
+          bottom = doc.h - 12 * mm,
+          tbH = 30 * mm; /* the title box in the bottom right corner */
+        const bbox = (objs) => {
+          let x0 = Infinity,
+            y0 = Infinity,
+            x1 = -Infinity,
+            y1 = -Infinity;
+          objs.forEach((o) =>
+            [o.a, o.b, o.x != null ? [o.x, o.y] : null].forEach((q) => {
+              if (!q) return;
+              x0 = Math.min(x0, q[0]);
+              y0 = Math.min(y0, q[1]);
+              x1 = Math.max(x1, q[0]);
+              y1 = Math.max(y1, q[1]);
+            }),
+          );
+          return [x0, y0, x1, y1];
+        };
+        const part = (k, fn, ox, oy) => {
+          setNpScx(k);
+          try {
+            return fn(
+              sp,
+              {
+                U: toUnits,
+                pwFor,
+                dim: (a, b, off) => mkDim(a, b, off, { size: 14 }),
+              },
+              ox,
+              oy,
+            );
+          } finally {
+            setNpScx(0);
+          }
+        };
+        let best = null;
+        for (const ke of [20, 25, 50, 75, 100, 200]) {
+          for (const ks of [10, 15, 20, 25, 50, 75, 100]) {
+            if (ks > ke) break;
+            const S1 = part(ks, rwSection, left, topY);
+            const b1 = bbox(S1.objs);
+            const ox2 = b1[2] + gap + 18 * 6;
+            const S2 = part(ke, rwElev, ox2, topY);
+            const b2 = bbox(S2.objs);
+            const ny = Math.max(b1[3], b2[3]) + gap;
+            const N = rwNotes(sp, { pwFor }, left, ny, right - left - 20 * mm);
+            /* the plan's labels run on past the wall by about 60 mm on paper */
+            if (b2[2] + 28 * mm <= right && N.bottom <= bottom - tbH) {
+              best = { ks, ke, S1, S2, N, b1, b2 };
+              break;
+            }
+          }
+          if (best) break;
+        }
+        if (!best) {
+          toast(
+            "That wall is too big for this paper – choose a bigger paper size in 📐 Paper, then try again",
+          );
+          return;
+        }
+        if (!doc.scale) doc.scale = best.ke;
+        const pad = 5 * mm;
+        const frame = (b, k, name) => ({
+          t: "rect",
+          a: [b[0] - pad, b[1] - pad],
+          b: [b[2] + pad, b[3] + pad],
+          c: "#2f5fb3",
+          w: pwFor(2),
+          vp: k,
+          vpn: name,
+        });
+        const objs = [
+          frame(best.b1, best.ks, "Section"),
+          frame(
+            [best.b2[0], best.b2[1], best.b2[2] + 26 * mm, best.b2[3]],
+            best.ke,
+            "Elevation and plan",
+          ),
+          ...best.S1.objs,
+          ...best.S2.objs,
+          ...best.N.objs,
+        ];
+        objs.forEach((o) => Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]));
+        doc.pages[pg].objs = doc.objs;
+        doc.pages.push({
+          name: sp.name || "Retaining wall",
+          type: "External works",
+          objs,
+          retw: sp,
+        });
+        dirty = true;
+        goPage(doc.pages.length - 1);
+        const P = best.S1.P;
+        toast(
+          `Drawn on a new page: section at 1:${best.ks}, elevation and plan at 1:${best.ke}, with the materials` +
+            (P.warn.length ? ". ⚠ " + P.warn[0] : ""),
+        );
+      },
+    });
+  }
   /* the 3D view of the cupboard on this page, for the client */
   function cupb3d() {
     const p = doc.pages[pg];
@@ -6731,6 +6847,7 @@ async function openNotePage(opts) {
         else if (a === "elev") elevFromWall();
         else if (a === "cupb") cupbDlg();
         else if (a === "cupb3d") cupb3d();
+        else if (a === "retw") retwDlg();
         else if (a === "cupbpack") {
           const cp =
             doc.pages[pg] && doc.pages[pg].cupb ? doc.pages[pg] : doc.pages.find((x) => x.cupb);
