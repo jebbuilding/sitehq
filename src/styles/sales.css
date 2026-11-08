@@ -34,12 +34,20 @@
 @media (max-width:640px){.sd-row{grid-template-columns:1fr auto}.sd-no,.sd-dt{display:none}}
 .sd-ed{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .sd-edtop{display:flex;align-items:center;gap:10px}
-.sd-lhead,.sd-line{display:grid;grid-template-columns:1fr 70px 110px 76px 84px 44px;gap:6px;align-items:start}
-.sd-lhead{font-size:12px;color:var(--muted)}
-.sd-line{padding:6px 0;border-bottom:1px solid var(--line)}
-.sd-line textarea{min-height:44px;resize:vertical}
-.sd-lab{display:flex;align-items:center;gap:4px;font-size:12px;min-height:44px}
-@media (max-width:640px){.sd-lhead{display:none}.sd-line{grid-template-columns:1fr 1fr 1fr 44px}.sd-ld{grid-column:1/-1}}
+.sd-line{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.sd-lhd{display:flex;align-items:center;justify-content:space-between}
+.sd-line textarea{min-height:52px;resize:vertical}
+.sd-lrow{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.sd-lf{display:flex;flex-direction:column;font-size:13px;min-width:110px;flex:1}
+.sd-lf[hidden]{display:none}
+.sd-lamt input{font-weight:700;font-size:17px}
+.sd-lamt input[readonly]{background:var(--soft)}
+.sd-lmode{min-height:44px}
+.sd-ltot{margin-left:auto;font-size:15px;min-height:44px;display:flex;align-items:center;gap:6px}
+.sd-vatbar{margin-bottom:8px}
+.sd-imgrow{display:flex;flex-wrap:wrap;gap:16px;margin:8px 0}
+.sd-imgrow>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.sd-img{max-width:200px;max-height:80px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px}
 .sd-tot{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--surface)}
 .sd-tot .sd-due{font-size:17px}
 .sd-edacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 96px}
@@ -65,3 +73,12 @@
 .cis-sub .who{flex:1;min-width:140px}
 .cis-sub select,.cis-sub input{width:auto;min-width:150px}
 .cis-subacts{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:10px 0}
+.cis-tabs{margin-bottom:10px}
+.cis-tr4{grid-template-columns:1.6fr 1fr 1fr 1fr;min-width:420px}
+button.cis-tr{background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font:inherit;text-align:left;cursor:pointer;min-height:44px;width:100%}
+.cis-ysub.on{background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.cis-subcard .cis-ph{margin-bottom:8px}
+.cis-subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px 14px;font-size:14px}
+.cis-subgrid small{display:block;color:var(--muted);font-size:12px}
+.cis-warn{margin-top:8px;color:var(--danger);font-size:13px}
+.cis-calcbox{border:1px solid var(--line);border-radius:10px;padding:6px 10px;align-self:end}

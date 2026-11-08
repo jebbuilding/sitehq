@@ -1,28 +1,71 @@
 /* ================= SALES PDF: estimates as a letter on the letterhead, invoices with totals, VAT and CIS ================= */
 import { gbp, iso, parse, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
+import { getFileBlob } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
-import { BRGB, pdfLogo } from "../photos/photos.js";
+import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { sdCalc, sdDueDate, sdR2, sdSet } from "./sales-calc.js";
-export { sdLongDate, sdPdf, sdSavePdf };
-/* The letterhead: logo top left, company address and contacts top right, a line in the brand colour; the footer has
-   the job and reference, the trades line, VAT number and page number. An estimate reads like James's own letters:
-   client address, estimate number and date, Re:, Dear…, the wording, a summary of costs, works included and
-   excluded, the closing words and his name, then the terms on their own pages. A generic layout. */
+import { SD_VATC, sdAmt, sdCalc, sdDueDate, sdLines, sdSet, sdVc } from "./sales-calc.js";
+export { sdHeadLines, sdImgData, sdLongDate, sdPdf, sdSavePdf };
+/* Set out like James's own Word estimate: the logo top left and the company's address and contacts top right in the
+   brand colour, a full-width line under them; at the foot a line, the job and reference in grey, the trades line,
+   the VAT number and "Page | n", all centred. The estimate: client address, estimate number, the date, Re:, Dear…,
+   the wording, "Summary of Estimated Costs" with the total +VAT and Inc VAT, how long it's valid and a note, the
+   works included and excluded as numbered lists, the closing words, the sign-off, signature and name, then the
+   terms with their headings in the brand colour. The letterhead (lines, logo, footer line) and wording come from
+   Estimates & invoices › Letterhead (brought in from his Word letterhead), else from Company details. */
 function sdLongDate(di) {
   const d = parse(di || iso(new Date())),
     n = d.getDate();
-  const th =
-    n % 10 === 1 && n !== 11
-      ? "st"
-      : n % 10 === 2 && n !== 12
-        ? "nd"
-        : n % 10 === 3 && n !== 13
-          ? "rd"
-          : "th";
-  return n + th + " " + d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  return n + sdOrd(n) + " " + d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 }
+const sdOrd = (n) =>
+  n % 10 === 1 && n !== 11
+    ? "st"
+    : n % 10 === 2 && n !== 12
+      ? "nd"
+      : n % 10 === 3 && n !== 13
+        ? "rd"
+        : "th";
+/* an uploaded picture as a data URL with its size, or null */
+async function sdImgData(id) {
+  if (!id) return null;
+  try {
+    const b = await getFileBlob(id);
+    const u = await new Promise((res) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => res(null);
+      fr.readAsDataURL(b);
+    });
+    if (!u) return null;
+    const im = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = u;
+    });
+    return {
+      u,
+      w: im.naturalWidth,
+      h: im.naturalHeight,
+      f: /^data:image\/jpe?g/.test(u) ? "JPEG" : "PNG",
+    };
+  } catch (e) {
+    return null;
+  }
+}
+/* the letterhead's lines: from the brought-in letterhead, else Company details */
+function sdHeadLines() {
+  const set = sdSet(),
+    co = coData();
+  if (set.head) return set.head.split("\n");
+  return [co.name]
+    .concat(String(co.address || "").split(/\s*\n\s*/))
+    .concat([""])
+    .concat([co.phone || co.mobile, co.email, co.website].filter(Boolean));
+}
+const sdVatNo = () => sdSet().vatNo || coData().vatNo || "";
 async function sdPdf(d) {
   await loadJsPdf();
   const { jsPDF } = window.jspdf;
@@ -32,345 +75,436 @@ async function sdPdf(d) {
     c = sdCalc(d),
     est = d.type === "estimate";
   const W = 210,
-    M = 18,
-    R = W - M,
+    M = 25,
+    R = 186,
     TW = R - M,
-    BOT = 270;
+    BOT = 262;
   const brand = BRGB();
-  const ink = () => doc.setTextColor(30, 30, 30);
-  const soft = () => doc.setTextColor(100, 100, 100);
-  let y = 0;
-  /* letterhead on every page */
-  const head = async () => {
-    await pdfLogo(doc, M + 58, 10, 58, 30);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    ink();
-    const addr = [co.name]
-      .concat(String(co.address || "").split(/\s*[\n,]\s*/))
-      .concat([co.phone || co.mobile, co.email, co.website])
-      .filter(Boolean);
-    addr.forEach((t, i) => {
-      if (i === 1) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-      }
-      doc.text(String(t), R, 14 + i * 4.4, { align: "right" });
-    });
-    doc.setDrawColor(...brand);
-    doc.setLineWidth(0.8);
-    doc.line(M, 44, R, 44);
-    y = 54;
-  };
-  const need = async (h) => {
-    if (y + h <= BOT) return;
-    doc.addPage();
-    await head();
-  };
-  const para = async (t, size, bold, gap) => {
-    doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.setFontSize(size || 10);
-    ink();
-    for (const block of String(t || "").split(/\n\s*\n/)) {
-      const lines = doc.splitTextToSize(block.trim(), TW);
-      for (const ln of lines) {
-        await need(5);
-        doc.text(ln, M, y);
-        y += (size || 10) * 0.45;
-      }
-      y += gap == null ? 2.5 : gap;
+  const ink = () => doc.setTextColor(20, 20, 20);
+  const red = () => doc.setTextColor(...brand);
+  const logo = await sdImgData(set.logoId || ((S.settings || {}).company || {}).logoId);
+  const sig = await sdImgData(set.sigId);
+  const headLines = sdHeadLines();
+  let y = 0,
+    page = 1;
+  const head = () => {
+    if (logo) {
+      const k = Math.min(72 / logo.w, 40 / logo.h);
+      doc.addImage(logo.u, logo.f, 16, 6, logo.w * k, logo.h * k, "sdlogo", "FAST");
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      red();
+      doc.text(co.name, 19, 24);
     }
-  };
-  const bullets = async (list) => {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    ink();
-    for (const it of list) {
-      const lines = doc.splitTextToSize(it, TW - 6);
-      await need(5 * lines.length);
-      doc.setFillColor(...brand);
-      doc.circle(M + 1.5, y - 1.2, 0.8, "F");
-      lines.forEach((ln) => {
-        doc.text(ln, M + 6, y);
-        y += 4.6;
-      });
-      y += 0.8;
-    }
-    y += 2;
+    doc.setFontSize(10.5);
+    red();
+    let hy = 12.5;
+    headLines.forEach((t) => {
+      if (!t.trim()) {
+        hy += 2.6;
+        return;
+      }
+      doc.text(t, R, hy, { align: "right" });
+      hy += 4.6;
+    });
+    const ly = Math.max(52, hy + 2);
+    doc.setDrawColor(...brand);
+    doc.setLineWidth(0.7);
+    doc.line(2.5, ly, 207.5, ly);
+    y = ly + (page === 1 ? 17 : 8);
   };
-  const heading = async (t) => {
-    await need(14);
-    y += 2;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...brand);
-    doc.text(t, M, y);
-    y += 6.5;
+  const newPage = () => {
+    doc.addPage();
+    page++;
+    head();
+  };
+  const need = (h) => {
+    if (y + h > BOT) newPage();
+  };
+  const LH = 5.1;
+  /* a paragraph: { st font style, sz size, red | grey, center | justify, u underline, x, lh line height, gap after } */
+  const para = (t, o) => {
+    o = o || {};
+    doc.setFont("helvetica", o.st || "normal");
+    doc.setFontSize(o.sz || 10.5);
+    const col = () => (o.red ? red() : o.grey ? doc.setTextColor(140, 140, 140) : ink());
+    const x = o.x || M,
+      w = o.w || R - x;
+    const lines = doc.splitTextToSize(String(t || ""), w);
+    const lh = o.lh || (o.sz || 10.5) * 0.47;
+    lines.forEach((ln, i) => {
+      need(lh);
+      col();
+      doc.setFont("helvetica", o.st || "normal");
+      doc.setFontSize(o.sz || 10.5);
+      const last = i === lines.length - 1;
+      if (o.center) doc.text(ln, W / 2, y, { align: "center" });
+      else if (o.justify && !last) doc.text(ln, x, y, { align: "justify", maxWidth: w });
+      else doc.text(ln, x, y);
+      if (o.u) {
+        doc.setLineWidth(0.25);
+        doc.setDrawColor(20, 20, 20);
+        doc.line(x, y + 0.8, x + doc.getTextWidth(ln), y + 0.8);
+      }
+      y += lh;
+    });
+    y += o.gap == null ? 3.2 : o.gap;
+  };
+  const paras = (t, o) =>
+    String(t || "")
+      .split(/\n\s*\n/)
+      .filter((x) => x.trim())
+      .forEach((b) =>
+        para(
+          b.trim(),
+          Object.assign({ st: /^please note/i.test(b.trim()) ? "italic" : "normal" }, o),
+        ),
+      );
+  /* a numbered (or bullet) list */
+  const list = (items, o) => {
+    o = o || {};
+    items.forEach((it, i) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      const lines = doc.splitTextToSize(it, R - (M + 13));
+      need(o.lh || LH);
+      ink();
+      doc.text(o.bullet ? "•" : i + 1 + ".", M + 9, y, { align: "right" });
+      lines.forEach((ln) => {
+        need(o.lh || LH);
+        ink();
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        doc.text(ln, M + 13, y);
+        y += o.lh || LH;
+      });
+      y += o.gap == null ? 1.6 : o.gap;
+    });
+    y += 3;
   };
   const listOf = (s) =>
     String(s || "")
       .split(/\n+/)
-      .map((x) => x.replace(/^[\s•\-*·]+/, "").trim())
+      .map((x) => x.replace(/^\s*(\d+[.)]|[•\-*·])\s*/, "").trim())
       .filter(Boolean);
-  await head();
+  head();
   ink();
   const addrLines = [d.client].concat(String(d.address || "").split(/\s*\n\s*/)).filter(Boolean);
   if (est) {
+    addrLines.forEach((t) => para(t, { gap: 0, lh: 4.9 }));
+    y += 4.3;
+    para("Estimate Number: " + (d.number || ""), { gap: 4.4 });
+    /* the date, with "th" raised like Word does it */
+    const dd = parse(d.date || iso(new Date())),
+      n = dd.getDate();
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    addrLines.forEach((t) => {
-      doc.text(t, M, y);
-      y += 4.6;
-    });
-    y += 4;
-    doc.setFont("helvetica", "bold");
-    doc.text("Estimate Number: " + (d.number || ""), M, y);
-    y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(sdLongDate(d.date), M, y);
-    y += 8;
-    if (d.title) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Re: " + d.title, M, y);
-      y += 8;
-    }
-    await para("Dear " + (d.dear || d.client || "Sir or Madam"), 10, false, 3);
-    await para(d.intro != null ? d.intro : set.intro);
-    await heading("Summary of Estimated Costs");
-    const lines = (d.lines || []).filter((l) => l && (l.d || +l.r));
-    doc.setFontSize(10);
-    for (const l of lines) {
-      const amt = sdR2((l.q === "" || l.q == null ? 1 : +l.q) * (+l.r || 0));
-      const txt = doc.splitTextToSize(
-        String(l.d || "") + (+l.q > 1 ? ` (${l.q} × ${gbp(l.r)})` : ""),
-        TW - 40,
-      );
-      await need(5 * txt.length + 1);
-      doc.setFont("helvetica", "normal");
-      ink();
-      txt.forEach((ln, i) => {
-        doc.text(ln, M, y + i * 4.6);
-      });
-      doc.text(gbp(amt), R, y, { align: "right" });
-      y += 4.6 * txt.length + 1.2;
-      doc.setDrawColor(225, 225, 225);
-      doc.setLineWidth(0.2);
-      doc.line(M, y - 3.4, R, y - 3.4);
-    }
-    await need(22);
+    doc.setFontSize(10.5);
+    ink();
+    doc.text(String(n), M, y);
+    let x = M + doc.getTextWidth(String(n));
+    doc.setFontSize(6.5);
+    doc.text(sdOrd(n), x, y - 1.6);
+    x += doc.getTextWidth(sdOrd(n)) + 1;
+    doc.setFontSize(10.5);
+    doc.text(dd.toLocaleDateString("en-GB", { month: "long", year: "numeric" }), x, y);
+    y += 19;
+    if (d.title) para("Re: " + d.title, { st: "bold", gap: 4.4 });
+    para("Dear " + (d.dear || d.client || "Sir or Madam"), { gap: 4.4 });
+    paras(d.intro != null ? d.intro : set.intro, { gap: 4.4 });
     y += 2;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Total estimate:", M, y);
-    doc.text(gbp(c.net) + (c.vat ? " +VAT" : ""), R, y, { align: "right" });
-    y += 5.5;
-    if (c.vat) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(gbp(c.gross) + " Inc VAT", R, y, { align: "right" });
-      y += 5.5;
-    }
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Estimate is valid for ${+d.validDays || +set.validDays || 30} days`, M, y);
-    y += 8;
-    if (listOf(d.incl).length) {
-      await heading("Works Included Within the Estimate");
-      await bullets(listOf(d.incl));
-    }
-    if (listOf(d.excl).length) {
-      await heading("Works Excluded from the Estimate");
-      await bullets(listOf(d.excl));
-    }
-    if (d.notes) await para(d.notes);
-    await para(set.closing);
-    await need(22);
-    y += 2;
-    await para("Kind Regards", 10, false, 6);
-    await para(co.owner + "\n" + co.name, 10, true, 0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    if (set.terms) {
-      doc.addPage();
-      await head();
-      await heading("Terms and Conditions of Contract");
-      doc.setFontSize(9);
-      for (const p of String(set.terms).split(/\n/)) {
-        const t = p.trim();
-        if (!t) {
-          y += 2;
-          continue;
-        }
-        const isHead = /^\d+(\.\d+)?\.?\s+\S/.test(t) && t.length < 70;
-        doc.setFont("helvetica", isHead ? "bold" : "normal");
-        doc.setFontSize(isHead ? 10 : 9);
+    need(36);
+    para("Summary of Estimated Costs", { st: "bold", u: 1, gap: 4.6 });
+    const lines = sdLines(d);
+    if (lines.length > 1) {
+      lines.forEach((l) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        const t = doc.splitTextToSize(l.d || "Item", TW - 42);
+        need(LH * t.length);
         ink();
-        for (const ln of doc.splitTextToSize(t, TW)) {
-          await need(4.5);
-          doc.text(ln, M, y);
-          y += 4.1;
-        }
-        y += isHead ? 0.5 : 1.5;
-      }
+        t.forEach((ln, i) => doc.text(ln, M, y + i * LH));
+        doc.text(gbp(sdAmt(l)), R, y, { align: "right" });
+        y += LH * t.length + 1.2;
+      });
+      y += 2;
     }
+    need(16);
+    const vatOn = set.vatReg !== false && (c.vat || c.rcVat);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    ink();
+    doc.text("Total estimate:", M, y);
+    doc.setFont("helvetica", "bold");
+    doc.text(gbp(c.net) + (vatOn ? " +VAT" : set.vatReg === false ? "" : " (no VAT)"), M + 38, y);
+    y += 6.6;
+    if (c.vat) {
+      doc.text(gbp(c.gross) + " Inc VAT", M + 38, y);
+      y += 6.6;
+    }
+    if (c.rcVat)
+      para(`Reverse charge: the ${gbp(c.rcVat)} VAT is paid by you to HMRC, not to us.`, {
+        sz: 9.5,
+      });
+    y += 6;
+    para(`Estimate is valid for ${+d.validDays || +set.validDays || 30} Days`, {
+      st: "bold",
+      gap: 1.4,
+    });
+    if (set.costNote) paras(set.costNote, { st: "italic", gap: 4 });
+    y += 6;
+    const inc = listOf(d.incl),
+      exc = listOf(d.excl);
+    if (inc.length) {
+      need(20);
+      para(d.inclHead || set.inclHead, { st: "bold", u: 1, gap: 5 });
+      list(inc, { lh: 5.4, gap: 2.2 });
+      y += 4;
+    }
+    if (exc.length) {
+      need(20);
+      para(set.exclHead, { st: "bold", u: 1, gap: 6 });
+      list(exc, { lh: 5, gap: 2.2 });
+      y += 4;
+    }
+    if (d.notes) paras(d.notes, { gap: 4.4 });
+    paras(set.closing, { gap: 5 });
+    /* sign-off: e.g. "Yours sincerely," then "Kind Regards", the signature, the name */
+    need(40);
+    y += 4;
+    const so = String(set.signoff || "")
+      .split("\n")
+      .filter((x) => x.trim());
+    so.forEach((t, i) => para(t, { gap: i < so.length - 1 ? 9 : 2 }));
+    if (sig) {
+      const k = Math.min(55 / sig.w, 16 / sig.h);
+      doc.addImage(sig.u, sig.f, M - 9, y, sig.w * k, sig.h * k, "sdsig", "FAST");
+      y += sig.h * k + 4;
+    } else y += 12;
+    para(co.owner, { gap: 0 });
+    const rule = () => {
+      doc.setDrawColor(...brand);
+      doc.setLineWidth(0.3);
+      doc.line(M, y - 5, R, y - 5);
+    };
+    if (set.terms)
+      sdTermsPages(set, { head: newPage, para, list, rule, at: () => y, set: (v) => (y = v), M });
   } else {
     /* invoice */
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.setTextColor(...brand);
-    doc.text(d.drc ? "INVOICE" : co.vatNo ? "TAX INVOICE" : "INVOICE", M, y + 4);
-    y += 12;
+    doc.setFontSize(20);
+    red();
+    const taxInv = set.vatReg !== false && sdVatNo() && c.vat > 0;
+    doc.text(taxInv ? "TAX INVOICE" : "INVOICE", M, y);
+    y += 10;
     const top = y;
     doc.setFontSize(9);
-    soft();
+    doc.setTextColor(120, 120, 120);
     doc.text("INVOICE TO", M, y);
-    y += 4.6;
-    ink();
-    doc.setFontSize(10);
+    y += 5;
     addrLines.forEach((t, i) => {
       doc.setFont("helvetica", i ? "normal" : "bold");
+      doc.setFontSize(10.5);
+      ink();
       doc.text(t, M, y);
-      y += 4.6;
+      y += 4.9;
     });
     const facts = [
       ["Invoice number", String(d.number || "")],
       ["Invoice date", sdLongDate(d.date)],
       ["Payment due", sdLongDate(sdDueDate(d))],
       d.site ? ["Site", d.site] : null,
-      d.ref ? ["Your ref", d.ref] : null,
+      d.ref ? ["Your order / ref", d.ref] : null,
+      taxInv ? ["VAT number", sdVatNo()] : null,
     ].filter(Boolean);
     let fy = top;
     facts.forEach(([k, v]) => {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      soft();
-      doc.text(k, 120, fy);
+      doc.setTextColor(120, 120, 120);
+      doc.text(k, 118, fy);
       ink();
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.text(doc.splitTextToSize(v, R - 150)[0], R, fy, { align: "right" });
-      fy += 5.2;
+      fy += 5.4;
     });
     y = Math.max(y, fy) + 6;
-    if (d.title) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      ink();
-      doc.text(d.title + (d.part ? " – " + d.part : ""), M, y);
-      y += 7;
-    }
+    if (d.title) para("Re: " + d.title + (d.part ? " – " + d.part : ""), { st: "bold", gap: 4 });
     /* the lines */
     const cols = [
-      [M, "Description", "left"],
-      [130, "Qty", "right"],
-      [152, "Price", "right"],
+      [M + 2, "Description", "left"],
+      [128, "Qty", "right"],
+      [150, "Rate", "right"],
       [166, "VAT", "right"],
-      [R, "Amount", "right"],
+      [R - 2, "Amount", "right"],
     ];
     const tableHead = () => {
       doc.setFillColor(...brand);
-      doc.rect(M, y - 4.5, TW, 7, "F");
+      doc.rect(M, y - 4.6, TW, 7, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      cols.forEach(([x, t, a]) =>
-        doc.text(t, a === "left" ? x + 2 : x - (x === R ? 2 : 0), y, { align: a }),
-      );
+      cols.forEach(([x, t, a]) => doc.text(t, x, y, { align: a }));
       y += 7;
     };
     tableHead();
-    for (const l of (d.lines || []).filter((l) => l && (l.d || +l.r))) {
-      const q = l.q === "" || l.q == null ? 1 : +l.q;
-      const amt = sdR2(q * (+l.r || 0));
-      const txt = doc.splitTextToSize(String(l.d || ""), 128 - M - 18);
+    for (const l of sdLines(d)) {
+      const vc = SD_VATC[sdVc(l, d)];
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      const txt = doc.splitTextToSize(String(l.d || ""), 128 - M - 22);
       if (y + 4.6 * txt.length > BOT) {
-        doc.addPage();
-        await head();
+        newPage();
         tableHead();
       }
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
       ink();
       txt.forEach((ln, i) => doc.text(ln, M + 2, y + i * 4.4));
-      doc.text(String(q), 130, y, { align: "right" });
-      doc.text(gbp(l.r || 0), 152, y, { align: "right" });
-      doc.text(d.drc ? "RC" : (l.v == null ? 20 : +l.v) + "%", 166, y, { align: "right" });
-      doc.text(gbp(amt), R - 2, y, { align: "right" });
+      const priced = l.q !== "" && l.q != null && l.r !== "" && l.r != null;
+      doc.text(priced ? String(+l.q) + (l.u ? " " + l.u : "") : "1", 128, y, { align: "right" });
+      doc.text(gbp(priced ? l.r : sdAmt(l)), 150, y, { align: "right" });
+      doc.text(set.vatReg === false ? "–" : vc.p, 166, y, { align: "right" });
+      doc.text(gbp(sdAmt(l)), R - 2, y, { align: "right" });
       y += 4.4 * txt.length + 2;
       doc.setDrawColor(225, 225, 225);
       doc.setLineWidth(0.2);
       doc.line(M, y - 3.6, R, y - 3.6);
     }
-    /* the totals */
-    const tot = [
-      ["Subtotal", gbp(c.net)],
-      d.drc ? ["VAT", "Reverse charge"] : ["VAT", gbp(c.vat)],
-      ["Total", gbp(c.gross), 1],
-      c.cis ? [`Less CIS at ${d.cis}% on labour of ${gbp(c.lab)}`, "-" + gbp(c.cis)] : null,
-      c.paid ? ["Paid so far", "-" + gbp(c.paid)] : null,
-      ["Amount due", gbp(c.balance), 2],
-    ].filter(Boolean);
-    await need(8 * tot.length + 6);
+    /* totals, with VAT by rate */
+    const tot = [[d.inc ? "Total before VAT" : "Subtotal", gbp(c.net)]];
+    if (set.vatReg !== false)
+      Object.keys(c.byRate).forEach((k) => {
+        const v = SD_VATC[k];
+        if (v.rc) tot.push([`VAT ${v.r}% reverse charge`, "£0.00"]);
+        else if (v.r) tot.push([`VAT at ${v.r}% on ${gbp(c.byRate[k].net)}`, gbp(c.byRate[k].vat)]);
+      });
+    tot.push(["Total", gbp(c.gross), 1]);
+    if (c.cis) tot.push([`Less CIS ${d.cis}% on labour of ${gbp(c.lab)}`, "-" + gbp(c.cis)]);
+    if (c.ret) tot.push([`Less retention ${d.ret}%`, "-" + gbp(c.ret)]);
+    if (c.paid) tot.push(["Paid so far", "-" + gbp(c.paid)]);
+    tot.push(["Amount due", gbp(c.balance), 2]);
+    need(7 * tot.length + 8);
     y += 3;
     tot.forEach(([k, v, b]) => {
       if (b === 2) {
         doc.setFillColor(...brand);
-        doc.rect(110, y - 5, R - 110, 8, "F");
+        doc.rect(108, y - 5, R - 108, 8, "F");
         doc.setTextColor(255, 255, 255);
       } else ink();
       doc.setFont("helvetica", b ? "bold" : "normal");
       doc.setFontSize(b ? 11 : 9.5);
-      doc.text(doc.splitTextToSize(k, 60)[0], 112, y);
+      doc.text(doc.splitTextToSize(k, 58)[0], 110, y);
       doc.text(v, R - 2, y, { align: "right" });
       y += b === 2 ? 9 : 6;
     });
     y += 4;
-    if (d.drc)
-      await para(
-        "Reverse charge: customer to account to HMRC for the VAT on these services (VAT Act 1994 Section 55A). VAT that would have been charged: " +
-          gbp(sdR2(c.net * 0.2)) +
-          ".",
-        9,
+    if (c.rcVat)
+      para(
+        `Reverse charge: customer to account to HMRC for the VAT (VAT Act 1994 Section 55A). VAT the customer pays to HMRC: ${gbp(c.rcVat)}.`,
+        { sz: 9 },
       );
     if (c.cis)
-      await para("CIS: please send us a payment and deduction statement for the tax taken off.", 9);
+      para("CIS: please send us a payment and deduction statement for the tax taken off.", {
+        sz: 9,
+      });
+    if (c.ret)
+      para(`Retention of ${gbp(c.ret)} to be released at the end of the defects period.`, {
+        sz: 9,
+      });
     if (set.bank) {
-      await heading("How to pay");
-      await para(set.bank, 10);
-      await para(
+      para("How to pay", { st: "bold", red: 1, sz: 11, gap: 2 });
+      String(set.bank)
+        .split("\n")
+        .forEach((t) => para(t, { gap: 0.4 }));
+      para(
         "Please use " +
           (d.number ? "invoice number " + d.number : "the invoice number") +
           " as the reference.",
-        9,
+        { sz: 9 },
       );
     }
-    if (d.notes) await para(d.notes, 10);
-    if (set.invNote) await para(set.invNote, 10);
+    if (d.notes) paras(d.notes);
+    if (set.invNote) para(set.invNote);
   }
   /* footer on every page */
   const n = doc.getNumberOfPages();
   for (let i = 1; i <= n; i++) {
     doc.setPage(i);
     doc.setDrawColor(...brand);
-    doc.setLineWidth(0.5);
-    doc.line(M, 279, R, 279);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    ink();
-    doc.text(`${d.title || (est ? "Estimate" : "Invoice")} – Ref: ${d.number || ""}`, M, 283.5);
+    doc.setLineWidth(0.7);
+    doc.line(3.5, 270.5, 208.5, 270.5);
     doc.setFont("helvetica", "normal");
-    soft();
-    if (set.tagline) doc.text(set.tagline, W / 2, 287.5, { align: "center" });
-    const reg = [
-      co.vatNo ? "VAT Number " + co.vatNo : "",
-      co.companyNo ? "Company No " + co.companyNo : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    if (reg) doc.text(reg, W / 2, 291.5, { align: "center" });
-    doc.text("Page | " + i, R, 283.5, { align: "right" });
+    doc.setFontSize(9.5);
+    doc.setTextColor(200, 200, 200);
+    doc.text(`${d.title || (est ? "Estimate" : "Invoice")} – Ref:${d.number || ""}`, W / 2, 275.2, {
+      align: "center",
+    });
+    red();
+    let fy = 279.8;
+    if (set.tagline) {
+      doc.text(set.tagline, W / 2, fy, { align: "center" });
+      fy += 4.6;
+    }
+    if (sdVatNo() && set.vatReg !== false) {
+      doc.text("VAT Number " + sdVatNo(), W / 2, fy, { align: "center" });
+      fy += 4.6;
+    }
+    doc.text("Page | " + i, W / 2, fy, { align: "center" });
   }
   return doc.output("blob");
+}
+/* the terms: company name and title centred, the version in grey, then the clauses ("# " headings, "## " sub-headings,
+   "- " bullets, ">> " centred lines, lines of ____ for signing, others as justified paragraphs) */
+function sdTermsPages(set, h) {
+  const co = coData();
+  h.head();
+  h.para(co.name, { st: "bold", sz: 22, red: 1, center: 1, gap: 9, lh: 9 });
+  h.para(set.termsTitle || "Terms and Conditions of Contract", {
+    st: "bold",
+    sz: 15,
+    red: 1,
+    center: 1,
+    gap: set.termsVer ? 2 : 8,
+    lh: 7,
+  });
+  if (set.termsVer) h.para(set.termsVer, { st: "italic", sz: 9, grey: 1, center: 1, gap: 9 });
+  let bul = [];
+  const flush = () => {
+    if (bul.length) h.list(bul, { bullet: 1, lh: 4.7, gap: 0.9 });
+    bul = [];
+  };
+  String(set.terms)
+    .split("\n")
+    .forEach((raw) => {
+      const t = raw.trim();
+      if (!t) return;
+      if (/^- /.test(t)) return bul.push(t.slice(2));
+      flush();
+      if (/^# /.test(t)) {
+        h.set(h.at() + 6);
+        if (h.at() > 236) h.head();
+        h.para(t.slice(2), { sz: 16, red: 1, gap: 2.5, lh: 7 });
+      } else if (/^## /.test(t)) {
+        h.set(h.at() + 1.5);
+        if (h.at() > 244) h.head();
+        h.para(t.slice(3), { sz: 13, red: 1, gap: 2, lh: 6 });
+      } else if (/^### /.test(t)) {
+        /* a short bold heading, e.g. Acceptance: kept with what follows (the signing lines) */
+        h.set(h.at() + 6);
+        if (h.at() > 190) h.head();
+        h.rule();
+        h.para(t.slice(4), { st: "bold", sz: 11.5, red: 1, gap: 3 });
+      } else if (/^>> /.test(t)) h.para(t.slice(3), { center: 1, gap: 2 });
+      else if (/^1\. /.test(t)) h.para(t.slice(3), { x: h.M + 6, gap: 1.5 });
+      else if (/_{5,}/.test(t)) {
+        h.set(h.at() + 6);
+        h.para(t, { gap: 4 });
+      } else h.para(t, { justify: 1, gap: 2.2 });
+    });
+  flush();
 }
 async function sdSavePdf(d) {
   toast("Making the PDF…");
