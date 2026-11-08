@@ -65,6 +65,8 @@ import { myVehIns } from "../safety/expiry-dates.js";
 import { myPolTodo, policiesView } from "../safety/policies-insurance.js";
 import { empIndTodo, indFor } from "../safety/site-inductions.js";
 import { expiryState, myTalkTodo, trainingView } from "../safety/training.js";
+import { cisView } from "../sales/cis-returns.js";
+import { salesView } from "../sales/sales.js";
 import { hsView } from "../sites/doc-visibility.js";
 import { jobProgress, myJobs } from "../sites/job-sheets.js";
 import { autoPins } from "../sites/maps-pins.js";
@@ -119,12 +121,14 @@ const OWN_TABS = [
   ["materials", "🧰 Materials & tools"],
   ["suppliers", "🏪 Merchants"],
   ["receipts", "🧾 Receipts"],
-  ["invoices", "📑 Invoices"],
+  ["invoices", "📑 Trades' invoices"],
   ["training", "🎓 Training"],
   ["policies", "🛡️ Policies & insurance"],
   ["people", "👷 Employees"],
   ["wages", "💷 Wage calculator"],
   ["costs", "📊 Business costings"],
+  ["sales", "💰 Estimates & invoices"],
+  ["cis", "🏗️ CIS returns"],
   ["calc", "🧮 Calculator"],
   ["draw", "✏️ Drawings"],
   ["setup", "⚙️ Setup"],
@@ -294,7 +298,7 @@ function renderWeek() {
     (curTab() === "time" && ownerMode()) ||
     curTab() === "checks" ||
     (curTab() === "photos" && (!ownerMode() || S.f.pwhen === "week")) ||
-    (curTab() === "planner" && (S.f.pmode || "week") === "week");
+    (curTab() === "planner" && (S.f.pmode || (ownerMode() ? "board" : "week")) === "week");
   $("weekbar").hidden = !show;
   if (!show) return;
   const e = addDays(S.week, 6);
@@ -374,53 +378,57 @@ function render() {
           ? "Wage calculator"
           : t === "costs"
             ? "Business costings"
-            : /^sec-/.test(t)
-              ? nlName(t.slice(4))
-              : t === "daywork"
-                ? "Day work (chargeable hours)"
-                : t === "draw"
-                  ? "Drawings"
-                  : t === "portal"
-                    ? "Client portal"
-                    : t === "leads"
-                      ? "Planning leads"
-                      : t === "samples"
-                        ? "Samples"
-                        : t === "signin"
-                          ? "Site sign-in book"
-                          : t === "signoffs"
-                            ? "Forms · sign-offs"
-                            : t === "clients"
-                              ? "Clients"
-                              : t === "projects"
-                                ? "Sites"
-                                : t === "suppliers"
-                                  ? "Merchants"
-                                  : t === "policies"
-                                    ? "Policies & insurance"
-                                    : t === "hs"
-                                      ? "Health & safety"
-                                      : t === "checks"
-                                        ? "Reports"
-                                        : t === "jobs"
-                                          ? "Forms"
-                                          : t === "training"
-                                            ? "Training"
-                                            : t === "chat"
-                                              ? "Chat"
-                                              : t === "planner"
-                                                ? "Planner"
-                                                : t === "materials"
-                                                  ? "Materials & tools"
-                                                  : t === "receipts"
-                                                    ? "Receipts"
-                                                    : t === "people"
-                                                      ? "Employees"
-                                                      : t === "todo"
-                                                        ? "To do"
-                                                        : t === "calc"
-                                                          ? "Calculator"
-                                                          : "Team";
+            : t === "sales"
+              ? "Estimates & invoices"
+              : t === "cis"
+                ? "CIS returns"
+                : /^sec-/.test(t)
+                  ? nlName(t.slice(4))
+                  : t === "daywork"
+                    ? "Day work (chargeable hours)"
+                    : t === "draw"
+                      ? "Drawings"
+                      : t === "portal"
+                        ? "Client portal"
+                        : t === "leads"
+                          ? "Planning leads"
+                          : t === "samples"
+                            ? "Samples"
+                            : t === "signin"
+                              ? "Site sign-in book"
+                              : t === "signoffs"
+                                ? "Forms · sign-offs"
+                                : t === "clients"
+                                  ? "Clients"
+                                  : t === "projects"
+                                    ? "Sites"
+                                    : t === "suppliers"
+                                      ? "Merchants"
+                                      : t === "policies"
+                                        ? "Policies & insurance"
+                                        : t === "hs"
+                                          ? "Health & safety"
+                                          : t === "checks"
+                                            ? "Reports"
+                                            : t === "jobs"
+                                              ? "Forms"
+                                              : t === "training"
+                                                ? "Training"
+                                                : t === "chat"
+                                                  ? "Chat"
+                                                  : t === "planner"
+                                                    ? "Planner"
+                                                    : t === "materials"
+                                                      ? "Materials & tools"
+                                                      : t === "receipts"
+                                                        ? "Receipts"
+                                                        : t === "people"
+                                                          ? "Employees"
+                                                          : t === "todo"
+                                                            ? "To do"
+                                                            : t === "calc"
+                                                              ? "Calculator"
+                                                              : "Team";
     $("who").textContent = "Owner view · you see everyone";
     const ASK = {
       policies: "policy",
@@ -440,6 +448,8 @@ function render() {
         today: todayView,
         wages: wagesView,
         costs: costsView,
+        sales: salesView,
+        cis: cisView,
         "sec-jobs": () => nlSectionView("jobs"),
         "sec-people": () => nlSectionView("people"),
         "sec-paper": () => nlSectionView("paper"),
@@ -509,7 +519,7 @@ function render() {
         });
     }
     try {
-      const wn = whatsNewHTML(t);
+      const wn = t === "planner" ? "" : whatsNewHTML(t);
       if (wn) {
         $("main").insertAdjacentHTML("afterbegin", wn);
         wireWhatsNew();

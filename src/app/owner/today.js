@@ -6,7 +6,7 @@ import { nameOf } from "./owner.js";
 import { searchOpen } from "./search.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
-export { nlApply, nlName, nlSectionView, todayView };
+export { nlApply, nlName, nlOn, nlSectionView, todayView };
 /* Switched on per device with the "✨ New look" button in the header (kept in jeb.newlook); off = the app as before.
    The old tab row stays in the page, hidden, and the section pages open a tab by pressing its button, so every tab
    behaves exactly as it does from the tab row. Layout agreed in docs/mockups/new-layout. */
@@ -39,7 +39,9 @@ const NL_SECTIONS = [
       "hs",
       "policies",
       "receipts",
+      "sales",
       "invoices",
+      "cis",
       "costs",
       "checks",
       "suppliers",

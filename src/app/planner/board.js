@@ -20,15 +20,24 @@ import {
 import { armDelete, closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
 import { S, inWeek, liveSite, ownerMode, siteNames, weekDays } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { openViewer } from "../core/viewer.js";
+import { closeViewer, openViewer } from "../core/viewer.js";
 import { isImg, uploadFile } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { noBin } from "../owner/deleted-items.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
 import { diaryHtml, diaryRows, wireDiary } from "./diary.js";
+import {
+  plClashHtml,
+  plClashes,
+  plCopyLastWeek,
+  plSendWeek,
+  plWhereHtml,
+  plWireWhere,
+} from "./planner-extras.js";
 import {
   LEAVE_TYPES,
   PTYPES,
@@ -52,7 +61,11 @@ export {
   openKeyDates,
   openPlanEditor,
   openPlanView,
+  pbPlanWeek,
+  pbSiteOf,
+  pbSiteShort,
   plannerView,
+  siteHue,
 };
 const PB_HUES = [210, 150, 25, 285, 0, 190, 60, 330, 110, 245];
 function siteHue(site) {
@@ -147,6 +160,8 @@ function pbMenu(anchor, owner) {
   const items = owner
     ? [
         ["add", "➕ Add to planner"],
+        ["copy", "📋 Copy last week into this week"],
+        ["send", "📣 Send this week to the team"],
         ["key", "📌 Key dates for a job"],
         ["stages", "🧱 Job timeline"],
         ["leave", "🌴 Book time off for someone"],
@@ -182,6 +197,8 @@ function pbMenu(anchor, owner) {
         const k = b.dataset.k;
         const today = iso(new Date());
         if (k === "add") openPlanEditor(null, today);
+        else if (k === "copy") plCopyLastWeek();
+        else if (k === "send") plSendWeek();
         else if (k === "key")
           openKeyDates(S.f.psite && !S.f.psite.startsWith("job:") ? S.f.psite : "", "");
         else if (k === "stages") {
@@ -210,7 +227,7 @@ function pbRequests() {
   openViewer(
     `<h3 style="font-family:var(--f-display);font-size:22px;margin:0 0 8px;color:var(--accent)">Time-off requests</h3>${pending.length ? pending.map((l) => leaveCard(l, true)).join("") : '<div class="nothing">Nothing waiting for you.</div>'}`,
   );
-  wireLeave(true);
+  wireLeave(true, $("viewer-body"));
 }
 function pbTaken() {
   const yr = String(new Date().getFullYear());
@@ -297,6 +314,7 @@ function pbBoardHtml(shown, entries) {
     S.f.pq || S.f.psite || S.f.pwho
       ? `<div class="pb-filt">Showing: ${esc([S.f.pq && "“" + S.f.pq + "”", S.f.psite, S.f.pwho && nameOf(S.f.pwho)].filter(Boolean).join(" · "))} <button type="button" class="linkbtn" id="pb-clear">Clear</button></div>`
       : "";
+  const clashes = plClashes(shown, days);
   const cell = (r, d) => {
     const di = iso(d);
     const list = shown
@@ -313,7 +331,8 @@ function pbBoardHtml(shown, entries) {
       );
     const off = list.find((p) => p.type === "holiday");
     const os = di === today && onsite.find((e) => e.who === r.id);
-    return `<div class="pb-cell ${off ? "off" : ""} ${di === today ? "today" : ""} ${d.getDay() === 0 || d.getDay() === 6 ? "wkend" : ""}" data-d="${di}" data-w="${esc(r.id)}">${os ? `<i class="pb-os" title="On site now"></i>` : ""}${list.map((p) => `<button type="button" class="pb-chip t-${esc(p.type)} ${p.auto || p.pending ? "" : "drag"}" data-p="${esc(p.id)}" style="${pbChipStyle(p)}" title="${esc(p.title + (p.site ? " · " + p.site : ""))}">${p.type === "holiday" ? "🌴 Off" : `${p.time ? `<i>${esc(p.time)}</i>` : ""}${esc(pbSiteShort(pbSiteOf(p)) || pbShort(p.title))}`}</button>`).join("")}</div>`;
+    const clash = clashes.some((c) => c.who === r.id && c.day === di);
+    return `<div class="pb-cell ${clash ? "pb-clashc" : ""} ${off ? "off" : ""} ${di === today ? "today" : ""} ${d.getDay() === 0 || d.getDay() === 6 ? "wkend" : ""}" data-d="${di}" data-w="${esc(r.id)}">${os ? `<i class="pb-os" title="On site now"></i>` : ""}${list.map((p) => `<button type="button" class="pb-chip t-${esc(p.type)} ${p.auto || p.pending ? "" : "drag"}" data-p="${esc(p.id)}" style="${pbChipStyle(p)}" title="${esc(p.title + (p.site ? " · " + p.site : ""))}">${p.type === "holiday" ? "🌴 Off" : `${p.time ? `<i>${esc(p.time)}</i>` : ""}${esc(pbSiteShort(pbSiteOf(p)) || pbShort(p.title))}`}</button>`).join("")}</div>`;
   };
   const freeRow = days
     .map((d) => {
@@ -336,7 +355,15 @@ function pbBoardHtml(shown, entries) {
     if (!un.some((x) => x.length)) return "";
     return `<div class="pb-name"><b>Not assigned</b></div>${un.map((l, i) => `<div class="pb-cell ${iso(days[i]) === today ? "today" : ""}" data-d="${iso(days[i])}" data-w="">${l.map((p) => `<button type="button" class="pb-chip t-${esc(p.type)} drag" data-p="${esc(p.id)}" style="${pbChipStyle(p)}">${p.time ? `<i>${esc(p.time)}</i>` : ""}${esc(pbSiteShort(pbSiteOf(p)) || pbShort(p.title))}</button>`).join("")}</div>`).join("")}`;
   })();
-  return `${pending.length ? `<details class="card pb-reqs" open><summary><div class="nm">⚠ ${pending.length} time-off request${pending.length === 1 ? "" : "s"} to answer<small>Approve or decline, then it goes on the board</small></div></summary><div class="cardbody">${pending.map((l) => leaveCard(l, true)).join("")}</div></details>` : ""}${
+  /* the board first: requests as one line, clashes, the grid; jobs with nothing booked below it */
+  return `${pending.length ? `<button type="button" class="pb-reqline" id="pb-reqline">⚠ ${pending.length} time-off request${pending.length === 1 ? "" : "s"} to answer ›</button>` : ""}${plClashHtml(clashes)}${filt}
+  <div class="pb-wrap"><div class="pb-grid" style="grid-template-columns:78px repeat(${days.length},minmax(${days.length > 5 ? 48 : 60}px,1fr))">
+    <div class="pb-corner"><button type="button" class="pb-we" id="pb-we" title="${showWe ? "Hide" : "Show"} weekend">${showWe ? "Mon–Sun" : "+ Sat/Sun"}</button></div>${days.map((d) => `<div class="pb-dh ${iso(d) === today ? "today" : ""} ${d.getDay() === 0 || d.getDay() === 6 ? "wkend" : ""}"><small>${esc(d.toLocaleDateString("en-GB", { weekday: "short" }))}</small><b>${d.getDate()}</b></div>`).join("")}
+    <div class="pb-name pb-freen"><small>Free</small></div>${freeRow}
+    ${rows.map((r) => `<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.id === S.me ? "Me" : r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
+    ${unRow}
+  </div></div>
+  ${
     waiting.length
       ? `<div class="pb-strip">${
           waiting.length
@@ -350,13 +377,7 @@ function pbBoardHtml(shown, entries) {
             : ""
         }</div>`
       : ""
-  }${filt}
-  <div class="pb-wrap"><div class="pb-grid" style="grid-template-columns:78px repeat(${days.length},minmax(${days.length > 5 ? 48 : 60}px,1fr))">
-    <div class="pb-corner"><button type="button" class="pb-we" id="pb-we" title="${showWe ? "Hide" : "Show"} weekend">${showWe ? "Mon–Sun" : "+ Sat/Sun"}</button></div>${days.map((d) => `<div class="pb-dh ${iso(d) === today ? "today" : ""} ${d.getDay() === 0 || d.getDay() === 6 ? "wkend" : ""}"><small>${esc(d.toLocaleDateString("en-GB", { weekday: "short" }))}</small><b>${d.getDate()}</b></div>`).join("")}
-    <div class="pb-name pb-freen"><small>Free</small></div>${freeRow}
-    ${rows.map((r) => `<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.id === S.me ? "Me" : r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
-    ${unRow}
-  </div></div>
+  }
   ${sitesThisWeek.length ? `<div class="pb-legend">${sitesThisWeek.map((s) => `<span><i style="background:hsl(${siteHue(s)} 55% 42%)"></i>${esc(pbSiteShort(s))}</span>`).join("")}</div>` : ""}
   <div class="who" style="margin-top:6px">Tap an empty square to book someone. Hold a booking and drag it to another day or person. Tap a booking to see or change it.</div>`;
 }
@@ -753,6 +774,7 @@ function pbHeader(owner, mode) {
         : `${wk.toLocaleDateString("en-GB", { day: "numeric", month: wk.getMonth() === end.getMonth() ? undefined : "short" })} – ${end.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
   const views = owner
     ? [
+        ["where", "Who's where"],
         ["board", "Board"],
         ["day", "Day"],
         ["stages", "Jobs"],
@@ -762,7 +784,7 @@ function pbHeader(owner, mode) {
         ["week", "Week"],
         ["month", "Month"],
       ];
-  return `<div class="pb-top">${mode !== "day" ? `<button type="button" class="iconbtn" id="pb-prev" aria-label="Previous week">‹</button><b class="pb-lab">${esc(lab)}</b><button type="button" class="iconbtn" id="pb-next" aria-label="Next week">›</button>${pbPlanWeek() !== iso(monday(new Date())) ? `<button type="button" class="pillbtn" id="pb-today">Today</button>` : ""}` : `<b class="pb-lab"></b>`}
+  return `<div class="pb-top">${mode !== "day" && mode !== "where" ? `<button type="button" class="iconbtn" id="pb-prev" aria-label="Previous week">‹</button><b class="pb-lab">${esc(lab)}</b><button type="button" class="iconbtn" id="pb-next" aria-label="Next week">›</button>${pbPlanWeek() !== iso(monday(new Date())) ? `<button type="button" class="pillbtn" id="pb-today">Today</button>` : ""}` : `<b class="pb-lab"></b>`}
     </div><div class="pb-top pb-top2"><div class="seg pb-seg" id="pb-mode">${views.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div><button type="button" class="iconbtn" id="pb-menu" aria-label="More" title="More">⋯</button></div>`;
 }
 function pbWireHeader(owner) {
@@ -797,10 +819,12 @@ function pbWireHeader(owner) {
 }
 function plannerView() {
   const owner = ownerMode();
-  let mode = S.f.pmode || (owner ? "board" : "week");
+  let mode =
+    S.f.pmode || (owner ? (nlOn() && window.innerWidth < 700 ? "where" : "board") : "week");
   if (owner && mode === "diary") mode = "day";
   if (owner && mode === "week") mode = "board";
-  if (!owner && ["board", "day", "stages", "diary", "year", "list"].includes(mode)) mode = "week";
+  if (!owner && ["where", "board", "day", "stages", "diary", "year", "list"].includes(mode))
+    mode = "week";
   const entries = planEntries();
   const who = owner ? S.f.pwho || "" : "";
   const psite = S.f.psite || "";
@@ -823,7 +847,9 @@ function plannerView() {
   let html = pbHeader(owner, mode);
   const today = iso(new Date());
   if (!owner) html += pbDaySheet(shown);
-  if (mode === "board") {
+  if (mode === "where") {
+    html += plWhereHtml(shown);
+  } else if (mode === "board") {
     html += pbBoardHtml(shown, entries);
   } else if (mode === "stages") {
     html += pbStagesHtml(shown);
@@ -950,7 +976,9 @@ function plannerView() {
   }
   $("main").innerHTML = html;
   pbWireHeader(owner);
+  if (mode === "where") plWireWhere(entries);
   if (mode === "board") pbWireBoard(shown, entries);
+  if ($("pb-reqline")) $("pb-reqline").onclick = pbRequests;
   if (mode === "stages") pbWireStages(shown);
   if ($("pl-mode"))
     $("pl-mode")
@@ -1283,40 +1311,38 @@ function leaveCard(l, owner) {
     <div class="sub">${shortDay(l.from)}${l.to !== l.from ? " – " + shortDay(l.to) : ""}${l.half ? " · half day (" + esc(l.half) + ")" : ""} · ${days} working day${days === 1 ? "" : "s"}</div>
     ${l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}
     ${l.reply ? `<div class="sub"><b>James:</b> ${esc(l.reply)}</div>` : ""}
-    <div class="sub">Requested ${stamp(l.requestedAt || l.created)}${l.answeredAt ? " · answered " + stamp(l.answeredAt) : ""}</div>
+    <div class="sub">${l.requestedAt || l.created ? "Requested " + stamp(l.requestedAt || l.created) : "Waiting for an answer"}${l.answeredAt ? " · answered " + stamp(l.answeredAt) : ""}</div>
     <div class="filerow">${owner && l.status === "pending" ? `<button type="button" class="btn primary lv-yes" style="padding:7px 14px">Approve</button><button type="button" class="btn lv-no" style="padding:7px 14px">Decline</button>` : ""}
     ${!owner && l.status === "pending" ? `<button type="button" class="linkdanger lv-cancel">Cancel request</button>` : ""}</div></div></div>`;
 }
-function wireLeave(owner) {
-  $("main")
-    .querySelectorAll(".lv")
-    .forEach((row) => {
-      const l = owner
-        ? allTeam("signoffs").find((x) => x.id === row.dataset.l && x.who === row.dataset.w)
-        : leaveOf(S.mine.signoffs).find((x) => x.id === row.dataset.l);
-      if (!l) return;
-      const y = row.querySelector(".lv-yes"),
-        n = row.querySelector(".lv-no"),
-        c = row.querySelector(".lv-cancel");
-      if (y) y.onclick = () => answerLeave(l, true);
-      if (n) n.onclick = () => answerLeave(l, false);
-      if (c) {
-        let a = false;
-        c.onclick = async () => {
-          if (!a) {
-            a = true;
-            c.textContent = "Tap again to cancel";
-            return;
-          }
-          try {
-            await myDoc("signoffs", l.id).update({ status: "cancelled" });
-            toast("Request cancelled");
-          } catch (e) {
-            toast("Couldn't cancel");
-          }
-        };
-      }
-    });
+function wireLeave(owner, root) {
+  (root || $("main")).querySelectorAll(".lv").forEach((row) => {
+    const l = owner
+      ? allTeam("signoffs").find((x) => x.id === row.dataset.l && x.who === row.dataset.w)
+      : leaveOf(S.mine.signoffs).find((x) => x.id === row.dataset.l);
+    if (!l) return;
+    const y = row.querySelector(".lv-yes"),
+      n = row.querySelector(".lv-no"),
+      c = row.querySelector(".lv-cancel");
+    if (y) y.onclick = () => answerLeave(l, true);
+    if (n) n.onclick = () => answerLeave(l, false);
+    if (c) {
+      let a = false;
+      c.onclick = async () => {
+        if (!a) {
+          a = true;
+          c.textContent = "Tap again to cancel";
+          return;
+        }
+        try {
+          await myDoc("signoffs", l.id).update({ status: "cancelled" });
+          toast("Request cancelled");
+        } catch (e) {
+          toast("Couldn't cancel");
+        }
+      };
+    }
+  });
 }
 function answerLeave(l, yes) {
   openSheet(
@@ -1350,6 +1376,7 @@ function answerLeave(l, yes) {
           });
         }
         closeForm();
+        if (!$("viewer").hidden && $("viewer-body").querySelector(".lv")) closeViewer();
         toast(yes ? "Approved and added to the planner" : "Declined");
         render();
       } catch (e) {

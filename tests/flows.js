@@ -40,7 +40,7 @@ const R=[];const ok=(name,cond,info)=>{R.push((cond?'✅ ':'❌ ')+name+(info?' 
  await tab(o,'photos');t=await txt(o);ok('Photos tab shows Day work photo',/Day work/.test(t),t.slice(0,0));
  // 4. leave -> planner + timesheet
  await tab(o,'planner');t=await txt(o);ok('Planner shows Sam time-off request',/Holiday|time off|Time-off/i.test(t));
- const ap=o.locator('#main button',{hasText:/^✓? ?Approve/});const apn=await ap.count();if(apn){await ap.first().click();await o.waitForTimeout(400);await o.click('#f-save');await o.waitForTimeout(800)}
+ if(await o.$('#pb-reqline')){await o.click('#pb-reqline');await o.waitForTimeout(400)}const ap=o.locator('#main button, #viewer-body button',{hasText:/^✓? ?Approve/});const apn=await ap.count();if(apn){await ap.first().click();await o.waitForTimeout(400);await o.click('#f-save');await o.waitForTimeout(800)}
  s=await st(o);ok('Approving leave updates it',s['sheets/emp1/signoffs/l1'].status==='approved','buttons found '+apn+', status '+s['sheets/emp1/signoffs/l1'].status);
  await o.evaluate(()=>__T.openPersonMonth("emp1"));await o.waitForTimeout(400);await o.click('#viewer-body .ts-next').catch(()=>{});await o.waitForTimeout(300);t=(await o.innerText('#viewer-body')).replace(/\s+/g,' ');ok('Leave shows on Sam month timesheet (Nov)',/Holiday|🌴|off/i.test(t),t.match(/.{30}(Holiday|🌴).{20}/)?.[0]);await o.keyboard.press('Escape');
  // 5. invoice stages

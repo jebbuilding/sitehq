@@ -21,6 +21,7 @@ const PDOC_TYPES = {
   address: "Proof of address",
   ni: "National Insurance letter or card",
   medical: "Medical note or fit note",
+  cis: "CIS payment and deduction statement",
   other: "Other personal document",
 };
 const pdocsOf = (list) =>

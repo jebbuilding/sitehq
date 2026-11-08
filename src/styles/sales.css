@@ -1,0 +1,67 @@
+/* ===== styles: sales – estimates and invoices to clients, and CIS returns ===== */
+.sd-tabs{margin-bottom:10px}
+.sd-acts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.sd-filebtn{position:relative;overflow:hidden;display:inline-flex;align-items:center}
+.sd-file{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;width:100%;height:100%}
+.sd-boxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.sd-box{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:44px;font:inherit;cursor:pointer;border-top:4px solid var(--accent)}
+.sd-box small{color:var(--muted);font-size:12px}
+.sd-box b{font-size:20px}
+.sd-box span{color:var(--muted);font-size:12px}
+.sd-box.bad{border-top-color:var(--danger)}
+.sd-box.ok{border-top-color:var(--ok)}
+.sd-chart .cardbody{display:flex;flex-direction:column;gap:6px}
+.sd-key{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sd-key i{display:inline-block;width:10px;height:10px;border-radius:2px}
+.sd-ki,.sd-bi{background:var(--accent)}
+.sd-kp,.sd-bp{background:var(--ok)}
+.sd-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;height:130px;align-items:end}
+.sd-mon{display:flex;flex-direction:column;align-items:center;height:100%;gap:4px}
+.sd-pair{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
+.sd-pair i{display:block;width:40%;max-width:22px;min-height:2px;border-radius:3px 3px 0 0}
+.sd-mon small{font-size:11px;color:var(--muted)}
+.sd-ty{margin:6px 0 12px}
+.sd-filt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.sd-filt input{flex:1;min-width:180px}
+.sd-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.sd-row{display:grid;grid-template-columns:90px 1fr auto auto;gap:10px;align-items:center;text-align:left;padding:10px 12px;min-height:52px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;cursor:pointer}
+.sd-row:last-child{border-bottom:0}
+.sd-row small{display:block;color:var(--muted);font-size:12px}
+.sd-no{font-weight:600;font-size:13px}
+.sd-dt{text-align:right}
+.sd-amt{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.sd-late{color:var(--danger)!important}
+@media (max-width:640px){.sd-row{grid-template-columns:1fr auto}.sd-no,.sd-dt{display:none}}
+.sd-ed{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.sd-edtop{display:flex;align-items:center;gap:10px}
+.sd-lhead,.sd-line{display:grid;grid-template-columns:1fr 70px 110px 76px 84px 44px;gap:6px;align-items:start}
+.sd-lhead{font-size:12px;color:var(--muted)}
+.sd-line{padding:6px 0;border-bottom:1px solid var(--line)}
+.sd-line textarea{min-height:44px;resize:vertical}
+.sd-lab{display:flex;align-items:center;gap:4px;font-size:12px;min-height:44px}
+@media (max-width:640px){.sd-lhead{display:none}.sd-line{grid-template-columns:1fr 1fr 1fr 44px}.sd-ld{grid-column:1/-1}}
+.sd-tot{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--surface)}
+.sd-tot .sd-due{font-size:17px}
+.sd-edacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 96px}
+.sd-imp{margin-bottom:10px}
+.cis-nav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cis-nav b{flex:1;text-align:center;font-size:16px}
+.cis-due{margin-bottom:10px}
+.cis-tbl{display:flex;flex-direction:column;margin:8px 0;overflow-x:auto}
+.cis-tr{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr 1fr;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);min-width:560px;font-size:14px}
+.cis-tr small{display:block;color:var(--muted);font-size:12px}
+.cis-th{font-size:12px;color:var(--muted)}
+.cis-tf{font-weight:700;border-bottom:0}
+.cis-acts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.cis-pays{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.cis-pay{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface)}
+.cis-pay.cis-skip{opacity:.6}
+.cis-ph{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.cis-ph .who{flex:1}
+.cis-pin{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:6px}
+.cis-pin label{display:flex;flex-direction:column;font-size:12px;width:130px}
+.cis-calc{font-size:13px;flex:1;min-width:180px}
+.cis-sub{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.cis-sub .who{flex:1;min-width:140px}
+.cis-sub select,.cis-sub input{width:auto;min-width:150px}
+.cis-subacts{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:10px 0}

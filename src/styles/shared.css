@@ -438,5 +438,7 @@ body:has(.np) .scrim{z-index:37}body:has(.np) .sheet{z-index:38}
 .toast{pointer-events:none}
 /* money tables (wage calculator, business costings) */
 .wc-t{width:100%;border-collapse:collapse}.wc-t td,.wc-t th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}.wc-t .num{text-align:right;white-space:nowrap}.wc-t .wc-tot td{font-weight:700}
+/* a pop-up form hides the "PDF saved – Print" bar, which would sit over its buttons */
+body:has(#sheet:not([hidden])) .pdfbar{display:none}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}

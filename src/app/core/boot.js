@@ -190,6 +190,10 @@ initPhotoTest();
         S.npSyms = all.filter((t) => t.kind === "npsym");
         S.wageCalcs = all.filter((t) => t.kind === "wagecalc");
         S.bizCosts = all.find((t) => t.kind === "bizcosts") || null;
+        S.sales = all.filter((t) => t.kind === "sale");
+        S.salesSet = all.find((t) => t.kind === "salesset") || null;
+        S.cisSubs = all.find((t) => t.kind === "cissubs") || null;
+        S.cisMonths = all.filter((t) => t.kind === "cismonth");
         S.audit = all.filter((t) => t.kind === "audit");
         S.bin = all.filter((t) => t.kind === "bin");
         if (!window.__binPurgeT)
