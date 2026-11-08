@@ -56,6 +56,9 @@ const NP_DET_BOX = new Set([
   "ewBlock",
   "ewBrk",
   "fdnsec",
+  "rwsBlock",
+  "rwsSleeper",
+  "rwsGabion",
 ]);
 function npDetailSym(ctx, o, x0, y0, w, h) {
   const lw = ctx.lineWidth,
@@ -552,6 +555,164 @@ function npDetailSym(ctx, o, x0, y0, w, h) {
       lab(`${fd.dep} to underside`, sx, yb - fs * 0.3, fs);
       break;
     }
+    /* --- retaining walls in section: the wall, its footing, the ground both sides, the drainage behind --- */
+    case "rwsBlock":
+    case "rwsSleeper":
+    case "rwsGabion": {
+      /* mm across from the wall's front face, mm down from the low ground; the box fits the whole section */
+      const span =
+        o.k === "rwsGabion" ? [-700, 1900] : o.k === "rwsSleeper" ? [-600, 1100] : [-600, 1400];
+      const vspan =
+        o.k === "rwsSleeper" ? [-1050, 800] : o.k === "rwsGabion" ? [-1400, 550] : [-1150, 550];
+      const k = Math.min(w / (span[1] - span[0]), h / (vspan[1] - vspan[0]));
+      const ox = x0 + (w - (span[1] - span[0]) * k) / 2 - span[0] * k,
+        oy = y0 + (h - (vspan[1] - vspan[0]) * k) / 2 - vspan[0] * k;
+      const X2 = (mm) => ox + mm * k,
+        Y2 = (mm) => oy + mm * k;
+      const box = (a, b, cc, d) => [X2(a), Y2(b), (cc - a) * k, (d - b) * k];
+      const EARTH = "#eadfcb",
+        STONE = "#e2e2e2";
+      const earth = (a, b, cc, d) => {
+        const [x, y, ww, hh] = box(a, b, cc, d);
+        ctx.save();
+        ctx.fillStyle = EARTH;
+        ctx.fillRect(x, y, ww, hh);
+        ctx.beginPath();
+        ctx.rect(x, y, ww, hh);
+        ctx.clip();
+        ctx.lineWidth = Math.max(lw * 0.35, 0.35);
+        ctx.strokeStyle = npHexMix(c, 0.5);
+        const st = Math.max(60 * k, 3);
+        for (let t = -hh; t < ww + hh; t += st) {
+          ctx.beginPath();
+          ctx.moveTo(x + t, y + hh);
+          ctx.lineTo(x + t + st * 0.5, y + hh - st * 0.5);
+          ctx.moveTo(x + t + st * 0.2, y + hh * 0.5);
+          ctx.lineTo(x + t + st * 0.6, y + hh * 0.5 - st * 0.4);
+          ctx.stroke();
+        }
+        ctx.restore();
+      };
+      const stone = (a, b, cc, d) => {
+        const [x, y, ww, hh] = box(a, b, cc, d);
+        R(x, y, ww, hh, STONE);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, ww, hh);
+        ctx.clip();
+        ctx.lineWidth = Math.max(lw * 0.4, 0.4);
+        const st = Math.max(70 * k, 4);
+        let r = 0;
+        for (let yy = y + st / 2; yy < y + hh; yy += st * 0.8, r++)
+          for (let xx = x + (r % 2 ? st / 2 : st / 6); xx < x + ww; xx += st) {
+            ctx.beginPath();
+            ctx.ellipse(xx, yy, st * 0.32, st * 0.24, (r % 3) * 0.6, 0, 7);
+            ctx.stroke();
+          }
+        ctx.restore();
+      };
+      const pipe = (xm, ym) => {
+        ctx.save();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(X2(xm), Y2(ym), 50 * k, 0, 7);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      };
+      const gl = (a, b, y) => {
+        ctx.save();
+        ctx.lineWidth = lw * 1.5;
+        ln(X2(a), Y2(y), X2(b), Y2(y));
+        ctx.restore();
+      };
+      const concF = (a, b, cc, d) => {
+        R(...box(a, b, cc, d), "#dcdcdc");
+        conc(...box(a, b, cc, d));
+      };
+      const f2 = Math.max(5, Math.min(fs, 85 * k));
+      const note = (t, xm, ym) => lab(t, X2(xm), Y2(ym), f2);
+      if (o.k === "rwsBlock") {
+        /* 900 held back, 150 upstand, 215 blockwork on a 700 × 300 footing (toe 175), 300 of drainage stone */
+        earth(-600, 0, -175, 550);
+        earth(-175, 0, 0, 150);
+        stone(215, -650, 515, 150);
+        earth(215, -900, 515, -650);
+        earth(515, -900, 1400, 150);
+        earth(525, 150, 1400, 550);
+        earth(-175, 450, 525, 550);
+        concF(-175, 150, 525, 450);
+        blk(...box(0, -1050, 215, 150));
+        R(...box(-25, -1110, 240, -1050), "#bbbbbb");
+        ctx.save();
+        ctx.strokeStyle = "#c2410c";
+        ctx.lineWidth = lw * 1.2;
+        ln(X2(107), Y2(-980), X2(107), Y2(380));
+        ln(X2(107), Y2(380), X2(450), Y2(380));
+        ln(X2(-130), Y2(410), X2(450), Y2(410), [lw * 3, lw * 2]);
+        ctx.restore();
+        ctx.save();
+        ctx.lineWidth = lw * 2;
+        ln(X2(-20), Y2(-75), X2(235), Y2(-75));
+        ctx.restore();
+        pipe(365, 90);
+        gl(-600, 0, 0);
+        gl(215, 1400, -900);
+        note("Blockwork, cores filled, bars up the wall", 560, -1080);
+        note("Drainage stone", 560, -500);
+        note("Weep hole", -590, -130);
+        note("Drain pipe", 560, 90);
+        note("Concrete footing", -590, 620);
+      } else if (o.k === "rwsSleeper") {
+        /* four 200 × 100 sleepers on a 100 × 200 post set 600 into concrete; drainage stone behind */
+        earth(-600, 0, 0, 800);
+        stone(300, -350, 600, 100);
+        earth(300, -600, 600, -350);
+        earth(600, -600, 1100, 800);
+        earth(400, 100, 600, 800);
+        concF(0, 600, 400, 750);
+        concF(300, 50, 400, 600);
+        concF(0, 100, 100, 600);
+        X(...box(100, -700, 300, 600), "#d9b98c");
+        for (let i = 0; i < 4; i++) X(...box(0, -700 + i * 200, 100, -500 + i * 200), "#d9b98c");
+        pipe(450, -20);
+        gl(-600, 0, 0);
+        gl(300, 1100, -600);
+        note("Sleepers 200 × 100", 650, -950);
+        note("Post in concrete", -590, 690);
+        note("Drainage stone", 650, -300);
+      } else {
+        /* gabions: 500-high baskets 1000, 500 and 500 deep, back flat to the earth, on 150 hardcore */
+        earth(-700, 0, -150, 550);
+        stone(-150, 200, 1150, 350);
+        earth(-150, 350, 1300, 550);
+        earth(1150, -1000, 1900, 350);
+        [
+          [0, 1000],
+          [500, 500],
+          [500, 500],
+        ].forEach(([fx, wd], i) => {
+          const yb = 200 - 500 * i;
+          const [x, y, ww, hh] = box(fx, yb - 500, fx + wd, yb);
+          stone(fx, yb - 500, fx + wd, yb);
+          ctx.save();
+          ctx.lineWidth = lw * 1.4;
+          ctx.strokeRect(x, y, ww, hh);
+          ctx.restore();
+        });
+        ctx.save();
+        ctx.strokeStyle = "#2f5fb3";
+        ln(X2(1010), Y2(-1000), X2(1010), Y2(350), [lw * 3, lw * 2]);
+        ctx.restore();
+        pipe(1080, 140);
+        gl(-700, 0, 0);
+        gl(1000, 1900, -1000);
+        note("Gabion baskets, stone filled", 1050, -1150);
+        note("Geotextile", 1200, -600);
+        note("Hardcore base", -690, 460);
+      }
+      break;
+    }
     case "ewCav":
     case "ewBrick":
     case "ewSolid":
@@ -977,6 +1138,14 @@ const NP_SHAPES = [
   ["ewBlock", "▦ Blockwork wall face with DPC & footing", "Walls side on", "pro"],
   ["ewBrk", "▤ Brickwork wall face with DPC & footing", "Walls side on", "pro"],
   ["fdnsec", "⊥ Foundation section: footing & courses to DPC", "Foundations & ground", "pro"],
+  [
+    "rwsBlock",
+    "▙ Retaining wall section: blockwork, footing & drainage",
+    "Foundations & ground",
+    "pro",
+  ],
+  ["rwsSleeper", "▙ Retaining wall section: sleepers on posts", "Foundations & ground", "pro"],
+  ["rwsGabion", "▙ Retaining wall section: gabion baskets", "Foundations & ground", "pro"],
   ["sdTbk", "┳ Partition meets wall: flat backer", "Stud wall details", "pro"],
   ["sdL3", "┏ Corner: 3-stud", "Stud wall details", "pro"],
   ["sdLcal", "┏ Corner: California (stud turned flat)", "Stud wall details", "pro"],

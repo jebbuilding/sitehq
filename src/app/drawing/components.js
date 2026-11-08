@@ -1583,6 +1583,9 @@ const NP_LIB = [
     "Foundations & ground",
     [
       "fdnsec",
+      "rwsBlock",
+      "rwsSleeper",
+      "rwsGabion",
       "ewBlock",
       "ewBrk",
       "fdn",
