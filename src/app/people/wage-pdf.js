@@ -2,7 +2,7 @@
 import { $, iso } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { coData } from "../owner/company-details.js";
-import { wcMoney } from "./wage-calc.js";
+import { wcCalc, wcMoney } from "./wage-calc.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { sdSet } from "../sales/sales-calc.js";
@@ -61,7 +61,8 @@ async function wcPdf(o) {
   let y = 72;
   /* what was put in */
   const facts = [
-    ["Gross salary a year", wcMoney(o.salary)],
+    ["Hourly rate", wcMoney(wcCalc(o).rate, 2)],
+    ["Gross salary a year", wcMoney(wcCalc(o).sal)],
     o.vanMode !== "none" && o.van
       ? [
           "Company van a year",

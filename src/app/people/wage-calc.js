@@ -44,6 +44,7 @@ const WC_RATE_LABELS = [
 ];
 const WC_NEW = {
   name: "",
+  rate: 0,
   salary: 30000,
   van: 0,
   vanMode: "none",
@@ -62,11 +63,19 @@ const wcMoney = (v, dp) =>
     maximumFractionDigits: dp || 0,
   });
 
+/* a calculation saved before the hourly rate came in starts from its salary's rate */
+const wcStartRate = (r) => {
+  const ph = (+r.days || 0) * (+r.hrs || 0);
+  return ph && +r.salary ? Math.round((+r.salary / ph) * 100) / 100 : "";
+};
 /* every figure for one calculation */
 function wcCalc(r0) {
   const r = Object.assign({}, WC_NEW, r0),
     R = Object.assign({}, WC_RATES, r0.rates || {});
-  const sal = +r.salary || 0,
+  /* the yearly gross: the hourly rate × the paid hours (working days, holiday paid, × hours a day); older saved
+     calculations without a rate keep their salary */
+  const paidHrs = (+r.days || 0) * (+r.hrs || 0);
+  const sal = +r.rate > 0 && paidHrs ? Math.round(+r.rate * paidHrs) : +r.salary || 0,
     van = +r.van || 0,
     benefit = r.vanMode === "benefit" && van > 0,
     fromPay = r.vanMode === "deduct" ? van : 0,
@@ -97,6 +106,8 @@ function wcCalc(r0) {
     charge = +r.charge || 0;
   return {
     sal,
+    rate: paidHrs ? sal / paidHrs : 0,
+    paidHrs,
     taxable,
     pa,
     tax,
@@ -167,7 +178,8 @@ function wcOpen(rec) {
     <h3 style="margin:0 0 8px">💷 Wage calculator</h3>
     <label for="wc-name">Who or what role<input id="wc-name" maxlength="60" value="${esc(r.name)}" placeholder="e.g. Carpenter, or a person's name"></label>
     <div class="wc-grid">
-      ${num("wc-salary", "Gross salary a year (£)", r.salary, "100")}
+${num("wc-rate", "Hourly rate (£ an hour)", r.rate || (rec ? wcStartRate(r) : 15), "0.05", "What they're paid an hour – everything is worked out from this")}
+      <label for="wc-salary">Gross salary a year (£)<input id="wc-salary" type="number" readonly tabindex="-1" class="wc-calc"><span class="who" id="wc-salnote">Hourly rate × paid hours a year</span></label>
       ${num("wc-charge", "You charge them out at (£ an hour)", r.charge || "", "0.5", "Optional: shows your margin")}
       ${num("wc-van", "Company van (£ a year)", r.van, "100", "What the van costs you a year")}
       <label for="wc-vanmode">Van is<select id="wc-vanmode"><option value="none"${r.vanMode === "none" ? " selected" : ""}>No van</option><option value="benefit"${r.vanMode === "benefit" ? " selected" : ""}>A taxable benefit (you pay, they're taxed)</option><option value="deduct"${r.vanMode === "deduct" ? " selected" : ""}>Paid by them from their pay</option></select></label>
@@ -186,6 +198,7 @@ function wcOpen(rec) {
     const v = (id) => parseFloat($(id).value) || 0;
     const o = {
       name: $("wc-name").value.trim(),
+      rate: v("wc-rate"),
       salary: v("wc-salary"),
       charge: v("wc-charge"),
       van: v("wc-van"),
@@ -209,8 +222,13 @@ function wcOpen(rec) {
     `<tr${b ? ' class="wc-tot"' : ""}><td>${l}</td><td class="num">${v}</td></tr>`;
   const show = () => {
     const c = wcCalc(read());
+    /* the yearly gross, worked out */
+    $("wc-salary").value = Math.round(c.sal);
+    $("wc-salnote").textContent =
+      `${wcMoney(c.rate, 2)} × ${Math.round(c.paidHrs).toLocaleString("en-GB")} paid hours a year`;
     $("wc-out").innerHTML = `
       <div class="wc-head">
+        <div class="tot"><div class="n">${wcMoney(c.rate, 2)}</div><div class="l">Their pay an hour (${wcMoney(c.sal)} a year)</div></div>
         <div class="tot"><div class="n">${wcMoney(c.perHour, 2)}</div><div class="l">Costs you an hour worked</div></div>
         <div class="tot"><div class="n">${wcMoney(c.net / 12)}</div><div class="l">They take home a month</div></div>
         <div class="tot"><div class="n">${wcMoney(c.total)}</div><div class="l">Costs you a year</div></div>

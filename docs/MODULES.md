@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 175 files, 3609 KB, 93642 lines.
-- 1767 names declared at the top level (the shared scope); 931 of them are used by a file other than the one that declares them.
+- 175 files, 3611 KB, 93661 lines.
+- 1768 names declared at the top level (the shared scope); 931 of them are used by a file other than the one that declares them.
 - 1844 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 158 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -1013,8 +1013,8 @@ SUBCONTRACTOR AGREEMENT: fill in, both sign on the device (or print to sign), sa
 
 WAGE CALCULATOR (owner): what an employee takes home, and what they really cost per hour, day and year
 
-- 282 lines, 12 KB. Declares 7 names, 3 used elsewhere.
-- **Used elsewhere:** `wcMoney` (2), `wagesView` (1), `wcCalc` (1)
+- 300 lines, 14 KB. Declares 8 names, 3 used elsewhere.
+- **Used elsewhere:** `wcCalc` (2), `wcMoney` (2), `wagesView` (1)
 - **Uses names from 6 files:** `core/helpers.js` (3), `core/viewer.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `people/wage-pdf.js` (1)
 - **Used by 3 files**
 
@@ -1022,9 +1022,9 @@ WAGE CALCULATOR (owner): what an employee takes home, and what they really cost 
 
 WAGE CALCULATOR PDF: a wage calculation on the letterhead, as shown on screen
 
-- 155 lines, 5.2 KB. Declares 1 names, 1 used elsewhere.
+- 156 lines, 5.3 KB. Declares 1 names, 1 used elsewhere.
 - **Used elsewhere:** `wcPdf` (1)
-- **Uses names from 8 files:** `sales/sales-pdf.js` (3), `core/helpers.js` (2), `core/state.js` (1), `owner/company-details.js` (1), `people/wage-calc.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-calc.js` (1)
+- **Uses names from 8 files:** `sales/sales-pdf.js` (3), `core/helpers.js` (2), `people/wage-calc.js` (2), `core/state.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-calc.js` (1)
 - **Used by 1 files**
 
 ### `photos/mark-up.js`
