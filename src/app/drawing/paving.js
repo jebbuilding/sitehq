@@ -717,6 +717,202 @@ const npLineShape = (o) => o && o.t === "shape" && (NP_LINE.has(o.k) || o.k === 
 const npBoxy = (o) =>
   o && (["rect", "circle", "text", "img"].includes(o.t) || (o.t === "shape" && !npLineShape(o)));
 /* real sizes in mm for tap-to-place when a scale is set: [width, height] (line types: [length]) */
+/* the sizes things usually come in (mm): [label, width, depth or height]. Generic trade sizes, not any one maker's */
+const NP_STD = {
+  door: [
+    ["610 (2'0\") internal", 610],
+    ["686 (2'3\") internal", 686],
+    ["762 (2'6\") internal", 762],
+    ["838 (2'9\") internal", 838],
+    ["926 internal – wider access", 926],
+    ["813 external", 813],
+    ["838 external", 838],
+    ["914 external", 914],
+    ["1000 accessible", 1000],
+  ],
+  door2: [
+    ["1106 (2 × 553) pair", 1106],
+    ["1220 (2 × 610) pair", 1220],
+    ["1372 (2 × 686) pair", 1372],
+    ["1524 (2 × 762) pair", 1524],
+    ["1676 (2 × 838) pair", 1676],
+    ["1200 French doors", 1200],
+    ["1500 French doors", 1500],
+    ["1800 French doors", 1800],
+  ],
+  sdoor: [
+    ["1500 sliding", 1500],
+    ["1800 sliding", 1800],
+    ["2100 sliding", 2100],
+    ["2400 sliding", 2400],
+    ["3000 sliding", 3000],
+    ["3600 sliding", 3600],
+  ],
+  bifold: [
+    ["1800 bi-fold (2 leaf)", 1800],
+    ["2100 bi-fold (3 leaf)", 2100],
+    ["2400 bi-fold (3 leaf)", 2400],
+    ["3000 bi-fold (4 leaf)", 3000],
+    ["3600 bi-fold (4 leaf)", 3600],
+    ["4200 bi-fold (5 leaf)", 4200],
+    ["4800 bi-fold (6 leaf)", 4800],
+  ],
+  opening: [
+    ["600", 600],
+    ["762", 762],
+    ["900", 900],
+    ["1000", 1000],
+    ["1200", 1200],
+    ["1500", 1500],
+    ["1800", 1800],
+  ],
+  window: [
+    ["488", 488],
+    ["630", 630],
+    ["915", 915],
+    ["1200", 1200],
+    ["1500", 1500],
+    ["1770", 1770],
+    ["1800", 1800],
+    ["2340", 2340],
+  ],
+  ewin: [
+    ["630 × 1050", 630, 1050],
+    ["915 × 1050", 915, 1050],
+    ["1200 × 1050", 1200, 1050],
+    ["1200 × 1200", 1200, 1200],
+    ["1770 × 1050", 1770, 1050],
+    ["1770 × 1200", 1770, 1200],
+    ["2340 × 1050", 2340, 1050],
+    ["915 × 450 (bathroom)", 915, 450],
+  ],
+  edoor: [
+    ["762 × 1981 (2'6\" × 6'6\")", 762, 1981],
+    ["838 × 1981 (2'9\" × 6'6\")", 838, 1981],
+    ["926 × 2040", 926, 2040],
+    ["Frame 920 × 2085 external", 920, 2085],
+    ["Frame 1000 × 2100 external", 1000, 2100],
+  ],
+  efrench: [
+    ["1200 × 2100", 1200, 2100],
+    ["1500 × 2100", 1500, 2100],
+    ["1800 × 2100", 1800, 2100],
+  ],
+  ebifold: [
+    ["2400 × 2100", 2400, 2100],
+    ["3000 × 2100", 3000, 2100],
+    ["3600 × 2100", 3600, 2100],
+    ["4800 × 2100", 4800, 2100],
+  ],
+  egarage: [
+    ["2134 × 1981 (7' × 6'6\")", 2134, 1981],
+    ["2286 × 2134 (7'6\" × 7')", 2286, 2134],
+    ["2438 × 2134 (8' × 7')", 2438, 2134],
+    ["4267 × 2134 (14' × 7') double", 4267, 2134],
+    ["4877 × 2134 (16' × 7') double", 4877, 2134],
+  ],
+  rooflight: [
+    ["550 × 780", 550, 780],
+    ["550 × 980", 550, 980],
+    ["660 × 1180", 660, 1180],
+    ["780 × 980", 780, 980],
+    ["780 × 1180", 780, 1180],
+    ["780 × 1400", 780, 1400],
+    ["940 × 1600", 940, 1600],
+    ["1140 × 1180", 1140, 1180],
+  ],
+  eroofl: [
+    ["550 × 780", 550, 780],
+    ["660 × 1180", 660, 1180],
+    ["780 × 980", 780, 980],
+    ["780 × 1180", 780, 1180],
+    ["780 × 1400", 780, 1400],
+  ],
+  lintel: [600, 750, 900, 1050, 1200, 1350, 1500, 1650, 1800, 2100, 2400, 2700, 3000].map((L) => [
+    L + " long",
+    L,
+    215,
+  ]),
+  bath: [
+    ["1500 × 700", 1500, 700],
+    ["1600 × 700", 1600, 700],
+    ["1700 × 700", 1700, 700],
+    ["1700 × 750", 1700, 750],
+    ["1800 × 800", 1800, 800],
+  ],
+  shower: [
+    ["760 × 760", 760, 760],
+    ["800 × 800", 800, 800],
+    ["900 × 900", 900, 900],
+    ["1000 × 800", 1000, 800],
+    ["1200 × 800", 1200, 800],
+    ["1200 × 900", 1200, 900],
+    ["1400 × 900", 1400, 900],
+    ["1600 × 800", 1600, 800],
+    ["1700 × 800", 1700, 800],
+  ],
+  wc: [
+    ["360 × 500 short projection", 360, 500],
+    ["360 × 600", 360, 600],
+    ["400 × 700", 400, 700],
+  ],
+  basin: [
+    ["400 × 300 cloakroom", 400, 300],
+    ["500 × 400", 500, 400],
+    ["550 × 450", 550, 450],
+    ["600 × 470", 600, 470],
+  ],
+  sink: [
+    ["1000 × 500 single bowl", 1000, 500],
+    ["1160 × 500 bowl and a half", 1160, 500],
+    ["1500 × 500 double bowl", 1500, 500],
+  ],
+  units: [300, 400, 450, 500, 600, 800, 1000]
+    .map((w) => [w + " base unit", w, 600])
+    .concat([300, 400, 500, 600, 800, 1000].map((w) => [w + " wall unit", w, 320])),
+  hob: [
+    ["600 × 520", 600, 520],
+    ["700 × 520", 700, 520],
+    ["800 × 520", 800, 520],
+    ["900 × 520", 900, 520],
+  ],
+  fridge: [
+    ["550 × 600 under counter", 550, 600],
+    ["600 × 600", 600, 600],
+    ["700 × 650 fridge freezer", 700, 650],
+    ["900 × 700 American style", 900, 700],
+  ],
+  wm: [["600 × 600", 600, 600]],
+  rad: [400, 500, 600, 700, 800, 900, 1000, 1200, 1400, 1600, 1800].map((w) => [
+    w + " long",
+    w,
+    100,
+  ]),
+  dbed: [
+    ["1350 × 1900 double", 1350, 1900],
+    ["1500 × 2000 king", 1500, 2000],
+    ["1800 × 2000 super king", 1800, 2000],
+  ],
+  sbed: [
+    ["900 × 1900 single", 900, 1900],
+    ["1200 × 1900 small double", 1200, 1900],
+  ],
+  wardrobe: [1000, 1200, 1500, 1800, 2400].map((w) => [w + " × 600", w, 600]),
+  shed: [
+    ["1800 × 1200 (6' × 4')", 1800, 1200],
+    ["2400 × 1800 (8' × 6')", 2400, 1800],
+    ["3000 × 2400 (10' × 8')", 3000, 2400],
+  ],
+  container: [
+    ["10 ft – 3048 × 2438", 3048, 2438],
+    ["20 ft – 6058 × 2438", 6058, 2438],
+  ],
+  parking: [
+    ["2400 × 4800", 2400, 4800],
+    ["2500 × 5000", 2500, 5000],
+    ["3300 × 5000 accessible", 3300, 5000],
+  ],
+};
 const NP_REAL = {
   ewCav: [1200, 2700],
   ewBrick: [1200, 2700],
@@ -1402,7 +1598,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
-    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
+    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span>mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
       NP_PAVE,
     )
       .map(([k, v]) => `<option value="${k}">${v[0]}</option>`)
@@ -2685,15 +2881,15 @@ async function openNotePage(opts) {
         g.rotate(so.r || 0);
         g.translate(-c[0], -c[1]);
       }
-      g.setLineDash([10 / s, 8 / s]);
-      g.lineWidth = 2 / s;
-      g.strokeStyle = "#2f5fb3";
+      g.setLineDash([5 / s, 5 / s]);
+      g.lineWidth = 1 / s;
+      g.strokeStyle = "rgba(47,95,179,.7)";
       g.strokeRect(b[0] - 6 / s, b[1] - 6 / s, b[2] + 12 / s, b[3] + 12 / s);
       g.restore();
       g.save();
       handles(so).forEach((h) => {
         if (h.stem) {
-          g.lineWidth = 2 / s;
+          g.lineWidth = 1 / s;
           g.strokeStyle = "#2f5fb3";
           g.beginPath();
           g.moveTo(h.stem[0], h.stem[1]);
@@ -2701,19 +2897,48 @@ async function openNotePage(opts) {
           g.stroke();
         }
         g.beginPath();
-        if (h.k === "size") {
-          g.fillStyle = "#2f5fb3";
-          g.fillRect(h.p[0] - 11 / s, h.p[1] - 11 / s, 22 / s, 22 / s);
+        const turn = h.k === "rot" || h.k === "lrot";
+        const dragging =
+          drag &&
+          (drag.kind === "end" || drag.kind === "resize") &&
+          drag.i === sel &&
+          (h.k === drag.which || (h.k === "size" && drag.kind === "resize"));
+        const len1 =
+          so.a && so.b && !npBoxy(so) ? Math.hypot(so.b[0] - so.a[0], so.b[1] - so.a[1]) * s : 999;
+        const hr = turn ? HR : Math.max(6, Math.min(HR, len1 * 0.22));
+        const cross = (r2) => {
+          g.save();
+          g.lineWidth = 1.2 / s;
+          g.strokeStyle = "#2f5fb3";
+          g.beginPath();
+          g.moveTo(h.p[0] - r2 / s, h.p[1]);
+          g.lineTo(h.p[0] + r2 / s, h.p[1]);
+          g.moveTo(h.p[0], h.p[1] - r2 / s);
+          g.lineTo(h.p[0], h.p[1] + r2 / s);
+          g.stroke();
+          g.restore();
+        };
+        if (dragging) {
+          cross(HR * 1.6);
+        } else if (h.k === "size") {
+          g.lineWidth = 1.3 / s;
+          g.strokeStyle = "#2f5fb3";
+
+          g.rect(h.p[0] - 9 / s, h.p[1] - 9 / s, 18 / s, 18 / s);
+
+          g.stroke();
+          cross(5);
         } else {
-          g.arc(h.p[0], h.p[1], HR / s, 0, 7);
-          g.fillStyle = h.k === "rot" || h.k === "lrot" ? "#2f5fb3" : "#fff";
-          g.fill();
-          g.lineWidth = 3 / s;
+          g.arc(h.p[0], h.p[1], hr / s, 0, 7);
+          /* clear: just the ring, nothing filled in */
+
+          g.lineWidth = 1.3 / s;
           g.strokeStyle = "#2f5fb3";
           g.stroke();
+          if (!turn) cross(Math.max(3, hr * 0.55));
           if (h.k === "rot" || h.k === "lrot") {
             g.save();
-            g.fillStyle = "#fff";
+            g.fillStyle = "#2f5fb3";
             g.font = `700 ${16 / s}px system-ui`;
             g.textAlign = "center";
             g.textBaseline = "middle";
@@ -2908,6 +3133,7 @@ async function openNotePage(opts) {
       }
     }
     q(".np-selbar:not(.np-mbar)").hidden = !so || msel.size > 0;
+    opBar(so && msel.size === 0 ? so : null);
     if (so) {
       const lk = !!so.lk;
       q('.np-sb[data-a="lock"]').innerHTML = lk
@@ -3439,7 +3665,12 @@ async function openNotePage(opts) {
       if (so && !so.lk) {
         const bxy = npBoxy(so) || so.t === "rect" || so.t === "circle";
         const bb0 = bbox(so);
-        const R = bxy ? Math.max(12 / s, Math.min(30 / s, Math.min(bb0[2], bb0[3]) * 0.3)) : 30 / s;
+        const len0 = so.a && so.b ? Math.hypot(so.b[0] - so.a[0], so.b[1] - so.a[1]) : 0;
+        const R = bxy
+          ? Math.max(12 / s, Math.min(30 / s, Math.min(bb0[2], bb0[3]) * 0.3))
+          : len0
+            ? Math.max(8 / s, Math.min(30 / s, len0 * 0.3))
+            : 30 / s;
         const h = handles(so)
           .map((h) => [h, Math.hypot(p[0] - h.p[0], p[1] - h.p[1])])
           .filter((x) => x[1] < (x[0].k === "rot" || x[0].k === "lrot" ? Math.max(R, 18 / s) : R))
@@ -4033,6 +4264,10 @@ async function openNotePage(opts) {
         (npLineShape(cur) && !NP_OPENK.has(cur.k) && cur.k !== "door")
       )
         showLenBar(cur);
+      else if (cur.t === "shape" && NP_OPENK.has(cur.k)) {
+        const placed = cur;
+        setTimeout(() => opBar(placed, true), 0);
+      }
       if (
         cur.t === "shape" &&
         (cur.k === "tstud" || cur.k === "eframe") &&
@@ -4147,6 +4382,8 @@ async function openNotePage(opts) {
         live = null;
         draw();
       }
+      /* the door bar, now the press is over */
+      opBar(sel != null && !msel.size ? doc.objs[sel] : null);
     }
   };
   cv.addEventListener("pointerup", end);
@@ -6887,6 +7124,232 @@ async function openNotePage(opts) {
     }
     lb.hidden = true;
     lenObj = null;
+  };
+  /* the size bar: anything with a real size – doors and openings (width, and where along the wall), windows (width and
+     where along the wall), everything else boxy (width × depth) – typed, or picked from the sizes it usually comes in */
+  function opbEl() {
+    return q(".np-opbar");
+  }
+  function opSt() {
+    const e = opbEl();
+    if (!e.__st) e.__st = { o: null, pin: false };
+    return e.__st;
+  }
+  function opKind(o) {
+    if (!o || o.t !== "shape" || !o.a || !o.b) return "";
+    if (NP_OPENK.has(o.k)) return "open";
+    if (o.k === "window") return "win";
+    if (NP_REAL[o.k] && npBoxy(o) && NP_REAL[o.k].length > 1) return "box";
+    return "";
+  }
+  /* a window's ends along its long side (it's a box, maybe turned) */
+  function winEnds(o) {
+    const x0 = Math.min(o.a[0], o.b[0]),
+      y0 = Math.min(o.a[1], o.b[1]),
+      w = Math.abs(o.b[0] - o.a[0]),
+      h = Math.abs(o.b[1] - o.a[1]),
+      c = [x0 + w / 2, y0 + h / 2],
+      r = o.r || 0,
+      L = Math.max(w, h) / 2,
+      d = w >= h ? [Math.cos(r), Math.sin(r)] : [-Math.sin(r), Math.cos(r)];
+    return {
+      a: [c[0] - d[0] * L, c[1] - d[1] * L],
+      b: [c[0] + d[0] * L, c[1] + d[1] * L],
+      c,
+      w,
+      h,
+    };
+  }
+  function opWall(o) {
+    let best = null,
+      bd = Infinity;
+    const m = [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2];
+    doc.objs.concat(rsWallsAsShapes(doc.objs)).forEach((x) => {
+      if (!npIsWall(x) || !x.a || !x.b) return;
+      const dx = x.b[0] - x.a[0],
+        dy = x.b[1] - x.a[1],
+        L = Math.hypot(dx, dy) || 1,
+        u = [dx / L, dy / L],
+        n = [-u[1], u[0]];
+      const par =
+        Math.abs((o.b[0] - o.a[0]) * n[0] + (o.b[1] - o.a[1]) * n[1]) / (lenOf(o.a, o.b) || 1);
+      if (par > 0.25) return;
+      const t = (m[0] - x.a[0]) * u[0] + (m[1] - x.a[1]) * u[1],
+        d = (m[0] - x.a[0]) * n[0] + (m[1] - x.a[1]) * n[1];
+      const T = npWallT(x, x.w || 6);
+      if (t < -1 || t > L + 1 || Math.abs(d) > T / 2 + 4 / s) return;
+      if (Math.abs(d) < bd) {
+        bd = Math.abs(d);
+        best = { x, u, n, L, d };
+      }
+    });
+    return best;
+  }
+  /* along-the-wall numbers for a door or window: where its near edge is, and what's left to the other end */
+  const opAlong = (w, e) => {
+    const ta = (e.a[0] - w.x.a[0]) * w.u[0] + (e.a[1] - w.x.a[1]) * w.u[1],
+      tb = (e.b[0] - w.x.a[0]) * w.u[0] + (e.b[1] - w.x.a[1]) * w.u[1];
+    return { ta, tb, t0: Math.min(ta, tb), t1: Math.max(ta, tb) };
+  };
+  function opBar(o, force) {
+    if (drag) return;
+    const bar = opbEl(),
+      st = opSt(),
+      kind = opKind(o);
+    if (!kind || !doc.scale) {
+      if (!force && !(st.pin && !o)) {
+        bar.hidden = true;
+        st.o = null;
+      }
+      return;
+    }
+    st.pin = !!force;
+    /* don't overwrite what's being typed */
+    if (st.o === o && !bar.hidden && bar.contains(document.activeElement)) return;
+    st.o = o;
+    const name = npSymLabel(o.k) || "Size";
+    bar.querySelector(".nob-t").textContent =
+      (kind === "open" ? "🚪 " : kind === "win" ? "🪟 " : "📐 ") + name;
+    /* the standard sizes it comes in */
+    const std = NP_STD[o.k] || [];
+    const sel = bar.querySelector(".nob-std");
+    sel.hidden = !std.length;
+    sel.innerHTML =
+      `<option value="">Standard sizes…</option>` +
+      std
+        .map(
+          ([l, w, d], i) =>
+            `<option value="${i}">${esc(l || (d ? w + " × " + d : w + " mm"))}</option>`,
+        )
+        .join("");
+    let W, D, w2;
+    if (kind === "open") W = realMm(lenOf(o.a, o.b));
+    else if (kind === "win") {
+      const e = winEnds(o);
+      W = realMm(Math.max(e.w, e.h));
+    } else {
+      W = realMm(Math.abs(o.b[0] - o.a[0]));
+      D = realMm(Math.abs(o.b[1] - o.a[1]));
+    }
+    bar.querySelector(".nob-wl").textContent = kind === "box" ? "Width" : "Width";
+    bar.querySelector(".nob-w").value = Math.round(W);
+    bar.querySelectorAll(".nob-dg").forEach((e) => (e.hidden = kind !== "box"));
+    if (kind === "box") bar.querySelector(".nob-d").value = Math.round(D);
+    /* where along its wall, for doors and windows */
+    if (kind !== "box") {
+      const e = kind === "win" ? winEnds(o) : o;
+      w2 = opWall(e);
+    }
+    bar.querySelectorAll(".nob-pg").forEach((e) => (e.hidden = !w2));
+    if (w2) {
+      const A = opAlong(w2, kind === "win" ? winEnds(o) : o);
+      bar.querySelector(".nob-p").value = Math.round(realMm(A.t0));
+      bar.querySelector(".nob-o").textContent =
+        "· " + npFmtLen(Math.round(realMm(w2.L - A.t1))) + " to the other end";
+    }
+    lb.hidden = true;
+    bar.hidden = false;
+  }
+  opbEl().querySelector(".nob-x").onclick = () => {
+    opbEl().hidden = true;
+    opSt().o = null;
+    opSt().pin = false;
+  };
+  /* a standard size picked: fill it in and set it */
+  opbEl().querySelector(".nob-std").onchange = (e) => {
+    const o = opSt().o;
+    const it = o && (NP_STD[o.k] || [])[+e.target.value];
+    if (!it) return;
+    opbEl().querySelector(".nob-w").value = it[1];
+    if (it[2]) opbEl().querySelector(".nob-d").value = it[2];
+    opbEl().requestSubmit ? opbEl().requestSubmit() : opbEl().onsubmit(new Event("submit"));
+  };
+  opbEl().onsubmit = (e) => {
+    e.preventDefault();
+    const bar = opbEl(),
+      o = opSt().o,
+      kind = opKind(o);
+    if (!o || doc.objs.indexOf(o) < 0 || !kind) {
+      bar.hidden = true;
+      return;
+    }
+    const W = parseFloat(bar.querySelector(".nob-w").value),
+      D = parseFloat(bar.querySelector(".nob-d").value);
+    if (!(W > 0) || (kind === "box" && !(D > 0))) {
+      toast("Type the size in mm");
+      return;
+    }
+    snap();
+    const Wu = toUnits(W);
+    const P = parseFloat(bar.querySelector(".nob-p").value);
+    let msg = npSymLabel(o.k) + " " + npFmtLen(W) + (kind === "box" ? " × " + npFmtLen(D) : "");
+    if (kind === "open") {
+      const w = opWall(o);
+      if (w) {
+        const A = opAlong(w, o);
+        let t0 = P >= 0 && !bar.querySelector(".nob-p").hidden ? toUnits(P) : A.t0;
+        if (t0 + Wu > w.L) {
+          toast("That runs past the end of the wall – moved to fit");
+          t0 = Math.max(0, w.L - Wu);
+        }
+        const at = (t) => [
+          w.x.a[0] + w.u[0] * t + w.n[0] * w.d,
+          w.x.a[1] + w.u[1] * t + w.n[1] * w.d,
+        ];
+        /* the same way round as before, so the door still opens the same way */
+        if (A.ta <= A.tb) {
+          o.a = at(t0);
+          o.b = at(t0 + Wu);
+        } else {
+          o.a = at(t0 + Wu);
+          o.b = at(t0);
+        }
+        msg += ", " + npFmtLen(Math.round(realMm(t0))) + " from the wall end";
+      } else {
+        const L0 = lenOf(o.a, o.b) || 1;
+        o.b = [o.a[0] + ((o.b[0] - o.a[0]) / L0) * Wu, o.a[1] + ((o.b[1] - o.a[1]) / L0) * Wu];
+      }
+    } else if (kind === "win") {
+      /* the long side becomes W, about the middle; then slid along the wall to its place */
+      const e0 = winEnds(o);
+      const sx = Math.sign(o.b[0] - o.a[0]) || 1,
+        sy = Math.sign(o.b[1] - o.a[1]) || 1;
+      if (e0.w >= e0.h) {
+        o.a = [e0.c[0] - (sx * Wu) / 2, o.a[1]];
+        o.b = [e0.c[0] + (sx * Wu) / 2, o.b[1]];
+      } else {
+        o.a = [o.a[0], e0.c[1] - (sy * Wu) / 2];
+        o.b = [o.b[0], e0.c[1] + (sy * Wu) / 2];
+      }
+      const e1 = winEnds(o),
+        w = opWall(e1);
+      if (w && P >= 0 && !bar.querySelector(".nob-p").hidden) {
+        const A = opAlong(w, e1);
+        let t0 = toUnits(P);
+        if (t0 + Wu > w.L) {
+          toast("That runs past the end of the wall – moved to fit");
+          t0 = Math.max(0, w.L - Wu);
+        }
+        const dt = t0 - A.t0;
+        o.a = [o.a[0] + w.u[0] * dt, o.a[1] + w.u[1] * dt];
+        o.b = [o.b[0] + w.u[0] * dt, o.b[1] + w.u[1] * dt];
+        msg += ", " + npFmtLen(Math.round(realMm(t0))) + " from the wall end";
+      }
+    } else {
+      /* a box: W across, D the other way, about its middle (it keeps any turn) */
+      const cx = (o.a[0] + o.b[0]) / 2,
+        cy = (o.a[1] + o.b[1]) / 2,
+        sx = Math.sign(o.b[0] - o.a[0]) || 1,
+        sy = Math.sign(o.b[1] - o.a[1]) || 1,
+        Du = toUnits(D);
+      o.a = [cx - (sx * Wu) / 2, cy - (sy * Du) / 2];
+      o.b = [cx + (sx * Wu) / 2, cy + (sy * Du) / 2];
+    }
+    dirty = true;
+    opSt().o = null;
+    draw();
+    opBar(o, true);
+    toast(msg);
   };
   /* set the line / wall being typed to length L mm at angle A° (anticlockwise from pointing right) */
   const setLen = (o, L, A) => {

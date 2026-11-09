@@ -93,3 +93,6 @@ body>.dimask.cb3-sg{z-index:320}
 .cbp-mrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:end;padding:8px 0;border-bottom:1px dashed var(--line)}.cbp-mrow b{grid-column:1/-1}
 .cbp-mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:8px}
 .cbp-out{margin-top:10px;background:var(--soft);border-radius:10px;padding:8px 12px}.cbp-out ul{margin:0 0 6px;padding-left:18px}.cbp-big{color:var(--danger);font-weight:600}
+.np-opbar{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:rgba(31,26,26,.94);color:#fff;padding:6px 8px;border-radius:12px;z-index:5;box-shadow:0 6px 18px rgba(0,0,0,.4);font-size:13px;flex-wrap:wrap;max-width:calc(100% - 16px)}.np-opbar[hidden],.np-opbar [hidden]{display:none}.np-opbar .btn{padding:6px 12px}.np-opbar input{width:90px;padding:6px 8px;font-size:15px}
+.np-opbar .nob-x{background:#4a3f40;color:#fff;border-color:#6b5f60}.np-opbar .nob-o{color:#cbbebe}
+.np-opbar .nob-std{width:auto;max-width:220px;height:34px;background:#362e2e;color:#fff;border-color:#4a3f40;padding:0 6px}
