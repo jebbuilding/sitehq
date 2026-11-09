@@ -324,7 +324,12 @@ async function sdQuickLetterhead(file) {
    Resolves true to go ahead (with the letterhead, or without it if he chooses), false to stop. */
 function sdLetterheadAsk() {
   const set = sdSet();
-  if (set.head || set.logoId || ((S.settings || {}).company || {}).logoId)
+  if (
+    set.head ||
+    set.logoId ||
+    (set.lhTop && set.lhTop.id) ||
+    ((S.settings || {}).company || {}).logoId
+  )
     return Promise.resolve(true);
   return new Promise((res) => {
     const d = document.createElement("div");

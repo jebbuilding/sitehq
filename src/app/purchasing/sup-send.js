@@ -6,7 +6,7 @@ import { SENDTO } from "../files/send-to.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { lhLogoId } from "../sales/letterhead-setup.js";
+import { lhLogoId, lhPics, lhPutTop } from "../sales/letterhead-setup.js";
 import { sdSet } from "../sales/sales-calc.js";
 import { sdHeadLines, sdImgData } from "../sales/sales-pdf.js";
 export { supSendSheet };
@@ -31,8 +31,10 @@ async function supDetailsPdf(name, rec, kind) {
   const brand = BRGB(),
     co = coData(),
     set = sdSet();
-  const logo = await sdImgData(lhLogoId());
-  if (logo) {
+  const pics = await lhPics();
+  const logo = pics ? null : await sdImgData(lhLogoId());
+  if (pics) lhPutTop(doc, pics, 44);
+  else if (logo) {
     const k = Math.min(60 / logo.w, 32 / logo.h);
     doc.addImage(logo.u, logo.f, 16, 8, logo.w * k, logo.h * k, "splogo", "FAST");
   } else {
@@ -45,7 +47,7 @@ async function supDetailsPdf(name, rec, kind) {
   doc.setFontSize(9.5);
   doc.setTextColor(...brand);
   let hy = 12;
-  sdHeadLines().forEach((t) => {
+  (pics ? [] : sdHeadLines()).forEach((t) => {
     if (!t.trim()) {
       hy += 2;
       return;
@@ -55,7 +57,7 @@ async function supDetailsPdf(name, rec, kind) {
   });
   doc.setDrawColor(...brand);
   doc.setLineWidth(0.7);
-  doc.line(3, 46, 207, 46);
+  if (!pics) doc.line(3, 46, 207, 46);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.text(name, 20, 60);

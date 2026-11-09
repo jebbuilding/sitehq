@@ -5,7 +5,7 @@ import { getFileBlob } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { lhLogoId } from "./letterhead-setup.js";
+import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import {
   SD_VATC,
   sdAmt,
@@ -92,17 +92,23 @@ async function sdPdf(d) {
   const W = 210,
     M = 25,
     R = 186,
-    TW = R - M,
-    BOT = 262;
+    TW = R - M;
+  let BOT = 262;
   const brand = BRGB();
   const ink = () => doc.setTextColor(20, 20, 20);
   const red = () => doc.setTextColor(...brand);
   const logo = await sdImgData(lhLogoId());
   const sig = await sdImgData(set.sigId);
   const headLines = sdHeadLines();
+  const pics = await lhPics();
+  if (pics && pics.bot) BOT = Math.min(BOT, pics.bot.y - 12);
   let y = 0,
     page = 1;
   const head = () => {
+    if (pics) {
+      y = lhPutTop(doc, pics, 0) + (page === 1 ? 14 : 8);
+      return;
+    }
     if (logo) {
       const k = Math.min(72 / logo.w, 40 / logo.h);
       doc.addImage(logo.u, logo.f, 16, 6, logo.w * k, logo.h * k, "sdlogo", "FAST");
@@ -508,6 +514,20 @@ async function sdPdf(d) {
   const n = doc.getNumberOfPages();
   for (let i = 1; i <= n; i++) {
     doc.setPage(i);
+    if (pics && pics.bot) {
+      /* the letterhead's own foot, with the reference and page number small above it */
+      const by = lhPutBot(doc, pics);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(170, 170, 170);
+      doc.text(
+        `${d.title || (est ? "Estimate" : "Invoice")} – Ref:${est ? (d.number || "") + ((+d.ver || 1) > 1 ? " v" + d.ver : "") : sdNo(d)} · Page ${i} of ${n}`,
+        W / 2,
+        by - 2.5,
+        { align: "center" },
+      );
+      continue;
+    }
     doc.setDrawColor(...brand);
     doc.setLineWidth(0.7);
     doc.line(3.5, 270.5, 208.5, 270.5);

@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 178 files, 3685 KB, 95553 lines.
-- 1808 names declared at the top level (the shared scope); 959 of them are used by a file other than the one that declares them.
-- 1874 file-to-file dependencies (file A uses at least one name from file B).
+- 178 files, 3694 KB, 95776 lines.
+- 1819 names declared at the top level (the shared scope); 962 of them are used by a file other than the one that declares them.
+- 1876 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 161 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -22,7 +22,7 @@ The de facto shared API: names used by the most files.
 | `S` | `core/state.js` | 140 files |
 | `$` | `core/helpers.js` | 136 files |
 | `toast` | `core/helpers.js` | 123 files |
-| `render` | `core/tabs-week.js` | 100 files |
+| `render` | `core/tabs-week.js` | 101 files |
 | `openSheet` | `core/sheet.js` | 87 files |
 | `closeForm` | `core/sheet.js` | 86 files |
 | `formFoot` | `core/sheet.js` | 83 files |
@@ -33,7 +33,7 @@ The de facto shared API: names used by the most files.
 | `ownerMode` | `core/state.js` | 60 files |
 | `shortDay` | `core/helpers.js` | 54 files |
 | `stamp` | `core/helpers.js` | 51 files |
-| `uploadFile` | `files/files.js` | 45 files |
+| `uploadFile` | `files/files.js` | 46 files |
 | `blobUrl` | `files/files.js` | 44 files |
 | `teamIds` | `owner/owner.js` | 40 files |
 | `allTeam` | `owner/owner.js` | 38 files |
@@ -429,9 +429,9 @@ STATE
 TABS & WEEK
 
 - 745 lines, 26 KB. Declares 12 names, 8 used elsewhere.
-- **Used elsewhere:** `render` (100), `curTab` (8), `empTabs` (4), `OWN_TABS` (3), `refreshJobDetail` (2), `EMP_TABS` (1), `initTabsWeek` (1), `renderTabs` (1)
+- **Used elsewhere:** `render` (101), `curTab` (8), `empTabs` (4), `OWN_TABS` (3), `refreshJobDetail` (2), `EMP_TABS` (1), `initTabsWeek` (1), `renderTabs` (1)
 - **Uses names from 55 files:** `people/reminders.js` (11), `core/helpers.js` (7), `owner/owner.js` (7), `owner/todo-lists.js` (6), `owner/today.js` (4), `chat/chat.js` (3), `clients/portal.js` (3), `owner/whats-new.js` (3), `people/personal-details.js` (3), `purchasing/materials-receipts.js` (3), `safety/training.js` (3), `core/state.js` (2), `files/outbox.js` (2), `owner/alerts.js` (2), `owner/reports-home.js` (2), `people/foreman.js` (2), `people/profile-photos.js` (2), `safety/policies-insurance.js` (2), `safety/site-inductions.js` (2), `sites/job-sheets.js` (2), `sites/plans-specs.js` (2), `sites/sign-in-book.js` (2), `survey/door-window-survey.js` (2), `timesheets/day-work.js` (2), `calculators/calculator.js` (1), `clients/address-book.js` (1), `clients/portal-calendar.js` (1), `clients/sign-offs.js` (1), `core/now-bar.js` (1), `core/report-issue.js` (1), `drawing/drawings-tab.js` (1), `drawing/sign-off-sheet.js` (1), `drawing/trade-drawings.js` (1), `owner/biz-costs.js` (1), `owner/leads.js` (1), `people/induction-matrix.js` (1), `people/wage-calc.js` (1), `photos/photos.js` (1), `photos/select-zip.js` (1), `planner/board.js` (1), `purchasing/invoices.js` (1), `purchasing/samples.js` (1), `purchasing/suppliers.js` (1), `safety/checklists.js` (1), `safety/expiry-dates.js` (1), `sales/accounts.js` (1), `sales/acct-receipts.js` (1), `sales/cis-returns.js` (1), `sales/estimating.js` (1), `sales/sales.js` (1), `sites/doc-visibility.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/storage.js` (1), `timesheets/time.js` (1)
-- **Used by 102 files**
+- **Used by 103 files**
 
 ### `core/viewer.js`
 
@@ -717,7 +717,7 @@ FILE IT: save any PDF the app makes into a client's job file and/or a site's doc
 FILES
 
 - 194 lines, 6.5 KB. Declares 19 names, 12 used elsewhere.
-- **Used elsewhere:** `uploadFile` (45), `blobUrl` (44), `uploadErr` (34), `saveAsset` (15), `csvSave` (10), `isImg` (9), `isWord` (4), `assetBlob` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
+- **Used elsewhere:** `uploadFile` (46), `blobUrl` (44), `uploadErr` (34), `saveAsset` (15), `csvSave` (10), `isImg` (9), `isWord` (4), `assetBlob` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
 - **Uses names from 4 files:** `core/state.js` (2), `core/helpers.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1)
 - **Used by 78 files**
 
@@ -726,9 +726,9 @@ FILES
 IN-APP FILES (kept inside the app, not in the phone's downloads)
 
 - 684 lines, 21 KB. Declares 29 names, 12 used elsewhere.
-- **Used elsewhere:** `openFile` (31), `getFileBlob` (11), `loadPdfJs` (5), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1), `loadScript` (1)
+- **Used elsewhere:** `openFile` (31), `getFileBlob` (11), `loadPdfJs` (6), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1), `loadScript` (1)
 - **Uses names from 10 files:** `files/scale-ruler.js` (8), `files/files.js` (4), `core/helpers.js` (3), `core/state.js` (2), `owner/deleted-items.js` (2), `core/tabs-week.js` (1), `files/cut-outs.js` (1), `files/print.js` (1), `files/send-to.js` (1), `photos/photos.js` (1)
-- **Used by 44 files**
+- **Used by 45 files**
 
 ### `files/outbox.js`
 
@@ -914,7 +914,7 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 345 lines, 15 KB. Declares 17 names, 7 used elsewhere.
+- 349 lines, 16 KB. Declares 17 names, 7 used elsewhere.
 - **Used elsewhere:** `nlGo` (3), `nlOpenTab` (3), `nlSectionView` (2), `nlApply` (1), `nlName` (1), `nlOn` (1), `todayView` (1)
 - **Uses names from 11 files:** `owner/today-desk.js` (5), `core/helpers.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `core/tabs-week.js` (2), `sites/roll-call.js` (2), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/search.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 5 files**
@@ -1031,9 +1031,9 @@ WAGE CALCULATOR (owner): what an employee takes home, and what they really cost 
 
 WAGE CALCULATOR PDF: a wage calculation on the letterhead, as shown on screen
 
-- 156 lines, 5.2 KB. Declares 1 names, 1 used elsewhere.
+- 158 lines, 5.4 KB. Declares 1 names, 1 used elsewhere.
 - **Used elsewhere:** `wcPdf` (1)
-- **Uses names from 8 files:** `sales/sales-pdf.js` (3), `core/helpers.js` (2), `people/wage-calc.js` (2), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/letterhead-setup.js` (1), `sales/sales-calc.js` (1)
+- **Uses names from 8 files:** `sales/letterhead-setup.js` (3), `sales/sales-pdf.js` (3), `core/helpers.js` (2), `people/wage-calc.js` (2), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-calc.js` (1)
 - **Used by 1 files**
 
 ### `photos/mark-up.js`
@@ -1059,7 +1059,7 @@ Photo test: plain phone file boxes, to tell an app/phone problem from a SiteHQ o
 PHOTOS
 
 - 1151 lines, 40 KB. Declares 52 names, 31 used elsewhere.
-- **Used elsewhere:** `BRGB` (27), `pdfLogo` (19), `siteRec` (18), `loadImage` (9), `photoViewer` (6), `audTag` (5), `readExif` (5), `vidExt` (5), `audExt` (4), `exifDate` (4), `myTrade` (4), `stampPhoto` (4), `VID_MAX` (4), `wireVoice` (4), `openPhoto` (3), `photoTile` (3), `brandHex` (2), `isAud` (2), `logoId` (2), `openEditFolders` (2), `vidTag` (2), `applyBrand` (1), `applyColour` (1), `BRAND_COLS` (1), `BRAND_DEF` (1), `empPhotos` (1), `feedNear` (1), `isVid` (1), `LOGO_ID` (1), `openAddFolder` (1), `siteFolders` (1)
+- **Used elsewhere:** `BRGB` (27), `pdfLogo` (19), `siteRec` (18), `loadImage` (10), `photoViewer` (6), `audTag` (5), `readExif` (5), `vidExt` (5), `audExt` (4), `exifDate` (4), `myTrade` (4), `stampPhoto` (4), `VID_MAX` (4), `wireVoice` (4), `openPhoto` (3), `photoTile` (3), `brandHex` (2), `isAud` (2), `logoId` (2), `openEditFolders` (2), `vidTag` (2), `applyBrand` (1), `applyColour` (1), `BRAND_COLS` (1), `BRAND_DEF` (1), `empPhotos` (1), `feedNear` (1), `isVid` (1), `LOGO_ID` (1), `openAddFolder` (1), `siteFolders` (1)
 - **Uses names from 21 files:** `core/helpers.js` (8), `core/sheet.js` (6), `drawing/trade-drawings.js` (5), `core/state.js` (4), `files/outbox.js` (4), `core/fields.js` (3), `files/files.js` (3), `core/tabs-week.js` (2), `core/viewer.js` (2), `files/in-app-files.js` (2), `people/reminders.js` (2), `photos/mark-up.js` (2), `clients/portal-calendar.js` (1), `clients/portal.js` (1), `owner/deleted-items.js` (1), `owner/owner.js` (1), `sales/letterhead-setup.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/tiles.js` (1), `sites/trade-sites.js` (1)
 - **Used by 65 files**
 
@@ -1175,9 +1175,9 @@ SAMPLES: James's sample library (set up with photos) and a book-out log linked t
 
 SEND A MERCHANT OR SUPPLIER: their details (as a PDF) and brochures, to clients, trades or by email
 
-- 144 lines, 5.1 KB. Declares 3 names, 1 used elsewhere.
+- 146 lines, 5.2 KB. Declares 3 names, 1 used elsewhere.
 - **Used elsewhere:** `supSendSheet` (2)
-- **Uses names from 10 files:** `core/helpers.js` (3), `core/sheet.js` (3), `sales/sales-pdf.js` (2), `files/files.js` (1), `files/send-to.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/letterhead-setup.js` (1), `sales/sales-calc.js` (1)
+- **Uses names from 10 files:** `core/helpers.js` (3), `core/sheet.js` (3), `sales/letterhead-setup.js` (3), `sales/sales-pdf.js` (2), `files/files.js` (1), `files/send-to.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-calc.js` (1)
 - **Used by 2 files**
 
 ### `purchasing/suppliers.js`
@@ -1373,9 +1373,9 @@ CIS BILLS: a subbie's bill entered line by line, like a bill in an accounts pack
 
 CIS RETURNS (owner): the monthly CIS return – what each subcontractor was paid and the tax taken off
 
-- 1199 lines, 53 KB. Declares 32 names, 11 used elsewhere.
+- 1201 lines, 53 KB. Declares 32 names, 11 used elsewhere.
 - **Used elsewhere:** `cisLab` (2), `cisDown` (1), `cisMonthOf` (1), `cisPayments` (1), `cisRange` (1), `cisRateOf` (1), `cisRec` (1), `cisSaveMonth` (1), `cisSub` (1), `cisSubList` (1), `cisView` (1)
-- **Uses names from 17 files:** `core/helpers.js` (9), `sales/sales-calc.js` (5), `core/sheet.js` (4), `owner/owner.js` (3), `sales/sales-pdf.js` (3), `core/state.js` (1), `core/tabs-week.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `people/employment-types.js` (1), `photos/photos.js` (1), `purchasing/materials-receipts.js` (1), `safety/site-inductions.js` (1), `sales/cis-bill.js` (1), `sales/letterhead-setup.js` (1), `sales/sales-email.js` (1)
+- **Uses names from 17 files:** `core/helpers.js` (9), `sales/sales-calc.js` (5), `core/sheet.js` (4), `owner/owner.js` (3), `sales/letterhead-setup.js` (3), `sales/sales-pdf.js` (3), `core/state.js` (1), `core/tabs-week.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `people/employment-types.js` (1), `photos/photos.js` (1), `purchasing/materials-receipts.js` (1), `safety/site-inductions.js` (1), `sales/cis-bill.js` (1), `sales/sales-email.js` (1)
 - **Used by 3 files**
 
 ### `sales/estimating.js`
@@ -1409,9 +1409,9 @@ JOB FILE: every document, plan, price and photo for a job, in folders, tied to t
 
 LETTERHEAD SETUP: one place in Setup to bring in the letterhead every PDF uses
 
-- 60 lines, 3.4 KB. Declares 4 names, 3 used elsewhere.
-- **Used elsewhere:** `lhLogoId` (8), `lhCard` (1), `lhWire` (1)
-- **Uses names from 7 files:** `core/helpers.js` (4), `sales/sales-pdf.js` (2), `sales/sales-settings.js` (2), `core/state.js` (1), `files/files.js` (1), `photos/photos.js` (1), `sales/sales-calc.js` (1)
+- 242 lines, 11 KB. Declares 15 names, 6 used elsewhere.
+- **Used elsewhere:** `lhLogoId` (8), `lhPics` (5), `lhPutTop` (5), `lhPutBot` (2), `lhCard` (1), `lhWire` (1)
+- **Uses names from 9 files:** `core/helpers.js` (4), `sales/sales-pdf.js` (3), `sales/sales-settings.js` (3), `files/files.js` (2), `photos/photos.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `sales/sales-calc.js` (1)
 - **Used by 9 files**
 
 ### `sales/sales-calc.js`
@@ -1454,17 +1454,17 @@ SALES EMAIL: send an estimate, invoice or statement as an email with its PDF att
 
 SALES PDF: estimates as a letter on the letterhead, invoices with totals, VAT and CIS
 
-- 612 lines, 21 KB. Declares 8 names, 5 used elsewhere.
-- **Used elsewhere:** `sdHeadLines` (5), `sdImgData` (4), `sdLongDate` (4), `sdPdf` (3), `sdSavePdf` (1)
-- **Uses names from 9 files:** `sales/sales-calc.js` (12), `core/helpers.js` (4), `core/state.js` (1), `files/in-app-files.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/letterhead-setup.js` (1), `sales/sales-settings.js` (1)
+- 632 lines, 22 KB. Declares 8 names, 5 used elsewhere.
+- **Used elsewhere:** `sdHeadLines` (5), `sdImgData` (5), `sdLongDate` (4), `sdPdf` (3), `sdSavePdf` (1)
+- **Uses names from 9 files:** `sales/sales-calc.js` (12), `core/helpers.js` (4), `sales/letterhead-setup.js` (4), `core/state.js` (1), `files/in-app-files.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-settings.js` (1)
 - **Used by 7 files**
 
 ### `sales/sales-settings.js`
 
 SALES SETTINGS: letterhead, logo, signature, VAT, wording, terms and bank – and bringing them in from Word
 
-- 348 lines, 18 KB. Declares 8 names, 7 used elsewhere.
-- **Used elsewhere:** `sdLetterheadAsk` (2), `sdSettings` (2), `sdImportWord` (1), `sdQuickLetterhead` (1), `sdSaveSet` (1), `sdSetupCard` (1), `sdWireSetup` (1)
+- 353 lines, 18 KB. Declares 8 names, 7 used elsewhere.
+- **Used elsewhere:** `sdLetterheadAsk` (2), `sdSaveSet` (2), `sdSettings` (2), `sdImportWord` (1), `sdQuickLetterhead` (1), `sdSetupCard` (1), `sdWireSetup` (1)
 - **Uses names from 9 files:** `sales/sales-calc.js` (6), `core/helpers.js` (5), `core/sheet.js` (4), `files/files.js` (2), `sales/sales-docx.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `sales/sales-email.js` (1)
 - **Used by 5 files**
 
@@ -1472,9 +1472,9 @@ SALES SETTINGS: letterhead, logo, signature, VAT, wording, terms and bank – an
 
 SALES SIGN-OFF AND RECEIPTS: the client accepts an estimate; a receipt for every payment
 
-- 299 lines, 11 KB. Declares 7 names, 4 used elsewhere.
+- 305 lines, 11 KB. Declares 7 names, 4 used elsewhere.
 - **Used elsewhere:** `sdAskSign` (1), `sdEstSign` (1), `sdReceipt` (1), `sdSyncSigns` (1)
-- **Uses names from 17 files:** `sales/sales-calc.js` (5), `core/helpers.js` (4), `core/sheet.js` (4), `sales/sales-pdf.js` (4), `clients/portal.js` (2), `clients/portal-calendar.js` (1), `clients/sign-offs.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `core/viewer.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/letterhead-setup.js` (1), `sales/sales-email.js` (1)
+- **Uses names from 17 files:** `sales/sales-calc.js` (5), `core/helpers.js` (4), `core/sheet.js` (4), `sales/letterhead-setup.js` (4), `sales/sales-pdf.js` (4), `clients/portal.js` (2), `clients/portal-calendar.js` (1), `clients/sign-offs.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `core/viewer.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-email.js` (1)
 - **Used by 2 files**
 
 ### `sales/sales.js`

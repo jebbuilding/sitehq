@@ -34,6 +34,8 @@ const NL_SECTIONS = [
       "calc",
     ],
   ],
+  /* Estimates & invoices: right under Jobs & clients so they are easy to find (James, Nov 2026); still in Accounts too */
+  ["sales", "Estimates & invoices", ["sales"]],
   ["people", "People", ["people", "inductions", "wages", "time", "training", "chat"]],
   ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers", "materials"]],
   /* Accounts: the money pages, their own area (James, Nov 2026) */
@@ -52,6 +54,8 @@ const NL_ICON = {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>',
   money:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.5 8.5c-.6-.9-1.5-1.3-2.5-1.3-1.7 0-2.8 1.1-2.8 2.7V16M8 12.5h5M8 16h7.5"/></svg>',
+  sales:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M14 11.2c-.4-.6-1-.9-1.7-.9-1.1 0-1.8.7-1.8 1.8V17M9 14h3.5M9 17h5"/></svg>',
   estim:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17L17 3l4 4L7 21H3z"/><path d="M14 6l1.5 1.5M11 9l2 2M8 12l1.5 1.5M5 15l2 2"/></svg>',
   setup:
@@ -202,7 +206,7 @@ function nlApply() {
     `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(tile)}</span><b>SiteHQ</b></div>` +
     NL_SECTIONS.map(([k, name, tabs]) => {
       const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
-      return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
+      return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "sales" ? "Invoices" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
     }).join("") +
     `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>`;
   $("nl-add").onclick = qaOpen;

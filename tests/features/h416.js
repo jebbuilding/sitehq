@@ -17,7 +17,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#nl-tog');await p.waitForTimeout(300);
  ok(await p.evaluate(()=>document.body.classList.contains('nl-on')),tag+': new look on');
  ok(!(await p.isVisible('#tabs'))&&await p.isVisible('#nlbar'),tag+': tab row hidden, section bar showing');
- ok((await p.$$('#nlbar .nl-b')).length===7,tag+': seven areas (Accounts and Estimating have their own): '+(await p.$$eval('#nlbar .nl-b',x=>x.map(b=>b.innerText.trim()).join(' | '))));
+ ok((await p.$$('#nlbar .nl-b')).length===8&&(await p.$$eval('#nlbar .nl-b',x=>x.map(b=>b.dataset.s).join(',')))==='today,jobs,sales,people,paper,money,estim,setup',tag+': eight areas, Estimates & invoices under Jobs & clients: '+(await p.$$eval('#nlbar .nl-b',x=>x.map(b=>b.innerText.trim()).join(' | '))));
  ok((await p.textContent('#h1'))==='Today'&&await p.isVisible('.nl-today'),tag+': opens on Today');
  ok(/On site now/.test(await p.innerText('.nl-today')),tag+': Today shows who is on site');
  const bar=await p.$eval('#nlbar',e=>{const r=e.getBoundingClientRect();return {top:r.top,left:r.left,w:r.width,h:r.height}});

@@ -12,7 +12,7 @@ import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { lhLogoId } from "./letterhead-setup.js";
+import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { sdCalc, sdNo, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdHeadLines, sdImgData, sdLongDate, sdPdf } from "./sales-pdf.js";
@@ -138,8 +138,10 @@ async function sdReceiptPdf(d, i) {
   const brand = BRGB(),
     co = coData(),
     set = sdSet();
-  const logo = await sdImgData(lhLogoId());
-  if (logo) {
+  const pics = await lhPics();
+  const logo = pics ? null : await sdImgData(lhLogoId());
+  if (pics) lhPutTop(doc, pics, 50);
+  else if (logo) {
     const k = Math.min(72 / logo.w, 40 / logo.h);
     doc.addImage(logo.u, logo.f, 16, 6, logo.w * k, logo.h * k, "rclogo", "FAST");
   } else {
@@ -152,7 +154,7 @@ async function sdReceiptPdf(d, i) {
   doc.setFontSize(10.5);
   doc.setTextColor(...brand);
   let hy = 12.5;
-  sdHeadLines().forEach((t) => {
+  (pics ? [] : sdHeadLines()).forEach((t) => {
     if (!t.trim()) {
       hy += 2.6;
       return;
@@ -162,7 +164,7 @@ async function sdReceiptPdf(d, i) {
   });
   doc.setDrawColor(...brand);
   doc.setLineWidth(0.7);
-  doc.line(2.5, 52, 207.5, 52);
+  if (!pics) doc.line(2.5, 52, 207.5, 52);
   const M = 25;
   let y = 68;
   doc.setTextColor(20, 20, 20);
@@ -220,6 +222,10 @@ async function sdReceiptPdf(d, i) {
   } else y += 2;
   doc.setFont("helvetica", "bold");
   doc.text(co.owner, M, y);
+  if (pics && pics.bot) {
+    lhPutBot(doc, pics);
+    return doc.output("blob");
+  }
   doc.setDrawColor(...brand);
   doc.setLineWidth(0.7);
   doc.line(3.5, 270.5, 208.5, 270.5);

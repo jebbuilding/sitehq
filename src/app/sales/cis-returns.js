@@ -12,7 +12,7 @@ import { BRGB } from "../photos/photos.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { cisBill } from "./cis-bill.js";
-import { lhLogoId } from "./letterhead-setup.js";
+import { lhLogoId, lhPics, lhPutTop } from "./letterhead-setup.js";
 import { sdCalc, sdR2, sdSales, sdSet, sdTaxYear } from "./sales-calc.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdHeadLines, sdImgData, sdLongDate } from "./sales-pdf.js";
@@ -865,10 +865,12 @@ async function cisPdfStart() {
   const set = sdSet(),
     co = coData(),
     brand = BRGB();
-  const logo = await sdImgData(lhLogoId());
+  const pics = await lhPics();
+  const logo = pics ? null : await sdImgData(lhLogoId());
   const sig = await sdImgData(set.sigId);
   const head = (title) => {
-    if (logo) {
+    if (pics) lhPutTop(doc, pics, 44);
+    else if (logo) {
       const k = Math.min(60 / logo.w, 32 / logo.h);
       doc.addImage(logo.u, logo.f, 16, 8, logo.w * k, logo.h * k, "cislogo", "FAST");
     } else {
@@ -881,7 +883,7 @@ async function cisPdfStart() {
     doc.setFontSize(9.5);
     doc.setTextColor(...brand);
     let hy = 12;
-    sdHeadLines().forEach((t) => {
+    (pics ? [] : sdHeadLines()).forEach((t) => {
       if (!t.trim()) {
         hy += 2;
         return;
@@ -891,7 +893,7 @@ async function cisPdfStart() {
     });
     doc.setDrawColor(...brand);
     doc.setLineWidth(0.7);
-    doc.line(3, 46, 207, 46);
+    if (!pics) doc.line(3, 46, 207, 46);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
     doc.text(title, 20, 57);
