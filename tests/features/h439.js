@@ -28,7 +28,10 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#f-cancel');await p.waitForTimeout(200);
  await p.click('.nl-b[data-s=paper]');await p.waitForTimeout(400);
  const pg=await p.innerText('#main');
- ok(/Health & safety/.test(pg)&&/Money/.test(pg)&&/Only you/.test(pg)&&/Company and suppliers/.test(pg)&&(await p.$$('.nl-row2')).length>=10,'Paperwork: grouped cards with rows');
+ ok(/Health & safety/.test(pg)&&!/Money/.test(pg)&&/Company and suppliers/.test(pg)&&(await p.$$('.nl-row2')).length>=7,'Paperwork: grouped cards with rows, the money pages not here');
+ await p.click('.nl-b[data-s=money]');await p.waitForTimeout(400);
+ const pm=await p.innerText('#main');
+ ok(/Bank and accounts/.test(pm)&&/Invoices and CIS/.test(pm)&&/Only you/.test(pm)&&(await p.$$('.nl-row2')).length===5,'Accounts: its own area with the five money pages');
  await p.screenshot({path:'h439-paperwork.png'});
  await p.click('.nl-b[data-s=today]');await p.waitForTimeout(500);
  await p.click('.td-c');await p.waitForTimeout(600);

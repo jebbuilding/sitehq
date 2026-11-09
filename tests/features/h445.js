@@ -27,10 +27,11 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(!(await p.isVisible('#nl-crumb'))&&/Jobs & clients/.test(await p.innerText('#h1')),'‹ goes back to Jobs & clients');
  await p.click('.nl-b[data-s=today]');await p.waitForTimeout(400);
  ok(!(await p.isVisible('#nl-crumb')),'no row on Today');
- /* the place kept for the Job Pack Estimator: Paperwork › Money, next to Estimates & invoices */
+ /* the place kept for the Job Pack Estimator: its own area, not in Paperwork › Money */
  await p.click('.nl-b[data-s=paper]');await p.waitForTimeout(400);
- ok(!!(await p.$('.nl-go[data-t=estim]'))&&/Estimating/.test(await p.innerText('.nl-go[data-t=estim]')),'Paperwork has 📐 Estimating');
- await p.click('.nl-go[data-t=estim]');await p.waitForTimeout(400);
+ ok(!(await p.$('.nl-go[data-t=estim]')),'Estimating is no longer in Paperwork');
+ ok(!!(await p.$('.nl-b[data-s=estim]')),'it has its own button on the menu');
+ await p.click('.nl-b[data-s=estim]');await p.waitForTimeout(400);
  ok(/Estimating/.test(await p.innerText('#h1'))&&/hasn't been brought in yet/.test(await p.innerText('#main')),'it says the estimator goes here, not brought in yet');
  ok(/claude\.ai\/artifact\//.test(await p.getAttribute('#main a.btn','href')||''),'with a button to open the estimator where it is now');
  await p.click('.nl-b[data-s=today]');await p.waitForTimeout(400);

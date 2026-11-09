@@ -2,7 +2,7 @@
 import { $ } from "../core/helpers.js";
 export { estView };
 /* James's estimating app (the Job Pack Estimator, a separate claude.ai page) comes in here when he says so (Nov 2026).
-   Until then this page only holds its place in the menu (Paperwork › Money, next to Estimates & invoices) and opens
+   Until then this page only holds its place in the menu (its own area, Estimating, apart from the money pages) and opens
    the estimator where it is now. Nothing from it is copied in and it has no data of its own here yet. */
 const EST_LINK = "https://claude.ai/artifact/9f6KEUV4ZWW2dwTLR7o2Be";
 function estView() {

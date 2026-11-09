@@ -468,6 +468,7 @@ function render() {
         "sec-jobs": () => nlSectionView("jobs"),
         "sec-people": () => nlSectionView("people"),
         "sec-paper": () => nlSectionView("paper"),
+        "sec-money": () => nlSectionView("money"),
         "sec-setup": () => nlSectionView("setup"),
         hs: hsView,
         draw: drawView,

@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 175 files, 3620 KB, 93899 lines.
+- 175 files, 3620 KB, 93893 lines.
 - 1769 names declared at the top level (the shared scope); 931 of them are used by a file other than the one that declares them.
 - 1844 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
@@ -428,7 +428,7 @@ STATE
 
 TABS & WEEK
 
-- 744 lines, 26 KB. Declares 12 names, 8 used elsewhere.
+- 745 lines, 26 KB. Declares 12 names, 8 used elsewhere.
 - **Used elsewhere:** `render` (100), `curTab` (8), `empTabs` (4), `OWN_TABS` (3), `refreshJobDetail` (2), `EMP_TABS` (1), `initTabsWeek` (1), `renderTabs` (1)
 - **Uses names from 55 files:** `people/reminders.js` (11), `core/helpers.js` (7), `owner/owner.js` (7), `owner/todo-lists.js` (6), `owner/today.js` (4), `chat/chat.js` (3), `clients/portal.js` (3), `owner/whats-new.js` (3), `people/personal-details.js` (3), `purchasing/materials-receipts.js` (3), `safety/training.js` (3), `core/state.js` (2), `files/outbox.js` (2), `owner/alerts.js` (2), `owner/reports-home.js` (2), `people/foreman.js` (2), `people/profile-photos.js` (2), `safety/policies-insurance.js` (2), `safety/site-inductions.js` (2), `sites/job-sheets.js` (2), `sites/plans-specs.js` (2), `sites/sign-in-book.js` (2), `survey/door-window-survey.js` (2), `timesheets/day-work.js` (2), `calculators/calculator.js` (1), `clients/address-book.js` (1), `clients/portal-calendar.js` (1), `clients/sign-offs.js` (1), `core/now-bar.js` (1), `core/report-issue.js` (1), `drawing/drawings-tab.js` (1), `drawing/sign-off-sheet.js` (1), `drawing/trade-drawings.js` (1), `owner/biz-costs.js` (1), `owner/leads.js` (1), `people/induction-matrix.js` (1), `people/wage-calc.js` (1), `photos/photos.js` (1), `photos/select-zip.js` (1), `planner/board.js` (1), `purchasing/invoices.js` (1), `purchasing/samples.js` (1), `purchasing/suppliers.js` (1), `safety/checklists.js` (1), `safety/expiry-dates.js` (1), `sales/accounts.js` (1), `sales/acct-receipts.js` (1), `sales/cis-returns.js` (1), `sales/estimating.js` (1), `sales/sales.js` (1), `sites/doc-visibility.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/storage.js` (1), `timesheets/time.js` (1)
 - **Used by 102 files**
@@ -905,7 +905,7 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 352 lines, 15 KB. Declares 17 names, 7 used elsewhere.
+- 345 lines, 15 KB. Declares 17 names, 7 used elsewhere.
 - **Used elsewhere:** `nlGo` (3), `nlOpenTab` (3), `nlSectionView` (2), `nlApply` (1), `nlName` (1), `nlOn` (1), `todayView` (1)
 - **Uses names from 11 files:** `owner/today-desk.js` (5), `core/helpers.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `core/tabs-week.js` (2), `sites/roll-call.js` (2), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/search.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 5 files**

@@ -217,3 +217,6 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .nl-cpages::-webkit-scrollbar{display:none}
 .nl-cp{flex:0 0 auto;min-height:40px;padding:0 14px;border:0;border-radius:11px;background:transparent;color:var(--muted);font:inherit;font-weight:600;white-space:nowrap;cursor:pointer}
 .nl-cp[aria-current]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+/* seven areas on a phone (Accounts and Estimating have their own): each button shares the width, the label shrinks to fit */
+@media (max-width:899px){.nlbar .nl-b{min-width:0;padding:0 1px}.nlbar .nl-ic{width:100%;max-width:56px}.nlbar .nl-ls{font-size:11px;letter-spacing:-.2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media (max-width:359px){.nlbar .nl-ls{font-size:10px;letter-spacing:-.3px}}
