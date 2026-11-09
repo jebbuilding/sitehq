@@ -37,6 +37,7 @@ function cbsUnit(sp, name, x, y, w, h, d, o) {
     plan: o.plan || "A",
     sp: Object.assign({}, sp, {
       kind: "full",
+      slope: "",
       W: w,
       H: h,
       D: d,

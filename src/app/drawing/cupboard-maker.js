@@ -5,7 +5,18 @@ import { CB3_COLS } from "./cupboard-3d.js";
 import { CBA_KINDS, cbaHasBase } from "./cupboard-alcove.js";
 import { CBP_DOOR, CBP_KIND, cbpPicker } from "./cupboard-pics.js";
 import { CBS_KINDS } from "./cupboard-shapes.js";
-export { CB_BAYS, CB_DOORS, cbBayDoor, cbDetails, cbDraw, cbMakeDialog, cbPlan };
+export {
+  CB_BAYS,
+  CB_DOORS,
+  cbBayDoor,
+  cbDetails,
+  cbDraw,
+  cbHAt,
+  cbMakeDialog,
+  cbPlan,
+  cbSlopeOn,
+  cbSlopeW,
+};
 /* A form for the overall size, board thicknesses, plinth, bays (equal or given widths) and what's in each bay
    (shelves, hanging – single or double – drawers, or a mix), and the doors (none, hinged, pairs or sliding). It
    draws a new page in the drawing: the front with doors (hinge side shown), the front with the doors off (inside),
@@ -87,6 +98,31 @@ const CB_RUNNERS = [
   ["roller", "Basic roller"],
 ];
 const cbBayDoor = (sp, b) => (sp.doors === "sliding" ? "sliding" : (b && b.door) || sp.doors);
+/* a sloping ceiling over a wardrobe (eaves, stairs): the carcass height x mm from its left. sp.slope "L" or "R" is the
+   low end, sp.slopeLow its height, sp.slopeW how far in from that end the slope runs (blank = all the way) */
+const cbSlopeOn = (sp) =>
+  (sp.slope === "L" || sp.slope === "R") && +sp.slopeLow > 0 && +sp.slopeLow < sp.H;
+const cbSlopeW = (sp) => Math.min(sp.W, +sp.slopeW || sp.W);
+const cbHAt = (sp, x) => {
+  if (!cbSlopeOn(sp)) return sp.H;
+  const sw = cbSlopeW(sp),
+    lo = +sp.slopeLow,
+    d = sp.slope === "L" ? x : sp.W - x;
+  return d >= sw ? sp.H : lo + ((sp.H - lo) * Math.max(0, d)) / sw;
+};
+const cbSlopeAng = (sp) =>
+  Math.round((Math.atan2(sp.H - +sp.slopeLow, cbSlopeW(sp)) * 180) / Math.PI);
+/* how much of a level board at height y (its top) fits under the slope between xa and xb: [from, to] in mm, or null */
+function cbUnder(sp, xa, xb, y) {
+  let a = null,
+    z = null;
+  for (let x = xa; x <= xb + 0.01; x += Math.max(1, (xb - xa) / 200))
+    if (cbHAt(sp, x) - sp.t >= y) {
+      if (a === null) a = x;
+      z = x;
+    }
+  return a === null ? null : [a, Math.min(xb, z)];
+}
 /* numbers typed with commas, e.g. "300, 700, 1100" */
 const cbNums = (s) =>
   String(s || "")
@@ -112,11 +148,13 @@ function cbBayLayout(sp, b, P) {
     L.fixed.push({ y: split, part: "Fixed shelf", why: "under the top box" });
     hi = split - st / 2;
   }
-  const dh = Math.max(80, +b.dh || P.drH);
+  /* drawer front heights, bottom first: one for them all, or a list ("250, 200, 150"); the last one repeats */
+  const dhs = cbNums(b.dh).map((x) => Math.max(80, x));
   const drawers = (n) => {
     for (let k = 0; k < n; k++) {
-      L.drawers.push({ y: lo, h: dh });
-      lo += dh;
+      const h = dhs[k] || dhs[dhs.length - 1] || P.drH;
+      L.drawers.push({ y: lo, h });
+      lo += h;
     }
   };
   const shelves = (a, z, n) => {
@@ -196,6 +234,68 @@ function cbPlan(sp) {
     Object.assign({ w }, src[i] || { k: "shelves", s: 3, d: 0 }, { w }),
   );
   bays.forEach((b) => (b.L = cbBayLayout(sp, b, P)));
+  /* where each bay starts, mm from the carcass's left */
+  const bx0 = [];
+  {
+    let x = t;
+    ws.forEach((w) => {
+      bx0.push(x);
+      x += w + t;
+    });
+  }
+  P.bx0 = bx0;
+  /* under a sloping ceiling: shelves, rails and fixed shelves high up are cut short to the slope, or left out */
+  const slope = cbSlopeOn(sp);
+  if (slope)
+    bays.forEach((b, i) => {
+      const L = b.L,
+        xa = bx0[i],
+        xb = xa + b.w;
+      L.cw = {};
+      const fit = (y, min) => {
+        const u = cbUnder(sp, xa, xb, y);
+        if (!u || u[1] - u[0] < min) return null;
+        return u[1] - u[0] >= b.w - 1 ? true : u;
+      };
+      L.shelves = L.shelves.filter((y) => {
+        const f = fit(y + P.sht / 2, 120);
+        if (f && f !== true) L.cw[y] = f;
+        return !!f;
+      });
+      L.fixed = L.fixed.filter((f) => {
+        const r = fit(f.y + P.sht / 2, 120);
+        if (r && r !== true) L.cw[f.y] = r;
+        return !!r;
+      });
+      L.rails = L.rails.filter((y) => {
+        const r = fit(y + 50, 300);
+        if (r && r !== true) L.cw["r" + y] = r;
+        return !!r;
+      });
+    });
+  /* a face frame: stiles (sides), rails (top and bottom) and muntins (between bays) on the front; each bay's opening in
+     it, and the doors overlay it by 12 mm or sit in it with a 2 mm gap */
+  const ff = sp.ff
+    ? {
+        w: +sp.ffW || 45,
+        r: +sp.ffR || 45,
+        m: +sp.ffM || 45,
+        t: +sp.ffT || 20,
+        inset: sp.ff === "inset",
+      }
+    : null;
+  if (ff) {
+    ff.ov = ff.inset ? -2 : 12;
+    ff.opX = (i) => [
+      i === 0 ? ff.w : bx0[i] - t / 2 + ff.m / 2,
+      i === n - 1 ? sp.W - ff.w : bx0[i] + ws[i] + t / 2 - ff.m / 2,
+    ];
+    ff.opY = (z) => [
+      z.y0 <= (sp.plinth || 0) + 1 ? (sp.plinth || 0) + ff.r : z.y0 + ff.r / 2,
+      z.y1 >= sp.H - 1 ? sp.H - ff.r : z.y1 - ff.r / 2,
+    ];
+  }
+  P.ff = ff;
   const cut = [];
   /* what each board is made of (material and colour), from what it is */
   const cn = (c) => (c ? (CB3_COLS.find((x) => x[0] === c) || [c, c])[1].toLowerCase() : "");
@@ -204,6 +304,7 @@ function cbPlan(sp) {
     /veneer|solid|ply/i.test(m || "") ? m : [cn(c), m || ""].filter(Boolean).join(" ");
   const matOf = (part) => {
     if (/glass/i.test(part)) return "";
+    if (/face frame/i.test(part)) return sp.ffMat || "hardwood";
     if (/back panel/i.test(part)) return sp.matBack || "";
     if (/door|drawer front|filler|end panel|cornice|plinth/i.test(part))
       return jn(sp.colDoor || (sp.matDoor ? "" : sp.colCar), sp.matDoor || sp.matCar);
@@ -225,10 +326,40 @@ function cbPlan(sp) {
     if (ex) ex.qty += qty;
     else cut.push({ part, qty, l: Math.round(l), w: Math.round(w), th, note: note || "", mat });
   };
-  add("Side", 2, sp.H, sp.D, t);
-  add("Top", 1, sp.W - 2 * t, sp.D, t);
-  add("Bottom", 1, sp.W - 2 * t, sp.D, t);
-  if (n > 1) add("Division", n - 1, ih, sp.D - bt, t);
+  if (slope) {
+    const lo = +sp.slopeLow,
+      sw = cbSlopeW(sp),
+      ang = cbSlopeAng(sp);
+    add("Side", 1, sp.H, sp.D, t, "high end");
+    add("Side", 1, lo, sp.D, t, "low end, under the slope; top cut at " + ang + "°");
+    add(
+      "Top (raking)",
+      1,
+      Math.hypot(sw - t, ((sp.H - lo) * (sw - t)) / sw),
+      sp.D,
+      t,
+      "under the slope; ends cut at " + ang + "°",
+    );
+    if (sp.W - sw - t > 50) add("Top", 1, sp.W - sw - t, sp.D, t, "the level part");
+    add("Bottom", 1, sp.W - 2 * t, sp.D, t);
+    for (let i = 1; i < n; i++) {
+      const xd = bx0[i] - t / 2,
+        hd = cbHAt(sp, xd);
+      add(
+        "Division",
+        1,
+        hd - (sp.plinth || 0) - 2 * t + (hd < sp.H ? t : 0),
+        sp.D - bt,
+        t,
+        hd < sp.H ? "top cut at " + ang + "° to the raking top" : "",
+      );
+    }
+  } else {
+    add("Side", 2, sp.H, sp.D, t);
+    add("Top", 1, sp.W - 2 * t, sp.D, t);
+    add("Bottom", 1, sp.W - 2 * t, sp.D, t);
+    if (n > 1) add("Division", n - 1, ih, sp.D - bt, t);
+  }
   if (sp.plinth) add("Plinth / kickboard", 1, sp.W, sp.plinth, t);
   if (bt) {
     const bfix =
@@ -238,7 +369,8 @@ function cbPlan(sp) {
           ? "screwed onto the back"
           : "fits into a groove";
     /* wider than a sheet: one piece a bay, joining behind the divisions (or two halves on a batten) */
-    if (sp.W <= 1220) add("Back panel", 1, sp.H - sp.plinth, sp.W, bt, bfix);
+    const bcut = slope ? "; cut to the slope, " + sp.slopeLow + " at the low end" : "";
+    if (sp.W <= 1220) add("Back panel", 1, sp.H - sp.plinth, sp.W, bt, bfix + bcut);
     else if (n > 1)
       ws.forEach((w) =>
         add(
@@ -247,7 +379,7 @@ function cbPlan(sp) {
           sp.H - sp.plinth,
           w + t,
           bt,
-          bfix + "; one a bay, joins behind the divisions",
+          bfix + "; one a bay, joins behind the divisions" + bcut,
         ),
       );
     else
@@ -257,7 +389,35 @@ function cbPlan(sp) {
         sp.H - sp.plinth,
         sp.W / 2,
         bt,
-        bfix + "; two halves, joined on a batten",
+        bfix + "; two halves, joined on a batten" + bcut,
+      );
+  }
+  if (ff) {
+    const fh = sp.H - (sp.plinth || 0);
+    add(
+      "Face frame stile",
+      2,
+      fh,
+      ff.w,
+      ff.t,
+      "left and right; glued and pocket-screwed to the carcass front",
+    );
+    add(
+      "Face frame rail",
+      2,
+      sp.W - 2 * ff.w,
+      ff.r,
+      ff.t,
+      "top and bottom, between the stiles" + (slope ? "; the top one follows the slope" : ""),
+    );
+    if (n > 1)
+      add(
+        "Face frame muntin",
+        n - 1,
+        fh - 2 * ff.r,
+        ff.m,
+        ff.t,
+        "between the bays, over the divisions",
       );
   }
   const gap = 3;
@@ -268,12 +428,26 @@ function cbPlan(sp) {
   bays.forEach((b, i) => {
     const bay = "bay " + (i + 1);
     const L = b.L;
-    if (L.shelves.length) add("Shelf", L.shelves.length, b.w - 2, sd - 20, sht, bay);
+    const cw = (k) => (L.cw && L.cw[k] ? L.cw[k][1] - L.cw[k][0] : 0);
+    L.shelves.forEach((y) =>
+      add(
+        "Shelf",
+        1,
+        cw(y) || b.w - 2,
+        sd - 20,
+        sht,
+        bay + (cw(y) ? "; end cut to the slope" : ""),
+      ),
+    );
+    if (ff && L.split) {
+      const [a, z] = ff.opX(i);
+      add("Face frame rail", 1, z - a, ff.r, ff.t, bay + "; between the doors");
+    }
     L.fixed.forEach((f) =>
       add(
         f.part,
         1,
-        b.w,
+        cw(f.y) || b.w,
         sd - (f.part === "Desk / dressing table top" ? 0 : 20),
         sht,
         bay + (f.why ? "; " + f.why : ""),
@@ -288,20 +462,50 @@ function cbPlan(sp) {
     const dtp = cbBayDoor(sp, b);
     if (dtp !== "sliding" && dtp !== "none")
       L.zones.forEach((z) => {
-        const h = z.y1 - z.y0 - gap,
+        let h = z.y1 - z.y0 - gap,
           w1 = b.w + t - gap;
+        let xa = bx0[i] - t / 2,
+          xb = bx0[i] + b.w + t / 2;
+        let note = bay;
+        if (ff) {
+          const [a, zx] = ff.opX(i),
+            [y0, y1] = ff.opY(z);
+          h = y1 - y0 + 2 * ff.ov;
+          w1 = zx - a + 2 * ff.ov;
+          xa = a - ff.ov;
+          xb = zx + ff.ov;
+          note += ff.inset
+            ? "; inset in the face frame (inset hinges)"
+            : "; overlays the face frame by 12";
+        }
+        /* a top door under the slope: as tall as its high side, the top cut to the slope */
+        if (slope && z.y1 >= sp.H - 1) {
+          const top = ff ? -ff.r + ff.ov : -gap / 2;
+          const ha = cbHAt(sp, xa) + top,
+            hb = cbHAt(sp, xb) + top;
+          if (Math.abs(ha - hb) > 1 || Math.min(ha, hb) < sp.H + top - 1) {
+            const base = z.y1 + top - h;
+            h = Math.max(ha, hb) - base;
+            note +=
+              "; top cut to the slope: " +
+              Math.round(ha - base) +
+              " at the left, " +
+              Math.round(hb - base) +
+              " at the right";
+          }
+        }
         if (dtp === "pairs") {
-          add("Door", 2, h, (b.w + t) / 2 - gap, dt, bay);
+          add("Door", 2, h, (w1 + gap) / 2 - gap, dt, note);
           doorsN += 2;
           hinges += 2 * hingeN(h);
         } else {
           if (dtp === "glass") {
-            add("Glazed door frame", 1, h, w1, dt, bay + "; rebate for the glass");
+            add("Glazed door frame", 1, h, w1, dt, note + "; rebate for the glass");
             add("Glass panel (toughened, to order)", 1, h - 140, w1 - 140, 4, bay);
           } else if (dtp === "mirror") {
-            add("Mirror door (backing board)", 1, h, w1, dt, bay + "; mirror glued on");
+            add("Mirror door (backing board)", 1, h, w1, dt, note + "; mirror glued on");
             add("Mirror glass (safety-backed, to order)", 1, h - 4, w1 - 4, 4, bay);
-          } else add("Door", 1, h, w1, dt, bay);
+          } else add("Door", 1, h, w1, dt, note);
           doorsN++;
           hinges += hingeN(h);
         }
@@ -497,6 +701,30 @@ function cbPlan(sp) {
     const rn = (CB_RUNNERS.find((r) => r[0] === (sp.runner || "soft-close")) ||
       CB_RUNNERS[0])[1].toLowerCase();
     add(`Drawer runners, ${rn}, ${rl} mm (pairs, to buy)`, drawersN, 0, 0, 0, "");
+    /* the boxes: 13 mm each side for the runners, 15 mm sides, a 6 mm base in a groove */
+    bays.forEach((b, i) =>
+      b.L.drawers.forEach((d) => {
+        const bh = Math.max(60, Math.round(d.h - 50)),
+          bw = Math.round(b.w - 26);
+        add(
+          "Drawer box side",
+          2,
+          rl,
+          bh,
+          15,
+          "bay " + (i + 1) + "; front " + Math.round(d.h) + " high",
+        );
+        add(
+          "Drawer box front and back",
+          2,
+          bw - 30,
+          bh - 12,
+          15,
+          "bay " + (i + 1) + "; between the sides, on the base",
+        );
+        add("Drawer base", 1, bw - 14, rl - 15, 6, "bay " + (i + 1) + "; in a 6 mm groove");
+      }),
+    );
   }
   if (sp.H > 1000)
     add(
@@ -603,10 +831,39 @@ function cbDraw(sp, api) {
     bx.push([x, U(w)]);
     x += U(w) + T;
   });
+  /* a sloping ceiling: the outline follows it (ox, oyb = the carcass's bottom left on the page) */
+  const slope = cbSlopeOn(sp);
+  const slopeXs = (xa, xb) => {
+    const xs = [xa];
+    if (slope) {
+      const sw = cbSlopeW(sp),
+        xk = sp.slope === "L" ? sw : sp.W - sw;
+      if (xk > xa + 0.5 && xk < xb - 0.5) xs.push(xk);
+    }
+    xs.push(xb);
+    return xs;
+  };
+  const polyLines = (pts, o) => {
+    for (let k = 0; k < pts.length; k++)
+      objs.push(
+        Object.assign(
+          { t: "line", a: pts[k], b: pts[(k + 1) % pts.length], c: col, w: lw },
+          o || {},
+        ),
+      );
+  };
+  const outline = (ox, oyb) =>
+    polyLines(
+      [[ox, oyb]].concat(
+        slopeXs(0, sp.W).map((xm) => [ox + U(xm), oyb - U(cbHAt(sp, xm))]),
+        [[ox + W, oyb]],
+      ),
+    );
   /* --- the front with the doors on --- */
   const x1 = Math.max(Z * 5, (doc.w - (2 * W + P.n * D + (P.n + 1) * gapX)) / 2),
     y1 = top;
-  rect(x1, y1, W, H);
+  if (slope) outline(x1, y1 + H);
+  else rect(x1, y1, W, H);
   if (PL) line(x1, y1 + H - PL, x1 + W, y1 + H - PL, { w: lw });
   /* mm up from the floor → the page, for the front with the doors on */
   const fy = (yy) => y1 + H - U(yy);
@@ -628,6 +885,27 @@ function cbDraw(sp, api) {
       });
   };
   const door = (dx, dw, dTop, dBot, hinge, kind) => {
+    if (slope) {
+      const tops = slopeXs((dx - x1) / U(1), (dx + dw - x1) / U(1)).map((xm) => [
+        x1 + U(xm),
+        Math.max(dTop, fy(cbHAt(sp, xm)) + U(1.5)),
+      ]);
+      if (tops.some((p) => p[1] > dTop + 0.01)) {
+        polyLines([[dx, dBot]].concat(tops, [[dx + dw, dBot]]), { w: thin });
+        const topAt = (px) => (Math.abs(px - dx) < 0.01 ? tops[0][1] : tops[tops.length - 1][1]);
+        if (hinge) {
+          const hx = hinge === "L" ? dx : dx + dw,
+            ox = hinge === "L" ? dx + dw : dx,
+            mid = (topAt(hx) + dBot) / 2;
+          line(ox, topAt(ox), hx, mid, { dash: 1 });
+          line(ox, dBot, hx, mid, { dash: 1 });
+          const hxx = hinge === "L" ? dx + dw - U(45) : dx + U(45);
+          const lowTop = Math.max(tops[0][1], tops[tops.length - 1][1]);
+          handleAt(hxx, Math.min(Math.max(fy(1050), lowTop + U(150)), dBot - U(120)));
+        }
+        return;
+      }
+    }
     rect(dx, dTop, dw, dBot - dTop, {
       w: thin,
       fill: kind === "mirror" ? "#e3edf1" : kind !== "glass" && sp.colDoor ? sp.colDoor : undefined,
@@ -684,19 +962,59 @@ function cbDraw(sp, api) {
       );
     }
   };
+  /* a face frame: stiles, rails and muntins on the front, under the doors */
+  const FF = P.ff;
+  if (FF) {
+    const fo = { w: thin, fill: sp.colDoor || "#e9e3d8", fa: 0.7 };
+    const fb = fy(sp.plinth || 0);
+    const hl = cbHAt(sp, 0),
+      hr = cbHAt(sp, sp.W);
+    rect(x1, fy(hl), U(FF.w), fb - fy(hl), fo);
+    rect(x1 + W - U(FF.w), fy(hr), U(FF.w), fb - fy(hr), fo);
+    rect(x1 + U(FF.w), fb - U(FF.r), W - 2 * U(FF.w), U(FF.r), fo);
+    if (slope) {
+      const xs = slopeXs(FF.w, sp.W - FF.w);
+      xs.slice(0, -1).forEach((xa, k) => {
+        const xb = xs[k + 1];
+        line(x1 + U(xa), fy(cbHAt(sp, xa) - FF.r), x1 + U(xb), fy(cbHAt(sp, xb) - FF.r), {
+          w: thin,
+        });
+      });
+    } else rect(x1 + U(FF.w), y1, W - 2 * U(FF.w), U(FF.r), fo);
+    for (let i = 1; i < P.n; i++) {
+      const xc = P.bx0[i] - t / 2;
+      const tp = fy(cbHAt(sp, xc) - FF.r);
+      rect(x1 + U(xc - FF.m / 2), tp, U(FF.m), fb - U(FF.r) - tp, fo);
+    }
+    P.bays.forEach((b, i) => {
+      if (!b.L.split) return;
+      const [a, z] = FF.opX(i);
+      rect(x1 + U(a), fy(b.L.split + FF.r / 2), U(z - a), U(FF.r), fo);
+    });
+  }
   if (sp.doors !== "sliding")
     bx.forEach(([bxx, bw], i) => {
       const b = P.bays[i],
         dt = cbBayDoor(sp, b);
-      const dx = x1 + bxx - T / 2 + U(1.5),
+      let dx = x1 + bxx - T / 2 + U(1.5),
         dw = bw + T - U(3);
+      if (FF) {
+        const [a, zx] = FF.opX(i);
+        dx = x1 + U(a - FF.ov);
+        dw = U(zx - a + 2 * FF.ov);
+      }
       if (dt === "none") rect(x1 + bxx, y1 + T, bw, H - PL - 2 * T, { w: thin });
       else
         b.L.zones.forEach((z) => {
-          const zt = fy(z.y1) + U(1.5),
+          let zt = fy(z.y1) + U(1.5),
             zb = fy(z.y0) - U(1.5);
+          if (FF) {
+            const [y0, yt] = FF.opY(z);
+            zt = fy(yt + FF.ov);
+            zb = fy(y0 - FF.ov);
+          }
           if (dt === "pairs") {
-            const hw = (bw + T) / 2 - U(3);
+            const hw = (dw - U(3)) / 2;
             door(dx, hw, zt, zb, "L");
             door(dx + hw + U(3), hw, zt, zb, "R");
           } else door(dx, dw, zt, zb, i % 2 ? "R" : "L", dt);
@@ -768,14 +1086,51 @@ function cbDraw(sp, api) {
     mkDim([x1, y1 + H], [x1 + W, y1 + H], dimSize() * 2.4),
     mkDim([x1, y1], [x1, y1 + H], dimSize() * 2.4),
   );
+  if (slope) {
+    const lx = sp.slope === "L" ? x1 : x1 + W;
+    objs.push(
+      mkDim(
+        [lx, y1 + H - U(+sp.slopeLow)],
+        [lx, y1 + H],
+        (sp.slope === "L" ? 1 : -1) * dimSize() * 1.2,
+      ),
+    );
+    const sw = cbSlopeW(sp);
+    if (sw < sp.W - 1) {
+      const a = sp.slope === "L" ? x1 : x1 + W - U(sw);
+      objs.push(mkDim([a, y1], [a + U(sw), y1], -dimSize() * 1.2));
+    }
+    text(
+      sp.slope === "L" ? x1 + U(80) : x1 + W - U(80) - Z * 6,
+      y1 + H - U(+sp.slopeLow) - Z * 0.6,
+      "slope " + cbSlopeAng(sp) + "°",
+      0.65,
+    );
+  }
   vt(++vn, "Front – doors on", x1, y1 - Z * 1.6);
   /* --- the front with the doors off: the inside --- */
   const x2 = x1 + W + gapX,
     y2 = top;
-  rect(x2, y2, W, H);
-  line(x2 + T, y2, x2 + T, y2 + H - PL, { w: thin });
-  line(x2 + W - T, y2, x2 + W - T, y2 + H - PL, { w: thin });
-  line(x2 + T, y2 + T, x2 + W - T, y2 + T, { w: thin });
+  if (slope) {
+    outline(x2, y2 + H);
+    line(x2 + T, y2 + H - U(cbHAt(sp, t)), x2 + T, y2 + H - PL, { w: thin });
+    line(x2 + W - T, y2 + H - U(cbHAt(sp, sp.W - t)), x2 + W - T, y2 + H - PL, { w: thin });
+    const xs = slopeXs(t, sp.W - t);
+    xs.slice(0, -1).forEach((xa, k) =>
+      line(
+        x2 + U(xa),
+        y2 + H - U(cbHAt(sp, xa) - t),
+        x2 + U(xs[k + 1]),
+        y2 + H - U(cbHAt(sp, xs[k + 1]) - t),
+        { w: thin },
+      ),
+    );
+  } else {
+    rect(x2, y2, W, H);
+    line(x2 + T, y2, x2 + T, y2 + H - PL, { w: thin });
+    line(x2 + W - T, y2, x2 + W - T, y2 + H - PL, { w: thin });
+    line(x2 + T, y2 + T, x2 + W - T, y2 + T, { w: thin });
+  }
   if (PL) {
     line(x2, y2 + H - PL, x2 + W, y2 + H - PL, { w: lw });
     line(x2 + T, y2 + H - PL - T, x2 + W - T, y2 + H - PL - T, { w: thin });
@@ -790,17 +1145,32 @@ function cbDraw(sp, api) {
     const [bxx, bw] = bx[i];
     const lx = x2 + bxx;
     const L = b.L;
-    if (i < P.n - 1) rect(lx + bw, iTop, T, IH, { w: thin });
+    if (i < P.n - 1) {
+      const dTop = slope ? iy(cbHAt(sp, P.bx0[i] + P.ws[i] + t / 2) - t) : iTop;
+      rect(lx + bw, dTop, T, iBot - dTop, { w: thin });
+    }
+    /* a board cut short by the slope: where it is across the bay */
+    const span = (k) =>
+      L.cw && L.cw[k] ? [x2 + U(L.cw[k][0]), U(L.cw[k][1] - L.cw[k][0])] : [lx, bw];
     L.drawers.forEach((d) => {
       const dt = iy(d.y + d.h),
         db = iy(d.y);
       rect(lx + U(1.5), dt + U(1.5), bw - U(3), db - dt - U(3), { w: thin });
+      if (String(b.dh || "").trim())
+        text(lx + U(15), (dt + db) / 2 - U(15), String(Math.round(d.h)), 0.55);
       line(lx + bw / 2 - U(60), (dt + db) / 2, lx + bw / 2 + U(60), (dt + db) / 2, { w: pwFor(4) });
     });
-    L.shelves.forEach((y) => rect(lx, iy(y) - ST / 2, bw, ST, { w: thin }));
-    L.fixed.forEach((f) => rect(lx, iy(f.y) - ST / 2, bw, ST, { w: thin, fill: "#e6e6e6" }));
+    L.shelves.forEach((y) => {
+      const [sx, sw2] = span(y);
+      rect(sx, iy(y) - ST / 2, sw2, ST, { w: thin });
+    });
+    L.fixed.forEach((f) => {
+      const [sx, sw2] = span(f.y);
+      rect(sx, iy(f.y) - ST / 2, sw2, ST, { w: thin, fill: "#e6e6e6" });
+    });
     L.rails.forEach((y) => {
-      line(lx + U(30), iy(y), lx + bw - U(30), iy(y), { w: pwFor(6) });
+      const [sx, sw2] = span("r" + y);
+      line(sx + U(30), iy(y), sx + sw2 - U(30), iy(y), { w: pwFor(6) });
       text(lx + U(40), iy(y) - U(40), "rail " + Math.round(y), 0.7);
     });
     L.labels.forEach((l) => text(lx + U(40), iy(l.y), l.s, 0.7));
@@ -908,9 +1278,12 @@ function cbDraw(sp, api) {
     );
     /* the doors on the front */
     const dtp = cbBayDoor(sp, b);
+    const FT = FF ? U(FF.t) : 0;
+    if (FF) rect(xs - FT, y3, FT, H - PL, { w: thin, fill: sp.colDoor || "#e9e3d8", fa: 0.7 });
+    const dxs = FF ? (FF.inset ? xs - FT : xs - FT - DT3) : xs - DT3;
     if (dtp !== "none" && dtp !== "sliding")
       L.zones.forEach((z) =>
-        rect(xs - DT3, sy(z.y1) + U(1.5), DT3, U(z.y1 - z.y0) - U(3), {
+        rect(dxs, sy(z.y1) + U(1.5), DT3, U(z.y1 - z.y0) - U(3), {
           w: thin,
           fill: sp.colDoor || undefined,
           fa: 0.55,
@@ -973,7 +1346,7 @@ function cbDraw(sp, api) {
   text(
     x1,
     yt,
-    `${sp.name || "Cupboard"} – ${sp.W} wide × ${sp.H} high × ${sp.D} deep. Boards ${t} mm${sp.bt ? `, back ${sp.bt} mm` : ""}${sp.plinth ? `, plinth ${sp.plinth} mm` : ""}.`,
+    `${sp.name || "Cupboard"} – ${sp.W} wide × ${sp.H} high × ${sp.D} deep${slope ? `, sloping down to ${sp.slopeLow} at the ${sp.slope === "L" ? "left" : "right"} (${cbSlopeAng(sp)}°)` : ""}. Boards ${t} mm${sp.bt ? `, back ${sp.bt} mm` : ""}${sp.plinth ? `, plinth ${sp.plinth} mm` : ""}.`,
     1,
   );
   /* boards, edging, colours and handles */
@@ -981,6 +1354,9 @@ function cbDraw(sp, api) {
     const cn = (c) => (c ? (CB3_COLS.find((x) => x[0] === c) || [c, c])[1] : "");
     const bits = [
       `Doors and fronts ${P.dt} mm, shelves ${P.sht} mm`,
+      FF
+        ? `face frame ${FF.w} mm ${(sp.ffMat || "hardwood").toLowerCase()}, doors ${FF.inset ? "inset" : "over the frame"}`
+        : "",
       sp.edge || "",
       sp.colCar ? "carcass " + cn(sp.colCar).toLowerCase() : "",
       sp.colDoor ? "doors " + cn(sp.colDoor).toLowerCase() : "",
@@ -1088,7 +1464,7 @@ function cbMakeDialog(api) {
     last.H = last.Hopen || last.H;
   }
   const bayRow = (i, b) =>
-    `<div class="cb2-bay" data-i="${i}"><b>Bay ${i + 1}</b><select class="cb2-k" aria-label="Bay ${i + 1}: what's in it">${CB_BAYS.map(([k, l]) => `<option value="${k}"${k === b.k ? " selected" : ""}>${l}</option>`).join("")}</select><label>Shelves<input class="cb2-s" type="number" inputmode="numeric" min="0" max="12" value="${b.s}"></label><label>Drawers<input class="cb2-d" type="number" inputmode="numeric" min="0" max="8" value="${b.d}"></label><select class="cb2-dr" aria-label="Bay ${i + 1}: doors">${CB_BAYDOORS.map(([k, l]) => `<option value="${k}"${k === (b.door || "") ? " selected" : ""}>${l}</option>`).join("")}</select><span class="cb2-fit"><label class="inl"><input type="checkbox" class="cb2-shoe"${b.shoe ? " checked" : ""}> Shoe rack</label><label class="inl"><input type="checkbox" class="cb2-tr"${b.trouser ? " checked" : ""}> Trouser pull-out</label><label class="inl"><input type="checkbox" class="cb2-led"${b.led ? " checked" : ""}> LED light</label></span><details class="cb2-adj"${b.w || b.sh || b.dh || b.rail || b.top ? " open" : ""}><summary>Adjust this bay</summary><div class="cb2-adjg"><label>Width inside (mm)<input class="cb2-w" type="number" inputmode="numeric" value="${b.w || ""}" placeholder="share"></label><label>Top box height (mm)<input class="cb2-tb" type="number" inputmode="numeric" value="${b.top || ""}" placeholder="none"></label><label>Drawer height (mm)<input class="cb2-dh" type="number" inputmode="numeric" value="${b.dh || ""}" placeholder="180"></label><label>Rail height from the floor (mm)<input class="cb2-rl" type="number" inputmode="numeric" value="${b.rail || ""}" placeholder="auto"></label><label class="cb2-shl">Shelf heights from the floor (mm)<input class="cb2-sh" maxlength="80" value="${esc(b.sh || "")}" placeholder="e.g. 400, 800, 1200 – or leave for even"></label></div><div class="who">A top box puts a fixed shelf and a separate door at the top. Leave a box empty to let the app work it out.</div></details></div>`;
+    `<div class="cb2-bay" data-i="${i}"><b>Bay ${i + 1}</b><select class="cb2-k" aria-label="Bay ${i + 1}: what's in it">${CB_BAYS.map(([k, l]) => `<option value="${k}"${k === b.k ? " selected" : ""}>${l}</option>`).join("")}</select><label>Shelves<input class="cb2-s" type="number" inputmode="numeric" min="0" max="12" value="${b.s}"></label><label>Drawers<input class="cb2-d" type="number" inputmode="numeric" min="0" max="8" value="${b.d}"></label><select class="cb2-dr" aria-label="Bay ${i + 1}: doors">${CB_BAYDOORS.map(([k, l]) => `<option value="${k}"${k === (b.door || "") ? " selected" : ""}>${l}</option>`).join("")}</select><span class="cb2-fit"><label class="inl"><input type="checkbox" class="cb2-shoe"${b.shoe ? " checked" : ""}> Shoe rack</label><label class="inl"><input type="checkbox" class="cb2-tr"${b.trouser ? " checked" : ""}> Trouser pull-out</label><label class="inl"><input type="checkbox" class="cb2-led"${b.led ? " checked" : ""}> LED light</label></span><details class="cb2-adj"${b.w || b.sh || b.dh || b.rail || b.top ? " open" : ""}><summary>Adjust this bay</summary><div class="cb2-adjg"><label>Width inside (mm)<input class="cb2-w" type="number" inputmode="numeric" value="${b.w || ""}" placeholder="share"></label><label>Top box height (mm)<input class="cb2-tb" type="number" inputmode="numeric" value="${b.top || ""}" placeholder="none"></label><label>Drawer heights (mm, bottom first)<input class="cb2-dh" inputmode="numeric" maxlength="60" value="${esc(String(b.dh || ""))}" placeholder="180 – or e.g. 250, 200, 150"></label><label>Rail height from the floor (mm)<input class="cb2-rl" type="number" inputmode="numeric" value="${b.rail || ""}" placeholder="auto"></label><label class="cb2-shl">Shelf heights from the floor (mm)<input class="cb2-sh" maxlength="80" value="${esc(b.sh || "")}" placeholder="e.g. 400, 800, 1200 – or leave for even"></label></div><div class="who">A top box puts a fixed shelf and a separate door at the top. Leave a box empty to let the app work it out.</div></details></div>`;
   const bayRead = (r) => ({
     k: r.querySelector(".cb2-k").value,
     s: +r.querySelector(".cb2-s").value || 0,
@@ -1099,7 +1475,7 @@ function cbMakeDialog(api) {
     led: r.querySelector(".cb2-led").checked,
     w: +r.querySelector(".cb2-w").value || 0,
     top: +r.querySelector(".cb2-tb").value || 0,
-    dh: +r.querySelector(".cb2-dh").value || 0,
+    dh: r.querySelector(".cb2-dh").value.trim(),
     rail: +r.querySelector(".cb2-rl").value || 0,
     sh: r.querySelector(".cb2-sh").value.trim(),
   });
@@ -1143,6 +1519,11 @@ function cbMakeDialog(api) {
       <div class="grid2"><label for="cb2-ftop">Filler at the top (mm, to the ceiling)<input id="cb2-ftop" type="number" inputmode="numeric" value="${v("fillT", 0)}"></label><span></span></div>
       <div class="grid2"><label for="cb2-co">Cornice height (mm, 0 = none)<input id="cb2-co" type="number" inputmode="numeric" value="${v("cornice", 0)}"></label><label for="cb2-wt">Width at the top, if not square (mm)<input id="cb2-wt" type="number" inputmode="numeric" value="${v("openTop", "")}" placeholder="same as the bottom"></label></div>
       <div class="who">Width and height above are the whole opening. The fillers (sides and top), end panels and cornice come off them, and the narrower end of an out-of-square opening is used, with the fillers scribed to fit.</div>
+      <div class="grid2"><label for="cb2-sl">Sloping ceiling (eaves or stairs)<select id="cb2-sl"><option value="">No – a level top</option><option value="L"${v("slope", "") === "L" ? " selected" : ""}>Slopes down to the left</option><option value="R"${v("slope", "") === "R" ? " selected" : ""}>Slopes down to the right</option></select></label><label for="cb2-slh" class="cb2-sls">Height at the low end (mm)<input id="cb2-slh" type="number" inputmode="numeric" value="${v("slopeLow", 1200)}"></label></div>
+      <label for="cb2-slw" class="cb2-sls">The slope runs in from that end (mm – blank = all the way across)<input id="cb2-slw" type="number" inputmode="numeric" value="${v("slopeW", "")}" placeholder="all the way"></label>
+      <div class="grid2"><label for="cb2-ff">Front<select id="cb2-ff"><option value="">Frameless – doors on the carcass</option><option value="overlay"${v("ff", "") === "overlay" ? " selected" : ""}>Face frame – doors over the frame</option><option value="inset"${v("ff", "") === "inset" ? " selected" : ""}>Face frame – doors inset in the frame</option></select></label><label for="cb2-ffm" class="cb2-ffs">Frame timber<input id="cb2-ffm" maxlength="40" value="${esc(v("ffMat", "Tulipwood"))}"></label></div>
+      <div class="grid2 cb2-ffs"><label for="cb2-ffw">Stiles – the sides (mm)<input id="cb2-ffw" type="number" inputmode="numeric" value="${v("ffW", 45)}"></label><label for="cb2-ffr">Rails – top and bottom (mm)<input id="cb2-ffr" type="number" inputmode="numeric" value="${v("ffR", 45)}"></label></div>
+      <div class="grid2 cb2-ffs"><label for="cb2-ffj">Muntins – between bays (mm)<input id="cb2-ffj" type="number" inputmode="numeric" value="${v("ffM", 45)}"></label><label for="cb2-fft">Frame thickness (mm)<input id="cb2-fft" type="number" inputmode="numeric" value="${v("ffT", 20)}"></label></div>
     </fieldset>
     <div class="cb2-g" data-k="full alcove base corner stairs eaves bridge window seat bench tv">
     <details class="cb2-fin"${last.colDoor || last.edge || last.dt ? " open" : ""}><summary>Boards, edging, colours and handles</summary>
@@ -1225,6 +1606,14 @@ function cbMakeDialog(api) {
           endR: $("cb2-er").checked,
           cornice: Math.max(0, num("cb2-co", 0)),
           fillT: Math.max(0, num("cb2-ftop", 0)),
+          slope: $("cb2-sl").value,
+          slopeW: Math.max(0, num("cb2-slw", 0)) || "",
+          ff: $("cb2-ff").value,
+          ffMat: $("cb2-ffm").value.trim(),
+          ffW: Math.max(20, num("cb2-ffw", 45)),
+          ffR: Math.max(20, num("cb2-ffr", 45)),
+          ffM: Math.max(20, num("cb2-ffj", 45)),
+          ffT: Math.max(10, num("cb2-fft", 20)),
           openTop: num("cb2-wt", 0) || "",
           open: sp.W,
           Hopen: sp.H,
@@ -1232,6 +1621,13 @@ function cbMakeDialog(api) {
         const narrow = Math.min(sp.W, sp.openTop || sp.W);
         sp.W = narrow - sp.fillL - sp.fillR - (sp.endL ? sp.t : 0) - (sp.endR ? sp.t : 0);
         sp.H = sp.H - sp.cornice - sp.fillT;
+        if (sp.slope) {
+          sp.slopeLow = Math.round(num("cb2-slh", 1200) - sp.cornice - sp.fillT);
+          if (sp.slopeLow < 300 || sp.slopeLow >= sp.H)
+            return showErr(
+              "The height at the low end of the slope must be lower than the height, and at least 300.",
+            );
+        }
       }
       if (sp.kind === "chimney") {
         sp.aL = sp.W;
@@ -1333,6 +1729,18 @@ function cbMakeDialog(api) {
       });
     kindSync();
   };
+  /* the slope's and the frame's sizes only when they're picked */
+  const extraSync = () => {
+    document
+      .querySelectorAll(".cb2-sls")
+      .forEach((e) => (e.style.display = $("cb2-sl").value ? "" : "none"));
+    document
+      .querySelectorAll(".cb2-ffs")
+      .forEach((e) => (e.style.display = $("cb2-ff").value ? "" : "none"));
+  };
+  $("cb2-sl").onchange = extraSync;
+  $("cb2-ff").onchange = extraSync;
+  extraSync();
   $("cb2-bh").oninput = () =>
     $("cb2-kind").value === "base" && ($("cb2-H").value = $("cb2-bh").value);
   kindSync();

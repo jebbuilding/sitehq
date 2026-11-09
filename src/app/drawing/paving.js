@@ -6951,8 +6951,12 @@ async function openNotePage(opts) {
         }
         dirty = true;
         goPage(doc.pages.length - (r.cutObjs ? 2 : 1));
+        const nWalls = doc.pages.filter((x) => x.cupb).length;
         toast(
-          "Drawn on a new page with the cutting list" +
+          (nWalls > 1
+            ? nWalls + " cupboards in this job – 🪚 Workshop pack can do them all at once. "
+            : "") +
+            "Drawn on a new page with the cutting list" +
             (r.cutObjs ? " on the page after" : "") +
             " (" +
             r.cut.length +
@@ -7437,7 +7441,11 @@ async function openNotePage(opts) {
           const cp =
             doc.pages[pg] && doc.pages[pg].cupb ? doc.pages[pg] : doc.pages.find((x) => x.cupb);
           if (!cp) toast("Draw a cupboard first with 🗄️ Cupboards, then tap 🪚 Workshop pack");
-          else cbpOpen(cp.cupb, { client: (doc.info || {}).client || "" });
+          else
+            cbpOpen(cp.cupb, {
+              client: (doc.info || {}).client || "",
+              walls: doc.pages.filter((x) => x.cupb).map((x) => x.cupb),
+            });
         } else if (a === "check") checkDlg();
         else if (a === "tpl") tplDlg();
         else if (a === "rev") q(".np-info").click();

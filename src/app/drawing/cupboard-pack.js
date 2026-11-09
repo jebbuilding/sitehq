@@ -23,8 +23,45 @@ function cbpEdges(part, note) {
   if (/back panel|batten|rail/.test(p)) return [0, 0, 0, 0];
   return [1, 0, 0, 0];
 }
+/* one cupboard's cutting list, or a whole job's (several walls): each board named by its wall, the bought things added
+   up across the walls */
+function cbpCut(sp) {
+  const one = (x) =>
+    (cbsIs(x) ? cbsPlan(x) : x.kind && x.kind !== "full" ? cbaPlan(x) : cbPlan(x)).cut;
+  if (!sp.job) return one(sp);
+  const out = [];
+  sp.job.forEach((w, i) =>
+    one(w).forEach((c) => {
+      if (/^Boards to order/.test(c.part)) return;
+      if (c.th) {
+        out.push(
+          Object.assign({}, c, {
+            part: (w.name || "Wall " + (i + 1)) + " – " + c.part.toLowerCase(),
+          }),
+        );
+        return;
+      }
+      const ex = out.find((o) => !o.th && o.part === c.part && o.l === c.l);
+      if (ex) ex.qty += c.qty;
+      else out.push(Object.assign({}, c, { note: "" }));
+    }),
+  );
+  return out;
+}
 /* every panel, one by one, with its holes */
 function cbpPanels(sp) {
+  if (sp.job) {
+    const all = [];
+    sp.job.forEach((w, i) =>
+      cbpPanels(w).forEach((x) =>
+        all.push(
+          Object.assign(x, { part: (w.name || "Wall " + (i + 1)) + " – " + x.part.toLowerCase() }),
+        ),
+      ),
+    );
+    all.forEach((x, i) => (x.label = "P" + (i + 1)));
+    return all;
+  }
   const P = cbsIs(sp) ? cbsPlan(sp) : sp.kind && sp.kind !== "full" ? cbaPlan(sp) : cbPlan(sp);
   const shelvesInside =
     sp.kind === "shelves"
@@ -239,9 +276,7 @@ async function cbpPdf(sp, meta) {
     y,
   );
   doc.setFont("helvetica", "normal");
-  const bought = (
-    cbsIs(sp) ? cbsPlan(sp) : sp.kind && sp.kind !== "full" ? cbaPlan(sp) : cbPlan(sp)
-  ).cut.filter((c) => !c.th && !/^Boards to order/.test(c.part));
+  const bought = cbpCut(sp).filter((c) => !c.th && !/^Boards to order/.test(c.part));
   if (bought.length) {
     y += 6;
     doc.text(
@@ -525,7 +560,12 @@ function cbpOpen(sp, meta) {
   const panels = cbpPanels(sp);
   openSheet(
     `<h3 id="sheettitle">🪚 Workshop pack – ${esc(sp.name || "Cupboard")}</h3>
-    <div class="who">${panels.length} panels from the cutting list, labelled P1–P${panels.length}: each drawn to size with the edges to band and the holes (hinge cups on doors, shelf pins on sides).</div>
+    ${
+      meta && meta.walls && meta.walls.length > 1
+        ? `<label for="cbp-which">Which cupboards<select id="cbp-which"><option value="one"${sp.job ? "" : " selected"}>${esc((meta.one || sp).name || "This cupboard")} only</option><option value="job"${sp.job ? " selected" : ""}>The whole job – all ${meta.walls.length} (${esc(meta.walls.map((w) => w.name || "Cupboard").join(", "))})</option></select></label>`
+        : ""
+    }
+    <div class="who">${panels.length} panels from the cutting list${sp.job ? " of every cupboard in this drawing" : ""}, labelled P1–P${panels.length}: each drawn to size with the edges to band and the holes (hinge cups on doors, shelf pins on sides).</div>
     <details class="cbp-mats" open><summary>Materials and sheets</summary><div id="cbp-mrows"></div>
       <div class="cbp-mg"><label>Saw cut (kerf, mm)<input id="cbp-kerf" type="number" inputmode="decimal"></label><label>Trim off each sheet edge (mm)<input id="cbp-trim" type="number" inputmode="numeric"></label><label>Edging roll (m)<input id="cbp-roll" type="number" inputmode="numeric"></label><label>Edging £ a metre<input id="cbp-ep" type="number" inputmode="decimal" placeholder="optional"></label></div>
       <div class="cbp-out" id="cbp-out" aria-live="polite"></div></details>
@@ -534,6 +574,15 @@ function cbpOpen(sp, meta) {
     () => {},
     null,
   );
+  /* this cupboard or the whole job: the pack again for the other */
+  if ($("cbp-which"))
+    $("cbp-which").onchange = (e) => {
+      const one = (meta && meta.one) || sp;
+      cbpOpen(
+        e.target.value === "job" ? { name: "Whole job", job: meta.walls } : one,
+        Object.assign({}, meta, { one }),
+      );
+    };
   /* materials: one row each – the sheet size (a common one or your own) and the price; the sheets worked out live */
   const set = cbpSettings();
   const keys = [...new Set(panels.map(cbpKey))];

@@ -4,7 +4,15 @@ import { ptOf, ptSrc } from "../clients/portal.js";
 import { esc, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { cba3Model } from "./cupboard-alcove.js";
-import { CB_BAYS, CB_DOORS, cbBayDoor, cbPlan } from "./cupboard-maker.js";
+import {
+  CB_BAYS,
+  CB_DOORS,
+  cbBayDoor,
+  cbHAt,
+  cbPlan,
+  cbSlopeOn,
+  cbSlopeW,
+} from "./cupboard-maker.js";
 import { cb3ExtFaces, cbs3Model, cbsIs } from "./cupboard-shapes.js";
 import { uploadFile } from "../files/files.js";
 import { newId } from "../files/outbox.js";
@@ -275,6 +283,58 @@ function cb3Model(sp, look, open) {
   if (fR) box(W + eR, 0, D - 20, W + eR + fR, H + cH + fT, D + t, doorC);
   if (fT) box(-eL - fL, H, D - 20, W + eR + fR, H + fT, D + t, doorC);
   if (cH) box(-eL - fL, H + fT, 0, W + eR + fR, H + fT + cH, D + t + 10, doorC);
+  /* a face frame on the front */
+  const FF = P.ff;
+  if (FF) {
+    const z0 = D - 2,
+      z1 = D + 2;
+    box(0, PL, z0, FF.w, cbHAt(sp, 0), z1, doorC, { top: 1 });
+    box(W - FF.w, PL, z0, W, cbHAt(sp, W), z1, doorC, { top: 1 });
+    box(FF.w, PL, z0, W - FF.w, PL + FF.r, z1, doorC, { top: 1 });
+    if (!cbSlopeOn(sp)) box(FF.w, H - FF.r, z0, W - FF.w, H, z1, doorC, { top: 1 });
+    for (let i = 1; i < P.n; i++) {
+      const xc = P.bx0[i] - t / 2;
+      box(xc - FF.m / 2, PL, z0, xc + FF.m / 2, cbHAt(sp, xc), z1, doorC, { top: 1 });
+    }
+  }
+  /* a sloping ceiling: every part is cut to the slope – sliced across so each slice stops under it (doors keep their
+     hinge turn) – and a raking top board runs along it */
+  if (cbSlopeOn(sp)) {
+    const cutOut = [];
+    out.forEach((o) => {
+      if (!o.b) return cutOut.push(o);
+      const [x0, y0, z0, x1, y1, z1] = o.b;
+      if (y1 <= Math.min(cbHAt(sp, x0), cbHAt(sp, x1)) + 0.5) return cutOut.push(o);
+      const k = Math.max(1, Math.min(24, Math.ceil((x1 - x0) / 40)));
+      for (let i = 0; i < k; i++) {
+        const xa = x0 + ((x1 - x0) * i) / k,
+          xb = x0 + ((x1 - x0) * (i + 1)) / k;
+        const top = Math.min(y1, cbHAt(sp, xa), cbHAt(sp, xb));
+        if (top > y0 + 1)
+          cutOut.push(Object.assign({}, o, { b: [xa, y0, z0, xb, top, z1], slice: k > 1 ? 1 : 0 }));
+      }
+    });
+    out.length = 0;
+    out.push(...cutOut);
+    const sw = cbSlopeW(sp),
+      lo = +sp.slopeLow;
+    const xs = sp.slope === "L" ? [0, sw] : [W - sw, W];
+    const ys = xs.map((x) => cbHAt(sp, x));
+    out.push({
+      ext: {
+        pts: [
+          [xs[0], ys[0] - t],
+          [xs[1], ys[1] - t],
+          [xs[1], ys[1]],
+          [xs[0], ys[0]],
+        ],
+        z0: 0,
+        z1: D,
+      },
+      c: car,
+    });
+    void lo;
+  }
   return out;
 }
 function shadeHex(hex, k) {
@@ -376,6 +436,7 @@ function cb3Draw(cv, sp, look, open, yaw) {
         glass: o.glass,
         mirror: o.mirror,
         top: o.top || 0,
+        slice: o.slice || 0,
         n,
       });
     });
@@ -469,7 +530,7 @@ function cb3Draw(cv, sp, look, open, yaw) {
       gr.addColorStop(0.55, "#dfe7ea");
       gr.addColorStop(1, "#a9b6bb");
       poly(fa.q, gr, "rgba(0,0,0,.35)");
-    } else poly(fa.q, fa.col, "rgba(0,0,0,.28)");
+    } else poly(fa.q, fa.col, fa.slice ? fa.col : "rgba(0,0,0,.28)");
   });
 }
 /* --- the screen --- */
