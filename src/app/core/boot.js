@@ -202,6 +202,8 @@ initPhotoTest();
         S.jcSet = all.find((t) => t.kind === "jcset") || null;
         S.jobCosts = all.filter((t) => t.kind === "jobcost");
         S.variations = all.filter((t) => t.kind === "variation");
+        S.priceLists = all.filter((t) => t.kind === "pricelist");
+        S.purchaseOrders = all.filter((t) => t.kind === "purchaseorder");
         S.audit = all.filter((t) => t.kind === "audit");
         S.bin = all.filter((t) => t.kind === "bin");
         if (!window.__binPurgeT)

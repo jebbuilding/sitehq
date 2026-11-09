@@ -42,14 +42,21 @@ function jbBudget(d) {
     d.items.filter((i) => i.kind === "lab" || i.kind === "sub").reduce((a, i) => a + i.cost, 0),
   );
   const spentMat = sdR2(d.items.filter((i) => i.kind === "mat").reduce((a, i) => a + i.cost, 0));
+  /* a materials budget from the drawing's priced list takes the materials share; labour gets the rest */
+  const mb = +d.j.matBudget || 0;
   const parts = [
     {
       k: "lab",
       name: "Labour (your team and subbies)",
-      budget: sdR2(budget * labShare),
+      budget: mb ? Math.max(0, sdR2(budget - mb)) : sdR2(budget * labShare),
       spent: spentLab,
     },
-    { k: "mat", name: "Materials and hire", budget: sdR2(budget * matShare), spent: spentMat },
+    {
+      k: "mat",
+      name: mb ? "Materials and hire (from the drawing's priced list)" : "Materials and hire",
+      budget: mb || sdR2(budget * matShare),
+      spent: spentMat,
+    },
   ];
   /* how far through: typed in, else the job sheets' ticked tasks, else the planner, else what's been invoiced */
   const typed = d.j.done != null && d.j.done !== "" && !isNaN(+d.j.done);

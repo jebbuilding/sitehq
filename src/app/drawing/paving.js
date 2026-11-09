@@ -66,6 +66,7 @@ import { newId } from "../files/outbox.js";
 import { printBlob } from "../files/print.js";
 import { coData } from "../owner/company-details.js";
 import { brandHex, loadImage } from "../photos/photos.js";
+import { poPriceSheet } from "../purchasing/price-order.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { lhLogoId } from "../sales/letterhead-setup.js";
@@ -5885,8 +5886,17 @@ async function openNotePage(opts) {
                 .join("")}</tbody></table></div>`
             : ""
         }
-        <div class="dimbtns"><button type="button" class="btn qcopy">📋 Copy as text</button><button type="button" class="btn primary qx">Close</button></div></div>`;
+        <div class="dimbtns"><button type="button" class="btn qcopy">📋 Copy as text</button>${mat.length && ownerMode() ? `<button type="button" class="btn qprice">💷 Price it and order</button>` : ""}<button type="button" class="btn primary qx">Close</button></div></div>`;
         d.querySelector(".qx").onclick = () => d.remove();
+        const qp = d.querySelector(".qprice");
+        if (qp)
+          qp.onclick = () => {
+            d.remove();
+            poPriceSheet(
+              mat.map(([a, b]) => ({ label: a, qty: b })),
+              doc.site || "",
+            );
+          };
         d.querySelectorAll(".qfw,.qfd").forEach(
           (i) =>
             (i.onchange = () => {

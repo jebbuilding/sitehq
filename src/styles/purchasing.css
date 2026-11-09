@@ -14,3 +14,10 @@
 .sps-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
 .sps-item{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:52px}
 .sps-item small{color:var(--muted);font-weight:400;font-size:12px}
+.pl-list{display:flex;flex-direction:column;gap:8px}.pl-list .pl-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}.pl-row .pl-btns{display:flex;gap:8px;flex-wrap:wrap}
+.pl-item{display:grid;grid-template-columns:1fr 80px 100px 44px;gap:6px;margin:6px 0;align-items:center}
+.po-lines{display:flex;flex-direction:column;gap:8px;margin:10px 0}.po-lines .po-line{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.po-lines .po-line.po-none{opacity:.7;border-style:dashed}
+.po-line .po-what{font-weight:600;font-size:.92em}.po-line .po-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}.po-line .po-q{width:90px}.po-line .po-pick{flex:1 1 220px;min-width:0}.po-line .po-lt{margin-left:auto}
+.po-tot{font-size:1.05em}.po-ord{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.po-acts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.pl-filebtn{position:relative;overflow:hidden;display:inline-flex;align-items:center}.pl-filebtn input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;width:100%;height:100%}
