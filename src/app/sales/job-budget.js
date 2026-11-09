@@ -1,10 +1,12 @@
 /* ================= JOB BUDGET: live profit per job – the quote against what's been spent, and a warning as soon as a job starts going over ================= */
-import { $, esc, gbp } from "../core/helpers.js";
+import { $, esc, gbp, iso, parse } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { nlOpenTab } from "../owner/today.js";
 import { jcData, jcJob, jcSave } from "./job-costs.js";
 import { sdCalc, sdR2 } from "./sales-calc.js";
+import { jobProgress } from "../sites/job-sheets.js";
+import { same } from "../sites/project-pages.js";
 export { jbBudget, jbCard, jbTag, jbTodayCard, jbTodayWire, jbWire };
 /* A fixed-price job's price is its accepted estimate (or what's been invoiced, if more). The budget for costs is the
    price less the profit James aims to make on it (j.target %, else the usual one in jcset.target, else 20%), split
@@ -49,13 +51,11 @@ function jbBudget(d) {
     },
     { k: "mat", name: "Materials and hire", budget: sdR2(budget * matShare), spent: spentMat },
   ];
-  /* how far through: typed in, else the share of the price invoiced so far */
+  /* how far through: typed in, else the job sheets' ticked tasks, else the planner, else what's been invoiced */
   const typed = d.j.done != null && d.j.done !== "" && !isNaN(+d.j.done);
-  const done = typed
-    ? Math.min(100, Math.max(0, +d.j.done))
-    : d.price
-      ? Math.min(100, Math.round((d.invoiced / d.price) * 100))
-      : 0;
+  const auto = jbProgress(d);
+  const done = typed ? Math.min(100, Math.max(0, +d.j.done)) : auto.pct;
+  const doneFrom = typed ? "typed in" : auto.from;
   const forecast = done >= 5 ? sdR2((d.cost * 100) / done) : null;
   const profitNow = sdR2(d.price - d.cost);
   const profitEnd = forecast != null ? sdR2(d.price - forecast) : null;
@@ -77,7 +77,47 @@ function jbBudget(d) {
       msg = `${p.name} already ${gbp(p.spent - p.budget)} over its share of the budget`;
     }
   }
-  return { tgt, budget, parts, done, typed, forecast, profitNow, profitEnd, lvl, msg };
+  return { tgt, budget, parts, done, doneFrom, typed, forecast, profitNow, profitEnd, lvl, msg };
+}
+/* how far through a job is, worked out: { pct, from } */
+function jbProgress(d) {
+  const site = d.site || d.j.site;
+  /* the job sheets for the site: tasks ticked off */
+  const jobs = (S.jobs || []).filter((j) => same(j.site, site) && (j.tasks || []).length);
+  if (jobs.length) {
+    let n = 0,
+      k = 0;
+    jobs.forEach((j) => {
+      const p = jobProgress(j);
+      n += p.n;
+      k += p.d;
+    });
+    if (n)
+      return {
+        pct: Math.round((k / n) * 100),
+        from: `the job sheets: ${k} of ${n} tasks ticked off`,
+      };
+  }
+  /* the planner: how far today is through the days booked for it */
+  const ps = (S.plan || []).concat(S.planPrivate || []).filter((p) => same(p.site, site) && p.from);
+  if (ps.length) {
+    const from = ps.map((p) => p.from).sort()[0];
+    const to = ps
+      .map((p) => p.to || p.from)
+      .sort()
+      .slice(-1)[0];
+    const day = (x) => Math.round(parse(x).getTime() / 864e5);
+    const all = day(to) - day(from) + 1;
+    const gone = Math.min(all, Math.max(0, day(iso(new Date())) - day(from) + 1));
+    return {
+      pct: Math.round((gone / all) * 100),
+      from: `the planner: day ${gone} of ${all} booked`,
+    };
+  }
+  return {
+    pct: d.price ? Math.min(100, Math.round((d.invoiced / d.price) * 100)) : 0,
+    from: "what's been invoiced so far",
+  };
 }
 const JB_TAG = {
   ok: ["ok", "✓ On track"],
@@ -141,10 +181,11 @@ function jbCard(d) {
   return `<section class="card jbg-card jbg-${b.lvl}"><div class="cardbody"><b>📈 Budget and profit</b>
     <div class="notice ${b.lvl === "ok" ? "" : "warn"} jbg-msg">${jbTag(b)} ${esc(b.msg)}</div>
     ${d.items.some((i) => i.kind === "lab" && !i.costRate && !i.note) ? `<div class="who">⚠ Some hours count as £0 because what that person costs you an hour isn't set (⚙️ Cost rates below), so labour looks cheaper than it is.</div>` : ""}
-    <div class="jbg-set"><label for="jbg-tgt">Profit you're aiming for %<input id="jbg-tgt" type="number" inputmode="decimal" min="0" max="90" value="${esc(b.tgt)}"></label><label for="jbg-done">How far through the job %<input id="jbg-done" type="number" inputmode="numeric" min="0" max="100" value="${esc(b.typed ? b.done : "")}" placeholder="${esc(b.done)} (from invoices)"></label></div>
-    <div class="jbg-row"><div class="jbg-lab">Whole job: costs so far against the budget (price ${gbp(d.price)} less ${b.tgt}% profit)</div>${bar(d.cost, b.budget)}</div>
+    <div class="jbg-set"><label for="jbg-tgt">Profit you're aiming for %<input id="jbg-tgt" type="number" inputmode="decimal" min="0" max="90" value="${esc(b.tgt)}"></label><label for="jbg-done">How far through the job %<input id="jbg-done" type="number" inputmode="numeric" min="0" max="100" value="${esc(b.typed ? b.done : "")}" placeholder="${esc(b.done)} (worked out)"></label></div>
+    <div class="jbg-row"><div class="jbg-lab">Whole job: costs so far against the budget (price ${gbp(d.price)} less ${b.tgt}% profit${d.varNet ? `, including ${gbp(d.varNet)} of signed variations` : ""})</div>${bar(d.cost, b.budget)}</div>
     ${b.parts.map((p) => `<div class="jbg-row"><div class="jbg-lab">${esc(p.name)}</div>${bar(p.spent, p.budget)}</div>`).join("")}
     <div class="drow"><span>Profit if it finished now</span><b>${gbp(b.profitNow)}</b></div>
+    <div class="who">${b.done}% through – from ${esc(b.doneFrom)}${b.typed ? "" : ". Type a figure to use your own"}.</div>
     ${b.forecast != null ? `<div class="drow"><span>On course to cost (at ${b.done}% done)</span><b>${gbp(b.forecast)}</b></div><div class="drow"><span>Profit at the end, on that course</span><b class="${b.profitEnd < 0 ? "jc-neg" : ""}">${gbp(b.profitEnd)} (${Math.round((b.profitEnd / d.price) * 100)}%)</b></div>` : `<div class="who">Put in how far through the job is to see where the costs are heading.</div>`}
   </div></section>`;
 }

@@ -18,6 +18,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const photo=async()=>Buffer.from(await p.evaluate(()=>{const c=document.createElement('canvas');c.width=400;c.height=300;const x=c.getContext('2d');x.fillStyle='#c8a165';x.fillRect(0,0,400,300);x.fillStyle='#333';x.fillRect(150,80,100,140);return c.toDataURL('image/jpeg').split(',')[1]}),'base64');
  const fillNew=async(title,amt)=>{await p.selectOption('#vr-site','12 Marine Way, Exmouth');await p.fill('#vr-client','Mrs Sample');await p.fill('#vr-title',title);await p.fill('#vr-det','Drain down, new pipework, refit and refill');await p.fill('#vr-amt',String(amt));await p.waitForTimeout(100);};
  const sign=async(name)=>{await p.fill('#vr-name',name);const bb=await p.locator('#vr-pad').boundingBox();await p.mouse.move(bb.x+30,bb.y+bb.height/2);await p.mouse.down();await p.mouse.move(bb.x+150,bb.y+20,{steps:8});await p.mouse.move(bb.x+260,bb.y+bb.height-20,{steps:8});await p.mouse.up();await p.click('#f-save');await p.waitForTimeout(2500);};
+ const notNow=async()=>{await p.evaluate(()=>{const c=document.querySelector('#f-cancel');if(c)c.click()});await p.waitForTimeout(300);};
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  await p.evaluate(()=>{window.__toasts=[];new MutationObserver(()=>document.querySelectorAll('.toast').forEach(t=>{const x=t.textContent;if(x&&window.__toasts[window.__toasts.length-1]!==x)window.__toasts.push(x)})).observe(document.body,{childList:true,subtree:true,characterData:true});});
  if(await p.$('#nl-tog')){await p.click('#nl-tog');await p.waitForTimeout(300);await p.evaluate(()=>{const t=document.querySelector('#nl-tog');if(t)t.style.display='none'});}
@@ -39,8 +40,11 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/Sign in the box first/.test(await p.innerText('body')),'it needs a signature');
  await p.screenshot({path:'h464-sign.png'});
  await sign('Mrs Sample');
+ ok(/Send them a copy/.test(await p.innerText('#sheettitle'))&&/signed copy of variation V1/.test(await p.inputValue('#vr-msg'))&&(await p.innerText('#f-cancel'))==='Not now','after signing: a ready-written email with their signed copy (or Not now)');
+ await p.fill('#vr-to','client@example.com');await p.click('#f-save');await p.waitForTimeout(800);
+ ok((await toasts()).some(t=>/Copy sent/.test(t))&&await p.evaluate(()=>(window.__dl||[]).some(d=>/^Variation V1/.test(d.filename))),'the copy is sent (the PDF goes with the email)');
  let v=(await vars())[0];
- ok(v.status==='signed'&&v.sign&&v.sign.name==='Mrs Sample'&&v.sign.sigId&&v.sign.pdfId&&v.photos.length===1,'signed: name, signature, photo and the signed sheet kept');
+ ok(v.status==='signed'&&v.emailedAt&&v.sign&&v.sign.name==='Mrs Sample'&&v.sign.sigId&&v.sign.pdfId&&v.photos.length===1,'signed: name, signature, photo and the signed sheet kept');
  ok((await toasts()).some(t=>/Signed by Mrs Sample: V1 ready to go on the next invoice/.test(t)),'it says so');
  const pdfSize=await p.evaluate(id=>window.__blobs[id]&&window.__blobs[id].size,v.sign.pdfId);
  ok(pdfSize>5000,'the signed sheet PDF ('+pdfSize+' bytes)');
@@ -53,7 +57,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.screenshot({path:'h464-list.png'});
  /* signed: locked */
  await p.click('.vr-row');await p.waitForTimeout(300);
- ok(!(await p.$('#vr-cancel'))&&/can't be changed/.test(await p.innerText('body'))&&await p.isVisible('#vr-pdf'),'a signed one is locked (no cancel) and has its signed sheet');
+ ok(!(await p.$('#vr-cancel'))&&!(await p.$('#vr-edit'))&&await p.isVisible('#vr-send')&&/can't be changed/.test(await p.innerText('body'))&&await p.isVisible('#vr-pdf'),'a signed one is locked (no cancel) and has its signed sheet');
  await p.click('#vr-pdf');await p.waitForTimeout(600);
  ok(await p.evaluate(()=>(window.__dl||[]).some(d=>/^Variation V1/.test(d.filename))),'the signed sheet downloads');
  /* put it on an invoice */
@@ -71,11 +75,18 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(v2&&v2.status==='open'&&v2.number==='V2','not ready to sign: kept as V2, waiting for a signature');
  await p.evaluate(()=>document.querySelector('.tab[data-t=sales]').click());await p.waitForTimeout(300);await p.click('#sd-tabs button[data-v=var]');await p.waitForTimeout(300);
  await p.locator('.vr-row',{hasText:'socket'}).click();await p.waitForTimeout(300);
+ await p.click('#vr-edit');await p.waitForTimeout(300);
+ ok(/Change V2/.test(await p.innerText('#sheettitle'))&&(await p.inputValue('#vr-title'))==='Extra socket in the kitchen'&&(await p.inputValue('#vr-amt'))==='120','an unsigned one can be changed: its details are filled in');
+ await p.fill('#vr-title','Two extra sockets in the kitchen');await p.fill('#vr-amt','220');await p.click('#f-save');await p.waitForTimeout(600);await notNow();
+ v2=(await vars()).find(x=>/sockets/.test(x.title));
+ ok(v2&&v2.number==='V2'&&v2.amt===220&&(await vars()).length===2,'saved as the same V2 with the new price');
+ await p.evaluate(()=>document.querySelector('.tab[data-t=sales]').click());await p.waitForTimeout(300);await p.click('#sd-tabs button[data-v=var]');await p.waitForTimeout(300);
+ await p.locator('.vr-row',{hasText:'sockets'}).click();await p.waitForTimeout(300);
  await p.click('#vr-cancel');await p.waitForTimeout(400);
- ok((await vars()).find(x=>/socket/.test(x.title)).status==='cancelled','an unsigned one can be cancelled');
+ ok((await vars()).find(x=>/sockets/.test(x.title)).status==='cancelled','an unsigned one can be cancelled');
  /* a third, signed, goes onto the same draft invoice */
  await p.click('#nl-add');await p.waitForTimeout(200);await p.click('.qa-b[data-k=var]');await p.waitForTimeout(300);
- await fillNew('Paint the new wall',200);await p.click('#f-save');await p.waitForTimeout(600);await sign('Mrs Sample');
+ await fillNew('Paint the new wall',200);await p.click('#f-save');await p.waitForTimeout(600);await sign('Mrs Sample');await notNow();
  await p.evaluate(()=>document.querySelector('.tab[data-t=sales]').click());await p.waitForTimeout(300);await p.click('#sd-tabs button[data-v=var]');await p.waitForTimeout(300);
  await p.click('.vr-inv');await p.waitForTimeout(1200);
  inv=(await sales()).filter(d=>d.type==='invoice');

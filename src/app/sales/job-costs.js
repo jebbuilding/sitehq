@@ -7,6 +7,7 @@ import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
 import { allTeam, nameOf, teamPlusMe } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
+import { wcCalc } from "../people/wage-calc.js";
 import { acAllTx, acCatKind, acCatName } from "./acct-data.js";
 import { acRcptParts, acReceipts, acSaveRcpt } from "./acct-receipts.js";
 import { acRcptSheet } from "./acct-review.js";
@@ -35,10 +36,24 @@ const jcJob = (site) =>
     JC_DEF,
     (S.jobCosts || []).find((j) => same(j.site, site)) || {},
   );
+/* a subbie's rate from their latest subcontractor agreement: an hourly rate, or a day rate over 8 hours */
+const jcAgreeRate = (who) => {
+  const a = (S.data && S.data.signoffs ? allTeam("signoffs") : [])
+    .filter((x) => x.who === who && x.kind === "subagree" && x.agree)
+    .sort((x, y) => (y.created || 0) - (x.created || 0))[0];
+  if (!a) return 0;
+  const r = +a.agree.rate || 0;
+  if (!r) return 0;
+  if (a.agree.rateType === "hour") return r;
+  if (a.agree.rateType === "day" || a.agree.rateType === "mixed") return sdR2(r / 8);
+  return 0;
+};
+/* what someone costs an hour: set in Cost rates, else their agreement's rate, else the rate for everyone else */
 const jcCostRate = (who) => {
   const s = jcSet(),
     v = s.cost[who];
-  return +(v != null && v !== "" ? v : s.defCost) || 0;
+  if (v != null && v !== "") return +v || 0;
+  return jcAgreeRate(who) || +s.defCost || 0;
 };
 async function jcSave(j) {
   const rec = Object.assign({}, j, { kind: "jobcost", updated: Date.now() });
@@ -170,10 +185,13 @@ function jcData(site) {
     .filter((d) => d.type === "estimate" && d.status === "accepted" && mine(d))
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
   const estNet = est ? sdCalc(est).net : 0;
+  /* signed variations put the price up */
+  const vars = (S.variations || []).filter((v) => v.status === "signed" && same(v.site, site));
+  const varNet = sdR2(vars.reduce((a, v) => a + (+v.amt || 0), 0));
   const cost = sdR2(items.reduce((a, i) => a + i.cost, 0));
   const charge = sdR2(items.reduce((a, i) => a + i.charge, 0));
   const notInv = items.filter((i) => !i.inv);
-  const price = cp ? Math.max(charge, invoiced) : Math.max(estNet, invoiced);
+  const price = cp ? Math.max(charge, invoiced) : Math.max(sdR2(estNet + varNet), invoiced);
   const profit = sdR2(price - cost);
   return {
     j,
@@ -184,6 +202,8 @@ function jcData(site) {
     invoiced,
     est,
     estNet,
+    vars,
+    varNet,
     cost,
     charge,
     notInv,
@@ -236,7 +256,7 @@ function jcView(tabs) {
   if (S.f.jcs) return jcJobView(tabs, S.f.jcs);
   const rows = jcSites()
     .map((s) => Object.assign({ site: s }, jcData(s)))
-    .filter((d) => d.items.length || d.invoiced || d.estNet || d.j.id);
+    .filter((d) => d.items.length || d.invoiced || d.estNet || d.varNet || d.j.id);
   const loose = jcLoose();
   $("main").innerHTML = `<div class="ac-page">${tabs}
     <div class="who">What each job has cost (labour from the timesheets, receipts and bills booked to it, subbies' invoices), what's been invoiced, and the profit. Cost-plus jobs show what hasn't been charged yet.</div>
@@ -334,7 +354,7 @@ function jcJobView(tabs, site) {
     }
     <div class="sd-boxes">
       <div class="sd-box"><small>Costs so far</small><b>${gbp(d.cost)}</b><span>${d.hours} h labour</span></div>
-      <div class="sd-box"><small>${d.cp ? "Charge (cost plus)" : "Price (estimate)"}</small><b>${gbp(d.cp ? d.charge : d.estNet)}</b><span>${d.cp ? "costs + mark-ups" : d.est ? "estimate " + esc(d.est.number) : "no accepted estimate"}</span></div>
+      <div class="sd-box"><small>${d.cp ? "Charge (cost plus)" : d.varNet ? "Price (estimate + variations)" : "Price (estimate)"}</small><b>${gbp(d.cp ? d.charge : d.estNet + d.varNet)}</b><span>${d.cp ? "costs + mark-ups" : (d.est ? "estimate " + esc(d.est.number) : "no accepted estimate") + (d.varNet ? ` + ${d.vars.length} variation${d.vars.length === 1 ? "" : "s"} ${gbp(d.varNet)}` : "")}</span></div>
       <div class="sd-box"><small>Invoiced</small><b>${gbp(d.invoiced)}</b><span>${d.invs.length} invoice${d.invs.length === 1 ? "" : "s"}</span></div>
       <div class="sd-box${d.profit < 0 ? " bad" : " ok"}"><small>Profit</small><b>${gbp(d.profit)}</b><span>${d.price ? d.pctProfit + "% of the price" : "–"}</span></div>
       ${d.cp ? `<div class="sd-box${d.notInv.length ? " bad" : " ok"}"><small>Not invoiced yet</small><b>${gbp(d.notInvCharge)}</b><span>${d.notInv.length} cost${d.notInv.length === 1 ? "" : "s"}</span></div>` : ""}
@@ -422,8 +442,9 @@ function jcRates() {
   openSheet(
     `<h3 id="sheettitle">⚙️ What each person costs you an hour</h3>
     <div class="who">Used for the labour cost on each job: their hourly pay plus your on-costs (NI, pension, holiday, van). For subbies who send invoices for a job, the invoice is the cost instead. The charge rates for cost-plus jobs are your day-work rates.</div>
+    <div class="who">Subbies with a subcontractor agreement use its rate (a day rate counts as 8 hours) unless you put one in. For employees, pick a saved wage calculation and it fills in what they cost you an hour – their pay plus NI, pension and holiday.</div>
     <label for="jr-def">Everyone else £/h<input id="jr-def" type="number" inputmode="decimal" step="0.01" value="${esc(s.defCost || "")}"></label>
-    ${ids.map((id) => `<label for="jr-${esc(id)}">${esc(nameOf(id))} <span class="who">${esc(EMP_TYPES[empTypeOf(id)] || "")}</span><input id="jr-${esc(id)}" class="jr-p" data-w="${esc(id)}" type="number" inputmode="decimal" step="0.01" placeholder="${esc(s.defCost || "")}" value="${esc(s.cost[id] != null ? s.cost[id] : "")}"></label>`).join("")}
+    ${ids.map((id) => `<div class="jr-row"><label for="jr-${esc(id)}">${esc(nameOf(id))} <span class="who">${esc(EMP_TYPES[empTypeOf(id)] || "")}${jcAgreeRate(id) ? " · agreement " + gbp(jcAgreeRate(id)) + "/h" : ""}</span><input id="jr-${esc(id)}" class="jr-p" data-w="${esc(id)}" type="number" inputmode="decimal" step="0.01" placeholder="${esc(jcAgreeRate(id) || s.defCost || "")}" value="${esc(s.cost[id] != null ? s.cost[id] : "")}"></label>${(S.wageCalcs || []).length ? `<select class="jr-wc" data-w="${esc(id)}" aria-label="Fill in from a wage calculation for ${esc(nameOf(id))}"><option value="">From a wage calculation…</option>${(S.wageCalcs || []).map((w) => `<option value="${esc(w.id)}">${esc(w.name || "Wage calculation")} – ${gbp(wcCalc(w).perHour)}/h</option>`).join("")}</select>` : ""}</div>`).join("")}
     ${formFoot(false, "Save")}`,
     async () => {
       const cost = {};
@@ -431,10 +452,15 @@ function jcRates() {
         if (i.value !== "") cost[i.dataset.w] = +i.value;
       });
       try {
-        await S.db
-          .doc("todos/jcset")
-          .set({ kind: "jcset", cost, defCost: +$("jr-def").value || 0, updated: Date.now() });
-        S.jcSet = { kind: "jcset", cost, defCost: +$("jr-def").value || 0 };
+        const rec = Object.assign({}, S.jcSet || {}, {
+          kind: "jcset",
+          cost,
+          defCost: +$("jr-def").value || 0,
+          updated: Date.now(),
+        });
+        delete rec.id;
+        await S.db.doc("todos/jcset").set(rec);
+        S.jcSet = Object.assign({ id: "jcset" }, rec);
         closeForm();
         toast("Cost rates saved");
         render();
@@ -443,6 +469,13 @@ function jcRates() {
       }
     },
     "jr-def",
+  );
+  document.querySelectorAll(".jr-wc").forEach(
+    (sel) =>
+      (sel.onchange = () => {
+        const w = (S.wageCalcs || []).find((x) => x.id === sel.value);
+        if (w) $("jr-" + sel.dataset.w).value = sdR2(wcCalc(w).perHour).toFixed(2);
+      }),
   );
 }
 /* a draft invoice of every cost not charged yet, and those costs ticked off */

@@ -1,4 +1,5 @@
 /* ================= VARIATIONS: extra work agreed on site – photo, price and the client's signature, then onto the next invoice ================= */
+import { ptSrc } from "../clients/portal.js";
 import { clAddr } from "../clients/stages-planner.js";
 import { $, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -15,6 +16,7 @@ import { shrinkImage } from "../safety/training.js";
 import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { SD_VATC, sdNo, sdR2, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdEdit } from "./sales-edit.js";
+import { sdShareMail } from "./sales-email.js";
 import { sdImgData } from "./sales-pdf.js";
 import { siteClient } from "../sites/summary.js";
 export { vrNew, vrView };
@@ -94,22 +96,23 @@ function vrView(tabs) {
     .forEach((b) => (b.onclick = () => vrInvoice(b.dataset.s)));
 }
 /* ---------- a new variation: what, photos, price ---------- */
-function vrNew(site0) {
+function vrNew(site0, v0) {
   const sites = vrSites();
   const set = sdSet();
-  const vc0 = set.vatReg === false ? "NV" : set.vc || "S20";
-  let photos = [];
+  const vc0 = (v0 && v0.vc) || (set.vatReg === false ? "NV" : set.vc || "S20");
+  if (v0) site0 = v0.site;
+  let photos = v0 ? (v0.photos || []).slice() : [];
   openSheet(
-    `<h3 id="sheettitle">📝 New variation</h3>
+    `<h3 id="sheettitle">${v0 ? "✎ Change " + esc(v0.number) : "📝 New variation"}</h3>
     <div class="who">Fill this in with the client, then hand them the iPad to sign before the extra work starts.</div>
     <label for="vr-site">Job<select id="vr-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}"${s === site0 ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
-    <label for="vr-client">Client's name<input id="vr-client" maxlength="80" placeholder="e.g. Mr Smith"></label>
-    <label for="vr-title">What's the extra work?<input id="vr-title" maxlength="120" placeholder="e.g. Move the radiator to the other wall"></label>
-    <label for="vr-det">Details (what's included)<textarea id="vr-det" maxlength="2000" rows="3" placeholder="e.g. Drain down, new pipework in 15 mm copper, refit and refill"></textarea></label>
+    <label for="vr-client">Client's name<input id="vr-client" maxlength="80" placeholder="e.g. Mr Smith" value="${esc((v0 && v0.client) || "")}"></label>
+    <label for="vr-title">What's the extra work?<input id="vr-title" maxlength="120" placeholder="e.g. Move the radiator to the other wall" value="${esc((v0 && v0.title) || "")}"></label>
+    <label for="vr-det">Details (what's included)<textarea id="vr-det" maxlength="2000" rows="3" placeholder="e.g. Drain down, new pipework in 15 mm copper, refit and refill">${esc((v0 && v0.details) || "")}</textarea></label>
     <div class="flabel">Photos</div>
     <div class="vr-photos" id="vr-ph"></div>
     <span class="btn sd-filebtn">📷 Add a photo<input type="file" class="vr-file" accept="image/*" multiple aria-label="Add a photo"></span>
-    <div class="grid2"><label for="vr-amt">Price before VAT £<input id="vr-amt" type="number" inputmode="decimal" step="0.01" min="0"></label><label for="vr-vc">VAT<select id="vr-vc">${Object.entries(
+    <div class="grid2"><label for="vr-amt">Price before VAT £<input id="vr-amt" type="number" inputmode="decimal" step="0.01" min="0" value="${esc(v0 && v0.amt ? v0.amt : "")}"></label><label for="vr-vc">VAT<select id="vr-vc">${Object.entries(
       SD_VATC,
     )
       .map(
@@ -125,7 +128,7 @@ function vrNew(site0) {
       if (!(v.amt > 0)) return showErr("Put in the price.");
       try {
         $("f-save").disabled = true;
-        const saved = await vrSave(Object.assign(v, { status: "open" }));
+        const saved = await vrSave(Object.assign({}, v0 || {}, v, { status: "open" }));
         closeForm();
         vrSign(saved);
       } catch (e) {
@@ -148,10 +151,12 @@ function vrNew(site0) {
   };
   $("vr-amt").oninput = tot;
   $("vr-vc").onchange = tot;
+  tot();
   const drawPh = () =>
     ($("vr-ph").innerHTML = photos
       .map((id) => `<img src="${esc(blobUrl(id))}" alt="Photo" class="vr-thumb">`)
       .join(""));
+  drawPh();
   const fi = document.querySelector(".vr-file");
   fi.onchange = async () => {
     const files = [...fi.files];
@@ -208,10 +213,29 @@ function vrSign(v) {
         const pdf = await vrPdf(signed);
         const a = await uploadFile(pdf, `Variation ${v.number} ${v.site}.pdf`);
         signed.sign.pdfId = a.id;
-        await vrSave(signed);
+        const cl = (S.clients || []).find((c) => c.id === signed.clientId);
+        if (cl)
+          try {
+            const src = ptSrc(cl);
+            await src.addDoc(newId(), {
+              title: `Variation ${v.number} – ${v.title} (signed)`,
+              fileName: `Variation ${v.number}.pdf`,
+              assetId: a.id,
+              contentType: "application/pdf",
+              folder: "quotes",
+              note: "Signed " + new Date().toLocaleDateString("en-GB"),
+              sharedAt: Date.now(),
+            });
+            await src.bump();
+            signed.portalAt = Date.now();
+          } catch (e) {}
+        const saved = await vrSave(signed);
         closeForm();
-        toast(`Signed by ${name}: ${v.number} ready to go on the next invoice`);
+        toast(
+          `Signed by ${name}: ${v.number} ready to go on the next invoice${signed.portalAt ? " · a copy is in their portal" : ""}`,
+        );
         render();
+        vrSend(saved, pdf);
       } catch (e) {
         showErr("Couldn't save. Check your connection.");
         $("f-save").disabled = false;
@@ -234,12 +258,27 @@ function vrOpen(v) {
     <div class="drow"><span>Price</span><b>${gbp(vrNet(v))} + VAT ${gbp(vrVat(v))} = ${gbp(vrTot(v))}</b></div>
     ${v.sign ? `<div class="drow"><span>Signed</span><span>${esc(v.sign.name)} · ${esc(new Date(v.sign.at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }))}</span></div>${v.sign.sigId ? `<img src="${esc(blobUrl(v.sign.sigId))}" alt="Signature" class="vr-sig">` : ""}` : ""}
     ${inv ? `<div class="drow"><span>Invoiced</span><span>${esc(sdNo(inv))}</span></div>` : ""}
-    <div class="actions">${v.status === "open" ? `<button type="button" class="btn primary" id="vr-signnow">✍️ Client signs now</button><button type="button" class="btn danger" id="vr-cancel">Cancel this variation</button>` : ""}${v.sign && v.sign.pdfId ? `<button type="button" class="btn" id="vr-pdf">📄 Signed sheet (PDF)</button>` : ""}${v.status === "signed" && !v.invId ? `<button type="button" class="btn primary" id="vr-toinv">🧾 Put on an invoice</button>` : ""}</div>
+    <div class="actions">${v.status === "open" ? `<button type="button" class="btn primary" id="vr-signnow">✍️ Client signs now</button><button type="button" class="btn" id="vr-edit">✎ Change it</button><button type="button" class="btn danger" id="vr-cancel">Cancel this variation</button>` : ""}${v.sign && v.sign.pdfId ? `<button type="button" class="btn" id="vr-pdf">📄 Signed sheet (PDF)</button><button type="button" class="btn" id="vr-send">📧 Send a copy</button>` : ""}${v.status === "signed" && !v.invId ? `<button type="button" class="btn primary" id="vr-toinv">🧾 Put on an invoice</button>` : ""}</div>
     ${v.status === "signed" ? `<div class="who">🔒 Signed, so it can't be changed.</div>` : ""}`);
   if ($("vr-signnow"))
     $("vr-signnow").onclick = () => {
       closeViewer();
       vrSign(v);
+    };
+  if ($("vr-edit"))
+    $("vr-edit").onclick = () => {
+      closeViewer();
+      vrNew(v.site, v);
+    };
+  if ($("vr-send"))
+    $("vr-send").onclick = async () => {
+      try {
+        const b = await getFileBlob(v.sign.pdfId);
+        closeViewer();
+        vrSend(v, b);
+      } catch (e) {
+        toast("Couldn't open it. Check your connection.");
+      }
     };
   if ($("vr-cancel"))
     $("vr-cancel").onclick = async () => {
@@ -424,4 +463,43 @@ async function vrInvoice(site) {
   } catch (e) {
     toast("Couldn't save. Check your connection.");
   }
+}
+
+/* ---------- a copy for the client: email (ready-written) ---------- */
+function vrSend(v, blob) {
+  const cl = (S.clients || []).find((c) => c.id === v.clientId);
+  const co = coData();
+  const fn = `Variation ${v.number} ${v.site}`.replace(/[\\/:*?"<>|]+/g, "").trim() + ".pdf";
+  const body = `Dear ${v.client || (cl && cl.name) || ""},
+
+Thank you for agreeing the extra work today. Attached is your signed copy of variation ${v.number}: ${v.title}, ${gbp(vrNet(v))} + VAT (${gbp(vrTot(v))} in total). It will be added to your next invoice.
+
+Kind regards
+${co.owner || ""}
+${co.name || ""}`;
+  openSheet(
+    `<h3 id="sheettitle">📧 Send them a copy</h3>
+    <div class="who">${v.portalAt ? "✓ A copy is already in " + esc((cl && cl.name) || "their") + "'s portal. " : ""}Email them the signed sheet too.</div>
+    <label for="vr-to">Email to<input id="vr-to" type="email" maxlength="160" value="${esc((cl && cl.email) || "")}"></label>
+    <label for="vr-msg">Message<textarea id="vr-msg" rows="8" maxlength="3000">${esc(body)}</textarea></label>
+    ${formFoot(false, "📧 Email the copy")}`,
+    async () => {
+      const how = await sdShareMail({
+        to: $("vr-to").value.trim(),
+        subject: `Variation ${v.number} – ${v.title} – ${co.name}`,
+        body: $("vr-msg").value,
+        blob,
+        filename: fn,
+      });
+      if (!how) return;
+      try {
+        await vrSave(Object.assign({}, v, { emailedAt: Date.now() }));
+      } catch (e) {}
+      closeForm();
+      toast("Copy sent");
+    },
+    "vr-to",
+  );
+  const c = $("f-cancel");
+  if (c) c.textContent = "Not now";
 }

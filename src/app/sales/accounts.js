@@ -29,6 +29,7 @@ import {
   acBulkSheet,
   acCheckSheet,
   acFindSheet,
+  acJobGuess,
   acLearner,
   acLockedRec,
   acPicked,
@@ -325,13 +326,14 @@ function acBankView(tabs) {
                   : [];
               const xf = lk ? null : acXferFor(t, everyTx);
               const ln = lk ? null : learn(t);
+              const jg = lk ? "" : acJobGuess(t, everyTx);
               const split = t.split && t.split.length;
               const box = pick
                 ? `<label class="acr-tick acr-pk"><input type="checkbox" class="acr-pkc"${acPicked.has(k) ? " checked" : ""} aria-label="Choose this payment"></label>`
                 : `<label class="acr-tick" title="${t.ok ? "Ticked off against the statement" : "Tick off when it matches your statement"}"><input type="checkbox" class="acr-okc"${t.ok ? " checked" : ""}${lk ? " disabled" : ""} aria-label="Ticked off against the statement"></label>`;
               return `<div class="ac-tx ${t.amt > 0 ? "in" : "out"}${acrSorted(t) ? "" : " uns"}${t.ok ? " acr-done" : ""}" data-k="${esc(k)}">
             <div class="ac-txh">${box}<small>${esc(shortDay(t.date))}</small><span class="ac-desc">${lk ? `<span title="This month is locked" aria-label="Locked">🔒 </span>` : ""}${esc(t.desc)}</span><b class="ac-amt">${t.amt > 0 ? "+" : "−"}${gbp(Math.abs(t.amt))}</b></div>
-            <div class="ac-txr">${split ? `<button type="button" class="pillbtn acr-splab"${lk ? " disabled" : ""}>✂️ ${esc(acTxCatLabel(t))}</button>` : `<select class="ac-cat" aria-label="Category"${lk ? " disabled" : ""}>${opts(t.cat)}</select>`}${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${t.rcpt ? `<button type="button" class="pillbtn ac-rlink" data-id="${esc(t.rcpt)}">📎 Receipt</button>` : ""}${ln ? `<button type="button" class="pillbtn acr-learn" data-c="${esc(ln.cat)}">💡 ${esc(acCatName(ln.cat))}? <small>(${ln.n} before)</small></button>` : ""}${xf ? `<button type="button" class="pillbtn acr-xf">🔁 ${t.amt < 0 ? "Transfer to" : "Transfer from"} ${esc(acrAccName(xf.acc))}?</button>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
+            <div class="ac-txr">${split ? `<button type="button" class="pillbtn acr-splab"${lk ? " disabled" : ""}>✂️ ${esc(acTxCatLabel(t))}</button>` : `<select class="ac-cat" aria-label="Category"${lk ? " disabled" : ""}>${opts(t.cat)}</select>`}${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${t.rcpt ? `<button type="button" class="pillbtn ac-rlink" data-id="${esc(t.rcpt)}">📎 Receipt</button>` : ""}${ln ? `<button type="button" class="pillbtn acr-learn" data-c="${esc(ln.cat)}">💡 ${esc(acCatName(ln.cat))}? <small>(${ln.n} before)</small></button>` : ""}${t.site ? `<span class="tag">📍 ${esc(t.site)}</span>` : ""}${jg ? `<button type="button" class="pillbtn acr-job" data-s="${esc(jg)}">📍 ${esc(jg)}?</button>` : ""}${xf ? `<button type="button" class="pillbtn acr-xf">🔁 ${t.amt < 0 ? "Transfer to" : "Transfer from"} ${esc(acrAccName(xf.acc))}?</button>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
           </div>`;
             })
             .join(
@@ -436,6 +438,8 @@ function acBankView(tabs) {
     const ln = row.querySelector(".acr-learn");
     if (ln)
       ln.onclick = () => save({ [k]: { cat: ln.dataset.c } }, `Put in ${acCatName(ln.dataset.c)}`);
+    const jb = row.querySelector(".acr-job");
+    if (jb) jb.onclick = () => save({ [k]: { site: jb.dataset.s } }, "Booked to " + jb.dataset.s);
     const xb = row.querySelector(".acr-xf");
     if (xb)
       xb.onclick = async () => {

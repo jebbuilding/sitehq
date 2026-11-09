@@ -7,6 +7,7 @@ import { isInv } from "../purchasing/materials-receipts.js";
 import {
   AC_CATS,
   acAllTx,
+  acCatKind,
   acCatName,
   acCfg,
   acMonths,
@@ -19,6 +20,7 @@ export {
   acBulkSheet,
   acCheckSheet,
   acFindSheet,
+  acJobGuess,
   acLearner,
   acLockedRec,
   acPicked,
@@ -94,6 +96,18 @@ function acLearner() {
     const tot = e.reduce((a, x) => a + x[1], 0);
     return { cat: e[0][0], n: e[0][1], sure: e[0][1] >= 2 && e[0][1] === tot };
   };
+}
+/* the job a payment out was probably for: the job the last payment to the same place (within 30 days) was booked to */
+function acJobGuess(t, all) {
+  if (!t || t.amt >= 0 || t.site || t.rcpt || t.cat === "wages" || acCatKind(t.cat) === "move")
+    return "";
+  const k = acrKey(t.desc);
+  if (!k) return "";
+  const live = new Set((S.sites || []).filter((s) => !s.archived).map((s) => s.name));
+  const hit = (all || acAllTx())
+    .filter((x) => x.site && x.id !== t.id && acrKey(x.desc) === k && acrDays(x.date, t.date) <= 30)
+    .sort((a, b) => acrDays(a.date, t.date) - acrDays(b.date, t.date))[0];
+  return hit && live.has(hit.site) ? hit.site : "";
 }
 /* ---------- transfers between your own accounts ---------- */
 const acrDays = (a, b) => Math.abs((parse(a) - parse(b)) / 864e5);
