@@ -2,7 +2,7 @@
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
-import { OWN_TABS, render } from "../core/tabs-week.js";
+import { OWN_TABS, empTabs, render } from "../core/tabs-week.js";
 import { coData } from "./company-details.js";
 import { jbView } from "./jobs-desk.js";
 import { searchOpen } from "./search.js";
@@ -108,12 +108,13 @@ function nlSet(v) {
    test browsers (navigator.webdriver) start in the old look, which the older tests are written for, and keep the
    switch; tests/features/h416.js switches it on itself. */
 const nlOn = () => {
-  if (!navigator.webdriver) return ownerMode() && !S.preview;
+  /* My forms (S.preview: James filling in forms as himself) keeps the new look too */
+  if (!navigator.webdriver) return !!S.owner;
   if (nlFlag === null) {
     const saved = store.get("jeb.newlook", null);
     nlFlag = saved === null ? !navigator.webdriver : !!saved;
   }
-  return ownerMode() && !S.preview && nlFlag;
+  return !!S.owner && nlFlag;
 };
 /* the new look opens on Today each time the app is opened */
 let nlLanded = false;
@@ -146,7 +147,7 @@ function nlApply() {
   nlLanded = true;
   document.body.classList.toggle("nl-on", on);
   /* the date / weather strip shows on Today only (see owner.css) */
-  document.body.classList.toggle("nl-home", on && S.otab === "today");
+  document.body.classList.toggle("nl-home", on && !S.preview && S.otab === "today");
   const head = document.querySelector("header.top");
   let tog = $("nl-tog");
   if (ownerMode() && !S.preview && head && navigator.webdriver) {
@@ -193,7 +194,8 @@ function nlApply() {
     document.body.appendChild(bar);
   }
   bar.hidden = false;
-  const cur = nlSecOf(S.otab),
+  /* My forms is under Paperwork */
+  const cur = S.preview ? "paper" : nlSecOf(S.otab),
     badge = S.badgeNow || {};
   const coName = (coData().name || "SiteHQ").trim();
   const tile = (/^[A-Z]{2,4}\b/.exec(coName) || [
@@ -225,6 +227,11 @@ function nlApply() {
   bar.querySelectorAll(".nl-b").forEach(
     (b) =>
       (b.onclick = () => {
+        /* leaving My forms: back to your own view first */
+        if (S.preview) {
+          S.preview = false;
+          render();
+        }
         const s = b.dataset.s,
           tabs = (NL_SECTIONS.find((x) => x[0] === s) || [])[2] || [];
         if (s === "today") nlGo("today");
@@ -238,6 +245,7 @@ function nlApply() {
    kept above the page so it stays whatever the page draws */
 function nlCrumb(on) {
   let cr = $("nl-crumb");
+  if (on && S.preview) return nlCrumbForms();
   const t = S.otab || "";
   const sec =
     on && t !== "today" && !/^sec-/.test(t) ? NL_SECTIONS.find((x) => x[2].includes(t)) : null;
@@ -276,6 +284,50 @@ function nlCrumb(on) {
   }
 }
 
+/* My forms: the trades' pages as the strip, with a way back to your own view */
+function nlCrumbForms() {
+  let cr = $("nl-crumb");
+  if (!cr) {
+    cr = document.createElement("nav");
+    cr.id = "nl-crumb";
+    cr.className = "nl-crumb";
+    cr.setAttribute("aria-label", "My forms pages");
+    const m = $("weekbar") || $("main");
+    m.parentNode.insertBefore(cr, m);
+  }
+  cr.hidden = false;
+  const t = S.tab || "";
+  cr.innerHTML =
+    `<button type="button" class="nl-cback" data-s="paper">‹ My forms: back to your view</button><div class="nl-cpages">` +
+    empTabs()
+      .map(
+        ([k, l]) =>
+          `<button type="button" class="nl-cp" data-t="${k}"${k === t ? ' aria-current="page"' : ""}>${esc(String(l).replace(/^\S+\s/, ""))}</button>`,
+      )
+      .join("") +
+    "</div>";
+  cr.querySelector(".nl-cback").onclick = () => {
+    S.preview = false;
+    render();
+  };
+  cr.querySelectorAll(".nl-cp").forEach(
+    (b) =>
+      (b.onclick = () => {
+        S.tab = b.dataset.t;
+        store.set("jeb.tab", S.tab);
+        render();
+        window.scrollTo(0, 0);
+      }),
+  );
+  const curB = cr.querySelector(".nl-cp[aria-current]");
+  if (curB) {
+    const row = cr.querySelector(".nl-cpages");
+    row.scrollLeft = Math.max(
+      0,
+      curB.offsetLeft - row.offsetLeft - (row.clientWidth - curB.offsetWidth) / 2,
+    );
+  }
+}
 /* Today: who's on site, what needs James, what's coming up */
 function todayView() {
   const badge = S.badgeNow || {};

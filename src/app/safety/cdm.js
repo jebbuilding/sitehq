@@ -50,6 +50,10 @@ const CDM_DOCS = [
   ["check", "CDM 2015 compliance checklist"],
   ["f10", "F10 notification check"],
   ["hsf", "Health & safety file (contents and handover list)"],
+  [
+    "bccs",
+    "Building Control completion statement (compliance statements from the client, principal contractor and principal designer)",
+  ],
   ["dominfo", "Letter to a domestic client: CDM explained and what we need from them"],
   ["subcon", "Contractor appointment & competence checks (reg. 15)"],
   ["welfare", "Welfare facilities check (Schedule 2)"],
@@ -72,7 +76,7 @@ const CDM_GROUPS = [
     ["welfarepack", "cpp", "emerg", "welfare", "notice", "subcon", "tw", "log", "check"],
   ],
   ["Permits", ["hotpermit", "dig"]],
-  ["At handover", ["hsf"]],
+  ["At handover", ["hsf", "bccs"]],
 ];
 function cdmNotifiable(cd) {
   const wd = +cd.workDays || 0,
@@ -449,6 +453,101 @@ function cdmSections(cd, pick) {
         [
           ["Handed to client", cd.client],
           ["Handed over by", co.owner],
+        ],
+      ],
+    ]);
+  /* Building Control completion statement: since the October 2023 changes to the Building Regulations, the
+     completion notice to building control goes with statements that, to the best of each one's knowledge, the work
+     complies and the building regulations dutyholders (principal contractor and principal designer) have met their
+     duties */
+  if (pick.bccs)
+    S2("Building Control completion statement", [
+      [
+        "rows",
+        [
+          ["Project", cd.project],
+          ["Site address", cd.address],
+          ["Client", cd.client],
+          ["Building control body", cd.bc],
+          ["Building control reference", cd.bcRef || cd.planning],
+          ["Description of the work", cd.desc],
+          ["Date the work was completed", "___/___/______"],
+          ["The building work is complete", "Yes – this is the completion notice"],
+          ...(dom
+            ? [["Domestic client", "This notice is given on behalf of a domestic client"]]
+            : []),
+        ],
+      ],
+      ["h2", "Principal contractor and principal designer"],
+      [
+        "rows",
+        [
+          ["Principal contractor", (many ? cd.pcName : "") || co.name],
+          [
+            "Address",
+            (many && cd.pcName ? "" : String(co.address || "").replace(/\s*\n\s*/g, ", ")) ||
+              "______________________________",
+          ],
+          [
+            "Phone / email",
+            (many && cd.pcName
+              ? ""
+              : [co.phone || co.mobile, co.email].filter(Boolean).join(" · ")) ||
+              "______________________________",
+          ],
+          ["Principal designer", cd.pdName || cd.designer || "______________________________"],
+          ["Address", "______________________________"],
+          ["Phone / email", "______________________________"],
+        ],
+      ],
+      [
+        "p",
+        "Under the Building Regulations 2010 (as amended in October 2023), when building work is finished the building control body must be told and given statements that, to the best of each person's knowledge, the work complies with all applicable requirements of the Building Regulations, and that the principal designer and principal contractor have fulfilled their duties. Fill in and sign the parts below and send it to building control within 5 days of finishing (check your building control's deadline), before the final inspection. Building control won't issue the completion certificate without these statements.",
+      ],
+      ["h2", "1. Client's statement"],
+      [
+        "p",
+        "I / we confirm that, to the best of my / our knowledge, the building work described above complies with all applicable requirements of the Building Regulations.",
+      ],
+      ["sign", [["Client", cd.client]]],
+      ["h2", "2. Principal contractor's statement"],
+      [
+        "p",
+        "As principal contractor for this building work (appointed on ___/___/______), I confirm that, to the best of my knowledge, I have fulfilled my duties as principal contractor under Part 2A of the Building Regulations 2010, and that the building work complies with all applicable requirements of the Building Regulations.",
+      ],
+      [
+        "sign",
+        [
+          ["Principal contractor", (many ? cd.pcName : "") || co.name],
+          ["Signed for them by", co.owner],
+        ],
+      ],
+      ["h2", "3. Principal designer's statement"],
+      [
+        "p",
+        "As principal designer for this building work (appointed on ___/___/______), I confirm that, to the best of my knowledge, I have fulfilled my duties as principal designer under Part 2A of the Building Regulations 2010, and that the design work complies with all applicable requirements of the Building Regulations.",
+      ],
+      ["sign", [["Principal designer", cd.pdName || cd.designer || ""]]],
+      [
+        "p",
+        "Where one person or firm holds more than one role (for example a builder who is both principal contractor and principal designer on a small job), they sign each part that applies.",
+      ],
+      ["h2", "Sent with this statement (tick what applies)"],
+      [
+        "checks",
+        [
+          [
+            "Electrical installation certificate (Part P) – or the registered electrician's notification",
+            "",
+          ],
+          ["Gas Safe certificate for any new gas work or boiler", ""],
+          ["Window and door replacement certificate (FENSA, CERTASS or similar)", ""],
+          ["Heating and hot water commissioning certificates; benchmark checklist", ""],
+          ["Drainage test / CCTV survey results", ""],
+          ["Structural engineer's final calculations and sign-off", ""],
+          ["Air tightness, sound or energy (SAP / EPC) results, where needed", ""],
+          ["Fire safety information for the building, where needed", ""],
+          ["As-built drawings showing any changes from the approved plans", ""],
         ],
       ],
     ]);
