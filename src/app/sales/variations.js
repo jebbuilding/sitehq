@@ -19,7 +19,7 @@ import { sdEdit } from "./sales-edit.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdImgData } from "./sales-pdf.js";
 import { siteClient } from "../sites/summary.js";
-export { vrNew, vrView };
+export { vrNew, vrTot, vrView };
 /* Owner-private, todos/var-<id> (kind "variation"): { site, clientId, client, title, details, photos: [assetId],
    amt (before VAT), vc (VAT code), status "open" (waiting for the client to sign) | "signed" | "cancelled",
    sign: { name, at, sigId (picture of the signature), pdfId (the signed sheet) }, invId (the invoice it went onto),
