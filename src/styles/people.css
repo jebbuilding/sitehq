@@ -30,3 +30,6 @@
 .im-box.bad{border-top-color:var(--danger)}
 .im-box.warn{border-top-color:var(--hivis)}
 .im-filt{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.pa-tbl .pa-c{text-align:center;padding:0}.pa-tbl .pa-hit{display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;cursor:pointer;margin:0}.pa-tbl .pa-hit input{width:22px;height:22px;margin:0}
+.pa-person{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:8px}.pa-person:first-of-type{border-top:0}.pa-person .pa-ph{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.pa-person .pa-ph .pa-role{flex:1 1 220px;max-width:320px}
+.pa-person .pa-sites{display:flex;flex-direction:column}.pa-person .pa-sitel{min-height:44px;align-items:center}.pa-person .pa-sitel input{width:22px;height:22px}

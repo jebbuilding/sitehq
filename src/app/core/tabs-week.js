@@ -36,6 +36,7 @@ import {
   wireTradeTodos,
 } from "../owner/todo-lists.js";
 import { whatsNewHTML, wireWhatsNew, wnCapture } from "../owner/whats-new.js";
+import { acTabAllowed } from "../people/access.js";
 import { amForeman, foremanView } from "../people/foreman.js";
 import { inductionsView } from "../people/induction-matrix.js";
 import { detailsDone, myDetails, renderDetailsNeeded } from "../people/personal-details.js";
@@ -150,7 +151,8 @@ function empTabs() {
   let t = EMP_TABS.filter((x) => !(so && (x[0] === "time" || x[0] === "mydw")));
   const i = so ? 0 : t.findIndex((x) => x[0] === "time") + 1;
   t = t.slice(0, i).concat([["signin", "📍 Sign in"]], t.slice(i));
-  return t;
+  /* Setup › People & access: only the parts their role is given */
+  return t.filter(([k]) => acTabAllowed(k));
 }
 function renderTabs() {
   const tabs = ownerMode()

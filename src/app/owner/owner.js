@@ -29,6 +29,7 @@ import { backupCard, wireBackup } from "./backup.js";
 import { companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
 import { openMonthly } from "./reports.js";
+import { acView } from "../people/access.js";
 import { detailsDone, myDetails, openDetails } from "../people/personal-details.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
 import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
@@ -850,6 +851,23 @@ function ownerInvoices() {
   wireInvoices(list, true);
 }
 function ownerSetup() {
+  const stSeg = `<div class="seg st-tabs" id="st-tabs"><button type="button" data-v="setup" aria-pressed="${S.f.stab !== "access"}">⚙️ Setup</button><button type="button" data-v="access" aria-pressed="${S.f.stab === "access"}">👥 People &amp; access</button></div>`;
+  const stWire = () =>
+    $("st-tabs")
+      .querySelectorAll("button")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            S.f.stab = b.dataset.v;
+            render();
+            window.scrollTo(0, 0);
+          }),
+      );
+  if (S.f.stab === "access") {
+    acView(stSeg);
+    stWire();
+    return;
+  }
   const sec = (
     key,
     title,
@@ -859,7 +877,8 @@ function ownerSetup() {
   ) => `<details class="card" data-id="__${key}" ${S.open.has("__" + key) || !names.length ? "open" : ""}><summary><div class="nm">${title}<small>${names.length ? names.length + " in the list" : help}</small></div></summary>
     <div class="cardbody"><form class="addform" data-k="${key}" style="display:flex;gap:8px;flex-wrap:wrap"><input id="add-${key}" maxlength="100" placeholder="${esc(ph)}" aria-label="Add to ${esc(title)}" style="flex:1;min-width:200px"><button class="btn primary" type="submit">Add</button></form>
     ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">Details</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : "Driver & checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
-  $("main").innerHTML = `<div class="card"><div class="cardbody" style="border:0"><b>Working day</b>
+  $("main").innerHTML =
+    `${stSeg}<div class="card"><div class="cardbody" style="border:0"><b>Working day</b>
       <div class="grid2"><label for="wd-s">Paid start<input id="wd-s" type="time" value="${esc(WS())}"></label><label for="wd-e">Paid finish<input id="wd-e" type="time" value="${esc(WE())}"></label></div>
       <div class="who">People who check in before the start or check out after the finish are paid from the start to the finish, unless they ask for overtime when they check out and you approve it (on Timesheets: ✓ Pay overtime). The 1pm half hour is unpaid. Each person can also set their own usual day.</div>
       <div><button class="btn primary" id="wd-save" type="button">Save working day</button></div></div></div>
@@ -888,6 +907,7 @@ function ownerSetup() {
       .join("")}
     <div class="actions"><button class="btn" id="preview" type="button">Fill in forms as me</button></div>`;
   $("preview").onclick = startPreview;
+  stWire();
   wireBackup();
   wireCompany();
   lhWire();

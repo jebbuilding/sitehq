@@ -1,5 +1,6 @@
 /* ================= STATE ================= */
 import { addDays, iso, monday, store } from "./helpers.js";
+import { acMySites } from "../people/access.js";
 import { isPolDoc } from "../safety/policies-insurance.js";
 import { same } from "../sites/project-pages.js";
 export {
@@ -67,7 +68,12 @@ function inWeek(e) {
 function weekDays() {
   return Array.from({ length: 7 }, (_, i) => addDays(S.week, i));
 }
-const siteNames = () => S.sites.filter((x) => !x.archived).map((x) => x.name);
+const siteNames = () => {
+  const all = S.sites.filter((x) => !x.archived).map((x) => x.name);
+  /* Setup › People & access: a trade set to "only these jobs" gets just those */
+  const mine = acMySites();
+  return mine ? all.filter((n) => mine.some((m) => same(m, n))) : all;
+};
 const archivedSites = () => (S.sites || []).filter((x) => x.archived);
 /* completed or rejected jobs (and their sites) don't appear in drop-downs */
 /* a site you've deleted: its name is hidden everywhere (unless a new site is later made with the same name) */
