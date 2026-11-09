@@ -9,6 +9,7 @@ import { openPhoto } from "../photos/photos.js";
 import { openPlanEditor } from "../planner/board.js";
 import { onDay } from "../planner/time-off.js";
 import { sdEdit } from "../sales/sales-edit.js";
+import { vrNew } from "../sales/variations.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
 import { siteClient } from "../sites/summary.js";
@@ -205,6 +206,7 @@ const QA_ITEMS = [
   ["todo", "✅", "To-do"],
   ["plan", "🗓️", "Planner booking"],
   ["est", "💷", "Estimate"],
+  ["var", "📝", "Variation"],
   ["draw", "✏️", "Drawing"],
 ];
 function qaOpen() {
@@ -224,6 +226,7 @@ function qaOpen() {
         else if (k === "hours") pickPersonFor("hours");
         else if (k === "plan") openPlanEditor(null, iso(new Date()));
         else if (k === "est") sdEdit({ type: "estimate" });
+        else if (k === "var") vrNew();
         else if (k === "rcpt") {
           S.f.act = "rcpt";
           nlGo("accounts");

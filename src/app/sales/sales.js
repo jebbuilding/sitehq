@@ -17,12 +17,27 @@ import {
 import { sdEdit } from "./sales-edit.js";
 import { sdImportWord, sdSettings, sdSetupCard, sdWireSetup } from "./sales-settings.js";
 import { sdSyncSigns } from "./sales-sign.js";
+import { vrView } from "./variations.js";
 export { salesView };
 /* The page: tabs Invoices | Estimates. Invoices: boxes for drafts, waiting to be paid, overdue and paid in the last
    30 days, money invoiced and paid over 6 months, this tax year's totals (VAT, CIS taken off), then the list.
    Estimates: drafts, sent, accepted and the win rate. Each opens full screen to edit, make the PDF on the
    letterhead, mark sent, record a payment, or turn an estimate into an invoice (all, a deposit or a stage). */
 function salesView() {
+  if (S.f.sv === "var") {
+    const tabs = `<div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="false">Invoices</button><button type="button" data-v="est" aria-pressed="false">Estimates</button><button type="button" data-v="var" aria-pressed="true">📝 Variations</button></div>`;
+    vrView(tabs);
+    $("sd-tabs")
+      .querySelectorAll("button")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            S.f.sv = b.dataset.v;
+            render();
+          }),
+      );
+    return;
+  }
   sdSyncSigns();
   const all = sdSales();
   const est = (S.f.sv || "inv") === "est";
@@ -142,7 +157,7 @@ function salesView() {
         ["held", "For final invoice"],
       ];
   $("main").innerHTML = `<div class="sd-page">
-    <div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="${!est}">Invoices</button><button type="button" data-v="est" aria-pressed="${est}">Estimates</button></div>
+    <div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="${!est}">Invoices</button><button type="button" data-v="est" aria-pressed="${est}">Estimates</button><button type="button" data-v="var" aria-pressed="false">📝 Variations</button></div>
     <div class="sd-acts"><button type="button" class="btn primary" id="sd-new">+ New ${est ? "estimate" : "invoice"}</button>${est ? `<span class="btn sd-filebtn">📄 Bring in a Word estimate<input type="file" class="sd-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Bring in a Word estimate"></span>` : ""}<button type="button" class="btn" id="sd-set">⚙️ Letterhead, terms & bank</button></div>
     ${sdSetupCard()}
     <div class="sd-boxes">${tiles}</div>

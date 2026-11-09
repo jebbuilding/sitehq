@@ -201,6 +201,7 @@ initPhotoTest();
         S.jobFiles = all.filter((t) => t.kind === "jobfile");
         S.jcSet = all.find((t) => t.kind === "jcset") || null;
         S.jobCosts = all.filter((t) => t.kind === "jobcost");
+        S.variations = all.filter((t) => t.kind === "variation");
         S.audit = all.filter((t) => t.kind === "audit");
         S.bin = all.filter((t) => t.kind === "bin");
         if (!window.__binPurgeT)

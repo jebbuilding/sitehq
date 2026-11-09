@@ -68,6 +68,7 @@ Subcollections (`TR_COLLS`):
 | `sitedoc` | owner-private site documents |
 | `jcset` | job costs settings (`todos/jcset`): what each person costs an hour (`cost`: { id: £/h }, `defCost`) |
 | `jobcost` | one job's costing (`todos/jc-*`): `site`, `mode` (fixed / costplus), `labMode` (rates / markup), `labPct`, `matPct`, `subPct`, the profit aimed for `target` (%, else `jcset.target`, else 20) and how far through `done` (%), and `invoiced` { cost key: sale id } – the costs already on a client invoice |
+| `variation` | extra work agreed on site (`todos/var-*`): `site`, `clientId`, `client`, `title`, `details`, `photos` (asset ids), `amt` (before VAT), `vc` (VAT code), `status` (open / signed / cancelled), `sign` { `name`, `at`, `sigId`, `pdfId` }, `invId` (the invoice it went onto), `number` (V1, V2…). Signed ones are locked |
 | `training` | owner training records |
 
 ## Shared collections
