@@ -1598,7 +1598,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
-    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span>mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
+    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
       NP_PAVE,
     )
       .map(([k, v]) => `<option value="${k}">${v[0]}</option>`)
@@ -7261,6 +7261,7 @@ async function openNotePage(opts) {
     return e.__st;
   }
   function opKind(o) {
+    if (o && o.t === "img" && doc.scale) return "img";
     if (!o || o.t !== "shape" || !o.a || !o.b) return "";
     if (NP_OPENK.has(o.k)) return "open";
     if (o.k === "window") return "win";
@@ -7332,6 +7333,39 @@ async function openNotePage(opts) {
     /* don't overwrite what's being typed */
     if (st.o === o && !bar.hidden && bar.contains(document.activeElement)) return;
     st.o = o;
+    const isImg = kind === "img";
+    bar
+      .querySelectorAll(".nob-std,.nob-wl,.nob-w,.nob-dg,.nob-set")
+      .forEach((e) => (e.hidden = isImg));
+    bar.querySelectorAll(".nob-mm").forEach((e) => (e.hidden = isImg));
+    bar.querySelector(".nob-chk").hidden = !isImg;
+    bar.querySelector(".nob-i").hidden = !isImg;
+    if (isImg) {
+      bar.querySelectorAll(".nob-pg").forEach((e) => (e.hidden = true));
+      bar.querySelector(".nob-t").textContent = "🖼 Imported drawing";
+      const im = loadImg(o.src);
+      const nw = (im && im.naturalWidth) || 0,
+        cw = (o.crop && o.crop.w) || 1;
+      const actual = nw ? o.w / (cw * nw) : 0,
+        want = o.mmpp ? (o.mmpp * NP_U) / doc.scale : 0;
+      const off = want && actual ? actual / want - 1 : 0;
+      bar.querySelector(".nob-i").textContent = o.mmpp
+        ? (o.srcSc ? "Drawn at 1:" + o.srcSc + " · " : "Scale measured · ") +
+          "on this page at 1:" +
+          doc.scale +
+          (Math.abs(off) < 0.01
+            ? " · ✓ to scale"
+            : " · ⚠ " +
+              Math.round(Math.abs(off) * 100) +
+              "% " +
+              (off > 0 ? "too big" : "too small"))
+        : "Not to scale – measure something you know to set it";
+      bar.querySelector(".nob-fix").hidden = !(o.mmpp && Math.abs(off) >= 0.01);
+      lb.hidden = true;
+      bar.hidden = false;
+      return;
+    }
+    bar.querySelector(".nob-fix").hidden = true;
     const name = npSymLabel(o.k) || "Size";
     bar.querySelector(".nob-t").textContent =
       (kind === "open" ? "🚪 " : kind === "win" ? "🪟 " : "📐 ") + name;
@@ -7379,6 +7413,52 @@ async function openNotePage(opts) {
     opbEl().hidden = true;
     opSt().o = null;
     opSt().pin = false;
+  };
+  /* an imported drawing: resize it by f about its middle, so the rest stays where it was */
+  const imgScaleBy = (o, f) => {
+    snap();
+    const cx = o.x + o.w / 2,
+      cy = o.y + o.h / 2;
+    o.w *= f;
+    o.h *= f;
+    o.x = cx - o.w / 2;
+    o.y = cy - o.h / 2;
+    dirty = true;
+    opSt().o = null;
+    draw();
+    opBar(o, true);
+  };
+  opbEl().querySelector(".nob-fix").onclick = () => {
+    const o = opSt().o;
+    if (!o || o.t !== "img" || !o.mmpp) return;
+    const im = loadImg(o.src);
+    const nw = im && im.naturalWidth;
+    if (!nw) return;
+    const actual = o.w / (((o.crop && o.crop.w) || 1) * nw);
+    imgScaleBy(o, (o.mmpp * NP_U) / doc.scale / actual);
+    toast("Back to scale: 1:" + doc.scale + " on this page");
+  };
+  opbEl().querySelector(".nob-chk").onclick = () => {
+    const o = opSt().o;
+    if (!o || o.t !== "img") return;
+    const im = loadImg(o.src);
+    if (!(im.complete && im.naturalWidth)) {
+      toast("Still loading, try again in a moment");
+      return;
+    }
+    cropDlg(im, { check: true, crop: o.crop }, (res) => {
+      if (!res.mmpp) return;
+      const nw = im.naturalWidth;
+      const actual = o.w / (((o.crop && o.crop.w) || 1) * nw);
+      const was = o.mmpp;
+      o.mmpp = res.mmpp;
+      imgScaleBy(o, (res.mmpp * NP_U) / doc.scale / actual);
+      toast(
+        was && Math.abs(res.mmpp / was - 1) < 0.01
+          ? "✓ The scale was right – it measures true at 1:" + doc.scale
+          : "Scale set from your measurement – now true at 1:" + doc.scale + " on this page",
+      );
+    });
   };
   /* a standard size picked: fill it in and set it */
   opbEl().querySelector(".nob-std").onchange = (e) => {
@@ -9669,7 +9749,7 @@ async function openNotePage(opts) {
     const d = document.createElement("div");
     d.className = "dimask npimp";
     const isPdf = !!opt.wmm;
-    d.innerHTML = `<div class="dimbox npimpbox"><b>${opt.recrop ? "✂ Crop: keep the part you want" : "📥 Import drawing"}</b>
+    d.innerHTML = `<div class="dimbox npimpbox"><b>${opt.check ? "📏 Check the scale – measure something you know" : opt.recrop ? "✂ Crop: keep the part you want" : "📥 Import drawing"}</b>
       <div class="seg npimode"><button type="button" data-m="crop" aria-pressed="true">✂ Crop</button>${opt.recrop ? "" : `<button type="button" data-m="meas" aria-pressed="false">📏 Measure a known length</button>`}</div>
       <div class="who npihint">Drag the box (or its corners) round the part you want to keep. Everything outside the box is left off.</div>
       <canvas class="npicv"></canvas>
@@ -9679,13 +9759,13 @@ async function openNotePage(opts) {
           : `<label class="npiscl">What scale is this drawn at?<select class="npisc">${isPdf ? NP_SRC_SCALES.map(([v, l]) => `<option value="${v}"${v === String(opt.guess || 50) ? " selected" : ""}>${l}${isPdf ? " (at its paper size, " + Math.round(opt.wmm) + "×" + Math.round(opt.hmm) + " mm)" : ""}</option>`).join("") : ""}<option value="m"${isPdf ? "" : " selected"}>I'll measure a known length on it</option><option value="fit">Not to scale: just fit it on the page</option></select></label>
       <div class="npimeas" hidden><span class="who npimtxt">Tap <b>📏 Measure a known length</b> above, then tap both ends of something you know (a wall or a dimension).</span><label class="inl">Length<input class="npimm" type="number" inputmode="decimal" placeholder="mm" style="width:110px"> mm</label></div>`
       }
-      <div class="who npinote">${!opt.recrop && !doc.scale ? "⚠️ This drawing has no scale set, so imports will just be fitted. Set one in 📐 Paper to keep things to scale." : ""}</div>
-      <div class="dimbtns"><button type="button" class="btn npix">Cancel</button>${opt.crop && (opt.crop.w < 1 || opt.crop.h < 1) ? `<button type="button" class="btn npiall">Show it all again</button>` : ""}<button type="button" class="btn primary npiok">${opt.recrop ? "Keep this part" : "Place on drawing"}</button></div></div>`;
+      <div class="who npinote">${!opt.recrop && !opt.check && !doc.scale ? "This drawing has no scale yet: one that fits will be set for it, so the import goes in to scale." : ""}</div>
+      <div class="dimbtns"><button type="button" class="btn npix">Cancel</button>${opt.crop && (opt.crop.w < 1 || opt.crop.h < 1) ? `<button type="button" class="btn npiall">Show it all again</button>` : ""}<button type="button" class="btn primary npiok">${opt.check ? "✓ Done – set the scale" : opt.recrop ? "Keep this part" : "Place on drawing"}</button></div></div>`;
     ov.appendChild(d);
     const cvs = d.querySelector(".npicv"),
       gg = cvs.getContext("2d");
     const W = Math.min(window.innerWidth - 56, 860),
-      H = Math.min(window.innerHeight * 0.55, 640);
+      H = Math.min(window.innerHeight * 0.42, 640);
     const k = Math.min(W / nw, H / nh);
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     cvs.width = Math.round(nw * k * dpr);
@@ -9861,6 +9941,14 @@ async function openNotePage(opts) {
       const me = d.querySelector(".npimeas");
       if (me) me.hidden = false;
     }
+    /* checking the scale: straight to measuring */
+    if (opt.check && sc) {
+      sc.value = "m";
+      sc.closest("label").style.display = "none";
+      const cropB = d.querySelector(".npimode button[data-m=crop]");
+      if (cropB) cropB.style.display = "none";
+      setMode("meas");
+    }
     d.querySelector(".npix").onclick = () => d.remove();
     const all = d.querySelector(".npiall");
     if (all)
@@ -9895,7 +9983,17 @@ async function openNotePage(opts) {
         } else if (v !== "fit") mmpp = (opt.wmm * +v) / nw;
       }
       d.remove();
-      done({ crop: c.w > 0.999 && c.h > 0.999 ? null : c, mmpp });
+      done({
+        crop: c.w > 0.999 && c.h > 0.999 ? null : c,
+        mmpp,
+        /* the scale it's drawn at: picked, or worked out from a PDF's paper size */
+        srcSc:
+          !opt.recrop && sc && sc.value !== "m" && sc.value !== "fit"
+            ? +sc.value
+            : mmpp && opt.wmm
+              ? Math.round((mmpp * nw) / opt.wmm)
+              : 0,
+      });
     };
     paint();
   }
@@ -9904,6 +10002,18 @@ async function openNotePage(opts) {
       nh = im.naturalHeight,
       c = res.crop || { x: 0, y: 0, w: 1, h: 1 };
     const r = stage.getBoundingClientRect();
+    /* no page scale yet: the smallest usual scale the import fits on the page at */
+    let setSc = 0;
+    if (res.mmpp && !doc.scale) {
+      const rw = c.w * nw * res.mmpp,
+        rh = c.h * nh * res.mmpp;
+      setSc =
+        [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 1250, 2500].find(
+          (k) => rw / k <= (doc.w / NP_U) * 0.9 && rh / k <= (doc.h / NP_U) * 0.85,
+        ) || 2500;
+      doc.scale = setSc;
+      status();
+    }
     let u;
     if (res.mmpp && doc.scale) u = (res.mmpp * NP_U) / doc.scale;
     else {
@@ -9917,6 +10027,7 @@ async function openNotePage(opts) {
     const o = { t: "img", x: cx - w / 2, y: cy - h / 2, w, h, src: key };
     if (res.crop) o.crop = res.crop;
     if (res.mmpp) o.mmpp = res.mmpp;
+    if (res.srcSc) o.srcSc = res.srcSc;
     if (!sized() && o.y + h > doc.h - 40) doc.h = Math.ceil((o.y + h + 400) / 100) * 100;
     doc.objs.push(o);
     setTool("move");
@@ -9924,10 +10035,14 @@ async function openNotePage(opts) {
     draw();
     toast(
       res.mmpp && doc.scale
-        ? w > doc.w || h > doc.h
-          ? "Placed to scale. It's bigger than this page: crop it, or pick bigger paper in 📐 Paper"
-          : "Placed to scale. Drag to move it; ✂ Crop to trim it again"
-        : "Placed. Drag to move, corner to resize",
+        ? (res.srcSc ? "Drawn at 1:" + res.srcSc + ", " : "Measured, ") +
+            "placed to scale on this page at 1:" +
+            doc.scale +
+            (setSc ? " (the page had no scale, so 1:" + setSc + " was set)" : "") +
+            (w > doc.w || h > doc.h
+              ? ". It's bigger than the page: crop it, or pick bigger paper in 📐 Paper"
+              : "")
+        : "Placed, not to scale. Select it and tap 📏 Check the scale to put it to scale",
     );
   };
   function recropImg(o) {
