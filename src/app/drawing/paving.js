@@ -48,6 +48,7 @@ import { NP_ANNO_BOX, NP_TEXTSYM } from "./symbols-annotation.js";
 import { NP_DES_BOX, npScallop } from "./symbols-design.js";
 import { NP_BASIC, NP_XLAB, NP_XREAL, NP_XSHAPES } from "./symbols-more.js";
 import { NP_TIMB_BOX, NP_TIMB_DEF, NP_TIMB_SIZES, npRunAxis } from "./timber.js";
+import { npStepsDlg } from "./undo-list.js";
 import { WB, WB_BRICKS, wbHasBrick, wbMaterials, wbName, wbThick } from "./wall-buildups.js";
 import {
   NP_LIN,
@@ -1598,7 +1599,7 @@ async function openNotePage(opts) {
         )
         .join("")}</span>
       <span class="np-sep"></span>
-      <button type="button" class="np-t np-clear" data-g="edit page" title="Clear this page and start again" aria-label="Start again">🗑<small>Start again</small></button><button type="button" class="np-t np-paste" title="Paste what you copied onto this page" aria-label="Paste" hidden>📋<small>Paste</small></button><button type="button" class="np-t np-undo" title="Undo" aria-label="Undo">↶<small>Undo</small></button><button type="button" class="np-t np-redo" title="Redo" aria-label="Redo">↷<small>Redo</small></button>
+      <button type="button" class="np-t np-clear" data-g="edit page" title="Clear this page and start again" aria-label="Start again">🗑<small>Start again</small></button><button type="button" class="np-t np-paste" title="Paste what you copied onto this page" aria-label="Paste" hidden>📋<small>Paste</small></button><button type="button" class="np-t np-undo" title="Undo" aria-label="Undo">↶<small>Undo</small></button><button type="button" class="np-t np-redo" title="Redo" aria-label="Redo">↷<small>Redo</small></button><button type="button" class="np-t np-steps" title="See every step and go back to any of them" aria-label="Steps">🕘<small>Steps</small></button>
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
@@ -5164,6 +5165,21 @@ async function openNotePage(opts) {
     sel = null;
     dirty = true;
     draw();
+  };
+  q(".np-steps").onclick = () => {
+    const states = [...undo, JSON.stringify(doc.objs), ...redo.slice().reverse()];
+    const cur = undo.length;
+    npStepsDlg(ov, states, cur, (k) => {
+      msel.clear();
+      undo = states.slice(0, k);
+      redo = states.slice(k + 1).reverse();
+      setObjs(JSON.parse(states[k]));
+      sel = null;
+      dirty = true;
+      draw();
+      const n = Math.abs(k - cur);
+      toast(`${k < cur ? "Went back" : "Came forward"} ${n} step${n === 1 ? "" : "s"}`);
+    });
   };
   q(".np-zi").onclick = () => zoom(1.25);
   q(".np-zo").onclick = () => zoom(0.8);
