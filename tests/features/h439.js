@@ -31,7 +31,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/Health & safety/.test(pg)&&!/Money/.test(pg)&&/Company and suppliers/.test(pg)&&(await p.$$('.nl-row2')).length>=7,'Paperwork: grouped cards with rows, the money pages not here');
  await p.click('.nl-b[data-s=money]');await p.waitForTimeout(400);
  const pm=await p.innerText('#main');
- ok(/Bank and accounts/.test(pm)&&/Invoices and CIS/.test(pm)&&/Only you/.test(pm)&&(await p.$$('.nl-row2')).length===5,'Accounts: its own area with the five money pages');
+ ok(/Bank and accounts/.test(pm)&&/Invoices and CIS/.test(pm)&&/Only you/.test(pm)&&(await p.$$('.nl-row2')).length===6&&/Wage calculator/.test(pm),'Accounts: its own area with the money pages and the wage calculator');
  await p.screenshot({path:'h439-paperwork.png'});
  await p.click('.nl-b[data-s=today]');await p.waitForTimeout(500);
  await p.click('.td-c');await p.waitForTimeout(600);

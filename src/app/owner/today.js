@@ -37,7 +37,7 @@ const NL_SECTIONS = [
   ["people", "People", ["people", "inductions", "wages", "time", "training", "chat"]],
   ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers", "materials"]],
   /* Accounts: the money pages, their own area (James, Nov 2026) */
-  ["money", "Accounts", ["accounts", "sales", "invoices", "cis", "costs"]],
+  ["money", "Accounts", ["accounts", "sales", "invoices", "cis", "costs", "wages"]],
   /* Estimating: its own area, apart from the money pages (James, Nov 2026) */
   ["estim", "Estimating", ["estim"]],
   ["setup", "Setup", ["setup"]],
@@ -69,7 +69,7 @@ const NL_GROUPS = {
     ["Time and pay", ["time", "wages"]],
   ],
   money: [
-    ["Bank and accounts", ["accounts", "costs"], true],
+    ["Bank and accounts", ["accounts", "costs", "wages"], true],
     ["Invoices and CIS", ["sales", "invoices", "cis"], true],
   ],
   paper: [
