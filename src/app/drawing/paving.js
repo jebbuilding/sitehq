@@ -717,6 +717,8 @@ const npLineShape = (o) => o && o.t === "shape" && (NP_LINE.has(o.k) || o.k === 
 const npBoxy = (o) =>
   o && (["rect", "circle", "text", "img"].includes(o.t) || (o.t === "shape" && !npLineShape(o)));
 /* real sizes in mm for tap-to-place when a scale is set: [width, height] (line types: [length]) */
+/* what was last copied in the drawing tool (📋 Copy), kept between pages and drawings until something else is copied */
+const npClipboard = { items: null, page: -1 };
 /* the sizes things usually come in (mm): [label, width, depth or height]. Generic trade sizes, not any one maker's */
 const NP_STD = {
   door: [
@@ -1594,7 +1596,7 @@ async function openNotePage(opts) {
         )
         .join("")}</span>
       <span class="np-sep"></span>
-      <button type="button" class="np-t np-clear" data-g="edit page" title="Clear this page and start again" aria-label="Start again">🗑<small>Start again</small></button><button type="button" class="np-t np-undo" title="Undo" aria-label="Undo">↶<small>Undo</small></button><button type="button" class="np-t np-redo" title="Redo" aria-label="Redo">↷<small>Redo</small></button>
+      <button type="button" class="np-t np-clear" data-g="edit page" title="Clear this page and start again" aria-label="Start again">🗑<small>Start again</small></button><button type="button" class="np-t np-paste" title="Paste what you copied onto this page" aria-label="Paste" hidden>📋<small>Paste</small></button><button type="button" class="np-t np-undo" title="Undo" aria-label="Undo">↶<small>Undo</small></button><button type="button" class="np-t np-redo" title="Redo" aria-label="Redo">↷<small>Redo</small></button>
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
@@ -1617,8 +1619,8 @@ async function openNotePage(opts) {
       .join(
         "",
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
-      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
-      <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
+      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
+      <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="moveby">✥<small>Move by…</small></button><button type="button" class="np-mb" data-m="clip">📋<small>Copy</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
       <div class="np-finebox" hidden><div class="nfrow"><b>⚙ <span class="nfwhatis">Properties</span></b><button type="button" class="nfx" aria-label="Close">✕</button></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
           <div class="nfrow nfwrow"><span class="nfl">Thickness</span><div class="seg nfseg nfw">${[
@@ -2180,13 +2182,22 @@ async function openNotePage(opts) {
       o.r = Math.abs(an) < 1e-6 ? 0 : an;
     }
   }
-  function orthoB(a, b) {
+  function orthoB(a, b, raw) {
     if (!snapOn || fineNow) return b;
     const dx = b[0] - a[0],
       dy = b[1] - a[1];
     const an = Math.abs((Math.atan2(dy, dx) * 180) / Math.PI) % 90;
     if (an < 6 || an > 84) {
       return Math.abs(dx) > Math.abs(dy) ? [b[0], a[1]] : [a[0], b[1]];
+    }
+    /* close to a 15° step (15, 30, 45, 60, 75…): onto it, same length */
+    /* the angle from where the finger really is (the grid may have nudged the point) */
+    const ang = raw ? Math.atan2(raw[1] - a[1], raw[0] - a[0]) : Math.atan2(dy, dx),
+      st = Math.PI / 12,
+      r = Math.round(ang / st) * st;
+    if (Math.abs(ang - r) < (4 * Math.PI) / 180) {
+      const L = Math.hypot(dx, dy);
+      return [a[0] + Math.cos(r) * L, a[1] + Math.sin(r) * L];
     }
     return b;
   }
@@ -3038,11 +3049,65 @@ async function openNotePage(opts) {
           on: "On line",
         }[m.k];
         if (lab) {
-          g.font = `700 ${11 / s}px system-ui`;
-          g.fillStyle = "#16a34a";
-          g.fillText(lab, m.p[0] + R * 1.4, m.p[1] + R * 2.4);
+          g.font = `700 ${12 / s}px system-ui`;
+          const tw = g.measureText(lab).width;
+          g.fillStyle = "rgba(255,255,255,.92)";
+          g.fillRect(m.p[0] + R * 1.2, m.p[1] + R * 1.1, tw + 8 / s, 17 / s);
+          g.lineWidth = 1 / s;
+          g.strokeRect(m.p[0] + R * 1.2, m.p[1] + R * 1.1, tw + 8 / s, 17 / s);
+          g.fillStyle = "#15803d";
+          g.textBaseline = "middle";
+          g.fillText(lab, m.p[0] + R * 1.2 + 4 / s, m.p[1] + R * 1.1 + 8.5 / s);
         }
       }
+      g.restore();
+    }
+    /* the magnifier */
+    if (
+      cv.__ptr &&
+      npLoupeOn() &&
+      (cur || (drag && !/^(pan|band|erase)$/.test(drag.kind))) &&
+      ptrs.size === 1
+    ) {
+      const D = 132,
+        Zm = 2.6,
+        [sx, sy] = cv.__ptr,
+        CW = cv.width / dpr;
+      const lx = sx - 120 < D / 2 + 6 ? Math.min(CW - D / 2 - 6, sx + 120) : sx - 120,
+        ly = Math.max(D / 2 + 6, sy - 120);
+      const sw = D / Zm;
+      g.save();
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.beginPath();
+      g.arc(lx, ly, D / 2, 0, 7);
+      g.save();
+      g.clip();
+      g.fillStyle = "#fff";
+      g.fillRect(lx - D / 2, ly - D / 2, D, D);
+      try {
+        g.drawImage(
+          cv,
+          (sx - sw / 2) * dpr,
+          (sy - sw / 2) * dpr,
+          sw * dpr,
+          sw * dpr,
+          lx - D / 2,
+          ly - D / 2,
+          D,
+          D,
+        );
+      } catch (e) {}
+      g.restore();
+      g.lineWidth = 2;
+      g.strokeStyle = "#2f5fb3";
+      g.stroke();
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(lx - 12, ly);
+      g.lineTo(lx + 12, ly);
+      g.moveTo(lx, ly - 12);
+      g.lineTo(lx, ly + 12);
+      g.stroke();
       g.restore();
     }
     if (drag && drag.kind === "band") {
@@ -3134,6 +3199,26 @@ async function openNotePage(opts) {
     }
     q(".np-selbar:not(.np-mbar)").hidden = !so || msel.size > 0;
     opBar(so && msel.size === 0 ? so : null);
+    {
+      const lbe = q(".np-lenbar");
+      const lineLike =
+        so &&
+        !msel.size &&
+        !drag &&
+        doc.scale &&
+        (so.t === "line" || so.t === "arrow" || (npLineShape(so) && !NP_OPENK.has(so.k)));
+      if (lineLike) {
+        if (!(lbe.__o === so && !lbe.hidden && lbe.contains(document.activeElement))) {
+          showLenBar(so);
+          lbe.__o = so;
+          lbe.__sel = true;
+        }
+      } else if (lbe.__sel && !lbe.contains(document.activeElement)) {
+        lbe.hidden = true;
+        lbe.__sel = false;
+        lbe.__o = null;
+      }
+    }
     if (so) {
       const lk = !!so.lk;
       q('.np-sb[data-a="lock"]').innerHTML = lk
@@ -3863,6 +3948,20 @@ async function openNotePage(opts) {
     }
     draw();
   });
+  /* where the pointer is on the canvas (for the magnifier), and whether it's a finger or pen */
+  const npLoupeOn = () => {
+    try {
+      const v = localStorage.getItem("np.loupe");
+      if (v) return v === "1";
+    } catch (e) {}
+    return !!(window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+  };
+  const npPtr = (e) => {
+    const r = cv.getBoundingClientRect();
+    cv.__ptr = [e.clientX - r.left, e.clientY - r.top];
+  };
+  cv.addEventListener("pointerdown", npPtr, true);
+  cv.addEventListener("pointermove", npPtr, true);
   cv.addEventListener("pointermove", (e) => {
     if (!ptrs.has(e.pointerId)) return;
     ptrs.set(e.pointerId, [e.clientX, e.clientY]);
@@ -4100,7 +4199,7 @@ async function openNotePage(opts) {
     } else {
       let b = snapPt(p, { from: cur.a });
       if (!snappedObj && (["line", "dim", "arrow"].includes(cur.t) || npLineShape(cur)))
-        b = orthoB(cur.a, b);
+        b = orthoB(cur.a, b, p);
       cur.b = b;
       live = liveFor(cur);
     }
@@ -4382,8 +4481,8 @@ async function openNotePage(opts) {
         live = null;
         draw();
       }
-      /* the door bar, now the press is over */
-      opBar(sel != null && !msel.size ? doc.objs[sel] : null);
+      /* the size bars, now the press is over */
+      draw();
     }
   };
   cv.addEventListener("pointerup", end);
@@ -5114,6 +5213,14 @@ async function openNotePage(opts) {
           undo.pop();
           recropImg(o);
           return;
+        } else if (a === "moveby") {
+          undo.pop();
+          moveByDlg([o]);
+          return;
+        } else if (a === "clip") {
+          undo.pop();
+          npCopy([o]);
+          return;
         } else if (a === "turnby") {
           undo.pop();
           askLabel(ov, "Turn it by how many degrees? (minus turns the other way)", "45", (v) => {
@@ -5209,6 +5316,119 @@ async function openNotePage(opts) {
 
   /* ===== fine-tune panel for the selected item: nudge, turn by degrees, exact length/size ===== */
   const fb = q(".np-finebox");
+  /* copy and paste: what's copied stays until something else is copied, so it can go onto another page */
+  function npCopy(list) {
+    if (!list.length) return;
+    npClipboard.items = JSON.parse(JSON.stringify(list.filter(Boolean)));
+    npClipboard.page = pg;
+    q(".np-paste").hidden = false;
+    toast(
+      list.length +
+        (list.length === 1 ? " thing" : " things") +
+        " copied – open any page and tap 📋 Paste",
+    );
+  }
+  q(".np-paste").onclick = () => {
+    const items = npClipboard.items;
+    if (!items || !items.length) return;
+    snap();
+    /* on the same page, a little down and to the right so it doesn't sit on the original */
+    const d = npClipboard.page === pg ? (doc.scale ? toUnits(200) : 40) : 0;
+    const ng = items.some((o) => o.gid) ? "g" + Date.now().toString(36) : null;
+    msel.clear();
+    sel = null;
+    items.forEach((o) => {
+      const c = JSON.parse(JSON.stringify(o));
+      if (d) moveObj(c, d, d);
+      delete c.lk;
+      if (c.gid) c.gid = ng;
+      doc.objs.push(c);
+      if (items.length > 1) msel.add(doc.objs.length - 1);
+      else sel = doc.objs.length - 1;
+    });
+    setTool("move");
+    dirty = true;
+    draw();
+    toast(
+      "Pasted " +
+        items.length +
+        (items.length === 1 ? " thing" : " things") +
+        (d ? "" : " in the same place as on the page it came from"),
+    );
+  };
+  q(".np-paste").hidden = !(npClipboard.items && npClipboard.items.length);
+  /* Move by…: type how far across and up, or nudge with arrows; tick to make a copy instead */
+  function moveByDlg(list) {
+    list = list.filter(Boolean);
+    if (!list.length) return;
+    if (list.some((o) => o.lk)) {
+      toast("Unlock it first (🔓)");
+      return;
+    }
+    const d = document.createElement("div");
+    d.className = "dimask";
+    ov.appendChild(d);
+    const mm = !!doc.scale;
+    d.innerHTML = `<form class="dimbox np-mvbox"><b>✥ Move ${list.length > 1 ? list.length + " things" : "it"} by…</b>
+      <div class="grid2"><label>Across (${mm ? "mm" : "units"}, minus is left)<input class="mv-x" type="number" inputmode="decimal" step="any" value="0"></label><label>Up (${mm ? "mm" : "units"}, minus is down)<input class="mv-y" type="number" inputmode="decimal" step="any" value="0"></label></div>
+      <label class="inl"><input type="checkbox" class="mv-copy"> Make a copy there (leave this one where it is)</label>
+      <div class="flabel" style="margin-top:6px">Or nudge it</div>
+      <div class="mv-pad"><button type="button" class="btn" data-d="l" aria-label="Nudge left">◀</button><button type="button" class="btn" data-d="u" aria-label="Nudge up">▲</button><button type="button" class="btn" data-d="d" aria-label="Nudge down">▼</button><button type="button" class="btn" data-d="r" aria-label="Nudge right">▶</button>
+        <label>by<select class="mv-step">${(mm ? [1, 5, 10, 50, 100, 1000] : [1, 5, 10]).map((v) => `<option value="${v}"${v === 10 ? " selected" : ""}>${v}${mm ? " mm" : ""}</option>`).join("")}</select></label></div>
+      <div class="dimbtns"><button type="button" class="btn mv-x2">Done</button><button type="submit" class="btn primary">Move</button></div></form>`;
+    const U = (v) => (mm ? toUnits(v) : v / s);
+    const go = (dx, dy, copy) => {
+      snap();
+      const sel0 = [];
+      list.forEach((o) => {
+        let t = o;
+        if (copy) {
+          t = JSON.parse(JSON.stringify(o));
+          delete t.lk;
+          doc.objs.push(t);
+          sel0.push(doc.objs.length - 1);
+        }
+        moveObj(t, U(dx), -U(dy));
+        if (npIsWall(t)) {
+          weldWall(t);
+          orientCavity(t);
+        }
+      });
+      dirty = true;
+      draw();
+    };
+    d.querySelectorAll(".mv-pad [data-d]").forEach(
+      (b) =>
+        (b.onclick = () => {
+          const st = +d.querySelector(".mv-step").value || 10;
+          const v = { l: [-st, 0], r: [st, 0], u: [0, st], d: [0, -st] }[b.dataset.d];
+          go(v[0], v[1], false);
+        }),
+    );
+    d.querySelector(".mv-x2").onclick = () => d.remove();
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      const dx = parseFloat(d.querySelector(".mv-x").value) || 0,
+        dy = parseFloat(d.querySelector(".mv-y").value) || 0;
+      if (!dx && !dy) {
+        d.remove();
+        return;
+      }
+      const copy = d.querySelector(".mv-copy").checked;
+      go(dx, dy, copy);
+      d.remove();
+      toast(
+        (copy ? "Copied " : "Moved ") +
+          [
+            dx ? Math.abs(dx) + (mm ? " mm " : " ") + (dx > 0 ? "right" : "left") : "",
+            dy ? Math.abs(dy) + (mm ? " mm " : " ") + (dy > 0 ? "up" : "down") : "",
+          ]
+            .filter(Boolean)
+            .join(" and "),
+      );
+    };
+    setTimeout(() => d.querySelector(".mv-x").select(), 50);
+  }
   function moveObj(o, dx, dy) {
     if (o.v) o.v = [o.v[0] + dx, o.v[1] + dy];
     if (o.lead && o.lead.p && !o.__keepTip) o.lead.p = [o.lead.p[0] + dx, o.lead.p[1] + dy];
@@ -8441,7 +8661,15 @@ async function openNotePage(opts) {
           toast(js.length + " deleted");
         } else if (m === "rot") objs.forEach((o) => turnAbout(o, gc, Math.PI / 2));
         else if (m === "mirh" || m === "mirv") objs.forEach((o) => mirAbout(o, gc, m === "mirv"));
-        else if (m === "copy") {
+        else if (m === "moveby") {
+          undo.pop();
+          moveByDlg(objs);
+          return;
+        } else if (m === "clip") {
+          undo.pop();
+          npCopy(objs);
+          return;
+        } else if (m === "copy") {
           const d = snapOn ? 50 : 30 / s;
           const ng =
             js.length > 1 && objs.every((o) => o.gid && o.gid === objs[0].gid)
@@ -10642,6 +10870,16 @@ async function openNotePage(opts) {
     if (ctl && lk === "y") {
       e.preventDefault();
       press(".np-redo");
+      return;
+    }
+    if (ctl && lk === "c" && (sel != null || msel.size)) {
+      e.preventDefault();
+      npCopy(msel.size ? [...msel].map((j) => doc.objs[j]).filter(Boolean) : [doc.objs[sel]]);
+      return;
+    }
+    if (ctl && lk === "v") {
+      e.preventDefault();
+      press(".np-paste");
       return;
     }
     if (ctl && lk === "d") {

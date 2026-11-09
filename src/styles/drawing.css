@@ -98,3 +98,4 @@ body>.dimask.cb3-sg{z-index:320}
 .np-opbar .nob-std{width:auto;max-width:220px;height:34px;background:#362e2e;color:#fff;border-color:#4a3f40;padding:0 6px}
 .np-opbar .nob-i{color:#f1e7c8;max-width:340px}.np-opbar .nob-chk,.np-opbar .nob-fix{background:#4a3f40;color:#fff;border-color:#6b5f60}
 .npimpbox .dimbtns{position:sticky;bottom:-16px;background:var(--surface);padding:10px 0 4px;margin-bottom:-4px;z-index:1;border-top:1px solid var(--line)}
+.np-mvbox .mv-pad{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.np-mvbox .mv-pad .btn{min-width:48px;min-height:48px;font-size:18px}.np-mvbox .mv-pad label{flex-direction:row;align-items:center;gap:6px}.np-mvbox .mv-pad select{width:auto}
