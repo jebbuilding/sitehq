@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 178 files, 3694 KB, 95776 lines.
-- 1819 names declared at the top level (the shared scope); 962 of them are used by a file other than the one that declares them.
+- 178 files, 3696 KB, 95833 lines.
+- 1820 names declared at the top level (the shared scope); 962 of them are used by a file other than the one that declares them.
 - 1876 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 161 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -1409,7 +1409,7 @@ JOB FILE: every document, plan, price and photo for a job, in folders, tied to t
 
 LETTERHEAD SETUP: one place in Setup to bring in the letterhead every PDF uses
 
-- 242 lines, 11 KB. Declares 15 names, 6 used elsewhere.
+- 299 lines, 13 KB. Declares 16 names, 6 used elsewhere.
 - **Used elsewhere:** `lhLogoId` (8), `lhPics` (5), `lhPutTop` (5), `lhPutBot` (2), `lhCard` (1), `lhWire` (1)
 - **Uses names from 9 files:** `core/helpers.js` (4), `sales/sales-pdf.js` (3), `sales/sales-settings.js` (3), `files/files.js` (2), `photos/photos.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `sales/sales-calc.js` (1)
 - **Used by 9 files**

@@ -137,13 +137,66 @@ function lhFindBlocks(c) {
     bot: bot && bot[0] > H * 0.7 && bot[0] > top[1] ? [Math.max(0, bot[0] - pad), H] : null,
   };
 }
-async function lhCropUpload(c, y0, y1, name) {
+async function lhCropUpload(c, y0, y1, name, x0, x1) {
+  x0 = x0 || 0;
+  x1 = x1 || c.width;
   const p = document.createElement("canvas");
-  p.width = c.width;
+  p.width = x1 - x0;
   p.height = y1 - y0;
-  p.getContext("2d").drawImage(c, 0, y0, c.width, y1 - y0, 0, 0, c.width, y1 - y0);
+  p.getContext("2d").drawImage(c, x0, y0, x1 - x0, y1 - y0, 0, 0, x1 - x0, y1 - y0);
   const blob = await new Promise((res) => p.toBlob(res, "image/png"));
   return (await uploadFile(blob, name)).id;
+}
+/* the logo in the top block: the first thing from the left (above the line under the letterhead), up to a clear
+   gap of 5 mm across. [x0, y0, x1, y1] in pixels, or null when it isn't on the left half of the page. */
+function lhFindLogo(c, topEnd, mm) {
+  const W = c.width;
+  const d = c.getContext("2d").getImageData(0, 0, W, topEnd).data;
+  const dark = (x, y) => {
+    const i = (y * W + x) * 4;
+    return d[i] + d[i + 1] + d[i + 2] < 690;
+  };
+  /* rows that are a line across the page don't count */
+  const rows = [];
+  for (let y = 0; y < topEnd; y++) {
+    let n = 0;
+    for (let x = 0; x < W; x += 2) if (dark(x, y)) n++;
+    if (n <= W / 4) rows.push(y);
+  }
+  const colInk = (x) => rows.some((y) => dark(x, y));
+  let x = 0;
+  while (x < W && !colInk(x)) x++;
+  if (x >= W / 2) return null;
+  const x0 = x,
+    gap = Math.round(5 * mm);
+  let last = x,
+    clear = 0;
+  for (; x < W; x++) {
+    if (colInk(x)) {
+      last = x;
+      clear = 0;
+    } else if (++clear >= gap) break;
+  }
+  const x1 = last + 1;
+  if (x1 > W * 0.6 || x1 - x0 < 10 * mm) return null;
+  let y0 = -1,
+    y1 = -1;
+  rows.forEach((y) => {
+    for (let xx = x0; xx < x1; xx += 2)
+      if (dark(xx, y)) {
+        if (y0 < 0) y0 = y;
+        y1 = y;
+        break;
+      }
+  });
+  if (y0 < 0 || y1 - y0 < 5 * mm) return null;
+  const pad = Math.round(mm);
+  return [
+    Math.max(0, x0 - pad),
+    Math.max(0, y0 - pad),
+    Math.min(W, x1 + pad),
+    Math.min(topEnd, y1 + 1 + pad),
+  ];
 }
 async function lhFromPage(file) {
   toast("Reading " + (file.name || "your letterhead") + "…");
@@ -157,7 +210,10 @@ async function lhFromPage(file) {
       return false;
     }
     const r = (v) => Math.round(v * 10) / 10;
+    const lg = lhFindLogo(c, b.top[1], b.mm);
     const patch = {
+      /* its logo becomes the logo on every other PDF */
+      logoId: lg ? await lhCropUpload(c, lg[1], lg[3], "letterhead-logo.png", lg[0], lg[2]) : null,
       lhTop: {
         id: await lhCropUpload(c, b.top[0], b.top[1], "letterhead-top.png"),
         h: r(b.top[1] / b.mm),
@@ -170,6 +226,7 @@ async function lhFromPage(file) {
           }
         : null,
     };
+    if (!patch.logoId) delete patch.logoId;
     await sdSaveSet(patch);
     toast("Letterhead saved – it will print exactly like this");
     render();
