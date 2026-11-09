@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 175 files, 3549 KB, 92022 lines.
-- 1752 names declared at the top level (the shared scope); 928 of them are used by a file other than the one that declares them.
+- 175 files, 3573 KB, 92625 lines.
+- 1764 names declared at the top level (the shared scope); 928 of them are used by a file other than the one that declares them.
 - 1844 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 158 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -50,7 +50,7 @@ The de facto shared API: names used by the most files.
 | `siteNames` | `core/state.js` | 27 files |
 | `parse` | `core/helpers.js` | 25 files |
 | `shrinkImage` | `safety/training.js` | 23 files |
-| `store` | `core/helpers.js` | 22 files |
+| `store` | `core/helpers.js` | 23 files |
 | `myName` | `survey/door-window-survey.js` | 21 files |
 | `submitJob` | `files/outbox.js` | 21 files |
 | `viewClient` | `clients/quick-enquiry.js` | 21 files |
@@ -357,7 +357,7 @@ GENERIC FIELDS
 HELPERS: page lookups, dates, money and hours formatting, toast, working-day times, local storage
 
 - 123 lines, 3.3 KB. Declares 21 names, 20 used elsewhere.
-- **Used elsewhere:** `esc` (138), `$` (134), `toast` (121), `iso` (81), `shortDay` (53), `stamp` (51), `gbp` (36), `addDays` (29), `parse` (25), `store` (22), `hrs` (14), `monday` (12), `dayLabel` (5), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
+- **Used elsewhere:** `esc` (138), `$` (134), `toast` (121), `iso` (81), `shortDay` (53), `stamp` (51), `gbp` (36), `addDays` (29), `parse` (25), `store` (23), `hrs` (14), `monday` (12), `dayLabel` (5), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
 - **Uses names from 0 files:** none
 - **Used by 153 files**
 
@@ -464,7 +464,7 @@ construction details: stud wall connections, framing, headers, ground floor and 
 
 CUPBOARD 3D: a 3D picture of a fitted cupboard or wardrobe for the client, in their colours
 
-- 810 lines, 29 KB. Declares 12 names, 4 used elsewhere.
+- 833 lines, 30 KB. Declares 12 names, 4 used elsewhere.
 - **Used elsewhere:** `cb3Model` (2), `shadeHex` (2), `CB3_COLS` (1), `cb3Open` (1)
 - **Uses names from 13 files:** `drawing/cupboard-maker.js` (4), `drawing/cupboard-shapes.js` (3), `clients/portal.js` (2), `core/helpers.js` (2), `photos/photos.js` (2), `clients/portal-calendar.js` (1), `core/state.js` (1), `drawing/cupboard-alcove.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `sales/job-file.js` (1)
 - **Used by 4 files**
@@ -482,7 +482,7 @@ CUPBOARD ALCOVE: alcove units, base cupboards and shelves – drawing, cutting l
 
 CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting list
 
-- 893 lines, 43 KB. Declares 11 names, 6 used elsewhere.
+- 1171 lines, 55 KB. Declares 17 names, 6 used elsewhere.
 - **Used elsewhere:** `cbPlan` (5), `cbBayDoor` (2), `CB_BAYS` (1), `CB_DOORS` (1), `cbDraw` (1), `cbMakeDialog` (1)
 - **Uses names from 6 files:** `core/sheet.js` (4), `drawing/cupboard-pics.js` (3), `core/helpers.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/cupboard-3d.js` (1), `drawing/cupboard-shapes.js` (1)
 - **Used by 5 files**
@@ -491,9 +491,9 @@ CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting li
 
 CUPBOARD PACK: the workshop pack – every panel drawn, edged and drilled, labelled; and a DXF
 
-- 326 lines, 11 KB. Declares 7 names, 1 used elsewhere.
+- 628 lines, 23 KB. Declares 13 names, 1 used elsewhere.
 - **Used elsewhere:** `cbpOpen` (1)
-- **Uses names from 9 files:** `core/helpers.js` (3), `drawing/cupboard-shapes.js` (2), `core/sheet.js` (1), `core/state.js` (1), `drawing/cupboard-alcove.js` (1), `drawing/cupboard-maker.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1)
+- **Uses names from 9 files:** `core/helpers.js` (4), `drawing/cupboard-shapes.js` (2), `core/sheet.js` (1), `core/state.js` (1), `drawing/cupboard-alcove.js` (1), `drawing/cupboard-maker.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1)
 - **Used by 1 files**
 
 ### `drawing/cupboard-pics.js`

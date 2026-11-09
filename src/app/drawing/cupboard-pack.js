@@ -1,5 +1,5 @@
 /* ================= CUPBOARD PACK: the workshop pack – every panel drawn, edged and drilled, labelled; and a DXF ================= */
-import { $, esc, toast } from "../core/helpers.js";
+import { $, esc, store, toast } from "../core/helpers.js";
 import { openSheet } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { cbaPlan } from "./cupboard-alcove.js";
@@ -29,7 +29,8 @@ function cbpPanels(sp) {
   const shelvesInside =
     sp.kind === "shelves"
       ? false
-      : (P.bays || []).some((b) => b.k === "shelves" || b.k === "drawers");
+      : (sp.shelfSup || "pins") === "pins" &&
+        (P.bays || []).some((b) => b.k === "shelves" || b.k === "drawers");
   const out = [];
   P.cut.forEach((c) => {
     if (!c.th) return; /* rails and battens are bought, not cut */
@@ -53,6 +54,7 @@ function cbpPanels(sp) {
         W,
         th: c.th,
         note: c.note || "",
+        mat: c.mat || "",
         edges: cbpEdges(c.part, c.note),
         holes,
       });
@@ -60,6 +62,103 @@ function cbpPanels(sp) {
   });
   out.forEach((x, i) => (x.label = "P" + (i + 1)));
   return out;
+}
+/* --- materials and sheets: each material and thickness laid out on its sheets --- */
+const CBP_SHEETS = [
+  [2440, 1220],
+  [2800, 2070],
+  [2800, 1830],
+  [3050, 1220],
+  [2440, 610],
+];
+const cbpKey = (x) => x.th + " mm " + (x.mat || "board");
+/* the settings: a sheet size and price for each material, the saw cut, the trim round each sheet, the edging roll */
+/* kept in memory too, for when the device won't store it */
+let cbpMem = null;
+function cbpSettings() {
+  if (cbpMem) return JSON.parse(JSON.stringify(cbpMem));
+  return Object.assign(
+    { sizes: {}, kerf: 4, trim: 10, roll: 50, edgeP: 0 },
+    store.get("jeb.cbpSheets", {}) || {},
+  );
+}
+/* lay the panels out on sheets: strips across the sheet (widest first), panels along each strip. Veneer and oak keep
+   their grain along the length; other boards may be turned. Returns the sheets with every panel's place. */
+function cbpNest(panels, SL, SW, kerf, trim, grain) {
+  const L0 = SL - 2 * trim,
+    W0 = SW - 2 * trim;
+  const big = [];
+  const items = panels
+    .map((p) => {
+      let l = p.L,
+        w = p.W;
+      if (!grain && w > l) [l, w] = [w, l];
+      if (!grain && (l > L0 || w > W0) && w <= L0 && l <= W0) [l, w] = [w, l];
+      return { p, l, w };
+    })
+    .filter((it) => {
+      if (it.l > L0 || it.w > W0) {
+        big.push(it.p);
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => b.w - a.w || b.l - a.l);
+  const sheets = [];
+  items.forEach((it) => {
+    let done = false;
+    for (const sh of sheets) {
+      for (const st of sh.strips)
+        if (it.w <= st.h && st.x + it.l <= L0) {
+          sh.parts.push({ p: it.p, x: st.x, y: st.y, l: it.l, w: it.w });
+          st.x += it.l + kerf;
+          done = true;
+          break;
+        }
+      if (done) break;
+      if (sh.y + it.w <= W0) {
+        const st = { y: sh.y, h: it.w, x: it.l + kerf };
+        sh.strips.push(st);
+        sh.parts.push({ p: it.p, x: 0, y: sh.y, l: it.l, w: it.w });
+        sh.y += it.w + kerf;
+        done = true;
+        break;
+      }
+    }
+    if (!done)
+      sheets.push({
+        strips: [{ y: 0, h: it.w, x: it.l + kerf }],
+        parts: [{ p: it.p, x: 0, y: 0, l: it.l, w: it.w }],
+        y: it.w + kerf,
+      });
+  });
+  sheets.forEach((sh) => (sh.used = sh.parts.reduce((a, q) => a + q.l * q.w, 0) / (SL * SW)));
+  return { sheets, big, SL, SW, trim };
+}
+/* every material: its panels, sheets, how much is used, edging and cost */
+function cbpMaterials(panels, set) {
+  const groups = {};
+  panels.forEach((x) => (groups[cbpKey(x)] = groups[cbpKey(x)] || []).push(x));
+  return Object.entries(groups).map(([k, list]) => {
+    const z = set.sizes[k] || {};
+    const SL = +z.L || 2440,
+      SW = +z.W || 1220;
+    const grain = /veneer|oak/i.test(k);
+    const N = cbpNest(list, SL, SW, +set.kerf || 0, +set.trim || 0, grain);
+    const area = list.reduce((a, x) => a + x.L * x.W, 0);
+    return {
+      key: k,
+      list,
+      SL,
+      SW,
+      price: +z.price || 0,
+      grain,
+      nest: N,
+      n: N.sheets.length,
+      use: N.sheets.length ? area / (N.sheets.length * SL * SW) : 0,
+      band: list.reduce((a, x) => a + cbpBand(x), 0),
+    };
+  });
 }
 const cbpEdgeWords = (e) => {
   const w = [];
@@ -74,6 +173,8 @@ const cbpBand = (x) => (x.edges[0] + x.edges[1]) * x.L + (x.edges[2] + x.edges[3
 /* the PDF workshop pack */
 async function cbpPdf(sp, meta) {
   const panels = cbpPanels(sp);
+  const set = cbpSettings();
+  const mats = cbpMaterials(panels, set);
   await loadJsPdf();
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
   const [r, g, b] = BRGB();
@@ -140,13 +241,138 @@ async function cbpPdf(sp, meta) {
   doc.setFont("helvetica", "normal");
   const bought = (
     cbsIs(sp) ? cbsPlan(sp) : sp.kind && sp.kind !== "full" ? cbaPlan(sp) : cbPlan(sp)
-  ).cut.filter((c) => !c.th);
+  ).cut.filter((c) => !c.th && !/^Boards to order/.test(c.part));
   if (bought.length) {
     y += 6;
-    doc.text("Also: " + bought.map((c) => `${c.qty} × ${c.part} ${c.l} long`).join("; "), 12, y, {
-      maxWidth: 186,
-    });
+    doc.text(
+      "Also: " +
+        bought
+          .map(
+            (c) =>
+              `${c.qty} × ${c.part}${c.l ? " " + c.l + " long" : ""}${c.note ? " (" + c.note + ")" : ""}`,
+          )
+          .join("; "),
+      12,
+      y,
+      {
+        maxWidth: 186,
+      },
+    );
   }
+  /* materials to order */
+  y += bought.length
+    ? doc.splitTextToSize(
+        "Also: " +
+          bought
+            .map(
+              (c) =>
+                `${c.qty} × ${c.part}${c.l ? " " + c.l + " long" : ""}${c.note ? " (" + c.note + ")" : ""}`,
+            )
+            .join("; "),
+        186,
+      ).length *
+        3.8 +
+      6
+    : 8;
+  if (y > 250) {
+    doc.addPage();
+    head("Materials to order – " + (sp.name || "Cupboard"));
+    y = 30;
+  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Materials to order", 12, y);
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  let cost = 0;
+  mats.forEach((m) => {
+    y += 5.5;
+    const c = m.price ? m.n * m.price : 0;
+    cost += c;
+    doc.text(
+      `${m.n} × ${m.key} – sheets ${m.SL} × ${m.SW} · ${m.list.length} panel${m.list.length === 1 ? "" : "s"} · ${Math.round(m.use * 100)}% of the board used${m.grain ? " · grain kept along the length" : ""}${c ? " · £" + c.toFixed(2) : ""}`,
+      12,
+      y,
+      { maxWidth: 186 },
+    );
+    if (m.nest.big.length) {
+      y += 5;
+      doc.setTextColor(180, 35, 24);
+      doc.text(
+        `  Too big for this sheet: ${m.nest.big.map((x) => x.label + " " + x.L + " × " + x.W).join(", ")} – order a bigger board or join it`,
+        12,
+        y,
+        { maxWidth: 186 },
+      );
+      doc.setTextColor(0, 0, 0);
+    }
+  });
+  const bandM = Math.ceil((band * 1.1) / 1000);
+  const rolls = Math.ceil(bandM / (+set.roll || 50));
+  y += 5.5;
+  const ec = +set.edgeP ? bandM * +set.edgeP : 0;
+  cost += ec;
+  doc.text(
+    `Edging: ${bandM} m with 10% spare – ${rolls} roll${rolls === 1 ? "" : "s"} of ${+set.roll || 50} m${ec ? " · £" + ec.toFixed(2) : ""}`,
+    12,
+    y,
+  );
+  if (cost) {
+    y += 5.5;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Boards and edging: about £${cost.toFixed(2)} (from your prices)`, 12, y);
+    doc.setFont("helvetica", "normal");
+  }
+  y += 5;
+  doc.setFontSize(7.5);
+  doc.setTextColor(110, 110, 110);
+  doc.text(
+    `Laid out with a ${+set.kerf || 0} mm saw cut and ${+set.trim || 0} mm trimmed off each sheet edge.`,
+    12,
+    y,
+  );
+  doc.setTextColor(0, 0, 0);
+  /* a cutting layout for every sheet, two to a page */
+  let slot = 0;
+  mats.forEach((m) =>
+    m.nest.sheets.forEach((sh, si) => {
+      if (slot % 2 === 0) {
+        doc.addPage();
+        head("Cutting layout – " + (sp.name || "Cupboard"));
+      }
+      const oy = 28 + (slot % 2) * 132;
+      slot++;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(
+        `${m.key} – sheet ${si + 1} of ${m.n} (${m.SL} × ${m.SW}) · ${Math.round(sh.used * 100)}% used`,
+        12,
+        oy,
+      );
+      doc.setFont("helvetica", "normal");
+      const k = Math.min(186 / m.SL, 112 / m.SW),
+        ox = 12,
+        y0 = oy + 4;
+      doc.setDrawColor(150, 150, 150);
+      doc.setFillColor(238, 238, 238);
+      doc.rect(ox, y0, m.SL * k, m.SW * k, "FD");
+      doc.setDrawColor(40, 40, 40);
+      sh.parts.forEach((q) => {
+        doc.setDrawColor(40, 40, 40);
+        doc.setFillColor(255, 255, 255);
+        const x = ox + (m.nest.trim + q.x) * k,
+          yy = y0 + (m.nest.trim + q.y) * k,
+          w = q.l * k,
+          h = q.w * k;
+        doc.rect(x, yy, w, h, "FD");
+        doc.setFontSize(Math.max(5, Math.min(9, h * 0.45, w * 0.18)));
+        doc.setTextColor(r, g, b);
+        doc.text(q.p.label, x + 1.2, yy + Math.min(h - 1, 4));
+        doc.setTextColor(0, 0, 0);
+        if (h > 7 && w > 22) doc.text(`${q.l} × ${q.w}`, x + 1.2, yy + Math.min(h - 1, 8));
+      });
+    }),
+  );
   /* each panel drawn to scale, six to a page */
   const bw = 90,
     bh = 78;
@@ -300,11 +526,87 @@ function cbpOpen(sp, meta) {
   openSheet(
     `<h3 id="sheettitle">🪚 Workshop pack – ${esc(sp.name || "Cupboard")}</h3>
     <div class="who">${panels.length} panels from the cutting list, labelled P1–P${panels.length}: each drawn to size with the edges to band and the holes (hinge cups on doors, shelf pins on sides).</div>
+    <details class="cbp-mats" open><summary>Materials and sheets</summary><div id="cbp-mrows"></div>
+      <div class="cbp-mg"><label>Saw cut (kerf, mm)<input id="cbp-kerf" type="number" inputmode="decimal"></label><label>Trim off each sheet edge (mm)<input id="cbp-trim" type="number" inputmode="numeric"></label><label>Edging roll (m)<input id="cbp-roll" type="number" inputmode="numeric"></label><label>Edging £ a metre<input id="cbp-ep" type="number" inputmode="decimal" placeholder="optional"></label></div>
+      <div class="cbp-out" id="cbp-out" aria-live="polite"></div></details>
     <div class="actions"><button type="button" class="btn primary" id="cbp-pdf">📄 Workshop pack PDF</button><button type="button" class="btn" id="cbp-dxf">📐 Panels DXF (for a CNC or cutting service)</button></div>
     <div class="actions"><button type="button" class="btn" id="f-cancel">Close</button></div>`,
     () => {},
     null,
   );
+  /* materials: one row each – the sheet size (a common one or your own) and the price; the sheets worked out live */
+  const set = cbpSettings();
+  const keys = [...new Set(panels.map(cbpKey))];
+  $("cbp-mrows").innerHTML = keys
+    .map((k, i) => {
+      const z = set.sizes[k] || {};
+      const L = +z.L || 2440,
+        W = +z.W || 1220;
+      const std = CBP_SHEETS.some(([a, b]) => a === L && b === W);
+      return `<div class="cbp-mrow" data-k="${esc(k)}"><b>${esc(k)}</b><label>Sheet size<select class="cbp-sz" aria-label="Sheet size for ${esc(k)}">${CBP_SHEETS.map(([a, b]) => `<option value="${a}x${b}"${a === L && b === W ? " selected" : ""}>${a} × ${b}</option>`).join("")}<option value="own"${std ? "" : " selected"}>My own size…</option></select></label><label>Length (mm)<input class="cbp-L" type="number" inputmode="numeric" value="${L}"></label><label>Width (mm)<input class="cbp-W" type="number" inputmode="numeric" value="${W}"></label><label>£ a sheet<input class="cbp-p" type="number" inputmode="decimal" value="${z.price || ""}" placeholder="optional" id="cbp-p${i}"></label></div>`;
+    })
+    .join("");
+  $("cbp-kerf").value = set.kerf;
+  $("cbp-trim").value = set.trim;
+  $("cbp-roll").value = set.roll;
+  $("cbp-ep").value = set.edgeP || "";
+  const read = () => {
+    const sizes = Object.assign({}, set.sizes);
+    document.querySelectorAll(".cbp-mrow").forEach((r) => {
+      sizes[r.dataset.k] = {
+        L: +r.querySelector(".cbp-L").value || 2440,
+        W: +r.querySelector(".cbp-W").value || 1220,
+        price: +r.querySelector(".cbp-p").value || 0,
+      };
+    });
+    const ns = {
+      sizes,
+      kerf: Math.max(0, +$("cbp-kerf").value || 0),
+      trim: Math.max(0, +$("cbp-trim").value || 0),
+      roll: Math.max(1, +$("cbp-roll").value || 50),
+      edgeP: Math.max(0, +$("cbp-ep").value || 0),
+    };
+    cbpMem = ns;
+    store.set("jeb.cbpSheets", ns);
+    return ns;
+  };
+  const show = () => {
+    const ns = read();
+    const mats = cbpMaterials(panels, ns);
+    const band = panels.reduce((a, x) => a + cbpBand(x), 0);
+    const bandM = Math.ceil((band * 1.1) / 1000);
+    let cost = bandM * ns.edgeP;
+    const rows = mats.map((m) => {
+      cost += m.n * m.price;
+      return `<li><b>${m.n} sheet${m.n === 1 ? "" : "s"}</b> of ${esc(m.key)} (${m.SL} × ${m.SW}) – ${m.list.length} panel${m.list.length === 1 ? "" : "s"}, ${Math.round(m.use * 100)}% used${m.grain ? ", grain kept along the length" : ""}${m.price ? ` · £${(m.n * m.price).toFixed(2)}` : ""}${m.nest.big.length ? `<br><span class="cbp-big">Too big for this sheet: ${m.nest.big.map((x) => esc(x.label + " " + x.L + " × " + x.W)).join(", ")}</span>` : ""}</li>`;
+    });
+    $("cbp-out").innerHTML =
+      `<ul>${rows.join("")}<li>Edging <b>${bandM} m</b> (10% spare) – ${Math.ceil(bandM / ns.roll)} roll${Math.ceil(bandM / ns.roll) === 1 ? "" : "s"} of ${ns.roll} m${ns.edgeP ? ` · £${(bandM * ns.edgeP).toFixed(2)}` : ""}</li></ul>${cost ? `<b>Boards and edging about £${cost.toFixed(2)}</b>` : ""}<div class="who">The PDF has a cutting layout for every sheet.</div>`;
+  };
+  document.querySelectorAll(".cbp-mrow").forEach((r) => {
+    r.querySelector(".cbp-sz").onchange = (e) => {
+      if (e.target.value !== "own") {
+        const [a, b] = e.target.value.split("x");
+        r.querySelector(".cbp-L").value = a;
+        r.querySelector(".cbp-W").value = b;
+      } else r.querySelector(".cbp-L").focus();
+      show();
+    };
+    [".cbp-L", ".cbp-W"].forEach((c) =>
+      r.querySelector(c).addEventListener("input", () => {
+        const L = +r.querySelector(".cbp-L").value,
+          W = +r.querySelector(".cbp-W").value;
+        const m = CBP_SHEETS.find(([a, b]) => a === L && b === W);
+        r.querySelector(".cbp-sz").value = m ? m[0] + "x" + m[1] : "own";
+        show();
+      }),
+    );
+    r.querySelector(".cbp-p").addEventListener("input", show);
+  });
+  ["cbp-kerf", "cbp-trim", "cbp-roll", "cbp-ep"].forEach((id) =>
+    $(id).addEventListener("input", show),
+  );
+  show();
   $("cbp-pdf").onclick = async () => {
     try {
       const blob = await cbpPdf(sp, meta);

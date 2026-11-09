@@ -498,7 +498,7 @@ function cbsDraw(sp, api) {
     text(
       x1 + (i >= half ? Z * 40 : 0),
       yy,
-      `${c.qty} × ${c.part}: ${c.th ? `${c.l} × ${c.w} × ${c.th}` : `${c.l} long`}${c.note ? "  (" + c.note + ")" : ""}`,
+      `${c.qty} × ${c.part}${c.th ? `: ${c.l} × ${c.w} × ${c.th}${c.mat ? " – " + c.mat : ""}` : c.l ? `: ${c.l} long` : ""}${c.note ? "  (" + c.note + ")" : ""}`,
       0.8,
     );
   });

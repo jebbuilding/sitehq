@@ -128,6 +128,27 @@ function cb3Model(sp, look, open) {
     L.rails.forEach((y) =>
       box(x0 + 4, y - 9, (D - 20) / 2 - 8, x1 - 4, y + 9, (D - 20) / 2 + 8, steel, { inner: inn }),
     );
+    /* the lights, warm and glowing */
+    const lt = sp.lightType || (b.led ? "strip" : "");
+    if (lt && (b.led || sp.lightAll)) {
+      const glow = "#ffe7a3";
+      if (lt === "puck")
+        (x1 - x0 > 700 ? [0.3, 0.7] : [0.5]).forEach((f) => {
+          const cx = x0 + (x1 - x0) * f;
+          box(cx - 30, P.iT - 8, D / 2 - 30, cx + 30, P.iT, D / 2 + 30, glow, { inner: inn });
+        });
+      else if (lt === "profile")
+        [x0 + 2, x1 - 14].forEach((xx) =>
+          box(xx, P.iB + 20, D - 60, xx + 12, P.iT - 20, D - 40, glow, { inner: inn }),
+        );
+      else if (lt === "rail" && L.rails.length)
+        L.rails.forEach((y) =>
+          box(x0 + 6, y - 11, (D - 20) / 2 - 10, x1 - 6, y - 7, (D - 20) / 2 + 10, glow, {
+            inner: inn,
+          }),
+        );
+      else box(x0 + 10, P.iT - 10, D - 80, x1 - 10, P.iT, D - 50, glow, { inner: inn });
+    }
   });
   /* doors */
   const gap = 3,
@@ -240,12 +261,14 @@ function cb3Model(sp, look, open) {
     fR = +sp.fillR || 0,
     eL = sp.endL ? t : 0,
     eR = sp.endR ? t : 0,
-    cH = +sp.cornice || 0;
+    cH = +sp.cornice || 0,
+    fT = +sp.fillT || 0;
   if (eL) box(-eL, 0, 0, 0, H, D + t, doorC);
   if (eR) box(W, 0, 0, W + eR, H, D + t, doorC);
-  if (fL) box(-eL - fL, 0, D - 20, -eL, H + cH, D + t, doorC);
-  if (fR) box(W + eR, 0, D - 20, W + eR + fR, H + cH, D + t, doorC);
-  if (cH) box(-eL - fL, H, 0, W + eR + fR, H + cH, D + t + 10, doorC);
+  if (fL) box(-eL - fL, 0, D - 20, -eL, H + cH + fT, D + t, doorC);
+  if (fR) box(W + eR, 0, D - 20, W + eR + fR, H + cH + fT, D + t, doorC);
+  if (fT) box(-eL - fL, H, D - 20, W + eR + fR, H + fT, D + t, doorC);
+  if (cH) box(-eL - fL, H + fT, 0, W + eR + fR, H + fT + cH, D + t + 10, doorC);
   return out;
 }
 function shadeHex(hex, k) {

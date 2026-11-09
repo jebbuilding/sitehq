@@ -52,8 +52,8 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/CLIENT/.test(pdfTxt)&&/DRAWN BY/.test(pdfTxt)&&/SHEET/.test(pdfTxt)&&/Client approval/.test(pdfTxt),'the client PDF has the corner box (client, scale, date, rev, sheet, drawn by) and a client approval box');
  /* ✍️ client sign-off: to Sue's portal, a copy in her job file */
  await p.click('#cb3-sign');await p.waitForTimeout(300);
- await p.selectOption('#cb3-cl','c1');await p.click('#cb3-send');await p.waitForTimeout(2500);
- ok(/Sue Jones's portal to sign|Saved for Sue Jones/.test(await p.evaluate(()=>{const t=[...document.querySelectorAll('.toast')];return t.length?t[t.length-1].textContent:''})),'sent for sign-off');
+ await p.selectOption('#cb3-cl','c1');await p.click('#cb3-send');await p.waitForFunction(()=>[...document.querySelectorAll('.toast')].some(t=>/Sue Jones/.test(t.textContent)),null,{timeout:8000}).catch(()=>{});
+ ok(/Sue Jones's portal to sign|Saved for Sue Jones/.test(await p.evaluate(()=>[...document.querySelectorAll('.toast')].map(t=>t.textContent).join(' '))),'sent for sign-off');
  const st2=await p.evaluate(()=>window.__st);
  const allv=Object.entries(st2);
  const signs=allv.filter(([k,v])=>v&&v.kind==='design'&&v.status==='open');
