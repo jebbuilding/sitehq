@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 175 files, 3639 KB, 94420 lines.
-- 1775 names declared at the top level (the shared scope); 934 of them are used by a file other than the one that declares them.
-- 1844 file-to-file dependencies (file A uses at least one name from file B).
+- 175 files, 3646 KB, 94592 lines.
+- 1776 names declared at the top level (the shared scope); 940 of them are used by a file other than the one that declares them.
+- 1845 file-to-file dependencies (file A uses at least one name from file B).
 - 22 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 158 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -465,16 +465,16 @@ construction details: stud wall connections, framing, headers, ground floor and 
 CUPBOARD 3D: a 3D picture of a fitted cupboard or wardrobe for the client, in their colours
 
 - 904 lines, 33 KB. Declares 13 names, 6 used elsewhere.
-- **Used elsewhere:** `cb3Model` (2), `shadeHex` (2), `CB3_COLS` (1), `cb3Draw` (1), `cb3LookFor` (1), `cb3Open` (1)
+- **Used elsewhere:** `CB3_COLS` (2), `cb3Model` (2), `shadeHex` (2), `cb3Draw` (1), `cb3LookFor` (1), `cb3Open` (1)
 - **Uses names from 13 files:** `drawing/cupboard-maker.js` (7), `drawing/cupboard-shapes.js` (3), `clients/portal.js` (2), `core/helpers.js` (2), `photos/photos.js` (2), `clients/portal-calendar.js` (1), `core/state.js` (1), `drawing/cupboard-alcove.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `sales/job-file.js` (1)
-- **Used by 4 files**
+- **Used by 5 files**
 
 ### `drawing/cupboard-alcove.js`
 
 CUPBOARD ALCOVE: alcove units, base cupboards and shelves – drawing, cutting list and 3D
 
 - 298 lines, 13 KB. Declares 8 names, 5 used elsewhere.
-- **Used elsewhere:** `cbaPlan` (2), `CBA_KINDS` (1), `cba3Model` (1), `cbaDraw` (1), `cbaHasBase` (1)
+- **Used elsewhere:** `CBA_KINDS` (2), `cbaPlan` (2), `cba3Model` (1), `cbaDraw` (1), `cbaHasBase` (1)
 - **Uses names from 2 files:** `drawing/cupboard-3d.js` (2), `drawing/cupboard-maker.js` (1)
 - **Used by 4 files**
 
@@ -482,8 +482,8 @@ CUPBOARD ALCOVE: alcove units, base cupboards and shelves – drawing, cutting l
 
 CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting list
 
-- 1883 lines, 81 KB. Declares 23 names, 10 used elsewhere.
-- **Used elsewhere:** `cbPlan` (5), `cbBayDoor` (2), `CB_BAYS` (1), `CB_DOORS` (1), `cbDetails` (1), `cbDraw` (1), `cbHAt` (1), `cbMakeDialog` (1), `cbSlopeOn` (1), `cbSlopeW` (1)
+- 1889 lines, 81 KB. Declares 23 names, 16 used elsewhere.
+- **Used elsewhere:** `cbPlan` (5), `CB_BAYS` (2), `CB_DOORS` (2), `cbBayDoor` (2), `cbSlopeOn` (2), `CB_BAYDOORS` (1), `CB_HANDLES` (1), `CB_LIGHTS` (1), `CB_RUNNERS` (1), `CB_SUPS` (1), `cbDetails` (1), `cbDraw` (1), `cbHAt` (1), `cbMakeDialog` (1), `cbSlopeAng` (1), `cbSlopeW` (1)
 - **Uses names from 6 files:** `core/sheet.js` (4), `drawing/cupboard-pics.js` (3), `core/helpers.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/cupboard-3d.js` (1), `drawing/cupboard-shapes.js` (1)
 - **Used by 5 files**
 
@@ -491,9 +491,9 @@ CUPBOARD MAKER: fitted cupboards and wardrobes drawn to scale, with a cutting li
 
 CUPBOARD PACK: the workshop pack – every panel drawn, edged and drilled, labelled; and a DXF
 
-- 677 lines, 25 KB. Declares 14 names, 1 used elsewhere.
+- 803 lines, 30 KB. Declares 15 names, 1 used elsewhere.
 - **Used elsewhere:** `cbpOpen` (1)
-- **Uses names from 9 files:** `core/helpers.js` (4), `drawing/cupboard-shapes.js` (2), `core/sheet.js` (1), `core/state.js` (1), `drawing/cupboard-alcove.js` (1), `drawing/cupboard-maker.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1)
+- **Uses names from 10 files:** `drawing/cupboard-maker.js` (10), `core/helpers.js` (4), `drawing/cupboard-shapes.js` (3), `drawing/cupboard-alcove.js` (2), `core/sheet.js` (1), `core/state.js` (1), `drawing/cupboard-3d.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1)
 - **Used by 1 files**
 
 ### `drawing/cupboard-pics.js`
@@ -510,7 +510,7 @@ CUPBOARD PICS: small pictures to pick what you're making and the doors
 CUPBOARD SHAPES: corner, under-stairs, eaves, over-bed, window or radiator, window seat, boot bench, TV wall
 
 - 663 lines, 23 KB. Declares 8 names, 6 used elsewhere.
-- **Used elsewhere:** `cbsIs` (3), `cbsPlan` (2), `cb3ExtFaces` (1), `CBS_KINDS` (1), `cbs3Model` (1), `cbsDraw` (1)
+- **Used elsewhere:** `cbsIs` (3), `CBS_KINDS` (2), `cbsPlan` (2), `cb3ExtFaces` (1), `cbs3Model` (1), `cbsDraw` (1)
 - **Uses names from 2 files:** `drawing/cupboard-3d.js` (2), `drawing/cupboard-maker.js` (2)
 - **Used by 4 files**
 
@@ -563,7 +563,7 @@ NOTEBOOK PAGE (OneNote-style): big zoomable page, pen tools, photos you can move
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 11293 lines, 406 KB. Declares 30 names, 11 used elsewhere.
+- 11333 lines, 408 KB. Declares 30 names, 11 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_BATHNICE` (1), `NP_NICE` (1), `NP_REAL` (1), `NP_SCX` (1), `npBath` (1), `npCanopy` (1), `npNice` (1), `setNpScx` (1)
 - **Uses names from 34 files:** `drawing/construction-details.js` (16), `drawing/room-sketch.js` (9), `drawing/walls.js` (8), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/cupboard-maker.js` (4), `drawing/retaining-wall.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `files/files.js` (3), `photos/photos.js` (3), `survey/door-window-survey.js` (3), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sites/summary.js` (1)
 - **Used by 19 files**

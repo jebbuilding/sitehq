@@ -6,14 +6,20 @@ import { CBA_KINDS, cbaHasBase } from "./cupboard-alcove.js";
 import { CBP_DOOR, CBP_KIND, cbpPicker } from "./cupboard-pics.js";
 import { CBS_KINDS } from "./cupboard-shapes.js";
 export {
+  CB_BAYDOORS,
   CB_BAYS,
   CB_DOORS,
+  CB_HANDLES,
+  CB_LIGHTS,
+  CB_RUNNERS,
+  CB_SUPS,
   cbBayDoor,
   cbDetails,
   cbDraw,
   cbHAt,
   cbMakeDialog,
   cbPlan,
+  cbSlopeAng,
   cbSlopeOn,
   cbSlopeW,
 };

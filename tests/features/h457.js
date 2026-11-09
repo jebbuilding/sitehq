@@ -75,6 +75,11 @@ page_src=page_src.replace(HOOK,HOOK+'window.__np=()=>doc;window.__pg=()=>pg;');
  const t=await p.evaluate(async()=>{const r=window.__dl[window.__dl.length-1];const u=new Uint8Array(await r.data.arrayBuffer());let s='';u.forEach(x=>s+=String.fromCharCode(x));return [r.filename,s]});
  const txt=t[1].replace(/[^\x20-\x7e]/g,' ');
  ok(/Whole job/.test(t[0])&&/Eaves wardrobe/.test(txt)&&/Alcove wardrobe/.test(txt),'the PDF is for the whole job, naming both cupboards ('+t[0]+')');
+ const imgs=(t[1].match(/\/Subtype \/Image/g)||[]).length;
+ ok(/Specification - Eaves wardrobe|Specification . Eaves wardrobe/.test(txt)&&/Sloping top/.test(txt)&&/Face frame/.test(txt)&&/250, 200, 150/.test(txt),'each cupboard has its spec: slope, face frame, drawer heights');
+ ok(/Drawing . Eaves wardrobe/.test(txt)&&/Drawing . Alcove wardrobe/.test(txt),'and its drawing with the sizes');
+ ok(/3D views . Eaves wardrobe/.test(txt)&&/Doors open/.test(txt)&&imgs>=6,'and its 3D views, doors shut and open ('+imgs+' pictures in the PDF)');
+ fs.writeFileSync('h457-pack.pdf',Buffer.from(t[1],'binary'));
  }catch(err){console.log('FAIL',String(err.message).split('\n').slice(0,6).join(' | '));bad++}
  console.log(bad?'h457: '+bad+' FAILED':'h457: all passed');
  await b.close()})();

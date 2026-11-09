@@ -1353,11 +1353,13 @@ async function openNotePage(opts) {
     });
   }
   const vpOf = (o) => o && o.t === "rect" && o.vp;
+  /* the page being drawn when it isn't the one on screen (a PDF, a page picture): its own scaled areas count */
+  const vpList = { objs: null };
   const vpBoxAt = (p) => {
     if (!p) return null;
     let best = null,
       ba = Infinity;
-    for (const o of doc.objs) {
+    for (const o of vpList.objs || doc.objs) {
       if (!vpOf(o)) continue;
       const x0 = Math.min(o.a[0], o.b[0]),
         x1 = Math.max(o.a[0], o.b[0]),
@@ -2874,7 +2876,12 @@ async function openNotePage(opts) {
       if (gi != null && gi !== pg && doc.pages[gi]) {
         g.save();
         g.globalAlpha = 0.22;
-        npDrawAll(g, visObjs(doc.pages[gi].objs), drawObj);
+        vpList.objs = doc.pages[gi].objs;
+        try {
+          npDrawAll(g, visObjs(doc.pages[gi].objs), drawObj);
+        } finally {
+          vpList.objs = null;
+        }
         g.restore();
       }
     }
@@ -7445,6 +7452,34 @@ async function openNotePage(opts) {
             cbpOpen(cp.cupb, {
               client: (doc.info || {}).client || "",
               walls: doc.pages.filter((x) => x.cupb).map((x) => x.cupb),
+              /* each cupboard's drawing page as drawn, for the pack */
+              drawings: async (list) => {
+                doc.pages[pg].objs = doc.objs;
+                const k = Math.min(150 / 25.4 / NP_U, 3200 / Math.max(doc.w, doc.h));
+                const out = [];
+                for (const one of list) {
+                  const i = doc.pages.findIndex((x) => x.cupb === one);
+                  if (i < 0) continue;
+                  const oc = await renderPage(i, k);
+                  out.push({
+                    sp: one,
+                    name: doc.pages[i].name,
+                    url: oc.toDataURL("image/jpeg", 0.88),
+                    w: doc.w / NP_U,
+                    h: doc.h / NP_U,
+                  });
+                }
+                return out;
+              },
+              /* a 3D view, in the look chosen for it */
+              img3d: (one, open) => {
+                const p0 = doc.pages.find((x) => x.cupb === one);
+                const cv = document.createElement("canvas");
+                cv.width = 1400;
+                cv.height = 1000;
+                cb3Draw(cv, one, (p0 && p0.cupbLook) || cb3LookFor(one), open, -0.45);
+                return cv.toDataURL("image/jpeg", 0.88);
+              },
             });
         } else if (a === "check") checkDlg();
         else if (a === "tpl") tplDlg();
@@ -10829,7 +10864,12 @@ async function openNotePage(opts) {
           });
       }
     }
-    npDrawAll(og, visObjs(objs), drawObj);
+    vpList.objs = objs;
+    try {
+      npDrawAll(og, visObjs(objs), drawObj);
+    } finally {
+      vpList.objs = null;
+    }
     if (logoIm && !logoIm.complete)
       await new Promise((r) => {
         logoIm.addEventListener("load", r);

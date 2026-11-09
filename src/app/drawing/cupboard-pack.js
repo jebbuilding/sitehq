@@ -2,9 +2,21 @@
 import { $, esc, store, toast } from "../core/helpers.js";
 import { openSheet } from "../core/sheet.js";
 import { S } from "../core/state.js";
-import { cbaPlan } from "./cupboard-alcove.js";
-import { cbPlan } from "./cupboard-maker.js";
-import { cbsIs, cbsPlan } from "./cupboard-shapes.js";
+import { CB3_COLS } from "./cupboard-3d.js";
+import { CBA_KINDS, cbaPlan } from "./cupboard-alcove.js";
+import {
+  CB_BAYDOORS,
+  CB_BAYS,
+  CB_DOORS,
+  CB_HANDLES,
+  CB_LIGHTS,
+  CB_RUNNERS,
+  CB_SUPS,
+  cbPlan,
+  cbSlopeAng,
+  cbSlopeOn,
+} from "./cupboard-maker.js";
+import { CBS_KINDS, cbsIs, cbsPlan } from "./cupboard-shapes.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
@@ -207,6 +219,66 @@ const cbpEdgeWords = (e) => {
   return w.join(", ") || "none";
 };
 const cbpBand = (x) => (x.edges[0] + x.edges[1]) * x.L + (x.edges[2] + x.edges[3]) * x.W;
+/* the spec of one cupboard for the workshop: [label, value] rows */
+function cbpSpec(sp) {
+  const nm = (list, k, d) =>
+    ((list.find((x) => x[0] === (k || d)) || [0, k || ""])[1] || "").replace(/ \(.*\)$/, "");
+  const col = (c) => (c ? (CB3_COLS.find((x) => x[0] === c) || [c, c])[1] : "");
+  const both = (c, m) => [col(c), m].filter(Boolean).join(", ") || "Not chosen";
+  const kinds = CBA_KINDS.concat(CBS_KINDS);
+  const rows = [
+    ["Type", nm(kinds, sp.kind, "full") || "Fitted wardrobe"],
+    ["Size", `${sp.W} wide × ${sp.H} high × ${sp.D} deep (mm)`],
+  ];
+  if (cbSlopeOn(sp))
+    rows.push([
+      "Sloping top",
+      `down to ${sp.slopeLow} at the ${sp.slope === "L" ? "left" : "right"}${+sp.slopeW && +sp.slopeW < sp.W ? ", over " + sp.slopeW : ""} (${cbSlopeAng(sp)}°)`,
+    ]);
+  if (sp.open)
+    rows.push([
+      "Opening",
+      `${sp.open} × ${sp.Hopen || sp.H}${+sp.fillL || +sp.fillR || +sp.fillT ? ` – fillers ${+sp.fillL || 0} left, ${+sp.fillR || 0} right, ${+sp.fillT || 0} top` : ""}`,
+    ]);
+  rows.push(
+    [
+      "Boards",
+      `carcass ${sp.t} mm, back ${sp.bt || "none"}${sp.bt ? " mm" : ""}, doors and fronts ${sp.dt || sp.t} mm, shelves ${sp.sht || sp.t} mm`,
+    ],
+    ["Plinth", +sp.plinth ? sp.plinth + " mm, clip-on on adjustable legs" : "None"],
+    ["Carcass", both(sp.colCar, sp.matCar)],
+    ["Doors and fronts", both(sp.colDoor, sp.matDoor || sp.matCar)],
+    ["Shelves and top", both(sp.colTop, sp.matShelf || sp.matCar)],
+    ["Back", sp.matBack || "MDF"],
+    ["Edging", sp.edge || "Not chosen"],
+  );
+  if (sp.ff)
+    rows.push([
+      "Face frame",
+      `${sp.ffMat || "hardwood"} ${sp.ffT || 20} mm – stiles ${sp.ffW || 45}, rails ${sp.ffR || 45}, muntins ${sp.ffM || 45}; doors ${sp.ff === "inset" ? "inset in the frame" : "over the frame by 12"}`,
+    ]);
+  rows.push(
+    ["Doors", nm(CB_DOORS, sp.doors, "hinged")],
+    ["Handles", nm(CB_HANDLES, sp.handle, "bar")],
+    ["Shelves sit on", nm(CB_SUPS, sp.shelfSup, "pins")],
+    ["Drawer runners", nm(CB_RUNNERS, sp.runner, "soft-close")],
+  );
+  if (sp.lightType)
+    rows.push(["Lighting", nm(CB_LIGHTS, sp.lightType) + (sp.lightAll ? ", every bay" : "")]);
+  (sp.bays || []).forEach((b, i) => {
+    const bits = [nm(CB_BAYS, b.k, "shelves")];
+    if (+b.s) bits.push(b.s + " shelves" + (b.sh ? " at " + b.sh : ""));
+    if (+b.d) bits.push(b.d + " drawers" + (b.dh ? " (" + b.dh + " high)" : ""));
+    if (+b.w) bits.push(b.w + " wide inside");
+    if (+b.top) bits.push("top box " + b.top);
+    if (b.door) bits.push(nm(CB_BAYDOORS, b.door));
+    if (b.shoe) bits.push("shoe rack");
+    if (b.trouser) bits.push("trouser pull-out");
+    if (b.led) bits.push("LED light");
+    rows.push(["Bay " + (i + 1), bits.join(", ")]);
+  });
+  return rows;
+}
 /* the PDF workshop pack */
 async function cbpPdf(sp, meta) {
   const panels = cbpPanels(sp);
@@ -367,6 +439,60 @@ async function cbpPdf(sp, meta) {
     y,
   );
   doc.setTextColor(0, 0, 0);
+  /* each cupboard: its spec, its drawing (the views with every size), and the 3D views, doors shut and open */
+  const list = sp.job || [sp];
+  const drawings = meta && meta.drawings ? await meta.drawings(list).catch(() => []) : [];
+  for (const one of list) {
+    doc.addPage("a4", "portrait");
+    head("Specification – " + (one.name || "Cupboard"));
+    let sy = 30;
+    doc.setFontSize(9);
+    cbpSpec(one).forEach(([k, v]) => {
+      const ln = doc.splitTextToSize(String(v), 140);
+      if (sy + ln.length * 4.2 > 285) {
+        doc.addPage("a4", "portrait");
+        head("Specification – " + (one.name || "Cupboard") + " (continued)");
+        sy = 30;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.text(k, 12, sy);
+      doc.setFont("helvetica", "normal");
+      doc.text(ln, 52, sy);
+      sy += ln.length * 4.2 + 1.6;
+    });
+    /* the drawing page, as drawn, on a landscape page */
+    drawings
+      .filter((d) => d.sp === one)
+      .forEach((d) => {
+        doc.addPage("a4", "landscape");
+        doc.setFillColor(r, g, b);
+        doc.rect(0, 0, 297, 3, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(r, g, b);
+        doc.text("Drawing – " + (d.name || one.name || "Cupboard"), 10, 11);
+        doc.setTextColor(0, 0, 0);
+        const k2 = Math.min(281 / d.w, 190 / d.h);
+        doc.addImage(d.url, "JPEG", 8 + (281 - d.w * k2) / 2, 15, d.w * k2, d.h * k2);
+      });
+    /* the 3D views */
+    if (meta && meta.img3d) {
+      doc.addPage("a4", "portrait");
+      head("3D views – " + (one.name || "Cupboard"));
+      [false, true].forEach((open, i) => {
+        try {
+          const url = meta.img3d(one, open);
+          if (!url) return;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text(open ? "Doors open" : "Doors shut", 12, 30 + i * 132);
+          doc.addImage(url, "JPEG", 12, 33 + i * 132, 186, 186 * (1000 / 1400));
+        } catch (e) {
+          /* a 3D view that won't draw is left out */
+        }
+      });
+    }
+  }
   /* a cutting layout for every sheet, two to a page */
   let slot = 0;
   mats.forEach((m) =>
@@ -565,7 +691,7 @@ function cbpOpen(sp, meta) {
         ? `<label for="cbp-which">Which cupboards<select id="cbp-which"><option value="one"${sp.job ? "" : " selected"}>${esc((meta.one || sp).name || "This cupboard")} only</option><option value="job"${sp.job ? " selected" : ""}>The whole job – all ${meta.walls.length} (${esc(meta.walls.map((w) => w.name || "Cupboard").join(", "))})</option></select></label>`
         : ""
     }
-    <div class="who">${panels.length} panels from the cutting list${sp.job ? " of every cupboard in this drawing" : ""}, labelled P1–P${panels.length}: each drawn to size with the edges to band and the holes (hinge cups on doors, shelf pins on sides).</div>
+    <div class="who">${panels.length} panels from the cutting list${sp.job ? " of every cupboard in this drawing" : ""}, labelled P1–P${panels.length}: each drawn to size with the edges to band and the holes (hinge cups on doors, shelf pins on sides). The PDF also has each cupboard's spec, its drawing with every size, and the 3D views with the doors shut and open.</div>
     <details class="cbp-mats" open><summary>Materials and sheets</summary><div id="cbp-mrows"></div>
       <div class="cbp-mg"><label>Saw cut (kerf, mm)<input id="cbp-kerf" type="number" inputmode="decimal"></label><label>Trim off each sheet edge (mm)<input id="cbp-trim" type="number" inputmode="numeric"></label><label>Edging roll (m)<input id="cbp-roll" type="number" inputmode="numeric"></label><label>Edging £ a metre<input id="cbp-ep" type="number" inputmode="decimal" placeholder="optional"></label></div>
       <div class="cbp-out" id="cbp-out" aria-live="polite"></div></details>
