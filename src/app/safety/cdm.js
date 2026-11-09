@@ -45,6 +45,14 @@ const CDM_RISKS = [
 ];
 const CDM_DOCS = [
   ["appoint", "CDM duty holder appointments (client letter & acknowledgement)"],
+  [
+    "brappoint",
+    "Building Regulations dutyholder appointments (Part 2A): principal designer and principal contractor, in writing",
+  ],
+  [
+    "bccommence",
+    "Building Control commencement record (start notice and when the work counts as started)",
+  ],
   ["pci", "Pre-construction information (PCI)"],
   ["cpp", "Construction phase plan (CPP)"],
   ["check", "CDM 2015 compliance checklist"],
@@ -70,7 +78,7 @@ const CDM_DOCS = [
   ["dig", "Permit to dig (services check before excavating)"],
 ];
 const CDM_GROUPS = [
-  ["Before you start", ["appoint", "dominfo", "pci", "f10", "drr"]],
+  ["Before you start", ["appoint", "brappoint", "bccommence", "dominfo", "pci", "f10", "drr"]],
   [
     "Running the job",
     ["welfarepack", "cpp", "emerg", "welfare", "notice", "subcon", "tw", "log", "check"],
@@ -551,6 +559,116 @@ function cdmSections(cd, pick) {
         ],
       ],
     ]);
+  /* Building Regulations dutyholder appointments (Part 2A, from October 2023): separate from the CDM ones */
+  if (pick.brappoint)
+    S2("Building Regulations dutyholder appointments", [
+      ["h", "Principal designer and principal contractor (Part 2A)"],
+      ["rows", head.filter(([k]) => !/^Principal/.test(k))],
+      [
+        "p",
+        "Since October 2023 the Building Regulations have their own dutyholders, separate from the CDM ones (they are often the same people). Where more than one contractor or designer works on the job, the client must appoint a principal designer to plan, manage and monitor the design work, and a principal contractor to plan, manage and monitor the building work, so that it complies with the Building Regulations. The appointments should be made in writing before the work starts." +
+          (dom
+            ? " For a domestic client: if these appointments are not made, the designer in control of the design work is the principal designer and the contractor in control of the building work is the principal contractor – this letter puts it in writing so everyone knows."
+            : " For work done for a business, the appointments must be made in writing."),
+      ],
+      ["h2", "1. The client appoints"],
+      [
+        "rows",
+        [
+          ["Principal designer", cd.pdName || cd.designer || "______________________________"],
+          ["Principal contractor", (many ? cd.pcName : "") || co.name],
+          ["Appointed from", "___/___/______"],
+        ],
+      ],
+      [
+        "p",
+        "I / we appoint the principal designer and principal contractor named above for this building work, and will give them the information they need. Before appointing them, I / we took reasonable steps to check that each has the competence (skills, knowledge, experience and behaviours) for the role.",
+      ],
+      ["sign", [["Client", cd.client]]],
+      ["h2", "2. The principal contractor accepts"],
+      [
+        "p",
+        "I accept the appointment as principal contractor under Part 2A of the Building Regulations 2010. I confirm I am competent for the role, and I will plan, manage and monitor the building work, and co-operate with the client and the principal designer, so that the work complies with the Building Regulations.",
+      ],
+      [
+        "sign",
+        [
+          ["Principal contractor", (many ? cd.pcName : "") || co.name],
+          ["Signed for them by", co.owner],
+        ],
+      ],
+      ["h2", "3. The principal designer accepts"],
+      [
+        "p",
+        "I accept the appointment as principal designer under Part 2A of the Building Regulations 2010. I confirm I am competent for the role, and I will plan, manage and monitor the design work, and co-operate with the client and the principal contractor, so that the design complies with the Building Regulations.",
+      ],
+      ["sign", [["Principal designer", cd.pdName || cd.designer || ""]]],
+      [
+        "p",
+        "Keep a copy with the job. The dates of these appointments go on the Building Control completion statement at the end of the job.",
+      ],
+    ]);
+  /* Building Control commencement: the start notice, and the date the work counts as started */
+  if (pick.bccommence)
+    S2("Building Control commencement record", [
+      [
+        "rows",
+        [
+          ["Project", cd.project],
+          ["Site address", cd.address],
+          ["Client", cd.client],
+          ["Building control body", cd.bc],
+          ["Building control reference", cd.bcRef || cd.planning],
+          ...(dom ? [["Domestic client", "Notices are given on behalf of a domestic client"]] : []),
+        ],
+      ],
+      [
+        "p",
+        "Building control must be told before the work starts (traditionally at least 2 days before) and, under the October 2023 changes, when the work is regarded as commenced. Check your building control body's own deadlines and how they want to be told, and keep this record with the job.",
+      ],
+      ["h2", "Start notice"],
+      [
+        "rows",
+        [
+          ["Date work will start", ukDate(cd.start) || "___/___/______"],
+          ["Building control told on", "___/___/______"],
+          ["Told by (name)", cd.manager || co.owner],
+          ["How (online form, email, phone)", "______________________________"],
+          ["Their acknowledgement / reference", "______________________________"],
+        ],
+      ],
+      ["h2", "When the work is regarded as commenced"],
+      [
+        "rows",
+        [
+          [
+            "What counts as the start on this job",
+            "______________________________ (e.g. foundations for the extension dug and concreted)",
+          ],
+          ["Date that was done", "___/___/______"],
+          ["Building control told on", "___/___/______"],
+          ["Their acknowledgement / reference", "______________________________"],
+        ],
+      ],
+      ["h2", "Before you start"],
+      [
+        "checks",
+        [
+          ["Plans approved (full plans) or building notice accepted", ""],
+          [
+            "Principal designer and principal contractor appointed in writing (Building Regulations Part 2A)",
+            "",
+          ],
+          [
+            "Inspection stages agreed with building control (e.g. foundations, damp course, drains, pre-plaster, completion)",
+            "",
+          ],
+          ["Party wall notices served and agreed, where needed", ""],
+          ["Structural engineer's calculations sent to building control", ""],
+        ],
+      ],
+      ["sign", [["Recorded by", cd.manager || co.owner]]],
+    ]);
   {
     const cons = String(cd.otherContractors || "")
       .split(/[,;\n]+/)
@@ -624,11 +742,18 @@ function cdmSections(cd, pick) {
       ]);
     if (pick.subcon)
       S2("Contractor appointments & competence", [
-        ["h", "Contractors and subcontractors (CDM 2015 reg. 8 and 15)"],
+        [
+          "h",
+          "Contractors and subcontractors (CDM 2015 reg. 8 and 15; Building Regulations Part 2A)",
+        ],
         ["rows", head],
         [
           "p",
           "Everyone who works on this project must have the skills, knowledge, training and experience for their work. Check each contractor before they start and keep the evidence.",
+        ],
+        [
+          "p",
+          "Under Part 2A of the Building Regulations 2010 (from October 2023) everyone who carries out building work must also be competent to do it so that it complies with the Building Regulations – the skills, knowledge, experience and behaviours for the work – and must not take on work they are not competent for. The principal contractor must take all reasonable steps to check that the trades it brings in are competent before appointing them, and plan and monitor the work so that it complies.",
         ],
         [
           "tablew",
@@ -656,6 +781,28 @@ function cdmSections(cd, pick) {
             "The RAMS for the work and how it fits with other trades",
             "Welfare, first aid and emergency arrangements",
             "Who to report to on site: " + (cd.manager || co.owner),
+          ],
+        ],
+        ["h2", "Building Regulations: each trade confirms"],
+        [
+          "checks",
+          [
+            [
+              "I am competent to carry out my part of the work so that it complies with the Building Regulations, and I will tell the principal contractor straight away if I am not",
+              "",
+            ],
+            [
+              "I will follow the approved plans and specification, and raise any change before making it",
+              "",
+            ],
+            [
+              "I will tell the principal contractor about anything that may not comply, and co-operate with the other dutyholders",
+              "",
+            ],
+            [
+              "Where my trade self-certifies (e.g. Part P electrics, Gas Safe, FENSA), I will notify it and give the certificate to the principal contractor",
+              "",
+            ],
           ],
         ],
         ["sign", [["Checked by", co.owner]]],
