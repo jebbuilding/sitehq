@@ -7,9 +7,10 @@ import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
 import { allTeam, nameOf, teamPlusMe } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
-import { acCatName } from "./acct-data.js";
+import { acAllTx, acCatKind, acCatName } from "./acct-data.js";
 import { acRcptParts, acReceipts, acSaveRcpt } from "./acct-receipts.js";
 import { acRcptSheet } from "./acct-review.js";
+import { jbBudget, jbCard, jbTag, jbWire } from "./job-budget.js";
 import { SD_VATC, sdCalc, sdCounts, sdNo, sdR2, sdSales, sdSaveRec } from "./sales-calc.js";
 import { sdEdit } from "./sales-edit.js";
 import { empTypeOf } from "../sites/job-details.js";
@@ -17,7 +18,7 @@ import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
 import { dwRate } from "../timesheets/day-work.js";
-export { jcData, jcView };
+export { jcData, jcJob, jcSave, jcView };
 /* For each site: labour from the timesheets (hours × what each person costs you an hour), materials and hire from
    receipts and bills booked to the site, subbies from their invoices and CIS bills for the site; against what's
    been invoiced (and, for a fixed-price job, the accepted estimate). A cost-plus job charges labour at each
@@ -139,6 +140,25 @@ function jcData(site) {
       });
     }),
   );
+  /* bank payments booked to the job – not ones with a receipt or matched to a subbie's invoice (counted above), not
+     wages (the timesheets count those), not money moved about */
+  acAllTx().forEach((t) => {
+    if (!same(t.site, site) || t.amt >= 0 || t.rcpt || t.link || t.cat === "wages") return;
+    if (acCatKind(t.cat) === "move") return;
+    const net = sdR2(-t.amt - (+t.vat || 0));
+    const sub = t.cat === "subs";
+    const pct = +(sub ? j.subPct : j.matPct) || 0;
+    items.push({
+      key: "b|" + t.rec + "|" + t.id,
+      kind: sub ? "sub" : "mat",
+      date: t.date,
+      desc: "Bank: " + t.desc,
+      cat: t.cat ? acCatName(t.cat) : "",
+      cost: net,
+      pct,
+      charge: sdR2(net * (1 + pct / 100)),
+    });
+  });
   items.forEach((it) => (it.inv = j.invoiced[it.key] || ""));
   items.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
   /* what the client's been invoiced, and the estimate */
@@ -223,10 +243,10 @@ function jcView(tabs) {
     <div class="actions"><button type="button" class="btn" id="jc-rates">⚙️ What each person costs you an hour</button></div>
     ${
       rows.length
-        ? `<div class="tablewrap"><table class="jc-tbl"><thead><tr><th>Job</th><th>Type</th><th class="num">Costs</th><th class="num">Invoiced</th><th class="num">Profit</th><th class="num">%</th></tr></thead><tbody>${rows
+        ? `<div class="tablewrap"><table class="jc-tbl"><thead><tr><th>Job</th><th>Type</th><th class="num">Costs</th><th class="num">Invoiced</th><th class="num">Profit</th><th class="num">%</th><th>Budget</th></tr></thead><tbody>${rows
             .map(
               (d) =>
-                `<tr class="jc-row" data-s="${esc(d.site)}"><td><b>${esc(d.site)}</b>${d.cp && d.notInv.length ? `<div class="jc-warn">${gbp(d.notInvCharge)} not invoiced yet</div>` : ""}</td><td>${d.cp ? "Cost plus" : "Fixed price"}</td><td class="num">${gbp(d.cost)}</td><td class="num">${gbp(d.invoiced)}</td><td class="num${d.profit < 0 ? " jc-neg" : ""}">${gbp(d.profit)}</td><td class="num">${d.price ? d.pctProfit + "%" : "–"}</td></tr>`,
+                `<tr class="jc-row" data-s="${esc(d.site)}"><td><b>${esc(d.site)}</b>${d.cp && d.notInv.length ? `<div class="jc-warn">${gbp(d.notInvCharge)} not invoiced yet</div>` : ""}</td><td>${d.cp ? "Cost plus" : "Fixed price"}</td><td class="num">${gbp(d.cost)}</td><td class="num">${gbp(d.invoiced)}</td><td class="num${d.profit < 0 ? " jc-neg" : ""}">${gbp(d.profit)}</td><td class="num">${d.price ? d.pctProfit + "%" : "–"}</td><td>${jbTag(jbBudget(d)) || (d.cp ? "Cost plus" : "–")}</td></tr>`,
             )
             .join("")}</tbody></table></div>`
         : `<div class="empty"><strong>No job costs yet</strong>Book receipts to a site, and hours on the timesheets count by themselves.</div>`
@@ -319,6 +339,7 @@ function jcJobView(tabs, site) {
       <div class="sd-box${d.profit < 0 ? " bad" : " ok"}"><small>Profit</small><b>${gbp(d.profit)}</b><span>${d.price ? d.pctProfit + "% of the price" : "–"}</span></div>
       ${d.cp ? `<div class="sd-box${d.notInv.length ? " bad" : " ok"}"><small>Not invoiced yet</small><b>${gbp(d.notInvCharge)}</b><span>${d.notInv.length} cost${d.notInv.length === 1 ? "" : "s"}</span></div>` : ""}
     </div>
+    ${jbCard(d)}
     <div class="actions">${d.cp && d.notInv.length ? `<button type="button" class="btn primary" id="jc-inv">🧾 Invoice what's not been charged (${gbp(d.notInvCharge)})</button>` : ""}<button type="button" class="btn" id="jc-xls">⬇ Spreadsheet</button><button type="button" class="btn" id="jc-rates">⚙️ Cost rates</button></div>
     <section class="card"><div class="cardbody"><b>Labour</b><div class="tablewrap"><table class="jc-tbl"><thead><tr><th>Who</th><th class="num">Hours</th><th class="num">Cost £/h</th><th class="num">Cost</th>${d.cp ? `<th class="num">Charge £/h</th><th class="num">Charge</th><th class="num">Not invoiced</th>` : ""}</tr></thead><tbody>${
       Object.values(labBy)
@@ -392,6 +413,7 @@ function jcJobView(tabs, site) {
   setF("jc-lp", "labPct", 1);
   setF("jc-mp", "matPct", 1);
   setF("jc-sp", "subPct", 1);
+  jbWire(site);
 }
 /* what each person costs an hour (wages + on-costs, or their agreed rate) */
 function jcRates() {

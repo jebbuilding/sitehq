@@ -567,6 +567,19 @@ function acTxSheet(t) {
     <label for="at-c">Category<select id="at-c"><option value="">To sort…</option>${opts}</select></label>
     ${t.amt < 0 ? `<div class="grid2"><label for="at-v">VAT in it £ (from the receipt)<input id="at-v" type="number" inputmode="decimal" step="0.01" value="${esc(t.vat || "")}"></label><button type="button" class="btn" id="at-v20">It had 20% VAT</button></div>` : ""}
     <label for="at-n">Note<input id="at-n" maxlength="140" value="${esc(t.note || "")}" placeholder="e.g. Kitchen job, Marine Way"></label>
+    ${
+      t.amt < 0
+        ? `<label for="at-s">Job it was for (counts in Job costs)<select id="at-s"><option value="">Not for a job</option>${(
+            S.sites || []
+          )
+            .filter((x) => !x.archived && x.name)
+            .map(
+              (x) =>
+                `<option value="${esc(x.name)}"${x.name === t.site ? " selected" : ""}>${esc(x.name)}</option>`,
+            )
+            .join("")}</select></label>`
+        : ""
+    }
     <label class="inl"><input type="checkbox" id="at-r"> Always put payments with <input id="at-rw" maxlength="40" value="${esc(word)}" style="width:12em" aria-label="Words to look for"> in this category</label>
     ${t.split && t.split.length ? `<div class="who">✂️ ${esc(acTxCatLabel(t))}. Saving a category here puts it back to one category.</div>` : ""}
     <div class="sd-acts">${locked ? `<button type="button" class="btn" id="at-unlock">🔓 Unlock ${esc(t.month || "")}</button>` : `<button type="button" class="btn" id="at-split">✂️ Split it</button>${t.link ? "" : `<button type="button" class="btn" id="at-find">🔎 Find and match</button>`}`}</div>
@@ -576,6 +589,7 @@ function acTxSheet(t) {
       if (locked) return showErr("This month is locked. Unlock it first.");
       const cat = $("at-c").value;
       const patch = { cat, note: $("at-n").value.trim() };
+      if ($("at-s")) patch.site = $("at-s").value;
       if (t.split && t.split.length && cat) patch.split = null;
       if ($("at-v")) patch.vat = sdR2($("at-v").value) || 0;
       try {

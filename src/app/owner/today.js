@@ -9,6 +9,7 @@ import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
+import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
 export { nlApply, nlGo, nlName, nlOn, nlOpenTab, nlSectionView, todayView };
 /* Switched on per device with the "✨ New look" button in the header (kept in jeb.newlook); off = the app as before.
@@ -291,6 +292,7 @@ function todayView() {
         : '<div class="nl-card who">Nothing waiting for you. 👍</div>'
     }
     ${tdwCard()}
+    ${jbTodayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -300,6 +302,7 @@ function todayView() {
   $("nl-search").onclick = () => searchOpen("");
   tdWire();
   tdDeskWire();
+  jbTodayWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();
   $("nl-roll").onclick = () => (rows.length ? openRollCall() : nlOpenTab("signin"));
