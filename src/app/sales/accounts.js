@@ -24,7 +24,22 @@ import {
 } from "./acct-data.js";
 import { adView } from "./acct-due.js";
 import { acExportSheet } from "./acct-export.js";
-import { acMatchWaiting, acReceipts } from "./acct-receipts.js";
+import { acLinkRcpt, acMatchWaiting, acReceipts } from "./acct-receipts.js";
+import {
+  acBulkSheet,
+  acCheckSheet,
+  acFindSheet,
+  acLearner,
+  acLockedRec,
+  acPicked,
+  acSetXfer,
+  acSplitSheet,
+  acTxCatLabel,
+  acUnlockAsk,
+  acXferFor,
+  acrAccName,
+  acrSorted,
+} from "./acct-reconcile.js";
 import { acRcptSheet, acRcptView } from "./acct-review.js";
 import { acSupView } from "./acct-suppliers.js";
 import { jcView } from "./job-costs.js";
@@ -115,8 +130,8 @@ function acOverView(tabs) {
     AC_CATS.filter((c) => c[2] === kind && s.byCat[c[0]])
       .map((c) => [c[1], s.byCat[c[0]]])
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-  const unsortedIn = s.tx.filter((t) => !t.cat && t.amt > 0).reduce((a, t) => a + t.amt, 0);
-  const unsortedOut = s.tx.filter((t) => !t.cat && t.amt < 0).reduce((a, t) => a - t.amt, 0);
+  const unsortedIn = s.tx.filter((t) => !acrSorted(t) && t.amt > 0).reduce((a, t) => a + t.amt, 0);
+  const unsortedOut = s.tx.filter((t) => !acrSorted(t) && t.amt < 0).reduce((a, t) => a - t.amt, 0);
   const pl = (rows, sign) =>
     rows
       .map(
@@ -233,9 +248,16 @@ function acBankView(tabs) {
   const acc = cfg.accounts.find((a) => a.id === S.f.aca) || cfg.accounts[0];
   const f = S.f.acf || "all";
   const q = String(S.f.acq || "").toLowerCase();
+  const pick = !!S.f.acpick;
   const all = acc ? acAllTx(acc.id) : [];
+  const everyTx = acc && cfg.accounts.length > 1 ? acAllTx() : all;
+  const learn = acLearner();
   const list = all
-    .filter((t) => f === "all" || (f === "sort" ? !t.cat : f === "in" ? t.amt > 0 : t.amt < 0))
+    .filter(
+      (t) =>
+        f === "all" ||
+        (f === "sort" ? !acrSorted(t) : f === "tick" ? !t.ok : f === "in" ? t.amt > 0 : t.amt < 0),
+    )
     .filter((t) => !q || (t.desc + " " + (t.note || "")).toLowerCase().includes(q));
   const shown = list.slice(0, S.f.acn || 100);
   const opts = (sel) =>
@@ -253,6 +275,9 @@ function acBankView(tabs) {
             .join("")}</optgroup>`,
       )
       .join("");
+  const ticked = all.filter((t) => t.ok).length;
+  const lastCheck = acc && (acc.checks || []).slice(-1)[0];
+  const lockedN = acc ? acMonths().filter((m) => m.acc === acc.id && m.locked).length : 0;
   $("main").innerHTML = `<div class="ac-page">${tabs}
     ${
       cfg.accounts.length
@@ -263,10 +288,13 @@ function acBankView(tabs) {
     ${
       !acc
         ? `<div class="empty"><strong>Add your bank account first</strong>Then download a statement from your online banking (most banks call it "Export" or "Download transactions", as CSV) and bring it in here.</div>`
-        : `<div class="who">${esc(acc.name)}: balance ${gbp(acBalance(acc))} · ${all.length} payments · ${all.filter((t) => !t.cat).length} to sort</div>
+        : `<div class="who">${esc(acc.name)}: balance ${gbp(acBalance(acc))} · ${all.length} payments · ${all.filter((t) => !acrSorted(t)).length} to sort</div>
+    <div class="acr-bar"><span class="acr-sum">✓ ${ticked} of ${all.length} ticked off${lastCheck ? ` · agreed with the statement on ${esc(shortDay(lastCheck.date))}` : ""}${lockedN ? ` · 🔒 ${lockedN} month${lockedN === 1 ? "" : "s"} locked` : ""}</span><button type="button" class="btn" id="acr-check">⚖️ Check against statement</button><button type="button" class="btn" id="acr-pick" aria-pressed="${pick}">☑ ${pick ? "Stop choosing" : "Choose several"}</button></div>
+    ${pick ? `<div class="acr-pickbar"><span id="acr-pn">${acPicked.size} chosen</span><button type="button" class="pillbtn" id="acr-pall">Choose all ${list.length} shown</button><button type="button" class="pillbtn" id="acr-pnone">Clear</button><button type="button" class="btn primary" id="acr-pgo">Sort them…</button></div>` : ""}
     <div class="sd-filt"><div class="seg" id="ac-f">${[
       ["all", "All"],
       ["sort", "To sort"],
+      ["tick", "Not ticked"],
       ["in", "Money in"],
       ["out", "Money out"],
     ]
@@ -280,21 +308,30 @@ function acBankView(tabs) {
       shown.length
         ? `<div class="ac-list">${shown
             .map((t) => {
-              const ms = !t.link
-                ? acSaleMatches(t)
-                    .map((d) => ["sale", d.id, `INV-${d.number} ${d.client}`])
-                    .concat(
-                      acTradeMatches(t).map((v) => [
-                        "trade",
-                        v.id,
-                        `${nameOf(v.who)} invoice ${v.number || ""}`,
-                        v.who,
-                      ]),
-                    )
-                : [];
-              return `<div class="ac-tx ${t.amt > 0 ? "in" : "out"}${t.cat ? "" : " uns"}" data-k="${esc(t.rec + "|" + t.id)}">
-            <div class="ac-txh"><small>${esc(shortDay(t.date))}</small><span class="ac-desc">${esc(t.desc)}</span><b class="ac-amt">${t.amt > 0 ? "+" : "−"}${gbp(Math.abs(t.amt))}</b></div>
-            <div class="ac-txr"><select class="ac-cat" aria-label="Category">${opts(t.cat)}</select>${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${t.rcpt ? `<button type="button" class="pillbtn ac-rlink" data-id="${esc(t.rcpt)}">📎 Receipt</button>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
+              const k = t.rec + "|" + t.id;
+              const lk = acLockedRec(t.rec);
+              const ms =
+                !t.link && !lk
+                  ? acSaleMatches(t)
+                      .map((d) => ["sale", d.id, `INV-${d.number} ${d.client}`])
+                      .concat(
+                        acTradeMatches(t).map((v) => [
+                          "trade",
+                          v.id,
+                          `${nameOf(v.who)} invoice ${v.number || ""}`,
+                          v.who,
+                        ]),
+                      )
+                  : [];
+              const xf = lk ? null : acXferFor(t, everyTx);
+              const ln = lk ? null : learn(t);
+              const split = t.split && t.split.length;
+              const box = pick
+                ? `<label class="acr-tick acr-pk"><input type="checkbox" class="acr-pkc"${acPicked.has(k) ? " checked" : ""} aria-label="Choose this payment"></label>`
+                : `<label class="acr-tick" title="${t.ok ? "Ticked off against the statement" : "Tick off when it matches your statement"}"><input type="checkbox" class="acr-okc"${t.ok ? " checked" : ""}${lk ? " disabled" : ""} aria-label="Ticked off against the statement"></label>`;
+              return `<div class="ac-tx ${t.amt > 0 ? "in" : "out"}${acrSorted(t) ? "" : " uns"}${t.ok ? " acr-done" : ""}" data-k="${esc(k)}">
+            <div class="ac-txh">${box}<small>${esc(shortDay(t.date))}</small><span class="ac-desc">${lk ? `<span title="This month is locked" aria-label="Locked">🔒 </span>` : ""}${esc(t.desc)}</span><b class="ac-amt">${t.amt > 0 ? "+" : "−"}${gbp(Math.abs(t.amt))}</b></div>
+            <div class="ac-txr">${split ? `<button type="button" class="pillbtn acr-splab"${lk ? " disabled" : ""}>✂️ ${esc(acTxCatLabel(t))}</button>` : `<select class="ac-cat" aria-label="Category"${lk ? " disabled" : ""}>${opts(t.cat)}</select>`}${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${t.rcpt ? `<button type="button" class="pillbtn ac-rlink" data-id="${esc(t.rcpt)}">📎 Receipt</button>` : ""}${ln ? `<button type="button" class="pillbtn acr-learn" data-c="${esc(ln.cat)}">💡 ${esc(acCatName(ln.cat))}? <small>(${ln.n} before)</small></button>` : ""}${xf ? `<button type="button" class="pillbtn acr-xf">🔁 ${t.amt < 0 ? "Transfer to" : "Transfer from"} ${esc(acrAccName(xf.acc))}?</button>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
           </div>`;
             })
             .join(
@@ -311,12 +348,34 @@ function acBankView(tabs) {
         (b) =>
           (b.onclick = () => {
             S.f.aca = b.dataset.v;
+            acPicked.clear();
             render();
           }),
       );
   $("ac-newacc").onclick = () => acEditAccount(null);
   if (!acc) return;
   $("ac-rules").onclick = acRulesSheet;
+  $("acr-check").onclick = () => acCheckSheet(acc, render);
+  $("acr-pick").onclick = () => {
+    S.f.acpick = !pick;
+    acPicked.clear();
+    render();
+  };
+  const pn = () => {
+    if ($("acr-pn")) $("acr-pn").textContent = `${acPicked.size} chosen`;
+  };
+  if (pick) {
+    $("acr-pall").onclick = () => {
+      list.forEach((t) => acPicked.add(t.rec + "|" + t.id));
+      render();
+    };
+    $("acr-pnone").onclick = () => {
+      acPicked.clear();
+      render();
+    };
+    $("acr-pgo").onclick = () =>
+      acPicked.size ? acBulkSheet(all, render) : toast("Tick the payments you want first");
+  }
   $("ac-f")
     .querySelectorAll("button")
     .forEach(
@@ -349,17 +408,47 @@ function acBankView(tabs) {
     fi.value = "";
     if (file) acImport(acc, file);
   };
+  const save = async (ch, msg) => {
+    try {
+      await acUpdateTx(ch);
+      if (msg) toast(msg);
+      render();
+    } catch (er) {
+      toast("Couldn't save. Check your connection.");
+    }
+  };
   document.querySelectorAll("#main .ac-tx").forEach((row) => {
     const k = row.dataset.k;
     const t = all.find((x) => x.rec + "|" + x.id === k);
-    row.querySelector(".ac-cat").onchange = async (e) => {
-      try {
-        await acUpdateTx({ [k]: { cat: e.target.value } });
-        render();
-      } catch (er) {
-        toast("Couldn't save. Check your connection.");
-      }
-    };
+    const sel = row.querySelector(".ac-cat");
+    if (sel) sel.onchange = (e) => save({ [k]: { cat: e.target.value } });
+    const sp = row.querySelector(".acr-splab");
+    if (sp) sp.onclick = () => acSplitSheet(t, render);
+    const ok = row.querySelector(".acr-okc");
+    if (ok) ok.onchange = () => save({ [k]: { ok: ok.checked } });
+    const pk = row.querySelector(".acr-pkc");
+    if (pk)
+      pk.onchange = () => {
+        if (pk.checked) acPicked.add(k);
+        else acPicked.delete(k);
+        pn();
+      };
+    const ln = row.querySelector(".acr-learn");
+    if (ln)
+      ln.onclick = () => save({ [k]: { cat: ln.dataset.c } }, `Put in ${acCatName(ln.dataset.c)}`);
+    const xb = row.querySelector(".acr-xf");
+    if (xb)
+      xb.onclick = async () => {
+        const x = acXferFor(t, everyTx);
+        if (!x) return;
+        try {
+          await acSetXfer(t, x);
+          toast(`Both halves marked as a transfer (${acrAccName(x.acc)})`);
+          render();
+        } catch (e) {
+          toast("Couldn't save. Check your connection.");
+        }
+      };
     row.querySelector(".ac-more").onclick = () => acTxSheet(t);
     const rl = row.querySelector(".ac-rlink");
     if (rl) rl.onclick = () => acRcptSheet(acReceipts().find((r) => r.id === rl.dataset.id));
@@ -413,16 +502,26 @@ async function acImport(acc, file) {
   }
   if (!rows.length) return toast("No payments found in that file");
   const have = new Set(acAllTx(acc.id).map((t) => t.date + "|" + t.amt + "|" + t.desc));
-  const fresh = rows.filter((r) => !have.has(r.date + "|" + r.amt + "|" + r.desc));
+  const newRows = rows.filter((r) => !have.has(r.date + "|" + r.amt + "|" + r.desc));
+  /* a locked month agreed with the statement: nothing is added to it */
+  const lockedOut = newRows.filter((r) => acLockedRec(`atx-${acc.id}-${r.date.slice(0, 7)}`));
+  const fresh = newRows.filter((r) => !lockedOut.includes(r));
   const byMonth = {};
-  let sorted = 0;
+  const learn = acLearner();
+  let sorted = 0,
+    learned = 0;
   fresh.forEach((r, i) => {
     const rule = acRuleFor(r.desc);
     const t = Object.assign({ id: Date.now().toString(36) + "-" + i }, r);
+    const ln = rule ? null : learn(t);
     if (rule) {
       t.cat = rule.cat;
       if (rule.vat && t.amt < 0) t.vat = sdR2((Math.abs(t.amt) * +rule.vat) / (100 + +rule.vat));
       sorted++;
+    } else if (ln && ln.sure) {
+      t.cat = ln.cat;
+      t.learned = true;
+      learned++;
     }
     (byMonth[r.date.slice(0, 7)] = byMonth[r.date.slice(0, 7)] || []).push(t);
   });
@@ -430,20 +529,22 @@ async function acImport(acc, file) {
     for (const [m, tx] of Object.entries(byMonth)) {
       const id = `atx-${acc.id}-${m}`;
       const old = acMonths().find((x) => x.id === id);
-      await S.db.doc("todos/" + id).set({
+      const rec = Object.assign({}, old || {}, {
         kind: "acctx",
         acc: acc.id,
         month: m,
         tx: ((old && old.tx) || []).concat(tx),
         updated: Date.now(),
       });
+      delete rec.id;
+      await S.db.doc("todos/" + id).set(rec);
     }
     const rm = await acMatchWaiting();
     toast(
       (rm ? `${rm} receipt${rm === 1 ? "" : "s"} matched · ` : "") +
-        `Brought in ${fresh.length} payment${fresh.length === 1 ? "" : "s"}${rows.length > fresh.length ? ` (${rows.length - fresh.length} already there)` : ""}${sorted ? `, ${sorted} sorted by your rules` : ""}`,
+        `Brought in ${fresh.length} payment${fresh.length === 1 ? "" : "s"}${rows.length > newRows.length ? ` (${rows.length - newRows.length} already there)` : ""}${sorted ? `, ${sorted} sorted by your rules` : ""}${learned ? `, ${learned} sorted the way you did before` : ""}${lockedOut.length ? ` · ${lockedOut.length} left out: their month is locked` : ""}`,
     );
-    S.f.acf = fresh.length - sorted ? "sort" : "all";
+    S.f.acf = fresh.length - sorted - learned ? "sort" : "all";
     render();
   } catch (e) {
     toast("Couldn't save. Check your connection.");
@@ -459,6 +560,7 @@ function acTxSheet(t) {
   const opts = AC_CATS.map(
     (c) => `<option value="${c[0]}"${c[0] === t.cat ? " selected" : ""}>${esc(c[1])}</option>`,
   ).join("");
+  const locked = acLockedRec(t.rec);
   openSheet(
     `<h3 id="sheettitle">${t.amt > 0 ? "Money in" : "Money out"}: ${gbp(Math.abs(t.amt))}</h3>
     <div class="who">${esc(shortDay(t.date))} · ${esc(t.desc)}</div>
@@ -466,10 +568,15 @@ function acTxSheet(t) {
     ${t.amt < 0 ? `<div class="grid2"><label for="at-v">VAT in it £ (from the receipt)<input id="at-v" type="number" inputmode="decimal" step="0.01" value="${esc(t.vat || "")}"></label><button type="button" class="btn" id="at-v20">It had 20% VAT</button></div>` : ""}
     <label for="at-n">Note<input id="at-n" maxlength="140" value="${esc(t.note || "")}" placeholder="e.g. Kitchen job, Marine Way"></label>
     <label class="inl"><input type="checkbox" id="at-r"> Always put payments with <input id="at-rw" maxlength="40" value="${esc(word)}" style="width:12em" aria-label="Words to look for"> in this category</label>
+    ${t.split && t.split.length ? `<div class="who">✂️ ${esc(acTxCatLabel(t))}. Saving a category here puts it back to one category.</div>` : ""}
+    <div class="sd-acts">${locked ? `<button type="button" class="btn" id="at-unlock">🔓 Unlock ${esc(t.month || "")}</button>` : `<button type="button" class="btn" id="at-split">✂️ Split it</button>${t.link ? "" : `<button type="button" class="btn" id="at-find">🔎 Find and match</button>`}`}</div>
+    ${locked ? `<div class="who">🔒 This month is locked: it agreed with your bank statement. Unlock it to change anything.</div>` : ""}
     ${formFoot(false, "Save")}`,
     async () => {
+      if (locked) return showErr("This month is locked. Unlock it first.");
       const cat = $("at-c").value;
       const patch = { cat, note: $("at-n").value.trim() };
+      if (t.split && t.split.length && cat) patch.split = null;
       if ($("at-v")) patch.vat = sdR2($("at-v").value) || 0;
       try {
         await acUpdateTx({ [t.rec + "|" + t.id]: patch });
@@ -487,7 +594,12 @@ function acTxSheet(t) {
           /* sort the others already in that match */
           const ch = {};
           acAllTx()
-            .filter((x) => !x.cat && x.desc.toLowerCase().includes(m.toLowerCase()))
+            .filter(
+              (x) =>
+                !acrSorted(x) &&
+                !acLockedRec(x.rec) &&
+                x.desc.toLowerCase().includes(m.toLowerCase()),
+            )
             .forEach(
               (x) =>
                 (ch[x.rec + "|" + x.id] = Object.assign(
@@ -511,11 +623,31 @@ function acTxSheet(t) {
   );
   if ($("at-v20"))
     $("at-v20").onclick = () => ($("at-v").value = sdR2(Math.abs(t.amt) / 6).toFixed(2));
+  if ($("at-split"))
+    $("at-split").onclick = () => {
+      closeForm();
+      acSplitSheet(t, render);
+    };
+  if ($("at-find"))
+    $("at-find").onclick = () => {
+      closeForm();
+      acFindSheet(t, (x) => acMatch(t, x.k, x.id, x.who || ""));
+    };
+  if ($("at-unlock"))
+    $("at-unlock").onclick = () => {
+      closeForm();
+      acUnlockAsk(t.rec, render);
+    };
 }
 /* match a payment to an invoice: a customer's (records the payment) or a trade's (marks it paid) */
 async function acMatch(t, kind, id, who) {
   try {
-    if (kind === "sale") {
+    if (kind === "rcpt") {
+      const r = acReceipts().find((x) => x.id === id);
+      if (!r) return;
+      if (r.tx && r.tx !== t.rec + "|" + t.id) await acUpdateTx({ [r.tx]: { rcpt: "" } });
+      toast(await acLinkRcpt(Object.assign({}, r, { tx: t.rec + "|" + t.id })));
+    } else if (kind === "sale") {
       const d = sdSales().find((x) => x.id === id);
       if (!d) return;
       await sdSaveRec(

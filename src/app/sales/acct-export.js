@@ -6,6 +6,7 @@ import { csvSave } from "../files/files.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { acAllTx, acCatName, acCfg } from "./acct-data.js";
 import { acRcptParts, acReceipts } from "./acct-receipts.js";
+import { acTxCatLabel } from "./acct-reconcile.js";
 import { cisLab, cisPayments, cisRange } from "./cis-returns.js";
 import { sdCalc, sdNo, sdSales, sdStatus, sdTaxYear } from "./sales-calc.js";
 export { acExportSheet };
@@ -133,7 +134,7 @@ function axRows(k, from, to) {
           t.desc,
           t.amt > 0 ? m2(t.amt) : "",
           t.amt < 0 ? m2(-t.amt) : "",
-          t.cat ? acCatName(t.cat) : "Not sorted",
+          acTxCatLabel(t),
           t.vat ? m2(t.vat) : "",
           t.note || "",
           t.rcpt ? "Yes" : "",

@@ -246,7 +246,14 @@ function acSums(from, to) {
   let inc = 0,
     exp = 0,
     vatIn = 0;
-  tx.forEach((t) => {
+  /* a split payment counts as its parts */
+  const parts = [];
+  tx.forEach((t) =>
+    t.split && t.split.length
+      ? t.split.forEach((p) => parts.push({ cat: p.cat, amt: +p.amt || 0, vat: +p.vat || 0 }))
+      : parts.push(t),
+  );
+  parts.forEach((t) => {
     const k = t.cat || "";
     const kind = acCatKind(k) || (t.amt > 0 ? "in" : "out");
     /* costs without the VAT in them (it is claimed back) */
@@ -285,7 +292,7 @@ function acSums(from, to) {
     profit: sdR2(inc - exp),
     vatOut: sdR2(vatOut),
     vatIn: sdR2(vatIn),
-    unsorted: tx.filter((t) => !t.cat).length,
+    unsorted: tx.filter((t) => !t.cat && !(t.split && t.split.length)).length,
   };
 }
 /* an account's balance: the last balance its statement gave, else opening + everything since */
