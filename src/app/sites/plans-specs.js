@@ -15,6 +15,7 @@ import { empSitesView, plansView0 } from "./trade-sites.js";
 export {
   DOC_CATS,
   RAMS_SIGN,
+  catName,
   docPath,
   docRow,
   docSite,

@@ -28,6 +28,7 @@ import {
   syncSiteJobs,
   wireSiteSum,
 } from "./job-details.js";
+import { jkOpen } from "./job-pack.js";
 import { jobCard } from "./job-sheets.js";
 import { dropPin } from "./maps-pins.js";
 import { RAMS_SIGN, docPath, docRow, wireDocs } from "./plans-specs.js";
@@ -301,6 +302,7 @@ function ownerProjects() {
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
   P.overview = `${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}
+    <div class="actions"><button type="button" class="btn" id="jk-open">📦 Send job details to someone not on the app</button></div>
     <div class="totals"><div class="tot"><div class="n">${hrs(sumH(ts, () => true))}</div><div class="l">Timesheet hours</div></div><div class="tot hi"><div class="n">${hrs(sumH(extra, () => true))}</div><div class="l">Extra work hours</div></div><div class="tot"><div class="n">${people.length}</div><div class="l">People worked here</div></div></div>
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
     <div class="folders">${T.slice(1)
@@ -343,6 +345,7 @@ function ownerProjects() {
   }
   wireSiteSum(site);
   if ($("mkrams")) $("mkrams").onclick = () => ramsMaker(site);
+  if ($("jk-open")) $("jk-open").onclick = () => jkOpen(site);
   if ($("sj-edit")) $("sj-edit").onclick = () => editSiteJob(site);
   if ($("sj-perm")) $("sj-perm").onclick = () => editSiteVis(site);
   if ($("pj-site"))
