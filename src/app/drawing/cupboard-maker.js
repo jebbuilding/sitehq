@@ -5,7 +5,7 @@ import { CB3_COLS } from "./cupboard-3d.js";
 import { CBA_KINDS, cbaHasBase } from "./cupboard-alcove.js";
 import { CBP_DOOR, CBP_KIND, cbpPicker } from "./cupboard-pics.js";
 import { CBS_KINDS } from "./cupboard-shapes.js";
-export { CB_BAYS, CB_DOORS, cbBayDoor, cbDraw, cbMakeDialog, cbPlan };
+export { CB_BAYS, CB_DOORS, cbBayDoor, cbDetails, cbDraw, cbMakeDialog, cbPlan };
 /* A form for the overall size, board thicknesses, plinth, bays (equal or given widths) and what's in each bay
    (shelves, hanging – single or double – drawers, or a mix), and the doors (none, hinged, pairs or sliding). It
    draws a new page in the drawing: the front with doors (hinge side shown), the front with the doors off (inside),
@@ -40,6 +40,7 @@ const CB_HANDLES = [
   ["black", "Bar handles – black"],
   ["knob", "Knobs"],
   ["none", "Handle-less (push to open)"],
+  ["gola", "Gola – handle-less finger channel"],
 ];
 const CB_EDGES = [
   ["1 mm ABS edging", "1 mm ABS edging"],
@@ -198,18 +199,17 @@ function cbPlan(sp) {
   const cut = [];
   /* what each board is made of (material and colour), from what it is */
   const cn = (c) => (c ? (CB3_COLS.find((x) => x[0] === c) || [c, c])[1].toLowerCase() : "");
+  /* a natural finish (veneer, solid oak, birch ply) is its own colour, so the colour name isn't added */
+  const jn = (c, m) =>
+    /veneer|solid|ply/i.test(m || "") ? m : [cn(c), m || ""].filter(Boolean).join(" ");
   const matOf = (part) => {
     if (/glass/i.test(part)) return "";
     if (/back panel/i.test(part)) return sp.matBack || "";
     if (/door|drawer front|filler|end panel|cornice|plinth/i.test(part))
-      return [cn(sp.colDoor || (sp.matDoor ? "" : sp.colCar)), sp.matDoor || sp.matCar || ""]
-        .filter(Boolean)
-        .join(" ");
+      return jn(sp.colDoor || (sp.matDoor ? "" : sp.colCar), sp.matDoor || sp.matCar);
     if (/shelf|desk|top \/|worktop/i.test(part))
-      return [cn(sp.colTop || (sp.matShelf ? "" : sp.colCar)), sp.matShelf || sp.matCar || ""]
-        .filter(Boolean)
-        .join(" ");
-    return [cn(sp.colCar), sp.matCar || ""].filter(Boolean).join(" ");
+      return jn(sp.colTop || (sp.matShelf ? "" : sp.colCar), sp.matShelf || sp.matCar);
+    return jn(sp.colCar, sp.matCar);
   };
   const add = (part, qty, l, w, th, note) => {
     const mat = th ? matOf(part) : "";
@@ -467,7 +467,16 @@ function cbPlan(sp) {
     );
   }
   const hn = doorsN + fronts + slides;
-  if (hn)
+  if (sp.handle === "gola" && doorsN + fronts)
+    add(
+      "Gola profile, aluminium (to buy)",
+      doorsN + fronts,
+      0,
+      0,
+      0,
+      "one a door or drawer front, cut to suit; doors 20 mm short of it",
+    );
+  if (hn && sp.handle !== "gola")
     add(
       sp.handle === "none"
         ? "Push-to-open catches (to buy)"
@@ -541,6 +550,45 @@ function cbDraw(sp, api) {
     });
   /* writing is a set size on paper (about 3.5 mm), so spacing goes by it */
   const Z = 18;
+  const scaleTxt = api.k ? "1:" + api.k : "";
+  const vt = (n, name, x, y, sc) => {
+    objs.push({
+      t: "circle",
+      a: [x, y - Z * 0.75],
+      b: [x + Z * 1.5, y + Z * 0.75],
+      c: col,
+      w: pwFor(2),
+    });
+    objs.push({
+      t: "text",
+      x: x + Z * (n > 9 ? 0.25 : 0.42),
+      y: y - Z * 0.42,
+      s: String(n).padStart(2, "0"),
+      c: col,
+      size: Math.round(Z * 0.7),
+      ly: "notes",
+    });
+    objs.push({
+      t: "text",
+      x: x + Z * 2,
+      y: y - Z * 0.75,
+      s: name.toUpperCase(),
+      c: col,
+      size: Math.round(Z * 1.0),
+      ly: "notes",
+    });
+    if (sc !== false)
+      objs.push({
+        t: "text",
+        x: x + Z * 2,
+        y: y + Z * 0.35,
+        s: sc || scaleTxt,
+        c: "#666666",
+        size: Math.round(Z * 0.7),
+        ly: "notes",
+      });
+  };
+  let vn = 0;
   const gapX = Math.max(U(500), Z * 6 + dimSize() * 3),
     top = Math.max(U(300), Z * 4 + dimSize() * 2.6);
   const W = U(sp.W),
@@ -556,7 +604,7 @@ function cbDraw(sp, api) {
     x += U(w) + T;
   });
   /* --- the front with the doors on --- */
-  const x1 = Math.max(Z * 5, (doc.w - (2 * W + D + 2 * gapX)) / 2),
+  const x1 = Math.max(Z * 5, (doc.w - (2 * W + P.n * D + (P.n + 1) * gapX)) / 2),
     y1 = top;
   rect(x1, y1, W, H);
   if (PL) line(x1, y1 + H - PL, x1 + W, y1 + H - PL, { w: lw });
@@ -582,15 +630,19 @@ function cbDraw(sp, api) {
   const door = (dx, dw, dTop, dBot, hinge, kind) => {
     rect(dx, dTop, dw, dBot - dTop, {
       w: thin,
-      fill: kind === "mirror" ? "#e3edf1" : undefined,
-      fa: 0.7,
+      fill: kind === "mirror" ? "#e3edf1" : kind !== "glass" && sp.colDoor ? sp.colDoor : undefined,
+      fa: kind === "mirror" ? 0.7 : 0.55,
     });
-    /* the hinge side: lines from the hinge-side corners to the middle of the other side */
+    if (hnd === "gola" && hinge) {
+      const gx = hinge === "L" ? dx + dw - U(25) : dx;
+      rect(gx, dTop, U(25), dBot - dTop, { w: pwFor(1), fill: "#9aa0a6", fa: 0.9 });
+    }
+    /* which side the hinges are: lines from the handle-side corners meeting at the middle of the hinge side (the point is the hinges) */
     if (hinge) {
       const hx = hinge === "L" ? dx : dx + dw,
         ox = hinge === "L" ? dx + dw : dx;
-      line(hx, dTop, ox, (dTop + dBot) / 2, { dash: 1 });
-      line(hx, dBot, ox, (dTop + dBot) / 2, { dash: 1 });
+      line(ox, dTop, hx, (dTop + dBot) / 2, { dash: 1 });
+      line(ox, dBot, hx, (dTop + dBot) / 2, { dash: 1 });
     }
     if (kind === "glass") {
       /* the glass, with glazing bars */
@@ -716,7 +768,7 @@ function cbDraw(sp, api) {
     mkDim([x1, y1 + H], [x1 + W, y1 + H], dimSize() * 2.4),
     mkDim([x1, y1], [x1, y1 + H], dimSize() * 2.4),
   );
-  text(x1, y1 - Z * 0.8, "FRONT – doors on", 1.1);
+  vt(++vn, "Front – doors on", x1, y1 - Z * 1.6);
   /* --- the front with the doors off: the inside --- */
   const x2 = x1 + W + gapX,
     y2 = top;
@@ -808,16 +860,76 @@ function cbDraw(sp, api) {
     mkDim([x2, y2 + H], [x2 + W, y2 + H], dimSize() * 2.4),
     mkDim([x2 + W, iTop], [x2 + W, iBot], -dimSize() * 2.4),
   );
-  text(x2, y2 - Z * 0.8, "FRONT – doors off (inside)", 1.1);
-  /* --- side section --- */
+  vt(++vn, "Front – inside", x2, y2 - Z * 1.6 - dimSize() * 2.4);
+  /* --- a section through every bay: its shelves, rails, drawers and doors, side on (front on the left) --- */
   const x3 = x2 + W + gapX,
-    y3 = top;
-  rect(x3, y3, D, H);
-  if (sp.bt) rect(x3 + D - U(sp.bt), y3 + T, U(sp.bt), H - PL - T, { w: thin, fill: "#cccccc" });
-  line(x3, y3 + T, x3 + D, y3 + T, { w: thin });
-  if (PL) line(x3 + U(60), y3 + H - PL, x3 + D, y3 + H - PL, { w: thin });
-  objs.push(mkDim([x3, y3 + H], [x3 + D, y3 + H], dimSize() * 2.4));
-  text(x3, y3 - Z * 0.8, "SIDE SECTION", 1.1);
+    y3 = top,
+    ST3 = U(P.sht),
+    DT3 = U(P.dt);
+  const sy = (yy) => y3 + H - U(yy);
+  P.bays.forEach((b, i) => {
+    const xs = x3 + i * (D + gapX);
+    const L = b.L;
+    rect(xs, y3, D, H);
+    if (sp.bt) rect(xs + D - U(sp.bt), y3 + T, U(sp.bt), H - PL - T, { w: thin, fill: "#cccccc" });
+    line(xs, y3 + T, xs + D, y3 + T, { w: thin });
+    line(xs, sy(P.iB), xs + D, sy(P.iB), { w: thin });
+    if (PL) line(xs + U(60), y3 + H - PL, xs + D, y3 + H - PL, { w: thin });
+    const back = xs + D - U(sp.bt || 0);
+    L.shelves.forEach((y) =>
+      rect(xs + U(20), sy(y) - ST3 / 2, back - xs - U(20), ST3, { w: thin }),
+    );
+    L.fixed.forEach((f) =>
+      rect(
+        xs + (/Desk/.test(f.part) ? 0 : U(20)),
+        sy(f.y) - ST3 / 2,
+        back - xs - (/Desk/.test(f.part) ? 0 : U(20)),
+        ST3,
+        { w: thin, fill: "#e6e6e6" },
+      ),
+    );
+    L.drawers.forEach((d) =>
+      rect(
+        xs + U(b.k === "desk" ? 0 : 25),
+        sy(d.y + d.h) + U(3),
+        Math.min(back - xs - U(40), U(500)),
+        U(d.h) - U(6),
+        { w: thin },
+      ),
+    );
+    L.rails.forEach((y) =>
+      objs.push({
+        t: "circle",
+        a: [xs + D / 2 - U(15), sy(y) - U(15)],
+        b: [xs + D / 2 + U(15), sy(y) + U(15)],
+        c: col,
+        w: thin,
+      }),
+    );
+    /* the doors on the front */
+    const dtp = cbBayDoor(sp, b);
+    if (dtp !== "none" && dtp !== "sliding")
+      L.zones.forEach((z) =>
+        rect(xs - DT3, sy(z.y1) + U(1.5), DT3, U(z.y1 - z.y0) - U(3), {
+          w: thin,
+          fill: sp.colDoor || undefined,
+          fa: 0.55,
+        }),
+      );
+    if (sp.doors === "sliding") rect(xs - U(70), y3 + U(20), U(40), H - PL - U(40), { w: thin });
+    /* heights from the floor */
+    L.shelves
+      .concat(L.fixed.map((f) => f.y))
+      .forEach((y) => text(xs + D + Z * 0.3, sy(y) + Z * 0.25, String(Math.round(y)), 0.55));
+    L.rails.forEach((y) => text(xs + D + Z * 0.3, sy(y) + Z * 0.25, "rail " + Math.round(y), 0.55));
+    objs.push(mkDim([xs, y3 + H], [xs + D, y3 + H], dimSize() * 2.4));
+    vt(
+      ++vn,
+      "Section " + String(i + 1).padStart(2, "0") + " – bay " + (i + 1),
+      xs - DT3,
+      y3 - Z * 1.6,
+    );
+  });
   /* --- plan --- */
   const y4 = top + H + Z * 3 + dimSize() * 4;
   rect(x2, y4, W, D);
@@ -853,7 +965,7 @@ function cbDraw(sp, api) {
     line(x2 + T, y4 + D + U(50), x2 + W - T, y4 + D + U(50), { w: thin });
   }
   objs.push(mkDim([x2 + W, y4], [x2 + W, y4 + D], -dimSize() * 2.4));
-  text(x2 - Z * 4.5, y4 + Z, "PLAN", 1.1);
+  vt(++vn, "Plan", x2 - Z * 7, y4 + Z * 1.2);
   /* --- title and cutting list --- */
   /* below the door swings on the plan */
   const yt =
@@ -888,19 +1000,78 @@ function cbDraw(sp, api) {
     ].filter(Boolean);
     text(x1, yt + Z * 1.3, bits.join(" · ") + ".", 0.8);
   }
-  let yy = yt + Z * 3.2;
-  text(x1, yy, "CUTTING LIST (length × width × thickness, mm)", 1);
-  const half = P.cut.length > 9 ? Math.ceil(P.cut.length / 2) : P.cut.length;
-  const y0c = yy;
+  /* finishes key: a round swatch of each colour chosen, with what it is */
+  const ys = yt + Z * 3.2;
+  const keyItems = [
+    [sp.colCar, "Carcass", sp.matCar],
+    [sp.colDoor, "Doors and fronts", sp.matDoor || sp.matCar],
+    [sp.colTop, "Shelves and top", sp.matShelf || sp.matCar],
+  ].filter((k) => k[0] || k[2]);
+  let kx = x1;
+  if (keyItems.length) {
+    text(kx, ys, "FINISHES", 0.9);
+    keyItems.forEach(([c, what, m], i) => {
+      const cy = ys + Z * 1.6 + i * Z * 2.4;
+      objs.push({
+        t: "circle",
+        a: [kx, cy - Z * 0.9],
+        b: [kx + Z * 1.8, cy + Z * 0.9],
+        c: col,
+        w: thin,
+        fill: c || "#ffffff",
+        fa: 0.99,
+      });
+      text(kx + Z * 2.3, cy - Z * 0.55, what, 0.8);
+      text(
+        kx + Z * 2.3,
+        cy + Z * 0.45,
+        [c ? (CB3_COLS.find((x) => x[0] === c) || [c, c])[1] : "", m || ""]
+          .filter(Boolean)
+          .join(" · "),
+        0.65,
+      );
+    });
+    kx += Z * 14;
+  }
+  /* the cutting list: its own page, three columns */
+  const cutObjs = [];
+  const ctext = (x, y, str, k) =>
+    cutObjs.push({
+      t: "text",
+      x,
+      y,
+      s: str,
+      c: "#333333",
+      size: Math.round(18 * (k || 0.9)),
+      ly: "notes",
+    });
+  const cx0 = Z * 5;
+  let cy0 = Z * 6;
+  ctext(cx0, cy0, `${sp.name || "Cupboard"} – cutting list`, 1.3);
+  cy0 += Z * 1.8;
+  ctext(
+    cx0,
+    cy0,
+    `${sp.W} wide × ${sp.H} high × ${sp.D} deep · boards ${t} mm${sp.bt ? `, back ${sp.bt} mm` : ""}${sp.plinth ? `, plinth ${sp.plinth} mm` : ""}`,
+    0.9,
+  );
+  cy0 += Z * 2;
+  ctext(cx0, cy0, "CUTTING LIST (length × width × thickness, mm)", 1);
+  const cols = 3,
+    per = Math.ceil(P.cut.length / cols),
+    colW = (doc.w - cx0 * 2) / cols;
   P.cut.forEach((c, i) => {
-    yy = y0c + ((i % half) + 1) * Z * 1.25;
-    text(
-      x1 + (i >= half ? Z * 34 : 0),
+    const yy = cy0 + ((i % per) + 1) * Z * 1.25;
+    ctext(
+      cx0 + Math.floor(i / per) * colW,
       yy,
       `${c.qty} × ${c.part}${c.th ? `: ${c.l} × ${c.w} × ${c.th}${c.mat ? " – " + c.mat : ""}` : c.l ? `: ${c.l} long` : ""}${c.note ? "  (" + c.note + ")" : ""}`,
-      0.85,
+      0.75,
     );
   });
+  objs.forEach((o) => Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]));
+  cutObjs.forEach((o) => Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]));
+  return { objs, cut: P.cut, cutObjs, strip: { x: kx, y: ys }, vn };
   objs.forEach((o) => Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]));
   return { objs, cut: P.cut };
 }
@@ -1168,4 +1339,137 @@ function cbMakeDialog(api) {
   /* small pictures to tap for what's being made and the doors */
   cbpPicker("cb2-kind", CBP_KIND, "cb2-kpics");
   cbpPicker("cb2-doors", CBP_DOOR, "cb2-dpics");
+}
+
+/* four magnified details, each a circle at 1:5 with its number and name: the top (and cornice or top filler), the
+   plinth, the handle or gola, and how the shelves are held. ox, oy: the top left of the row; U is at 1:5 */
+function cbDetails(sp, api, ox, oy, n0) {
+  const { U, pwFor } = api;
+  const P = cbPlan(sp);
+  const objs = [];
+  const col = "#111111",
+    thin = pwFor(2),
+    lw = pwFor(4);
+  const rect = (x, y, w, h, o) =>
+    objs.push(Object.assign({ t: "rect", a: [x, y], b: [x + w, y + h], c: col, w: lw }, o || {}));
+  const line = (x1, y1, x2, y2, o) =>
+    objs.push(Object.assign({ t: "line", a: [x1, y1], b: [x2, y2], c: col, w: thin }, o || {}));
+  const text = (x, y, s2, k, c) =>
+    objs.push({
+      t: "text",
+      x,
+      y,
+      s: s2,
+      c: c || "#333333",
+      size: Math.round(18 * (k || 0.8)),
+      ly: "notes",
+    });
+  const Z = 18,
+    R = U(70),
+    t = U(sp.t),
+    dt = U(P.dt),
+    st = U(P.sht);
+  const car = sp.colCar || "#f1ece4",
+    dc = sp.colDoor || "#e9e3d8";
+  const titles = [];
+  const ring = (i, name, draw) => {
+    const cx = ox + R + i * (2 * R + Z * 3),
+      cy = oy + R;
+    objs.push({ t: "circle", a: [cx - R, cy - R], b: [cx + R, cy + R], c: col, w: thin, dash: 1 });
+    draw(cx, cy);
+    titles.push([cx - R, cy + R + Z * 1.6, name]);
+  };
+  /* 1: the top – side, top board, the door in front, and the cornice or top filler above */
+  ring(0, "Top" + (+sp.cornice ? " and cornice" : +sp.fillT ? " and top filler" : ""), (cx, cy) => {
+    const xs = cx - U(20),
+      yt = cy - U(5);
+    rect(xs, yt, t, U(70), { fill: car, fa: 0.9 });
+    rect(xs + t, yt, U(60), t, { fill: car, fa: 0.9 });
+    rect(xs - dt - U(2), yt + U(2), dt, U(65), { fill: dc, fa: 0.8 });
+    if (+sp.cornice || +sp.fillT)
+      rect(xs - dt - U(2), yt - U(35), dt + t + U(60), U(33), { w: thin, fill: dc, fa: 0.6 });
+    line(cx - R * 0.9, yt - U(36), cx + R * 0.9, yt - U(36), { w: lw });
+    text(cx - R * 0.85, yt - U(40), "ceiling", 0.55);
+    text(xs + t + U(4), yt + t + U(14), sp.t + " top", 0.55);
+  });
+  /* 2: the plinth – the bottom on the plinth, set back, the floor */
+  ring(1, "Plinth", (cx, cy) => {
+    const xs = cx - U(20),
+      fl = cy + U(58),
+      pl = U(Math.min(+sp.plinth || 0, 90));
+    rect(xs, fl - pl - t - U(15), t, U(15) + t + pl, { fill: car, fa: 0.9 });
+    rect(xs + t, fl - pl - t, U(60), t, { fill: car, fa: 0.9 });
+    if (pl) rect(xs + U(40), fl - pl, t, pl - U(2), { w: thin, fill: dc, fa: 0.6 });
+    rect(xs - dt - U(2), fl - pl - t - U(15), dt, U(15) + t - U(3), { fill: dc, fa: 0.8 });
+    line(cx - R * 0.9, fl, cx + R * 0.9, fl, { w: lw });
+    text(cx - R * 0.85, fl + U(10), "floor", 0.55);
+    if (pl) text(xs + U(40) + t + U(3), fl - pl / 2, "plinth " + sp.plinth + ", set back 40", 0.5);
+  });
+  /* 3: the handle – in plan at the door edge: a gola channel, a bar, a knob or push to open */
+  const hnd = sp.handle || "bar";
+  ring(
+    2,
+    hnd === "gola" ? "Gola profile" : hnd === "none" ? "Push to open" : "Handle",
+    (cx, cy) => {
+      const y0 = cy - U(10);
+      rect(cx - U(60), y0, U(60), dt, { fill: dc, fa: 0.8 });
+      rect(cx + U(3), y0, U(50), dt, { fill: dc, fa: 0.8 });
+      rect(cx - U(60), y0 + dt + U(2), U(60), t, { w: thin, fill: car, fa: 0.7 });
+      if (hnd === "gola") {
+        objs.push({
+          t: "line",
+          a: [cx - U(25), y0 - U(1)],
+          b: [cx - U(25), y0 + dt * 0.6],
+          c: "#555555",
+          w: lw,
+        });
+        rect(cx - U(25), y0 + dt * 0.4, U(25), U(3), { w: thin, fill: "#9aa0a6", fa: 0.9 });
+        text(cx - R * 0.8, cy + R * 0.55, "channel 25 × 30", 0.55);
+      } else if (hnd === "none") {
+        rect(cx - U(20), y0 + dt + U(3), U(15), U(10), { w: thin, fill: "#9aa0a6", fa: 0.9 });
+        text(cx - R * 0.8, cy + R * 0.55, "push catch", 0.55);
+      } else {
+        line(cx - U(45), y0 - U(30), cx - U(15), y0 - U(30), {
+          w: lw,
+          c: hnd === "black" ? "#111111" : "#777777",
+        });
+        line(cx - U(45), y0 - U(30), cx - U(45), y0, { w: thin });
+        line(cx - U(15), y0 - U(30), cx - U(15), y0, { w: thin });
+        text(cx - R * 0.8, cy + R * 0.55, hnd === "knob" ? "knob" : "bar handle", 0.55);
+      }
+    },
+  );
+  /* 4: how the shelves are held */
+  const sup = sp.shelfSup || "pins";
+  ring(
+    3,
+    sup === "track" ? "Shelf on track" : sup === "fixed" ? "Fixed shelf" : "Shelf pin",
+    (cx, cy) => {
+      const xs = cx - U(30);
+      rect(xs, cy - U(60), t, U(120), { fill: car, fa: 0.9 });
+      if (sup === "track") {
+        rect(xs + t, cy - U(60), U(8), U(120), { w: thin, fill: "#9aa0a6", fa: 0.9 });
+        rect(xs + t + U(8), cy - U(6), U(20), U(4), { w: thin, fill: "#9aa0a6", fa: 0.9 });
+        rect(xs + t + U(10), cy - U(6) - st, U(80), st, { fill: car, fa: 0.6 });
+      } else if (sup === "fixed") {
+        rect(xs + t, cy - st / 2, U(80), st, { fill: car, fa: 0.6 });
+        line(xs - U(10), cy, xs + t + U(30), cy, { dash: 1 });
+        text(cx - R * 0.8, cy + R * 0.55, "dowelled / screwed", 0.55);
+      } else {
+        [-32, 0, 32].forEach((d) =>
+          objs.push({
+            t: "circle",
+            a: [xs + t / 2 - U(2.5), cy + U(d) - U(2.5)],
+            b: [xs + t / 2 + U(2.5), cy + U(d) + U(2.5)],
+            c: col,
+            w: thin,
+          }),
+        );
+        rect(xs + t, cy + U(1), U(14), U(5), { w: thin, fill: "#9aa0a6", fa: 0.9 });
+        rect(xs + t + U(1), cy - st + U(1), U(80), st, { fill: car, fa: 0.6 });
+        text(cx - R * 0.8, cy + R * 0.55, "5 mm pins, holes every 32", 0.55);
+      }
+    },
+  );
+  return { objs, titles, R };
 }

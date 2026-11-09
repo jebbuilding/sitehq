@@ -44,7 +44,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/LED puck spotlight/.test(t)&&/LED driver/.test(t)&&/Door sensor switch/.test(t)&&/electrician/.test(t),'lights: pucks, driver, door sensors, electrician note');
  ok(/Drawer runners, push-to-open/.test(t),'push-to-open drawer runners');
  ok(/Wall fixing brackets/.test(t),'wall fixings for a tall unit');
- ok(/Boards to order: 18 mm/.test(t),'boards to order');
+ ok(/Materials to order/.test(t)&&/18 mm/.test(t),'materials to order');
  /* the drawing's cutting list says what each board is made of */
  const notes=await p.evaluate(()=>{const st=window.__st;return ''});void notes;
  await p.evaluate(()=>document.querySelector('.np [data-bt=cupb3d]').click());await p.waitForTimeout(400);

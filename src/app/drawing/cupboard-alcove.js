@@ -164,8 +164,8 @@ function cbaDraw(sp, api) {
         const hl = leaves === 2 ? k === 0 : i % 2 === 0;
         const hx = hl ? lx + U(1.5) : lx + lw2 - U(1.5),
           ox = hl ? lx + lw2 - U(1.5) : lx + U(1.5);
-        line(hx, dTop, ox, (dTop + dBot) / 2, { dash: 1 });
-        line(hx, dBot, ox, (dTop + dBot) / 2, { dash: 1 });
+        line(ox, dTop, hx, (dTop + dBot) / 2, { dash: 1 });
+        line(ox, dBot, hx, (dTop + dBot) / 2, { dash: 1 });
       }
       xx += dw;
     });

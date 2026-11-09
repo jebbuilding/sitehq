@@ -313,8 +313,8 @@ function cbsDraw(sp, api) {
             lw2 = bw / leaves;
           rect(lx + U(2), uy + U(2), lw2 - U(4), uh - PLu - U(4), { w: thin });
           const hl = leaves === 2 ? k === 0 : i % 2 === 0;
-          line(hl ? lx : lx + lw2, uy, hl ? lx + lw2 : lx, uy + (uh - PLu) / 2, { dash: 1 });
-          line(hl ? lx : lx + lw2, uy + uh - PLu, hl ? lx + lw2 : lx, uy + (uh - PLu) / 2, {
+          line(hl ? lx + lw2 : lx, uy, hl ? lx : lx + lw2, uy + (uh - PLu) / 2, { dash: 1 });
+          line(hl ? lx + lw2 : lx, uy + uh - PLu, hl ? lx : lx + lw2, uy + (uh - PLu) / 2, {
             dash: 1,
           });
         }

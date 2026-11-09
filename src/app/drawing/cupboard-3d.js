@@ -12,7 +12,7 @@ import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { jfSave } from "../sales/job-file.js";
-export { CB3_COLS, cb3Model, cb3Open, shadeHex };
+export { CB3_COLS, cb3Draw, cb3LookFor, cb3Model, cb3Open, shadeHex };
 /* From the sizes on a cupboard page (🗄️ Cupboards): the carcass, plinth, back, divisions, shelves, rails, drawers and
    doors are built as boxes in millimetres and drawn in perspective with light and shade on a canvas – no outside
    library. Turn it with the slider and open the doors to see inside. Change the door type (hinged, pairs, sliding,
@@ -43,6 +43,7 @@ const CB3_HANDLES = [
   ["black", "Bar – black"],
   ["knob", "Knob"],
   ["none", "None (push to open)"],
+  ["gola", "Gola channel"],
 ];
 const cb3ColName = (c) => (CB3_COLS.find((x) => x[0] === c) || [c, c])[1];
 /* --- the model: boxes in mm. x along the front, y up from the floor, z out from the wall --- */
@@ -157,6 +158,11 @@ function cb3Model(sp, look, open) {
   const th = dT;
   const handle = (hx, cy, z, rot, ya, yb) => {
     if (look.handle === "none") return;
+    /* gola: a finger channel down the door edge */
+    if (look.handle === "gola") {
+      box(hx - 12, ya, z - 3, hx + 12, yb, z + 1, "#7d8288", { rot, top: 1 });
+      return;
+    }
     const c = look.handle === "black" ? "#222222" : steel;
     const len = yb - ya > 1200 ? 320 : 160;
     if (look.handle === "knob")
@@ -467,9 +473,9 @@ function cb3Draw(cv, sp, look, open, yaw) {
   });
 }
 /* --- the screen --- */
-function cb3Open(sp, look0, onLook, meta) {
-  meta = meta || {};
-  const look = Object.assign(
+/* the look the 3D view starts with: what was picked in the cupboard form, then any changes made in the 3D view */
+function cb3LookFor(sp, look0) {
+  return Object.assign(
     {
       type: sp.doors && sp.doors !== "none" ? sp.doors : "hinged",
       style: sp.slideMirror && sp.doors === "sliding" ? "mirror" : "slab",
@@ -481,6 +487,10 @@ function cb3Open(sp, look0, onLook, meta) {
     },
     look0 || {},
   );
+}
+function cb3Open(sp, look0, onLook, meta) {
+  meta = meta || {};
+  const look = cb3LookFor(sp, look0);
   let open = false,
     yaw = -0.45;
   const d = document.createElement("div");

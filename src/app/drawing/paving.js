@@ -23,9 +23,9 @@ import {
   npSymLabel,
   npUnit,
 } from "./construction-details.js";
-import { cb3Open } from "./cupboard-3d.js";
+import { cb3Draw, cb3LookFor, cb3Open } from "./cupboard-3d.js";
 import { cbaDraw, cbaPlan } from "./cupboard-alcove.js";
-import { cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
+import { cbDetails, cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
 import { cbpOpen } from "./cupboard-pack.js";
 import { cbsDraw, cbsIs, cbsPlan } from "./cupboard-shapes.js";
 import { npDxf } from "./dxf-export.js";
@@ -6571,7 +6571,7 @@ async function openNotePage(opts) {
   function cupbDlg() {
     cbMakeDialog({
       last: cupbLast,
-      make(sp) {
+      async make(sp) {
         cupbLast = sp;
         /* the page gets its own scale that fits it (a scaled area over the page), whatever the plan is drawn at */
         const alc = sp.kind && sp.kind !== "full";
@@ -6589,18 +6589,23 @@ async function openNotePage(opts) {
             alc
               ? (sp.W + (+sp.wB || 0) + 800 + Math.max(+sp.D || 0, +sp.shelfD || 0)) / x <= freeW &&
                 (sp.H + Math.max(+sp.D || 0, +sp.shelfD || 0) + (+sp.wB || 0) + 400) / x <= freeH
-              : (2 * sp.W + sp.D) / x <= freeW && (sp.H + sp.D + Math.max(...P0.ws)) / x <= freeH,
+              : (2 * sp.W + P0.ws.length * sp.D) / x +
+                  (P0.ws.length + 1) * Math.max(500 / x, (18 * 6 + 14 * 3) / NP_U) +
+                  20 <=
+                  pw && (sp.H + sp.D + Math.max(...P0.ws)) / x + 110 <= doc.h / NP_U - 20,
           ) || 100;
         if (!doc.scale) doc.scale = k;
         setNpScx(k);
         let r;
         try {
+          /* sizes on cupboard sheets: a set, smaller size, so they don't run into each other */
           r = (shp ? cbsDraw : alc ? cbaDraw : cbDraw)(sp, {
             doc,
             U: toUnits,
-            mkDim,
-            dimSize,
+            mkDim: (a, b, off, extra) => mkDim(a, b, off, Object.assign({ size: 14 }, extra || {})),
+            dimSize: () => 14,
             pwFor,
+            k,
           });
         } finally {
           setNpScx(0);
@@ -6615,6 +6620,90 @@ async function openNotePage(opts) {
           vp: k,
           vpn: sp.name || "Cupboard",
         });
+        /* a wardrobe's sheet, like a drawing set: the 3D picture, then four details at 1:5, in the strip under the
+           views; if there's no room there they go on the cutting list page */
+        let extra = null;
+        if (r.cutObjs) {
+          const pick = { objs: [], frames: [] };
+          let sx = r.strip.x,
+            sy = r.strip.y + 8 * NP_U;
+          const room = (h) => sy + h <= doc.h - 14 * NP_U;
+          const img3 = await cupb3dImg(sp);
+          const iw = 64 * NP_U,
+            ih = img3 ? (iw * img3.h) / img3.w : 0;
+          setNpScx(5);
+          let det;
+          try {
+            det = cbDetails(sp, { U: toUnits, pwFor }, 0, 0, r.vn);
+          } finally {
+            setNpScx(0);
+          }
+          const dW = det.objs.reduce((a, o) => Math.max(a, o.b ? o.b[0] : o.x || 0), 0);
+          const dH = 2 * det.R + 7 * NP_U;
+          const place = (x0, y0, list) => {
+            if (img3) {
+              list.push({ t: "img", x: x0, y: y0, w: iw, h: ih, src: img3.key });
+              list.push({
+                t: "text",
+                x: x0,
+                y: y0 + ih + 4 * NP_U,
+                s: String(r.vn + 1).padStart(2, "0") + "  3D VIEW",
+                c: "#111111",
+                size: 18,
+                ly: "notes",
+              });
+            }
+            const dx = x0 + (img3 ? iw + 8 * NP_U : 0);
+            const shift = (o) => {
+              const q = JSON.parse(JSON.stringify(o));
+              if (q.a) q.a = [q.a[0] + dx, q.a[1] + y0];
+              if (q.b) q.b = [q.b[0] + dx, q.b[1] + y0];
+              if (q.x != null) {
+                q.x += dx;
+                q.y += y0;
+              }
+              return q;
+            };
+            /* the details' own scaled area, 1:5 */
+            list.push({
+              t: "rect",
+              a: [dx - 3 * NP_U, y0 - 3 * NP_U],
+              b: [dx + dW + 3 * NP_U, y0 + dH + 3 * NP_U],
+              c: "#2f5fb3",
+              w: pwFor(2),
+              vp: 5,
+              vpn: "Details",
+            });
+            det.objs.forEach((o) => list.push(shift(o)));
+            det.titles.forEach(([tx, ty, name], i) => {
+              const n = r.vn + (img3 ? 2 : 1) + i;
+              list.push({
+                t: "text",
+                x: tx + dx,
+                y: ty + y0,
+                s: String(n).padStart(2, "0") + "  " + name.toUpperCase(),
+                c: "#111111",
+                size: 16,
+                ly: "notes",
+              });
+              list.push({
+                t: "text",
+                x: tx + dx,
+                y: ty + y0 + 4 * NP_U,
+                s: "1:5",
+                c: "#666666",
+                size: 13,
+                ly: "notes",
+              });
+            });
+          };
+          if (
+            room(Math.max(ih + 8 * NP_U, dH + 10 * NP_U)) &&
+            sx + (img3 ? iw + 8 * NP_U : 0) + dW <= doc.w - 14 * NP_U
+          )
+            place(sx, sy, r.objs);
+          else extra = place;
+        }
         doc.pages[pg].objs = doc.objs;
         doc.pages.push({
           name: sp.name || "Cupboard " + (doc.pages.filter((p) => p.type === "Joinery").length + 1),
@@ -6622,10 +6711,30 @@ async function openNotePage(opts) {
           objs: r.objs,
           cupb: sp,
         });
+        /* the cutting list on its own page, straight after */
+        if (r.cutObjs) {
+          const cobjs = r.cutObjs.slice();
+          if (extra) {
+            /* the 3D picture and details at the top of this page, the list moved down under them */
+            const top = 22 * NP_U;
+            const low = cobjs.map((o) => Object.assign({}, o, { y: o.y + 80 * NP_U }));
+            const ex = [];
+            extra(14 * NP_U, top, ex);
+            cobjs.length = 0;
+            cobjs.push(...ex, ...low);
+          }
+          doc.pages.push({
+            name: (sp.name || "Cupboard") + " – cutting list",
+            type: "Joinery",
+            objs: cobjs,
+          });
+        }
         dirty = true;
-        goPage(doc.pages.length - 1);
+        goPage(doc.pages.length - (r.cutObjs ? 2 : 1));
         toast(
-          "Drawn on a new page with the cutting list (" +
+          "Drawn on a new page with the cutting list" +
+            (r.cutObjs ? " on the page after" : "") +
+            " (" +
             r.cut.length +
             " parts). Tap 🎨 3D view for a picture for the client",
         );
@@ -6745,6 +6854,22 @@ async function openNotePage(opts) {
         );
       },
     });
+  }
+  async function cupb3dImg(sp) {
+    try {
+      const cv = document.createElement("canvas");
+      cv.width = 1400;
+      cv.height = 1000;
+      cb3Draw(cv, sp, cb3LookFor(sp), false, -0.45);
+      const b = await new Promise((res) => cv.toBlob(res, "image/png"));
+      if (!b) return null;
+      const key = "local:" + ++lc;
+      locals[key] = { blob: b, url: URL.createObjectURL(b) };
+      imgs[key] = await loadImage(b);
+      return { key, w: cv.width, h: cv.height };
+    } catch (e) {
+      return null;
+    }
   }
   /* the 3D view of the cupboard on this page, for the client */
   function cupb3d() {
