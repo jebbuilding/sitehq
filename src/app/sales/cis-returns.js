@@ -12,6 +12,7 @@ import { BRGB } from "../photos/photos.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { cisBill } from "./cis-bill.js";
+import { lhLogoId } from "./letterhead-setup.js";
 import { sdCalc, sdR2, sdSales, sdSet, sdTaxYear } from "./sales-calc.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdHeadLines, sdImgData, sdLongDate } from "./sales-pdf.js";
@@ -864,7 +865,7 @@ async function cisPdfStart() {
   const set = sdSet(),
     co = coData(),
     brand = BRGB();
-  const logo = await sdImgData(set.logoId || ((S.settings || {}).company || {}).logoId);
+  const logo = await sdImgData(lhLogoId());
   const sig = await sdImgData(set.sigId);
   const head = (title) => {
     if (logo) {

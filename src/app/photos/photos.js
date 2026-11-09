@@ -21,6 +21,7 @@ import { binFromViewer } from "../owner/deleted-items.js";
 import { nameOf } from "../owner/owner.js";
 import { markPrompt, myOpenPrompts } from "../people/reminders.js";
 import { markupBlock, markupSend } from "./mark-up.js";
+import { lhLogoId } from "../sales/letterhead-setup.js";
 import { hereNow } from "../sites/maps-pins.js";
 import { same } from "../sites/project-pages.js";
 import { photoDelete } from "../sites/tiles.js";
@@ -168,7 +169,7 @@ function logoImage() {
 /* draws the company logo into a jsPDF doc, fitted inside a box whose top-right corner is (right,top) */
 async function pdfLogo(doc, right, top, maxW, maxH) {
   try {
-    const b = await getFileBlob(logoId());
+    const b = await getFileBlob(lhLogoId());
     const u = await new Promise((res) => {
       const fr = new FileReader();
       fr.onload = () => res(fr.result);

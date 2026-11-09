@@ -1,12 +1,12 @@
 /* ================= SEND A MERCHANT OR SUPPLIER: their details (as a PDF) and brochures, to clients, trades or by email ================= */
 import { $, esc, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet } from "../core/sheet.js";
-import { S } from "../core/state.js";
 import { uploadFile } from "../files/files.js";
 import { SENDTO } from "../files/send-to.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { lhLogoId } from "../sales/letterhead-setup.js";
 import { sdSet } from "../sales/sales-calc.js";
 import { sdHeadLines, sdImgData } from "../sales/sales-pdf.js";
 export { supSendSheet };
@@ -31,7 +31,7 @@ async function supDetailsPdf(name, rec, kind) {
   const brand = BRGB(),
     co = coData(),
     set = sdSet();
-  const logo = await sdImgData(set.logoId || ((S.settings || {}).company || {}).logoId);
+  const logo = await sdImgData(lhLogoId());
   if (logo) {
     const k = Math.min(60 / logo.w, 32 / logo.h);
     doc.addImage(logo.u, logo.f, 16, 8, logo.w * k, logo.h * k, "splogo", "FAST");

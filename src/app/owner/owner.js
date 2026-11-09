@@ -36,6 +36,7 @@ import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
+import { lhCard, lhWire } from "../sales/letterhead-setup.js";
 import { sdSigCard, sdWireSig } from "../sales/sig-setup.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
@@ -869,6 +870,7 @@ function ownerSetup() {
     <div class="card"><div class="cardbody" style="border:0"><b>🪪 My own details</b><div class="who">${detailsDone(myDetails()) ? "✓ Filled in. " : ""}Your name, trade, CSCS card, next of kin and medical info. Used to fill in inductions, toolbox talks, briefings and other forms for you automatically, the same as the trades.</div><div><button class="btn ${detailsDone(myDetails()) ? "" : "primary"}" id="op-det" type="button">${detailsDone(myDetails()) ? "Check my details" : "Fill in my details"}</button></div></div></div>
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
     ${companyCard()}
+    ${lhCard()}
     ${sdSigCard()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
@@ -888,6 +890,7 @@ function ownerSetup() {
   $("preview").onclick = startPreview;
   wireBackup();
   wireCompany();
+  lhWire();
   sdWireSig();
   $("op-det").onclick = () => openDetails();
   $("op-tel").addEventListener("input", (e) => {

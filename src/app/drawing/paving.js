@@ -65,9 +65,10 @@ import { loadPdfJs } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { printBlob } from "../files/print.js";
 import { coData } from "../owner/company-details.js";
-import { brandHex, loadImage, logoId } from "../photos/photos.js";
+import { brandHex, loadImage } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
+import { lhLogoId } from "../sales/letterhead-setup.js";
 import { siteClient } from "../sites/summary.js";
 import { DWS, myName, siteFilePicker } from "../survey/door-window-survey.js";
 export {
@@ -10488,7 +10489,7 @@ async function openNotePage(opts) {
   /* title box drawn on the page itself (bottom right), so the preview, PDF and anyone opening it see it */
   let logoIm = null;
   try {
-    logoIm = loadImg(logoId());
+    logoIm = loadImg(lhLogoId());
   } catch (e) {}
   function tbox(ctx, i) {
     if (!sized() || !doc.info || !doc.info.show) return;

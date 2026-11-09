@@ -8,7 +8,15 @@ import { coData } from "../owner/company-details.js";
 import { SD_VATC, sdCalc, sdNextNumber, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdParseEstimate, sdReadDocxAll } from "./sales-docx.js";
 import { SD_MAILT } from "./sales-email.js";
-export { sdImportWord, sdSaveSet, sdSettings, sdSetupCard, sdWireSetup };
+export {
+  sdImportWord,
+  sdLetterheadAsk,
+  sdQuickLetterhead,
+  sdSaveSet,
+  sdSettings,
+  sdSetupCard,
+  sdWireSetup,
+};
 /* One sheet for everything the estimates and invoices print: the letterhead lines and logo (brought in from James's
    Word letterhead, or typed), his signature, VAT registration, number and the usual rate, numbering, payment days,
    the standard wording (opening, cost note, closing, sign-off, list headings), the terms and the bank details.
@@ -293,8 +301,10 @@ async function sdQuickLetterhead(file) {
   try {
     const r = await sdReadDocxAll(file);
     const lh = r.letterhead;
-    if (!lh.head && !r.logo)
-      return toast("No letterhead found in that file (it should be in the page header)");
+    if (!lh.head && !r.logo) {
+      toast("No letterhead found in that file (it should be in the page header)");
+      return false;
+    }
     const patch = {};
     if (lh.head) patch.head = lh.head;
     if (lh.tagline) patch.tagline = lh.tagline;
@@ -304,7 +314,35 @@ async function sdQuickLetterhead(file) {
     await sdSaveSet(patch);
     toast("Letterhead saved" + (lh.vat ? " · VAT number " + lh.vat : ""));
     render();
+    return true;
   } catch (e) {
     toast("Couldn't read that file. Is it a Word (.docx) file?");
+    return false;
   }
+}
+/* before an estimate or invoice PDF: if no letterhead has been brought in, say so and offer to bring it in now.
+   Resolves true to go ahead (with the letterhead, or without it if he chooses), false to stop. */
+function sdLetterheadAsk() {
+  const set = sdSet();
+  if (set.head || set.logoId || ((S.settings || {}).company || {}).logoId)
+    return Promise.resolve(true);
+  return new Promise((res) => {
+    const d = document.createElement("div");
+    d.className = "dimask";
+    d.innerHTML = `<div class="dimbox"><b>📄 Your letterhead isn't in the app yet</b><div class="who">Without it, estimates and invoices come out with just your company name in plain text: no logo, no foot line. Bring in the Word file you use as your letterhead (the one with your logo at the top) – it's done once, and every estimate and invoice uses it from then on.</div><div class="dimbtns"><button type="button" class="btn sax">Cancel</button><button type="button" class="btn sd-lhno">Make it without</button><span class="btn primary sd-filebtn">📄 Bring in my letterhead<input type="file" class="sd-lhask" accept=".docx" aria-label="Bring in my Word letterhead"></span></div></div>`;
+    document.body.appendChild(d);
+    const done = (v) => {
+      d.remove();
+      res(v);
+    };
+    d.querySelector(".sax").onclick = () => done(false);
+    d.querySelector(".sd-lhno").onclick = () => done(true);
+    const fi = d.querySelector(".sd-lhask");
+    fi.onchange = async () => {
+      const f = fi.files[0];
+      fi.value = "";
+      if (!f) return;
+      if (await sdQuickLetterhead(f)) done(true);
+    };
+  });
 }

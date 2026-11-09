@@ -7,6 +7,7 @@ import { coData } from "../owner/company-details.js";
 import { jfFolderName, jfFor } from "./job-file.js";
 import { SD_IK, sdCalc, sdDueDate, sdIk, sdIsPf, sdNo, sdSet } from "./sales-calc.js";
 import { sdLongDate, sdPdf } from "./sales-pdf.js";
+import { sdLetterheadAsk } from "./sales-settings.js";
 export { SD_MAILT, sdEmail, sdShareMail };
 /* The app has no mail server of its own, so it hands the email to James's own email app. On an iPad or phone the
    share sheet opens with the PDF (and any files ticked from the job file) attached and the message filled in (he
@@ -122,7 +123,8 @@ function sdEmailText(d) {
   return { subject, body };
 }
 /* the email form; the PDF (and any ticked files) are made ready while it's open so Send can attach them at once */
-function sdEmail(d, onSent) {
+async function sdEmail(d, onSent) {
+  if (!(await sdLetterheadAsk())) return;
   const t = sdEmailText(d);
   const pdfP = sdPdf(d).catch(() => null);
   const j = jfFor(d);

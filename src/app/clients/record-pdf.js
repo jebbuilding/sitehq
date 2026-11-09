@@ -9,8 +9,9 @@ import { S } from "../core/state.js";
 import { openNotePage, pdfShow } from "../drawing/paving.js";
 import { isSketch } from "../drawing/trade-drawings.js";
 import { blobUrl, uploadFile } from "../files/files.js";
-import { BRGB, logoId } from "../photos/photos.js";
+import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { lhLogoId } from "../sales/letterhead-setup.js";
 import { same } from "../sites/project-pages.js";
 export { clientPdf };
 async function clientPdf(c, btn, o) {
@@ -117,7 +118,7 @@ async function clientPdf(c, btn, o) {
   doc.setFillColor(...BRGB());
   doc.rect(0, 0, W, 6, "F");
   try {
-    const L = await toData(logoId());
+    const L = await toData(lhLogoId());
     const lh = 22,
       lw = Math.min(55, (lh * L.w) / L.h);
     doc.addImage(L.u, L.png ? "PNG" : "JPEG", W - M - lw, 10, lw, lh);

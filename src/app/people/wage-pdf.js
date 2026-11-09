@@ -1,10 +1,10 @@
 /* ================= WAGE CALCULATOR PDF: a wage calculation on the letterhead, as shown on screen ================= */
 import { $, iso } from "../core/helpers.js";
-import { S } from "../core/state.js";
 import { coData } from "../owner/company-details.js";
 import { wcCalc, wcMoney } from "./wage-calc.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { lhLogoId } from "../sales/letterhead-setup.js";
 import { sdSet } from "../sales/sales-calc.js";
 import { sdHeadLines, sdImgData, sdLongDate } from "../sales/sales-pdf.js";
 export { wcPdf };
@@ -20,7 +20,7 @@ async function wcPdf(o) {
     set = sdSet();
   const M = 20,
     R = 190;
-  const logo = await sdImgData(set.logoId || ((S.settings || {}).company || {}).logoId);
+  const logo = await sdImgData(lhLogoId());
   if (logo) {
     const k = Math.min(60 / logo.w, 32 / logo.h);
     doc.addImage(logo.u, logo.f, 16, 8, logo.w * k, logo.h * k, "wclogo", "FAST");

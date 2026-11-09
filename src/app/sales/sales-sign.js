@@ -12,6 +12,7 @@ import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { lhLogoId } from "./letterhead-setup.js";
 import { sdCalc, sdNo, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdHeadLines, sdImgData, sdLongDate, sdPdf } from "./sales-pdf.js";
@@ -137,7 +138,7 @@ async function sdReceiptPdf(d, i) {
   const brand = BRGB(),
     co = coData(),
     set = sdSet();
-  const logo = await sdImgData(set.logoId || ((S.settings || {}).company || {}).logoId);
+  const logo = await sdImgData(lhLogoId());
   if (logo) {
     const k = Math.min(72 / logo.w, 40 / logo.h);
     doc.addImage(logo.u, logo.f, 16, 6, logo.w * k, logo.h * k, "rclogo", "FAST");

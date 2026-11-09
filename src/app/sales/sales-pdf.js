@@ -5,6 +5,7 @@ import { getFileBlob } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { lhLogoId } from "./letterhead-setup.js";
 import {
   SD_VATC,
   sdAmt,
@@ -19,6 +20,7 @@ import {
   sdSigned,
   sdVc,
 } from "./sales-calc.js";
+import { sdLetterheadAsk } from "./sales-settings.js";
 export { sdHeadLines, sdImgData, sdLongDate, sdPdf, sdSavePdf };
 /* Set out like James's own Word estimate: the logo top left and the company's address and contacts top right in the
    brand colour, a full-width line under them; at the foot a line, the job and reference in grey, the trades line,
@@ -95,7 +97,7 @@ async function sdPdf(d) {
   const brand = BRGB();
   const ink = () => doc.setTextColor(20, 20, 20);
   const red = () => doc.setTextColor(...brand);
-  const logo = await sdImgData(set.logoId || ((S.settings || {}).company || {}).logoId);
+  const logo = await sdImgData(lhLogoId());
   const sig = await sdImgData(set.sigId);
   const headLines = sdHeadLines();
   let y = 0,
@@ -593,6 +595,7 @@ function sdTermsPages(set, h) {
   flush();
 }
 async function sdSavePdf(d) {
+  if (!(await sdLetterheadAsk())) return null;
   toast("Making the PDF…");
   try {
     const blob = await sdPdf(d);
