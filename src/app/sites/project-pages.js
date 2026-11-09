@@ -33,6 +33,7 @@ import { jobCard } from "./job-sheets.js";
 import { dropPin } from "./maps-pins.js";
 import { RAMS_SIGN, docPath, docRow, wireDocs } from "./plans-specs.js";
 import { QRSITE } from "./qr-sign-in.js";
+import { sdiHtml, sdiWire } from "./site-diary.js";
 import { arcWhy, siteArchive, siteRestore, storageHtml, wireStorage } from "./storage.js";
 import { siteTiles } from "./tiles.js";
 import { folderIcon, openDoc } from "./trade-sites.js";
@@ -283,6 +284,11 @@ function ownerProjects() {
     ["induction", "Induction", ind ? "Set up" : "Not set up"],
     ["jobs", "Jobs & snags", openJobs ? openJobs + " open" : sj.length],
     ["dates", "Key dates", kd.length],
+    [
+      "diary",
+      "Site diary",
+      (S.siteDiary || []).filter((r) => same(r.site, site)).length + " notes",
+    ],
     ["chat", "Chat", ""],
   ];
   const ICON = {
@@ -296,8 +302,10 @@ function ownerProjects() {
     jobs: "✅",
     dates: "📅",
     chat: "💬",
+    diary: "📔",
     money: "🧾",
   };
+  P.diary = sdiHtml(site);
   let tab = S.f.pjtab || "overview";
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
@@ -448,6 +456,7 @@ function ownerProjects() {
     );
   wireDocs(true);
   wireInvoices(invs, true);
+  if (tab === "diary") sdiWire(site);
   wireInduction();
   wireReceipts(rcs, true);
   $("main")

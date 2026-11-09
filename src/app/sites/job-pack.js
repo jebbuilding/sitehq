@@ -17,7 +17,7 @@ import { taskDone } from "./job-sheets.js";
 import { catName } from "./plans-specs.js";
 import { same } from "./project-pages.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
-export { jkOpen };
+export { jkImg, jkOpen };
 /* For a supplier, scaffolder, architect or a trade who isn't on the app yet. James ticks what goes in (the job,
    contacts, access, welfare, hazards, notes, key dates, open job sheets and snags, the drawings list – with the files
    too if he likes – the latest photos and a map link), picks a PDF on his letterhead or a spreadsheet, and it opens

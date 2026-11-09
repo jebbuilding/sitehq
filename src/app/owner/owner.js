@@ -507,8 +507,11 @@ function wireTimeControls(root, id) {
       const e = all().find((x) => x.id === ed.dataset.e);
       if (e) openEntry("hours", e, id);
     };
-  root.querySelector(".tc-add").onclick = () => openEntry("hours", null, id);
-  root.querySelector(".tc-job").onclick = () => openEntry("job", null, id);
+  /* James's own week has its own add buttons, without these */
+  const ad = root.querySelector(".tc-add"),
+    jb = root.querySelector(".tc-job");
+  if (ad) ad.onclick = () => openEntry("hours", null, id);
+  if (jb) jb.onclick = () => openEntry("job", null, id);
 }
 function openStartFor(id) {
   const D = dayFor(id);

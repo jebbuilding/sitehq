@@ -71,6 +71,7 @@ Subcollections (`TR_COLLS`):
 | `variation` | extra work agreed on site (`todos/var-*`): `site`, `clientId`, `client`, `title`, `details`, `photos` (asset ids), `amt` (before VAT), `vc` (VAT code), `status` (open / signed / cancelled), `sign` { `name`, `at`, `sigId`, `pdfId` }, `invId` (the invoice it went onto), `number` (V1, V2…). Signed ones are locked |
 | `pricelist` | a merchant's prices, owner-only and never copied to trades (`todos/pl-{merchant id}`): `sup`, `items` [{ `n` item, `u` unit, `p` £ before VAT }] |
 | `purchaseorder` | an order to one merchant (`todos/po-*`): `number` (PO1…), `site`, `sup`, `supName`, `lines` [{ `d`, `q`, `u`, `p`, `for` }], `net`, `status` (draft / sent), `sentAt` |
+| `sitediary` | James's note for one day on one site (`todos/sdi-{site slug}-{date}`): `site`, `date`, `note`, `weather` (saved with the note), `byName`, `updated`. The rest of the day (sign-ins, work, ticks, photos) is read from the existing records, not copied |
 | `training` | owner training records |
 
 ## Shared collections

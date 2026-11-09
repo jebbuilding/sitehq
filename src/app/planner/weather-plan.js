@@ -4,7 +4,7 @@ import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { pbEntryDays } from "./board.js";
 import { same } from "../sites/project-pages.js";
-export { wpCard, wpPlannerTop, wpWire };
+export { wpCard, wpDays, wpPlannerTop, wpWire };
 /* The forecast comes in its own record, settings/forecast (written three times a day by the "JEB weather forecast"
    routine from AccuWeather; the live weather in settings/weather may carry the same): { at, places: [{ name, site,
    key, days }] }, each place's days: [{ d (YYYY-MM-DD), rain (% chance, daytime), mm (rain, day + night), max, min (°C, the
