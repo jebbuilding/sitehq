@@ -151,6 +151,14 @@ initPhotoTest();
     },
     () => {},
   );
+  /* the 10-day forecast, written by the "JEB weather forecast" routine (weather-wise planner) */
+  db.doc("settings/forecast").onSnapshot(
+    (s) => {
+      S.wxFc = s.exists ? s.data() : null;
+      if (curTab() === "planner" || curTab() === "today") render();
+    },
+    () => {},
+  );
   db.doc("settings/matcalc").onSnapshot(
     (s) => {
       S.matcalc = s.exists ? s.data() : { lists: [] };

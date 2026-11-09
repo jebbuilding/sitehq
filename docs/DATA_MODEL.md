@@ -78,7 +78,7 @@ Subcollections (`TR_COLLS`):
 - `docs/{id}` – site documents (`site`, `cat`, `title`, `assetId`, `who` visibility, folder).
 - `inductions/{id}` – per-site induction (`site`, `details{}`, `items[]`, `version`, `redo`).
 - `equipment`, `talks` (toolbox talks), `jobs` / `jobdone` (job sheets & completion), `plan` (planner items) / `planprivate`, `chats` / `msgs`, `sphotos` (site photos), `wfiles`.
-- `settings/app` – company details, people list, waste carrier, waste sites, brand; `settings/matcalc`; `settings/weather`.
+- `settings/app` – company details, people list, waste carrier, waste sites, brand; `settings/matcalc`; `settings/weather` (written hourly by the "JEB weather update" routine from AccuWeather: `at`, `places` [{ name, site, key, lat, lon, icon, phrase, temp, wind }]); `settings/forecast` (the weather-wise planner's 10-day forecast, written at 6:10, 12:10 and 17:10 by the "JEB weather forecast" routine: `at`, `places` [{ name, site, key, `days` [{ d, rain %, mm, max, min °C, gust km/h, phrase }] }]).
 - `portal/{clientUid}` (+ `docs`, `signs`, uploads) – client portal.
 - `visitinds` – visitor inductions done on the owner's device; `offapp` – people not on the app.
 

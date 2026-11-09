@@ -8,6 +8,7 @@ import { jbView } from "./jobs-desk.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
+import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
@@ -293,6 +294,7 @@ function todayView() {
     }
     ${tdwCard()}
     ${jbTodayCard()}
+    ${wpCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -303,6 +305,7 @@ function todayView() {
   tdWire();
   tdDeskWire();
   jbTodayWire();
+  wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();
   $("nl-roll").onclick = () => (rows.length ? openRollCall() : nlOpenTab("signin"));

@@ -49,6 +49,7 @@ import {
   workDays,
 } from "./time-off.js";
 import { openDayPlan, openPlanDetail, openPlanImport, planListHtml, planMatch } from "./views.js";
+import { wpPlannerTop } from "./weather-plan.js";
 import { shrinkImage } from "../safety/training.js";
 import { myJobs } from "../sites/job-sheets.js";
 import { same } from "../sites/project-pages.js";
@@ -61,6 +62,7 @@ export {
   openKeyDates,
   openPlanEditor,
   openPlanView,
+  pbEntryDays,
   pbPlanWeek,
   pbSiteOf,
   pbSiteShort,
@@ -975,6 +977,7 @@ function plannerView() {
       </div></details>`;
   }
   $("main").innerHTML = html;
+  wpPlannerTop();
   pbWireHeader(owner);
   if (mode === "where") plWireWhere(entries);
   if (mode === "board") pbWireBoard(shown, entries);
