@@ -1,6 +1,7 @@
 /* ================= BOOT: get the platform (database, user, files, downloads), work out who is signed in, start the app ================= */
 import { initRoofing } from "../calculators/roofing.js";
 import { CH, initChat, renderChatHead, syncSettings } from "../chat/chat.js";
+import { initJobStory } from "../clients/job-story.js";
 import { startClient, startPortalOwner } from "../clients/portal.js";
 import { initQuickEnquiry } from "../clients/quick-enquiry.js";
 import { soWatch } from "../clients/sign-offs.js";
@@ -56,6 +57,7 @@ initRoofing();
 initSpellCheck();
 initDictation();
 initPhotoTest();
+initJobStory();
 
 /* get the platform, work out who is signed in, start the app */
 (async () => {

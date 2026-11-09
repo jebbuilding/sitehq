@@ -2,6 +2,7 @@
 import { openChat, openClientChat, unread, visibleChats } from "../chat/chat.js";
 import { clContactsHtml, clInvHtml, clMainHtml, clientSites } from "./address-book.js";
 import { clAddNote, clStage, saveClient } from "./clients.js";
+import { ptStoryHtml, stToggleHtml, stWireToggle, wirePtStory } from "./job-story.js";
 import {
   pdClientTab,
   pdOwnerSection,
@@ -318,6 +319,7 @@ function renderClient() {
   const newDocs = (PT.docs || []).filter((d) => (d.sharedAt || 0) > (C.seenDocsAt || 0));
   const tabs = [
     ["home", "🏠 Home"],
+    ["story", "📖 Job story"],
     ["photos", "📷 Photos"],
     [
       "docs",
@@ -436,6 +438,7 @@ function renderClient() {
         .join("")}`;
   }
   if (tab === "cal") html += pdClientTab();
+  if (tab === "story") html += ptStoryHtml(C);
   if (tab === "draw") {
     const dr = (PT.ups || []).filter((u) => u.kind === "drawing");
     html += `<button type="button" class="btn primary drawnew" id="pt-draw">✏️ Start a new drawing</button>
@@ -550,6 +553,7 @@ function renderClient() {
         }),
     );
   if (tab === "cal") wirePdClient();
+  if (tab === "story") wirePtStory();
   wireSjPhotos($("main"));
   if (!C._preview)
     $("main")
@@ -979,6 +983,7 @@ function ptManager(c) {
   openViewer(`<div class="ptmgr"><button type="button" class="btn backbtn" id="pm-back">‹ Back to ${esc(c.name)}</button>
     <h3 style="margin:10px 0 4px">🏡 ${esc(c.name)}'s portal</h3><div class="who">${status}</div>
     ${ptSumHtml(c)}
+    ${p ? stToggleHtml(c) : ""}
     <div class="actions" style="margin-top:6px">${p ? "" : `<button type="button" class="btn primary" id="pm-invite">${c.portalCode ? "Send the invite again" : "Invite them"}</button>`}<button type="button" class="btn" id="pm-pv">👁 See what they see</button></div>
     <div class="ptsec"><b>🏗️ Their job site</b>
       <label for="pm-site" style="max-width:420px">Site for this client<select id="pm-site"><option value="">Not linked to a site yet</option>${sites.map((s) => `<option ${same(s, site) ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
@@ -993,6 +998,7 @@ function ptManager(c) {
     <div class="ptsec"><div class="ptsech"><b>💬 Client chat</b>${chat && p ? `<button type="button" class="btn primary" id="pm-chat">Open chat</button>` : ""}</div>
       ${p ? `<div class="who">${chat ? `In the chat: you, ${esc(p.name)}${trades.length ? ", " + trades.map((id) => esc(nameOf(id))).join(", ") : ""}.` : "No chat yet. Choose which trades can talk to the client."}</div><button type="button" class="btn" id="pm-members" style="align-self:flex-start">${chat ? "Change who's in the chat" : "Set up the chat"}</button>` : `<div class="who">The chat can be set up once they've joined.</div>`}</div>
     ${p ? `<div class="ptsec"><button type="button" class="linkdanger" id="pm-revoke">End ${esc(c.name)}'s portal access</button></div>` : ""}</div>`);
+  stWireToggle(c);
   $("pm-back").onclick = () => {
     PT.mgr = null;
     viewClient(ptCl(c));
