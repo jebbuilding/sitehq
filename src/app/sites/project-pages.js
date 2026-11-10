@@ -21,6 +21,7 @@ import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv, matCard, openMat, rcRow, wireReceipts } from "../purchasing/materials-receipts.js";
 import { ramsMaker } from "../safety/rams-maker.js";
 import { indFor, indSectionWithId, wireInduction } from "../safety/site-inductions.js";
+import { dcmOpen } from "./drawing-compare.js";
 import {
   editSiteJob,
   editSiteVis,
@@ -225,13 +226,15 @@ function ownerProjects() {
     );
     return m;
   })();
-  P.plans = dSec(
-    "plans",
-    "Plans & drawings",
-    "+ Upload plans & drawings",
-    "No plans for this site yet. Upload drawings here and the trades can open and measure them.",
-    dPlans,
-  );
+  P.plans =
+    `<div class="actions"><button type="button" class="btn" id="dcm-open">🔍 Compare two drawings</button></div>` +
+    dSec(
+      "plans",
+      "Plans & drawings",
+      "+ Upload plans & drawings",
+      "No plans for this site yet. Upload drawings here and the trades can open and measure them.",
+      dPlans,
+    );
   P.rams =
     `<div class="notice ramsmk"><b>📝 Make RAMS for this site</b><span class="who">Start from your existing RAMS, tick the ones this job needs and fill in the blanks (address, client, dates, first aiders…). They're saved here as Word files.</span><button type="button" class="btn primary" id="mkrams">📝 Make RAMS from my set</button></div>` +
     dSec(
@@ -466,6 +469,7 @@ function ownerProjects() {
   wireInvoices(invs, true);
   if (tab === "diary") sdiWire(site);
   if (tab === "programme") pgWire(site);
+  if ($("dcm-open")) $("dcm-open").onclick = () => dcmOpen(site);
   wireInduction();
   wireReceipts(rcs, true);
   $("main")

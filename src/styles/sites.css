@@ -66,3 +66,12 @@
 .sq-map{margin-bottom:18px}
 .sq-key{margin:8px 0 0;padding-left:22px;line-height:1.6}
 .sq-key .sq-done{text-decoration:line-through;color:var(--muted,#888)}
+.dcm-key{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle}
+.dcm-key.dcm-new{background:#149628}
+.dcm-key.dcm-gone{background:#d21e1e}
+.dcm-mode{margin:8px 0}
+.dcm-stage{position:relative;border:1px solid var(--line);border-radius:8px;overflow:auto;background:#fff;max-height:70vh}
+.dcm-stage img{display:block;width:100%;height:auto}
+#dcm-fade{position:relative}
+#dcm-fade img+img{position:absolute;inset:0}
+.dcm label{display:block;margin-top:8px}

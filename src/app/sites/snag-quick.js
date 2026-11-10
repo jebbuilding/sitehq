@@ -15,7 +15,7 @@ import { empTypeOf } from "./job-details.js";
 import { taskDone } from "./job-sheets.js";
 import { same } from "./project-pages.js";
 import { openJob } from "../survey/door-window-survey.js";
-export { sqMap, sqOpen };
+export { sqDrawingUrl, sqDrawings, sqMap, sqOpen };
 /* On a site James (or anyone running the job from the owner's app) taps 📸 Snag: takes a photo, says or types what's
    wrong (🎤 Speak under the box), and the app tidies it into a snag line and picks the trade from the words
    ("socket" → the electrician, "grout" → the tiler…) – he can change it. He can tap the spot on one of the site's
