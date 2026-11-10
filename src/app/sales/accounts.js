@@ -43,6 +43,7 @@ import {
 } from "./acct-reconcile.js";
 import { acRcptSheet, acRcptView } from "./acct-review.js";
 import { acSupView } from "./acct-suppliers.js";
+import { gpView } from "./getting-paid.js";
 import { jcView } from "./job-costs.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
 import { vtPeriodAsk, vtView } from "./vat-return.js";
@@ -69,6 +70,7 @@ function accountsView() {
     ["over", "Overview"],
     ["bank", "Bank"],
     ["due", "💳 Paid / not paid"],
+    ["gp", "📨 Getting paid"],
     ["rcpt", "Receipts"],
     ["sup", "Suppliers & sites"],
     ["jobs", "💷 Job costs"],
@@ -83,6 +85,7 @@ function accountsView() {
   if (tab === "bank") acBankView(tabs);
   else if (tab === "rcpt") acRcptView(tabs);
   else if (tab === "due") adView(tabs);
+  else if (tab === "gp") gpView(tabs);
   else if (tab === "sup") acSupView(tabs);
   else if (tab === "jobs") jcView(tabs);
   else if (tab === "vat") vtView(tabs);
