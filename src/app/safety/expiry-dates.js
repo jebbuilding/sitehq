@@ -9,6 +9,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { wnJump } from "../owner/whats-new.js";
+import { cmpDueItems } from "../people/companies.js";
 import { PDOC_TYPES } from "../people/personal-documents.js";
 import { EQM_KINDS } from "../planner/plant-care.js";
 import { KINDS } from "./checklists.js";
@@ -76,6 +77,8 @@ function dueSoonItems(scope) {
         });
     }),
   );
+  /* insurance of the companies and self-employed trades working for us */
+  if (scope !== "mine") cmpDueItems().forEach((x) => out.push(x));
   if (scope !== "mine")
     (S.policies || [])
       .filter((p) => p.expires)

@@ -8,6 +8,7 @@ import { personPhotoDlg, personPhotoSet } from "../files/cut-outs.js";
 import { blobUrl, csvSave, uploadErr, uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { companyOf, nameOf, roleOf, roleTag, teamIds } from "../owner/owner.js";
+import { cmpView } from "./companies.js";
 import { EMP_TYPES } from "./employment-types.js";
 import { accessNotice, leaversBlock, openLeaver, wireLeavers } from "./leavers.js";
 import { DET_SECTIONS, detailsDone, myDetails, openDetails } from "./personal-details.js";
@@ -452,4 +453,10 @@ function peopleView() {
   /* holiday requests waiting for an answer, and everyone's holidays */
   $("main").insertAdjacentHTML("afterbegin", holTeamHtml());
   holTeamWire();
+  /* the companies and self-employed trades who come in to work */
+  $("main").insertAdjacentHTML(
+    "afterbegin",
+    `<div class="actions"><button type="button" class="btn primary" id="pp-cmp">🏢 Companies &amp; subcontractors</button></div>`,
+  );
+  $("pp-cmp").onclick = () => cmpView();
 }

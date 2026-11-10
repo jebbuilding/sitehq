@@ -35,6 +35,19 @@ const DET_SECTIONS = [
     ],
   ],
   [
+    "Your business (if you're self-employed or a company – leave blank if employed)",
+    [
+      ["tradingName", "Trading name", 0],
+      ["companyNo", "Company number (if a limited company)", 0],
+      ["vatNo", "VAT number (if VAT registered)", 0],
+      ["plInsurer", "Public liability insurer", 0],
+      ["plCover", "Public liability cover (e.g. £5,000,000)", 0],
+      ["plExpiry", "Public liability insurance runs out on", 0, "date"],
+      ["accred", "Qualifications and schemes (e.g. Gas Safe 123456, NICEIC, CSCS)", 0, "area"],
+      ["dayRate", "Day rate £ (optional)", 0],
+    ],
+  ],
+  [
     "Next of kin (emergency contact)",
     [
       ["nokName", "Name", 1],
