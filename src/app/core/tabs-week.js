@@ -37,6 +37,7 @@ import {
 } from "../owner/todo-lists.js";
 import { whatsNewHTML, wireWhatsNew, wnCapture } from "../owner/whats-new.js";
 import { acTabAllowed } from "../people/access.js";
+import { cmpPage } from "../people/companies.js";
 import { amForeman, foremanView } from "../people/foreman.js";
 import { inductionsView } from "../people/induction-matrix.js";
 import { detailsDone, myDetails, renderDetailsNeeded } from "../people/personal-details.js";
@@ -129,6 +130,8 @@ const OWN_TABS = [
   ["training", "🎓 Training"],
   ["policies", "🛡️ Policies & insurance"],
   ["people", "👷 Employees"],
+  ["firms", "🏢 Companies"],
+  ["selfemp", "🧑‍🔧 Self-employed trades"],
   ["wages", "💷 Wage calculator"],
   ["inductions", "🦺 Site inductions"],
   ["costs", "📊 Business costings"],
@@ -488,6 +491,8 @@ function render() {
         projects: ownerProjects,
         setup: ownerSetup,
         people: peopleView,
+        firms: () => cmpPage("firms"),
+        selfemp: () => cmpPage("self"),
         todo: todoView,
         jobs: jobsView,
         training: trainingView,

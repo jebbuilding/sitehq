@@ -2,7 +2,7 @@
 import { $, addDays, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
-import { openViewer } from "../core/viewer.js";
+import { render } from "../core/tabs-week.js";
 import { uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
@@ -12,7 +12,7 @@ import { daysTo } from "../safety/expiry-dates.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { shrinkImage } from "../safety/training.js";
 import { empTypeOf } from "../sites/job-details.js";
-export { cmpDueItems, cmpView };
+export { cmpDueItems, cmpPage };
 /* 🏢 on the team page. Companies James adds (todos/firm-*, owner-only): name, trades, contact, phone, email, address,
    website, company, VAT and UTR numbers, CIS (gross, 20% or 30%), public and employer's liability insurance with the
    date it runs out, qualifications and schemes, day rate, notes, the insurance certificate and other documents, and
@@ -75,7 +75,8 @@ function cmpPeople() {
     }));
   return app.concat(off);
 }
-function cmpView() {
+/* the Companies page (kind "firms") or the Self-employed trades page (kind "self") */
+function cmpPage(kind) {
   const f = S.f.cmpf || "all";
   const q = cmpNorm(S.f.cmpq || "");
   const firms = cmpFirms();
@@ -109,7 +110,7 @@ function cmpView() {
       trade: p.d.trade || "",
       exp: p.d.plExpiry,
     }));
-  let rows = rowsF.concat(rowsP);
+  let rows = kind === "firms" ? rowsF : rowsP;
   if (f === "now") rows = rows.filter((r) => r.now);
   if (f === "not") rows = rows.filter((r) => !r.now);
   if (q)
@@ -123,12 +124,12 @@ function cmpView() {
       ).includes(q),
     );
   rows.sort((a, b) => (b.now ? 1 : 0) - (a.now ? 1 : 0) || a.name.localeCompare(b.name));
-  const nNow = rowsF.concat(rowsP).filter((r) => r.now).length;
-  const warn = rowsF.concat(rowsP).filter((r) => r.exp && daysTo(r.exp) <= 30).length;
-  openViewer(`<div class="cmp"><div class="vhead"><b>🏢 Companies &amp; subcontractors</b></div>
-    <div class="who">Every company that comes in to work and every self-employed trade. Self-employed trades on the app keep their own details up to date in My details; you can fill them in or check them too.</div>
-    ${warn ? `<div class="notice warn">⚠ ${warn} with insurance that has run out or runs out within 30 days – ask them for the new certificate.</div>` : ""}
-    <div class="actions"><button type="button" class="btn primary" id="cmp-add">+ Add a company</button><button type="button" class="btn" id="cmp-addp">+ Add a self-employed trade not on the app</button></div>
+  const nNow = (kind === "firms" ? rowsF : rowsP).filter((r) => r.now).length;
+  const warn2 = rows.filter((r) => r.exp && daysTo(r.exp) <= 30).length;
+  $("main").innerHTML = `<div class="cmp">
+    <div class="who">${kind === "firms" ? "Every company that comes in to work: contacts, numbers, CIS, insurance and certificates. Their people show under them." : "Every self-employed trade, on the app or not. Those on the app keep their own business details up to date in My details; you can fill them in or check them too."}</div>
+    ${warn2 ? `<div class="notice warn">⚠ ${warn2} with insurance that has run out or runs out within 30 days – ask them for the new certificate.</div>` : ""}
+    <div class="actions">${kind === "firms" ? `<button type="button" class="btn primary" id="cmp-add">+ Add a company</button>` : `<button type="button" class="btn primary" id="cmp-addp">+ Add a self-employed trade not on the app</button>`}</div>
     <div class="cmp-top"><div class="seg" id="cmp-f">${[
       ["all", "Everyone"],
       ["now", `Working for us now (${nNow})`],
@@ -150,23 +151,23 @@ function cmpView() {
         )
         .join("") ||
       `<div class="nothing">${q || f !== "all" ? "Nobody matches." : "Nobody yet. Add the companies that come in to work, and self-employed trades fill in their own details on the app."}</div>`
-    }</div>`);
-  $("cmp-add").onclick = () => cmpEdit(null);
-  $("cmp-addp").onclick = () => openDetails({ off: true });
+    }</div>`;
+  if ($("cmp-add")) $("cmp-add").onclick = () => cmpEdit(null);
+  if ($("cmp-addp")) $("cmp-addp").onclick = () => openDetails({ off: true });
   $("cmp-f")
     .querySelectorAll("button")
     .forEach(
       (b) =>
         (b.onclick = () => {
           S.f.cmpf = b.dataset.v;
-          cmpView();
+          render();
         }),
     );
   $("cmp-q").oninput = (e) => {
     S.f.cmpq = e.target.value;
     clearTimeout(cmpTimer);
     cmpTimer = setTimeout(() => {
-      cmpView();
+      render();
       const el = $("cmp-q");
       if (el) {
         el.focus();
@@ -206,7 +207,7 @@ function cmpPerson(p) {
         p.rec.working = !!$("cmp-now").checked;
       } catch (e) {}
     d2.remove();
-    cmpView();
+    render();
   };
   d2.querySelector(".cmp-ed").onclick = () => {
     d2.remove();
@@ -308,7 +309,7 @@ function cmpEdit(fm0) {
         await cmpSave(o);
         closeForm();
         toast(fm0 ? "Saved" : name + " added");
-        cmpView();
+        render();
       } catch (e) {
         showErr("Couldn't save – check your connection");
       }
@@ -374,7 +375,7 @@ function cmpEdit(fm0) {
     armDelete(async () => {
       await S.db.doc("todos/" + fm0.id).delete();
       S.firms = (S.firms || []).filter((x) => x.id !== fm0.id);
-      cmpView();
+      render();
     });
 }
 /* insurance running out, for Today's "coming up" list */

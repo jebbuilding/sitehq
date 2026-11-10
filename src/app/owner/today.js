@@ -39,7 +39,11 @@ const NL_SECTIONS = [
   ],
   /* Estimates & invoices: right under Jobs & clients so they are easy to find (James, Nov 2026); still in Accounts too */
   ["sales", "Estimates & invoices", ["sales"]],
-  ["people", "People", ["people", "inductions", "wages", "time", "training", "chat"]],
+  [
+    "people",
+    "People",
+    ["people", "firms", "selfemp", "inductions", "wages", "time", "training", "chat"],
+  ],
   ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers", "materials"]],
   /* Accounts: the money pages, their own area (James, Nov 2026) */
   ["money", "Accounts", ["accounts", "sales", "invoices", "cis", "costs", "wages"]],
@@ -72,7 +76,7 @@ const NL_GROUPS = {
     ["Materials and tools", ["materials", "calc"]],
   ],
   people: [
-    ["Your team", ["people", "inductions", "training", "chat"]],
+    ["Your team", ["people", "firms", "selfemp", "inductions", "training", "chat"]],
     ["Time and pay", ["time", "wages"]],
   ],
   money: [

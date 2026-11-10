@@ -33,9 +33,8 @@ function mk(owner,dump){let src=src0.replace('const store={}, listeners=[];','co
  const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR owner',e.message);bad++;});
  await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+mk(true)+page_src+'</body></html>');await p.waitForTimeout(2200);await p.keyboard.press('Escape');
  await p.evaluate(async(d)=>{await window.__S.db.doc('sheets/emp1').update({details:JSON.parse(d)['sheets/emp1'].details});},dump);await p.waitForTimeout(400);
- await p.evaluate(()=>{window.__S.otab='people';window.render()});await p.waitForTimeout(500);
- ok(await p.isVisible('#pp-cmp'),'the team page has 🏢 Companies & subcontractors');
- await p.click('#pp-cmp');await p.waitForTimeout(400);
+ ok(await p.evaluate(()=>!!document.querySelector('#tabs .tab[data-t=firms]')&&!!document.querySelector('#tabs .tab[data-t=selfemp]')),'Your team has Companies and Self-employed trades pages');
+ await p.evaluate(()=>{window.__S.otab='firms';window.render()});await p.waitForTimeout(500);
  await p.click('#cmp-add');await p.waitForTimeout(300);
  await p.fill('#cmp-name','Test Scaffolding Ltd');await p.fill('#cmp-trades','Scaffolding');await p.fill('#cmp-contact','Dave Test');await p.fill('#cmp-phone','07700 900222');
  await p.selectOption('#cmp-cis','net20');await p.fill('#cmp-plInsurer','Test Underwriters');
@@ -45,17 +44,22 @@ function mk(owner,dump){let src=src0.replace('const store={}, listeners=[];','co
  await p.click('#f-save');await p.waitForTimeout(800);
  const fm=await p.evaluate(()=>Object.values(window.__st).find(v=>v&&v.kind==='firm'));
  ok(fm&&fm.name==='Test Scaffolding Ltd'&&fm.cis==='net20'&&fm.docs.length===1&&fm.docs[0].kind==='pl'&&fm.status==='now','the company is saved with its certificate');
- const v=await p.innerText('#viewer-body');console.log(v.split('\n').slice(0,14).join(' | '));
+ const v=await p.innerText('#main');console.log(v.split('\n').slice(0,14).join(' | '));
  ok(/Test Scaffolding Ltd/.test(v)&&/Working for us now/.test(v)&&/Insurance runs out/.test(v),'listed as working for us now, insurance flagged');
- ok(/Sam Test Electrical/.test(v)&&/Insurance ran out/.test(v),'Sam is listed by his trading name with his insurance flagged');
- ok(/2 with insurance that has run out or runs out within 30 days/.test(v),'a warning at the top');
+ ok(/1 with insurance that has run out or runs out within 30 days/.test(v),'a warning at the top');
+ await p.evaluate(()=>{window.__S.otab='selfemp';window.render()});await p.waitForTimeout(500);
+ const sv=await p.innerText('#main');
+ ok(/Sam Test Electrical/.test(sv)&&/Insurance ran out/.test(sv)&&!/Test Scaffolding/.test(sv),'Self-employed trades lists Sam by his trading name, insurance flagged');
  await p.locator('.cmp-person:has-text("Sam Test Electrical")').click();await p.waitForTimeout(300);
  const pd=await p.innerText('.cmp-box');
  ok(/Test Insurance Co/.test(pd)&&/NICEIC/.test(pd)&&/keep these up to date themselves/.test(pd),'James sees Sam\'s business details');
  await p.click('.cmp-x');await p.waitForTimeout(300);
  await p.click('#cmp-f button[data-v=not]');await p.waitForTimeout(300);
- const nv=await p.innerText('#viewer-body');
+ await p.evaluate(()=>{window.__S.otab='firms';window.render()});await p.waitForTimeout(400);await p.click('#cmp-f button[data-v=not]');await p.waitForTimeout(300);
+ const nv=await p.innerText('#main');
  ok(!/Test Scaffolding Ltd/.test(nv),'"Not at the moment" leaves out those working for us now');
+ await p.evaluate(()=>{window.__S.otab='people';window.__S.f.prole=undefined;window.render()});await p.waitForTimeout(400);
+ ok(await p.evaluate(()=>document.querySelector('#pp-rf [aria-pressed=true]')&&/Employees/.test(document.querySelector('#pp-rf [aria-pressed=true]').textContent)),'People shows the employees');
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h495: ${bad} failed`:'h495: all passed');await b.close();process.exit(bad?1:0);
 })();
