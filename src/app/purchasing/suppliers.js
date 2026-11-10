@@ -10,6 +10,7 @@ import { noBin } from "../owner/deleted-items.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { makersView, wireMakers } from "./makers.js";
 import { mkCopies, syncMakers, tradeMakersHtml, whoSeesDlg } from "./merchants.js";
+import { pordView } from "./orders.js";
 import { plView } from "./price-order.js";
 import { supSendSheet } from "./sup-send.js";
 import { acSupKey, acSupSpent } from "../sales/acct-suppliers.js";
@@ -222,7 +223,22 @@ function suppliersView() {
   const owner = ownerMode();
   if (owner && S.f.merTab === "prices") {
     plView(
-      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="true">💷 Price lists</button></div>`,
+      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="true">💷 Price lists</button><button type="button" class="mer-t" data-v="orders" aria-pressed="${S.f.merTab === "orders"}">📦 Orders</button></div>`,
+    );
+    $("main")
+      .querySelectorAll(".mer-t")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            S.f.merTab = b.dataset.v;
+            render();
+          }),
+      );
+    return;
+  }
+  if (owner && S.f.merTab === "orders") {
+    pordView(
+      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button><button type="button" class="mer-t" data-v="orders" aria-pressed="true">📦 Orders</button></div>`,
     );
     $("main")
       .querySelectorAll(".mer-t")
@@ -237,7 +253,7 @@ function suppliersView() {
   }
   if (owner && S.f.merTab === "makers") {
     $("main").innerHTML =
-      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="true">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button></div>` +
+      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="true">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button><button type="button" class="mer-t" data-v="orders" aria-pressed="${S.f.merTab === "orders"}">📦 Orders</button></div>` +
       makersView();
     wireMakers();
     $("main")
@@ -300,7 +316,7 @@ function suppliersView() {
   );
   $("main").innerHTML = `${
     owner
-      ? `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="true">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button></div><div class="actions"><button class="btn primary" id="sup-add" type="button">+ Add a merchant</button><button class="btn hv" id="mer-who" type="button">👥 Choose who sees what</button></div>
+      ? `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="true">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button><button type="button" class="mer-t" data-v="orders" aria-pressed="${S.f.merTab === "orders"}">📦 Orders</button></div><div class="actions"><button class="btn primary" id="sup-add" type="button">+ Add a merchant</button><button class="btn hv" id="mer-who" type="button">👥 Choose who sees what</button></div>
       <div class="notice">For each merchant choose who can see it: everyone, only certain trades, or just you. Trades only ever receive the suppliers you've chosen for them.</div>`
       : ""
   }

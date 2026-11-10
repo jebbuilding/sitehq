@@ -14,7 +14,7 @@ import { sdR2 } from "../sales/sales-calc.js";
 import { sdShareMail } from "../sales/sales-email.js";
 import { sdImgData, sdLongDate } from "../sales/sales-pdf.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
-export { plView, poPriceSheet };
+export { plSupName, plView, poAll, poOrdersSheet, poPdf, poPriceSheet, poSave };
 /* Owner-private (prices are never sent to trades, unlike the merchant records):
    - todos/pl-<merchant id> (kind "pricelist"): { sup, items: [{ n (item), u (unit), p (£ before VAT) }], updated }
    - todos/po-<id> (kind "purchaseorder"): { number (PO1…), site, sup, supName, lines: [{ d, q, u, p }], net, status

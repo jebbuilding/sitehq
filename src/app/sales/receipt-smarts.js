@@ -7,7 +7,7 @@ import { openViewer } from "../core/viewer.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { acPdfPicture, acReceipts } from "./acct-receipts.js";
 import { sdR2 } from "./sales-calc.js";
-export { rcsLearn, rcsNoticeHtml, rcsWire };
+export { rcsLearn, rcsNorm, rcsNoticeHtml, rcsWire };
 /* Supplier rules: when Claude reads a receipt from a supplier James has saved before, the category, how it was paid
    and the site come from his last one (he set them once; they're filled in from then on). Duplicates: a receipt with
    the same supplier and total within 3 days of another (or the same reference) gets a warning before it's counted
