@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 207 files, 4153 KB, 106627 lines.
-- 2133 names declared at the top level (the shared scope); 1082 of them are used by a file other than the one that declares them.
+- 207 files, 4159 KB, 106795 lines.
+- 2137 names declared at the top level (the shared scope); 1082 of them are used by a file other than the one that declares them.
 - 2241 file-to-file dependencies (file A uses at least one name from file B).
 - 23 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 190 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -1212,7 +1212,7 @@ PROGRAMME: a job's stages in order, linked ("can't start until…"), with delay 
 
 QR STICKERS: a sticker for every van, trailer, digger, machine, tool and ladder – scan it to open that one
 
-- 199 lines, 8.0 KB. Declares 10 names, 4 used elsewhere.
+- 367 lines, 15 KB. Declares 14 names, 4 used elsewhere.
 - **Used elsewhere:** `qrsOwnerOpen` (2), `qrsPrint` (2), `qrsAll` (1), `qrsTradeScan` (1)
 - **Uses names from 9 files:** `core/helpers.js` (5), `core/sheet.js` (4), `planner/kit-out.js` (3), `core/state.js` (1), `owner/company-details.js` (1), `safety/checklists.js` (1), `safety/checks.js` (1), `safety/expiry-dates.js` (1), `safety/site-inductions.js` (1)
 - **Used by 3 files**
