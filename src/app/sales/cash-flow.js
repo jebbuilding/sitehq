@@ -8,7 +8,7 @@ import { acBalance, acCatKind, acCfg, acSaveCfg, acSums } from "./acct-data.js";
 import { adOwedIn, adOwedOut } from "./acct-due.js";
 import { sdR2, sdSigned } from "./sales-calc.js";
 import { vtBoxes, vtFiled, vtName, vtQuarters } from "./vat-return.js";
-export { csfView };
+export { csfPlan, csfView };
 /* Accounts › 📈 Cash flow. Starts from today's bank balances. Money in: invoices not yet paid, in the week they're due
    (overdue ones in this week, marked). Money out: bills and trades' invoices not yet paid, by their due dates; the VAT
    for the quarter just gone (and the one running) on its due date; and the usual week's running costs (the average

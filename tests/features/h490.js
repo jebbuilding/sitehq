@@ -62,7 +62,7 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  ok(info.length===4,'four elevation pages');
  ok(P('Front elevation').doors===1&&P('Front elevation').wins===1,'front: the door, and an upstairs window over it');
  ok(P('Back elevation').wins===2&&P('Back elevation').doors===0,'back: the window on both floors');
- ok(P('Front elevation').strokes===1&&P('Left side elevation').strokes===2,'the roof: face-on at the front, a gable triangle (and its wall) at the side');
+ ok(P('Front elevation').strokes===1&&P('Left side elevation').strokes===1&&P('Left side elevation').lines>P('Front elevation').lines-20,'the roof: face-on at the front, the gable end (its wall and verges) at the side');
  ok(P('Front elevation').lines>40,'brick courses and tile lines are drawn');
  ok(/2 storeys/.test(P('Front elevation').txt)&&/gable roof at 35°/.test(P('Front elevation').txt)&&/brickwork/.test(P('Front elevation').txt),'the note says 2 storeys, a 35° gable roof, brickwork');
  /* hipped and flat */

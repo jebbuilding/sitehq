@@ -12,7 +12,7 @@ import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { sdAmt, sdLines, sdNo, sdR2, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { same } from "../sites/project-pages.js";
-export { appView };
+export { appAll, appCalc, appView };
 /* Accounts › 🏗 Applications. For a job paid in stages against a priced list (often for a main contractor or a
    bigger client): start from the accepted estimate's lines (or type them), put how far through each one is (%), and
    it values the work to date, takes off the retention and what's been applied for before, and gives the amount due

@@ -6879,6 +6879,73 @@ async function openNotePage(opts) {
     });
     return { W, H: Hmm };
   }
+  /* the plan's footprint as rectangles: an L, T or U shape becomes two or three, each with its own roof. The square
+     walls make a grid; a grid square is inside the building if there's a wall on all four sides of it; then the
+     biggest rectangles of inside squares are taken, largest first (they may overlap where the wings meet, so the roofs
+     cross there like a valley). */
+  function elevRects(W, box) {
+    const ax = W.filter((x) => Math.abs(x.u[0]) > 0.99 || Math.abs(x.u[1]) > 0.99);
+    if (ax.length < 4) return [box];
+    const rnd = (v) => Math.round(v / 10) * 10;
+    const xs = [...new Set(ax.flatMap((x) => [rnd(x.a[0]), rnd(x.b[0])]))].sort((a, b) => a - b);
+    const ys = [...new Set(ax.flatMap((x) => [rnd(x.a[1]), rnd(x.b[1])]))].sort((a, b) => a - b);
+    if (xs.length < 2 || ys.length < 2 || xs.length > 16 || ys.length > 16) return [box];
+    const V = ax.filter((x) => Math.abs(x.u[1]) > 0.99),
+      Hz = ax.filter((x) => Math.abs(x.u[0]) > 0.99);
+    const tol = 30;
+    const cov = (w, k, v) =>
+      Math.min(w.a[k], w.b[k]) - tol <= v && Math.max(w.a[k], w.b[k]) + tol >= v;
+    const hit = (cx, cy) =>
+      V.some((w) => w.a[0] < cx && cov(w, 1, cy)) &&
+      V.some((w) => w.a[0] > cx && cov(w, 1, cy)) &&
+      Hz.some((w) => w.a[1] < cy && cov(w, 0, cx)) &&
+      Hz.some((w) => w.a[1] > cy && cov(w, 0, cx));
+    const nx = xs.length - 1,
+      ny = ys.length - 1;
+    const inside = [],
+      done = [];
+    for (let i = 0; i < nx; i++) {
+      inside.push([]);
+      done.push([]);
+      for (let j = 0; j < ny; j++) {
+        inside[i].push(hit((xs[i] + xs[i + 1]) / 2, (ys[j] + ys[j + 1]) / 2));
+        done[i].push(false);
+      }
+    }
+    const cellA = (i, j) => (xs[i + 1] - xs[i]) * (ys[j + 1] - ys[j]);
+    let total = 0;
+    for (let i = 0; i < nx; i++)
+      for (let j = 0; j < ny; j++) if (inside[i][j]) total += cellA(i, j);
+    if (!total) return [box];
+    const out = [];
+    for (let k = 0; k < 4; k++) {
+      let best = null;
+      for (let i0 = 0; i0 < nx; i0++)
+        for (let i1 = i0; i1 < nx; i1++)
+          for (let j0 = 0; j0 < ny; j0++)
+            for (let j1 = j0; j1 < ny; j1++) {
+              let ok = true,
+                fresh = 0;
+              for (let i = i0; i <= i1 && ok; i++)
+                for (let j = j0; j <= j1; j++) {
+                  if (!inside[i][j]) {
+                    ok = false;
+                    break;
+                  }
+                  if (!done[i][j]) fresh += cellA(i, j);
+                }
+              if (!ok) break;
+              const area = (xs[i1 + 1] - xs[i0]) * (ys[j1 + 1] - ys[j0]);
+              if (!best || fresh > best.fresh || (fresh === best.fresh && area > best.area))
+                best = { i0, i1, j0, j1, fresh, area };
+            }
+      if (!best || best.fresh < total * 0.04) break;
+      for (let i = best.i0; i <= best.i1; i++)
+        for (let j = best.j0; j <= best.j1; j++) done[i][j] = true;
+      out.push({ x0: xs[best.i0], x1: xs[best.i1 + 1], y0: ys[best.j0], y1: ys[best.j1 + 1] });
+    }
+    return out.length ? out : [box];
+  }
   /* every storey (the plan here at the bottom), the box round the building and the roof */
   function elevBuild() {
     const g = elevModel(doc.objs);
@@ -6929,12 +6996,32 @@ async function openNotePage(opts) {
         : st.roof === "lean"
           ? span * tn
           : (span / 2) * tn;
+    /* a roof over each part of the plan; the biggest part takes the ridge direction chosen */
+    const roofs = elevRects(g.W, box).map((bb, i) => {
+      const axx =
+        i === 0 && (st.ridge === "x" || st.ridge === "y")
+          ? st.ridge
+          : bb.x1 - bb.x0 >= bb.y1 - bb.y0
+            ? "x"
+            : "y";
+      const sp = st.roof === "lean" ? bb.y1 - bb.y0 : axx === "x" ? bb.y1 - bb.y0 : bb.x1 - bb.x0;
+      const rs =
+        st.roof === "flat" || st.roof === "none" ? 0 : st.roof === "lean" ? sp * tn : (sp / 2) * tn;
+      return {
+        box: bb,
+        type: st.roof,
+        ax: st.roof === "lean" ? "x" : axx,
+        rise: rs,
+        over: Math.max(0, +st.over || 0),
+      };
+    });
     return {
       st,
       storeys,
       H: g.H,
       box,
       E,
+      roofs,
       roof: {
         type: st.roof,
         ax: st.roof === "lean" ? "x" : ax,
@@ -7089,101 +7176,145 @@ async function openNotePage(opts) {
         });
       /* floor lines between storeys */
       B.storeys.slice(1).forEach((s) => L(P(lo, s.z - 150), P(hi, s.z - 150), thin, grey, true));
-      /* the roof */
+      /* the roofs – one over each part of the plan (an L, T or U shape has more than one) – furthest first, each
+         filled white so the nearer ones cover the ones behind */
       const E = B.E,
-        o = R.over,
-        rise = R.rise;
-      const along =
-        (R.ax === "x" && Math.abs(r[0]) > 0.5) || (R.ax === "y" && Math.abs(r[1]) > 0.5);
-      const roofPoly = [];
-      if (R.type === "flat") {
-        roofPoly.push([lo - 50, E], [hi + 50, E], [hi + 50, E + 250], [lo - 50, E + 250]);
-      } else if (R.type === "lean") {
-        if (along) {
-          const front = out[1] > 0;
-          if (front)
-            roofPoly.push([lo - o, E], [hi + o, E], [hi + o, E + rise], [lo - o, E + rise]);
-          else {
-            /* the high back wall */
-            objs.push({
-              t: "rect",
-              a: P(lo, E + rise),
-              b: P(hi, E),
-              c: col,
-              w: lw,
-              fill: "#ffffff",
-              fa: 1,
-            });
-            roofPoly.push(
-              [lo - o, E + rise],
-              [hi + o, E + rise],
-              [hi + o, E + rise + 120],
-              [lo - o, E + rise + 120],
-            );
-          }
-        } else {
-          /* from the side: high at the back */
-          const hiAtLo = B.box.y0 * r[1] < B.box.y1 * r[1];
-          roofPoly.push(
-            hiAtLo ? [lo - o, E + rise] : [lo - o, E],
-            hiAtLo ? [hi + o, E] : [hi + o, E + rise],
-            hiAtLo ? [hi + o, E] : [hi + o, E + rise],
-          );
-          objs.push({
-            t: "stroke",
-            p: [[P(lo, E), P(hiAtLo ? lo : hi, E + rise), P(hi, E)]],
-            c: col,
-            w: lw,
+        o = R.over;
+      const poly = (pts, tiles) => {
+        const pp = pts.map(([x, z]) => P(x, z));
+        objs.push({ t: "stroke", p: pp, c: "#ffffff", w: 0.1, fill: "#ffffff", fa: 1 });
+        pp.forEach((q, i) => L(q, pp[(i + 1) % pp.length]));
+        if (!tiles) return;
+        const zs = pts.map((q) => q[1]);
+        const zmin = Math.min(...zs),
+          zmax = Math.max(...zs);
+        for (let z = zmin + 110; z < zmax - 20; z += 110) {
+          const xsx = [];
+          pts.forEach((q, i) => {
+            const q2 = pts[(i + 1) % pts.length];
+            if ((q[1] - z) * (q2[1] - z) < 0)
+              xsx.push(q[0] + ((z - q[1]) * (q2[0] - q[0])) / (q2[1] - q[1]));
           });
+          if (xsx.length >= 2) L(P(Math.min(...xsx), z), P(Math.max(...xsx), z), thin, grey);
         }
-      } else if (R.type === "gable" || R.type === "hip") {
-        const midX = (lo + hi) / 2;
-        if (along) {
-          const h =
-            R.type === "hip"
-              ? Math.min(
-                  (hi - lo) / 2,
-                  (R.ax === "x" ? B.box.y1 - B.box.y0 : B.box.x1 - B.box.x0) / 2,
-                )
-              : 0;
-          roofPoly.push(
-            [lo - o, E],
-            [hi + o, E],
-            [hi - h + (h ? 0 : o), E + rise],
-            [lo + h - (h ? 0 : o), E + rise],
+      };
+      const mid = (b) => [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2];
+      const roofs = (B.roofs || [Object.assign({ box: B.box }, R)])
+        .slice()
+        .sort((a, b) => Z(mid(b.box)) - Z(mid(a.box)));
+      let topZ = E;
+      roofs.forEach((rf) => {
+        const bb = rf.box,
+          rise = rf.rise;
+        const rl = Math.min(X([bb.x0, bb.y0]), X([bb.x1, bb.y1])),
+          rh = Math.max(X([bb.x0, bb.y0]), X([bb.x1, bb.y1]));
+        const along =
+          (rf.ax === "x" && Math.abs(r[0]) > 0.5) || (rf.ax === "y" && Math.abs(r[1]) > 0.5);
+        topZ = Math.max(topZ, E + (rf.type === "flat" ? 250 : rise));
+        if (rf.type === "flat")
+          poly(
+            [
+              [rl - 50, E],
+              [rh + 50, E],
+              [rh + 50, E + 250],
+              [rl - 50, E + 250],
+            ],
+            false,
           );
-        } else {
-          roofPoly.push(
-            [lo - o, E],
-            [midX, E + rise + (o * rise) / ((hi - lo) / 2 || 1)],
-            [hi + o, E],
-          );
-          if (R.type === "gable")
-            objs.push({ t: "stroke", p: [[P(lo, E), P(midX, E + rise), P(hi, E)]], c: col, w: lw });
-        }
-      }
-      if (roofPoly.length) {
-        const pp = roofPoly.map(([x, z]) => P(x, z));
-        objs.push({ t: "stroke", p: [pp.concat([pp[0]])], c: col, w: lw });
-        /* tile courses across the roof (not on a flat roof) */
-        if (R.type !== "flat") {
-          const zs = roofPoly.map((q) => q[1]);
-          const zmin = Math.min(...zs),
-            zmax = Math.max(...zs);
-          for (let z = zmin + 110; z < zmax - 20; z += 110) {
-            /* where this height crosses the roof's outline */
-            const xsx = [];
-            roofPoly.forEach((q, i) => {
-              const q2 = roofPoly[(i + 1) % roofPoly.length];
-              if ((q[1] - z) * (q2[1] - z) < 0)
-                xsx.push(q[0] + ((z - q[1]) * (q2[0] - q[0])) / (q2[1] - q[1]));
-            });
-            if (xsx.length >= 2) L(P(Math.min(...xsx), z), P(Math.max(...xsx), z), thin, grey);
+        else if (rf.type === "lean") {
+          if (along) {
+            if (out[1] > 0)
+              poly(
+                [
+                  [rl - o, E],
+                  [rh + o, E],
+                  [rh + o, E + rise],
+                  [rl - o, E + rise],
+                ],
+                true,
+              );
+            else {
+              /* the high back wall, and the roof's edge on top of it */
+              poly(
+                [
+                  [rl, E],
+                  [rh, E],
+                  [rh, E + rise],
+                  [rl, E + rise],
+                ],
+                false,
+              );
+              poly(
+                [
+                  [rl - o, E + rise],
+                  [rh + o, E + rise],
+                  [rh + o, E + rise + 120],
+                  [rl - o, E + rise + 120],
+                ],
+                false,
+              );
+            }
+          } else {
+            const hiAtLo = bb.y0 * r[1] < bb.y1 * r[1];
+            poly(
+              hiAtLo
+                ? [
+                    [rl, E],
+                    [rl, E + rise],
+                    [rh, E],
+                  ]
+                : [
+                    [rl, E],
+                    [rh, E + rise],
+                    [rh, E],
+                  ],
+              false,
+            );
+            L(P(hiAtLo ? rl - o : rh + o, E + rise + 60), P(hiAtLo ? rh + o : rl - o, E - 60));
+          }
+        } else if (rf.type === "gable" || rf.type === "hip") {
+          const m = (rl + rh) / 2;
+          if (along) {
+            const h =
+              rf.type === "hip"
+                ? Math.min((rh - rl) / 2, (rf.ax === "x" ? bb.y1 - bb.y0 : bb.x1 - bb.x0) / 2)
+                : 0;
+            poly(
+              [
+                [rl - o, E],
+                [rh + o, E],
+                [h ? rh - h : rh + o, E + rise],
+                [h ? rl + h : rl - o, E + rise],
+              ],
+              true,
+            );
+          } else if (rf.type === "hip")
+            poly(
+              [
+                [rl - o, E],
+                [m, E + rise],
+                [rh + o, E],
+              ],
+              true,
+            );
+          else {
+            /* a gable end: the wall up to the apex, with the verges over it */
+            poly(
+              [
+                [rl, E],
+                [m, E + rise],
+                [rh, E],
+              ],
+              false,
+            );
+            const up = (o * rise) / ((rh - rl) / 2 || 1);
+            L(P(rl - o, E - up * 0.2), P(m, E + rise + 80));
+            L(P(m, E + rise + 80), P(rh + o, E - up * 0.2));
           }
         }
-      }
+      });
       L([x0 - U(800) - U(o), gy], [x0 + U(hi - lo) + U(800) + U(o), gy], pwFor(12));
-      const top = E + (R.type === "flat" ? 250 : rise);
+      const top = topZ;
       objs.push(
         mkDim(P(lo, 0), P(hi, 0), dimSize() * 2.6),
         mkDim(P(lo, top), P(lo, 0), dimSize() * 2.6),
@@ -7231,7 +7362,7 @@ async function openNotePage(opts) {
       `<select id="${id}">${opts.map(([k, l]) => `<option value="${k}"${String(k) === String(v) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
     const d = document.createElement("div");
     d.className = "dimask";
-    d.innerHTML = `<div class="dimbox el-box" role="dialog" aria-label="Elevations and 3D"><b>🏘️ From this plan</b><div class="who">${B ? `${B.W.length} walls, ${B.W.reduce((a, x) => a + x.cuts.length, 0)} doors and windows, walls ${B.H} mm a storey.` : doc.scale ? "Draw the walls first." : "Set a scale in 📐 Paper first."}</div>
+    d.innerHTML = `<div class="dimbox el-box" role="dialog" aria-label="Elevations and 3D"><b>🏘️ From this plan</b><div class="who">${B ? `${B.W.length} walls, ${B.W.reduce((a, x) => a + x.cuts.length, 0)} doors and windows, walls ${B.H} mm a storey${B.roofs && B.roofs.length > 1 ? `, ${B.roofs.length} roofs where the plan turns` : ""}.` : doc.scale ? "Draw the walls first." : "Set a scale in 📐 Paper first."}</div>
       <div class="grid2"><label>Roof${sel(
         "el-roof",
         [

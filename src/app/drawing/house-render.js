@@ -335,280 +335,284 @@ function hrBuild(B) {
       g.add(grp);
     }),
   );
-  /* the roof */
-  const R = B.roof || { type: "none" };
+  /* the roofs: one over each part of the plan (an L, T or U shape has more than one; where they meet they cross like valleys) */
   const bx = B.box;
-  const E = B.E,
-    o = R.over || 0,
-    rise = R.rise || 0;
-  const cover = st.cover || (R.type === "flat" ? "flat" : "slate");
-  const roofTex = hrTiles(R.type === "flat" ? "flat" : cover);
-  const fasciaMat = new T.MeshStandardMaterial({
-    color: st.frames === "anthracite" ? 0x30343a : 0xf2f2f0,
-    roughness: 0.5,
-  });
-  const plane = (pts, mat) => {
-    /* a flat face, its texture laid along its first edge (the eaves) */
-    const P = pts.map((p) => new T.Vector3(mm(p[0]), mm(p[2]), mm(p[1])));
-    const ax = P[1].clone().sub(P[0]).normalize();
-    const nrm = P[1]
-      .clone()
-      .sub(P[0])
-      .cross(P[P.length - 1].clone().sub(P[0]))
-      .normalize();
-    const up = nrm.clone().cross(ax).normalize();
-    const pos = [],
-      uv = [];
-    const tri = (i, j, k) =>
-      [i, j, k].forEach((q) => {
-        pos.push(P[q].x, P[q].y, P[q].z);
-        const d = P[q].clone().sub(P[0]);
-        uv.push(d.dot(ax), d.dot(up));
-      });
-    tri(0, 1, 2);
-    if (P.length === 4) tri(0, 2, 3);
-    const geo = new T.BufferGeometry();
-    geo.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
-    geo.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
-    geo.computeVertexNormals();
-    const me = new T.Mesh(geo, mat);
-    me.material.side = T.DoubleSide;
-    me.castShadow = me.receiveShadow = true;
-    g.add(me);
-  };
-  const rm = hrMat(roofTex, { roughness: 0.75 });
-  const X0 = bx.x0 - o,
-    X1 = bx.x1 + o,
-    Y0 = bx.y0 - o,
-    Y1 = bx.y1 + o;
-  const eave = (p, q) => {
-    /* a fascia board along an eave, 200 deep */
-    const a = new T.Vector3(mm(p[0]), mm(E) - 0.1, mm(p[1])),
-      b = new T.Vector3(mm(q[0]), mm(E) - 0.1, mm(q[1]));
-    const len = a.distanceTo(b);
-    const me = new T.Mesh(new T.BoxGeometry(len, 0.2, 0.025), fasciaMat);
-    me.position.copy(a.clone().add(b).multiplyScalar(0.5));
-    me.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
-    me.castShadow = true;
-    g.add(me);
-    /* the soffit under the overhang */
-    if (o > 50) {
-      const sf = new T.Mesh(new T.BoxGeometry(len, 0.015, mm(o)), fasciaMat);
-      sf.position.copy(me.position).add(new T.Vector3(0, -0.1, 0));
-      sf.rotation.y = me.rotation.y;
-      const n = new T.Vector3(-(b.z - a.z), 0, b.x - a.x).normalize();
-      const mid = new T.Vector3(mm((bx.x0 + bx.x1) / 2), 0, mm((bx.y0 + bx.y1) / 2));
-      const towards = mid.clone().sub(me.position).setY(0);
-      sf.position.add(n.multiplyScalar(((n.dot(towards) > 0 ? 1 : -1) * mm(o)) / 2));
-      g.add(sf);
-    }
-  };
-  const ridge = (p, q) => {
-    const a = new T.Vector3(mm(p[0]), mm(E + rise) + 0.03, mm(p[1])),
-      b = new T.Vector3(mm(q[0]), mm(E + rise) + 0.03, mm(q[1]));
-    const len = a.distanceTo(b);
-    if (len < 0.05) return;
-    const me = new T.Mesh(
-      new T.CylinderGeometry(0.11, 0.11, len, 14, 1, false, 0, Math.PI),
-      new T.MeshStandardMaterial({
-        color: cover === "red" ? 0x7a3524 : cover === "brown" ? 0x4f3322 : 0x2e3136,
-        roughness: 0.7,
-        envMapIntensity: 0.3,
-      }),
-    );
-    me.position.copy(a.clone().add(b).multiplyScalar(0.5));
-    me.rotation.z = Math.PI / 2;
-    me.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
-    me.castShadow = true;
-    g.add(me);
-  };
-  const gableWall = (pts) => plane(pts, wallMat);
-  if (R.type === "flat") {
-    plane(
-      [
-        [bx.x0, bx.y0, E + 200],
-        [bx.x1, bx.y0, E + 200],
-        [bx.x1, bx.y1, E + 200],
-        [bx.x0, bx.y1, E + 200],
-      ],
-      rm,
-    );
-    /* the parapet with a coping */
-    [
-      [
-        [bx.x0, bx.y0],
-        [bx.x1, bx.y0],
-      ],
-      [
-        [bx.x1, bx.y0],
-        [bx.x1, bx.y1],
-      ],
-      [
-        [bx.x1, bx.y1],
-        [bx.x0, bx.y1],
-      ],
-      [
-        [bx.x0, bx.y1],
-        [bx.x0, bx.y0],
-      ],
-    ].forEach(([p, q]) => {
-      const a = new T.Vector3(mm(p[0]), mm(E), mm(p[1])),
-        b = new T.Vector3(mm(q[0]), mm(E), mm(q[1]));
+  const E = B.E;
+  const roofList = B.roofs || [Object.assign({ box: B.box }, B.roof || { type: "none" })];
+  const rise = Math.max(0, ...roofList.map((q) => q.rise || 0));
+  roofList.forEach((R) => {
+    const bx = R.box;
+    const o = R.over || 0,
+      rise = R.rise || 0;
+    const cover = st.cover || (R.type === "flat" ? "flat" : "slate");
+    const roofTex = hrTiles(R.type === "flat" ? "flat" : cover);
+    const fasciaMat = new T.MeshStandardMaterial({
+      color: st.frames === "anthracite" ? 0x30343a : 0xf2f2f0,
+      roughness: 0.5,
+    });
+    const plane = (pts, mat) => {
+      /* a flat face, its texture laid along its first edge (the eaves) */
+      const P = pts.map((p) => new T.Vector3(mm(p[0]), mm(p[2]), mm(p[1])));
+      const ax = P[1].clone().sub(P[0]).normalize();
+      const nrm = P[1]
+        .clone()
+        .sub(P[0])
+        .cross(P[P.length - 1].clone().sub(P[0]))
+        .normalize();
+      const up = nrm.clone().cross(ax).normalize();
+      const pos = [],
+        uv = [];
+      const tri = (i, j, k) =>
+        [i, j, k].forEach((q) => {
+          pos.push(P[q].x, P[q].y, P[q].z);
+          const d = P[q].clone().sub(P[0]);
+          uv.push(d.dot(ax), d.dot(up));
+        });
+      tri(0, 1, 2);
+      if (P.length === 4) tri(0, 2, 3);
+      const geo = new T.BufferGeometry();
+      geo.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+      geo.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
+      geo.computeVertexNormals();
+      const me = new T.Mesh(geo, mat);
+      me.material.side = T.DoubleSide;
+      me.castShadow = me.receiveShadow = true;
+      g.add(me);
+    };
+    const rm = hrMat(roofTex, { roughness: 0.75 });
+    const X0 = bx.x0 - o,
+      X1 = bx.x1 + o,
+      Y0 = bx.y0 - o,
+      Y1 = bx.y1 + o;
+    const eave = (p, q) => {
+      /* a fascia board along an eave, 200 deep */
+      const a = new T.Vector3(mm(p[0]), mm(E) - 0.1, mm(p[1])),
+        b = new T.Vector3(mm(q[0]), mm(E) - 0.1, mm(q[1]));
       const len = a.distanceTo(b);
-      const me = new T.Mesh(
-        new T.BoxGeometry(len + 0.1, 0.32, 0.12),
-        new T.MeshStandardMaterial({ color: 0x9a9890, roughness: 0.8 }),
-      );
-      me.position.copy(a.clone().add(b).multiplyScalar(0.5)).add(new T.Vector3(0, 0.16, 0));
+      const me = new T.Mesh(new T.BoxGeometry(len, 0.2, 0.025), fasciaMat);
+      me.position.copy(a.clone().add(b).multiplyScalar(0.5));
       me.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
       me.castShadow = true;
       g.add(me);
-    });
-  } else if (R.type === "lean") {
-    plane(
+      /* the soffit under the overhang */
+      if (o > 50) {
+        const sf = new T.Mesh(new T.BoxGeometry(len, 0.015, mm(o)), fasciaMat);
+        sf.position.copy(me.position).add(new T.Vector3(0, -0.1, 0));
+        sf.rotation.y = me.rotation.y;
+        const n = new T.Vector3(-(b.z - a.z), 0, b.x - a.x).normalize();
+        const mid = new T.Vector3(mm((bx.x0 + bx.x1) / 2), 0, mm((bx.y0 + bx.y1) / 2));
+        const towards = mid.clone().sub(me.position).setY(0);
+        sf.position.add(n.multiplyScalar(((n.dot(towards) > 0 ? 1 : -1) * mm(o)) / 2));
+        g.add(sf);
+      }
+    };
+    const ridge = (p, q) => {
+      const a = new T.Vector3(mm(p[0]), mm(E + rise) + 0.03, mm(p[1])),
+        b = new T.Vector3(mm(q[0]), mm(E + rise) + 0.03, mm(q[1]));
+      const len = a.distanceTo(b);
+      if (len < 0.05) return;
+      const me = new T.Mesh(
+        new T.CylinderGeometry(0.11, 0.11, len, 14, 1, false, 0, Math.PI),
+        new T.MeshStandardMaterial({
+          color: cover === "red" ? 0x7a3524 : cover === "brown" ? 0x4f3322 : 0x2e3136,
+          roughness: 0.7,
+          envMapIntensity: 0.3,
+        }),
+      );
+      me.position.copy(a.clone().add(b).multiplyScalar(0.5));
+      me.rotation.z = Math.PI / 2;
+      me.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
+      me.castShadow = true;
+      g.add(me);
+    };
+    const gableWall = (pts) => plane(pts, wallMat);
+    if (R.type === "flat") {
+      plane(
+        [
+          [bx.x0, bx.y0, E + 200],
+          [bx.x1, bx.y0, E + 200],
+          [bx.x1, bx.y1, E + 200],
+          [bx.x0, bx.y1, E + 200],
+        ],
+        rm,
+      );
+      /* the parapet with a coping */
       [
-        [X0, Y1, E],
-        [X1, Y1, E],
-        [X1, bx.y0, E + rise],
-        [X0, bx.y0, E + rise],
-      ],
-      rm,
-    );
-    gableWall([
-      [bx.x0, bx.y0, E],
-      [bx.x1, bx.y0, E],
-      [bx.x1, bx.y0, E + rise],
-      [bx.x0, bx.y0, E + rise],
-    ]);
-    gableWall([
-      [bx.x0, bx.y1, E],
-      [bx.x0, bx.y0, E],
-      [bx.x0, bx.y0, E + rise],
-    ]);
-    gableWall([
-      [bx.x1, bx.y1, E],
-      [bx.x1, bx.y0, E],
-      [bx.x1, bx.y0, E + rise],
-    ]);
-    eave([X0, Y1], [X1, Y1]);
-  } else if (R.type === "gable" || R.type === "hip") {
-    const hip = R.type === "hip";
-    if (R.ax === "x") {
-      const ym = (bx.y0 + bx.y1) / 2,
-        h = hip ? Math.min((bx.x1 - bx.x0) / 2, (bx.y1 - bx.y0) / 2) : 0;
-      const ra = [hip ? bx.x0 + h : X0, ym],
-        rb = [hip ? bx.x1 - h : X1, ym];
+        [
+          [bx.x0, bx.y0],
+          [bx.x1, bx.y0],
+        ],
+        [
+          [bx.x1, bx.y0],
+          [bx.x1, bx.y1],
+        ],
+        [
+          [bx.x1, bx.y1],
+          [bx.x0, bx.y1],
+        ],
+        [
+          [bx.x0, bx.y1],
+          [bx.x0, bx.y0],
+        ],
+      ].forEach(([p, q]) => {
+        const a = new T.Vector3(mm(p[0]), mm(E), mm(p[1])),
+          b = new T.Vector3(mm(q[0]), mm(E), mm(q[1]));
+        const len = a.distanceTo(b);
+        const me = new T.Mesh(
+          new T.BoxGeometry(len + 0.1, 0.32, 0.12),
+          new T.MeshStandardMaterial({ color: 0x9a9890, roughness: 0.8 }),
+        );
+        me.position.copy(a.clone().add(b).multiplyScalar(0.5)).add(new T.Vector3(0, 0.16, 0));
+        me.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
+        me.castShadow = true;
+        g.add(me);
+      });
+    } else if (R.type === "lean") {
       plane(
         [
           [X0, Y1, E],
           [X1, Y1, E],
-          [rb[0], ym, E + rise],
-          [ra[0], ym, E + rise],
+          [X1, bx.y0, E + rise],
+          [X0, bx.y0, E + rise],
         ],
         rm,
       );
-      plane(
-        [
-          [X1, Y0, E],
-          [X0, Y0, E],
-          [ra[0], ym, E + rise],
-          [rb[0], ym, E + rise],
-        ],
-        rm,
-      );
-      if (hip) {
+      gableWall([
+        [bx.x0, bx.y0, E],
+        [bx.x1, bx.y0, E],
+        [bx.x1, bx.y0, E + rise],
+        [bx.x0, bx.y0, E + rise],
+      ]);
+      gableWall([
+        [bx.x0, bx.y1, E],
+        [bx.x0, bx.y0, E],
+        [bx.x0, bx.y0, E + rise],
+      ]);
+      gableWall([
+        [bx.x1, bx.y1, E],
+        [bx.x1, bx.y0, E],
+        [bx.x1, bx.y0, E + rise],
+      ]);
+      eave([X0, Y1], [X1, Y1]);
+    } else if (R.type === "gable" || R.type === "hip") {
+      const hip = R.type === "hip";
+      if (R.ax === "x") {
+        const ym = (bx.y0 + bx.y1) / 2,
+          h = hip ? Math.min((bx.x1 - bx.x0) / 2, (bx.y1 - bx.y0) / 2) : 0;
+        const ra = [hip ? bx.x0 + h : X0, ym],
+          rb = [hip ? bx.x1 - h : X1, ym];
         plane(
           [
-            [X0, Y0, E],
             [X0, Y1, E],
+            [X1, Y1, E],
+            [rb[0], ym, E + rise],
             [ra[0], ym, E + rise],
           ],
           rm,
         );
         plane(
           [
-            [X1, Y1, E],
             [X1, Y0, E],
+            [X0, Y0, E],
+            [ra[0], ym, E + rise],
             [rb[0], ym, E + rise],
           ],
           rm,
         );
-        eave([X0, Y0], [X0, Y1]);
-        eave([X1, Y0], [X1, Y1]);
+        if (hip) {
+          plane(
+            [
+              [X0, Y0, E],
+              [X0, Y1, E],
+              [ra[0], ym, E + rise],
+            ],
+            rm,
+          );
+          plane(
+            [
+              [X1, Y1, E],
+              [X1, Y0, E],
+              [rb[0], ym, E + rise],
+            ],
+            rm,
+          );
+          eave([X0, Y0], [X0, Y1]);
+          eave([X1, Y0], [X1, Y1]);
+        } else {
+          gableWall([
+            [bx.x0, bx.y0, E],
+            [bx.x0, bx.y1, E],
+            [bx.x0, ym, E + rise],
+          ]);
+          gableWall([
+            [bx.x1, bx.y1, E],
+            [bx.x1, bx.y0, E],
+            [bx.x1, ym, E + rise],
+          ]);
+        }
+        eave([X0, Y1], [X1, Y1]);
+        eave([X0, Y0], [X1, Y0]);
+        ridge(ra, rb);
       } else {
-        gableWall([
-          [bx.x0, bx.y0, E],
-          [bx.x0, bx.y1, E],
-          [bx.x0, ym, E + rise],
-        ]);
-        gableWall([
-          [bx.x1, bx.y1, E],
-          [bx.x1, bx.y0, E],
-          [bx.x1, ym, E + rise],
-        ]);
-      }
-      eave([X0, Y1], [X1, Y1]);
-      eave([X0, Y0], [X1, Y0]);
-      ridge(ra, rb);
-    } else {
-      const xm = (bx.x0 + bx.x1) / 2,
-        h = hip ? Math.min((bx.x1 - bx.x0) / 2, (bx.y1 - bx.y0) / 2) : 0;
-      const ra = [xm, hip ? bx.y0 + h : Y0],
-        rb = [xm, hip ? bx.y1 - h : Y1];
-      plane(
-        [
-          [X0, Y0, E],
-          [X0, Y1, E],
-          [xm, rb[1], E + rise],
-          [xm, ra[1], E + rise],
-        ],
-        rm,
-      );
-      plane(
-        [
-          [X1, Y1, E],
-          [X1, Y0, E],
-          [xm, ra[1], E + rise],
-          [xm, rb[1], E + rise],
-        ],
-        rm,
-      );
-      if (hip) {
+        const xm = (bx.x0 + bx.x1) / 2,
+          h = hip ? Math.min((bx.x1 - bx.x0) / 2, (bx.y1 - bx.y0) / 2) : 0;
+        const ra = [xm, hip ? bx.y0 + h : Y0],
+          rb = [xm, hip ? bx.y1 - h : Y1];
         plane(
           [
-            [X1, Y0, E],
             [X0, Y0, E],
+            [X0, Y1, E],
+            [xm, rb[1], E + rise],
             [xm, ra[1], E + rise],
           ],
           rm,
         );
         plane(
           [
-            [X0, Y1, E],
             [X1, Y1, E],
+            [X1, Y0, E],
+            [xm, ra[1], E + rise],
             [xm, rb[1], E + rise],
           ],
           rm,
         );
-        eave([X0, Y0], [X1, Y0]);
-        eave([X0, Y1], [X1, Y1]);
-      } else {
-        gableWall([
-          [bx.x0, bx.y0, E],
-          [bx.x1, bx.y0, E],
-          [xm, bx.y0, E + rise],
-        ]);
-        gableWall([
-          [bx.x1, bx.y1, E],
-          [bx.x0, bx.y1, E],
-          [xm, bx.y1, E + rise],
-        ]);
+        if (hip) {
+          plane(
+            [
+              [X1, Y0, E],
+              [X0, Y0, E],
+              [xm, ra[1], E + rise],
+            ],
+            rm,
+          );
+          plane(
+            [
+              [X0, Y1, E],
+              [X1, Y1, E],
+              [xm, rb[1], E + rise],
+            ],
+            rm,
+          );
+          eave([X0, Y0], [X1, Y0]);
+          eave([X0, Y1], [X1, Y1]);
+        } else {
+          gableWall([
+            [bx.x0, bx.y0, E],
+            [bx.x1, bx.y0, E],
+            [xm, bx.y0, E + rise],
+          ]);
+          gableWall([
+            [bx.x1, bx.y1, E],
+            [bx.x0, bx.y1, E],
+            [xm, bx.y1, E + rise],
+          ]);
+        }
+        eave([X0, Y0], [X0, Y1]);
+        eave([X1, Y0], [X1, Y1]);
+        ridge(ra, rb);
       }
-      eave([X0, Y0], [X0, Y1]);
-      eave([X1, Y0], [X1, Y1]);
-      ridge(ra, rb);
     }
-  }
+  });
   /* the ground: a patio round the building and a lawn */
   const cx = mm((bx.x0 + bx.x1) / 2),
     cz = mm((bx.y0 + bx.y1) / 2),

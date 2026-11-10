@@ -9,7 +9,7 @@ import { kitView } from "./kit-out.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo, openEqDates } from "../safety/expiry-dates.js";
 import { ukDate } from "../safety/rams-maker.js";
-export { EQM_KINDS, eqmPlannerCard, eqmView, eqmWireCard };
+export { EQM_KINDS, eqmPlannerCard, eqmToBook, eqmView, eqmWireCard };
 /* Every vehicle, trailer, digger and piece of machinery or small plant (the equipment lists in Setup) with its due
    dates (MOT, service, insurance, tax, LOLER, PAT…), shown soonest first and coloured by how close they are. 📅 Book
    in: pick the date and the garage – it goes on the planner (who drives it can see it) and the reminder changes from

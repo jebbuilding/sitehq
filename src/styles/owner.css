@@ -220,3 +220,9 @@ body.nl-on #h1[data-date=""]::before{display:none}
 /* seven areas on a phone (Accounts and Estimating have their own): each button shares the width, the label shrinks to fit */
 @media (max-width:899px){.nlbar .nl-b{min-width:0;padding:0 1px}.nlbar .nl-ic{width:100%;max-width:56px}.nlbar .nl-ls{font-size:11px;letter-spacing:-.2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 @media (max-width:359px){.nlbar .nl-ls{font-size:10px;letter-spacing:-.3px}}
+.brf{display:flex;flex-direction:column;gap:2px;padding:14px 16px}
+.brf-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.brf-h b{font-size:20px}
+.brf-l{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;width:100%;text-align:left;min-height:44px;padding:6px 4px;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;cursor:pointer}
+.brf-l.warn span:nth-child(2){color:var(--danger);font-weight:600}
+.brf-i{font-size:18px}

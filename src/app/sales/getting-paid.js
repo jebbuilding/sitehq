@@ -12,7 +12,7 @@ import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { sdCalc, sdCounts, sdDueDate, sdNo, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdImgData } from "./sales-pdf.js";
-export { gpView };
+export { gpToChase, gpView };
 /* Accounts › 📨 Getting paid. Chase plan: each overdue invoice gets a friendly reminder, then a firmer one, then a
    final one (by default 1, 14 and 30 days overdue) – the ones due today are listed with the email ready, and each
    one sent is noted on the invoice so the next step comes round on its own. Statements: every client with
