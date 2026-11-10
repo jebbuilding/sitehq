@@ -1,6 +1,6 @@
 /* ================= CUPBOARD ALCOVE: alcove units, base cupboards and shelves – drawing, cutting list and 3D ================= */
 import { cb3Model, shadeHex } from "./cupboard-3d.js";
-import { cbPlan } from "./cupboard-maker.js";
+import { CB_MIDW, cbPlan } from "./cupboard-maker.js";
 export { CBA_KINDS, cba3Model, cbaDraw, cbaHasBase, cbaPlan };
 /* Besides the full-height wardrobe: an alcove unit (a cupboard at the bottom with a top on it, shelves above), a base
    cupboard only, or shelves only. The base is a small cupboard (bays, doors, shelves or drawers inside, plinth, back)
@@ -88,14 +88,67 @@ function cbaPlan(sp) {
       const y0 = cbaHasBase(sp) ? +sp.baseH || 800 : 0;
       add("Shelf unit side", 2, sp.H - y0, sd, sp.t, "scribe to the walls");
       add("Shelf unit top", 1, iw - 2 * sp.t, sd, sp.t);
-      add("Shelf", ys.length, iw - 2 * sp.t, sd - 10, th, "on shelf pins or housed");
+      const len = iw - 2 * sp.t;
+      if (cbaMid(sp, len) === "upright")
+        add(
+          "Shelf",
+          ys.length * 2,
+          Math.round((len - sp.t) / 2),
+          sd - 10,
+          th,
+          "either side of the middle upright",
+        );
+      else add("Shelf", ys.length, len, sd - 10, th, "on shelf pins or housed");
+      cbaMidParts(sp, add, len, ys, y0, sd, th, sp.H - sp.t);
     } else {
-      add("Shelf", ys.length, sp.W, sd, th, "floating, scribed to the walls");
+      if (cbaMid(sp, sp.W) === "upright")
+        add(
+          "Shelf",
+          ys.length * 2,
+          Math.round((sp.W - sp.t) / 2),
+          sd,
+          th,
+          "floating, scribed to the walls; either side of the middle upright",
+        );
+      else add("Shelf", ys.length, sp.W, sd, th, "floating, scribed to the walls");
+      cbaMidParts(sp, add, sp.W, ys, cbaHasBase(sp) ? +sp.baseH || 800 : 0, sd, th);
       add("Batten (back wall)", ys.length, sp.W - 20, 0, 0, "25 × 38 mm, plugged and screwed");
       add("Batten (side walls)", ys.length * 2, sd - 30, 0, 0, "25 × 38 mm");
     }
   }
   return { cut, ws, n: ws.length, ys, bays: cbaHasBase(sp) ? cbPlan(cbaBaseSpec(sp)).bays : [] };
+}
+/* the middle support for shelves over 600 mm (the same choice as in the cupboards) */
+const cbaMid = (sp, len) => (sp.midSup && len > CB_MIDW ? sp.midSup : "");
+function cbaMidParts(sp, add, len, ys, y0, sd, th, top) {
+  const m = cbaMid(sp, len);
+  if (m === "upright")
+    add(
+      "Middle upright",
+      1,
+      Math.round((top || Math.max(...ys) + th) - y0),
+      sd - 10,
+      sp.t,
+      "holds the middle of the shelves",
+    );
+  if (m === "bracket")
+    add(
+      "Shelf middle bracket (to buy)",
+      ys.length,
+      0,
+      0,
+      0,
+      "under the middle of each shelf, fixed to the back wall",
+    );
+  if (m === "batten" && sp.shelfStyle === "framed")
+    add(
+      "Shelf batten (along the back)",
+      ys.length,
+      len,
+      44,
+      22,
+      "planed softwood, screwed to the back under each shelf",
+    );
 }
 /* the drawing: front, side section and plan, dimensioned, with the cutting list */
 function cbaDraw(sp, api) {
@@ -177,6 +230,29 @@ function cbaDraw(sp, api) {
       rect(x1 + sc + T, fl - yy - sT, W - 2 * sc - 2 * T, sT, { w: thin, fill: "#e6e6e6" });
     else rect(x1, fl - yy - sT, W, sT, { w: thin, fill: "#e6e6e6" });
   });
+  /* the middle support under shelves over 600 mm */
+  {
+    const fr = sp.shelfStyle === "framed";
+    const len = fr ? sp.W - 2 * (+sp.scribe || 0) - 2 * sp.t : sp.W;
+    const m = cbaMid(sp, len);
+    const mx = x1 + W / 2;
+    if (m === "upright" && ys.length) {
+      const fy = hasB ? fl - bH : fl;
+      rect(mx - T / 2, fl - Math.max(...ys) - sT, T, fy - (fl - Math.max(...ys) - sT), {
+        w: thin,
+        fill: "#e6e6e6",
+      });
+    }
+    ys.forEach((yy) => {
+      const yb = fl - yy;
+      if (m === "bracket") {
+        line(mx, yb, mx, yb + U(120), { w: thin, c: "#555555" });
+        line(mx, yb + U(120), mx + U(90), yb, { w: thin, c: "#555555" });
+      }
+      if (m === "batten" && fr)
+        rect(x1 + sc + T, yb, W - 2 * sc - 2 * T, U(44), { w: thin, c: "#888888", dash: 1 });
+    });
+  }
   if (sp.shelfStyle === "framed" && ys.length) {
     const fy = hasB ? fl - bH : fl;
     rect(x1 + sc, y1, T, fy - y1, { w: thin });

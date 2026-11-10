@@ -7,6 +7,7 @@ import { cba3Model } from "./cupboard-alcove.js";
 import {
   CB_BAYS,
   CB_DOORS,
+  CB_MIDW,
   cbBayDoor,
   cbHAt,
   cbPlan,
@@ -133,6 +134,22 @@ function cb3Model(sp, look, open) {
         top: full ? 0.5 : 0,
       });
     L.shelves.forEach((y) => shelf(y));
+    /* middle supports under shelves over 600 mm wide */
+    const mid = sp.midSup || "";
+    if (mid && x1 - x0 > CB_MIDW && L.shelves.length) {
+      const xm = (x0 + x1) / 2;
+      if (mid === "upright" && L.sz)
+        box(xm - t / 2, L.sz[0], dep0, xm + t / 2, L.sz[1], dep1 - 10, shelfC, { inner: inn });
+      L.shelves.forEach((y) => {
+        const yb = y - P.sht / 2;
+        if (mid === "bracket")
+          box(xm - 10, yb - 110, dep0, xm + 10, yb, dep0 + (dep1 - dep0) * 0.6, steel, {
+            inner: inn,
+          });
+        if (mid === "batten")
+          box(x0 + 2, yb - 44, dep0, x1 - 2, yb, dep0 + 22, shelfC, { inner: inn });
+      });
+    }
     L.fixed.forEach((f) => shelf(f.y, front && /Desk/.test(f.part)));
     L.rails.forEach((y) =>
       box(x0 + 4, y - 9, (D - 20) / 2 - 8, x1 - 4, y + 9, (D - 20) / 2 + 8, steel, { inner: inn }),

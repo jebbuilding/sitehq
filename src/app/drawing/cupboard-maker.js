@@ -11,6 +11,7 @@ export {
   CB_DOORS,
   CB_HANDLES,
   CB_LIGHTS,
+  CB_MIDW,
   CB_RUNNERS,
   CB_SUPS,
   cbBayDoor,
@@ -85,6 +86,14 @@ const CB_SUPS = [
   ["track", "Twin-slot track and brackets (adjustable)"],
   ["fixed", "Fixed shelves (dowelled and screwed)"],
 ];
+/* shelves wider than 600 mm sag: a middle support for them */
+const CB_MIDS = [
+  ["", "No middle support"],
+  ["upright", "An upright panel up the middle (shelves in two halves)"],
+  ["bracket", "A bracket under the middle of each shelf"],
+  ["batten", "A batten along the back under each shelf"],
+];
+const CB_MIDW = 600;
 const CB_LIGHTS = [
   ["", "No lighting"],
   ["strip", "LED strip under the top"],
@@ -167,6 +176,7 @@ function cbBayLayout(sp, b, P) {
     const hand = cbNums(b.sh).filter((y) => y > a + st && y < z - st);
     if (hand.length) hand.forEach((y) => L.shelves.push(y));
     else for (let k = 1; k <= n; k++) L.shelves.push(a + ((z - a) * k) / (n + 1));
+    if (L.shelves.length) L.sz = L.sz ? [Math.min(L.sz[0], a), Math.max(L.sz[1], z)] : [a, z];
   };
   const hang = (a, z, two) => {
     /* the rail hangs 60 under a hat shelf; with a top box the box's shelf is the hat shelf */
@@ -435,16 +445,50 @@ function cbPlan(sp) {
     const bay = "bay " + (i + 1);
     const L = b.L;
     const cw = (k) => (L.cw && L.cw[k] ? L.cw[k][1] - L.cw[k][0] : 0);
-    L.shelves.forEach((y) =>
+    const mid = sp.midSup || "";
+    let midN = 0;
+    L.shelves.forEach((y) => {
+      const len = cw(y) || b.w - 2;
+      const wide = mid && len > CB_MIDW;
+      if (wide) midN++;
+      if (wide && mid === "upright")
+        add(
+          "Shelf",
+          2,
+          Math.round((len - sp.t) / 2),
+          sd - 20,
+          sht,
+          bay + "; either side of the middle upright",
+        );
+      else add("Shelf", 1, len, sd - 20, sht, bay + (cw(y) ? "; end cut to the slope" : ""));
+      if (wide && mid === "batten")
+        add(
+          "Shelf batten (along the back)",
+          1,
+          len,
+          44,
+          22,
+          bay + "; planed softwood, screwed to the back under the shelf",
+        );
+    });
+    if (midN && mid === "upright" && L.sz)
       add(
-        "Shelf",
+        "Middle upright",
         1,
-        cw(y) || b.w - 2,
+        Math.round(L.sz[1] - L.sz[0]),
         sd - 20,
-        sht,
-        bay + (cw(y) ? "; end cut to the slope" : ""),
-      ),
-    );
+        sp.t,
+        bay + "; holds the middle of the shelves",
+      );
+    if (midN && mid === "bracket")
+      add(
+        "Shelf middle bracket (to buy)",
+        midN,
+        0,
+        0,
+        0,
+        bay + "; under the middle of each shelf, screwed to the back",
+      );
     if (ff && L.split) {
       const [a, z] = ff.opX(i);
       add("Face frame rail", 1, z - a, ff.r, ff.t, bay + "; between the doors");
@@ -1169,7 +1213,25 @@ function cbDraw(sp, api) {
     L.shelves.forEach((y) => {
       const [sx, sw2] = span(y);
       rect(sx, iy(y) - ST / 2, sw2, ST, { w: thin });
+      /* the middle support under a wide shelf */
+      if (sp.midSup && sw2 > U(CB_MIDW)) {
+        const mx = sx + sw2 / 2;
+        if (sp.midSup === "bracket") {
+          line(mx, iy(y) + ST / 2, mx, iy(y) + ST / 2 + U(120), { w: pwFor(3), c: "#555555" });
+          line(mx, iy(y) + ST / 2 + U(120), mx + U(90), iy(y) + ST / 2, {
+            w: pwFor(2),
+            c: "#555555",
+          });
+        }
+        if (sp.midSup === "batten")
+          rect(sx, iy(y) + ST / 2, sw2, U(44), { w: thin, c: "#888888", dash: 1 });
+      }
     });
+    if (sp.midSup === "upright" && L.sz && L.shelves.length && bw > U(CB_MIDW))
+      rect(lx + bw / 2 - U(sp.t) / 2, iy(L.sz[1]), U(sp.t), iy(L.sz[0]) - iy(L.sz[1]), {
+        w: thin,
+        fill: "#e6e6e6",
+      });
     L.fixed.forEach((f) => {
       const [sx, sw2] = span(f.y);
       rect(sx, iy(f.y) - ST / 2, sw2, ST, { w: thin, fill: "#e6e6e6" });
@@ -1375,6 +1437,10 @@ function cbDraw(sp, api) {
       (CB_SUPS.find((x) => x[0] === (sp.shelfSup || "pins")) || ["", ""])[1]
         .toLowerCase()
         .replace(/ \(.*\)/, ""),
+      sp.midSup
+        ? "shelves over 600 mm: " +
+          (CB_MIDS.find((x) => x[0] === sp.midSup) || ["", ""])[1].toLowerCase()
+        : "",
       sp.lightType
         ? (CB_LIGHTS.find((x) => x[0] === sp.lightType) || ["", ""])[1].toLowerCase() +
           (sp.lightAll ? " in every bay" : "")
@@ -1516,6 +1582,7 @@ function cbMakeDialog(api) {
     <fieldset class="cb2-g od-who" data-k="alcove shelves chimney"><legend>The shelves</legend>
       <div class="grid2"><label for="cb2-sn">How many shelves<input id="cb2-sn" type="number" inputmode="numeric" min="0" max="12" value="${v("shelfN", 4)}"></label><label for="cb2-ss">Fixed<select id="cb2-ss"><option value="floating"${v("shelfStyle", "floating") === "floating" ? " selected" : ""}>Floating – on battens to the walls</option><option value="framed"${v("shelfStyle", "floating") === "framed" ? " selected" : ""}>In a frame (two sides and a top)</option></select></label></div>
       <div class="grid2"><label for="cb2-sd">Shelf depth (mm)<input id="cb2-sd" type="number" inputmode="numeric" value="${v("shelfD", 250)}"></label><label for="cb2-st">Shelf thickness (mm)<input id="cb2-st" type="number" inputmode="numeric" value="${v("shelfT", 30)}"></label></div>
+      <label for="cb2-mid2">Shelves over 600 mm wide<select id="cb2-mid2">${CB_MIDS.map(([k, l]) => `<option value="${k}"${k === v("midSup", "") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       <label for="cb2-sg">Gaps between shelves (optional)<input id="cb2-sg" maxlength="60" value="${esc(v("shelfGaps", ""))}" placeholder="e.g. 400, 350, 300 – or leave for even spacing"></label>
       <label for="cb2-sf" class="cb2-g" data-k="shelves">First shelf height from the floor (mm)<input id="cb2-sf" type="number" inputmode="numeric" value="${v("shelfFrom", 300)}"></label>
     </fieldset>
@@ -1543,7 +1610,7 @@ function cbMakeDialog(api) {
     <label class="inl"><input type="checkbox" id="cb2-sm"${v("slideMirror", false) ? " checked" : ""}> Mirror sliding doors</label>
     <div class="who">The materials and colours go on the drawing and the cutting list, with how many boards to order; the colours and handles are the starting choice in the 🎨 3D view.</div></details>
     <details class="cb2-fin"${last.lightType || last.shelfSup ? " open" : ""}><summary>Shelves, lighting and fittings</summary>
-    <div class="grid2"><label for="cb2-sup">Adjustable shelves sit on<select id="cb2-sup">${CB_SUPS.map(([k, l]) => `<option value="${k}"${k === v("shelfSup", "pins") ? " selected" : ""}>${l}</option>`).join("")}</select></label><label for="cb2-run">Drawer runners<select id="cb2-run">${CB_RUNNERS.map(([k, l]) => `<option value="${k}"${k === v("runner", "soft-close") ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
+    <div class="grid2"><label for="cb2-sup">Adjustable shelves sit on<select id="cb2-sup">${CB_SUPS.map(([k, l]) => `<option value="${k}"${k === v("shelfSup", "pins") ? " selected" : ""}>${l}</option>`).join("")}</select></label><label for="cb2-mid">Shelves over 600 mm wide<select id="cb2-mid">${CB_MIDS.map(([k, l]) => `<option value="${k}"${k === v("midSup", "") ? " selected" : ""}>${l}</option>`).join("")}</select></label><label for="cb2-run">Drawer runners<select id="cb2-run">${CB_RUNNERS.map(([k, l]) => `<option value="${k}"${k === v("runner", "soft-close") ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
     <div class="grid2"><label for="cb2-lt">Lighting inside<select id="cb2-lt">${CB_LIGHTS.map(([k, l]) => `<option value="${k}"${k === v("lightType", "") ? " selected" : ""}>${l}</option>`).join("")}</select></label><label for="cb2-lon">Lights come on by<select id="cb2-lon">${CB_LIGHTON.map(([k, l]) => `<option value="${k}"${k === v("lightOn", "door") ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
     <div class="grid2"><label for="cb2-lk">Light colour<select id="cb2-lk">${["warm white (3000 K)", "neutral white (4000 K)", "cool white (6000 K)"].map((k) => `<option${k === v("lightK", "warm white (3000 K)") ? " selected" : ""}>${k}</option>`).join("")}</select></label><label class="inl"><input type="checkbox" id="cb2-la"${v("lightAll", false) ? " checked" : ""}> Light every bay (or tick LED light on the bays you want)</label></div>
     <div class="who">Pins: rows of holes drilled in the sides (the workshop pack shows them). Track: slotted uprights on the back with brackets. Lights run off a 12 V driver – the mains connection is for an electrician.</div></details>
@@ -1593,6 +1660,7 @@ function cbMakeDialog(api) {
         matShelf: $("cb2-ms").value,
         matBack: $("cb2-mb").value,
         shelfSup: $("cb2-sup").value,
+        midSup: ($("cb2-mid2") && $("cb2-mid2").offsetParent ? $("cb2-mid2") : $("cb2-mid")).value,
         runner: $("cb2-run").value,
         lightType: $("cb2-lt").value,
         lightOn: $("cb2-lon").value,
