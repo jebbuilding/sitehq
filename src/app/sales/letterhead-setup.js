@@ -23,6 +23,10 @@ export { lhCard, lhLogoId, lhPics, lhPutBot, lhPutTop, lhWire };
 const lhLogoId = () => sdSet().logoId || logoId();
 const lhHasPics = () => !!(sdSet().lhTop && sdSet().lhTop.id);
 /* the letterhead pictures ready for jsPDF, or null */
+const lhBotUp = () => {
+  const v = sdSet().lhBotUp;
+  return v == null || v === "" || isNaN(+v) ? 5 : +v;
+};
 async function lhPics() {
   const s = sdSet();
   if (!s.lhTop || !s.lhTop.id) return null;
@@ -31,7 +35,8 @@ async function lhPics() {
   const bot = s.lhBot && s.lhBot.id ? await sdImgData(s.lhBot.id) : null;
   return {
     top: Object.assign(top, { h: +s.lhTop.h }),
-    bot: bot ? Object.assign(bot, { y: +s.lhBot.y, h: +s.lhBot.h }) : null,
+    /* James can lift the bottom (Setup › Letterhead ▲ ▼); 5 mm up unless he has set it */
+    bot: bot ? Object.assign(bot, { y: +s.lhBot.y - lhBotUp(), h: +s.lhBot.h }) : null,
   };
 }
 /* the top of the letterhead on this page; `room` is how tall the PDF's own header is (mm) – a taller top is shrunk
@@ -257,7 +262,7 @@ function lhCard() {
     <div class="who">Used on every PDF the app makes. Estimates, invoices, payment receipts, wage sheets, CIS statements and letters to suppliers are printed on it; forms such as RAMS, inductions and sign-in sheets carry its logo.</div>
     ${
       pics
-        ? `<div class="lh-prev lh-pics" aria-label="Your letterhead"><img src="${esc(blobUrl(s.lhTop.id))}" alt="Top of your letterhead" class="lh-ptop">${s.lhBot && s.lhBot.id ? `<div class="lh-gap">…</div><img src="${esc(blobUrl(s.lhBot.id))}" alt="Bottom of your letterhead" class="lh-pbot">` : ""}</div><div class="who">✓ Kept exactly as your letterhead looks.</div>`
+        ? `<div class="lh-prev lh-pics" aria-label="Your letterhead"><img src="${esc(blobUrl(s.lhTop.id))}" alt="Top of your letterhead" class="lh-ptop">${s.lhBot && s.lhBot.id ? `<div class="lh-gap">…</div><img src="${esc(blobUrl(s.lhBot.id))}" alt="Bottom of your letterhead" class="lh-pbot">` : ""}</div><div class="who">✓ Kept exactly as your letterhead looks.</div>${s.lhBot && s.lhBot.id ? `<div class="lh-nudge"><span>Bottom of the letterhead: <b id="lh-upval">${lhBotUp() ? lhBotUp() + " mm up" : "where it was"}</b></span><button type="button" class="btn" id="lh-up" aria-label="Move the bottom up 1 mm">▲ Up</button><button type="button" class="btn" id="lh-down" aria-label="Move the bottom down 1 mm">▼ Down</button></div>` : ""}`
         : has
           ? `<div class="lh-prev" aria-label="Your letterhead"><div class="lh-top"><img src="${esc(blobUrl(lhLogoId()))}" alt="Logo" class="lh-logo"><div class="lh-lines">${lines.map((t) => `<div>${esc(t)}</div>`).join("")}</div></div><div class="lh-rule"></div><div class="lh-foot">${s.tagline ? `<div>${esc(s.tagline)}</div>` : ""}${s.vatNo ? `<div>VAT Number ${esc(s.vatNo)}</div>` : ""}</div></div>
       <div class="notice">This was read from a Word file, so the app lays it out itself: the words are right but the fonts and spacing won't match exactly. For an exact copy, bring in a <b>PDF</b> of your letterhead (in Word: File › Save As › PDF), or a photo or scan of it.</div>`
@@ -276,6 +281,15 @@ function lhWire() {
   };
   if ($("lh-edit")) $("lh-edit").onclick = () => sdSettings();
   if ($("lh-pdf")) $("lh-pdf").onclick = lhSample;
+  const nudge = async (d) => {
+    const v = Math.max(-20, Math.min(40, lhBotUp() + d));
+    await sdSaveSet({ lhBotUp: v });
+    if ($("lh-upval"))
+      $("lh-upval").textContent = v ? (v > 0 ? v + " mm up" : -v + " mm down") : "where it was";
+    toast("Saved – tap See a sample page to check");
+  };
+  if ($("lh-up")) $("lh-up").onclick = () => nudge(1);
+  if ($("lh-down")) $("lh-down").onclick = () => nudge(-1);
 }
 /* a sample page on the letterhead, to check it */
 async function lhSample() {
