@@ -9,7 +9,7 @@ import { acRcptParts, acReceipts } from "./acct-receipts.js";
 import { acTxCatLabel } from "./acct-reconcile.js";
 import { cisLab, cisPayments, cisRange } from "./cis-returns.js";
 import { sdCalc, sdNo, sdSales, sdStatus, sdTaxYear } from "./sales-calc.js";
-export { acExportSheet };
+export { AX_KINDS, acExportSheet, axRows };
 /* Pick the period (any month and year, a tax year 6 April – 5 April, a calendar year, or from/to dates) and what to
    include – bank payments, receipts and bills, your invoices, trades' invoices, CIS payments – and each comes out
    as its own CSV file (opens in Excel or Numbers, or goes to the accountant). */

@@ -216,6 +216,7 @@ initJobStory();
         S.purchaseOrders = all.filter((t) => t.kind === "purchaseorder");
         S.siteDiary = all.filter((t) => t.kind === "sitediary");
         S.programmes = all.filter((t) => t.kind === "programme");
+        S.vatReturns = all.filter((t) => t.kind === "vatreturn");
         S.audit = all.filter((t) => t.kind === "audit");
         S.bin = all.filter((t) => t.kind === "bin");
         if (!window.__binPurgeT)

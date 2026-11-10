@@ -45,6 +45,7 @@ import { acRcptSheet, acRcptView } from "./acct-review.js";
 import { acSupView } from "./acct-suppliers.js";
 import { jcView } from "./job-costs.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
+import { vtPeriodAsk, vtView } from "./vat-return.js";
 export { acPeriod, accountsView };
 /* Two tabs. Overview: money in, money out and profit for the period, bank balances, month-by-month bars, the profit
    and loss by category, a VAT estimate, what customers owe and what's owed to trades, and an export for the
@@ -71,6 +72,7 @@ function accountsView() {
     ["rcpt", "Receipts"],
     ["sup", "Suppliers & sites"],
     ["jobs", "💷 Job costs"],
+    ["vat", "🧾 VAT return"],
   ]
     .map(
       ([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`,
@@ -83,8 +85,11 @@ function accountsView() {
   else if (tab === "due") adView(tabs);
   else if (tab === "sup") acSupView(tabs);
   else if (tab === "jobs") jcView(tabs);
+  else if (tab === "vat") vtView(tabs);
   else acOverView(tabs);
   if ($("ac-csv")) $("ac-csv").onclick = acExportSheet;
+  if ($("vt-pack")) $("vt-pack").onclick = () => vtPeriodAsk("pack");
+  if ($("vt-pl")) $("vt-pl").onclick = () => vtPeriodAsk("pl");
   $("ac-tabs")
     .querySelectorAll("button")
     .forEach(
@@ -188,7 +193,7 @@ function acOverView(tabs) {
         <section class="card"><div class="cardbody"><b>🔗 Linking to your bank</b>
           <div class="who">A live link to your bank (payments appear by themselves, like Xero) uses Open Banking, which has to run on our own server. That's on Jasper's list. Until then, download a statement as a CSV file from your online banking and bring it in on the Bank tab: it takes a minute and nothing is typed twice.</div>
         </div></section>
-        <div class="sd-acts"><button type="button" class="btn" id="ac-export">⬇️ Export for my accountant</button></div>
+        <div class="sd-acts"><button type="button" class="btn primary" id="vt-pack">📦 Pack for my accountant (Excel)</button><button type="button" class="btn" id="vt-pl">📄 Profit and loss PDF</button><button type="button" class="btn" id="ac-export">⬇️ CSV files</button></div>
       </div>
     </div>
   </div>`;
