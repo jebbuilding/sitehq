@@ -6,6 +6,7 @@ import { render } from "../core/tabs-week.js";
 import { openViewer } from "../core/viewer.js";
 import { uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
+import { rfqListHtml, rfqWireList } from "./price-ask.js";
 import { plSupName, poAll, poOrdersSheet, poPdf, poSave } from "./price-order.js";
 import { supMaster } from "./suppliers.js";
 import { ukDate } from "../safety/rams-maker.js";
@@ -46,7 +47,8 @@ const pordGotValue = (o) => sdR2(pordGot(o).reduce((a, q, i) => a + q * (+o.line
 function pordView(seg) {
   const L = poAll();
   $("main").innerHTML = `${seg}
-    <div class="actions"><button type="button" class="btn primary" id="pord-new">+ New order for a job</button></div>
+    <div class="actions"><button type="button" class="btn primary" id="pord-new">+ New order for a job</button><button type="button" class="btn" id="rfq-new">💬 Ask merchants for prices</button></div>
+    ${rfqListHtml()}
     ${
       L.map((o) => {
         const st = pordStatus(o);
@@ -58,6 +60,7 @@ function pordView(seg) {
     }`;
   const find = (b) => L.find((x) => x.id === b.dataset.id);
   $("pord-new").onclick = () => pordNew();
+  rfqWireList();
   document.querySelectorAll(".pord-open").forEach((b) => (b.onclick = () => pordOpen(find(b))));
   document.querySelectorAll(".pord-del").forEach((b) => (b.onclick = () => pordDelivery(find(b))));
   document.querySelectorAll(".pord-inv").forEach((b) => (b.onclick = () => pordInvoice(find(b))));

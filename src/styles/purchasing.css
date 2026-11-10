@@ -31,3 +31,10 @@
 .pord-tbl th,.pord-tbl td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
 .pord-tbl tr.pord-short td{color:var(--danger)}
 .pord-cmp{margin:10px 0}
+.rfq-line{display:grid;grid-template-columns:1fr 70px 64px auto;gap:6px;margin-bottom:6px;align-items:center}
+.rfq-line input{min-height:44px}
+.rfq-tbl{border-collapse:collapse;width:100%;font-size:14px}
+.rfq-tbl th,.rfq-tbl td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.rfq-tbl .rfq-p{width:90px;min-height:44px}
+.rfq-tbl td.rfq-best{background:#e5f4e4}
+.rfq-tick{display:block;font-size:12px;color:#2e7d32;font-weight:600}
