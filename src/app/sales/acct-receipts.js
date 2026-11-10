@@ -9,12 +9,14 @@ import { allTeam, nameOf } from "../owner/owner.js";
 import { shrinkImage } from "../safety/training.js";
 import { AC_CATS, acAllTx, acUpdateTx } from "./acct-data.js";
 import { acRcptSheet } from "./acct-review.js";
+import { rcsLearn } from "./receipt-smarts.js";
 import { sdR2 } from "./sales-calc.js";
 export {
   acAddRcpts,
   acFileTradeRc,
   acLinkRcpt,
   acMatchWaiting,
+  acPdfPicture,
   acRcptMatch,
   acRcptParts,
   acReceipts,
@@ -92,7 +94,7 @@ async function acReadRcpt(blob) {
     .map((c) => `${c[0]} = ${c[1]}`)
     .join("; ");
   const prompt = `This photo is a receipt or bill for a UK building company. Read it and reply with JSON only, no other words:
-{"supplier": shop or company name, "date": "YYYY-MM-DD", "total": total paid as a number, "vat": VAT amount as a number (0 if none shown), "vatNo": the seller's VAT number or "", "desc": a few words on what was bought, "cat": one of these codes: ${cats}, "paid": "card" or "cash" (as printed, else "card")}
+{"supplier": shop or company name, "date": "YYYY-MM-DD", "total": total paid as a number, "vat": VAT amount as a number (0 if none shown), "vatNo": the seller's VAT number or "", "desc": a few words on what was bought, "cat": one of these codes: ${cats}, "paid": "card" or "cash" (as printed, else "card"), "lines": [{"desc": what the line is, "amt": the line total with VAT as a number, "cat": a code from the list}] – one for each item on it}
 If something can't be read, use "" (or 0 for numbers). UK dates are day/month/year.`;
   const j = await sample.json(prompt, { images: [blob], modelTier: "default" });
   if (!j || typeof j !== "object") return null;
@@ -111,6 +113,20 @@ If something can't be read, use "" (or 0 for numbers). UK dates are day/month/ye
     desc: String(j.desc || "").slice(0, 120),
     cat: AC_CATS.some((c) => c[0] === j.cat && c[2] === "out") ? j.cat : "oexp",
     paid: j.paid === "cash" ? "cash" : "card",
+    /* every line read; split by category only when the lines go to different categories */
+    ...(() => {
+      const ls = (Array.isArray(j.lines) ? j.lines : [])
+        .map((l) => ({
+          desc: String(l.desc || "").slice(0, 80),
+          amt: num(l.amt),
+          cat: AC_CATS.some((c) => c[0] === l.cat && c[2] === "out") ? l.cat : "oexp",
+          site: "",
+        }))
+        .filter((l) => l.amt);
+      return ls.length > 1 && new Set(ls.map((l) => l.cat)).size > 1
+        ? { multi: true, lines: ls }
+        : {};
+    })(),
   };
 }
 /* new photos: save each straight away, then let Claude read them one by one */
@@ -153,6 +169,7 @@ async function acAddRcpts(files) {
     } catch (e) {
       got = null;
     }
+    if (got) got = rcsLearn(got);
     if (got) read++;
     last = await acSaveRcpt(Object.assign({}, r, got || {}, { status: "check" }));
   }

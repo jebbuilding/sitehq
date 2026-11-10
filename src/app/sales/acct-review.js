@@ -15,6 +15,7 @@ import {
   acSaveRcpt,
   acTradeRcptsHtml,
 } from "./acct-receipts.js";
+import { rcsNoticeHtml, rcsWire } from "./receipt-smarts.js";
 import { sdR2 } from "./sales-calc.js";
 export { acRcptSheet, acRcptView };
 /* Three panes on a wide screen (stacked on a phone): the receipts on the left (⚠ to check, ✓ done), the photo or PDF
@@ -109,7 +110,7 @@ function acRcptView(tabs) {
           ? `<span class="acv-st ok" title="Done">✓</span>`
           : `<span class="acv-st" title="Waiting for the bank payment">•</span>`;
   $("main").innerHTML = `<div class="ac-page acv-page">${tabs}
-    <div class="sd-acts"><span class="btn primary sd-filebtn">📷 Snap or add receipts<input type="file" class="ac-rfile" accept="image/*,application/pdf,.pdf" multiple aria-label="Snap or add receipts"></span></div>
+    <div class="sd-acts"><span class="btn primary sd-filebtn">📷 Snap or add receipts<input type="file" class="ac-rfile" accept="image/*,application/pdf,.pdf" multiple aria-label="Snap or add receipts"></span><button type="button" class="btn" id="rcs-stmt">🧾 Check a merchant's statement</button></div>
     <div class="who">Take a photo of each receipt (or add the PDF of a bill). Claude reads the shop, date, total and VAT; you check it, book it to a site, and it's matched to the payment on your bank statement.</div>
     ${acTradeRcptsHtml()}
     <div class="sd-boxes">
@@ -200,6 +201,7 @@ function acRcptView(tabs) {
     if (files.length) acAddRcpts(files);
   };
   if (sel) acvWire(sel, shown);
+  rcsWire();
 }
 /* the document in the middle */
 function acvDocHtml(r) {
@@ -232,6 +234,7 @@ function acvFormHtml(r0, shown) {
   const linked = r.tx && acAllTx().find((t) => t.rec + "|" + t.id === r.tx);
   return `<section class="acv-det" aria-label="Details">
     <div class="acv-nav"><button type="button" class="btn" id="rr-prev"${idx > 0 ? "" : " disabled"}>‹ Prev</button><button type="button" class="btn primary" id="rr-save">${r0.status === "done" ? "Save" : "Save & next"}</button><button type="button" class="btn" id="rr-next"${idx >= 0 && idx < shown.length - 1 ? "" : " disabled"}>Next ›</button></div>
+    ${rcsNoticeHtml(r)}
     ${r0.status === "check" && r0.supplier ? `<div class="notice">Claude read this – check it's right.</div>` : r0.status === "done" ? `<div class="who">Saved. Change anything and Save again.</div>` : ""}
     <div class="flabel">Details</div>
     <label for="rr-ty">Document type<select id="rr-ty">${ACV_TYPES.map(([k, l]) => `<option value="${k}"${k === (r.type || "receipt") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
