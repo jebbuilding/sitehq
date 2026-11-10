@@ -3,6 +3,7 @@ import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, siteNames } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
+import { loadScript } from "../files/in-app-files.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { nameOf, teamIds } from "../owner/owner.js";
@@ -206,9 +207,50 @@ async function kitStickers() {
   await S.dl.save({ filename: "Tool stickers.pdf", data: doc.output("blob") });
   toast("Print on a sheet of 21 labels (70 × 42.4 mm)");
 }
-/* scan a sticker with the camera where the browser can read QR codes; otherwise type the number */
+/* scan a sticker with the camera. Where the browser reads QR codes itself (Chrome on Android) that is used; elsewhere –
+   Safari on the iPad and iPhone – a small QR reader (jsQR) is loaded and looks at each camera frame. If the camera
+   can't be opened, type the number from the sticker instead. */
+const kitTagOf = (t) => (String(t || "").match(/SITEHQ\s+(T-\d+)/) || [])[1] || "";
+let kitJsQrP = null;
+function kitLoadJsQr() {
+  if (window.jsQR) return Promise.resolve();
+  if (!kitJsQrP)
+    kitJsQrP = loadScript("https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js").catch((e) => {
+      kitJsQrP = null;
+      throw e;
+    });
+  return kitJsQrP;
+}
+/* a reader for one video frame: gives the text of a QR code in it, or "" */
+async function kitReader() {
+  if ("BarcodeDetector" in window) {
+    try {
+      const det = new window.BarcodeDetector({ formats: ["qr_code"] });
+      return async (v) => {
+        const got = await det.detect(v);
+        return (got && got[0] && String(got[0].rawValue || "")) || "";
+      };
+    } catch (e) {}
+  }
+  await kitLoadJsQr();
+  const c = document.createElement("canvas");
+  const g = c.getContext("2d", { willReadFrequently: true });
+  return async (v) => {
+    const w = v.videoWidth,
+      h = v.videoHeight;
+    if (!w || !h) return "";
+    /* a smaller copy is quicker to read and still plenty for a sticker held up to the camera */
+    const k = Math.min(1, 640 / Math.max(w, h));
+    c.width = Math.round(w * k);
+    c.height = Math.round(h * k);
+    g.drawImage(v, 0, 0, c.width, c.height);
+    const img = g.getImageData(0, 0, c.width, c.height);
+    const r = window.jsQR(img.data, c.width, c.height, { inversionAttempts: "dontInvert" });
+    return (r && r.data) || "";
+  };
+}
 async function kitScan() {
-  if (!("BarcodeDetector" in window) || !navigator.mediaDevices) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     toast("Type the number from the sticker (e.g. T-004) in the box");
     if ($("kit-q")) $("kit-q").focus();
     return;
@@ -216,7 +258,7 @@ async function kitScan() {
   let stream = null;
   const d = document.createElement("div");
   d.className = "dimask";
-  d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Scan a sticker"><b>📷 Point at the sticker</b><video class="kit-video" playsinline muted></video><div class="dimbtns"><button type="button" class="btn kit-stop">Cancel</button></div></div>`;
+  d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Scan a sticker"><b>📷 Point at the sticker</b><video class="kit-video" playsinline muted autoplay></video><div class="who kit-hint">Hold it steady, about a hand's width away</div><div class="dimbtns"><button type="button" class="btn kit-stop">Cancel</button></div></div>`;
   document.body.appendChild(d);
   const stop = () => {
     if (stream) stream.getTracks().forEach((t) => t.stop());
@@ -224,28 +266,37 @@ async function kitScan() {
   };
   d.querySelector(".kit-stop").onclick = stop;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    const [read, st] = await Promise.all([
+      kitReader(),
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false }),
+    ]);
+    stream = st;
+    if (!d.isConnected) return stop();
     const v = d.querySelector("video");
     v.srcObject = stream;
     await v.play();
-    const det = new window.BarcodeDetector({ formats: ["qr_code"] });
+    let other = "";
     const look = async () => {
       if (!d.isConnected) return;
       try {
-        const got = await det.detect(v);
-        const t = got && got[0] && String(got[0].rawValue || "");
-        const m = t.match(/SITEHQ\s+(T-\d+)/);
-        if (m) {
+        const t = await read(v);
+        const tag = kitTagOf(t);
+        if (tag) {
           stop();
-          kitView(m[1]);
+          kitView(tag);
           return;
         }
+        if (t && t !== other) {
+          other = t;
+          d.querySelector(".kit-hint").textContent = "That's not one of our tool stickers";
+        }
       } catch (e) {}
-      setTimeout(look, 300);
+      setTimeout(look, 250);
     };
     look();
   } catch (e) {
     stop();
     toast("Couldn't open the camera – type the number from the sticker instead");
+    if ($("kit-q")) $("kit-q").focus();
   }
 }

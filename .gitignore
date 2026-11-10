@@ -14,6 +14,7 @@ tests/xlsxpkg/
 tests/mammothpkg/
 tests/qrlib/
 tests/threepkg/
+tests/jsqrpkg/
 # NEVER commit real data exports (personal data: NI numbers, medical notes, client details)
 data/
 exports/

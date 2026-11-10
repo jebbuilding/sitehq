@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 206 files, 4143 KB, 106420 lines.
-- 2121 names declared at the top level (the shared scope); 1076 of them are used by a file other than the one that declares them.
-- 2230 file-to-file dependencies (file A uses at least one name from file B).
+- 206 files, 4145 KB, 106471 lines.
+- 2125 names declared at the top level (the shared scope); 1076 of them are used by a file other than the one that declares them.
+- 2231 file-to-file dependencies (file A uses at least one name from file B).
 - 23 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 189 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -763,9 +763,9 @@ FILES
 IN-APP FILES (kept inside the app, not in the phone's downloads)
 
 - 684 lines, 21 KB. Declares 29 names, 12 used elsewhere.
-- **Used elsewhere:** `openFile` (34), `getFileBlob` (14), `loadPdfJs` (7), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1), `loadScript` (1)
+- **Used elsewhere:** `openFile` (34), `getFileBlob` (14), `loadPdfJs` (7), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `loadScript` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1)
 - **Uses names from 10 files:** `files/scale-ruler.js` (8), `files/files.js` (4), `core/helpers.js` (3), `core/state.js` (2), `owner/deleted-items.js` (2), `core/tabs-week.js` (1), `files/cut-outs.js` (1), `files/print.js` (1), `files/send-to.js` (1), `photos/photos.js` (1)
-- **Used by 51 files**
+- **Used by 52 files**
 
 ### `files/outbox.js`
 
@@ -1176,9 +1176,9 @@ HOLIDAYS: each employee's allowance for the year, what's taken, booked, waiting 
 
 KIT: tools and plant on QR stickers – booked out to a person or a site, and back in
 
-- 251 lines, 11 KB. Declares 13 names, 1 used elsewhere.
+- 302 lines, 12 KB. Declares 17 names, 1 used elsewhere.
 - **Used elsewhere:** `kitView` (3)
-- **Uses names from 10 files:** `core/helpers.js` (5), `core/sheet.js` (4), `files/outbox.js` (3), `core/state.js` (2), `owner/owner.js` (2), `safety/expiry-dates.js` (2), `core/viewer.js` (1), `owner/company-details.js` (1), `safety/checklists.js` (1), `safety/site-inductions.js` (1)
+- **Uses names from 11 files:** `core/helpers.js` (5), `core/sheet.js` (4), `files/outbox.js` (3), `core/state.js` (2), `owner/owner.js` (2), `safety/expiry-dates.js` (2), `core/viewer.js` (1), `files/in-app-files.js` (1), `owner/company-details.js` (1), `safety/checklists.js` (1), `safety/site-inductions.js` (1)
 - **Used by 3 files**
 
 ### `planner/planner-extras.js`

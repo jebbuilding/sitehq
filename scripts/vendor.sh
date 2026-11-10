@@ -10,4 +10,5 @@ pack xlsxpkg    xlsx@0.18.5
 pack mammothpkg mammoth@1.8.0
 pack qrlib      qrcode-generator@1.4.4
 pack threepkg   three@0.128.0
+pack jsqrpkg    jsqr@1.4.0
 echo "vendored into tests/"
