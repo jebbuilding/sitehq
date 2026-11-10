@@ -15,6 +15,7 @@ import {
   siteRec,
 } from "../photos/photos.js";
 import { keyDatesFor, keyTimeline, openKeyDates, openPlanEditor } from "../planner/board.js";
+import { pgHtml, pgRec, pgWire } from "../planner/programme.js";
 import { planEntries } from "../planner/time-off.js";
 import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv, matCard, openMat, rcRow, wireReceipts } from "../purchasing/materials-receipts.js";
@@ -285,6 +286,7 @@ function ownerProjects() {
     ["induction", "Induction", ind ? "Set up" : "Not set up"],
     ["jobs", "Jobs & snags", openJobs ? openJobs + " open" : sj.length],
     ["dates", "Key dates", kd.length],
+    ["programme", "Programme", (pgRec(site) || { stages: [] }).stages.length + " stages"],
     [
       "diary",
       "Site diary",
@@ -304,9 +306,11 @@ function ownerProjects() {
     dates: "📅",
     chat: "💬",
     diary: "📔",
+    programme: "📊",
     money: "🧾",
   };
   P.diary = sdiHtml(site);
+  P.programme = pgHtml(site);
   let tab = S.f.pjtab || "overview";
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
@@ -461,6 +465,7 @@ function ownerProjects() {
   wireDocs(true);
   wireInvoices(invs, true);
   if (tab === "diary") sdiWire(site);
+  if (tab === "programme") pgWire(site);
   wireInduction();
   wireReceipts(rcs, true);
   $("main")

@@ -72,6 +72,7 @@ Subcollections (`TR_COLLS`):
 | `pricelist` | a merchant's prices, owner-only and never copied to trades (`todos/pl-{merchant id}`): `sup`, `items` [{ `n` item, `u` unit, `p` £ before VAT }] |
 | `purchaseorder` | an order to one merchant (`todos/po-*`): `number` (PO1…), `site`, `sup`, `supName`, `lines` [{ `d`, `q`, `u`, `p`, `for` }], `net`, `status` (draft / sent), `sentAt` |
 | `sitediary` | James's note for one day on one site (`todos/sdi-{site slug}-{date}`): `site`, `date`, `note`, `weather` (saved with the note), `byName`, `updated`. The rest of the day (sign-ins, work, ticks, photos) is read from the existing records, not copied |
+| `programme` | a job's programme (`todos/prog-{site slug}`): `site`, `start`, `toClient`, `stages` [{ `id`, `name`, `days` (working days), `after` (an earlier stage id), `link` (end / with), `lag` (delay days), `fix`, `done`, `actFrom`, `actTo`, `base` { first planned `from`, `to` } }]. Each stage is a `plan/prg-{slug}-{stage}` entry (`progId`, `stageId`); the client's copy is `portal/{uid}.programme` |
 | `training` | owner training records |
 
 ## Shared collections

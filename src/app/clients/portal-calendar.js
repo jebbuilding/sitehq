@@ -30,6 +30,7 @@ import { coData } from "../owner/company-details.js";
 import { auditFirst } from "../owner/deletion-record.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
+import { pgClientHtml } from "../planner/programme.js";
 import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
 import { sjClientOK, sjMaster, sjPayload } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
@@ -153,7 +154,7 @@ function pdClientTab() {
   const list = pdSorted(PT.dates);
   const ym = PT.pdym || iso(new Date()).slice(0, 7);
   const prev = S.client && S.client._preview;
-  return `<div class="ptsend"><div><b>📅 Your job calendar</b><br><span class="who">Important dates for your job. Add your own, like holidays or deliveries, and James will see them.</span></div><button type="button" class="btn primary" id="pd-add">+ Add a date</button></div>
+  return `${pgClientHtml(S.client)}<div class="ptsend"><div><b>📅 Your job calendar</b><br><span class="who">Important dates for your job. Add your own, like holidays or deliveries, and James will see them.</span></div><button type="button" class="btn primary" id="pd-add">+ Add a date</button></div>
     ${pdMonthHtml(list, ym, true)}<div class="flabel" style="margin-top:10px">Coming up</div>${pdListHtml(list, true, false)}`;
 }
 function wirePdClient() {

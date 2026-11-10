@@ -27,7 +27,7 @@ import { jkImg } from "./job-pack.js";
 import { taskDone } from "./job-sheets.js";
 import { same } from "./project-pages.js";
 import { SIGNIN } from "./sign-in-book.js";
-export { sdiHtml, sdiWire };
+export { sdiHtml, sdiSlug, sdiWire };
 /* Each day on a site is put together from what's already in the app: who signed in and out (timesheets, the
    sign-in book and visitors), the weather (the forecast for that day, saved with the day once James adds a note,
    or the weather noted on the photos), the photos taken, the work and hours logged, job sheet tasks ticked and
