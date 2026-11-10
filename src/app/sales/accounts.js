@@ -47,6 +47,7 @@ import { csfView } from "./cash-flow.js";
 import { gpView } from "./getting-paid.js";
 import { jcView } from "./job-costs.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
+import { txView } from "./tax-aside.js";
 import { vtPeriodAsk, vtView } from "./vat-return.js";
 export { acPeriod, accountsView };
 /* Two tabs. Overview: money in, money out and profit for the period, bank balances, month-by-month bars, the profit
@@ -77,6 +78,7 @@ function accountsView() {
     ["sup", "Suppliers & sites"],
     ["jobs", "💷 Job costs"],
     ["vat", "🧾 VAT return"],
+    ["tx", "💰 Tax"],
   ]
     .map(
       ([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`,
@@ -92,6 +94,7 @@ function accountsView() {
   else if (tab === "sup") acSupView(tabs);
   else if (tab === "jobs") jcView(tabs);
   else if (tab === "vat") vtView(tabs);
+  else if (tab === "tx") txView(tabs);
   else acOverView(tabs);
   if ($("ac-csv")) $("ac-csv").onclick = acExportSheet;
   if ($("vt-pack")) $("vt-pack").onclick = () => vtPeriodAsk("pack");

@@ -247,3 +247,6 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .csf-in-t{color:#2e7d32}
 .csf-out-t{color:var(--danger)}
 .csf-det{padding:0 4px 10px 16px;font-size:14px}
+.tx-type{margin:8px 0}
+.tx-q{padding:8px 0;border-top:1px solid var(--line)}
+.tx-q summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer}
