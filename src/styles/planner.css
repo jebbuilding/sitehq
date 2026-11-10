@@ -128,3 +128,10 @@
 .pg-client{padding:14px;margin-bottom:12px}
 .pg-crow{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
 .pg-crow.pg-done span:first-child{color:#2e7d32}
+.kit-top{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.kit-top input{flex:1 1 220px;min-height:44px}
+.kit-row{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}
+.kit-acts{display:flex;gap:6px}
+.kit-acts .btn{min-height:44px}
+.kit-due{color:var(--danger);font-weight:600}
+.kit-video{width:100%;max-width:420px;border-radius:8px;background:#000;margin:8px 0}

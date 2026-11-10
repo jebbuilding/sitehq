@@ -34,6 +34,7 @@ import { detailsDone, myDetails, openDetails } from "../people/personal-details.
 import { pvView } from "../people/portal-access.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
 import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
+import { kitView } from "../planner/kit-out.js";
 import { eqmView } from "../planner/plant-care.js";
 import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv } from "../purchasing/materials-receipts.js";
@@ -903,7 +904,7 @@ function ownerSetup() {
     ${sdSigCard()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
-    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button></div>
+    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button></div>
     ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 Marine Way, Exmouth")}
     ${Object.entries(KINDS)
       .map(([k, K]) =>
@@ -919,6 +920,7 @@ function ownerSetup() {
     <div class="actions"><button class="btn" id="preview" type="button">Fill in forms as me</button></div>`;
   $("preview").onclick = startPreview;
   if ($("eqm-reg")) $("eqm-reg").onclick = eqmView;
+  if ($("kit-reg")) $("kit-reg").onclick = () => kitView();
   stWire();
   wireBackup();
   wireCompany();
