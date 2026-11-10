@@ -38,6 +38,7 @@ import {
   plWhereHtml,
   plWireWhere,
 } from "./planner-extras.js";
+import { eqmPlannerCard, eqmWireCard } from "./plant-care.js";
 import {
   LEAVE_TYPES,
   PTYPES,
@@ -978,6 +979,14 @@ function plannerView() {
   }
   $("main").innerHTML = html;
   wpPlannerTop();
+  /* vans and plant to book in, or booked */
+  if (owner) {
+    const vc = eqmPlannerCard();
+    if (vc) {
+      $("main").insertAdjacentHTML("afterbegin", vc);
+      eqmWireCard();
+    }
+  }
   pbWireHeader(owner);
   if (mode === "where") plWireWhere(entries);
   if (mode === "board") pbWireBoard(shown, entries);

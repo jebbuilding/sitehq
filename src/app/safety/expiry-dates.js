@@ -10,6 +10,7 @@ import { newId } from "../files/outbox.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { wnJump } from "../owner/whats-new.js";
 import { PDOC_TYPES } from "../people/personal-documents.js";
+import { EQM_KINDS } from "../planner/plant-care.js";
 import { KINDS } from "./checklists.js";
 import { ukDate } from "./rams-maker.js";
 import { shrinkImage } from "./training.js";
@@ -62,7 +63,12 @@ function dueSoonItems(scope) {
       const n = daysTo(d);
       if (n <= win && (scope !== "mine" || eq.assignee === S.me))
         out.push({
-          what: `${l}: ${eq.name}`,
+          what:
+            (eq.booked && eq.booked[k] && eq.booked[k].date
+              ? `${l} booked for ${shortDay(eq.booked[k].date)}: `
+              : EQM_KINDS.includes(eq.kind)
+                ? `Book in ${l.toLowerCase()}: `
+                : `${l}: `) + eq.name,
           date: d,
           n,
           who: eq.assignee || "",

@@ -10,6 +10,7 @@ const PTYPES = {
   meeting: "Meeting",
   delivery: "Delivery",
   inspection: "Inspection",
+  vehicle: "Vehicle / plant",
   holiday: "Time off",
   other: "Other",
 };

@@ -1,6 +1,15 @@
 /* ================= CLIENT PORTAL ================= */
 import { openChat, openClientChat, unread, visibleChats } from "../chat/chat.js";
 import { clContactsHtml, clInvHtml, clMainHtml, clientSites } from "./address-book.js";
+import {
+  csClientHtml,
+  csClientStart,
+  csClientWire,
+  csOpenCount,
+  csOwnerHtml,
+  csOwnerWatch,
+  csOwnerWire,
+} from "./choices.js";
 import { clAddNote, clStage, saveClient } from "./clients.js";
 import { ptStoryHtml, stToggleHtml, stWireToggle, wirePtStory } from "./job-story.js";
 import {
@@ -42,6 +51,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { coData, companyCard } from "../owner/company-details.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { pvOn } from "../people/portal-access.js";
 import { siteRec, wireVoice } from "../photos/photos.js";
 import { sigPad } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
@@ -66,6 +76,7 @@ export {
   ptManager,
   ptMgrSubscribe,
   ptOf,
+  ptRefresh,
   ptSrc,
   renderClient,
   renderClientJoin,
@@ -204,6 +215,7 @@ function startClient(pd) {
       () => {},
     ),
   );
+  csClientStart();
   render();
 }
 function renderWelcomeChoice() {
@@ -320,6 +332,10 @@ function renderClient() {
   const tabs = [
     ["home", "🏠 Home"],
     ["story", "📖 Job story"],
+    [
+      "choices",
+      "🎨 Choices" + (csOpenCount(C) ? ` <span class="badge">${csOpenCount(C)}</span>` : ""),
+    ],
     ["photos", "📷 Photos"],
     [
       "docs",
@@ -329,8 +345,11 @@ function renderClient() {
     ["cal", "📅 Dates"],
     ["signs", "✍️ Sign-offs" + (open.length ? ` <span class="badge">${open.length}</span>` : "")],
     ["chat", "💬 Messages" + (un ? ` <span class="badge">${un}</span>` : "")],
-  ].concat(coOn || cpols.length ? [["about", "🏢 About us & policies"]] : []);
-  const tab = PT.tab;
+  ]
+    .concat(coOn || cpols.length ? [["about", "🏢 About us & policies"]] : [])
+    /* the parts James lets clients see (Setup › Client portal) */
+    .filter(([k]) => pvOn(k, C._preview ? (PT.mgr && PT.mgr.uid) || "" : S.me));
+  const tab = tabs.some(([k]) => k === PT.tab) ? PT.tab : "home";
   let html = `<div class="seg ptabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
   if (tab === "home") {
     html += `<div class="card pthero"><div class="who">Hello ${esc((C.name || "").split(" ")[0])}</div><b style="font-size:20px">${esc(C.project || C.site || "Your project")}</b>${C.site ? `<button type="button" class="maplink" data-addr="${esc(C.site)}">📍 ${esc(C.site)}</button>` : ""}</div>
@@ -439,6 +458,7 @@ function renderClient() {
   }
   if (tab === "cal") html += pdClientTab();
   if (tab === "story") html += ptStoryHtml(C);
+  if (tab === "choices") html += csClientHtml(C);
   if (tab === "draw") {
     const dr = (PT.ups || []).filter((u) => u.kind === "drawing");
     html += `<button type="button" class="btn primary drawnew" id="pt-draw">✏️ Start a new drawing</button>
@@ -554,6 +574,7 @@ function renderClient() {
     );
   if (tab === "cal") wirePdClient();
   if (tab === "story") wirePtStory();
+  if (tab === "choices") csClientWire(C);
   wireSjPhotos($("main"));
   if (!C._preview)
     $("main")
@@ -783,6 +804,7 @@ function ptMgrSubscribe(c) {
       () => {},
     ),
   );
+  csOwnerWatch(p.id);
   PT.mgrUnsub.push(
     S.db.collection("portal/" + p.id + "/signs").onSnapshot(
       (snap) => {
@@ -994,11 +1016,13 @@ function ptManager(c) {
       ${docs.map((d) => `<div class="pmdoc"><button type="button" class="linkbtn pm-open" data-id="${esc(d.id)}">${isImg(d.contentType) ? "🖼" : "📄"} ${esc(d.title || d.fileName)}</button><span class="who">${esc((PT_FOLDERS.find((x) => x[0] === (d.folder || "other")) || [, ""])[1])} · ${esc(stamp(d.sharedAt))}</span><button type="button" class="linkdanger pm-del" data-id="${esc(d.id)}">Remove</button></div>`).join("") || '<div class="nothing">Nothing shared yet. Only what you send here is visible to the client.</div>'}</div>
     <div class="ptsec"><div class="ptsech"><b>✍ Sign-offs (${signs.length})</b><button type="button" class="btn primary" id="pm-ask">+ Ask for a sign-off</button></div>
       ${signs.map((x) => `<button type="button" class="incrow pm-sign" data-id="${esc(x.id)}"><span><b>${esc(x.title)}</b> <span class="tag ${x.status === "signed" ? "ok" : x.status === "changes" ? "bad" : "day"}">${x.status === "signed" ? "Signed" : x.status === "changes" ? "Changes asked" : "Waiting"}</span><br><span class="who">${esc(ptKind(x.kind)[1])}${x.amount ? " · " + gbp(+x.amount) : ""} · ${x.signedAt ? esc((x.status === "signed" ? "signed " : "replied ") + stamp(x.signedAt)) : "sent " + esc(stamp(x.created))}</span></span><span aria-hidden="true">›</span></button>`).join("") || '<div class="nothing">Nothing sent for sign-off yet.</div>'}</div>
+    ${p ? csOwnerHtml(c, p) : ""}
     ${pdOwnerSection(c, p)}
     <div class="ptsec"><div class="ptsech"><b>💬 Client chat</b>${chat && p ? `<button type="button" class="btn primary" id="pm-chat">Open chat</button>` : ""}</div>
       ${p ? `<div class="who">${chat ? `In the chat: you, ${esc(p.name)}${trades.length ? ", " + trades.map((id) => esc(nameOf(id))).join(", ") : ""}.` : "No chat yet. Choose which trades can talk to the client."}</div><button type="button" class="btn" id="pm-members" style="align-self:flex-start">${chat ? "Change who's in the chat" : "Set up the chat"}</button>` : `<div class="who">The chat can be set up once they've joined.</div>`}</div>
     ${p ? `<div class="ptsec"><button type="button" class="linkdanger" id="pm-revoke">End ${esc(c.name)}'s portal access</button></div>` : ""}</div>`);
   stWireToggle(c);
+  if (p) csOwnerWire(c, p);
   $("pm-back").onclick = () => {
     PT.mgr = null;
     viewClient(ptCl(c));

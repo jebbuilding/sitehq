@@ -31,8 +31,10 @@ import { auditFirst } from "./deletion-record.js";
 import { openMonthly } from "./reports.js";
 import { acView } from "../people/access.js";
 import { detailsDone, myDetails, openDetails } from "../people/personal-details.js";
+import { pvView } from "../people/portal-access.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
 import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
+import { eqmView } from "../planner/plant-care.js";
 import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { KINDS, ck } from "../safety/checklists.js";
@@ -854,7 +856,7 @@ function ownerInvoices() {
   wireInvoices(list, true);
 }
 function ownerSetup() {
-  const stSeg = `<div class="seg st-tabs" id="st-tabs"><button type="button" data-v="setup" aria-pressed="${S.f.stab !== "access"}">⚙️ Setup</button><button type="button" data-v="access" aria-pressed="${S.f.stab === "access"}">👥 People &amp; access</button></div>`;
+  const stSeg = `<div class="seg st-tabs" id="st-tabs"><button type="button" data-v="setup" aria-pressed="${S.f.stab !== "access" && S.f.stab !== "portal"}">⚙️ Setup</button><button type="button" data-v="access" aria-pressed="${S.f.stab === "access"}">👥 People &amp; access</button><button type="button" data-v="portal" aria-pressed="${S.f.stab === "portal"}">🏡 Client portal</button></div>`;
   const stWire = () =>
     $("st-tabs")
       .querySelectorAll("button")
@@ -868,6 +870,11 @@ function ownerSetup() {
       );
   if (S.f.stab === "access") {
     acView(stSeg);
+    stWire();
+    return;
+  }
+  if (S.f.stab === "portal") {
+    pvView(stSeg);
     stWire();
     return;
   }
@@ -896,6 +903,7 @@ function ownerSetup() {
     ${sdSigCard()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
+    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button></div>
     ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 Marine Way, Exmouth")}
     ${Object.entries(KINDS)
       .map(([k, K]) =>
@@ -910,6 +918,7 @@ function ownerSetup() {
       .join("")}
     <div class="actions"><button class="btn" id="preview" type="button">Fill in forms as me</button></div>`;
   $("preview").onclick = startPreview;
+  if ($("eqm-reg")) $("eqm-reg").onclick = eqmView;
   stWire();
   wireBackup();
   wireCompany();

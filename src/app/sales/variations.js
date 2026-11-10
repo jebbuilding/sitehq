@@ -19,7 +19,7 @@ import { sdEdit } from "./sales-edit.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdImgData } from "./sales-pdf.js";
 import { siteClient } from "../sites/summary.js";
-export { vrNew, vrTot, vrView };
+export { vrNew, vrPrefill, vrTot, vrView };
 /* Owner-private, todos/var-<id> (kind "variation"): { site, clientId, client, title, details, photos: [assetId],
    amt (before VAT), vc (VAT code), status "open" (waiting for the client to sign) | "signed" | "cancelled",
    sign: { name, at, sigId (picture of the signature), pdfId (the signed sheet) }, invId (the invoice it went onto),
@@ -96,6 +96,16 @@ function vrView(tabs) {
     .forEach((b) => (b.onclick = () => vrInvoice(b.dataset.s)));
 }
 /* ---------- a new variation: what, photos, price ---------- */
+/* fill in a new variation that another part of the app started (e.g. a client choice over its allowance) */
+function vrPrefill(o) {
+  if (o.client != null && $("vr-client")) $("vr-client").value = o.client;
+  if (o.title != null && $("vr-title")) $("vr-title").value = String(o.title).slice(0, 120);
+  if (o.details != null && $("vr-det")) $("vr-det").value = o.details;
+  if (o.amt != null && $("vr-amt")) {
+    $("vr-amt").value = String(o.amt);
+    $("vr-amt").dispatchEvent(new Event("input"));
+  }
+}
 function vrNew(site0, v0) {
   const sites = vrSites();
   const set = sdSet();
