@@ -31,6 +31,7 @@ import { cbsDraw, cbsIs, cbsPlan } from "./cupboard-shapes.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
+import { hs3View } from "./house-3d.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
 import { rwDialog, rwElev, rwNotes, rwSection } from "./retaining-wall.js";
 import {
@@ -1571,6 +1572,7 @@ async function openNotePage(opts) {
               ["sched", "📋", "Schedules"],
               ["grid", "#️⃣", "Grid lines"],
               ["elev", "🏠", "Elevation"],
+              ["elev3d", "🏘️", "Elevations & 3D"],
               ["cupb", "🗄️", "Cupboards"],
               ["cupb3d", "🎨", "3D view"],
               ["cupbpack", "🪚", "Workshop pack"],
@@ -6820,6 +6822,193 @@ async function openNotePage(opts) {
       "Elevation drawn on a new page. Change the wall height in 🧮 Quantities if it isn't 2400.",
     );
   }
+  /* the whole plan: an elevation of each side on its own page, and a 3D view, from the walls, doors and windows */
+  function elevModel() {
+    const walls = doc.objs.filter(npIsWall);
+    if (!walls.length) return null;
+    const Hmm = doc.wallH || 2400;
+    const sv = surveyItems();
+    const W = walls.map((w) => {
+      const L = lenOf(w.a, w.b) || 1;
+      const u = [(w.b[0] - w.a[0]) / L, (w.b[1] - w.a[1]) / L];
+      return {
+        w,
+        a: [realMm(w.a[0]), realMm(w.a[1])],
+        b: [realMm(w.b[0]), realMm(w.b[1])],
+        u,
+        n: [-u[1], u[0]],
+        L: realMm(L),
+        T: realMm(npWallT(w, w.w || 6)),
+        H: Hmm,
+        cuts: [],
+      };
+    });
+    doc.objs.filter(isOpening).forEach((o) => {
+      const r = wallOf(o);
+      const m = r && W.find((x) => x.w === r.w);
+      if (!m) return;
+      const win = o.k === "window",
+        it = o.mark && sv.find((x) => x.ref === o.mark),
+        sz = it ? DWS.sizeOf(it) : null;
+      const h = sz ? sz.H : win ? 1050 : 2100,
+        sill = win ? Math.max(0, it && it.kind === "door" ? 0 : 2100 - h) : 0;
+      m.cuts.push({ t1: realMm(r.t1), t2: realMm(r.t2), sill, h, win, mark: o.mark || "" });
+    });
+    const cx = W.reduce((s, x) => s + x.a[0] + x.b[0], 0) / (2 * W.length),
+      cy = W.reduce((s, x) => s + x.a[1] + x.b[1], 0) / (2 * W.length);
+    /* each wall's outside: the side of it away from the middle of the building */
+    W.forEach((x) => {
+      const m = [(x.a[0] + x.b[0]) / 2, (x.a[1] + x.b[1]) / 2];
+      if ((m[0] - cx) * x.n[0] + (m[1] - cy) * x.n[1] < 0) x.n = [-x.n[0], -x.n[1]];
+    });
+    return { W, H: Hmm };
+  }
+  const ELEV_SIDES = [
+    ["Front", [0, 1]],
+    ["Back", [0, -1]],
+    ["Left side", [-1, 0]],
+    ["Right side", [1, 0]],
+  ];
+  function elevAll() {
+    if (!doc.scale) {
+      toast("Set a scale in 📐 Paper first");
+      return;
+    }
+    const M = elevModel();
+    if (!M) {
+      toast("Draw the walls first (Walls & structure), with the doors and windows in them");
+      return;
+    }
+    const U = toUnits,
+      col = "#111111",
+      lw = pwFor(6);
+    doc.pages[pg].objs = doc.objs;
+    const first = doc.pages.length;
+    let made = 0;
+    ELEV_SIDES.forEach(([name, out]) => {
+      /* looking at this side from outside: d is the way the viewer looks, r is their right */
+      const d = [-out[0], -out[1]],
+        r = [-d[1], d[0]];
+      const side = M.W.filter((x) => Math.abs(x.u[0] * r[0] + x.u[1] * r[1]) > 0.5);
+      if (!side.length) return;
+      const X = (p) => p[0] * r[0] + p[1] * r[1],
+        Z = (p) => p[0] * d[0] + p[1] * d[1];
+      const xs = side.flatMap((x) => [X(x.a), X(x.b)]);
+      const lo = Math.min(...xs),
+        hi = Math.max(...xs);
+      const x0 = Math.max(U(600), (doc.w - U(hi - lo)) / 2),
+        gy = doc.h * 0.7;
+      const objs = [];
+      /* furthest first, filled white, so the nearer walls cover the ones behind */
+      side
+        .slice()
+        .sort(
+          (p, q) =>
+            Z([(q.a[0] + q.b[0]) / 2, (q.a[1] + q.b[1]) / 2]) -
+            Z([(p.a[0] + p.b[0]) / 2, (p.a[1] + p.b[1]) / 2]),
+        )
+        .forEach((x) => {
+          const xa = X(x.a) - lo,
+            xb = X(x.b) - lo;
+          const l = Math.min(xa, xb),
+            rr = Math.max(xa, xb);
+          objs.push({
+            t: "rect",
+            a: [x0 + U(l), gy - U(x.H)],
+            b: [x0 + U(rr), gy],
+            c: col,
+            w: lw,
+            fill: "#ffffff",
+            fa: 1,
+          });
+          /* openings only show on walls whose outside faces this way */
+          if (x.n[0] * out[0] + x.n[1] * out[1] < 0.5) return;
+          x.cuts.forEach((k) => {
+            const p1 = [x.a[0] + x.u[0] * k.t1, x.a[1] + x.u[1] * k.t1],
+              p2 = [x.a[0] + x.u[0] * k.t2, x.a[1] + x.u[1] * k.t2];
+            const c1 = Math.min(X(p1), X(p2)) - lo,
+              c2 = Math.max(X(p1), X(p2)) - lo;
+            const a = [x0 + U(c1), gy - U(k.sill + k.h)],
+              b = [x0 + U(c2), gy - U(k.sill)];
+            objs.push({
+              t: "rect",
+              a,
+              b,
+              c: col,
+              w: lw,
+              fill: k.win ? "#dbeafe" : "#f3f4f6",
+              fa: 1,
+            });
+            if (k.win)
+              objs.push({
+                t: "line",
+                a: [(a[0] + b[0]) / 2, a[1]],
+                b: [(a[0] + b[0]) / 2, b[1]],
+                c: col,
+                w: pwFor(2),
+              });
+            if (k.mark)
+              objs.push({
+                t: "text",
+                x: a[0] + U(60),
+                y: a[1] + U(60),
+                s: k.mark,
+                c: "#1d4ed8",
+                size: Math.round(dimSize() * 0.9),
+                ly: "notes",
+              });
+          });
+        });
+      objs.push({
+        t: "line",
+        a: [x0 - U(800), gy],
+        b: [x0 + U(hi - lo) + U(800), gy],
+        c: col,
+        w: pwFor(12),
+      });
+      objs.push(
+        mkDim([x0, gy], [x0 + U(hi - lo), gy], dimSize() * 2.6),
+        mkDim([x0, gy - U(M.H)], [x0, gy], dimSize() * 2.6),
+      );
+      objs.push({
+        t: "text",
+        x: x0,
+        y: gy + dimSize() * 5,
+        s: `${name} elevation, from the plan: wall height ${M.H} mm, doors and windows where they are on the plan. Add the roof, finishes and levels.`,
+        c: "#333333",
+        size: Math.round(dimSize() * 0.8),
+        ly: "notes",
+      });
+      objs.forEach((o) => Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]));
+      doc.pages.push({ name: name + " elevation", type: "Elevation", objs });
+      made++;
+    });
+    if (!made) {
+      toast("Couldn't find walls to draw elevations from");
+      return;
+    }
+    dirty = true;
+    goPage(first);
+    toast(
+      `${made} elevations drawn, one a page. Tap 🏘️ again on the plan for the 3D view. Wall height ${M.H} mm (change it in 🧮 Quantities).`,
+    );
+  }
+  function elevMenu() {
+    const M = doc.scale ? elevModel() : null;
+    const d = document.createElement("div");
+    d.className = "dimask";
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Elevations and 3D"><b>🏘️ From this plan</b><div class="who">${M ? `${M.W.length} walls, ${M.W.reduce((a, x) => a + x.cuts.length, 0)} doors and windows, walls ${M.H} mm high.` : doc.scale ? "Draw the walls first." : "Set a scale in 📐 Paper first."}</div><div class="dimbtns"><button type="button" class="btn el-3d"${M ? "" : " disabled"}>🧊 3D view</button><button type="button" class="btn primary el-all"${M ? "" : " disabled"}>📐 Draw the elevations</button><button type="button" class="btn el-x">Close</button></div></div>`;
+    document.body.appendChild(d);
+    d.querySelector(".el-x").onclick = () => d.remove();
+    d.querySelector(".el-all").onclick = () => {
+      d.remove();
+      elevAll();
+    };
+    d.querySelector(".el-3d").onclick = () => {
+      d.remove();
+      hs3View(M);
+    };
+  }
   /* fitted cupboards and wardrobes: a new page with the views and the cutting list */
   let cupbLast = null;
   function cupbDlg() {
@@ -7468,6 +7657,7 @@ async function openNotePage(opts) {
         } else if (a === "sched") schedDlg();
         else if (a === "grid") gridDlg();
         else if (a === "elev") elevFromWall();
+        else if (a === "elev3d") elevMenu();
         else if (a === "cupb") cupbDlg();
         else if (a === "cupb3d") cupb3d();
         else if (a === "retw") retwDlg();

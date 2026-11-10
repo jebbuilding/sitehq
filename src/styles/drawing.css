@@ -108,3 +108,5 @@ body>.dimask.cb3-sg{z-index:320}
 .np-stepsbox .np-step-n{min-width:26px;text-align:right;color:var(--ink);opacity:.6;font-size:.85em}
 .np-stepsbox .np-step-t{flex:1}
 .np-stepsbox .np-step-here{font-size:.8em;opacity:.8;white-space:nowrap}
+.hs3-cv{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#f4f6f8}
+.dimbox.hs3{max-width:min(1040px,96vw);width:96vw}
