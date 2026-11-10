@@ -6885,7 +6885,7 @@ async function openNotePage(opts) {
     if (!g) return null;
     const st = elevSet();
     const FL = 300; /* the floor zone between storeys */
-    const storeys = [{ W: g.W, z: 0 }];
+    const storeys = [{ W: g.W, z: 0, objs: doc.objs }];
     for (let s = 1; s < Math.max(1, Math.min(3, +st.storeys || 1)); s++) {
       const up =
         st.upper !== "same" && doc.pages[+st.upper] ? elevModel(doc.pages[+st.upper].objs) : null;
@@ -6902,7 +6902,7 @@ async function openNotePage(opts) {
             ),
           }),
         );
-      storeys.push({ W, z: s * (g.H + FL) });
+      storeys.push({ W, z: s * (g.H + FL), objs: up ? doc.pages[+st.upper].objs : [] });
     }
     const pts = g.W.flatMap((x) => [x.a, x.b]);
     const box = {
@@ -6942,6 +6942,8 @@ async function openNotePage(opts) {
         over: Math.max(0, +st.over || 0),
       },
       W: g.W,
+      /* mm for one unit on the page, for rooms and furniture in the cutaway */
+      mmU: realMm(1),
     };
   }
   const ELEV_SIDES = [

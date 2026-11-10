@@ -115,3 +115,4 @@ body>.dimask.cb3-sg{z-index:320}
 .el-box select,.el-box input{min-height:44px}
 .hr-stage{border-radius:10px;overflow:hidden;background:#dfe9f2;touch-action:none}
 .hr-stage canvas{display:block;width:100%;height:auto;border:0;border-radius:0}
+.hr-modes{margin:8px 0;flex-wrap:wrap}

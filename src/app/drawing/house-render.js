@@ -715,7 +715,8 @@ async function hrView(B, onDone) {
   d.className = "dimask";
   d.innerHTML = `<div class="dimbox hs3 hr-box" role="dialog" aria-label="3D view"><b>🧊 3D view</b><div class="who" id="hr-msg">Building the model…</div>
     <div class="hr-stage"><canvas id="hr-cv" class="hs3-cv" aria-label="3D view of the building"></canvas></div>
-    <div class="who">Drag to turn it round, pinch or scroll to zoom.</div>
+    <div class="seg hr-modes"><button type="button" class="hr-mode" data-m="out" aria-pressed="true">🏡 Outside</button>${B.storeys.map((x, i) => `<button type="button" class="hr-mode" data-m="in" data-f="${i}" aria-pressed="false">🔪 Inside${B.storeys.length > 1 ? (i ? " – floor " + (i + 1) : " – ground floor") : ""}</button>`).join("")}</div>
+    <div class="who">Drag to turn it round, pinch or scroll to zoom. Inside: the roof off and the walls cut at waist height, with the rooms and what's drawn in them.</div>
     <div class="dimbtns"><button type="button" class="btn" id="hr-save">⬇ Save the picture</button><button type="button" class="btn" id="hr-vid">🎬 Make a video</button><button type="button" class="btn primary" id="hr-x">Close</button></div></div>`;
   document.body.appendChild(d);
   let stop = false;
@@ -750,10 +751,11 @@ async function hrView(B, onDone) {
   const scene = new T.Scene();
   scene.background = hrSky(T);
   scene.fog = new T.Fog(0xdde9f3, 30, 160);
-  const M = hrBuild(B);
+  let M = hrBuild(B);
   scene.add(M.g);
   /* sky light and a low afternoon sun with soft shadows */
-  scene.add(new T.HemisphereLight(0xcfe3ff, 0x5d6b3a, 1.1));
+  const hemi = new T.HemisphereLight(0xcfe3ff, 0x5d6b3a, 1.1);
+  scene.add(hemi);
   const sun = new T.DirectionalLight(0xfff1dc, 3.2);
   const s = M.size;
   sun.position.set(M.centre.x + s * 1.2, s * 1.6 + 6, M.centre.z + s * 1.5);
@@ -783,6 +785,7 @@ async function hrView(B, onDone) {
       ),
     );
     scene.environment = pm.fromScene(envS).texture;
+    HR.env = scene.environment;
   } catch (e) {}
   const cam = new T.PerspectiveCamera(38, Wd / Ht, 0.1, 500);
   const orb = { th: -0.75, ph: 0.32, dist: s * 2.1 + 4 };
@@ -841,6 +844,40 @@ async function hrView(B, onDone) {
     draw();
   };
   cv.ontouchend = () => (pinch = null);
+  /* outside, or the cutaway of a floor */
+  const setMode = (mode, fi) => {
+    scene.remove(M.g);
+    M = mode === "in" ? hrCutaway(B, fi) : hrBuild(B);
+    scene.add(M.g);
+    scene.background = mode === "in" ? new T.Color(0xeef1f4) : hrSky(T);
+    scene.fog = mode === "in" ? null : new T.Fog(0xdde9f3, 30, 160);
+    /* inside: a soft studio light, no sky reflections, so the white walls and dark cut tops read properly */
+    scene.environment = mode === "in" ? null : HR.env || null;
+    r.toneMappingExposure = mode === "in" ? 0.72 : 1.05;
+    hemi.color.set(mode === "in" ? 0xffffff : 0xcfe3ff);
+    hemi.groundColor.set(mode === "in" ? 0xb8b2a8 : 0x5d6b3a);
+    hemi.intensity = mode === "in" ? 1.6 : 1.1;
+    sun.intensity = mode === "in" ? 2.2 : 3.2;
+    if (mode === "in") {
+      orb.ph = 0.9;
+      orb.dist = M.size * 1.25 + 2;
+    } else {
+      orb.ph = 0.32;
+      orb.dist = s * 2.1 + 4;
+    }
+    draw();
+    document
+      .querySelectorAll(".hr-mode")
+      .forEach((b) =>
+        b.setAttribute(
+          "aria-pressed",
+          String(b.dataset.m === mode && (+b.dataset.f || 0) === (fi || 0)),
+        ),
+      );
+  };
+  document
+    .querySelectorAll(".hr-mode")
+    .forEach((b) => (b.onclick = () => setMode(b.dataset.m, +b.dataset.f || 0)));
   HR.view = { draw, orb, M, cam, r, scene, B, isStopped: () => stop };
   $("hr-save").onclick = async () => {
     draw();
@@ -963,4 +1000,282 @@ async function hrVideo() {
   } catch (e) {
     toast("Couldn't save the video");
   }
+}
+/* ---------- the cutaway: roof off, walls cut at 1.15 m, the rooms with their floors and what's drawn in them ---------- */
+function hrFloorMat(name) {
+  const n = String(name || "").toLowerCase();
+  if (/kitchen|bath|shower|wc|toilet|utility|en.?suite|cloak/.test(n))
+    return hrMat(
+      hrTex(
+        (x, w, h) => {
+          x.fillStyle = "#9b958c";
+          x.fillRect(0, 0, w, h);
+          for (let r = 0; r < 4; r++)
+            for (let k = 0; k < 4; k++) {
+              const v = (Math.random() - 0.5) * 14;
+              x.fillStyle = `rgb(${214 + v},${210 + v},${202 + v})`;
+              x.fillRect((k * w) / 4 + 2, (r * h) / 4 + 2, w / 4 - 4, h / 4 - 4);
+            }
+          hrNoise(x, w, h, 8);
+        },
+        256,
+        256,
+        1.2,
+      ),
+      { roughness: 0.35 },
+    );
+  /* carpet in the bedrooms */
+  if (/bed/.test(n))
+    return hrMat(
+      hrTex(
+        (x, w, h) => {
+          x.fillStyle = "#b9b1a6";
+          x.fillRect(0, 0, w, h);
+          hrNoise(x, w, h, 22);
+        },
+        256,
+        256,
+        1,
+      ),
+      { roughness: 1 },
+    );
+  /* oak boards */
+  return hrMat(
+    hrTex(
+      (x, w, h) => {
+        for (let r = 0; r < 8; r++) {
+          const off = (r * 97) % w;
+          for (let k = -1; k < 3; k++) {
+            const v = (Math.random() - 0.5) * 30;
+            x.fillStyle = `rgb(${176 + v},${132 + v * 0.8},${86 + v * 0.6})`;
+            x.fillRect(k * (w / 2) + off, (r * h) / 8, w / 2 - 2, h / 8 - 2);
+          }
+        }
+        for (let i = 0; i < 400; i++) {
+          x.fillStyle = "rgba(90,60,30,.12)";
+          x.fillRect(Math.random() * w, Math.random() * h, Math.random() * 60, 1);
+        }
+      },
+      512,
+      512,
+      1.6,
+    ),
+    { roughness: 0.55 },
+  );
+}
+const HR_CUT = 1.15;
+function hrCutaway(B, fi) {
+  const T = window.THREE;
+  const mm = (v) => v / 1000;
+  const s = B.storeys[Math.min(fi || 0, B.storeys.length - 1)];
+  const g = new T.Group();
+  const plaster = new T.MeshStandardMaterial({ color: 0xf6f4f0, roughness: 0.9 });
+  const cut = new T.MeshStandardMaterial({ color: 0x2b2d31, roughness: 0.8 });
+  const U = B.mmU || 1;
+  const objs = s.objs || [];
+  /* the floors: each room drawn, or the whole footprint */
+  const rooms = objs.filter((o) => o.t === "room" && (o.p || []).length > 2);
+  const slab = (pts, mat) => {
+    const sh = new T.Shape();
+    pts.forEach((p, i) => (i ? sh.lineTo(mm(p[0]), -mm(p[1])) : sh.moveTo(mm(p[0]), -mm(p[1]))));
+    const geo = new T.ShapeGeometry(sh);
+    const me = new T.Mesh(geo, mat);
+    me.rotation.x = -Math.PI / 2;
+    me.position.y = 0.01;
+    me.receiveShadow = true;
+    g.add(me);
+  };
+  const bx = B.box;
+  /* a plinth under the whole footprint, so it reads as a model */
+  const pl = new T.Mesh(
+    new T.BoxGeometry(mm(bx.x1 - bx.x0) + 0.3, 0.25, mm(bx.y1 - bx.y0) + 0.3),
+    new T.MeshStandardMaterial({ color: 0xe9e6e0, roughness: 0.9 }),
+  );
+  pl.position.set(mm((bx.x0 + bx.x1) / 2), -0.125, mm((bx.y0 + bx.y1) / 2));
+  pl.receiveShadow = pl.castShadow = true;
+  g.add(pl);
+  if (rooms.length)
+    rooms.forEach((r) =>
+      slab(
+        r.p.map((p) => [p[0] * U, p[1] * U]),
+        hrFloorMat(r.name),
+      ),
+    );
+  else
+    slab(
+      [
+        [bx.x0, bx.y0],
+        [bx.x1, bx.y0],
+        [bx.x1, bx.y1],
+        [bx.x0, bx.y1],
+      ],
+      hrFloorMat(""),
+    );
+  /* the walls, cut at 1.15 m, with a dark top where they're cut */
+  s.W.forEach((w) => {
+    const L = mm(w.L),
+      H = HR_CUT,
+      D = mm(w.T);
+    const sh = new T.Shape();
+    sh.moveTo(0, 0);
+    sh.lineTo(L, 0);
+    sh.lineTo(L, H);
+    sh.lineTo(0, H);
+    sh.lineTo(0, 0);
+    w.cuts.forEach((k) => {
+      const y0 = mm(k.sill);
+      if (y0 >= H - 0.05) return;
+      const p = new T.Path();
+      const a = mm(k.t1),
+        b = mm(k.t2);
+      p.moveTo(a, y0);
+      p.lineTo(a, H + 0.01);
+      p.lineTo(b, H + 0.01);
+      p.lineTo(b, y0);
+      p.lineTo(a, y0);
+      sh.holes.push(p);
+    });
+    const grp = new T.Group();
+    const geo = new T.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false });
+    geo.translate(0, 0, -D / 2);
+    const me = new T.Mesh(geo, plaster);
+    me.castShadow = me.receiveShadow = true;
+    grp.add(me);
+    /* the cut tops, between the openings */
+    const gaps = w.cuts
+      .filter((k) => mm(k.sill) < H - 0.05)
+      .map((k) => [mm(k.t1), mm(k.t2)])
+      .sort((a, b) => a[0] - b[0]);
+    let at = 0;
+    gaps.concat([[L, L]]).forEach(([a, b]) => {
+      if (a - at > 0.01) {
+        const top = new T.Mesh(new T.BoxGeometry(a - at, 0.012, D + 0.002), cut);
+        top.position.set((at + a) / 2, H + 0.006, 0);
+        grp.add(top);
+      }
+      at = Math.max(at, b);
+    });
+    /* glass in the windows below the cut */
+    w.cuts.forEach((k) => {
+      if (!k.win || mm(k.sill) >= H - 0.05) return;
+      const gl = new T.Mesh(
+        new T.PlaneGeometry(mm(k.t2 - k.t1) - 0.1, H - mm(k.sill) - 0.05),
+        new T.MeshStandardMaterial({
+          color: 0x9fc3d8,
+          transparent: true,
+          opacity: 0.45,
+          roughness: 0.05,
+        }),
+      );
+      gl.position.set(mm((k.t1 + k.t2) / 2), (mm(k.sill) + H) / 2, 0);
+      grp.add(gl);
+      const sl = new T.Mesh(new T.BoxGeometry(mm(k.t2 - k.t1), 0.03, D + 0.04), plaster);
+      sl.position.set(mm((k.t1 + k.t2) / 2), mm(k.sill), 0);
+      grp.add(sl);
+    });
+    const ang = Math.atan2(w.u[1], w.u[0]);
+    grp.rotation.y = -ang;
+    grp.position.set(mm(w.a[0]), 0, mm(w.a[1]));
+    g.add(grp);
+  });
+  /* what's drawn in the rooms */
+  const M = (c, r, m) =>
+    new T.MeshStandardMaterial({ color: c, roughness: r == null ? 0.7 : r, metalness: m || 0 });
+  const white = M(0xf3f3f1, 0.4),
+    steel = M(0xc4c7ca, 0.25, 0.9),
+    top = M(0x3a3936, 0.35),
+    fabric = M(0x8f939a, 1),
+    duvet = M(0xe8e2d8, 1),
+    wood = M(0x9a6b42, 0.6),
+    dark = M(0x26272a, 0.5),
+    glassM = new T.MeshStandardMaterial({
+      color: 0xbfdbe8,
+      transparent: true,
+      opacity: 0.35,
+      roughness: 0.05,
+    });
+  objs
+    .filter((o) => o.t === "shape" && o.a && o.b)
+    .forEach((o) => {
+      const k = o.k;
+      const x0 = Math.min(o.a[0], o.b[0]) * U,
+        x1 = Math.max(o.a[0], o.b[0]) * U,
+        y0 = Math.min(o.a[1], o.b[1]) * U,
+        y1 = Math.max(o.a[1], o.b[1]) * U;
+      const w = mm(x1 - x0),
+        d = mm(y1 - y0);
+      if (w < 0.1 || d < 0.1) return;
+      const it = new T.Group();
+      const bx2 = (W, H, D, m, x, y, z) => {
+        const me = new T.Mesh(new T.BoxGeometry(W, H, D), m);
+        me.position.set(x, y, z);
+        me.castShadow = me.receiveShadow = true;
+        it.add(me);
+        return me;
+      };
+      if (k === "units" || k === "island") {
+        bx2(w, 0.86, d, white, 0, 0.43, 0);
+        bx2(w + 0.02, 0.04, d + 0.02, top, 0, 0.88, 0);
+        /* door lines on the fronts */
+        for (let i = 1; i < Math.round(w / 0.6); i++)
+          bx2(0.004, 0.7, d + 0.004, M(0xd8d8d6), -w / 2 + (i * w) / Math.round(w / 0.6), 0.45, 0);
+      } else if (k === "sink") {
+        bx2(w, 0.86, d, white, 0, 0.43, 0);
+        bx2(w + 0.02, 0.04, d + 0.02, top, 0, 0.88, 0);
+        bx2(w * 0.6, 0.02, d * 0.55, steel, 0, 0.905, 0);
+      } else if (k === "hob") {
+        bx2(w, 0.86, d, white, 0, 0.43, 0);
+        bx2(w + 0.02, 0.04, d + 0.02, top, 0, 0.88, 0);
+        bx2(w * 0.8, 0.01, d * 0.75, dark, 0, 0.905, 0);
+      } else if (k === "fridge") bx2(w, 1.8, d, steel, 0, 0.9, 0);
+      else if (k === "wm") bx2(w, 0.85, d, white, 0, 0.425, 0);
+      else if (k === "wc") {
+        bx2(w * 0.8, 0.4, d * 0.65, white, 0, 0.2, d * 0.1);
+        bx2(w, 0.38, d * 0.25, white, 0, 0.6, -d * 0.36);
+      } else if (k === "basin") {
+        bx2(w * 0.25, 0.75, d * 0.3, white, 0, 0.375, -d * 0.2);
+        bx2(w, 0.12, d, white, 0, 0.82, 0);
+      } else if (k === "bath") {
+        bx2(w, 0.55, d, white, 0, 0.275, 0);
+        bx2(w - 0.12, 0.02, d - 0.12, M(0xd9e6ee, 0.1), 0, 0.555, 0);
+      } else if (k === "shower") {
+        bx2(w, 0.05, d, white, 0, 0.025, 0);
+        bx2(0.01, 1.1, d, glassM, w / 2, 0.6, 0);
+        bx2(w, 1.1, 0.01, glassM, 0, 0.6, d / 2);
+      } else if (k === "dbed" || k === "sbed") {
+        bx2(w, 0.3, d, wood, 0, 0.15, 0);
+        bx2(w - 0.04, 0.22, d - 0.04, white, 0, 0.41, 0);
+        bx2(w - 0.02, 0.06, d * 0.62, duvet, 0, 0.55, d * 0.17);
+        const pw = k === "dbed" ? w / 2 - 0.08 : w - 0.15;
+        (k === "dbed" ? [-w / 4, w / 4] : [0]).forEach((px) =>
+          bx2(pw, 0.1, 0.35, white, px, 0.57, -d / 2 + 0.28),
+        );
+        bx2(w, 0.9, 0.06, fabric, 0, 0.45, -d / 2 + 0.03);
+      } else if (k === "sofa") {
+        bx2(w, 0.42, d, fabric, 0, 0.21, 0);
+        bx2(w, 0.4, d * 0.22, fabric, 0, 0.6, -d / 2 + d * 0.11);
+        bx2(0.18, 0.2, d, fabric, -w / 2 + 0.09, 0.52, 0);
+        bx2(0.18, 0.2, d, fabric, w / 2 - 0.09, 0.52, 0);
+      } else if (k === "table" || k === "desk") {
+        bx2(w, 0.04, d, wood, 0, 0.74, 0);
+        [
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1],
+        ].forEach(([a, b]) =>
+          bx2(0.05, 0.72, 0.05, wood, a * (w / 2 - 0.06), 0.36, b * (d / 2 - 0.06)),
+        );
+      } else if (k === "wardrobe") {
+        bx2(w, 1.12, d, wood, 0, 0.56, 0);
+      } else return;
+      it.position.set(mm((x0 + x1) / 2), 0, mm((y0 + y1) / 2));
+      it.rotation.y = -(o.r || 0);
+      g.add(it);
+    });
+  return {
+    g,
+    centre: new T.Vector3(mm((bx.x0 + bx.x1) / 2), 0.4, mm((bx.y0 + bx.y1) / 2)),
+    size: Math.max(mm(bx.x1 - bx.x0), mm(bx.y1 - bx.y0)),
+  };
 }
