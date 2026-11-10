@@ -218,6 +218,7 @@ initJobStory();
         S.programmes = all.filter((t) => t.kind === "programme");
         S.vatReturns = all.filter((t) => t.kind === "vatreturn");
         S.rfqs = all.filter((t) => t.kind === "rfq");
+        S.valuations = all.filter((t) => t.kind === "valuation");
         S.audit = all.filter((t) => t.kind === "audit");
         S.bin = all.filter((t) => t.kind === "bin");
         if (!window.__binPurgeT)

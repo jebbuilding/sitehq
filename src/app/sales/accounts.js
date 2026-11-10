@@ -48,6 +48,7 @@ import { gpView } from "./getting-paid.js";
 import { jcView } from "./job-costs.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
 import { txView } from "./tax-aside.js";
+import { appView } from "./valuations.js";
 import { vtPeriodAsk, vtView } from "./vat-return.js";
 export { acPeriod, accountsView };
 /* Two tabs. Overview: money in, money out and profit for the period, bank balances, month-by-month bars, the profit
@@ -74,6 +75,7 @@ function accountsView() {
     ["due", "💳 Paid / not paid"],
     ["gp", "📨 Getting paid"],
     ["cf", "📈 Cash flow"],
+    ["app", "🏗 Applications"],
     ["rcpt", "Receipts"],
     ["sup", "Suppliers & sites"],
     ["jobs", "💷 Job costs"],
@@ -91,6 +93,7 @@ function accountsView() {
   else if (tab === "due") adView(tabs);
   else if (tab === "gp") gpView(tabs);
   else if (tab === "cf") csfView(tabs);
+  else if (tab === "app") appView(tabs);
   else if (tab === "sup") acSupView(tabs);
   else if (tab === "jobs") jcView(tabs);
   else if (tab === "vat") vtView(tabs);

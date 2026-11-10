@@ -250,3 +250,8 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .tx-type{margin:8px 0}
 .tx-q{padding:8px 0;border-top:1px solid var(--line)}
 .tx-q summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.app-row{padding:12px 14px;margin-bottom:10px}
+.app-h{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.app-warn{color:var(--danger);font-weight:600}
+.app-it{display:grid;grid-template-columns:1fr 100px 64px auto auto;gap:6px;align-items:center;margin-bottom:6px}
+.app-it input{min-height:44px}
