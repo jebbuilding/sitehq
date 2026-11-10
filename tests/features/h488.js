@@ -25,10 +25,10 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(o&&o.who==='emp1'&&o.site==='4 Rolle Road, Exmouth','booked out to Sam at 4 Rolle Road');
  t=await p.innerText('#viewer-body');
  ok(/Sam Test · 4 Rolle Road, Exmouth \(1\)/.test(t)&&/In the yard \(2\)/.test(t),'it shows with Sam on site, the rest still in the yard');
- await p.click('#kit-qr');await p.waitForTimeout(2500);
+ await p.click('#kit-qr');await p.waitForTimeout(300);await p.click('#f-save');await p.waitForTimeout(2500);
  const tags=await p.evaluate(()=>Object.entries(window.__st).filter(([k,v])=>k.startsWith('equipment/')&&v.tag).map(([k,v])=>v.tag).sort());console.log(tags);
- ok(tags.length===3&&tags[0]==='T-001'&&tags[2]==='T-003','each gets a sticker number');
- ok(await p.evaluate(()=>(window.__dl||[]).some(x=>x.filename==='Tool stickers.pdf'&&x.data.size>2000)),'a sheet of QR stickers is made');
+ ok(tags.filter(t=>t[0]==='T').length===3&&tags.includes('T-001')&&tags.includes('T-003')&&tags.includes('V-001'),'each gets a sticker number (the van V-001, the rest T-)');
+ ok(await p.evaluate(()=>(window.__dl||[]).some(x=>x.filename==='QR stickers.pdf'&&x.data.size>2000)),'a sheet of QR stickers is made');
  const bt=await p.evaluate(()=>window.__st['equipment/k1'].tag);
  await p.evaluate(()=>{document.getElementById('viewer-close').click();window.__S.otab='setup';window.render()});await p.waitForTimeout(300);await p.click('#kit-reg');await p.waitForTimeout(300);
  await p.fill('#kit-q',bt);await p.waitForTimeout(700);

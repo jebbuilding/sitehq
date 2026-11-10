@@ -143,3 +143,5 @@
 .hol-neg{color:var(--danger)}
 .hol-p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .hol-p input{width:90px;min-height:44px;margin-left:auto}
+.qrs-all{display:flex;gap:8px;margin:8px 0}
+.qrs-row{display:flex;align-items:center;gap:8px;min-height:44px}

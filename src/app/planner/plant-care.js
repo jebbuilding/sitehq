@@ -5,7 +5,8 @@ import { S } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { newId } from "../files/outbox.js";
 import { nameOf } from "../owner/owner.js";
-import { kitView } from "./kit-out.js";
+import { kitScan, kitView } from "./kit-out.js";
+import { qrsOwnerOpen, qrsPrint } from "./qr-stickers.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo, openEqDates } from "../safety/expiry-dates.js";
 import { ukDate } from "../safety/rams-maker.js";
@@ -67,7 +68,7 @@ function eqmView() {
           : `<span class="tag">Due ${esc(shortDay(x.d))}</span>`;
   openViewer(`<div class="eqm"><div class="vhead"><b>🚐 Vehicles &amp; plant</b></div>
     <div class="who">Every van, trailer, digger and piece of plant with its MOT, service, insurance and inspection dates. Book them in and they go on the planner; mark them done and the next date is set.</div>
-    <div class="actions"><button type="button" class="btn" id="eqm-kit">🧰 Tools &amp; plant: who has what</button></div>
+    <div class="actions"><button type="button" class="btn" id="eqm-kit">🧰 Tools &amp; plant: who has what</button><button type="button" class="btn" id="eqm-scan">📷 Scan a sticker</button><button type="button" class="btn" id="eqm-qr">🏷 QR stickers</button></div>
     ${
       items.length
         ? items
@@ -90,6 +91,8 @@ function eqmView() {
         .join("") || `<div class="who">Add vans, trailers, diggers and plant in Setup.</div>`
     }</div>`);
   if ($("eqm-kit")) $("eqm-kit").onclick = () => kitView();
+  if ($("eqm-scan")) $("eqm-scan").onclick = () => kitScan(qrsOwnerOpen);
+  if ($("eqm-qr")) $("eqm-qr").onclick = qrsPrint;
   const find = (b) => (S.equipment || []).find((x) => x.id === b.dataset.e);
   document
     .querySelectorAll(".eqm-book")

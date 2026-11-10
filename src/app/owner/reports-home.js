@@ -5,6 +5,7 @@ import { render } from "../core/tabs-week.js";
 import { allTeam, checkDetail, nameOf, teamIds } from "./owner.js";
 import { openCheckHistory } from "./reports.js";
 import { DOW, mySchedDue, schedStatus } from "../people/reminders.js";
+import { qrsAll, qrsTradeScan } from "../planner/qr-stickers.js";
 import { incidentsBlock, wireIncidents } from "../safety/accidents.js";
 import { KINDS, ck, hasProblem } from "../safety/checklists.js";
 import { checkCard, openCheck } from "../safety/checks.js";
@@ -88,6 +89,7 @@ function reportsHome(owner) {
     : [];
   $("main").innerHTML =
     `${owner ? (ids.length && notToday.length ? `<div class="notice">No check done yet today: ${esc(notToday.join(", "))}</div>` : "") : `<div class="notice">Do a check before you use a vehicle, digger or machine each day. ${doneToday.length ? `<b>Done today:</b> ${esc(doneToday.join(", "))}.` : "<b>No checks done today yet.</b>"}</div>`}
+    ${owner || !qrsAll().length ? "" : `<div class="actions"><button type="button" class="btn primary" id="rep-scan">📷 Scan the sticker on a van or machine</button></div>`}
     <div class="flabel">Checks</div><div class="folders">${cats
       .filter(([k]) => KINDS[k] && !KINDS[k].inspect)
       .map(tile)
@@ -108,6 +110,7 @@ function reportsHome(owner) {
         }),
     );
   if ($("chkdl")) $("chkdl").onclick = openCheckHistory;
+  if ($("rep-scan")) $("rep-scan").onclick = qrsTradeScan;
 }
 const repBack = () =>
   `<div class="actions"><button class="btn" id="rep-back" type="button">‹ All reports</button></div>`;

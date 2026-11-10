@@ -5,12 +5,11 @@ import { S, siteNames } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { loadScript } from "../files/in-app-files.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
-import { coData } from "../owner/company-details.js";
 import { nameOf, teamIds } from "../owner/owner.js";
+import { qrsOwnerOpen, qrsPrint } from "./qr-stickers.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo } from "../safety/expiry-dates.js";
-import { loadJsPdf } from "../safety/site-inductions.js";
-export { kitView };
+export { kitLoadQr, kitScan, kitView };
 /* 🧰 Tools & plant: every machine, piece of small plant, ladder, digger and trailer with where it is now – in the yard,
    on a site, or with a person (and since when). Book it out (to someone, a site or both) and back in; each move is
    kept on its record. 🏷 QR stickers: a sheet of stickers to print, each with a QR code, the item's name and its
@@ -48,17 +47,6 @@ function kitLoadQr() {
     document.head.appendChild(s);
   });
   return kitQrP;
-}
-/* give everything a number for its sticker */
-async function kitTags() {
-  const all = kitAll();
-  let n = Math.max(0, ...all.map((e) => +String(e.tag || "").replace(/\D/g, "") || 0));
-  for (const e of all.filter((x) => !x.tag)) {
-    n++;
-    const tag = "T-" + String(n).padStart(3, "0");
-    await S.db.doc("equipment/" + e.id).update({ tag });
-    e.tag = tag;
-  }
 }
 function kitView(q) {
   const L = kitAll();
@@ -110,8 +98,8 @@ function kitView(q) {
   };
   document.querySelectorAll(".kit-out").forEach((b) => (b.onclick = () => kitBook(find(b))));
   document.querySelectorAll(".kit-in").forEach((b) => (b.onclick = () => kitBack(find(b))));
-  $("kit-qr").onclick = kitStickers;
-  $("kit-scan").onclick = kitScan;
+  $("kit-qr").onclick = qrsPrint;
+  $("kit-scan").onclick = () => kitScan(qrsOwnerOpen);
 }
 function kitBook(e) {
   if (!e) return;
@@ -169,48 +157,10 @@ async function kitBack(e) {
     toast("Couldn't save");
   }
 }
-/* a sheet of stickers: 3 across, 7 down */
-async function kitStickers() {
-  try {
-    await kitTags();
-    await kitLoadQr();
-    await loadJsPdf();
-  } catch (e) {
-    toast("Couldn't make the stickers – check your connection");
-    return;
-  }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const co = coData();
-  const W = 70,
-    H = 42.4,
-    X0 = 0,
-    Y0 = 0;
-  kitAll().forEach((e, i) => {
-    const k = i % 21;
-    if (i && !k) doc.addPage();
-    const x = X0 + (k % 3) * W,
-      y = Y0 + Math.floor(k / 3) * H;
-    const q = window.qrcode(0, "M");
-    q.addData("SITEHQ " + e.tag);
-    q.make();
-    doc.addImage(q.createDataURL(8, 0), "GIF", x + 4, y + 5, 32, 32);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(e.tag, x + 39, y + 14);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(doc.splitTextToSize(e.name || "", 28).slice(0, 3), x + 39, y + 20);
-    doc.setFontSize(7);
-    doc.text(co.name, x + 39, y + 36);
-  });
-  await S.dl.save({ filename: "Tool stickers.pdf", data: doc.output("blob") });
-  toast("Print on a sheet of 21 labels (70 × 42.4 mm)");
-}
 /* scan a sticker with the camera. Where the browser reads QR codes itself (Chrome on Android) that is used; elsewhere –
    Safari on the iPad and iPhone – a small QR reader (jsQR) is loaded and looks at each camera frame. If the camera
    can't be opened, type the number from the sticker instead. */
-const kitTagOf = (t) => (String(t || "").match(/SITEHQ\s+(T-\d+)/) || [])[1] || "";
+const kitTagOf = (t) => (String(t || "").match(/SITEHQ\s+([TV]-\d+)/) || [])[1] || "";
 let kitJsQrP = null;
 function kitLoadJsQr() {
   if (window.jsQR) return Promise.resolve();
@@ -249,7 +199,8 @@ async function kitReader() {
     return (r && r.data) || "";
   };
 }
-async function kitScan() {
+/* onTag(number) is called with the sticker's number once one is read */
+async function kitScan(onTag) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     toast("Type the number from the sticker (e.g. T-004) in the box");
     if ($("kit-q")) $("kit-q").focus();
@@ -283,7 +234,7 @@ async function kitScan() {
         const tag = kitTagOf(t);
         if (tag) {
           stop();
-          kitView(tag);
+          (onTag || qrsOwnerOpen)(tag);
           return;
         }
         if (t && t !== other) {
