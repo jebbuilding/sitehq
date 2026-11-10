@@ -50,6 +50,7 @@ import {
 } from "../sites/job-sheets.js";
 import { docPath } from "../sites/plans-specs.js";
 import { same } from "../sites/project-pages.js";
+import { sqMap } from "../sites/snag-quick.js";
 import { siteClient } from "../sites/summary.js";
 import { typeFor } from "../sites/trade-sites.js";
 export { DWS, jobDraft, jobsView, myName, openJob, openJobEditor, renderJobDetail, siteFilePicker };
@@ -5041,7 +5042,7 @@ function renderJobDetail() {
         const ph = x.photos || [];
         return `<div class="jtask ${x.done ? "done" : ""}" data-t="${esc(t.id)}">
         <label class="jcheck"><input type="checkbox" class="j-tick" ${x.done ? "checked" : ""} ${j.status === "closed" ? "disabled" : ""} aria-label="Done: ${esc(t.text)}"></label>
-        <div class="jbody"><div class="jtext"><span class="jnum">${i + 1}</span>${esc(t.text)}</div>
+        <div class="jbody"><div class="jtext"><span class="jnum">${i + 1}</span>${esc(t.text)}</div>${t.det ? `<div class="sub">${esc(t.det)}</div>` : ""}${t.pin && owner && j.site ? `<button type="button" class="pillbtn sq-pinbtn" style="align-self:flex-start">📍 Show on the drawing</button>` : ""}
           ${t.refPhoto ? `<div class="thumbs"><img src="${blobUrl(t.refPhoto)}" alt="Reference photo" class="j-img" data-id="${esc(t.refPhoto)}"><span class="who" style="align-self:center">Reference photo</span></div>` : ""}
           ${x.done ? `<div class="who">Done by ${esc(x.byName || "someone")} · ${stamp(x.at)}</div>` : x.byName ? `<div class="who">Last updated by ${esc(x.byName)} · ${stamp(x.at)}</div>` : ""}
           ${x.note ? `<div class="sub" style="white-space:pre-line">${esc(x.note)}</div>` : ""}
@@ -5059,6 +5060,7 @@ function renderJobDetail() {
     if (add) add.onclick = () => openTaskExtra(j, t);
   });
   vb.querySelectorAll(".j-img").forEach((im) => (im.onclick = () => openPhotoFull(im.dataset.id)));
+  vb.querySelectorAll(".sq-pinbtn").forEach((b) => (b.onclick = () => sqMap(j.site)));
   vb.querySelectorAll(".kd-row").forEach(
     (b) =>
       (b.onclick = () => {

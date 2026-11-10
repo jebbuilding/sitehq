@@ -34,6 +34,7 @@ import { dropPin } from "./maps-pins.js";
 import { RAMS_SIGN, docPath, docRow, wireDocs } from "./plans-specs.js";
 import { QRSITE } from "./qr-sign-in.js";
 import { sdiHtml, sdiWire } from "./site-diary.js";
+import { sqMap, sqOpen } from "./snag-quick.js";
 import { arcWhy, siteArchive, siteRestore, storageHtml, wireStorage } from "./storage.js";
 import { siteTiles } from "./tiles.js";
 import { folderIcon, openDoc } from "./trade-sites.js";
@@ -182,7 +183,7 @@ function ownerProjects() {
     P.dates = `<div class="day"><div class="dayh"><span>Key dates</span><button type="button" class="pillbtn" id="pj-kd" style="padding:4px 10px;font-size:12.5px">+ Add key dates</button></div>${kd.length ? keyTimeline(kd, true) : '<div class="nothing">No key dates for this site yet.</div>'}</div>`;
   }
   const sj = S.jobs.filter((j) => same(j.site, site));
-  P.jobs = `<div class="day"><div class="dayh"><span>Job sheets and snag lists</span><span class="sum">${sj.length}</span></div>${sj.length ? sj.map((j) => jobCard(j, true)).join("") : '<div class="nothing">None for this site yet. Create one in the Jobs tab.</div>'}</div>`;
+  P.jobs = `<div class="actions"><button type="button" class="btn primary" id="sq-new2">📸 Snag</button><button type="button" class="btn" id="sq-map">🗺 Snags on drawings</button></div><div class="day"><div class="dayh"><span>Job sheets and snag lists</span><span class="sum">${sj.length}</span></div>${sj.length ? sj.map((j) => jobCard(j, true)).join("") : '<div class="nothing">None for this site yet. Create one in the Jobs tab.</div>'}</div>`;
   P.induction = `<div class="day"><div class="dayh"><span>Site induction</span></div>${indSectionWithId(site, true)}</div>`;
   const dSec = (k, title, up, empty, list) => {
     const groups = {};
@@ -310,7 +311,7 @@ function ownerProjects() {
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
   P.overview = `${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}
-    <div class="actions"><button type="button" class="btn" id="jk-open">📦 Send job details to someone not on the app</button></div>
+    <div class="actions"><button type="button" class="btn" id="sq-new">📸 Snag</button><button type="button" class="btn" id="jk-open">📦 Send job details to someone not on the app</button></div>
     <div class="totals"><div class="tot"><div class="n">${hrs(sumH(ts, () => true))}</div><div class="l">Timesheet hours</div></div><div class="tot hi"><div class="n">${hrs(sumH(extra, () => true))}</div><div class="l">Extra work hours</div></div><div class="tot"><div class="n">${people.length}</div><div class="l">People worked here</div></div></div>
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
     <div class="folders">${T.slice(1)
@@ -354,6 +355,9 @@ function ownerProjects() {
   wireSiteSum(site);
   if ($("mkrams")) $("mkrams").onclick = () => ramsMaker(site);
   if ($("jk-open")) $("jk-open").onclick = () => jkOpen(site);
+  if ($("sq-new")) $("sq-new").onclick = () => sqOpen(site);
+  if ($("sq-new2")) $("sq-new2").onclick = () => sqOpen(site);
+  if ($("sq-map")) $("sq-map").onclick = () => sqMap(site);
   if ($("sj-edit")) $("sj-edit").onclick = () => editSiteJob(site);
   if ($("sj-perm")) $("sj-perm").onclick = () => editSiteVis(site);
   if ($("pj-site"))
