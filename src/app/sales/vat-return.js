@@ -13,7 +13,7 @@ import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { sdCalc, sdCounts, sdR2, sdSales, sdTaxYear } from "./sales-calc.js";
 import { sdImgData } from "./sales-pdf.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
-export { vtPeriodAsk, vtView };
+export { vtBoxes, vtFiled, vtName, vtPeriodAsk, vtQuarters, vtView };
 /* 🧾 VAT return (Accounts): James sets which months his VAT quarters end and whether he's on the standard or cash
    scheme. Each quarter shows the nine boxes worked out from his invoices (or the payments on them, on the cash
    scheme), bank payments and receipts – tap a box to see what's in it. He copies the figures into his filing (HMRC

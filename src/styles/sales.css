@@ -234,3 +234,16 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .vt-box .vt-n{font-weight:700;color:var(--accent)}
 .vt-box.vt-net{background:var(--soft);border-radius:8px}
 .vt-det{padding:4px 8px 10px 72px;font-size:14px}
+.csf-bars{display:grid;grid-template-columns:repeat(13,1fr);gap:4px;align-items:end;height:160px}
+.csf-col{display:flex;flex-direction:column;align-items:center;height:100%;gap:2px}
+.csf-col small{font-size:10px;color:var(--muted,#888);white-space:nowrap}
+.csf-col.low small{color:var(--danger);font-weight:700}
+.csf-pair{flex:1;display:flex;gap:2px;align-items:flex-end;width:100%;justify-content:center}
+.csf-pair i{display:block;width:40%;border-radius:2px 2px 0 0;min-height:1px}
+.csf-in{background:#2e7d32}
+.csf-out{background:var(--danger)}
+.csf-w{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;width:100%;text-align:left;padding:10px 4px;min-height:44px;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;cursor:pointer}
+.csf-w.neg b{color:var(--danger)}
+.csf-in-t{color:#2e7d32}
+.csf-out-t{color:var(--danger)}
+.csf-det{padding:0 4px 10px 16px;font-size:14px}

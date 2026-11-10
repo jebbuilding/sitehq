@@ -10,7 +10,7 @@ import { acLinkRcpt, acReceipts, acSaveRcpt } from "./acct-receipts.js";
 import { cisBill, cisBillCalc } from "./cis-bill.js";
 import { sdCalc, sdCounts, sdDueDate, sdNo, sdR2, sdSales, sdSaveRec } from "./sales-calc.js";
 import { sdEdit, sdPayment } from "./sales-edit.js";
-export { adOver, adOwedIn, adView };
+export { adOver, adOwedIn, adOwedOut, adView };
 /* Like the "Invoices owed to you" and "Bills to pay" panels in accounting packages: everything not paid yet, by how
    overdue it is (not due yet, 1–30, 31–60, 61–90, over 90 days), with the action beside each – record a payment
    or chase it (an email ready to send) for your invoices; mark paid for bills on account and trades' invoices; CIS

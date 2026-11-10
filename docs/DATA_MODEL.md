@@ -74,7 +74,7 @@ Subcollections (`TR_COLLS`):
 | `rfq` | a request for prices to several merchants (`todos/rfq-*`): `site`, `title`, `lines` [{ `d`, `q`, `u` }], `sups` [merchant ids], `prices` { merchant: { line index: £ each } }, `sentAt` { merchant: time }, `ordered`; orders made from it carry `rfq` |
 | `sitediary` | James's note for one day on one site (`todos/sdi-{site slug}-{date}`): `site`, `date`, `note`, `weather` (saved with the note), `byName`, `updated`. The rest of the day (sign-ins, work, ticks, photos) is read from the existing records, not copied |
 | `programme` | a job's programme (`todos/prog-{site slug}`): `site`, `start`, `toClient`, `stages` [{ `id`, `name`, `days` (working days), `after` (an earlier stage id), `link` (end / with), `lag` (delay days), `fix`, `done`, `actFrom`, `actTo`, `base` { first planned `from`, `to` } }]. Each stage is a `plan/prg-{slug}-{stage}` entry (`progId`, `stageId`); the client's copy is `portal/{uid}.programme` |
-| `vatreturn` | a VAT quarter marked filed (`todos/vat-{to}`): `from`, `to`, `boxes` {1–9} as sent, `scheme`, `filedOn`, `ref`. The quarter months and scheme are `vatEnds` ("1"/"2"/"3": the month of the first quarter end) and `vatScheme` (standard / cash) on the `acct` record |
+| `vatreturn` | a VAT quarter marked filed (`todos/vat-{to}`): `from`, `to`, `boxes` {1–9} as sent, `scheme`, `filedOn`, `ref`. The quarter months and scheme are `vatEnds` ("1"/"2"/"3": the month of the first quarter end) and `vatScheme` (standard / cash) on the `acct` record; the 📈 Cash flow's own lines are `cashLines` [{ `id`, `date`, `what`, `amt` (+ in, − out) }] there too |
 | `training` | owner training records |
 
 ## Shared collections
