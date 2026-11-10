@@ -5,10 +5,11 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
+import { leaveCard, pbPending, wireLeave } from "./board.js";
 import { leaveOf } from "./time-off.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { empTypeOf } from "../sites/job-details.js";
-export { holCardHtml, holOwnerHtml, holWire };
+export { holCardHtml, holOwnerHtml, holTeamHtml, holTeamWire, holWire };
 /* Employees see a 🌴 My holidays card on their planner: how many days they get this holiday year, how many they've
    taken, how many are booked (approved, still to come), how many are waiting for an answer, and how many are left –
    with the bank holidays, and their holidays listed. James sets the holiday year (when it starts), the usual
@@ -196,4 +197,23 @@ function holSettings() {
     },
     "hol-days",
   );
+}
+/* the team page: holiday requests waiting for an answer (with what each person has left), then everyone's figures */
+function holTeamHtml() {
+  const pending = pbPending();
+  return `<section class="card hol-team"><div class="cardbody"><b>🌴 Holiday requests${pending.length ? ` <span class="badge">${pending.length}</span>` : ""}</b>
+    ${
+      pending.length
+        ? pending
+            .map((l) => {
+              const s = holAllow(l.who) ? holSum(l.who, S.data.signoffs[l.who], l.from) : null;
+              return `${leaveCard(l, true)}${s ? `<div class="who hol-after">${esc(nameOf(l.who))} has ${holN(s.left)} day${s.left === 1 ? "" : "s"} left in that holiday year before this (${holN(holDays(l, s.Y.from, s.Y.to))} day${holDays(l, s.Y.from, s.Y.to) === 1 ? "" : "s"})${s.left - holDays(l, s.Y.from, s.Y.to) < 0 ? ' – <b class="hol-neg">this would take them over</b>' : ""}.</div>` : ""}`;
+            })
+            .join("")
+        : `<div class="nothing">No holiday requests waiting.</div>`
+    }</div></section>${holOwnerHtml()}`;
+}
+function holTeamWire() {
+  wireLeave(true, $("main"));
+  holWire();
 }

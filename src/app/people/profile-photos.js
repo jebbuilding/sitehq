@@ -23,6 +23,7 @@ import {
 import { openPromptSender, remindersPanel, wireReminders } from "./reminders.js";
 import { SUBAG } from "./subcontractor-agreement.js";
 import { loadImage } from "../photos/photos.js";
+import { holTeamHtml, holTeamWire } from "../planner/holidays.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dayFor, openMyDay } from "../timesheets/working-day.js";
 export { avatarHtml, myDetailsView, peopleView, personPhoto };
@@ -448,4 +449,7 @@ function peopleView() {
     );
     csvSave("Team details.csv", r);
   };
+  /* holiday requests waiting for an answer, and everyone's holidays */
+  $("main").insertAdjacentHTML("afterbegin", holTeamHtml());
+  holTeamWire();
 }

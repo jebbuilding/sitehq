@@ -61,15 +61,18 @@ export {
   answerLeave,
   keyDatesFor,
   keyTimeline,
+  leaveCard,
   openKeyDates,
   openPlanEditor,
   openPlanView,
   pbEntryDays,
+  pbPending,
   pbPlanWeek,
   pbSiteOf,
   pbSiteShort,
   plannerView,
   siteHue,
+  wireLeave,
 };
 const PB_HUES = [210, 150, 25, 285, 0, 190, 60, 330, 110, 245];
 function siteHue(site) {

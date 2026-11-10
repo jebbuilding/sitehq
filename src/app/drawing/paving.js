@@ -31,7 +31,7 @@ import { cbsDraw, cbsIs, cbsPlan } from "./cupboard-shapes.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
-import { hs3View } from "./house-3d.js";
+import { hrView } from "./house-render.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
 import { rwDialog, rwElev, rwNotes, rwSection } from "./retaining-wall.js";
 import {
@@ -6834,6 +6834,9 @@ async function openNotePage(opts) {
     upper: "same",
     finish: "brick",
     win: "casement",
+    cover: "slate",
+    frames: "white",
+    doorCol: "grey",
   };
   const elevSet = () => Object.assign({}, ELEV_DEF, doc.elevSet || {});
   function elevModel(objs) {
@@ -7274,6 +7277,31 @@ async function openNotePage(opts) {
         ],
         st.win,
       )}</label></div>
+      <div class="grid2"><label>Roof covering${sel(
+        "el-cover",
+        [
+          ["slate", "Natural slate"],
+          ["red", "Red clay tiles"],
+          ["brown", "Brown concrete tiles"],
+        ],
+        st.cover,
+      )}</label><label>Window and fascia colour${sel(
+        "el-frames",
+        [
+          ["white", "White"],
+          ["anthracite", "Anthracite grey"],
+        ],
+        st.frames,
+      )}</label></div>
+      <label>Front door${sel(
+        "el-door",
+        [
+          ["grey", "Grey"],
+          ["oak", "Oak"],
+          ["red", "Red"],
+        ],
+        st.doorCol,
+      )}</label>
       <div class="dimbtns"><button type="button" class="btn el-3d"${B ? "" : " disabled"}>🧊 3D view</button><button type="button" class="btn primary el-all"${B ? "" : " disabled"}>📐 Draw the elevations</button><button type="button" class="btn el-x">Close</button></div></div>`;
     document.body.appendChild(d);
     const save = () => {
@@ -7286,6 +7314,9 @@ async function openNotePage(opts) {
         upper: $("el-up").value,
         finish: $("el-fin").value,
         win: $("el-win").value,
+        cover: $("el-cover").value,
+        frames: $("el-frames").value,
+        doorCol: $("el-door").value,
       };
       dirty = true;
     };
@@ -7301,7 +7332,7 @@ async function openNotePage(opts) {
     d.querySelector(".el-3d").onclick = () => {
       save();
       d.remove();
-      hs3View(elevBuild());
+      hrView(elevBuild());
     };
   }
   /* fitted cupboards and wardrobes: a new page with the views and the cutting list */
