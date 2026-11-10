@@ -12,8 +12,10 @@ export {
   isNetErr,
   newId,
   obOpen,
+  obPending,
   outboxBanner,
   refreshOutbox,
+  saveOrKeep,
   sentToast,
   sphotoPut,
   sphotoWanted,
@@ -96,6 +98,21 @@ async function runJob(j) {
       if (j.qid) await obPut(j);
     }
   }
+  if (j.write) {
+    /* a record saved as it is: each file's id goes where f.field says, e.g. "deliveries.2.photo" */
+    for (const f of j.files || []) {
+      const ks = String(f.field).split(".");
+      let o = d;
+      ks.slice(0, -1).forEach((k) => {
+        o[k] = Array.isArray(o[k]) ? o[k].slice() : Object.assign({}, o[k]);
+        o = o[k];
+      });
+      o[ks[ks.length - 1]] = f.id;
+    }
+    const ref = S.db.doc(j.write.path);
+    await withTimeout(j.write.op === "update" ? ref.update(d) : ref.set(d), 20000);
+    return;
+  }
   for (const f of j.files || []) {
     if (f.field === "photos") d.photos = (d.photos || []).concat([f.id]);
     else {
@@ -149,7 +166,7 @@ async function submitJob(j) {
   if (navigator.onLine === false) {
     j.qid = newId();
     await obPut(j);
-    refreshOutbox();
+    await refreshOutbox();
     const pq = promptForJob(j);
     if (pq[0]) autoClearPrompts(pq[0], pq[1]);
     return "queued";
@@ -164,12 +181,23 @@ async function submitJob(j) {
     if (isNetErr(e)) {
       j.qid = newId();
       await obPut(j);
-      refreshOutbox();
+      await refreshOutbox();
       if (pf[0]) autoClearPrompts(pf[0], pf[1]);
       return "queued";
     }
     throw e;
   }
+}
+/* save a record now or, with no signal, keep it on this device and send it when there is. op is "set" or "update";
+   files are [{blob, name, field}], uploaded first, each id put into the record at field. Gives "sent" or "queued". */
+/* a record as it will be once what's waiting to send has gone: its queued writes laid over it (so a list redrawn
+   from the last copy the database sent still shows them) */
+function obPending(path, rec) {
+  const js = (S.outbox || []).filter((j) => j.write && j.write.path === path);
+  return js.length ? js.reduce((r, j) => Object.assign({}, r, j.data), rec) : rec;
+}
+function saveOrKeep(path, op, data, label, files) {
+  return submitJob({ write: { path, op }, data, label, files: files || [] });
 }
 async function refreshOutbox() {
   S.outbox = await obAll();
@@ -196,7 +224,8 @@ async function flushOutbox() {
   }
 }
 const jobLabel = (j) =>
-  (({
+  j.label ||
+  ({
     entries: j.data.type === "hours" ? "Timesheet" : "Job time",
     checks: "Check",
     photos: "Photo",
@@ -222,7 +251,7 @@ const jobLabel = (j) =>
     msgs: "Message",
     visitinds: "Induction",
     profile: "Your details",
-  })[j.coll] || "Item") + (j.data.date ? " · " + shortDay(j.data.date) : "");
+  }[j.coll] || "Item") + (j.data.date ? " · " + shortDay(j.data.date) : "");
 function outboxBanner() {
   if (!S.outbox || !S.outbox.length) return "";
   return `<div class="notice warn"><b>${S.outbox.length} item${S.outbox.length === 1 ? "" : "s"} waiting to send.</b> ${navigator.onLine === false ? "You have no signal right now." : "The connection dropped."} They're saved on this phone and will send when you have signal. Don't clear this browser's data.

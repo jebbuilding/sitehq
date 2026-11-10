@@ -3,7 +3,7 @@ import { $, esc, gbp, iso, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { newId } from "../files/outbox.js";
+import { newId, obPending, saveOrKeep } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { supMaster } from "./suppliers.js";
@@ -14,7 +14,7 @@ import { sdR2 } from "../sales/sales-calc.js";
 import { sdShareMail } from "../sales/sales-email.js";
 import { sdImgData, sdLongDate } from "../sales/sales-pdf.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
-export { plSupName, plView, poAll, poOrdersSheet, poPdf, poPriceSheet, poSave };
+export { plSupName, plView, poAll, poOrdersSheet, poPdf, poPriceSheet, poSave, poSaveOrKeep };
 /* Owner-private (prices are never sent to trades, unlike the merchant records):
    - todos/pl-<merchant id> (kind "pricelist"): { sup, items: [{ n (item), u (unit), p (£ before VAT) }], updated }
    - todos/po-<id> (kind "purchaseorder"): { number (PO1…), site, sup, supName, lines: [{ d, q, u, p }], net, status
@@ -383,7 +383,9 @@ function poPriceSheet(lines, site0) {
 }
 /* ---------- orders ---------- */
 const poAll = () =>
-  (S.purchaseOrders || []).slice().sort((a, b) => (b.created || 0) - (a.created || 0));
+  (S.purchaseOrders || [])
+    .map((o) => obPending("todos/" + o.id, o))
+    .sort((a, b) => (b.created || 0) - (a.created || 0));
 async function poSave(o) {
   const rec = Object.assign({}, o, { kind: "purchaseorder", updated: Date.now() });
   const id = rec.id || "po-" + newId();
@@ -399,6 +401,22 @@ async function poSave(o) {
   /* keep the list up to date before the database answers, so numbers don't repeat */
   S.purchaseOrders = (S.purchaseOrders || []).filter((x) => x.id !== id).concat([out]);
   return out;
+}
+/* the same, for an order that already exists (a delivery ticked off on site): kept on the device if there's no signal */
+async function poSaveOrKeep(o, files) {
+  const rec = Object.assign({}, o, { kind: "purchaseorder", updated: Date.now() });
+  const id = rec.id;
+  delete rec.id;
+  const sent = await saveOrKeep(
+    "todos/" + id,
+    "set",
+    rec,
+    "Delivery · " + (rec.number || ""),
+    files,
+  );
+  const out = Object.assign({ id }, rec);
+  S.purchaseOrders = (S.purchaseOrders || []).filter((x) => x.id !== id).concat([out]);
+  return { out, sent };
 }
 function poOrdersSheet(orders) {
   openSheet(

@@ -12,7 +12,7 @@ import { daysTo } from "../safety/expiry-dates.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { shrinkImage } from "../safety/training.js";
 import { empTypeOf } from "../sites/job-details.js";
-export { cmpDueItems, cmpPage };
+export { cmpDueItems, cmpEdit, cmpPage };
 /* 🏢 on the team page. Companies James adds (todos/firm-*, owner-only): name, trades, contact, phone, email, address,
    website, company, VAT and UTR numbers, CIS (gross, 20% or 30%), public and employer's liability insurance with the
    date it runs out, qualifications and schemes, day rate, notes, the insurance certificate and other documents, and

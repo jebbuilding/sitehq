@@ -5,9 +5,9 @@ import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { openViewer } from "../core/viewer.js";
 import { isSketch } from "../drawing/trade-drawings.js";
-import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
+import { blobUrl, uploadErr } from "../files/files.js";
 import { getFileBlob, loadPdfJs } from "../files/in-app-files.js";
-import { newId } from "../files/outbox.js";
+import { newId, obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { shrinkImage } from "../safety/training.js";
@@ -134,11 +134,8 @@ function sqOpen(site) {
       $("f-save").disabled = true;
       $("f-save").textContent = "Sending…";
       try {
-        let refPhoto = null;
-        if (SQ.photo) {
-          const small = await shrinkImage(SQ.photo, 1600);
-          refPhoto = (await uploadFile(small, "snag.jpg")).id;
-        }
+        const small = SQ.photo ? await shrinkImage(SQ.photo, 1600) : null;
+        const refPhoto = null;
         const dw = dws.find((d) => d.k === SQ.dwg);
         const pin = dw && SQ.pin ? { dwg: dw.k, title: dw.title, x: SQ.pin.x, y: SQ.pin.y } : null;
         const task = {
@@ -149,19 +146,37 @@ function sqOpen(site) {
           pin,
         };
         const who = SQ.who;
-        const list = (S.jobs || []).find(
-          (j) =>
-            j.kind === "snag" &&
-            j.status !== "closed" &&
-            same(j.site, site) &&
-            (who
-              ? (j.assignees || []).length === 1 && j.assignees[0] === who
-              : !(j.assignees || []).length),
-        );
+        const list = (S.jobs || [])
+          .map((j) => obPending("jobs/" + j.id, j))
+          .find(
+            (j) =>
+              j.kind === "snag" &&
+              j.status !== "closed" &&
+              same(j.site, site) &&
+              (who
+                ? (j.assignees || []).length === 1 && j.assignees[0] === who
+                : !(j.assignees || []).length),
+          );
+        let r;
         if (list) {
-          await S.db
-            .doc("jobs/" + list.id)
-            .update({ tasks: (list.tasks || []).concat([task]), updated: Date.now() });
+          const tasks = (list.tasks || []).concat([task]);
+          r = await saveOrKeep(
+            "jobs/" + list.id,
+            "update",
+            { tasks, updated: Date.now() },
+            "Snag",
+            small
+              ? [
+                  {
+                    blob: small,
+                    name: "snag.jpg",
+                    field: "tasks." + (tasks.length - 1) + ".refPhoto",
+                  },
+                ]
+              : [],
+          );
+          /* the next snag adds to this list too, even before it has sent */
+          list.tasks = tasks;
         } else {
           const data = {
             kind: "snag",
@@ -177,10 +192,19 @@ function sqOpen(site) {
             created: Date.now(),
             updated: Date.now(),
           };
-          await S.db.doc("jobs/" + newId()).set(data);
+          const id = newId();
+          r = await saveOrKeep(
+            "jobs/" + id,
+            "set",
+            data,
+            "Snag",
+            small ? [{ blob: small, name: "snag.jpg", field: "tasks.0.refPhoto" }] : [],
+          );
+          if (r === "queued") S.jobs = (S.jobs || []).concat([Object.assign({ id }, data)]);
         }
         closeForm();
-        toast(who ? "Snag sent to " + nameOf(who) : "Snag saved – not sent to anyone yet");
+        if (r === "queued") sentToast(r, "Snag");
+        else toast(who ? "Snag sent to " + nameOf(who) : "Snag saved – not sent to anyone yet");
         render();
       } catch (e) {
         $("f-save").disabled = false;

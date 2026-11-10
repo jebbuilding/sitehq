@@ -348,7 +348,7 @@ function renderClient() {
   ]
     .concat(coOn || cpols.length ? [["about", "🏢 About us & policies"]] : [])
     /* the parts James lets clients see (Setup › Client portal) */
-    .filter(([k]) => pvOn(k, C._preview ? (PT.mgr && PT.mgr.uid) || "" : S.me));
+    .filter(([k]) => pvOn(k, C._preview ? (PT.mgr && PT.mgr.uid) || "" : S.me, C.access));
   const tab = tabs.some(([k]) => k === PT.tab) ? PT.tab : "home";
   let html = `<div class="seg ptabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
   if (tab === "home") {

@@ -4,10 +4,10 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { openViewer } from "../core/viewer.js";
-import { uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
+import { sentToast } from "../files/outbox.js";
 import { rfqListHtml, rfqWireList } from "./price-ask.js";
-import { plSupName, poAll, poOrdersSheet, poPdf, poSave } from "./price-order.js";
+import { plSupName, poAll, poOrdersSheet, poPdf, poSave, poSaveOrKeep } from "./price-order.js";
 import { supMaster } from "./suppliers.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { shrinkImage } from "../safety/training.js";
@@ -197,19 +197,30 @@ function pordDelivery(o) {
       if (!Object.keys(g).length) return showErr("Nothing came? Put how many of each arrived");
       $("f-save").disabled = true;
       try {
-        let ph = "";
-        if (photo) ph = (await uploadFile(await shrinkImage(photo, 1600), "delivery-note.jpg")).id;
+        const small = photo ? await shrinkImage(photo, 1600) : null;
         const d = {
           date: $("pord-dd").value || iso(new Date()),
           got: g,
           note: $("pord-note").value.trim(),
-          photo: ph,
+          photo: "",
         };
-        const o2 = await poSave(
-          Object.assign({}, o, { deliveries: (o.deliveries || []).concat([d]) }),
+        const dels = (o.deliveries || []).concat([d]);
+        const { out: o2, sent } = await poSaveOrKeep(
+          Object.assign({}, o, { deliveries: dels }),
+          small
+            ? [
+                {
+                  blob: small,
+                  name: "delivery-note.jpg",
+                  field: "deliveries." + (dels.length - 1) + ".photo",
+                },
+              ]
+            : [],
         );
         closeForm();
-        toast(pordStatus(o2) === "got" ? "Everything's arrived" : "Saved – some still to come");
+        if (sent === "queued") sentToast(sent, "Delivery");
+        else
+          toast(pordStatus(o2) === "got" ? "Everything's arrived" : "Saved – some still to come");
         render();
       } catch (e) {
         $("f-save").disabled = false;

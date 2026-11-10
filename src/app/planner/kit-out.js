@@ -3,6 +3,7 @@ import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, siteNames } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
+import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { KINDS } from "../safety/checklists.js";
@@ -19,6 +20,7 @@ const KIT_KINDS = ["machine", "ladder", "digger", "trailer"];
 const kitAll = () =>
   (S.equipment || [])
     .filter((e) => KIT_KINDS.includes(e.kind))
+    .map((e) => obPending("equipment/" + e.id, e))
     .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 const kitWhere = (e) =>
   e.out && (e.out.who || e.out.site)
@@ -134,12 +136,14 @@ function kitBook(e) {
           out: { who, site, at: now, note: $("kit-note").value.trim() },
           kitLog: (e.kitLog || []).concat([{ at: now, act: "out", who, site }]).slice(-100),
         };
-        await S.db.doc("equipment/" + e.id).update(up);
+        const r = await saveOrKeep("equipment/" + e.id, "update", up, "Booked out: " + e.name);
         Object.assign(e, up);
         closeForm();
-        toast(
-          `${e.name} booked out to ${[who ? nameOf(who) : "", site].filter(Boolean).join(" at ")}`,
-        );
+        if (r === "queued") sentToast(r, "Booking out");
+        else
+          toast(
+            `${e.name} booked out to ${[who ? nameOf(who) : "", site].filter(Boolean).join(" at ")}`,
+          );
         kitView();
       } catch (er) {
         showErr("Couldn't save – check your connection");
@@ -155,9 +159,10 @@ async function kitBack(e) {
       out: null,
       kitLog: (e.kitLog || []).concat([{ at: Date.now(), act: "in" }]).slice(-100),
     };
-    await S.db.doc("equipment/" + e.id).update(up);
+    const r = await saveOrKeep("equipment/" + e.id, "update", up, "Back in: " + e.name);
     Object.assign(e, up);
-    toast(e.name + " back in the yard");
+    if (r === "queued") sentToast(r, "Booking in");
+    else toast(e.name + " back in the yard");
     kitView();
   } catch (er) {
     toast("Couldn't save");

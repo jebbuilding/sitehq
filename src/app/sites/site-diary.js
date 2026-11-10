@@ -14,6 +14,7 @@ import {
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
+import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { BRGB, photoTile, photoViewer } from "../photos/photos.js";
@@ -41,7 +42,12 @@ const sdiSlug = (s) =>
     .replace(/^-|-$/g, "")
     .slice(0, 40);
 const sdiId = (site, date) => "sdi-" + sdiSlug(site) + "-" + date;
-const sdiRec = (site, date) => (S.siteDiary || []).find((r) => r.id === sdiId(site, date)) || null;
+const sdiRec = (site, date) => {
+  const id = sdiId(site, date);
+  const r = (S.siteDiary || []).find((x) => x.id === id) || null;
+  const q = obPending("todos/" + id, r);
+  return q && Object.assign({ id }, q);
+};
 function sdiWx(site, date) {
   const f = wpDays(site);
   const d = f && f.by[date];
@@ -155,12 +161,15 @@ function sdiWire(site) {
         updated: Date.now(),
       };
       try {
-        await S.db.doc("todos/" + sdiId(site, cur)).set(rec);
+        const r = await saveOrKeep("todos/" + sdiId(site, cur), "set", rec, "Diary note");
         const r2 = Object.assign({ id: sdiId(site, cur) }, rec);
         const i = (S.siteDiary || []).findIndex((x) => x.id === r2.id);
         if (i >= 0) S.siteDiary[i] = r2;
         else S.siteDiary = (S.siteDiary || []).concat([r2]);
-        toast("Diary note saved");
+        if (r === "queued") {
+          sentToast(r, "Diary note");
+          render();
+        } else toast("Diary note saved");
       } catch (e) {
         toast("Couldn't save – check your connection");
       }

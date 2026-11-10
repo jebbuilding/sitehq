@@ -2,22 +2,28 @@
 import { viewClient } from "../clients/quick-enquiry.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, siteNames } from "../core/state.js";
-import { render } from "../core/tabs-week.js";
+import { OWN_TABS, render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
 import { drawOpen, myDrawings } from "../drawing/drawings-tab.js";
 import { nameOf, teamIds } from "./owner.js";
+import { NL_SUBS } from "./today.js";
+import { cmpEdit } from "../people/companies.js";
 import { openDetails } from "../people/personal-details.js";
+import { eqmView } from "../planner/plant-care.js";
 import { openSupplier } from "../purchasing/suppliers.js";
 import { openJob } from "../survey/door-window-survey.js";
 export { searchOpen };
 /* Opened from the 🔍 button in the header, or the search box on Today. Looks only at what is already loaded in the
    app (nothing is sent anywhere). Every word typed has to match; a result opens the same page its tab would. */
 const SR_KINDS = [
+  ["page", "Pages"],
   ["client", "Clients"],
   ["site", "Sites"],
   ["job", "Jobs"],
   ["person", "People"],
   ["merchant", "Merchants"],
+  ["firm", "Companies & self-employed"],
+  ["kit", "Vehicles, plant & tools"],
   ["drawing", "Drawings"],
   ["todo", "To-dos"],
 ];
@@ -51,6 +57,46 @@ function srFind(q) {
     return words.every((w) => t.includes(w));
   };
   const out = [];
+  /* the app's own pages, by name ("vat", "cash flow", "vans") */
+  OWN_TABS.forEach(([t, l]) => {
+    if (hit(l, t)) out.push({ k: "page", label: l, sub: "Page", go: () => srGoTab(t) });
+  });
+  NL_SUBS.forEach((s) => {
+    if (hit(s[1], s[4]))
+      out.push({
+        k: "page",
+        label: s[1],
+        sub: "Page",
+        go: () => {
+          closeViewer();
+          s[5]();
+        },
+      });
+  });
+  (S.firms || []).forEach((f) => {
+    if (hit(f.name, f.trades, f.contact, f.phone))
+      out.push({
+        k: "firm",
+        label: f.name || "Company",
+        sub: [f.trades, f.contact, f.phone].filter(Boolean).join(" · "),
+        go: () => {
+          closeViewer();
+          cmpEdit(f);
+        },
+      });
+  });
+  (S.equipment || []).forEach((e) => {
+    if (hit(e.name, e.reg, e.tag, e.make, e.model))
+      out.push({
+        k: "kit",
+        label: e.name || "Equipment",
+        sub: [e.reg, e.tag].filter(Boolean).join(" · ") || "Vehicles & plant",
+        go: () => {
+          closeViewer();
+          eqmView();
+        },
+      });
+  });
   (S.clients || []).forEach((c) => {
     if (hit(c.name, c.address, c.postcode, c.phone, c.email, c.site))
       out.push({

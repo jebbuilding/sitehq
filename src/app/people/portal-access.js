@@ -7,7 +7,9 @@ export { pvOn, pvView };
 /* Kept in settings/app as portalAccess: { tabs: { key: false } (parts switched off for every client),
    clients: { uid: { key: true|false } } (where one client differs from everyone) }. Nothing set = clients see
    every part, as before. Home is always there. Each change is written to the deletion record (audit). Clients'
-   apps read settings/app, so the portal follows it straight away. */
+   apps read settings/app, so the portal follows it straight away. A copy of what each client may see is also put
+   in their own portal record (portal/{uid}.access: { key: true|false }), for hosting where clients can read only
+   their own portal and not settings/app. */
 const PV_PARTS = [
   ["story", "📖 Job story", "price agreed, invoiced, paid, and the timeline"],
   ["photos", "📷 Photos", "progress photos you share"],
@@ -21,8 +23,9 @@ const PV_PARTS = [
 ];
 const pvAccess = () => (S.settings || {}).portalAccess || {};
 /* is this part of the portal on for this client (uid)? */
-function pvOn(k, uid) {
+function pvOn(k, uid, own) {
   if (k === "home") return true;
+  if (!(S.settings || {}).portalAccess && own && own[k] != null) return !!own[k];
   const a = pvAccess();
   const c = uid && (a.clients || {})[uid];
   if (c && c[k] != null) return !!c[k];
@@ -87,6 +90,14 @@ async function pvSave() {
     const portalAccess = { tabs, clients, updated: Date.now() };
     await S.db.doc("settings/app").update({ portalAccess });
     S.settings = Object.assign({}, S.settings, { portalAccess });
+    for (const c of pvClients()) {
+      const access = {};
+      PV_PARTS.forEach(([k]) => (access[k] = pvOn(k, c.portalUid)));
+      await S.db
+        .doc("portal/" + c.portalUid)
+        .update({ access })
+        .catch(() => {});
+    }
     if (said.length) await auditLog("Portal access", "What clients see", said.join(" · "), null);
     toast(
       said.length ? "Saved: " + said.length + " change" + (said.length === 1 ? "" : "s") : "Saved",

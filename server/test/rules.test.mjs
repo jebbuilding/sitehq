@@ -96,6 +96,14 @@ test("client: only portal/<their id>, and nothing else at all", () => {
   expect("another client", bob, { "portal/u8": "rw", "portal/u9": "", "portal/u9/docs/d1": "" });
 });
 
+// the records added in Nov 2026 (v339–364): where each lives decides who can see it
+test("new records: owner-only ones stay owner-only, shared ones are read-only, a client's picks are theirs", () => {
+  const ownerOnly = ["todos/firm-1", "todos/rfq-1", "todos/val-1", "todos/vat-2026-09-30", "todos/sdi-x", "todos/prog-1", "todos/po-1"];
+  expect("trade", sam, Object.fromEntries(ownerOnly.map((p) => [p, ""]).concat([["plan/eqb-1", "r"], ["plan/prg-1", "r"], ["equipment/e1", "r"], ["portal/u9/picks/p1", ""]])));
+  expect("client", sue, Object.fromEntries(ownerOnly.map((p) => [p, ""]).concat([["portal/u9/picks/p1", "rw"], ["portal/u8/picks/p1", ""], ["plan/prg-1", ""], ["plan/eqb-1", ""]])));
+  expect("owner", owner, Object.fromEntries(ownerOnly.map((p) => [p, "rw"]).concat([["portal/u9/picks/p1", "rw"], ["plan/eqb-1", "rw"]])));
+});
+
 test("nobody signed in: nothing", () => {
   const paths = ["sheets/emp1", "sites/s1", "settings/app", "docs/d1", "chats/team", "msgs/team/m/a1", "todos/c1", "portal/u9", "wfiles/emp1/f/x", "data/users/owner/pin"];
   for (const who of [null, undefined, callerFor(null), callerFor({ id: "x", role: "admin" }), callerFor({ id: "", role: "owner" }), callerFor({ role: "owner" }), { id: "x", level: "god" }])

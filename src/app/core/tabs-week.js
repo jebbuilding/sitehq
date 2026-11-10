@@ -553,6 +553,14 @@ function render() {
         wireWhatsNew();
       }
     } catch (e) {}
+    const obo = outboxBanner();
+    if (obo) {
+      $("main").insertAdjacentHTML("afterbegin", obo);
+      $("ob-send").onclick = () => {
+        toast("Trying to send…");
+        flushOutbox();
+      };
+    }
   } else {
     $("h1").textContent =
       {

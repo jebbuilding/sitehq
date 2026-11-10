@@ -9,11 +9,14 @@ import { jbView } from "./jobs-desk.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
+import { holSettings } from "../planner/holidays.js";
+import { kitView } from "../planner/kit-out.js";
+import { eqmView } from "../planner/plant-care.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
-export { nlApply, nlGo, nlName, nlOn, nlOpenTab, nlSectionView, todayView };
+export { NL_SUBS, nlApply, nlGo, nlName, nlOn, nlOpenTab, nlSectionView, todayView };
 /* Switched on per device with the "✨ New look" button in the header (kept in jeb.newlook); off = the app as before.
    The old tab row stays in the page, hidden, and the section pages open a tab by pressing its button, so every tab
    behaves exactly as it does from the tab row. Layout agreed in docs/mockups/new-layout. */
@@ -88,6 +91,110 @@ const NL_GROUPS = {
     ["Company and suppliers", ["policies", "suppliers", "materials"]],
   ],
 };
+/* pages that live inside another page (an Accounts tab, a pop-up from Setup or the planner): listed on their
+   section's page under the group named, and found by search like any tab. [key, label, section, group, more words, open] */
+const NL_SUBS = [
+  [
+    "acc-gp",
+    "📨 Getting paid",
+    "money",
+    "Invoices and CIS",
+    "chase reminder statement retention owed",
+    () => nlSub("accounts", { act: "gp" }),
+  ],
+  [
+    "acc-app",
+    "🏗 Applications for payment",
+    "money",
+    "Invoices and CIS",
+    "valuation stage interim",
+    () => nlSub("accounts", { act: "app" }),
+  ],
+  [
+    "acc-due",
+    "💳 Paid / not paid",
+    "money",
+    "Invoices and CIS",
+    "bills owed due",
+    () => nlSub("accounts", { act: "due" }),
+  ],
+  [
+    "acc-cf",
+    "📈 Cash flow",
+    "money",
+    "Bank and accounts",
+    "forecast overdraft weeks ahead",
+    () => nlSub("accounts", { act: "cf" }),
+  ],
+  [
+    "acc-vat",
+    "🧾 VAT return",
+    "money",
+    "Bank and accounts",
+    "mtd hmrc quarter",
+    () => nlSub("accounts", { act: "vat" }),
+  ],
+  [
+    "acc-tx",
+    "💰 Tax to put aside",
+    "money",
+    "Bank and accounts",
+    "corporation self assessment",
+    () => nlSub("accounts", { act: "tx" }),
+  ],
+  [
+    "acc-jobs",
+    "💷 Job costs",
+    "money",
+    "Bank and accounts",
+    "profit spend per site",
+    () => nlSub("accounts", { act: "jobs" }),
+  ],
+  [
+    "veh",
+    "🚐 Vehicles & plant",
+    "jobs",
+    "Materials and tools",
+    "van mot service servicing insurance road tax due",
+    () => eqmView(),
+  ],
+  [
+    "kit",
+    "🧰 Tools & plant: who has what",
+    "jobs",
+    "Materials and tools",
+    "book out back in qr sticker equipment",
+    () => kitView(),
+  ],
+  [
+    "orders",
+    "📦 Orders & deliveries",
+    "jobs",
+    "Materials and tools",
+    "purchase order delivery price ask quote merchant",
+    () => nlSub("suppliers", { merTab: "orders" }),
+  ],
+  [
+    "portalset",
+    "🏡 What clients see on the portal",
+    "jobs",
+    "Clients",
+    "portal access choices",
+    () => nlSub("setup", { stab: "portal" }),
+  ],
+  [
+    "hols",
+    "🌴 Holiday year and allowances",
+    "people",
+    "Time and pay",
+    "leave time off bank holidays",
+    () => holSettings(),
+  ],
+];
+function nlSub(otab, f) {
+  Object.assign(S.f, f);
+  nlGo(otab);
+}
 /* what Today asks James to look at: [tab, words] – shown when that tab has a count */
 const NL_NEEDS = [
   ["clients", "New enquiries"],
@@ -399,6 +506,11 @@ function nlSectionView(k, pre) {
               (x) =>
                 `<button type="button" class="nl-row2 nl-go" data-t="${x}"><span class="nl-rl">${esc(nlTabLabel(x))}</span>${badge[x] ? `<span class="nl-new">${badge[x]} new</span>` : ""}<span class="nl-chev" aria-hidden="true">›</span></button>`,
             )
+            .join("")}${NL_SUBS.filter((s) => s[2] === sec[0] && s[3] === t)
+            .map(
+              (s) =>
+                `<button type="button" class="nl-row2 nl-sub" data-s="${s[0]}"><span class="nl-rl">${esc(s[1])}</span><span class="nl-chev" aria-hidden="true">›</span></button>`,
+            )
             .join("")}</section>`,
       )
       .join("")}</div>
@@ -406,6 +518,9 @@ function nlSectionView(k, pre) {
   $("main")
     .querySelectorAll(".nl-go, .nl-banner")
     .forEach((x) => (x.onclick = () => nlOpenTab(x.dataset.t)));
+  $("main")
+    .querySelectorAll(".nl-sub")
+    .forEach((x) => (x.onclick = () => (NL_SUBS.find((s) => s[0] === x.dataset.s) || [])[5]()));
   if ($("nl-old"))
     $("nl-old").onclick = () => {
       nlSet(false);

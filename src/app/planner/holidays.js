@@ -9,7 +9,7 @@ import { leaveCard, pbPending, wireLeave } from "./board.js";
 import { leaveOf } from "./time-off.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { empTypeOf } from "../sites/job-details.js";
-export { holCardHtml, holOwnerHtml, holTeamHtml, holTeamWire, holWire };
+export { holCardHtml, holOwnerHtml, holSettings, holTeamHtml, holTeamWire, holWire };
 /* Employees see a 🌴 My holidays card on their planner: how many days they get this holiday year, how many they've
    taken, how many are booked (approved, still to come), how many are waiting for an answer, and how many are left –
    with the bank holidays, and their holidays listed. James sets the holiday year (when it starts), the usual
