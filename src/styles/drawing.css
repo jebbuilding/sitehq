@@ -110,3 +110,6 @@ body>.dimask.cb3-sg{z-index:320}
 .np-stepsbox .np-step-here{font-size:.8em;opacity:.8;white-space:nowrap}
 .hs3-cv{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#f4f6f8}
 .dimbox.hs3{max-width:min(1040px,96vw);width:96vw}
+.el-box{max-width:min(620px,96vw)}
+.el-box label{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.el-box select,.el-box input{min-height:44px}

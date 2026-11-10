@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 203 files, 4043 KB, 103722 lines.
-- 2071 names declared at the top level (the shared scope); 1052 of them are used by a file other than the one that declares them.
+- 203 files, 4059 KB, 104231 lines.
+- 2072 names declared at the top level (the shared scope); 1052 of them are used by a file other than the one that declares them.
 - 2176 file-to-file dependencies (file A uses at least one name from file B).
 - 23 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 186 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -580,9 +580,9 @@ HATCH: standard section hatching for areas (brick, block, concrete, insulation, 
 
 ### `drawing/house-3d.js`
 
-HOUSE 3D: the walls of a plan stood up to their height, with the doors and windows, turned round on screen
+HOUSE 3D: the walls of a plan stood up, storey on storey, with the doors, windows and the roof, turned round on screen
 
-- 148 lines, 5.7 KB. Declares 3 names, 1 used elsewhere.
+- 362 lines, 11 KB. Declares 4 names, 1 used elsewhere.
 - **Used elsewhere:** `hs3View` (1)
 - **Uses names from 2 files:** `core/helpers.js` (2), `core/state.js` (1)
 - **Used by 1 files**
@@ -600,7 +600,7 @@ NOTEBOOK PAGE (OneNote-style): big zoomable page, pen tools, photos you can move
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 11550 lines, 416 KB. Declares 30 names, 11 used elsewhere.
+- 11845 lines, 426 KB. Declares 30 names, 11 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_BATHNICE` (1), `NP_NICE` (1), `NP_REAL` (1), `NP_SCX` (1), `npBath` (1), `npCanopy` (1), `npNice` (1), `setNpScx` (1)
 - **Uses names from 38 files:** `drawing/construction-details.js` (16), `drawing/room-sketch.js` (9), `drawing/walls.js` (8), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/cupboard-maker.js` (4), `drawing/retaining-wall.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `files/files.js` (3), `survey/door-window-survey.js` (3), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `photos/photos.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `drawing/house-3d.js` (1), `drawing/undo-list.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `purchasing/price-order.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sales/letterhead-setup.js` (1), `sites/summary.js` (1)
 - **Used by 19 files**

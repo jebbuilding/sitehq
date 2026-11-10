@@ -6822,9 +6822,22 @@ async function openNotePage(opts) {
       "Elevation drawn on a new page. Change the wall height in 🧮 Quantities if it isn't 2400.",
     );
   }
-  /* the whole plan: an elevation of each side on its own page, and a 3D view, from the walls, doors and windows */
-  function elevModel() {
-    const walls = doc.objs.filter(npIsWall);
+  /* the whole plan: an elevation of each side on its own page, and a 3D view, from the walls, doors and windows –
+     with the roof (gable, hipped, lean-to or flat), more than one storey, the finish and the window styles chosen in
+     🏘️'s settings (kept on the drawing as doc.elevSet) */
+  const ELEV_DEF = {
+    roof: "gable",
+    pitch: 35,
+    over: 300,
+    ridge: "auto",
+    storeys: 1,
+    upper: "same",
+    finish: "brick",
+    win: "casement",
+  };
+  const elevSet = () => Object.assign({}, ELEV_DEF, doc.elevSet || {});
+  function elevModel(objs) {
+    const walls = (objs || doc.objs).filter(npIsWall);
     if (!walls.length) return null;
     const Hmm = doc.wallH || 2400;
     const sv = surveyItems();
@@ -6843,8 +6856,8 @@ async function openNotePage(opts) {
         cuts: [],
       };
     });
-    doc.objs.filter(isOpening).forEach((o) => {
-      const r = wallOf(o);
+    (objs || doc.objs).filter(isOpening).forEach((o) => {
+      const r = wallOf(o, objs || doc.objs);
       const m = r && W.find((x) => x.w === r.w);
       if (!m) return;
       const win = o.k === "window",
@@ -6863,6 +6876,71 @@ async function openNotePage(opts) {
     });
     return { W, H: Hmm };
   }
+  /* every storey (the plan here at the bottom), the box round the building and the roof */
+  function elevBuild() {
+    const g = elevModel(doc.objs);
+    if (!g) return null;
+    const st = elevSet();
+    const FL = 300; /* the floor zone between storeys */
+    const storeys = [{ W: g.W, z: 0 }];
+    for (let s = 1; s < Math.max(1, Math.min(3, +st.storeys || 1)); s++) {
+      const up =
+        st.upper !== "same" && doc.pages[+st.upper] ? elevModel(doc.pages[+st.upper].objs) : null;
+      let W;
+      if (up) W = up.W;
+      else
+        /* the same walls; doors upstairs become windows (wide ones stay wide) */
+        W = g.W.map((x) =>
+          Object.assign({}, x, {
+            cuts: x.cuts.map((k) =>
+              k.win
+                ? Object.assign({}, k)
+                : { t1: k.t1, t2: k.t2, sill: 1050, h: 1050, win: true, mark: "" },
+            ),
+          }),
+        );
+      storeys.push({ W, z: s * (g.H + FL) });
+    }
+    const pts = g.W.flatMap((x) => [x.a, x.b]);
+    const box = {
+      x0: Math.min(...pts.map((p) => p[0])),
+      x1: Math.max(...pts.map((p) => p[0])),
+      y0: Math.min(...pts.map((p) => p[1])),
+      y1: Math.max(...pts.map((p) => p[1])),
+    };
+    /* each storey's walls run up through the floor zone to the one above */
+    storeys.forEach((s, i) => (s.h = i < storeys.length - 1 ? g.H + FL : g.H));
+    const E = storeys[storeys.length - 1].z + g.H;
+    const ax =
+      st.ridge === "x" || st.ridge === "y"
+        ? st.ridge
+        : box.x1 - box.x0 >= box.y1 - box.y0
+          ? "x"
+          : "y";
+    const span =
+      st.roof === "lean" ? box.y1 - box.y0 : ax === "x" ? box.y1 - box.y0 : box.x1 - box.x0;
+    const tn = Math.tan((Math.max(0, Math.min(70, +st.pitch || 0)) * Math.PI) / 180);
+    const rise =
+      st.roof === "flat" || st.roof === "none"
+        ? 0
+        : st.roof === "lean"
+          ? span * tn
+          : (span / 2) * tn;
+    return {
+      st,
+      storeys,
+      H: g.H,
+      box,
+      E,
+      roof: {
+        type: st.roof,
+        ax: st.roof === "lean" ? "x" : ax,
+        rise,
+        over: Math.max(0, +st.over || 0),
+      },
+      W: g.W,
+    };
+  }
   const ELEV_SIDES = [
     ["Front", [0, 1]],
     ["Back", [0, -1]],
@@ -6874,62 +6952,82 @@ async function openNotePage(opts) {
       toast("Set a scale in 📐 Paper first");
       return;
     }
-    const M = elevModel();
-    if (!M) {
+    const B = elevBuild();
+    if (!B) {
       toast("Draw the walls first (Walls & structure), with the doors and windows in them");
       return;
     }
+    const st = B.st;
     const U = toUnits,
       col = "#111111",
-      lw = pwFor(6);
+      lw = pwFor(6),
+      thin = pwFor(1),
+      grey = "#9ca3af";
     doc.pages[pg].objs = doc.objs;
     const first = doc.pages.length;
     let made = 0;
+    const R = B.roof;
     ELEV_SIDES.forEach(([name, out]) => {
-      /* looking at this side from outside: d is the way the viewer looks, r is their right */
       const d = [-out[0], -out[1]],
         r = [-d[1], d[0]];
-      const side = M.W.filter((x) => Math.abs(x.u[0] * r[0] + x.u[1] * r[1]) > 0.5);
-      if (!side.length) return;
       const X = (p) => p[0] * r[0] + p[1] * r[1],
         Z = (p) => p[0] * d[0] + p[1] * d[1];
-      const xs = side.flatMap((x) => [X(x.a), X(x.b)]);
-      const lo = Math.min(...xs),
-        hi = Math.max(...xs);
-      const x0 = Math.max(U(600), (doc.w - U(hi - lo)) / 2),
-        gy = doc.h * 0.7;
+      const all = B.storeys.flatMap((s) => s.W.map((x) => ({ x, z: s.z, h: s.h })));
+      const side = all.filter((o) => Math.abs(o.x.u[0] * r[0] + o.x.u[1] * r[1]) > 0.5);
+      if (!side.length) return;
+      const bx = [
+        [B.box.x0, B.box.y0],
+        [B.box.x1, B.box.y1],
+      ];
+      const lo = Math.min(X(bx[0]), X(bx[1])),
+        hi = Math.max(X(bx[0]), X(bx[1]));
+      const x0 = Math.max(U(600) + U(R.over), (doc.w - U(hi - lo)) / 2),
+        gy = doc.h * 0.78;
+      const P = (x, z) => [x0 + U(x - lo), gy - U(z)];
+      const L = (a, b, w, c, dash) => {
+        const o = { t: "line", a, b, c: c || col, w: w || lw };
+        if (dash) o.dash = 1;
+        objs.push(o);
+      };
       const objs = [];
-      /* furthest first, filled white, so the nearer walls cover the ones behind */
+      /* walls: furthest first, filled white, so the nearer walls cover the ones behind; the finish on each */
       side
         .slice()
         .sort(
           (p, q) =>
-            Z([(q.a[0] + q.b[0]) / 2, (q.a[1] + q.b[1]) / 2]) -
-            Z([(p.a[0] + p.b[0]) / 2, (p.a[1] + p.b[1]) / 2]),
+            Z([(q.x.a[0] + q.x.b[0]) / 2, (q.x.a[1] + q.x.b[1]) / 2]) -
+              Z([(p.x.a[0] + p.x.b[0]) / 2, (p.x.a[1] + p.x.b[1]) / 2]) || p.z - q.z,
         )
-        .forEach((x) => {
-          const xa = X(x.a) - lo,
-            xb = X(x.b) - lo;
+        .forEach(({ x, z, h }) => {
+          const xa = X(x.a),
+            xb = X(x.b);
           const l = Math.min(xa, xb),
             rr = Math.max(xa, xb);
-          objs.push({
+          const rect = {
             t: "rect",
-            a: [x0 + U(l), gy - U(x.H)],
-            b: [x0 + U(rr), gy],
+            a: P(l, z + h),
+            b: P(rr, z),
             c: col,
             w: lw,
             fill: "#ffffff",
             fa: 1,
-          });
+          };
+          if (st.finish === "render") rect.hatch = "sand";
+          objs.push(rect);
+          if (st.finish === "brick" || st.finish === "clad") {
+            const step = st.finish === "brick" ? 75 : 150;
+            for (let hh = step; hh < h; hh += step) L(P(l, z + hh), P(rr, z + hh), thin, grey);
+          }
           /* openings only show on walls whose outside faces this way */
           if (x.n[0] * out[0] + x.n[1] * out[1] < 0.5) return;
           x.cuts.forEach((k) => {
             const p1 = [x.a[0] + x.u[0] * k.t1, x.a[1] + x.u[1] * k.t1],
               p2 = [x.a[0] + x.u[0] * k.t2, x.a[1] + x.u[1] * k.t2];
-            const c1 = Math.min(X(p1), X(p2)) - lo,
-              c2 = Math.max(X(p1), X(p2)) - lo;
-            const a = [x0 + U(c1), gy - U(k.sill + k.h)],
-              b = [x0 + U(c2), gy - U(k.sill)];
+            const c1 = Math.min(X(p1), X(p2)),
+              c2 = Math.max(X(p1), X(p2));
+            const a = P(c1, z + k.sill + k.h),
+              b = P(c2, z + k.sill);
+            const wmm = c2 - c1;
             objs.push({
               t: "rect",
               a,
@@ -6939,14 +7037,39 @@ async function openNotePage(opts) {
               fill: k.win ? "#dbeafe" : "#f3f4f6",
               fa: 1,
             });
-            if (k.win)
-              objs.push({
-                t: "line",
-                a: [(a[0] + b[0]) / 2, a[1]],
-                b: [(a[0] + b[0]) / 2, b[1]],
-                c: col,
-                w: pwFor(2),
-              });
+            const mx = (a[0] + b[0]) / 2,
+              my = (a[1] + b[1]) / 2;
+            if (k.win) {
+              if (st.win === "sash") L([a[0], my], [b[0], my], pwFor(3));
+              else if (st.win === "casement") {
+                if (wmm > 700) L([mx, a[1]], [mx, b[1]], pwFor(3));
+                /* the opening light: lines to the hinge side, as drawn on elevations */
+                const r0 = wmm > 700 ? mx : b[0];
+                L([a[0], a[1]], [r0, my], thin, col, true);
+                L([a[0], b[1]], [r0, my], thin, col, true);
+              }
+              if (k.sill > 0)
+                objs.push({
+                  t: "rect",
+                  a: [a[0] - U(40), b[1]],
+                  b: [b[0] + U(40), b[1] + U(60)],
+                  c: col,
+                  w: pwFor(2),
+                });
+            } else if (wmm >= 1500) {
+              /* bi-fold or patio doors: a leaf every 700 or so */
+              const n = Math.max(2, Math.round(wmm / 750));
+              for (let i = 1; i < n; i++)
+                L(
+                  [a[0] + ((b[0] - a[0]) * i) / n, a[1]],
+                  [a[0] + ((b[0] - a[0]) * i) / n, b[1]],
+                  pwFor(3),
+                );
+            } else if (wmm >= 1100) {
+              L([mx, a[1]], [mx, b[1]], pwFor(3));
+              L([mx - U(80), my], [mx - U(40), my], pwFor(6));
+              L([mx + U(40), my], [mx + U(80), my], pwFor(6));
+            } else L([b[0] - U(120), my], [b[0] - U(60), my], pwFor(6));
             if (k.mark)
               objs.push({
                 t: "text",
@@ -6959,27 +7082,127 @@ async function openNotePage(opts) {
               });
           });
         });
-      objs.push({
-        t: "line",
-        a: [x0 - U(800), gy],
-        b: [x0 + U(hi - lo) + U(800), gy],
-        c: col,
-        w: pwFor(12),
-      });
+      /* floor lines between storeys */
+      B.storeys.slice(1).forEach((s) => L(P(lo, s.z - 150), P(hi, s.z - 150), thin, grey, true));
+      /* the roof */
+      const E = B.E,
+        o = R.over,
+        rise = R.rise;
+      const along =
+        (R.ax === "x" && Math.abs(r[0]) > 0.5) || (R.ax === "y" && Math.abs(r[1]) > 0.5);
+      const roofPoly = [];
+      if (R.type === "flat") {
+        roofPoly.push([lo - 50, E], [hi + 50, E], [hi + 50, E + 250], [lo - 50, E + 250]);
+      } else if (R.type === "lean") {
+        if (along) {
+          const front = out[1] > 0;
+          if (front)
+            roofPoly.push([lo - o, E], [hi + o, E], [hi + o, E + rise], [lo - o, E + rise]);
+          else {
+            /* the high back wall */
+            objs.push({
+              t: "rect",
+              a: P(lo, E + rise),
+              b: P(hi, E),
+              c: col,
+              w: lw,
+              fill: "#ffffff",
+              fa: 1,
+            });
+            roofPoly.push(
+              [lo - o, E + rise],
+              [hi + o, E + rise],
+              [hi + o, E + rise + 120],
+              [lo - o, E + rise + 120],
+            );
+          }
+        } else {
+          /* from the side: high at the back */
+          const hiAtLo = B.box.y0 * r[1] < B.box.y1 * r[1];
+          roofPoly.push(
+            hiAtLo ? [lo - o, E + rise] : [lo - o, E],
+            hiAtLo ? [hi + o, E] : [hi + o, E + rise],
+            hiAtLo ? [hi + o, E] : [hi + o, E + rise],
+          );
+          objs.push({
+            t: "stroke",
+            p: [[P(lo, E), P(hiAtLo ? lo : hi, E + rise), P(hi, E)]],
+            c: col,
+            w: lw,
+          });
+        }
+      } else if (R.type === "gable" || R.type === "hip") {
+        const midX = (lo + hi) / 2;
+        if (along) {
+          const h =
+            R.type === "hip"
+              ? Math.min(
+                  (hi - lo) / 2,
+                  (R.ax === "x" ? B.box.y1 - B.box.y0 : B.box.x1 - B.box.x0) / 2,
+                )
+              : 0;
+          roofPoly.push(
+            [lo - o, E],
+            [hi + o, E],
+            [hi - h + (h ? 0 : o), E + rise],
+            [lo + h - (h ? 0 : o), E + rise],
+          );
+        } else {
+          roofPoly.push(
+            [lo - o, E],
+            [midX, E + rise + (o * rise) / ((hi - lo) / 2 || 1)],
+            [hi + o, E],
+          );
+          if (R.type === "gable")
+            objs.push({ t: "stroke", p: [[P(lo, E), P(midX, E + rise), P(hi, E)]], c: col, w: lw });
+        }
+      }
+      if (roofPoly.length) {
+        const pp = roofPoly.map(([x, z]) => P(x, z));
+        objs.push({ t: "stroke", p: [pp.concat([pp[0]])], c: col, w: lw });
+        /* tile courses across the roof (not on a flat roof) */
+        if (R.type !== "flat") {
+          const zs = roofPoly.map((q) => q[1]);
+          const zmin = Math.min(...zs),
+            zmax = Math.max(...zs);
+          for (let z = zmin + 110; z < zmax - 20; z += 110) {
+            /* where this height crosses the roof's outline */
+            const xsx = [];
+            roofPoly.forEach((q, i) => {
+              const q2 = roofPoly[(i + 1) % roofPoly.length];
+              if ((q[1] - z) * (q2[1] - z) < 0)
+                xsx.push(q[0] + ((z - q[1]) * (q2[0] - q[0])) / (q2[1] - q[1]));
+            });
+            if (xsx.length >= 2) L(P(Math.min(...xsx), z), P(Math.max(...xsx), z), thin, grey);
+          }
+        }
+      }
+      L([x0 - U(800) - U(o), gy], [x0 + U(hi - lo) + U(800) + U(o), gy], pwFor(12));
+      const top = E + (R.type === "flat" ? 250 : rise);
       objs.push(
-        mkDim([x0, gy], [x0 + U(hi - lo), gy], dimSize() * 2.6),
-        mkDim([x0, gy - U(M.H)], [x0, gy], dimSize() * 2.6),
+        mkDim(P(lo, 0), P(hi, 0), dimSize() * 2.6),
+        mkDim(P(lo, top), P(lo, 0), dimSize() * 2.6),
       );
+      if (B.storeys.length > 1 || R.type !== "none")
+        objs.push(mkDim(P(hi, E), P(hi, 0), -dimSize() * 2.6));
+      const roofName =
+        {
+          gable: "gable roof",
+          hip: "hipped roof",
+          lean: "lean-to roof",
+          flat: "flat roof",
+          none: "no roof",
+        }[R.type] || "";
       objs.push({
         t: "text",
         x: x0,
         y: gy + dimSize() * 5,
-        s: `${name} elevation, from the plan: wall height ${M.H} mm, doors and windows where they are on the plan. Add the roof, finishes and levels.`,
+        s: `${name} elevation, from the plan: ${B.storeys.length} storey${B.storeys.length === 1 ? "" : "s"}, walls ${B.H} mm a storey, ${roofName}${R.type !== "flat" && R.type !== "none" ? ` at ${st.pitch}°` : ""}, ${{ brick: "brickwork", render: "render", clad: "cladding", none: "no finish shown" }[st.finish] || ""}. Check the levels and details before it's used.`,
         c: "#333333",
         size: Math.round(dimSize() * 0.8),
         ly: "notes",
       });
-      objs.forEach((o) => Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]));
+      objs.forEach((ob) => Object.keys(ob).forEach((k) => ob[k] === undefined && delete ob[k]));
       doc.pages.push({ name: name + " elevation", type: "Elevation", objs });
       made++;
     });
@@ -6990,23 +7213,95 @@ async function openNotePage(opts) {
     dirty = true;
     goPage(first);
     toast(
-      `${made} elevations drawn, one a page. Tap 🏘️ again on the plan for the 3D view. Wall height ${M.H} mm (change it in 🧮 Quantities).`,
+      `${made} elevations drawn, one a page. Change the roof, storeys or finish in 🏘️ and draw them again.`,
     );
   }
   function elevMenu() {
-    const M = doc.scale ? elevModel() : null;
+    const B = doc.scale ? elevBuild() : null;
+    const st = elevSet();
+    const pages = doc.pages
+      .map((p, i) => [i, p.name || "Page " + (i + 1)])
+      .filter(([i]) => i !== pg && (doc.pages[i].objs || []).some(npIsWall));
+    const sel = (id, opts, v) =>
+      `<select id="${id}">${opts.map(([k, l]) => `<option value="${k}"${String(k) === String(v) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
     const d = document.createElement("div");
     d.className = "dimask";
-    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Elevations and 3D"><b>🏘️ From this plan</b><div class="who">${M ? `${M.W.length} walls, ${M.W.reduce((a, x) => a + x.cuts.length, 0)} doors and windows, walls ${M.H} mm high.` : doc.scale ? "Draw the walls first." : "Set a scale in 📐 Paper first."}</div><div class="dimbtns"><button type="button" class="btn el-3d"${M ? "" : " disabled"}>🧊 3D view</button><button type="button" class="btn primary el-all"${M ? "" : " disabled"}>📐 Draw the elevations</button><button type="button" class="btn el-x">Close</button></div></div>`;
+    d.innerHTML = `<div class="dimbox el-box" role="dialog" aria-label="Elevations and 3D"><b>🏘️ From this plan</b><div class="who">${B ? `${B.W.length} walls, ${B.W.reduce((a, x) => a + x.cuts.length, 0)} doors and windows, walls ${B.H} mm a storey.` : doc.scale ? "Draw the walls first." : "Set a scale in 📐 Paper first."}</div>
+      <div class="grid2"><label>Roof${sel(
+        "el-roof",
+        [
+          ["gable", "Pitched – gable ends"],
+          ["hip", "Pitched – hipped"],
+          ["lean", "Lean-to"],
+          ["flat", "Flat"],
+          ["none", "No roof"],
+        ],
+        st.roof,
+      )}</label><label>Pitch (degrees)<input id="el-pitch" type="number" inputmode="numeric" min="5" max="60" value="${esc(st.pitch)}"></label></div>
+      <div class="grid2"><label>Ridge runs${sel(
+        "el-ridge",
+        [
+          ["auto", "Along the longer side"],
+          ["x", "Side to side"],
+          ["y", "Front to back"],
+        ],
+        st.ridge,
+      )}</label><label>Overhang at the eaves (mm)<input id="el-over" type="number" inputmode="numeric" min="0" max="1000" value="${esc(st.over)}"></label></div>
+      <div class="grid2"><label>Storeys${sel(
+        "el-st",
+        [
+          [1, "1"],
+          [2, "2"],
+          [3, "3"],
+        ],
+        st.storeys,
+      )}</label><label>Upstairs${sel("el-up", [["same", "Same walls, windows over the openings"]].concat(pages.map(([i, n]) => [i, "From the page: " + n])), st.upper)}</label></div>
+      <div class="grid2"><label>Walls finished in${sel(
+        "el-fin",
+        [
+          ["brick", "Brick"],
+          ["render", "Render"],
+          ["clad", "Cladding"],
+          ["none", "Plain"],
+        ],
+        st.finish,
+      )}</label><label>Windows${sel(
+        "el-win",
+        [
+          ["casement", "Casement"],
+          ["sash", "Sash"],
+          ["fixed", "Plain"],
+        ],
+        st.win,
+      )}</label></div>
+      <div class="dimbtns"><button type="button" class="btn el-3d"${B ? "" : " disabled"}>🧊 3D view</button><button type="button" class="btn primary el-all"${B ? "" : " disabled"}>📐 Draw the elevations</button><button type="button" class="btn el-x">Close</button></div></div>`;
     document.body.appendChild(d);
-    d.querySelector(".el-x").onclick = () => d.remove();
+    const save = () => {
+      doc.elevSet = {
+        roof: $("el-roof").value,
+        pitch: Math.max(5, Math.min(60, +$("el-pitch").value || 35)),
+        ridge: $("el-ridge").value,
+        over: Math.max(0, Math.min(1000, +$("el-over").value || 0)),
+        storeys: +$("el-st").value || 1,
+        upper: $("el-up").value,
+        finish: $("el-fin").value,
+        win: $("el-win").value,
+      };
+      dirty = true;
+    };
+    d.querySelector(".el-x").onclick = () => {
+      save();
+      d.remove();
+    };
     d.querySelector(".el-all").onclick = () => {
+      save();
       d.remove();
       elevAll();
     };
     d.querySelector(".el-3d").onclick = () => {
+      save();
       d.remove();
-      hs3View(M);
+      hs3View(elevBuild());
     };
   }
   /* fitted cupboards and wardrobes: a new page with the views and the cutting list */
