@@ -31,6 +31,7 @@ const CO_FIELDS = [
   ["phone", "Office phone", ""],
   ["email", "Email", ""],
   ["website", "Website", ""],
+  ["reviewUrl", "Google review link", "e.g. https://g.page/r/…/review"],
   ["companyNo", "Company number", ""],
   ["vatNo", "VAT number", ""],
   ["plInsurer", "Public liability insurer", ""],

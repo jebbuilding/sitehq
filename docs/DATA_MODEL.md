@@ -36,7 +36,7 @@ Subcollections (`TR_COLLS`):
 | kind | What |
 |---|---|
 | *(none, has `text`)* | owner to-do items |
-| `client` | client record: contact, address, property, stage (`enquiry`…`done`/`lost`/`contact`=address book only), current enquiry fields (work, desc, budget, quote, timescale, planning, source, site), `notes[]`, `media[]`, `docs[]`, `pastJobs[]`, portal link (`portalUid`, `ptDocs`/`ptSigns` before linking), keys/alarm codes |
+| `client` | client record: contact, address, property, stage (`enquiry`…`done`/`lost`/`contact`=address book only), current enquiry fields (work, desc, budget, quote, timescale, planning, source, site), `notes[]`, `media[]`, `docs[]`, `pastJobs[]`, portal link (`portalUid`, `ptDocs`/`ptSigns` before linking), keys/alarm codes; `reviewAskedAt` when a Google review was asked for (the link is `company.reviewUrl` in settings/app) |
 | `supplier` | merchant (account no., branches, opening hours, `vis`/`people` who can see it) |
 | `maker` | manufacturer/supplier details (key matches built-in list or `mk-…`), `vis`/`people` |
 | `brochure` | brochure file for a maker (`maker`, `assetId`) |

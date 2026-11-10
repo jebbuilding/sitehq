@@ -1,6 +1,7 @@
 /* ================= CLIENT STAGES <-> PLANNER ================= */
 import { clStage, saveClient } from "./clients.js";
 import { VISIT_REMIND_MIN, viewClient } from "./quick-enquiry.js";
+import { rqAsk } from "./review-ask.js";
 import { $, addDays, dayLabel, esc, gbp, iso, parse, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -119,7 +120,7 @@ function clMove(c, stage) {
   else if (stage === "onsite")
     body = `<div class="who">Work has started.</div>${c.site && sjMaster(c.site) ? "" : chk("cm-site", c.site ? "Fill in the site's job details from this client" : "Make it a site with all the client's details, photos and pin", true)}`;
   else if (stage === "done")
-    body = `<div class="who">The job's finished. It moves to Completed and stays in their history.</div>${chk("cm-clear", "Remove any upcoming reminders for this client from my planner", true)}`;
+    body = `<div class="who">The job's finished. It moves to Completed and stays in their history.</div>${chk("cm-clear", "Remove any upcoming reminders for this client from my planner", true)}${chk("cm-review", c.reviewAskedAt ? "Thank them and ask for a Google review again" : "Thank them and ask for a Google review", !c.reviewAskedAt)}`;
   else if (stage === "lost")
     body = `<label for="cm-why">Why? (optional)<input id="cm-why" maxlength="200" placeholder="e.g. Went with a cheaper quote"></label>${chk("cm-clear", "Remove any upcoming reminders for this client from my planner", true)}`;
   openSheet(
@@ -228,6 +229,7 @@ function clMove(c, stage) {
         toast("Moved to " + L + (planned ? " · in your planner" : ""));
         render();
         viewClient(rec);
+        if (stage === "done" && on("cm-review")) setTimeout(() => rqAsk(rec), 300);
         setTimeout(() => {
           if (!$("viewer").hidden && $("viewer-body").querySelector(".clsteps"))
             viewClient((S.clients || []).find((x) => x.id === rec.id) || rec);
