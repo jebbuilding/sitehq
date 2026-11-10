@@ -30,6 +30,7 @@ import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
 import { diaryHtml, diaryRows, wireDiary } from "./diary.js";
+import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
 import {
   plClashHtml,
   plClashes,
@@ -952,6 +953,8 @@ function plannerView() {
   const myLeave = owner
     ? []
     : leaveOf(S.mine.signoffs).sort((a, b) => b.from.localeCompare(a.from));
+  /* holidays: an employee's own figures, or everyone's for James */
+  html += owner ? holOwnerHtml() : holCardHtml();
   if (!owner)
     html += `<div class="day"><div class="dayh"><span>My time-off requests</span><span class="sum">${myLeave.length}</span></div>${myLeave.length ? myLeave.map((l) => leaveCard(l, false)).join("") : '<div class="nothing">No requests yet.</div>'}</div>`;
   if (false) {
@@ -988,6 +991,7 @@ function plannerView() {
     }
   }
   pbWireHeader(owner);
+  holWire();
   if (mode === "where") plWireWhere(entries);
   if (mode === "board") pbWireBoard(shown, entries);
   if ($("pb-reqline")) $("pb-reqline").onclick = pbRequests;

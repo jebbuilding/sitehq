@@ -135,3 +135,11 @@
 .kit-acts .btn{min-height:44px}
 .kit-due{color:var(--danger);font-weight:600}
 .kit-video{width:100%;max-width:420px;border-radius:8px;background:#000;margin:8px 0}
+.hol-boxes{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.hol-boxes>div{flex:1 1 70px;display:flex;flex-direction:column;align-items:center;padding:8px;border-radius:10px;background:var(--soft)}
+.hol-boxes b{font-size:22px}
+.hol-boxes span{font-size:12px;color:var(--muted,#666)}
+.hol-boxes .hol-left{background:#e5f4e4}
+.hol-neg{color:var(--danger)}
+.hol-p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.hol-p input{width:90px;min-height:44px;margin-left:auto}
