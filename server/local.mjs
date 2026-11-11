@@ -8,17 +8,20 @@
 //   local.url        "http://127.0.0.1:<port>"
 //   local.store      the in-memory store (tests look inside it)
 //   local.refused    every read or write the rules refused, as { op, path, role } (tests and diagnosis)
+//   local.mail       every email "sent" (an invite's welcome email), as { to, subject, text, html } – nothing leaves the machine
 //   local.close()
 import fs from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDevAuth } from "./auth/dev.mjs";
+import { createDevAuth, SEED_USERS } from "./auth/dev.mjs";
+import { createLocalDirectory } from "./auth/local-directory.mjs";
 import { createDiskBlobs } from "./blobs/disk.mjs";
 import { createApi, MAX_FILE_BYTES } from "./core/api.mjs";
 import { createLive } from "./core/live.mjs";
 import { siteRules } from "./core/roles.mjs";
+import { createOutboxMailer } from "./mail/outbox.mjs";
 import { createMemoryStore } from "./store/memory.mjs";
 import { createLocalWsTransport } from "./transport/local-ws.mjs";
 
@@ -33,6 +36,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
  * @param options.store  a store to use instead of a new in-memory one
  * @param options.cognito  a Cognito stand-in (auth/local-cognito.mjs › createLocalCognito): served at /cognito, and
  *                         its tokens are accepted as well as the dev ones
+ * @param options.onMail  (message) – called for each email "sent" (the local run prints it)
+ * @param options.appUrl  the sign-in address put in welcome emails (default: <url>/app)
  */
 /**
  * Put starting documents and files into a store and a file store, the way the API itself would have recorded
@@ -51,9 +56,12 @@ export async function writeSeed({ store, blobs, seed = {}, files = {}, by = "own
   return { documents: Object.keys(seed).length, files: Object.keys(files).length };
 }
 
-export async function startLocal({ port = 0, host = "127.0.0.1", seed = {}, files = {}, users, page, store = createMemoryStore(), cognito } = {}) {
+export async function startLocal({ port = 0, host = "127.0.0.1", seed = {}, files = {}, users, page, store = createMemoryStore(), cognito, onMail, appUrl } = {}) {
   const capabilities = JSON.parse(await fs.readFile(path.join(here, "../platform/capabilities.json"), "utf8"));
-  const rules = siteRules(capabilities), dev = createDevAuth(users);
+  const devUsers = { ...(users || SEED_USERS) }; // a copy: invited people are added to it
+  const rules = siteRules(capabilities), dev = createDevAuth(devUsers);
+  const directory = createLocalDirectory({ users: devUsers, people: cognito && cognito.people });
+  const mailer = createOutboxMailer({ onSend: onMail });
   const auth = cognito ? { verify: async (token) => (await dev.verify(token)) || cognito.auth.verify(token) } : dev;
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "sitehq-files-"));
   const blobs = createDiskBlobs(dir);
@@ -92,11 +100,12 @@ export async function startLocal({ port = 0, host = "127.0.0.1", seed = {}, file
   const transport = createLocalWsTransport(server, "/ws");
   const live = createLive({ store, transport, rules, auth });
   transport.attach(live);
-  api = createApi({ store, rules, auth, blobs, live, onRefused: (r) => refused.push(r) });
-
   await new Promise((resolve, reject) => { server.once("error", reject); server.listen(port, host, resolve); });
+  const url = `http://${host === "0.0.0.0" ? "127.0.0.1" : host}:${server.address().port}`;
+  api = createApi({ store, rules, auth, blobs, live, onRefused: (r) => refused.push(r), directory, mailer, appUrl: appUrl || url + "/app" });
   return {
-    url: `http://${host === "0.0.0.0" ? "127.0.0.1" : host}:${server.address().port}`,
+    url,
+    mail: mailer.sent,
     port: server.address().port,
     store,
     refused,

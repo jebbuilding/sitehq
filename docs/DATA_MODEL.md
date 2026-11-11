@@ -24,7 +24,7 @@ Where the newer records sit (Nov 2026), and so who can see them: owner-only in `
 On our own backend the same file is enforced by `server/core/rules.mjs`, with owner / trade / client taken from the sign-in. `server/test/rules.test.mjs` checks this table row by row (and fails if the file and the table drift apart). Two things are stricter there than on claude.ai – a client can reach only `portal/{self}`, and a path no rule covers is owner-only – see `server/README.md` › Rules for those and the other assumptions.
 
 ## People: `sheets/{uid}`
-Profile: `name`, `joined`, `role` (`employed`/`sub`/…), `details` {fullName, address, postcode, dob, mobile, email, ni, utr, empType (`employed`/`cis`/`selfemp`), trade, company, driving, medical, cscs, nok*}, `photo` (asset id), `reads` (chat read markers), `day` (today's plan), flags (`foreman`, `signOnly`, `left`…).
+Profile: `name`, `joined`, `role` (`employed`/`sub`/…), `details` {fullName, address, postcode, dob, mobile, email, ni, utr, empType (`employed`/`cis`/`selfemp`), trade, company, driving, medical, cscs, nok*}, `photo` (asset id), `reads` (chat read markers), `day` (today's plan), flags (`foreman`, `signOnly`, `left`…). A trade the owner invited from the app also has `roleCompany`, `invitedAt` and `invitedBy` (written by the server, `server/README.md` › Inviting people); their `details` are what James typed, already confirmed. Inviting someone listed in `offapp` moves their record here.
 
 Subcollections (`TR_COLLS`): 
 - `entries` – timesheet/day-work entries (an hours entry from checking in keeps `actualIn` / `actualOut`; overtime asked for is `ot`: { early, late (minutes), why, status asked | ok | no } – approving moves `start` / `finish` to the actual times)

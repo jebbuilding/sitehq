@@ -176,8 +176,9 @@ list said "sign-in" without naming a path.
    as `index.html` with `config.json` and `version.json`, and CloudFront is refreshed. The first
    run takes 10–20 minutes (certificates, CloudFront).
 2. Open `https://dev.<domain>/version.json` – it shows the commit that is live.
-3. **First people.** Nobody can sign up; accounts are created by an administrator until the
-   server has an invite flow. For each person (role is `owner`, `trade` or `client` – exactly one;
+3. **First people.** Nobody can sign up. The owner invites trades from the app (Employees ›
+   "+ Add a trade" › *Invite them to the app*), so only the **owner** needs making by hand – and
+   anyone in a role the app cannot invite. For each such person (role is `owner`, `trade` or `client` – exactly one;
    in dev, while SES is in its sandbox, only addresses you verified there receive the code):
 
    ```bash
@@ -324,8 +325,10 @@ Expect a couple of fix-and-retry rounds on the first dev deploy.
 - **The connections table is not used by `server/` as it stands** – it keeps live-update records
   in the data table. Either the server moves them (two lines; then the WebSocket function needs no
   access to the data table) or the table should be removed from the stack.
-- **The HTTP function cannot create or manage users** yet. The invite flow will need
-  `cognito-idp:AdminCreateUser` and friends added in `lib/sitehq-stack.ts`.
+- **The HTTP function can create users, for the owner's invite only**: `AdminCreateUser`,
+  `AdminAddUserToGroup`, `AdminSetUserPassword`, `AdminDeleteUser` on the pool, and `ses:SendEmail`
+  from `no-reply@<site>` for the welcome email (`server/README.md` › Inviting people). It cannot
+  list, disable or change anyone. Neither has been exercised against real AWS yet.
 - **The app client, as the sign-in screen needs it**: emailed code and refresh-token flows only;
   15 minutes to type the code in (`authSessionValidity`; Cognito's default of 3 is short for email
   on a building site); refresh-token rotation off (the screen renews with `REFRESH_TOKEN_AUTH`,

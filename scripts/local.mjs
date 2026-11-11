@@ -34,13 +34,13 @@ export function rolePage(role, onboarding) {
  * server/local.mjs › startLocal does; `cognito` on it is the Cognito stand-in (tests read the codes from it).
  * @param options.cognito  options for the stand-in (createLocalCognito): accessTokenSeconds, onCode, …
  */
-export function startLocalSite({ port = 0, host, cognito: cognitoOptions } = {}) {
+export function startLocalSite({ port = 0, host, cognito: cognitoOptions, onMail } = {}) {
   const html = (status, body) => ({ status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }, body });
   const cognito = createLocalCognito(cognitoOptions);
   // What the deploy writes beside the page (infra › PageConfig), plus where the stand-in for Cognito is.
   const config = { env: "local", region: cognito.region, api: "/api", ws: "/ws", userPoolId: cognito.userPoolId, userPoolClientId: cognito.clientId, cognitoEndpoint: "/cognito" };
   return startLocal({
-    port, host, cognito,
+    port, host, cognito, onMail,
     seed: testSeed(),
     files: seedFiles(bundleApp()),
     page({ path, query }) {
@@ -56,7 +56,11 @@ export function startLocalSite({ port = 0, host, cognito: cognitoOptions } = {})
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const host = process.env.HOST || "127.0.0.1";
-  const local = await startLocalSite({ port: Number(process.env.PORT) || 4322, host, cognito: { onCode: (email, code) => console.log(`sign-in code for ${email}: ${code}`) } });
+  const local = await startLocalSite({
+    port: Number(process.env.PORT) || 4322, host,
+    cognito: { onCode: (email, code) => console.log(`sign-in code for ${email}: ${code}`) },
+    onMail: (m) => console.log(`\n--- email to ${m.to} (not sent: local) ---\nSubject: ${m.subject}\n\n${m.text}\n---\n`),
+  });
   const at = `http://${host === "0.0.0.0" || host === "127.0.0.1" ? "localhost" : host}:${local.port}`;
   console.log(`SiteHQ local (own backend in this process, synthetic data – kept until this server stops)\n  owner   ${at}/owner\n  trade   ${at}/trade   (${at}/trade?onboarding to see the details gate)\n  client  ${at}/client\nOpen two of them side by side: a change in one appears in the other.\n  sign-in ${at}/app   the page as deployed, with the sign-in screen. Sign in as ${Object.keys(LOCAL_PEOPLE).slice(0, 3).join(", ")};\n          no email is sent – the code is printed here.`);
 }

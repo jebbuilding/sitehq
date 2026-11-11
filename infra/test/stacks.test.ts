@@ -494,15 +494,25 @@ test("IAM: each function has its own role, no managed policies, no wildcards, on
     assert.equal(wsOnData.length, 1);
     assert.deepEqual(wsOnData[0].Condition, { "ForAllValues:StringLike": { "dynamodb:LeadingKeys": ["$*"] } });
     assert.ok(!actions(wsOnData).some((a) => /Scan|Batch/.test(a)), "ws: nothing that could bypass the key condition");
-    // the HTTP function: files only under the assets prefix, one key, and no user management
+    // the HTTP function: files only under the assets prefix, one key, and of user management only
+    // what the owner's invite needs, on this pool (server/core/people.mjs)
     const s3 = http.filter((s) => actions([s]).some((a) => a.startsWith("s3:")));
     assert.match(JSON.stringify(s3.find((s) => s.Sid === "FilesUnderAssetsPrefix")!.Resource), /\/assets\/\*/);
     assert.deepEqual(actions(s3).sort(), ["s3:DeleteObject", "s3:GetObject", "s3:ListBucket", "s3:PutObject"]);
     assert.equal(http.filter((s) => actions([s]).some((a) => a.startsWith("kms:"))).length, 1);
-    assert.ok(!actions(http).some((a) => a.startsWith("cognito-idp:")));
+    const userMgmt = http.filter((s) => actions([s]).some((a) => a.startsWith("cognito-idp:")));
+    assert.equal(userMgmt.length, 1);
+    assert.deepEqual(actions(userMgmt).sort(), ["cognito-idp:AdminAddUserToGroup", "cognito-idp:AdminCreateUser", "cognito-idp:AdminDeleteUser", "cognito-idp:AdminSetUserPassword"]);
+    assert.match(JSON.stringify(userMgmt[0].Resource), /UserPool/);
+    const mail = http.filter((s) => actions([s]).some((a) => a.startsWith("ses:")));
+    assert.equal(mail.length, 1);
+    assert.deepEqual(actions(mail), ["ses:SendEmail"]);
+    assert.match(JSON.stringify(mail[0].Resource), /:identity\//);
+    assert.deepEqual(Object.keys(mail[0].Condition.StringEquals), ["ses:FromAddress"]);
+    assert.match(mail[0].Condition.StringEquals["ses:FromAddress"], /^no-reply@/);
     // each is told where things are, under the names server/handlers/env.mjs reads
     const envOf = (fn: string) => byName(env.main, "AWS::Lambda::Function", "FunctionName", `${env.prefix}-${fn}`).Properties.Environment.Variables;
-    for (const key of ["TABLE_NAME", "USER_POOL_ID", "USER_POOL_CLIENT_ID", "WS_ENDPOINT", "ASSETS_BUCKET", "ASSETS_PREFIX"])
+    for (const key of ["TABLE_NAME", "USER_POOL_ID", "USER_POOL_CLIENT_ID", "WS_ENDPOINT", "ASSETS_BUCKET", "ASSETS_PREFIX", "MAIL_FROM", "APP_URL"])
       assert.ok(envOf("http")[key], `http function is given ${key}`);
     for (const key of ["TABLE_NAME", "USER_POOL_ID", "USER_POOL_CLIENT_ID", "WS_ENDPOINT"])
       assert.ok(envOf("ws")[key], `ws function is given ${key}`);
