@@ -866,7 +866,7 @@ function empPhotos() {
     `<div class="actions"><button class="btn primary" id="addP" type="button">+ Add photos</button><button class="btn primary" id="addD" type="button">✏️ Draw it out</button></div>
     <div class="notice">✏️ <b>Draw it out</b>: sketch a layout or detail, add photos and writing, and send it to James to check it's right.</div>
     ${sk.length ? `<div class="flabel">My drawings</div>${sketchStrip(sk, false)}<div class="flabel" style="margin-top:14px">Photos this week</div>` : ""}
-    <div class="notice">Each photo is stamped with the address, GPS position, altitude, date and time, company, project, plot and your note. For the position to show, turn on <b>location</b> for your phone's camera. On iPhone, when you choose photos, tap <b>Options</b> at the top and turn on <b>Location</b>.</div>
+    <details class="notice"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">📍 Each photo is stamped with where and when it was taken</summary>The address, GPS position, altitude, date and time, company, project, plot and your note. For the position to show, turn on <b>location</b> for your phone's camera. On iPhone, when you choose photos, tap <b>Options</b> at the top and turn on <b>Location</b>.</details>
     ${wp.length ? `<div class="phgrid">${wp.map((p) => photoTile(p, false)).join("")}</div>` : '<div class="empty"><strong>No photos this week</strong>Tap “Add photos” to take or choose photos of the work.</div>'}`;
   $("addP").onclick = openPhoto;
   $("addD").onclick = newDrawing;

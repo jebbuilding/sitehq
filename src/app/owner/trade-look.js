@@ -1,32 +1,46 @@
 /* ================= TRADES' LOOK: the trades' app in the new look – a Today page, five buttons along the bottom and everything else under More ================= */
-import { $, esc, iso, store } from "../core/helpers.js";
+import { $, addDays, esc, iso, shortDay, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { curTab, empTabs, render } from "../core/tabs-week.js";
 import { coData } from "./company-details.js";
 import { amForeman } from "../people/foreman.js";
-import { onDay, planEntries } from "../planner/time-off.js";
+import { qrsTradeScan } from "../planner/qr-stickers.js";
+import { planEntries } from "../planner/time-off.js";
+import { KINDS } from "../safety/checklists.js";
 import { signOnly } from "../sites/sign-in-book.js";
-export { tlApply, tlHome, tlMore };
+export { tlApply, tlHome, tlMore, tlOn };
 /* The trades get the same look as James (body.nl-on, the styles in owner.css): no wall of buttons at the top, but a bar
-   along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, ⏱️ Time (📍 Sign in for sign-in-only
-   people), 📋 Forms, 📷 Photos and ☰ More. Today says where they're booked, whether they're signed in, their hours so
-   far, and what's waiting for them (forms, things to sign, checks due, talks, policies, chat), each a tap away; big
-   buttons for the things they do most. More lists every other page they're allowed (Setup › People & access), in
+   along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 📋 Forms, 📷 Photos and
+   ☰ More. The trades don't see anything to do with timesheets or day work (James, Nov 2026): no Time or Day work pages,
+   and Sign in is the plain site sign-in book (sites/sign-in-book.js, siPlain). Today lists their dates from the planner
+   (today and what's coming up), whether they're signed in, and what's waiting for them (forms, things to sign, checks
+   due, talks, policies, chat), each a tap away; big buttons for the things they do most. More lists every other page they're allowed (Setup › People & access), in
    groups. It opens on Today each time the app is opened. Tests (navigator.webdriver) start in the old layout, which
    the older tests are written for; store "jeb.tradelook" true switches it on (tests/features/h500.js). */
 const TL_BAR = [
   ["home", "Today", "🏠"],
-  ["time", "Time", "⏱️"],
+  ["planner", "Planner", "🗓️"],
   ["jobs", "Forms", "📋"],
   ["photos", "Photos", "📷"],
   ["more", "More", "☰"],
 ];
 const TL_GROUPS = [
-  ["Work", ["foreman", "signin", "time", "mydw", "planner", "plans", "draw", "calc"]],
-  ["Checks, safety and training", ["checks", "training", "policies"]],
-  ["Materials", ["materials", "suppliers"]],
+  ["Work", ["foreman", "draw"]],
+  ["Policies and insurance", ["policies"]],
   ["Money", ["receipts", "invoices"]],
   ["You and the team", ["chat", "details"]],
+];
+/* left out of More (James, Nov 2026); a "Waiting for you" row on Today still opens Sites or Training when there's a
+   RAMS, induction or toolbox talk to sign */
+const TL_MORE_HIDE = [
+  "signin",
+  "mydw",
+  "plans",
+  "calc",
+  "training",
+  "materials",
+  "suppliers",
+  "checks",
 ];
 let tlLanded = false;
 const tlOn = () => {
@@ -35,16 +49,18 @@ const tlOn = () => {
   return !!store.get("jeb.tradelook", false);
 };
 /* the tabs this person has, as [key, label] (role access and sign-in-only already applied) */
-const tlTabs = () => (amForeman() ? [["foreman", "🦺 Foreman"]] : []).concat(empTabs());
+const TL_HIDE = ["time", "mydw"];
+const tlTabs = () =>
+  (amForeman() ? [["foreman", "🦺 Foreman"]] : [])
+    .concat(empTabs())
+    .filter(([k]) => !TL_HIDE.includes(k));
 const tlLabel = (k) =>
   ((tlTabs().find((x) => x[0] === k) || [0, k])[1] || "").replace(/^\S+\s/, "");
 const tlIcon = (k) => ((tlTabs().find((x) => x[0] === k) || [0, ""])[1] || "").split(" ")[0];
-/* the bar's buttons for this person: Time becomes Sign in for sign-in-only people; parts they don't have are left out */
+/* the bar's buttons for this person: parts they don't have are left out */
 function tlBar() {
   const have = new Set(tlTabs().map((x) => x[0]));
-  return TL_BAR.map((b) =>
-    b[0] === "time" && signOnly(S.me) ? ["signin", "Sign in", "📍"] : b,
-  ).filter(([k]) => k === "home" || k === "more" || have.has(k));
+  return TL_BAR.filter(([k]) => k === "home" || k === "more" || have.has(k));
 }
 function tlGo(k) {
   if (k === "checks") S.f.rcat = "";
@@ -62,7 +78,7 @@ function tlApply() {
     if (bar) bar.hidden = true;
     return;
   }
-  if (!tlLanded) {
+  if (!tlLanded || TL_HIDE.includes(S.tab)) {
     tlLanded = true;
     S.tab = "home";
   }
@@ -82,7 +98,7 @@ function tlApply() {
   const badge = S.badgeNow || {};
   const t = curTab();
   const moreN = tlTabs()
-    .filter(([k]) => !inBar.has(k))
+    .filter(([k]) => !inBar.has(k) && !TL_MORE_HIDE.includes(k))
     .reduce((s, [k]) => s + (badge[k] || 0), 0);
   const cur = inBar.has(t) ? t : "more";
   const co = (coData().name || "SiteHQ").trim();
@@ -112,18 +128,28 @@ function tlHome() {
   const hr = new Date().getHours();
   const hello = hr < 12 ? "Morning" : hr < 18 ? "Afternoon" : "Evening";
   const have = new Set(tlTabs().map((x) => x[0]));
-  /* where they're booked today */
-  let booked = [];
+  /* their dates from the planner: today and the next six weeks, in order */
+  let dates = [];
   try {
-    booked = planEntries().filter((p) => onDay(p, today) && !p.pending);
+    const end = iso(addDays(new Date(), 42));
+    dates = planEntries()
+      .filter((p) => !p.pending && (p.to || p.from) >= today && p.from <= end)
+      .sort((a, b) => a.from.localeCompare(b.from))
+      .slice(0, 8);
   } catch (e) {}
+  const tomorrow = iso(addDays(new Date(), 1));
+  const dayWord = (d) => (d === today ? "Today" : d === tomorrow ? "Tomorrow" : shortDay(d));
+  const when = (p) =>
+    p.from <= today && (p.to || p.from) >= today
+      ? (p.to || p.from) > today
+        ? "Today – " + shortDay(p.to)
+        : "Today"
+      : dayWord(p.from) + (p.to && p.to !== p.from ? " – " + shortDay(p.to) : "");
+  /* stickers on the vans and machines: Do a check goes straight to the camera */
+  const tagged = (S.equipment || []).some((e) => e.tag && KINDS[e.kind]);
   /* signed in? */
   const sins = (S.mine.signins || []).filter((x) => x.date === today);
   const inNow = sins.find((x) => !x.out);
-  /* hours so far today */
-  const hrs = (S.mine.entries || [])
-    .filter((e) => e.date === today && e.type === "hours")
-    .reduce((s, e) => s + (+e.hours || 0), 0);
   /* what's waiting */
   const waits = [
     ["jobs", badge.jobs, "form, job or to-do to do", "forms, jobs or to-dos to do"],
@@ -137,9 +163,9 @@ function tlHome() {
     ["training", badge.training, "toolbox talk to sign", "toolbox talks to sign"],
     ["policies", badge.policies, "policy to read", "policies to read"],
     ["chat", badge.chat, "new chat message", "new chat messages"],
-    ["time", badge.time, "timesheet reminder", "timesheet reminders"],
   ].filter(([k, n]) => n && have.has(k));
   const tiles = [
+    have.has("foreman") ? ["foreman", "🦺 Foreman", "Your team and sites today"] : null,
     signOnly(S.me) || have.has("signin")
       ? [
           "signin",
@@ -149,15 +175,9 @@ function tlHome() {
             : "At a site, when you get there",
         ]
       : null,
-    have.has("time")
-      ? [
-          "time",
-          "⏱️ My hours",
-          hrs ? `${hrs} hour${hrs === 1 ? "" : "s"} today` : "Fill in today's",
-        ]
-      : null,
-    have.has("checks")
-      ? ["checks", "🚐 Do a check", "Van, digger or machine – scan its sticker"]
+    /* Reports is out of the trades' app; a van or machine check is still one scan of its sticker away */
+    have.has("checks") && tagged
+      ? ["__scan", "🚐 Do a check", "Opens the camera – point it at the van or machine's sticker"]
       : null,
     have.has("photos") ? ["photos", "📷 Take a photo", "Progress, a problem or a drawing"] : null,
     have.has("jobs")
@@ -169,18 +189,18 @@ function tlHome() {
   ].filter(Boolean);
   $("main").innerHTML = `<div class="nl-today tl-home">
     <h2 class="nl-h">${esc(hello)}${first ? ", " + esc(first) : ""}</h2>
-    <section class="nl-card"><div class="nl-cardh"><h2>Where you're working</h2></div>
+    <section class="nl-card"><div class="nl-cardh"><h2>📅 Your dates</h2></div>
       ${
-        booked.length
-          ? booked
+        dates.length
+          ? dates
               .map(
                 (p) =>
-                  `<div class="nl-row"><b>${esc(p.site || p.title || "Booked")}</b><span class="who">${esc([p.site ? p.title : "", p.type === "holiday" ? "Time off" : ""].filter(Boolean).join(" · "))}</span></div>`,
+                  `<div class="nl-row tl-date"><b>${esc(when(p))}</b><span>${esc(p.site || p.title || "Booked")}</span>${p.site && p.title ? `<span class="who">${esc(String(p.title).replace(" – " + p.site, ""))}</span>` : ""}${p.type === "holiday" ? `<span class="who">Time off</span>` : ""}</div>`,
               )
               .join("")
-          : `<div class="who">Nothing booked for you on the planner today.</div>`
+          : `<div class="who">Nothing booked for you on the planner yet.</div>`
       }
-      ${have.has("planner") ? `<button type="button" class="btn nl-wide tl-go" data-t="planner">🗓️ My week on the planner</button>` : ""}
+      ${have.has("planner") ? `<button type="button" class="btn nl-wide tl-go" data-t="planner">🗓️ Open the planner</button>` : ""}
     </section>
     ${
       waits.length
@@ -201,12 +221,16 @@ function tlHome() {
   </div>`;
   $("main")
     .querySelectorAll(".tl-go")
-    .forEach((b) => (b.onclick = () => tlGo(b.dataset.t)));
+    .forEach(
+      (b) => (b.onclick = () => (b.dataset.t === "__scan" ? qrsTradeScan() : tlGo(b.dataset.t))),
+    );
 }
 /* ☰ More: every page they have that isn't in the bar */
 function tlMore() {
   const inBar = new Set(tlBar().map((x) => x[0]));
-  const have = tlTabs().map((x) => x[0]);
+  const have = tlTabs()
+    .map((x) => x[0])
+    .filter((k) => !TL_MORE_HIDE.includes(k));
   const badge = S.badgeNow || {};
   const groups = TL_GROUPS.map(([t, ks]) => [
     t,

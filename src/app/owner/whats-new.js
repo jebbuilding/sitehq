@@ -240,17 +240,17 @@ function wnReasons(t) {
     }
   } else {
     const lab = {
-      plans: "site induction to do",
-      jobs: "jobs or to-dos still open",
-      checks: "checks or reports due",
-      training: "toolbox talks or training to do",
-      policies: "policies to read and sign",
-      chat: "unread messages",
-      time: "things James has asked you to fill in",
+      plans: ["thing to read and sign for a site", "things to read and sign for a site"],
+      jobs: ["job or to-do still open", "jobs or to-dos still open"],
+      checks: ["check or report due", "checks or reports due"],
+      training: ["toolbox talk or training to do", "toolbox talks or training to do"],
+      policies: ["policy to read and sign", "policies to read and sign"],
+      chat: ["unread message", "unread messages"],
+      time: ["thing James has asked you to fill in", "things James has asked you to fill in"],
     };
     R(
       lab[t]
-        ? `${n} ${lab[t]}. They're in the list below.`
+        ? `${n} ${lab[t][n === 1 ? 0 : 1]}. ${n === 1 ? "It's" : "They're"} in the list below.`
         : `${n} ${pl(n, "thing", "things")} James has asked you to do here.`,
     );
   }

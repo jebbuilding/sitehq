@@ -228,3 +228,4 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .brf-i{font-size:18px}
 /* the trades in the new look (owner/trade-look.js): the bar's emoji, the same size as the owner's icons */
 .tl-b .tl-i{font-size:21px;line-height:1}
+.tl-date{gap:1px}

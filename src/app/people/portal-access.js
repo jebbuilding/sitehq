@@ -35,6 +35,12 @@ const pvClients = () =>
   (S.clients || [])
     .filter((c) => c.portalUid && c.stage !== "lost")
     .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+/* the policies and documents on the Policies & insurance page that have a file (only those can be opened) */
+const pvPols = () =>
+  (S.policies || [])
+    .filter((d) => d.assetId)
+    .slice()
+    .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
 function pvView(seg) {
   const cls = pvClients();
   const log = (S.audit || [])
@@ -52,6 +58,19 @@ function pvView(seg) {
           `<tr><td>${esc(l)}<div class="who">${esc(why)}</div></td>${cell(k, "", pvOn(k, ""), l + " for everyone")}${cls.map((c) => cell(k, c.portalUid, pvOn(k, c.portalUid), l + " for " + (c.name || "the client"))).join("")}</tr>`,
       ).join("")}</tbody></table></div>
       ${cls.length ? "" : `<div class="who">No clients have joined their portal yet. Invite one from their client page.</div>`}
+    </div></section>
+    <section class="card"><div class="cardbody"><b>Policies clients can see</b>
+      <div class="who">Tick the policies and documents every client can open under 🏢 About us &amp; policies. Add or change them on the Policies &amp; insurance page.</div>
+      ${
+        pvPols().length
+          ? pvPols()
+              .map(
+                (d) =>
+                  `<label class="inl pa-hit pv-polrow"><input type="checkbox" class="pv-pol" data-id="${esc(d.id)}"${d.clientVisible ? " checked" : ""}> <span>${esc(d.title || d.fileName || "Document")}${d.folder ? ` <span class="who">· ${esc(d.folder)}</span>` : ""}</span></label>`,
+              )
+              .join("")
+          : `<div class="who">No policies yet. Add them on the Policies &amp; insurance page.</div>`
+      }
     </div></section>
     <div class="actions"><button type="button" class="btn primary" id="pv-save">Save what clients see</button></div>
     ${log.length ? `<section class="card"><div class="cardbody"><b>Changes</b>${log.map((x) => `<div class="drow"><span>${esc(x.details || x.title || "")}</span><span class="who">${esc(new Date(x.at || x.time || 0).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }))}</span></div>`).join("")}</div></section>` : ""}`;
@@ -97,6 +116,14 @@ async function pvSave() {
         .doc("portal/" + c.portalUid)
         .update({ access })
         .catch(() => {});
+    }
+    /* the policies every client can see */
+    for (const x of document.querySelectorAll(".pv-pol")) {
+      const d = pvPols().find((y) => y.id === x.dataset.id);
+      if (!d || !!d.clientVisible === x.checked) continue;
+      await S.db.doc("docs/" + d.id).update({ clientVisible: x.checked });
+      d.clientVisible = x.checked;
+      said.push(`Policies: ${x.checked ? "+ " : "− "}${d.title || d.fileName || "a document"}`);
     }
     if (said.length) await auditLog("Portal access", "What clients see", said.join(" · "), null);
     toast(

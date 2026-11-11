@@ -152,3 +152,4 @@
 .qrs-cell.qrs-used{background:var(--line);color:var(--ink);opacity:.6;font-size:18px}
 .qrs-line{margin:8px 0}
 .qrs-line summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.pg-clw{display:flex;align-items:center;gap:6px;min-height:44px;white-space:nowrap}

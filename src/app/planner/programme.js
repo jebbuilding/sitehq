@@ -14,7 +14,8 @@ export { pgClientHtml, pgHtml, pgRec, pgWire };
    (and moves them there), and – if he ticks it – shows the client the programme in their portal's Dates tab. Each
    stage keeps its first planned dates, so a stage that has moved shows how many working days late it is.
    Stored in todos/prog-{site slug} (kind "programme"); planner entries plan/prg-{id}-{stage}; the client's copy is
-   portal/{uid}.programme. */
+   portal/{uid}.programme. A stage can be kept from the client (its "Client sees" tick off, stage.hide): it still goes
+   on the planner for the trades, but is left out of the client's copy (James, Nov 2026). */
 const PG_PRESETS = {
   extension: [
     ["Set up site, welfare and skip", 1],
@@ -122,7 +123,7 @@ function pgHtml(site) {
   const late = (s) => (s.base ? pgWorkBetween(s.base.to, dt[s.id].to) : 0);
   const c = siteClient(site);
   return `<div class="pg"><div class="pg-top"><label for="pg-start">Job starts<input id="pg-start" type="date" value="${esc(pr.start || "")}"></label><span class="who">Finishes <b>${esc(shortDay(hi))}</b> · ${pgWorkBetween(lo, hi) + 1} working days${st.some(late) ? ` · <span class="pg-late">${Math.max(...st.map(late))} days later than first planned</span>` : ""}</span></div>
-    <div class="tablewrap"><table class="pg-tbl"><thead><tr><th>#</th><th>Stage</th><th>Days</th><th>Can't start until</th><th>Delay</th><th>Dates</th><th>Done</th><th></th></tr></thead><tbody>${st
+    <div class="tablewrap"><table class="pg-tbl"><thead><tr><th>#</th><th>Stage</th><th>Days</th><th>Can't start until</th><th>Delay</th><th>Dates</th><th>Done</th><th>Client sees</th><th></th></tr></thead><tbody>${st
       .map((s, i) => {
         const d = dt[s.id];
         const lt = late(s);
@@ -139,6 +140,7 @@ function pgHtml(site) {
         <td><input class="pg-lag" type="number" inputmode="numeric" min="0" max="200" value="${esc(s.lag || 0)}" aria-label="Delay days before stage ${i + 1}"></td>
         <td class="pg-dates">${esc(shortDay(d.from))}${d.to !== d.from ? " – " + esc(shortDay(d.to)) : ""}${lt ? ` <span class="tag bad">${lt} day${lt === 1 ? "" : "s"} late</span>` : ""}${!s.done && d.from <= today && d.to >= today ? ' <span class="tag day">Now</span>' : ""}</td>
         <td><button type="button" class="pillbtn pg-tick" aria-pressed="${!!s.done}" aria-label="Stage ${i + 1} done">${s.done ? "✓ " + esc(shortDay(s.actTo || d.to)) : "Done?"}</button></td>
+        <td><label class="pg-clw"><input type="checkbox" class="pg-cl"${s.hide ? "" : " checked"} aria-label="The client sees stage ${i + 1}"><span>${s.hide ? "🔒 No" : "Yes"}</span></label></td>
         <td><button type="button" class="linkdanger pg-x" aria-label="Remove stage ${i + 1}">✕</button></td></tr>`;
       })
       .join("")}</tbody></table></div>
@@ -151,7 +153,7 @@ function pgHtml(site) {
         return `<div class="pg-grow"><span class="pg-gl">${i + 1}. ${esc(s.name || "")}</span><span class="pg-gt"><span class="pg-bar${s.done ? " done" : late(s) ? " late" : ""}" style="left:${l}%;width:${w}%"></span>${today >= lo && today <= hi ? `<span class="pg-today" style="left:${pos(today)}%"></span>` : ""}</span></div>`;
       })
       .join("")}</div>
-    <label class="inl"><input type="checkbox" id="pg-client"${pr.toClient ? " checked" : ""}${c && c.portalUid ? "" : " disabled"}> ${c ? `${esc(c.name)} can see the programme in their portal` : "No client linked to this site"}${c && !c.portalUid ? " (once they join the portal)" : ""}</label>
+    <label class="inl"><input type="checkbox" id="pg-client"${pr.toClient ? " checked" : ""}${c && c.portalUid ? "" : " disabled"}> ${c ? `${esc(c.name)} can see the programme in their portal` : "No client linked to this site"}${c && !c.portalUid ? " (once they join the portal)" : ""} – only the stages ticked "Client sees"; untick one to keep it to you and the trades</label>
     <div class="actions"><button type="button" class="btn primary" id="pg-save">Save and put on the planner</button><button type="button" class="linkdanger" id="pg-del">Delete the programme</button></div>
     <div class="who">Change a stage's days, what it waits for, or add delay days – the dates after it move. Tap Done when a stage finishes; if it finished late, put the real date and everything after it moves.</div></div>`;
 }
@@ -166,6 +168,7 @@ function pgRead(pr) {
     s.after = a || "";
     s.link = a ? link || "end" : "";
     s.lag = Math.max(0, Math.min(200, Math.round(+r.querySelector(".pg-lag").value || 0)));
+    s.hide = !r.querySelector(".pg-cl").checked;
     return s;
   });
   return Object.assign({}, pr, {
@@ -229,12 +232,14 @@ async function pgSave(site, pr, quiet) {
         programme: pr.toClient
           ? {
               site,
-              stages: pr.stages.map((s) => ({
-                name: s.name,
-                from: dt[s.id].from,
-                to: dt[s.id].to,
-                done: !!s.done,
-              })),
+              stages: pr.stages
+                .filter((s) => !s.hide)
+                .map((s) => ({
+                  name: s.name,
+                  from: dt[s.id].from,
+                  to: dt[s.id].to,
+                  done: !!s.done,
+                })),
               updated: Date.now(),
             }
           : null,

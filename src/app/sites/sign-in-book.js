@@ -9,6 +9,7 @@ import { newId, submitJob } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BIN_DAYS } from "../owner/deleted-items.js";
 import { nameOf, teamIds } from "../owner/owner.js";
+import { tlOn } from "../owner/trade-look.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
@@ -36,6 +37,9 @@ const SIGNIN = (() => {
       .replace(/\s+/g, " ")
       .trim();
   const sinsOf = (id) => (id === S.me ? S.mine.signins || [] : (S.data.signins || {})[id] || []);
+  /* the plain sign-in book (no timesheet check-in) for sign-in-only people, and for every trade in the new look,
+   where the trades don't see timesheets (James, Nov 2026) */
+  const siPlain = () => signOnly(S.me) || tlOn();
   /* every sign-in row for a date: from timesheets (automatic) and from the sign-in tab */
   function rows(date) {
     const out = [];
@@ -268,19 +272,19 @@ const SIGNIN = (() => {
     const today = iso(new Date());
     const mineS = (S.mine.signins || []).filter((x) => x.date === today);
     const openS = mineS.find((x) => x.open);
-    const openT = !signOnly(S.me) && (S.mine.entries || []).find((e) => e.open && e.date === today);
+    const openT = !siPlain() && (S.mine.entries || []).find((e) => e.open && e.date === today);
     const last =
       ((S.mine.signins || []).slice().sort((a, b) => (b.inAt || 0) - (a.inAt || 0))[0] || {})
         .site || lastOf(S.mine.entries || [], () => true, "job");
-    let h = `<div class="who" style="margin-bottom:8px">${signOnly(S.me) ? "Sign in when you arrive on site and sign out when you leave. This is the site's sign-in book, used for fire roll calls and health &amp; safety." : "Your timesheet check-in and check-out fill in the site sign-in book for you."}</div>`;
+    let h = `<div class="who" style="margin-bottom:8px">${siPlain() ? "Sign in when you arrive on site and sign out when you leave. This is the site's sign-in book, used for fire roll calls and health &amp; safety." : "Your timesheet check-in and check-out fill in the site sign-in book for you."}</div>`;
     if (openS)
       h += `<div class="checkin"><b>✅ Signed in at ${esc(openS.site)}</b><div class="who">Since ${esc(openS.in)} today</div><button class="btn danger big" type="button" id="si-out">Sign out now</button></div>`;
     else if (openT)
       h += `<div class="checkin"><b>✅ Signed in at ${esc(openT.job)}</b><div class="who">Since ${esc(openT.actualIn || openT.start)} today, from your timesheet check-in</div><button class="btn danger big" type="button" id="si-tout">Check out (signs you out too)</button></div>`;
     else
-      h += `<div class="checkin"><b>📍 Sign in to site</b>${pickField("ci-site", "Site", siteNames(), last, "e.g. 12 Marine Way, Exmouth")}<button class="btn primary big" type="button" id="si-in">${signOnly(S.me) ? "Sign in now" : "Check in now (timesheet + sign-in)"}</button></div>`;
+      h += `<div class="checkin"><b>📍 Sign in to site</b>${pickField("ci-site", "Site", siteNames(), last, "e.g. 12 Marine Way, Exmouth")}<button class="btn primary big" type="button" id="si-in">${siPlain() ? "Sign in now" : "Check in now (timesheet + sign-in)"}</button></div>`;
     const hist = (
-      signOnly(S.me)
+      siPlain()
         ? []
         : (S.mine.entries || [])
             .filter((e) => e.type === "hours")
@@ -307,7 +311,7 @@ const SIGNIN = (() => {
       )
       .sort((a, b) => (b.d + b.in).localeCompare(a.d + a.in))
       .slice(0, 20);
-    h += `<div class="day" style="margin-top:12px"><div class="dayh"><span>Your recent sign-ins</span><span class="sum">tap ✎ to change a time</span></div>${hist.map((x) => `<div class="citem"><span><b>${esc(shortDay(x.d))}</b> · ${esc(x.site || "")}<br><span class="who">${x.src === "t" ? "from your timesheet" : "signed in"}</span></span><span class="otime" style="display:flex;gap:6px;align-items:center">in <b>${esc(x.in || "")}</b>${x.open ? ' <span class="tag ok">On site</span>' : x.out ? ` · out <b>${esc(x.out)}</b>` : ""}<button type="button" class="iconbtn si-ed" data-src="${x.src}" data-id="${esc(x.id)}" aria-label="Change">✎</button></span></div>`).join("") || '<div class="nothing">Nothing yet.</div>'}</div>`;
+    h += `<div class="day" style="margin-top:12px"><div class="dayh"><span>Your recent sign-ins</span><span class="who">tap ✎ to change a time</span></div>${hist.map((x) => `<div class="citem"><span><b>${esc(shortDay(x.d))}</b> · ${esc(x.site || "")}<br><span class="who">${x.src === "t" ? "from your timesheet" : "signed in"}</span></span><span class="otime" style="display:flex;gap:6px;align-items:center">in <b>${esc(x.in || "")}</b>${x.open ? ' <span class="tag ok">On site</span>' : x.out ? ` · out <b>${esc(x.out)}</b>` : ""}<button type="button" class="iconbtn si-ed" data-src="${x.src}" data-id="${esc(x.id)}" aria-label="Change">✎</button></span></div>`).join("") || '<div class="nothing">Nothing yet.</div>'}</div>`;
     $("main").innerHTML = h;
     wirePicks($("main"));
     if ($("si-in"))
@@ -317,7 +321,7 @@ const SIGNIN = (() => {
           toast("Choose the site first");
           return;
         }
-        if (signOnly(S.me)) await signIn(site);
+        if (siPlain()) await signIn(site);
         else await checkIn();
       };
     if ($("si-out")) $("si-out").onclick = () => signOut(openS);
