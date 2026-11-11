@@ -56,6 +56,7 @@ export {
   checkDetail,
   companyOf,
   nameOf,
+  ownerDisplayName,
   ownerInvoices,
   ownerPhotos,
   ownerSetup,
@@ -76,14 +77,24 @@ function teamIds() {
 function allIds() {
   return Object.keys(S.team).filter((id) => id !== S.me);
 }
+/* The owner's name as the app shows it: their own profile when they are the one signed in (the name they gave,
+   or the full name from their details), what the sign-in knows, or what the company settings say – never a name
+   written into the code. "Owner" is the last resort. */
+function ownerDisplayName() {
+  if (S.owner) {
+    const p = S.myProfile || {};
+    const own = p.name || (p.details && p.details.fullName) || S.ownerName;
+    if (own) return own;
+  }
+  return (S.settings && S.settings.ownerName) || "Owner";
+}
 function nameOf(id) {
   if (id && String(id).startsWith("px:")) return String(id).slice(3);
   if (id && String(id).startsWith("off:")) {
     const o = S.offapp.find((x) => "off:" + x.id === id);
     return (o && o.details && o.details.fullName) || "Trade";
   }
-  if (id && id === S.me && S.owner)
-    return (S.myProfile && S.myProfile.name) || S.ownerName || "James";
+  if (id && id === S.me && S.owner) return ownerDisplayName();
   return (S.team[id] && S.team[id].name) || S.names[id] || "New employee";
 }
 function allTeam(coll) {
@@ -559,7 +570,7 @@ function openStartFor(id) {
           checkIn: true,
           notes: "",
           approved: false,
-          startedBy: S.ownerName || "James",
+          startedBy: ownerDisplayName(),
           created: now,
           updated: now,
         });
@@ -595,7 +606,7 @@ function openStopFor(id, e) {
         hours: h,
         outAt: Date.now(),
         updated: Date.now(),
-        stoppedBy: S.ownerName || "James",
+        stoppedBy: ownerDisplayName(),
       });
       delete d.id;
       delete d.who;

@@ -2,6 +2,7 @@
 import { $, esc, nowHM, toast } from "./helpers.js";
 import { S, ownerMode, siteNames } from "./state.js";
 import { EMP_TABS, OWN_TABS, curTab, empTabs } from "./tabs-week.js";
+import { ownerDisplayName } from "../owner/owner.js";
 import { myTrade } from "../photos/photos.js";
 import { WE, WS } from "../timesheets/working-day.js";
 export { aiClose, startAi };
@@ -105,7 +106,7 @@ function aiDraw(streamText) {
               `<div class="ai-m ${t.role === "user" ? "me" : "bot"}">${t.role === "user" ? esc(t.content).replace(/\n/g, "<br>") : aiMd(t.content)}</div>`,
           )
           .join("")
-      : `<div class="ai-hello"><b>Hi${ownerMode() ? " James" : S.myProfile && S.myProfile.name ? " " + esc(S.myProfile.name.split(" ")[0]) : ""}.</b> Ask me how to do something in the app, or anything about the job: quantities, materials, methods, wording a message.<div class="ai-sugg">${sugg.map((s) => `<button type="button" class="pillbtn ai-s">${esc(s)}</button>`).join("")}</div></div>`) +
+      : `<div class="ai-hello"><b>Hi${ownerMode() ? (ownerDisplayName() === "Owner" ? "" : " " + esc(ownerDisplayName().split(" ")[0])) : S.myProfile && S.myProfile.name ? " " + esc(S.myProfile.name.split(" ")[0]) : ""}.</b> Ask me how to do something in the app, or anything about the job: quantities, materials, methods, wording a message.<div class="ai-sugg">${sugg.map((s) => `<button type="button" class="pillbtn ai-s">${esc(s)}</button>`).join("")}</div></div>`) +
     (streamText != null
       ? `<div class="ai-m bot">${streamText ? aiMd(streamText) : '<span class="ai-think">Thinking…</span>'}</div>`
       : "");

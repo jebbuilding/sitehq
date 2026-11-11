@@ -4,7 +4,7 @@ import { viewClient } from "../clients/quick-enquiry.js";
 import { $, addDays, dayLabel, esc, iso, monday, parse, toMin, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { nameOf, roleTag, teamIds } from "../owner/owner.js";
+import { nameOf, ownerDisplayName, roleTag, teamIds } from "../owner/owner.js";
 import { openPlanEditor } from "./board.js";
 import { onDay } from "./time-off.js";
 import { openPlanDetail } from "./views.js";
@@ -19,7 +19,7 @@ function diaryRows(owner) {
   const ids = owner ? [S.me].concat(teamIds()) : [S.me];
   return ids.map((id) => ({
     id,
-    name: id === S.me ? (owner ? (S.ownerName || "James") + " (you)" : "You") : nameOf(id),
+    name: id === S.me ? (owner ? ownerDisplayName() + " (you)" : "You") : nameOf(id),
   }));
 }
 function diaryHtml(shown, owner) {

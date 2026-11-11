@@ -3,7 +3,7 @@ import { CH } from "./chat.js";
 import { esc } from "../core/helpers.js";
 import { openSheet } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { nameOf, ownerDisplayName, teamIds } from "../owner/owner.js";
 export { intlNum, isApple, openCallSheet, phoneOf };
 const intlNum = (n) => {
   let d = String(n || "").replace(/[^\d+]/g, "");
@@ -28,9 +28,7 @@ function callTargets(c) {
         ? c.members
         : [];
   if (!owner)
-    return [
-      { id: "james", name: S.ownerName || "James", tel: (S.settings || {}).ownerPhone || "" },
-    ];
+    return [{ id: "james", name: ownerDisplayName(), tel: (S.settings || {}).ownerPhone || "" }];
   return ids.filter((id) => id !== S.me).map((id) => ({ id, name: nameOf(id), tel: phoneOf(id) }));
 }
 function openCallSheet() {

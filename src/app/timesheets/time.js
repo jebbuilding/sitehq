@@ -34,7 +34,7 @@ import { S, inWeek, siteNames, weekDays } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
 import { newId, sentToast, submitJob } from "../files/outbox.js";
-import { nameOf } from "../owner/owner.js";
+import { nameOf, ownerDisplayName } from "../owner/owner.js";
 import { proxyFor, setProxyFor } from "../people/foreman.js";
 import { myTrade, siteRec } from "../photos/photos.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
@@ -520,7 +520,7 @@ async function saveEntry() {
     delete base._src;
     const out = Object.assign(base, { created: (editing && editing.created) || Date.now() }, data, {
       approved: true,
-      editedBy: S.ownerName || "James",
+      editedBy: ownerDisplayName(),
       editedAt: Date.now(),
     });
     if (!out.open) {

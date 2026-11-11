@@ -21,7 +21,7 @@ async function setup(opts = {}) {
   dirs.push(dir);
   const store = createMemoryStore(), published = [];
   const blobs = opts.blobs ? opts.blobs(createDiskBlobs(dir)) : createDiskBlobs(dir);
-  const api = createApi({ store, rules: siteRules(capabilities), auth: createDevAuth(), blobs, live: { publish: async (p, o) => void published.push([p, o || ""]) } });
+  const api = createApi({ store, rules: siteRules(capabilities), auth: opts.auth || createDevAuth(), blobs, live: { publish: async (p, o) => void published.push([p, o || ""]) } });
   const call = async (token, method, p, body, headers = {}) => {
     const raw = Buffer.isBuffer(body) ? body : body === undefined ? null : Buffer.from(JSON.stringify(body));
     const r = await api({ method, path: p, headers: { ...(token ? { authorization: "Bearer " + token } : {}), ...headers }, body: raw });
@@ -52,6 +52,19 @@ test("who am I", async () => {
   assert.deepEqual((await call(OWNER, "GET", "/api/me")).body, { id: "owner", role: "owner", isOwner: true, name: "James Bray", canUpload: true });
   assert.deepEqual((await call(SAM, "GET", "/api/me")).body, { id: "emp1", role: "trade", isOwner: false, name: "Sam Test", canUpload: true });
   assert.deepEqual((await call(SUE, "GET", "/api/me")).body, { id: "u9", role: "client", isOwner: false, name: "Sue Jones", canUpload: false });
+});
+
+test("who am I: a sign-in that carries no name (Cognito) is named from the person's own profile", async () => {
+  // the dev sign-in normally supplies names; this one does not, like a Cognito token
+  const { call, store } = await setup({ auth: createDevAuth({ owner: { role: "owner" }, emp1: { role: "trade" }, u9: { role: "client" } }) });
+  await store.set("sheets", "owner", { name: "James Bray" });
+  await store.set("sheets", "emp1", { details: { fullName: "Samuel Test" } });
+  await store.set("sheets", "u9", { name: "Not Sue" });
+  assert.equal((await call(OWNER, "GET", "/api/me")).body.name, "James Bray", "owner: the name on their profile");
+  assert.equal((await call(SAM, "GET", "/api/me")).body.name, "Samuel Test", "trade: the full name from their details when the profile has no name");
+  assert.equal((await call(SUE, "GET", "/api/me")).body.name, "", "client: nothing – the portal has their name");
+  const fresh = await setup({ auth: createDevAuth({ owner: { role: "owner" } }) });
+  assert.equal((await fresh.call(OWNER, "GET", "/api/me")).body.name, "", "no profile yet: no name, no made-up one");
 });
 
 test("documents: set, get, update, delete, add", async () => {

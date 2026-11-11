@@ -16,7 +16,7 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
-import { allTeam, nameOf } from "../owner/owner.js";
+import { allTeam, nameOf, ownerDisplayName } from "../owner/owner.js";
 import { BRGB, photoTile, photoViewer } from "../photos/photos.js";
 import { keyDatesFor } from "../planner/board.js";
 import { wpDays } from "../planner/weather-plan.js";
@@ -157,7 +157,7 @@ function sdiWire(site) {
         date: cur,
         note,
         weather: (old && old.weather) || sdiWx(site, cur) || "",
-        byName: S.ownerName || "James",
+        byName: ownerDisplayName(),
         updated: Date.now(),
       };
       try {

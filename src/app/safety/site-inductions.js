@@ -8,7 +8,7 @@ import { openViewer } from "../core/viewer.js";
 import { uploadErr, uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId, submitJob } from "../files/outbox.js";
-import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { allTeam, nameOf, ownerDisplayName, teamIds } from "../owner/owner.js";
 import { allVisitInds } from "../people/foreman.js";
 import { meInfo, myDetails } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
@@ -608,7 +608,7 @@ function openInduction(ind, onDevice, count) {
                 signature: sig.data(),
                 signedAt: now,
                 created: now,
-                recordedBy: fm ? myName() + " (foreman)" : S.ownerName || "James",
+                recordedBy: fm ? myName() + " (foreman)" : ownerDisplayName(),
               },
             }),
           );

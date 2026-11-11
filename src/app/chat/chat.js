@@ -13,7 +13,7 @@ import { render, renderTabs } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
 import { blobUrl, saveAsset, uploadErr } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { nameOf, ownerDisplayName, teamIds } from "../owner/owner.js";
 import {
   VID_MAX,
   audExt,
@@ -62,9 +62,9 @@ function chatPeople() {
   if (ownerMode())
     return teamIds()
       .map((id) => ({ id, name: nameOf(id) }))
-      .concat([{ id: S.me, name: S.ownerName || "James" }]);
+      .concat([{ id: S.me, name: ownerDisplayName() }]);
   return (S.settings.people || []).concat(
-    S.settings.ownerId ? [{ id: S.settings.ownerId, name: S.settings.ownerName || "James" }] : [],
+    S.settings.ownerId ? [{ id: S.settings.ownerId, name: ownerDisplayName() }] : [],
   );
 }
 function personName(id) {
@@ -73,7 +73,7 @@ function personName(id) {
   if (p) return p.name;
   const c = S.chats.find((x) => x.names && x.names[id]);
   if (c) return c.names[id] + " (client)";
-  if (S.client && S.settings && id === S.settings.ownerId) return S.settings.ownerName || "James";
+  if (S.client && S.settings && id === S.settings.ownerId) return ownerDisplayName();
   return "Someone";
 }
 function visibleChats() {
@@ -998,7 +998,7 @@ function syncSettings() {
     const people = teamIds().map((id) => ({ id, name: nameOf(id) }));
     const want = {
       ownerId: S.me,
-      ownerName: S.ownerName || "James",
+      ownerName: ownerDisplayName(),
       people,
       allowDm: !!S.settings.allowDm,
     };

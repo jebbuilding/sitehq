@@ -29,7 +29,7 @@ import { printBlob } from "../files/print.js";
 import { SENDTO } from "../files/send-to.js";
 import { coData } from "../owner/company-details.js";
 import { binFromViewer } from "../owner/deleted-items.js";
-import { allTeam, nameOf, roleShort, teamIds } from "../owner/owner.js";
+import { allTeam, nameOf, ownerDisplayName, roleShort, teamIds } from "../owner/owner.js";
 import { BRGB, exifDate, isVid, pdfLogo, readExif, siteRec, stampPhoto } from "../photos/photos.js";
 import { keyDatesFor, keyTimeline, openPlanEditor, openPlanView } from "../planner/board.js";
 import { planEntries } from "../planner/time-off.js";
@@ -5138,7 +5138,7 @@ function openPhotoFull(id) {
   };
 }
 const myName = () =>
-  ownerMode() ? S.ownerName || "James" : (S.myProfile && S.myProfile.name) || "Someone";
+  ownerMode() ? ownerDisplayName() : (S.myProfile && S.myProfile.name) || "Someone";
 async function setTask(j, t, patch, files) {
   const cur = taskDone(j, t) || {};
   const data = Object.assign(

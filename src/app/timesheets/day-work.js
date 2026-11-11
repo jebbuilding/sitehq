@@ -11,7 +11,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { auditFirst } from "../owner/deletion-record.js";
-import { nameOf, teamIds, teamPlusMe } from "../owner/owner.js";
+import { nameOf, ownerDisplayName, teamIds, teamPlusMe } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { myDetails, openDetails } from "../people/personal-details.js";
 import { avatarHtml } from "../people/profile-photos.js";
@@ -729,7 +729,7 @@ function pickPersonFor(type) {
   const ids = teamIds();
   openSheet(
     `<h3 id="sheettitle">${type === "job" ? "🧱 Add day work" : "📅 Add a timesheet day"}: who is it for?</h3>
-    <div class="seg pplgrp" id="pp-who"><button type="button" data-v="${esc(S.me)}">🙋 Me (${esc(S.ownerName || "James")})</button>${Object.entries(
+    <div class="seg pplgrp" id="pp-who"><button type="button" data-v="${esc(S.me)}">🙋 Me (${esc(ownerDisplayName())})</button>${Object.entries(
       EMP_TYPES,
     )
       .concat([["", "Not set yet"]])

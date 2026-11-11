@@ -51,7 +51,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { clApply, clMoreHtml, clOn } from "../owner/client-look.js";
 import { coData, companyCard } from "../owner/company-details.js";
-import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { allTeam, nameOf, ownerDisplayName, teamIds } from "../owner/owner.js";
 import { pvOn } from "../people/portal-access.js";
 import { siteRec, wireVoice } from "../photos/photos.js";
 import { sigPad } from "../safety/site-inductions.js";
@@ -385,7 +385,7 @@ function renderClient() {
       }
       ${
         newDocs.length
-          ? `<div class="notice warn" style="display:flex;flex-direction:column;gap:6px"><b>📬 ${esc((S.settings || {}).ownerName || "James")} sent you ${newDocs.length === 1 ? "a new document" : newDocs.length + " new documents"}</b>${newDocs
+          ? `<div class="notice warn" style="display:flex;flex-direction:column;gap:6px"><b>📬 ${esc(ownerDisplayName())} sent you ${newDocs.length === 1 ? "a new document" : newDocs.length + " new documents"}</b>${newDocs
               .slice(0, 4)
               .map(
                 (d) =>

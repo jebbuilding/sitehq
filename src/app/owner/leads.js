@@ -4,6 +4,7 @@ import { S, ownerMode } from "../core/state.js";
 import { curTab, render } from "../core/tabs-week.js";
 import { loadZip } from "./backup.js";
 import { coData } from "./company-details.js";
+import { ownerDisplayName } from "./owner.js";
 export { LEADS };
 const LEADS = (() => {
   const CATS = [
@@ -484,7 +485,7 @@ const LEADS = (() => {
     const web = (co.website || "www.jebbuilding.co.uk").replace(/^https?:\/\//, "");
     const tel = co.mobile || co.phone || "07917 646970";
     const mail = co.email || "info@jebbuilding.co.uk";
-    const nm = (co.owner || "James").split(" ")[0];
+    const nm = (co.owner || ownerDisplayName()).split(" ")[0];
     const cn = co.name || "JEB Building Services";
     return {
       12: `My name is ${nm} and I am the owner of ${cn}, a building company based in Exmouth working across East Devon, Exeter and Teignbridge. We specialise in extensions, loft conversions, luxury new builds and high-quality refurbishments.`,

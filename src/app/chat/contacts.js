@@ -9,7 +9,7 @@ import { openSheet } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
 import { isSketch } from "../drawing/trade-drawings.js";
 import { blobUrl, isImg } from "../files/files.js";
-import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { allTeam, nameOf, ownerDisplayName, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { empTypeOf } from "../sites/job-details.js";
@@ -46,7 +46,7 @@ function contactList() {
     out.push({
       key: "o",
       id: (S.settings || {}).ownerId || "",
-      name: S.ownerName || "James",
+      name: ownerDisplayName(),
       sub: "Boss",
       tel: (S.settings || {}).ownerPhone || "",
       kind: "owner",

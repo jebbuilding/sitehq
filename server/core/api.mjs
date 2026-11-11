@@ -216,6 +216,16 @@ export function createApi({ store, rules, auth, blobs, live, onRefused, now }) {
     return { status: 200, headers: common, body: bytes };
   }
 
+  /** The caller's own name: what the sign-in says if it says anything (dev tokens), else their profile – the name they
+   *  gave when they joined, or the full name from their details. A Cognito sign-in carries no name. */
+  async function nameOfCaller(user, caller) {
+    if (user.name) return user.name;
+    if (caller.confine) return ""; // a client: the portal has their name
+    const prof = await store.get("sheets", caller.id);
+    const d = prof && prof.data ? prof.data : prof;
+    return (d && typeof d.name === "string" && d.name) || (d && d.details && typeof d.details.fullName === "string" && d.details.fullName) || "";
+  }
+
   async function profiles(caller, { ids }) {
     if (!Array.isArray(ids) || ids.length > 500 || ids.some((i) => typeof i !== "string")) throw invalid("ids must be a list of at most 500 strings");
     // Names come from people's own profiles (sheets/<id>.name); a client is told nobody's name.
@@ -248,7 +258,7 @@ export function createApi({ store, rules, auth, blobs, live, onRefused, now }) {
     };
     const origin = CLIENT_ID.test(headers["x-sitehq-client"] || "") ? headers["x-sitehq-client"] : "";
 
-    if (path === "/api/me" && method === "GET") return json(200, { id: caller.id, role: caller.role, isOwner: caller.role === "owner", name: user.name || "", canUpload: caller.uploads !== "none" });
+    if (path === "/api/me" && method === "GET") return json(200, { id: caller.id, role: caller.role, isOwner: caller.role === "owner", name: await nameOfCaller(user, caller), canUpload: caller.uploads !== "none" });
     if (path === "/api/profiles" && method === "POST") return json(200, await profiles(caller, body()));
     let m = /^\/api\/db\/(get|list|set|update|delete|add)$/.exec(path);
     if (m && method === "POST") return json(200, await db[m[1]](caller, body(), origin));
