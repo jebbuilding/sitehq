@@ -19,7 +19,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm install
-      - run: npx playwright install --with-deps chromium
+      # The browser itself comes from Playwright's own CDN. Its system packages are normally already on the runner
+      # image, so installing them is best-effort: an unreachable apt mirror (seen 11 Nov 2026) must not fail the run.
+      - run: npx playwright install chromium
+      - run: timeout 180 npx playwright install-deps chromium || echo "::warning::could not install Chromium's system packages (apt unavailable); using what the runner image has"
       - run: npm run vendor
       - run: npm test
       - run: cd apps-script && node mock_test.js
