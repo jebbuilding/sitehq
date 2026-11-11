@@ -45,7 +45,20 @@
       } catch (e) {}
     }
     cfg = Object.assign(cfg, c || {});
+    environmentTitle();
   })();
+
+  // Anything but production says so in the tab title: "SiteHQ (Dev)", "SiteHQ (Local)". The app sets the title
+  // back to plain "SiteHQ" after some screens, so the suffix is re-applied whenever that happens.
+  function environmentTitle() {
+    const env = String(cfg.env || "");
+    if (!env || env === "prod") return;
+    const suffix = " (" + env[0].toUpperCase() + env.slice(1) + ")";
+    const apply = () => { if (document.title && !document.title.endsWith(suffix)) document.title += suffix; };
+    apply();
+    const t = document.querySelector("title");
+    if (t && typeof MutationObserver === "function") new MutationObserver(apply).observe(t, { childList: true, characterData: true, subtree: true });
+  }
 
   let lastToken = "", cookieVersion = 0;
   async function token() {
