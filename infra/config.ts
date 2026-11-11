@@ -136,7 +136,7 @@ export const config: ProjectConfig = {
       account: DEV_ACCOUNT,
       region: REGION,
       domain: DOMAIN,
-      subdomain: "dev",
+      subdomain: "sitehq", // the first, temporary site: sitehq.jevul.com in Jasper's account, synthetic data only
       hostedZoneId: env("SITEHQ_DEV_HOSTED_ZONE_ID", PLACEHOLDERS.hostedZoneId),
       hostedZoneName: env("SITEHQ_DEV_HOSTED_ZONE_NAME", DOMAIN),
       githubOidcProvider: "create",
