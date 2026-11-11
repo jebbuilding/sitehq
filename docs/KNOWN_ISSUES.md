@@ -37,10 +37,8 @@
 - The published page grew when the code was formatted: 2.25 MB → 2.90 MB, or 674 KB → 758 KB gzipped (+12%), and the script takes 10–18% longer to parse and run (about +0.07 s with the CPU slowed 4×, +0.1 s slowed 6×). Minifying at build time would undo both, but the build must keep the source text until the artifact is frozen (`docs/ARCHITECTURE.md` › Build).
 
 ## Product open items (from James)
-- Permit numbers for EMS and Stuart Partners waste transfer sites (Setup › Waste transfer sites).
 - Microsoft 365 connector was being connected.
 - QR site sign-in: needs James's Google Sheet + script deployed (instructions in-app, Setup › 📱 QR site sign-in; files in `apps-script/`). Tested only against a mock spreadsheet.
-- Trades' tab is still "Jobs & to-dos" (owner's was renamed "Forms") – undecided.
 - Some supplier details unconfirmed online (Royale/MB Frames contact, Ryterna phone, Cortizo from a directory).
 
 ## Data quality

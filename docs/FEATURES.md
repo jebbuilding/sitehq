@@ -31,7 +31,7 @@ Where to look: search `src/app/` for the function or module named; each file's f
 Openings (window/door/bay/garage/roof) drawn as SVG from presets or custom frames; per-opening sizes, glass, cill, frame, hardware, photos; uPVC/aluminium/composite/**timber** options (species, style, mouldings, finish, glazing, bars, ironmongery, conservation); **door leaf designs** (composite & wooden, `DOORD`); garage doors; house numbers; **client & site drop-downs**; 📖 brochures per maker (open, ✂️ cut a design onto an opening); PDFs: **Order request** and **Full survey**, both printable; saved on the client's record.
 
 ## Trade tabs (`EMP_TABS` / `empTabs()`)
-Timesheets (incl. paper-style monthly), Day work, Chat, Planner, Jobs & to-dos, Sites (plans, RAMS, specs, induction), Reports, Photos, Materials & tools, Merchants (only shared ones + shared suppliers/brochures), Receipts, Invoices, Training, Policies & insurance, Calculator, Drawings, My details. Sign-in-only people get Sign in instead of timesheets/day work.
+Timesheets (incl. paper-style monthly), Day work, Chat, Planner, Forms (jobs, to-dos and forms), Sites (plans, RAMS, specs, induction), Reports, Photos, Materials & tools, Merchants (only shared ones + shared suppliers/brochures), Receipts, Invoices, Training, Policies & insurance, Calculator, Drawings, My details. Sign-in-only people get Sign in instead of timesheets/day work.
 
 ## Client portal
 Home, documents by folder, sign-offs (sign on phone), uploads to James, job calendar, messages.
