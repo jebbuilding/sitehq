@@ -231,3 +231,7 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .tl-date{gap:1px}
 .tl-broch .supcard{margin:6px 0}
 .tl-bro .who{display:block;font-weight:400}
+/* trades' sign in by location (owner/trade-signin.js) */
+.tsi-st{display:flex;flex-direction:column;gap:2px;margin:2px 0 10px}
+.tsi-st b{font-size:18px}
+.tsi-pick{display:block;margin-top:10px}

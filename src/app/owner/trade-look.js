@@ -4,6 +4,7 @@ import { S, ownerMode } from "../core/state.js";
 import { curTab, empTabs, render } from "../core/tabs-week.js";
 import { openFile } from "../files/in-app-files.js";
 import { coData } from "./company-details.js";
+import { tsiCardHtml, tsiWire } from "./trade-signin.js";
 import { amForeman } from "../people/foreman.js";
 import { qrsTradeScan } from "../planner/qr-stickers.js";
 import { planEntries } from "../planner/time-off.js";
@@ -13,7 +14,7 @@ import { KINDS } from "../safety/checklists.js";
 import { signOnly } from "../sites/sign-in-book.js";
 export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
 /* The trades get the same look as James (body.nl-on, the styles in owner.css): no wall of buttons at the top, but a bar
-   along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 📋 Forms, 📷 Photos and
+   along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 🏗️ Sites, 📷 Photos and
    ☰ More. The trades don't see anything to do with timesheets or day work (James, Nov 2026): no Time or Day work pages,
    and Sign in is the plain site sign-in book (sites/sign-in-book.js, siPlain). Today lists their dates from the planner
    (today and what's coming up), whether they're signed in, and what's waiting for them (forms, things to sign, checks
@@ -23,12 +24,12 @@ export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
 const TL_BAR = [
   ["home", "Today", "🏠"],
   ["planner", "Planner", "🗓️"],
-  ["jobs", "Forms", "📋"],
+  ["plans", "Sites", "🏗️"],
   ["photos", "Photos", "📷"],
   ["more", "More", "☰"],
 ];
 const TL_GROUPS = [
-  ["Work", ["foreman", "signin", "plans", "draw", "calc"]],
+  ["Work", ["foreman", "jobs", "signin", "plans", "draw", "calc"]],
   ["Materials and merchants", ["materials", "suppliers", "brochures"]],
   ["Safety and training", ["training"]],
   ["Policies and insurance", ["policies"]],
@@ -37,7 +38,8 @@ const TL_GROUPS = [
 ];
 /* left out of More (James, Nov 2026): day work (nothing to do with timesheets or day work) and Reports; an
    accident or near miss is reported from the button on Today, and a van check by scanning its sticker */
-const TL_MORE_HIDE = ["mydw", "checks"];
+/* Sign in is on Today and at the top of Sites, found by the phone's location (owner/trade-signin.js) */
+const TL_MORE_HIDE = ["mydw", "checks", "signin"];
 let tlLanded = false;
 const tlOn = () => {
   if (S.owner || ownerMode() || S.client) return false;
@@ -144,9 +146,6 @@ function tlHome() {
       : dayWord(p.from) + (p.to && p.to !== p.from ? " – " + shortDay(p.to) : "");
   /* stickers on the vans and machines: Do a check goes straight to the camera */
   const tagged = (S.equipment || []).some((e) => e.tag && KINDS[e.kind]);
-  /* signed in? */
-  const sins = (S.mine.signins || []).filter((x) => x.date === today);
-  const inNow = sins.find((x) => !x.out);
   /* what's waiting */
   const waits = [
     ["jobs", badge.jobs, "form, job or to-do to do", "forms, jobs or to-dos to do"],
@@ -163,15 +162,6 @@ function tlHome() {
   ].filter(([k, n]) => n && have.has(k));
   const tiles = [
     have.has("foreman") ? ["foreman", "🦺 Foreman", "Your team and sites today"] : null,
-    signOnly(S.me) || have.has("signin")
-      ? [
-          "signin",
-          inNow ? "📍 Signed in" : "📍 Sign in",
-          inNow
-            ? `At ${inNow.site || "site"} since ${inNow.in || ""}`
-            : "At a site, when you get there",
-        ]
-      : null,
     /* Reports is out of the trades' app; a van or machine check is still one scan of its sticker away */
     have.has("checks") && tagged
       ? ["__scan", "🚐 Do a check", "Opens the camera – point it at the van or machine's sticker"]
@@ -187,6 +177,7 @@ function tlHome() {
   ].filter(Boolean);
   $("main").innerHTML = `<div class="nl-today tl-home">
     <h2 class="nl-h">${esc(hello)}${first ? ", " + esc(first) : ""}</h2>
+    ${signOnly(S.me) || have.has("signin") || have.has("plans") ? tsiCardHtml() : ""}
     <section class="nl-card"><div class="nl-cardh"><h2>📅 Your dates</h2></div>
       ${
         dates.length
@@ -217,6 +208,7 @@ function tlHome() {
       )
       .join("")}</div>
   </div>`;
+  if ($("tsi-card")) tsiWire();
   $("main")
     .querySelectorAll(".tl-go")
     .forEach(

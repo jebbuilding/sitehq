@@ -76,7 +76,7 @@
 #dcm-fade img+img{position:absolute;inset:0}
 .dcm label{display:block;margin-top:8px}
 /* building control reports (sites/building-control.js): the file picker sits over the button (iPad won't open a hidden one) */
-.bc{display:flex;flex-direction:column;gap:8px}
+.bc-wrap{display:flex;flex-direction:column;gap:8px}
 .bc-addw{position:relative;overflow:hidden;display:flex;width:fit-content;max-width:100%}
 .bc-addw input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:0}
 .bc-row{padding:12px 14px;margin:0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}

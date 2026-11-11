@@ -47,7 +47,7 @@ const bcResult = (k) => (BC_RES.find((x) => x[0] === (k || "")) || BC_RES[3])[1]
 function bcHtml(site) {
   const L = bcAll(site);
   const c = siteClient(site);
-  return `<div class="bc">
+  return `<div class="bc-wrap">
     <div class="who">Reports and certificates from building control for this job. ${c ? `Ones marked "Client sees it" are in ${esc(c.name)}'s portal under Certificates &amp; warranties.` : "No client is linked to this site, so they're kept here only."}</div>
     <span class="btn primary bc-addw">🏛️ Add a report or certificate<input type="file" id="bc-file" accept="application/pdf,image/*" multiple aria-label="Add a building control report"></span>
     <div class="who">From an email: open the attachment, tap <b>Share</b> › <b>Save to Files</b>, then tap the button above and pick it.</div>

@@ -55,7 +55,7 @@ const PDF=Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 
  await tc.addInitScript(()=>{try{localStorage.setItem('jeb.tradelook','true');localStorage.setItem('jeb.instLater','true')}catch(e){}});
  await tc.route(/^https?:\/\//,r=>r.request().url().startsWith('https://sitehq.test/')?r.fulfill({status:200,contentType:'text/html; charset=utf-8',body:html}):r.abort());
  const q=await tc.newPage();q.on('pageerror',e=>{console.log('ERR',e.message);bad++;});await q.goto('https://sitehq.test/');await q.waitForTimeout(2200);await q.keyboard.press('Escape');await q.waitForTimeout(300);
- ok(await q.locator('.nl-tile[data-t=signin]').count()===1,'Sign in is still on Today');
+ ok(await q.locator('#tsi-card').count()===1,'Sign in is still on Today');
  ok(await q.locator('.nl-tile[data-t=__inc]').count()===1,'Today has a 🚑 Report an accident button');
  await q.screenshot({path:OUT+'bc-2-trade-today.png'});
  await q.click('.nl-tile[data-t=__inc]');await q.waitForTimeout(500);
@@ -63,7 +63,7 @@ const PDF=Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 
  await q.click('#f-cancel');await q.waitForTimeout(300);
  await q.click('#tlbar .tl-b[data-t=more]');await q.waitForTimeout(400);
  const mm=await q.innerText('#main');
- ok(['Sites','Sign in','Calculator','Training','Materials','Merchants|Suppliers','Brochures'].every(w=>new RegExp(w).test(mm)),'More has Sites, Sign in, Calculator, Training, Materials, Merchants and Brochures back');
+ ok(['Forms','Calculator','Training','Materials','Merchants|Suppliers','Brochures'].every(w=>new RegExp(w).test(mm)),'More has Forms, Calculator, Training, Materials, Merchants and Brochures');
  ok(!/Day work|My reports/.test(mm),'but not Day work or Reports');
  await q.screenshot({path:OUT+'bc-3-trade-more.png',fullPage:true});
  await q.click('.tl-go[data-t=brochures]');await q.waitForTimeout(400);

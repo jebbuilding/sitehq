@@ -35,7 +35,8 @@ import {
   wireSentTodos,
   wireTradeTodos,
 } from "../owner/todo-lists.js";
-import { tlApply, tlBrochures, tlHome, tlMore } from "../owner/trade-look.js";
+import { tlApply, tlBrochures, tlHome, tlMore, tlOn } from "../owner/trade-look.js";
+import { tsiSitesTop } from "../owner/trade-signin.js";
 import { whatsNewHTML, wireWhatsNew, wnCapture } from "../owner/whats-new.js";
 import { acTabAllowed } from "../people/access.js";
 import { cmpPage } from "../people/companies.js";
@@ -98,7 +99,7 @@ const EMP_TABS = [
   ["plans", "🏗️ Sites"],
   ["checks", "📋 Reports"],
   ["photos", "📷 Photos"],
-  ["materials", "🧰 Materials & tools"],
+  ["materials", "🧰 Materials & tools requests"],
   ["suppliers", "🏪 Merchants"],
   ["receipts", "🧾 Receipts"],
   ["invoices", "📑 Invoices"],
@@ -580,7 +581,7 @@ function render() {
         training: "Training",
         chat: "Chat",
         planner: "Planner",
-        materials: "Materials & tools",
+        materials: "Materials & tools requests",
         receipts: "My receipts",
         details: "My details",
         todo: "My forms",
@@ -630,6 +631,7 @@ function render() {
         wireTradeTodos();
       }
     }
+    if (t === "plans" && tlOn() && !S.f.folder) tsiSitesTop();
     if (t === "plans" || t === "signin") {
       const sb = SIGNSHEET.bannerHtml();
       if (sb) {

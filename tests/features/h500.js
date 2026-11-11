@@ -22,7 +22,7 @@ async function open(b,vp){const ctx=await b.newContext({viewport:vp,deviceScaleF
  const p=await open(b,{width:390,height:844});
  ok(await p.evaluate(()=>getComputedStyle(document.getElementById('tabs')).display==='none'),'no wall of buttons at the top');
  const bar=await p.evaluate(()=>[...document.querySelectorAll('#tlbar .tl-b')].map(x=>x.textContent.replace(/\d+/g,'').trim()));
- ok(JSON.stringify(bar)==='["🏠Today","🗓️Planner","📋Forms","📷Photos","☰More"]','along the bottom: Today, Planner, Forms, Photos, More – no Time ('+bar.join(' ')+')');
+ ok(JSON.stringify(bar)==='["🏠Today","🗓️Planner","🏗️Sites","📷Photos","☰More"]','along the bottom: Today, Planner, Sites, Photos, More – no Time ('+bar.join(' ')+')');
  const bb=await p.evaluate(()=>{const r=document.getElementById('tlbar').getBoundingClientRect();return [r.bottom,innerHeight]});
  ok(Math.abs(bb[0]-bb[1])<2,'the bar sits at the bottom of the phone');
  const m=await p.innerText('#main');
@@ -42,11 +42,11 @@ async function open(b,vp){const ctx=await b.newContext({viewport:vp,deviceScaleF
  await p.screenshot({path:OUT+'trade-new-1-today.png'});
  await p.click('#tlbar .tl-b[data-t=more]');await p.waitForTimeout(400);
  const mm=await p.innerText('#main');
- ok(/Policies/.test(mm)&&/My details/.test(mm)&&/Sites/.test(mm)&&/Training/.test(mm)&&!/Photos|Day work|My reports/.test(mm),'More has the rest (Sites, Training and the others back) – without Day work or Reports');
+ ok(/Policies/.test(mm)&&/My details/.test(mm)&&/Forms/.test(mm)&&/Training/.test(mm)&&!/Photos|Day work|My reports/.test(mm),'More has the rest (Forms, Training and the others) – without Day work or Reports');
  await p.screenshot({path:OUT+'trade-new-2-more.png'});
  await p.click('.tl-go[data-t=policies]');await p.waitForTimeout(400);
  ok(await p.evaluate(()=>window.__S.tab==='policies')&&await p.isVisible('#tlbar .tl-b[data-t=more][aria-current]'),'Policies opens from More, with More still lit');
- await p.click('#tlbar .tl-b[data-t=jobs]');await p.waitForTimeout(400);
+ await p.click('#tlbar .tl-b[data-t=more]');await p.waitForTimeout(300);await p.click('.tl-go[data-t=jobs]');await p.waitForTimeout(400);
  ok(await p.evaluate(()=>window.__S.tab==='jobs')&&/Final snags/.test(await p.innerText('#main')),'Forms shows his jobs and snags');
  await p.screenshot({path:OUT+'trade-new-3-forms.png'});
  await p.click('#tlbar .tl-b[data-t=home]');await p.waitForTimeout(300);await p.click('.nl-tile.tl-go[data-t=__scan]');await p.waitForTimeout(800);
