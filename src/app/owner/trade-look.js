@@ -2,13 +2,16 @@
 import { $, addDays, esc, iso, shortDay, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { curTab, empTabs, render } from "../core/tabs-week.js";
+import { openFile } from "../files/in-app-files.js";
 import { coData } from "./company-details.js";
 import { amForeman } from "../people/foreman.js";
 import { qrsTradeScan } from "../planner/qr-stickers.js";
 import { planEntries } from "../planner/time-off.js";
+import { tradeMakersHtml, wireTradeMakers } from "../purchasing/merchants.js";
+import { openIncident } from "../safety/accidents.js";
 import { KINDS } from "../safety/checklists.js";
 import { signOnly } from "../sites/sign-in-book.js";
-export { tlApply, tlHome, tlMore, tlOn };
+export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
 /* The trades get the same look as James (body.nl-on, the styles in owner.css): no wall of buttons at the top, but a bar
    along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 📋 Forms, 📷 Photos and
    ☰ More. The trades don't see anything to do with timesheets or day work (James, Nov 2026): no Time or Day work pages,
@@ -25,23 +28,16 @@ const TL_BAR = [
   ["more", "More", "☰"],
 ];
 const TL_GROUPS = [
-  ["Work", ["foreman", "draw"]],
+  ["Work", ["foreman", "signin", "plans", "draw", "calc"]],
+  ["Materials and merchants", ["materials", "suppliers", "brochures"]],
+  ["Safety and training", ["training"]],
   ["Policies and insurance", ["policies"]],
   ["Money", ["receipts", "invoices"]],
   ["You and the team", ["chat", "details"]],
 ];
-/* left out of More (James, Nov 2026); a "Waiting for you" row on Today still opens Sites or Training when there's a
-   RAMS, induction or toolbox talk to sign */
-const TL_MORE_HIDE = [
-  "signin",
-  "mydw",
-  "plans",
-  "calc",
-  "training",
-  "materials",
-  "suppliers",
-  "checks",
-];
+/* left out of More (James, Nov 2026): day work (nothing to do with timesheets or day work) and Reports; an
+   accident or near miss is reported from the button on Today, and a van check by scanning its sticker */
+const TL_MORE_HIDE = ["mydw", "checks"];
 let tlLanded = false;
 const tlOn = () => {
   if (S.owner || ownerMode() || S.client) return false;
@@ -53,7 +49,8 @@ const TL_HIDE = ["time", "mydw"];
 const tlTabs = () =>
   (amForeman() ? [["foreman", "🦺 Foreman"]] : [])
     .concat(empTabs())
-    .filter(([k]) => !TL_HIDE.includes(k));
+    .filter(([k]) => !TL_HIDE.includes(k))
+    .concat([["brochures", "📖 Brochures"]]);
 const tlLabel = (k) =>
   ((tlTabs().find((x) => x[0] === k) || [0, k])[1] || "").replace(/^\S+\s/, "");
 const tlIcon = (k) => ((tlTabs().find((x) => x[0] === k) || [0, ""])[1] || "").split(" ")[0];
@@ -179,6 +176,7 @@ function tlHome() {
     have.has("checks") && tagged
       ? ["__scan", "🚐 Do a check", "Opens the camera – point it at the van or machine's sticker"]
       : null,
+    ["__inc", "🚑 Report an accident", "Or a near miss – straight away, from the site"],
     have.has("photos") ? ["photos", "📷 Take a photo", "Progress, a problem or a drawing"] : null,
     have.has("jobs")
       ? ["jobs", "📋 Forms", badge.jobs ? `${badge.jobs} to do` : "Jobs, snags and to-dos"]
@@ -222,8 +220,44 @@ function tlHome() {
   $("main")
     .querySelectorAll(".tl-go")
     .forEach(
-      (b) => (b.onclick = () => (b.dataset.t === "__scan" ? qrsTradeScan() : tlGo(b.dataset.t))),
+      (b) =>
+        (b.onclick = () =>
+          b.dataset.t === "__scan"
+            ? qrsTradeScan()
+            : b.dataset.t === "__inc"
+              ? openIncident()
+              : tlGo(b.dataset.t)),
     );
+}
+/* 📖 Brochures: what James has sent them from Merchants (📤 Send on a supplier or merchant: a brochure, or their
+   details as a PDF), newest first, then every supplier he shares with them (Merchants › Who sees what) with its
+   brochures, phone and website */
+function tlBrochures() {
+  const sent = (S.docs || [])
+    .filter((d) => d.brochure && (d.sentTo || []).includes(S.me))
+    .sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
+  $("main").innerHTML = `<div class="tl-broch">
+    <section class="nl-card"><div class="nl-cardh"><h2>📤 Sent to you</h2></div>
+      ${
+        sent.length
+          ? sent
+              .map(
+                (d) =>
+                  `<button type="button" class="nl-row2 tl-bro" data-id="${esc(d.id)}"><span class="nl-rl">📄 ${esc(d.title || d.fileName || "Brochure")}<span class="who"> ${esc(d.uploaded ? shortDay(iso(new Date(d.uploaded))) : "")}${d.note ? " · " + esc(d.note) : ""}</span></span><span class="nl-chev" aria-hidden="true">›</span></button>`,
+              )
+              .join("")
+          : `<div class="who">Nothing sent to you yet. When James sends you a brochure or a supplier's details, it's here.</div>`
+      }
+    </section>
+    <section class="nl-card"><div class="nl-cardh"><h2>🏭 Suppliers and their brochures</h2></div>${tradeMakersHtml()}</section>
+  </div>`;
+  $("main")
+    .querySelectorAll(".tl-bro")
+    .forEach((b) => {
+      const d = sent.find((x) => x.id === b.dataset.id);
+      b.onclick = () => d && openFile(d.assetId, d.fileName || d.title, d.contentType);
+    });
+  wireTradeMakers($("main"));
 }
 /* ☰ More: every page they have that isn't in the bar */
 function tlMore() {

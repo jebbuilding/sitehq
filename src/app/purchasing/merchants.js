@@ -4,11 +4,12 @@ import { TR } from "../core/live-feed.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
+import { openFile } from "../files/in-app-files.js";
 import { noBin } from "../owner/deleted-items.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { makersAll } from "./makers.js";
 import { scheduleSupSync, supMaster } from "./suppliers.js";
-export { mkCopies, scheduleMkSync, syncMakers, tradeMakersHtml, whoSeesDlg };
+export { mkCopies, scheduleMkSync, syncMakers, tradeMakersHtml, whoSeesDlg, wireTradeMakers };
 const mkAllowed = (r, id) =>
   r && (r.vis === "all" ? true : r.vis === "some" ? (r.people || []).includes(id) : false);
 const mkCopies = (list) =>
@@ -113,6 +114,12 @@ function tradeMakersHtml() {
       ${(r.brochures || []).length ? `<div class="flabel" style="margin-top:8px">📖 Brochures</div>${r.brochures.map((b) => `<button type="button" class="incrow tmk-open" data-a="${esc(b.assetId)}" data-n="${esc(b.fileName || b.title)}" data-t="${esc(b.contentType || "application/pdf")}"><span>📄 ${esc(b.title)}</span><span>›</span></button>`).join("")}` : ""}
       ${(r.links || []).map(([t, u]) => `<div class="dwsrow"><a href="${esc(u)}" target="_blank" rel="noopener">🌐 ${esc(t)}</a></div>`).join("")}</div></details>`;
   }).join("");
+}
+/* the brochure buttons in tradeMakersHtml open the file */
+function wireTradeMakers(root) {
+  (root || document)
+    .querySelectorAll(".tmk-open")
+    .forEach((b) => (b.onclick = () => openFile(b.dataset.a, b.dataset.n, b.dataset.t)));
 }
 /* one screen to choose who sees each merchant and supplier */
 function whoSeesDlg(fk, fid) {

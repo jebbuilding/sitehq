@@ -20,7 +20,7 @@ import {
   stampPhoto,
 } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
-export { INC_KINDS, incidentsBlock, viewIncident, wireIncidents };
+export { INC_KINDS, incidentsBlock, openIncident, viewIncident, wireIncidents };
 const INC_KINDS = {
   injury: "Accident (someone hurt)",
   nearmiss: "Near miss (nobody hurt)",

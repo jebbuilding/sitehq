@@ -122,7 +122,7 @@ function supSendSheet(name, rec, kind, files) {
         const i = +b.dataset.i;
         if (i >= 0) {
           closeForm();
-          return SENDTO.open(files[i]);
+          return SENDTO.open(Object.assign({}, files[i], { brochure: true }));
         }
         b.disabled = true;
         try {
@@ -136,6 +136,7 @@ function supSendSheet(name, rec, kind, files) {
             name: fn,
             type: "application/pdf",
             folder: "other",
+            brochure: true,
           });
         } catch (e) {
           b.disabled = false;

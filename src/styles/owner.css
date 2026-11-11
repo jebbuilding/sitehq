@@ -229,3 +229,5 @@ body.nl-on #h1[data-date=""]::before{display:none}
 /* the trades in the new look (owner/trade-look.js): the bar's emoji, the same size as the owner's icons */
 .tl-b .tl-i{font-size:21px;line-height:1}
 .tl-date{gap:1px}
+.tl-broch .supcard{margin:6px 0}
+.tl-bro .who{display:block;font-weight:400}

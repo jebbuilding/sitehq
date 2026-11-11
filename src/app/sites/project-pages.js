@@ -21,6 +21,7 @@ import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv, matCard, openMat, rcRow, wireReceipts } from "../purchasing/materials-receipts.js";
 import { ramsMaker } from "../safety/rams-maker.js";
 import { indFor, indSectionWithId, wireInduction } from "../safety/site-inductions.js";
+import { bcHtml, bcWire } from "./building-control.js";
 import { dcmOpen } from "./drawing-compare.js";
 import {
   editSiteJob,
@@ -295,6 +296,7 @@ function ownerProjects() {
       "Site diary",
       (S.siteDiary || []).filter((r) => same(r.site, site)).length + " notes",
     ],
+    ["bc", "Building control", (S.bcReports || []).filter((r) => same(r.site, site)).length],
     ["chat", "Chat", ""],
   ];
   const ICON = {
@@ -310,10 +312,12 @@ function ownerProjects() {
     chat: "💬",
     diary: "📔",
     programme: "📊",
+    bc: "🏛️",
     money: "🧾",
   };
   P.diary = sdiHtml(site);
   P.programme = pgHtml(site);
+  P.bc = bcHtml(site);
   let tab = S.f.pjtab || "overview";
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
@@ -468,6 +472,7 @@ function ownerProjects() {
   wireDocs(true);
   wireInvoices(invs, true);
   if (tab === "diary") sdiWire(site);
+  if (tab === "bc") bcWire(site);
   if (tab === "programme") pgWire(site);
   if ($("dcm-open")) $("dcm-open").onclick = () => dcmOpen(site);
   wireInduction();

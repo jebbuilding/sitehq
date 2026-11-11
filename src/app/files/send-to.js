@@ -180,6 +180,7 @@ const SENDTO = (() => {
               who: keep ? [] : tr,
               sentTo: tr,
               note,
+              brochure: !!f.brochure,
             });
           }
           for (const w of tr) {

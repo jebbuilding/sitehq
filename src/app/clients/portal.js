@@ -49,6 +49,7 @@ import { CUT } from "../files/cut-outs.js";
 import { blobUrl, isImg, saveAsset, uploadErr, uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
+import { clApply, clMoreHtml, clOn } from "../owner/client-look.js";
 import { coData, companyCard } from "../owner/company-details.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { pvOn } from "../people/portal-access.js";
@@ -349,10 +350,22 @@ function renderClient() {
     .concat(coOn || cpols.length ? [["about", "🏢 About us & policies"]] : [])
     /* the parts James lets clients see (Setup › Client portal) */
     .filter(([k]) => pvOn(k, C._preview ? (PT.mgr && PT.mgr.uid) || "" : S.me, C.access));
-  const tab = tabs.some(([k]) => k === PT.tab) ? PT.tab : "home";
-  let html = `<div class="seg ptabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
+  const clNew = clOn();
+  const tab = tabs.some(([k]) => k === PT.tab) || (clNew && PT.tab === "more") ? PT.tab : "home";
+  /* the new look: a bar along the bottom instead of the row of buttons (owner/client-look.js) */
+  clApply(tabs, tab, (k) => {
+    PT.tab = k;
+    PT.folder = "";
+    render();
+    window.scrollTo(0, 0);
+  });
+  let html = clNew
+    ? tab === "more"
+      ? clMoreHtml(tabs)
+      : ""
+    : `<div class="seg ptabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
   if (tab === "home") {
-    html += `<div class="card pthero"><div class="who">Hello ${esc((C.name || "").split(" ")[0])}</div><b style="font-size:20px">${esc(C.project || C.site || "Your project")}</b>${C.site ? `<button type="button" class="maplink" data-addr="${esc(C.site)}">📍 ${esc(C.site)}</button>` : ""}</div>
+    html += `<div class="card pthero"><div class="who">Hello ${esc((C.name || "").split(" ")[0])}</div><b style="font-size:20px">${esc(C.project || C.site || "Your project")}</b></div>
       ${
         C.site
           ? (() => {

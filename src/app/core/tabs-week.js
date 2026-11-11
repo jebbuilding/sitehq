@@ -35,7 +35,7 @@ import {
   wireSentTodos,
   wireTradeTodos,
 } from "../owner/todo-lists.js";
-import { tlApply, tlHome, tlMore } from "../owner/trade-look.js";
+import { tlApply, tlBrochures, tlHome, tlMore } from "../owner/trade-look.js";
 import { whatsNewHTML, wireWhatsNew, wnCapture } from "../owner/whats-new.js";
 import { acTabAllowed } from "../people/access.js";
 import { cmpPage } from "../people/companies.js";
@@ -587,6 +587,7 @@ function render() {
         calc: "Calculator",
         policies: "Policies & insurance",
         suppliers: "Suppliers",
+        brochures: "Brochures",
         foreman: "Foreman",
       }[t] || "My timesheet";
     $("who").textContent = S.myProfile.name + (S.preview ? " · preview" : "");
@@ -594,6 +595,7 @@ function render() {
       ({
         home: tlHome,
         more: tlMore,
+        brochures: tlBrochures,
         signin: SIGNIN.view,
         mydw: myDayworkView,
         draw: drawView,
