@@ -440,5 +440,7 @@ body:has(.np) .scrim.sh-np{z-index:37}body:has(.np) .sheet.sh-np{z-index:38}
 .wc-t{width:100%;border-collapse:collapse}.wc-t td,.wc-t th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}.wc-t .num{text-align:right;white-space:nowrap}.wc-t .wc-tot td{font-weight:700}
 /* a pop-up form hides the "PDF saved – Print" bar, which would sit over its buttons */
 body:has(#sheet:not([hidden])) .pdfbar{display:none}
+/* building control checklist (sites/building-control.js) – here rather than sites.css because "bc" is also a name other folders use */
+.bc{display:flex;flex-direction:column;gap:8px}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}
