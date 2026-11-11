@@ -221,6 +221,8 @@ root – `NodejsFunction`/esbuild with `format: ESM` picks it up. Dependencies a
 | `ASSETS_BUCKET` | http | S3 bucket for uploaded files |
 | `ASSETS_PREFIX` | http | key prefix, default `assets/` |
 | `WS_ENDPOINT` | http (required for live updates), ws (only with a custom domain) | the WebSocket API's management endpoint, `https://<api id>.execute-api.<region>.amazonaws.com/<stage>` |
+| `MAIL_FROM` | http, optional | the address welcome emails come from, verified in SES (`no-reply@<site>`) |
+| `APP_URL` | http, optional | where people sign in, as put in the welcome email (`https://<site>/`). Without this and `MAIL_FROM`, `POST /api/people` answers 501 |
 
 There is no setting that selects the dev sign-in or the in-memory store; only `local.mjs` and the tests build those.
 
@@ -234,7 +236,9 @@ There is no setting that selects the dev sign-in or the in-memory store; only `l
 - **HTTP function**: `dynamodb:GetItem, PutItem, DeleteItem, Query` on both tables; `s3:GetObject, PutObject,
   DeleteObject` on `arn:…:<bucket>/<prefix>*` and `s3:ListBucket` on the bucket (without it S3 answers 403, not
   404, for an object that is not there, and finishing an upload that never arrived becomes a 500);
-  `execute-api:ManageConnections` on the WebSocket API.
+  `execute-api:ManageConnections` on the WebSocket API; for inviting people, `cognito-idp:AdminCreateUser,
+  AdminAddUserToGroup, AdminSetUserPassword, AdminDeleteUser` on the user pool and `ses:SendEmail` on the site's
+  SES identity, from `MAIL_FROM` only.
 - **WebSocket function**: the same DynamoDB actions on the **connections table only** – it never reads a
   document; `execute-api:ManageConnections`.
 - **Bucket**: private. CORS allowing `PUT` and `GET` from the app's origin with the `content-type` header – the
@@ -288,6 +292,7 @@ Document paths go in the body, never the URL, so they stay out of access logs.
 | `GET /api/assets` | | `{ assets: [...], usage: { bytes, count } }` |
 | `DELETE /api/assets/<id>` | | `{}` |
 | `GET /_blob/<id>` | | the file (supports `Range`), or a 302 to a short-lived link |
+| `POST /api/people` | `{ email, name, role: "trade", profile?, company?, ownerName? }` | `{ id, emailed }` – owner only (403 otherwise). See [Inviting people](#inviting-people) |
 
 A read the rules refuse answers exactly as if nothing were there (`exists: false`, an empty list) – the behaviour
 of the platform the app was written on, and it means nothing can be learned by probing. A refused write is 403.
@@ -295,6 +300,31 @@ Limits: a document is a JSON object of at most 256 KiB and 32 levels; a path has
 digits and `_ - . ~ : @ +`; a file is at most 20 MiB and one of JPEG, PNG, WebP, GIF, HEIC, MP4, MOV, WebM, 3GP,
 PDF, audio (voice notes), JSON (a drawing's data), plain text, CSV, Word or Excel (no HTML, SVG or scripts – files are served from the app's own origin). An optional `x-sitehq-client` header
 names the page that made a write, and is echoed in the change message so that page can skip it.
+
+### Inviting people
+
+`core/people.mjs`, behind "Add a trade" › *Invite them to the app* in the app (`src/app/people/invite.js`, through
+the adapter's `use("people")`, which only the owner gets). In order:
+
+1. **The account**: in production `auth/cognito-admin.mjs` – `AdminCreateUser` (Cognito sends nothing:
+   `MessageAction: SUPPRESS`), `AdminAddUserToGroup` with the role, then `AdminSetUserPassword` with a 40-character
+   random **permanent** password nobody is told. That last step takes the account out of `FORCE_CHANGE_PASSWORD`,
+   which exists for temporary passwords, so it signs in by emailed code like any other. Locally
+   `auth/local-directory.mjs` adds the person to the dev users and the Cognito stand-in. An address that already
+   has an account is 409 `already_exists`; a half-made account is deleted.
+2. **The profile**: `sheets/<id>` = the `profile` sent (the details James typed) + `name`, `invitedAt`,
+   `invitedBy`. If it cannot be stored the account is deleted again. Every open page is told, the inviting one
+   included.
+3. **The welcome email** (`welcomeEmail`): plain text and HTML, the firm's name and the owner's name from the
+   request, the sign-in link (`APP_URL`), the address to type. Production sends it with SES
+   (`mail/ses.mjs`); locally `mail/outbox.mjs` keeps it (`local.mail`) and `npm run local` prints it. If sending
+   fails the person is still set up and the reply says `emailed: false` – the app tells James to send the link
+   himself.
+
+Only `trade` can be invited this way: clients join through their portal (not built on our hosting), and owners are
+made by an administrator. **Not tried against real AWS**: `FORCE_CHANGE_PASSWORD` → confirmed by setting a
+permanent password, and SES accepting `SendEmail` under the identity-scoped policy (in the SES sandbox the
+recipient must also be verified). Not built: sending the invite again, or changing someone's email address.
 
 ### The public website (`core/public.mjs`)
 
@@ -379,6 +409,6 @@ table in `docs/DATA_MODEL.md`.
 
 ## Not built yet
 
-Invitations and the client join-code flow, and a sign-out button in the app (the sign-in screen and token renewal
+Sending an invite again, the client join-code flow, and a sign-out button in the app (the sign-in screen and token renewal
 exist – [Sign-in](#sign-in)); server-side enforcement of PIN-protected deletes and locks on signed documents; "Ask Claude" (`use("sample")` is `null`); the data import; rate limits; clean-up of
 abandoned uploads; a size cap on the whole database or file store.

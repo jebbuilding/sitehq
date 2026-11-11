@@ -42,3 +42,5 @@
 .cmp-filebtn{position:relative;overflow:hidden;min-height:44px}
 .cmp-filebtn input[type="file"]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .pv-polrow{display:flex;align-items:center;gap:8px;min-height:44px}
+.inv-box{padding:12px;display:flex;flex-direction:column;gap:6px;border-color:var(--accent)}
+.inv-tick{font-size:16px;color:var(--ink);min-height:44px;white-space:normal}

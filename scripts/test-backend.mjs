@@ -4,8 +4,10 @@
 //   3. tests/backend-live.mjs – an owner's write appearing live in a trade's page (two browsers)
 //   4. tests/backend-signin.mjs – the sign-in screen on the page as deployed, against the local stand-in for Cognito:
 //      emailed code, owner / trade / client, token renewal, signing out, the messages
+//   5. tests/backend-invite.mjs – the owner inviting a trade from "Add a trade": account, profile, welcome email,
+//      then the new person signing in with the emailed code
 // Run with `npm run test:backend` (after `npm run build`); `npm test` runs it last. Exits non-zero on any failure.
-//   node scripts/test-backend.mjs unit | crawl [role] | live | signin     runs one part
+//   node scripts/test-backend.mjs unit | crawl [role] | live | signin | invite     runs one part
 //   VERBOSE=1 prints each crawl's full report and every request the rules refused
 import { spawn } from "node:child_process";
 import path from "node:path";
@@ -73,7 +75,16 @@ async function signin() {
   if (r.code !== 0 || !passed) fail("sign-in screen test failed");
 }
 
+async function invite() {
+  const r = await run(process.execPath, ["backend-invite.mjs"], { cwd: path.join(root, "tests") });
+  const passed = (r.out.match(/✅/g) || []).length, bad = r.out.split("\n").filter((l) => l.startsWith("❌"));
+  console.log(`inviting people: ${passed} passed, ${bad.length} failed`);
+  if (verbose || r.code !== 0) console.log((verbose ? r.out.trimEnd() : bad.join("\n") || r.out.trimEnd()).split("\n").map((l) => "    " + l).join("\n"));
+  if (r.code !== 0 || !passed) fail("invite test failed");
+}
+
 if (!part || part === "live") await live();
 if (!part || part === "signin") await signin();
+if (!part || part === "invite") await invite();
 console.log(failed ? "backend tests: FAILED" : "backend tests: OK");
 process.exit(failed ? 1 : 0);

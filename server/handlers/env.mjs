@@ -11,8 +11,13 @@
 //   ASSETS_PREFIX          key prefix in that bucket, default "assets/"                              http
 //   WS_ENDPOINT            the WebSocket API's management endpoint,                                  http (ws: optional)
 //                          https://<api id>.execute-api.<region>.amazonaws.com/<stage>
+//   MAIL_FROM              the address emails come from (verified in SES)                           http, optional
+//   APP_URL                where people sign in, put in welcome emails                              http, optional
+//                          Without both, POST /api/people answers 501 (inviting is not set up).
 import capabilities from "../../platform/capabilities.json" with { type: "json" };
+import { createCognitoDirectory } from "../auth/cognito-admin.mjs";
 import { createCognitoAuth } from "../auth/cognito.mjs";
+import { createSesMailer } from "../mail/ses.mjs";
 import { createS3Blobs } from "../blobs/s3.mjs";
 import { siteRules } from "../core/roles.mjs";
 import { createDynamoStore } from "../store/dynamodb.mjs";
@@ -48,3 +53,13 @@ export const liveStore = () =>
   liveRecords || (liveRecords = process.env.CONNECTIONS_TABLE_NAME ? createDynamoStore({ tableName: process.env.CONNECTIONS_TABLE_NAME }) : dataStore());
 
 export const blobsFromEnv = () => createS3Blobs({ bucket: need("ASSETS_BUCKET"), prefix: process.env.ASSETS_PREFIX || "assets/" });
+
+/** What POST /api/people needs: account-making, email and the sign-in address – or nothing, when not configured. */
+export function inviting() {
+  if (!process.env.MAIL_FROM || !process.env.APP_URL) return {};
+  return {
+    directory: createCognitoDirectory({ userPoolId: need("USER_POOL_ID") }),
+    mailer: createSesMailer({ from: process.env.MAIL_FROM }),
+    appUrl: process.env.APP_URL,
+  };
+}

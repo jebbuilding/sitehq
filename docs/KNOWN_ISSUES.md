@@ -17,7 +17,7 @@
 - The sign-in screen (`src/platform/sign-in.js`) has only ever talked to a local stand-in for Cognito written from its documentation; the first sign-in on a deployed dev environment is the real test (`server/README.md` › Sign-in, "Assumed about Cognito").
 - No sign-out button in the app on our own hosting: `window.SITEHQ_AUTH.signOut()` exists, nothing in `src/app/` calls it. Until a button is added, sign out by opening the site's address with `#signout` on the end.
 - Signing out forgets the sign-in but not the app's own storage on the device: the offline queue (`jeb-outbox`), the file cache (`jeb-files`) and `localStorage` settings stay. Queued work is only ever sent by the person who queued it, but on a shared tablet it is still there. Clearing it at sign-out would lose unsent work – undecided.
-- People are created with the AWS CLI; there is no invite flow and no client join-code flow on our own hosting.
+- On our own hosting the owner invites trades from the app; the owner account itself is still made with the AWS CLI, and there is no client join-code flow. Inviting has not yet run against real Cognito/SES.
 - `tests/flows.js` and the feature scripts run only on the fake; on the backend only the crawl and one live test run.
 - The adapter re-reads a whole collection when any document in it changes. Fine at today's size (~660 documents); the owner's `todos` is the one to watch.
 - At page load every listener reads twice (once straight away, once when its subscription is confirmed, so nothing that changed in between is missed): about 70 small requests for the owner. Harmless at this size; the second read could be dropped if the server sent a version with the confirmation.

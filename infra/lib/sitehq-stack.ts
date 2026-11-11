@@ -158,9 +158,9 @@ export class SiteHqStack extends Stack {
     });
 
     // ===================== Sign-in =====================
-    // Invite only: accounts are created by an administrator, never by signing up (README ›
-    // First people; the function gets no user-management rights until an invite flow needs
-    // them). People sign in with a one-time code emailed to them. Cognito insists that
+    // Invite only: accounts are created by the owner inviting someone from the app (the HTTP
+    // function's POST /api/people, below) or by an administrator (README › First people), never
+    // by signing up. People sign in with a one-time code emailed to them. Cognito insists that
     // "password" stays in the list of allowed factors, but nobody is ever given one and nobody
     // can set one (no self-service recovery).
     const userPool = new cognito.UserPool(this, "UserPool", {
@@ -376,6 +376,9 @@ export class SiteHqStack extends Stack {
     httpFn.addEnvironment("ASSETS_BUCKET", filesBucket.bucketName);
     httpFn.addEnvironment("ASSETS_PREFIX", assetsPrefix);
     httpFn.addEnvironment("SENSITIVE_KEY_ARN", sensitiveKey.keyArn);
+    // Inviting people (server/core/people.mjs): the welcome email's sender and sign-in address.
+    httpFn.addEnvironment("MAIL_FROM", names.emailFrom);
+    httpFn.addEnvironment("APP_URL", names.siteOrigin + "/");
 
     // HTTP function: the only thing that reads or writes documents, touches files or uses the key.
     dataTable.grantReadWriteData(httpRole);
@@ -397,6 +400,31 @@ export class SiteHqStack extends Stack {
     );
     sensitiveKey.grantEncryptDecrypt(httpRole);
     wsStage.grantManagementApiAccess(httpRole);
+    httpRole.addToPolicy(
+      new iam.PolicyStatement({
+        // the owner inviting someone: make the account, put it in its role's group, confirm it,
+        // and remove it again if the rest of the invite fails. Nothing else in the pool.
+        sid: "InvitePeople",
+        actions: [
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminAddUserToGroup",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminDeleteUser",
+        ],
+        resources: [userPool.userPoolArn],
+      }),
+    );
+    httpRole.addToPolicy(
+      new iam.PolicyStatement({
+        // the welcome email, only from this environment's own sending address
+        sid: "SendWelcomeEmail",
+        actions: ["ses:SendEmail"],
+        resources: [
+          Stack.of(this).formatArn({ service: "ses", resource: "identity", resourceName: names.siteDomain }),
+        ],
+        conditions: { StringEquals: { "ses:FromAddress": names.emailFrom } },
+      }),
+    );
 
     // WebSocket function: keeps the records of who is connected and pushes to browsers. It
     // cannot read or write documents, files or the key. In the data table it reaches only the

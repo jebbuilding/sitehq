@@ -24,6 +24,7 @@ const S = {
   user: null,
   assets: null,
   dl: null,
+  invites: null, // use("people"): inviting someone to the app – owner, own hosting only (people/invite.js)
   me: null,
   owner: false,
   preview: false,

@@ -12,6 +12,7 @@
 //   PUT    /api/assets/<id>/content      send the bytes (only when the file store has no direct upload)
 //   POST   /api/assets/<id>/complete     finish an upload      DELETE /api/assets/<id>   delete a file
 //   GET    /_blob/<id>                   the file itself
+//   POST   /api/people                   the owner invites someone: sign-in account, profile, welcome email (core/people.mjs)
 //   POST   /api/public/enquiry|hit       the public website's contact form and page counter (core/public.mjs)
 //
 // Every route but /api/public/* needs a signed-in caller. A read the rules refuse answers exactly like a read of something that is
@@ -21,6 +22,7 @@ import { randomBytes } from "node:crypto";
 import { ApiError, forbidden, invalid, notFound, unauthenticated } from "./errors.mjs";
 import { parseCollPath, parseDocPath } from "./paths.mjs";
 import { applyQuery, parseQuery } from "./query.mjs";
+import { createPeople } from "./people.mjs";
 import { createPublic } from "./public.mjs";
 import { callerFor } from "./roles.mjs";
 
@@ -78,10 +80,13 @@ function byteRange(header, size) {
  * @param deps.auth    { verify(token) } (auth/dev.mjs, auth/cognito.mjs)
  * @param deps.blobs   file store (blobs/disk.mjs, blobs/s3.mjs)
  * @param deps.live    { publish(path, origin) } (core/live.mjs) – optional
+ * @param deps.directory  makes sign-in accounts (core/people.mjs) – optional; without it POST /api/people is 501
+ * @param deps.mailer     sends email (core/people.mjs) – optional, as directory
+ * @param deps.appUrl     the address people sign in at, for the welcome email
  * @param deps.onRefused  called with { op, path, role } when the rules refuse something – local diagnosis only;
  *                        never wire this to a log in production (paths can contain ids)
  */
-export function createApi({ store, rules, auth, blobs, live, onRefused, now }) {
+export function createApi({ store, rules, auth, blobs, live, onRefused, now, directory, mailer, appUrl }) {
   const can = (caller, op, segs, action, path) => {
     const ok = rules.decide(caller, segs, action);
     if (!ok && onRefused) onRefused({ op, path, role: caller.role });
@@ -93,6 +98,7 @@ export function createApi({ store, rules, auth, blobs, live, onRefused, now }) {
   };
 
   const pub = createPublic({ store, changed: (path) => changed(path, ""), now });
+  const invite = createPeople({ store, directory, mailer, appUrl, changed, checkDoc });
 
   const db = {
     async get(caller, { path }) {
@@ -260,6 +266,7 @@ export function createApi({ store, rules, auth, blobs, live, onRefused, now }) {
 
     if (path === "/api/me" && method === "GET") return json(200, { id: caller.id, role: caller.role, isOwner: caller.role === "owner", name: await nameOfCaller(user, caller), canUpload: caller.uploads !== "none" });
     if (path === "/api/profiles" && method === "POST") return json(200, await profiles(caller, body()));
+    if (path === "/api/people" && method === "POST") return json(200, await invite(caller, body()));
     let m = /^\/api\/db\/(get|list|set|update|delete|add)$/.exec(path);
     if (m && method === "POST") return json(200, await db[m[1]](caller, body(), origin));
     if (path === "/api/assets" && method === "GET") return json(200, await assets.list(caller));

@@ -42,7 +42,8 @@ const random = (n) => crypto.randomBytes(n).toString("base64url");
  * @param options.sessionSeconds      how long a code can be used (default 180, Cognito's default)
  * @param options.onCode              (email, code) – called when a code "is sent"
  */
-export function createLocalCognito({ region = LOCAL_POOL.region, userPoolId = LOCAL_POOL.userPoolId, clientId = LOCAL_POOL.clientId, people = LOCAL_PEOPLE, accessTokenSeconds = 3600, sessionSeconds = 180, onCode } = {}) {
+export function createLocalCognito({ region = LOCAL_POOL.region, userPoolId = LOCAL_POOL.userPoolId, clientId = LOCAL_POOL.clientId, people: startPeople = LOCAL_PEOPLE, accessTokenSeconds = 3600, sessionSeconds = 180, onCode } = {}) {
+  const people = { ...startPeople }; // a copy: people invited while it runs are added here (auth/local-directory.mjs)
   const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
   const kid = "local-" + random(6);
   const jwks = { keys: [{ ...publicKey.export({ format: "jwk" }), kid, alg: "RS256", use: "sig" }] };
@@ -130,7 +131,7 @@ export function createLocalCognito({ region = LOCAL_POOL.region, userPoolId = LO
   }
 
   return {
-    region, userPoolId, clientId, jwks, settings, calls,
+    region, userPoolId, clientId, jwks, settings, calls, people,
     /** The server's ordinary Cognito verifier, checking against this stand-in's key. */
     auth: createCognitoAuth({ userPoolId, clientId, jwks }),
     /** The code last "sent" to an address and not yet used, or undefined. */

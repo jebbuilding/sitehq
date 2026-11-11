@@ -9,6 +9,7 @@ import { blobUrl, csvSave, uploadErr, uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { companyOf, nameOf, roleOf, roleTag, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "./employment-types.js";
+import { canInvite } from "./invite.js";
 import { accessNotice, leaversBlock, openLeaver, wireLeavers } from "./leavers.js";
 import { DET_SECTIONS, detailsDone, myDetails, openDetails } from "./personal-details.js";
 import {
@@ -136,7 +137,7 @@ function peopleView() {
     );
   const missing = rows.filter((r) => !r.off && !detailsDone(r.d));
   $("main").innerHTML =
-    `<div class="actions"><button class="btn primary" id="pp-add" type="button">+ Add a trade not on the app</button><button class="btn pr-send" type="button">Send a reminder</button>${missing.length ? `<button class="btn" id="pp-askdet" type="button">Ask everyone missing details</button>` : ""}</div>${remindersPanel()}
+    `<div class="actions"><button class="btn primary" id="pp-add" type="button">${canInvite() ? "+ Add a trade" : "+ Add a trade not on the app"}</button><button class="btn pr-send" type="button">Send a reminder</button>${missing.length ? `<button class="btn" id="pp-askdet" type="button">Ask everyone missing details</button>` : ""}</div>${remindersPanel()}
     <div class="actions"><button class="btn" id="pp-ec" type="button">Download emergency contacts (CSV)</button><button class="btn" id="pp-all" type="button">Download all details (CSV)</button></div>
     ${missing.length ? `<div class="notice warn"><b>Not filled in yet:</b> ${missing.map((r) => esc(nameOf(r.id))).join(", ")}. They'll be asked next time they open the app.</div>` : ""}
     <div class="seg" id="pp-rf">${[

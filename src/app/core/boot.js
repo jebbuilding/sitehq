@@ -65,11 +65,12 @@ initJobStory();
     window.claude && window.claude.use
       ? window.claude.use(n).catch(() => null)
       : Promise.resolve(null);
-  const [db, user, assets, dl] = await Promise.all([
+  const [db, user, assets, dl, invites] = await Promise.all([
     use("db"),
     use("user"),
     use("assets"),
     use("downloads"),
+    use("people"),
   ]);
   const id = user ? await user.id() : null;
   if (!db || !user || !id) {
@@ -94,7 +95,7 @@ initJobStory();
         },
       }
     : null;
-  Object.assign(S, { db: wrapDb(db), user, assets: wrapAssets(assets), dl: dl2, me: id });
+  Object.assign(S, { db: wrapDb(db), user, assets: wrapAssets(assets), dl: dl2, me: id, invites });
   fcOpen().then(() => render());
   OB.db = await obOpen();
   refreshOutbox().then(flushOutbox);

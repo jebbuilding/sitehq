@@ -19,6 +19,7 @@
    WebSocket. The server then sends "this path changed" – never the data – and the adapter reads it again. So what
    is shown always comes from a read, and the order messages arrive in cannot matter. After one of this page's own
    writes the affected listeners are re-read straight away, without waiting for the message.
+   Only here, not on claude.ai: use("people") – the owner inviting someone (an account and a welcome email).
    Not provided: use("sample") (Ask Claude) resolves null. */
 (function () {
   "use strict";
@@ -396,6 +397,13 @@
     },
   });
 
+  /* ---------- inviting people (owner only; server/core/people.mjs) ---------- */
+  // invite({ email, name, role, profile, company, ownerName }) → { id, emailed }. Rejects with { code, message }:
+  // "already_exists", "invalid_argument", "forbidden", "not_available", "unavailable".
+  const people = {
+    invite: (request) => http("POST", "/people", request).catch((e) => { throw fail(e.status === 0 ? "unavailable" : e.code, e.message); }),
+  };
+
   W.claude = {
     async use(name) {
       const me = await session;
@@ -404,6 +412,7 @@
       if (name === "user") return user(me);
       if (name === "assets") return me.canUpload ? assets : null;
       if (name === "downloads") return downloads;
+      if (name === "people") return me.isOwner ? people : null;
       return null;
     },
   };

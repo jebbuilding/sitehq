@@ -8,6 +8,7 @@ import { newId, submitJob } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { nameOf } from "../owner/owner.js";
 import { EMP_TYPES } from "./employment-types.js";
+import { canInvite, inviteBoxHtml, invitePerson, inviteTicked } from "./invite.js";
 import { autoClearPrompts, markPrompt, promptsOf } from "./reminders.js";
 export { DET_SECTIONS, detailsDone, meBtn, meInfo, myDetails, openDetails, renderDetailsNeeded };
 const DET_SECTIONS = [
@@ -134,9 +135,9 @@ function openDetails(target) {
   const nm = !target ? S.myProfile && S.myProfile.name : target.off ? "" : nameOf(target.id);
   const d = Object.assign({ fullName: nm || "" }, cur);
   openSheet(
-    `<h3 id="sheettitle">${!target ? "My details" : target.off && !target.rec ? "Add a trade not on the app" : "Details for " + esc(d.fullName || "trade")}</h3>
-    <div class="who">${forOther ? "You're filling this in for them. " + (target.off ? "They won't have access to the app." : "They can still check and update it themselves.") : "Only you and James can see these. Keep them up to date, especially your next of kin."}</div>
-    ${target && target.off ? `<label for="dt-role">Employee or subcontractor<select id="dt-role"><option value="sub" ${(target.rec || {}).role !== "employee" ? "selected" : ""}>Subcontractor</option><option value="employee" ${(target.rec || {}).role === "employee" ? "selected" : ""}>Employee</option><option value="company" ${(target.rec || {}).role === "company" ? "selected" : ""}>From another company</option></select></label><label for="dt-rco">Company they're from (if a subcontractor or another company)<input id="dt-rco" maxlength="80" value="${esc((target.rec || {}).roleCompany || "")}"></label>` : ""}
+    `<h3 id="sheettitle">${!target ? "My details" : target.off && !target.rec ? (canInvite() ? "Add a trade" : "Add a trade not on the app") : "Details for " + esc(d.fullName || "trade")}</h3>
+    <div class="who">${forOther ? "You're filling this in for them. " + (target.off ? (canInvite() ? "They won't have access to the app unless you invite them." : "They won't have access to the app.") : "They can still check and update it themselves.") : "Only you and James can see these. Keep them up to date, especially your next of kin."}</div>
+    ${target && target.off ? `<label for="dt-role">Employee or subcontractor<select id="dt-role"><option value="sub" ${(target.rec || {}).role !== "employee" ? "selected" : ""}>Subcontractor</option><option value="employee" ${(target.rec || {}).role === "employee" ? "selected" : ""}>Employee</option><option value="company" ${(target.rec || {}).role === "company" ? "selected" : ""}>From another company</option></select></label><label for="dt-rco">Company they're from (if a subcontractor or another company)<input id="dt-rco" maxlength="80" value="${esc((target.rec || {}).roleCompany || "")}"></label>${inviteBoxHtml(target.rec)}` : ""}
     ${DET_SECTIONS.map(([title, fields]) => `<div class="flabel" style="margin:6px 0 -4px;font-size:14px;color:var(--accent)">${esc(title)}</div>${fields.map((f) => detField(f, d, forOther)).join("")}`).join("")}
     <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="dt-ok" ${detailsDone(cur) ? "checked" : ""}> ${forOther ? "I've checked these details with them, and they've been told how JEB uses their information." : "These details are correct, and I've read how JEB Building Services uses my information (below)."}</label>
     ${privacyBlock(false)}
@@ -172,6 +173,11 @@ function openDetails(target) {
       out.confirmedAt = Date.now();
       if (forOther) out.enteredBy = "James";
       $("f-save").disabled = true;
+      if (forOther && target.off && inviteTicked()) {
+        if (!(await invitePerson(out, target.rec, $("dt-role").value, $("dt-rco").value.trim())))
+          $("f-save").disabled = false;
+        return;
+      }
       if (forOther) {
         try {
           if (target.off) {
