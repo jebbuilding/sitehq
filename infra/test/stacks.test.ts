@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Template } from "aws-cdk-lib/assertions";
-import { config, PLACEHOLDERS, type ProjectConfig } from "../config.ts";
+import { config, placeholdersIn, type ProjectConfig } from "../config.ts";
 import { buildApp, checkConfig } from "../lib/app.ts";
 import { PLACEHOLDER_NOTE } from "../lib/sitehq-stack.ts";
 
@@ -199,9 +199,9 @@ test("tags: project=sitehq and env=<env> on the stacks and on every taggable res
 // 3. Subdomains, certificates, DNS
 // ---------------------------------------------------------------------------------------------
 
-test("subdomains: dev.<domain> and app.<domain>, each with its own certificates and DNS records", () => {
-  assert.equal(two.dev.site, `dev.${config.environments.dev.domain}`);
-  assert.equal(two.prod.site, `app.${config.environments.prod.domain}`);
+test("subdomains: each environment on its own configured subdomain, with its own certificates and DNS records", () => {
+  assert.equal(two.dev.site, `${config.environments.dev.subdomain}.${config.environments.dev.domain}`);
+  assert.equal(two.prod.site, `${config.environments.prod.subdomain}.${config.environments.prod.domain}`);
   for (const env of Object.values(two)) {
     const dist = only(env.main, "AWS::CloudFront::Distribution").Properties.DistributionConfig;
     assert.deepEqual(dist.Aliases, [env.site]);
@@ -634,8 +634,9 @@ test("deploying: refused while placeholders remain; prod's main stack is refused
   real.environments.dev.account = "333333333333";
   real.environments.prod.account = "444444444444";
 
-  // placeholders left → no deploy (only meaningful while the committed config still has them)
-  const stillPlaceholders = Object.values(PLACEHOLDERS).some((p) => JSON.stringify(config).includes(p));
+  // placeholders left in dev's own settings → no deploy (only meaningful while they are still placeholders; the
+  // SITEHQ_* variables fill dev's in before prod's)
+  const stillPlaceholders = placeholdersIn(config.environments.dev).length > 0;
   if (stillPlaceholders) assert.throws(() => synth(config, repoRoot, "dev"), /placeholder values remain/);
 
   // real values: dev deploys alone, with the placeholder handler allowed
