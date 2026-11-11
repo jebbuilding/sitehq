@@ -1,13 +1,14 @@
 /* ================= TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet ================= */
 import { clStage } from "../clients/clients.js";
 import { quickEnquiry } from "../clients/quick-enquiry.js";
-import { $, addDays, esc, hrs, iso, parse } from "../core/helpers.js";
+import { $, addDays, esc, hrs, iso, parse, toast } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { allTeam, nameOf, teamIds } from "./owner.js";
 import { nlGo, nlOpenTab } from "./today.js";
 import { openPhoto } from "../photos/photos.js";
 import { openPlanEditor } from "../planner/board.js";
 import { onDay } from "../planner/time-off.js";
+import { openIncident } from "../safety/accidents.js";
 import { sdEdit } from "../sales/sales-edit.js";
 import { vrNew } from "../sales/variations.js";
 import { projectSites, same } from "../sites/project-pages.js";
@@ -15,7 +16,7 @@ import { onSiteNow } from "../sites/roll-call.js";
 import { siteClient } from "../sites/summary.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { sumH } from "../timesheets/time.js";
-export { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard };
+export { qaOpen, qaSetupCard, qaSetupWire, tdDeskWire, tdjCard, tdoCard, tdwCard };
 /* The Today page as in the layout pictures: This week (Mon–Fri, who's booked on each job from the planner, with
    gaps – a job nobody's booked on that day – and clashes – someone on two jobs), Today's jobs (live jobs with the
    client, stage, who and hours this week), On site now (each person, where, since when). + Add: one place to add a
@@ -197,22 +198,72 @@ function tdDeskWire() {
         }),
   );
 }
-/* + Add: one place to add anything */
+/* + Add: one place to add anything. James chooses what's in it on Setup (settings/app.qaItems, the keys ticked;
+   none saved = QA_DEFAULT) – James, Nov 2026 */
 const QA_ITEMS = [
   ["photo", "📷", "Photo"],
   ["enq", "⚡", "Enquiry"],
   ["rcpt", "🧾", "Receipt"],
   ["hours", "⏱️", "Hours for someone"],
+  ["dw", "🧱", "Day work"],
   ["todo", "✅", "To-do"],
   ["plan", "🗓️", "Planner booking"],
   ["est", "💷", "Estimate"],
   ["var", "📝", "Variation"],
   ["draw", "✏️", "Drawing"],
+  ["inc", "🚑", "Accident or near miss"],
 ];
+const QA_DEFAULT = ["photo", "enq", "rcpt", "hours", "todo", "plan", "est", "var", "draw"];
+const qaKeys = () => {
+  const k = (S.settings || {}).qaItems;
+  return Array.isArray(k) ? k : QA_DEFAULT;
+};
+/* Setup: tick what goes in + Add */
+function qaSetupCard() {
+  const on = new Set(qaKeys());
+  return `<div class="card"><div class="cardbody" style="border:0"><b>➕ What's in + Add</b><div class="who">Tick what you want when you tap <b>+ Add</b>.</div>
+    <div class="qa-set">${QA_ITEMS.map(([k, i, l]) => `<label class="inl"><input type="checkbox" class="qa-tick" value="${k}"${on.has(k) ? " checked" : ""}> ${i} ${esc(l)}</label>`).join("")}</div>
+    <div><button class="btn primary" id="qa-save" type="button">Save + Add</button></div></div></div>`;
+}
+function qaSetupWire() {
+  if (!$("qa-save")) return;
+  $("qa-save").onclick = async () => {
+    const keys = [...document.querySelectorAll(".qa-tick:checked")].map((x) => x.value);
+    if (!keys.length) {
+      toast("Tick at least one");
+      return;
+    }
+    $("qa-save").disabled = true;
+    try {
+      await S.db.doc("settings/app").update({ qaItems: keys });
+    } catch (e) {
+      try {
+        await S.db.doc("settings/app").set(Object.assign({}, S.settings, { qaItems: keys }));
+      } catch (x) {
+        toast("Couldn't save. Check your connection.");
+        $("qa-save").disabled = false;
+        return;
+      }
+    }
+    S.settings = Object.assign({}, S.settings, { qaItems: keys });
+    toast("+ Add saved");
+    $("qa-save").disabled = false;
+  };
+}
 function qaOpen() {
   const d = document.createElement("div");
   d.className = "dimask qa-pop";
-  d.innerHTML = `<div class="dimbox" role="dialog" aria-labelledby="qa-h"><b id="qa-h">➕ Add</b><div class="qa-grid">${QA_ITEMS.map(([k, i, l]) => `<button type="button" class="qa-b" data-k="${k}"><span aria-hidden="true">${i}</span>${esc(l)}</button>`).join("")}</div><div class="dimbtns"><button type="button" class="btn" id="qa-x">Close</button></div></div>`;
+  const on = new Set(qaKeys());
+  d.innerHTML = `<div class="dimbox" role="dialog" aria-labelledby="qa-h"><b id="qa-h">➕ Add</b><div class="qa-grid">${QA_ITEMS.filter(
+    ([k]) => on.has(k),
+  )
+    .map(
+      ([k, i, l]) =>
+        `<button type="button" class="qa-b" data-k="${k}"><span aria-hidden="true">${i}</span>${esc(l)}</button>`,
+    )
+    .join(
+      "",
+    )}</div><div class="dimbtns"><button type="button" class="btn" id="qa-x">Close</button></div></div>`;
   document.body.appendChild(d);
   d.querySelector("#qa-x").onclick = () => d.remove();
   d.onclick = (e) => e.target === d && d.remove();
@@ -224,6 +275,8 @@ function qaOpen() {
         if (k === "photo") openPhoto();
         else if (k === "enq") quickEnquiry();
         else if (k === "hours") pickPersonFor("hours");
+        else if (k === "dw") pickPersonFor("job");
+        else if (k === "inc") openIncident();
         else if (k === "plan") openPlanEditor(null, iso(new Date()));
         else if (k === "est") sdEdit({ type: "estimate" });
         else if (k === "var") vrNew();

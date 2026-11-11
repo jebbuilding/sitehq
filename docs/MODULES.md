@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 212 files, 4197 KB, 107609 lines.
-- 2189 names declared at the top level (the shared scope); 1101 of them are used by a file other than the one that declares them.
-- 2284 file-to-file dependencies (file A uses at least one name from file B).
+- 212 files, 4199 KB, 107660 lines.
+- 2193 names declared at the top level (the shared scope); 1103 of them are used by a file other than the one that declares them.
+- 2286 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 194 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
 
@@ -21,7 +21,7 @@ The de facto shared API: names used by the most files.
 | `esc` | `core/helpers.js` | 173 files |
 | `S` | `core/state.js` | 172 files |
 | `$` | `core/helpers.js` | 169 files |
-| `toast` | `core/helpers.js` | 148 files |
+| `toast` | `core/helpers.js` | 149 files |
 | `render` | `core/tabs-week.js` | 123 files |
 | `openSheet` | `core/sheet.js` | 109 files |
 | `closeForm` | `core/sheet.js` | 108 files |
@@ -386,7 +386,7 @@ GENERIC FIELDS
 HELPERS: page lookups, dates, money and hours formatting, toast, working-day times, local storage
 
 - 123 lines, 3.3 KB. Declares 21 names, 20 used elsewhere.
-- **Used elsewhere:** `esc` (173), `$` (169), `toast` (148), `iso` (108), `shortDay` (70), `stamp` (52), `gbp` (51), `addDays` (39), `parse` (38), `store` (27), `hrs` (15), `monday` (14), `dayLabel` (6), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
+- **Used elsewhere:** `esc` (173), `$` (169), `toast` (149), `iso` (108), `shortDay` (70), `stamp` (52), `gbp` (51), `addDays` (39), `parse` (38), `store` (27), `hrs` (15), `monday` (14), `dayLabel` (6), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
 - **Uses names from 0 files:** none
 - **Used by 190 files**
 
@@ -916,9 +916,9 @@ PLANNING LEADS (owner only): moved in from the Devon Planning Leads page
 
 OWNER
 
-- 1192 lines, 53 KB. Declares 25 names, 16 used elsewhere.
+- 1195 lines, 53 KB. Declares 25 names, 16 used elsewhere.
 - **Used elsewhere:** `nameOf` (77), `teamIds` (45), `allTeam` (41), `roleOf` (3), `roleShort` (3), `teamPlusMe` (3), `allIds` (2), `checkDetail` (2), `roleTag` (2), `companyOf` (1), `ownerInvoices` (1), `ownerPhotos` (1), `ownerSetup` (1), `ownerTime` (1), `startPreview` (1), `weekEntries` (1)
-- **Uses names from 36 files:** `core/helpers.js` (14), `core/state.js` (5), `timesheets/filters.js` (5), `core/sheet.js` (4), `photos/photos.js` (4), `safety/expiry-dates.js` (4), `core/fields.js` (3), `people/personal-details.js` (3), `timesheets/overtime.js` (3), `timesheets/time.js` (3), `timesheets/working-day.js` (3), `core/tabs-week.js` (2), `drawing/trade-drawings.js` (2), `files/files.js` (2), `owner/backup.js` (2), `owner/company-details.js` (2), `people/reminders.js` (2), `purchasing/invoices.js` (2), `safety/checklists.js` (2), `sales/letterhead-setup.js` (2), `sales/sig-setup.js` (2), `core/data.js` (1), `core/dictation.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `owner/deletion-record.js` (1), `owner/reports.js` (1), `people/access.js` (1), `people/portal-access.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `purchasing/materials-receipts.js` (1), `sites/roll-call.js` (1), `timesheets/day-work.js` (1), `timesheets/monthly-sheet.js` (1), `timesheets/pay-summary.js` (1)
+- **Uses names from 37 files:** `core/helpers.js` (14), `core/state.js` (5), `timesheets/filters.js` (5), `core/sheet.js` (4), `photos/photos.js` (4), `safety/expiry-dates.js` (4), `core/fields.js` (3), `people/personal-details.js` (3), `timesheets/overtime.js` (3), `timesheets/time.js` (3), `timesheets/working-day.js` (3), `core/tabs-week.js` (2), `drawing/trade-drawings.js` (2), `files/files.js` (2), `owner/backup.js` (2), `owner/company-details.js` (2), `owner/today-desk.js` (2), `people/reminders.js` (2), `purchasing/invoices.js` (2), `safety/checklists.js` (2), `sales/letterhead-setup.js` (2), `sales/sig-setup.js` (2), `core/data.js` (1), `core/dictation.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `owner/deletion-record.js` (1), `owner/reports.js` (1), `people/access.js` (1), `people/portal-access.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `purchasing/materials-receipts.js` (1), `sites/roll-call.js` (1), `timesheets/day-work.js` (1), `timesheets/monthly-sheet.js` (1), `timesheets/pay-summary.js` (1)
 - **Used by 83 files**
 
 ### `owner/pin.js`
@@ -952,7 +952,7 @@ OWNER: REPORTS
 
 SEARCH (owner): one box that finds any client, site, job, person, merchant, drawing or to-do
 
-- 204 lines, 6.4 KB. Declares 5 names, 1 used elsewhere.
+- 206 lines, 6.5 KB. Declares 5 names, 1 used elsewhere.
 - **Used elsewhere:** `searchOpen` (1)
 - **Uses names from 13 files:** `core/helpers.js` (3), `core/state.js` (2), `core/tabs-week.js` (2), `core/viewer.js` (2), `drawing/drawings-tab.js` (2), `owner/owner.js` (2), `clients/quick-enquiry.js` (1), `owner/today.js` (1), `people/companies.js` (1), `people/personal-details.js` (1), `planner/plant-care.js` (1), `purchasing/suppliers.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 1 files**
@@ -970,16 +970,16 @@ TODAY CARDS: chat and sites on the Today page
 
 TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
-- 244 lines, 11 KB. Declares 9 names, 5 used elsewhere.
-- **Used elsewhere:** `qaOpen` (1), `tdDeskWire` (1), `tdjCard` (1), `tdoCard` (1), `tdwCard` (1)
-- **Uses names from 16 files:** `core/helpers.js` (6), `owner/owner.js` (3), `core/state.js` (2), `owner/today.js` (2), `sites/project-pages.js` (2), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `photos/photos.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `sales/sales-edit.js` (1), `sales/variations.js` (1), `sites/roll-call.js` (1), `sites/summary.js` (1), `timesheets/day-work.js` (1), `timesheets/time.js` (1)
-- **Used by 1 files**
+- 297 lines, 13 KB. Declares 13 names, 7 used elsewhere.
+- **Used elsewhere:** `qaOpen` (1), `qaSetupCard` (1), `qaSetupWire` (1), `tdDeskWire` (1), `tdjCard` (1), `tdoCard` (1), `tdwCard` (1)
+- **Uses names from 17 files:** `core/helpers.js` (7), `owner/owner.js` (3), `core/state.js` (2), `owner/today.js` (2), `sites/project-pages.js` (2), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `photos/photos.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `safety/accidents.js` (1), `sales/sales-edit.js` (1), `sales/variations.js` (1), `sites/roll-call.js` (1), `sites/summary.js` (1), `timesheets/day-work.js` (1), `timesheets/time.js` (1)
+- **Used by 2 files**
 
 ### `owner/today.js`
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 556 lines, 22 KB. Declares 23 names, 11 used elsewhere.
+- 549 lines, 22 KB. Declares 23 names, 11 used elsewhere.
 - **Used elsewhere:** `nlGo` (4), `nlOpenTab` (4), `coTileOf` (3), `NL_BY` (2), `nlBrandHtml` (2), `nlSectionView` (2), `NL_SUBS` (1), `nlApply` (1), `nlName` (1), `nlOn` (1), `todayView` (1)
 - **Uses names from 17 files:** `owner/today-desk.js` (5), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/search.js` (1), `planner/holidays.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 11 files**
@@ -1385,9 +1385,9 @@ SUPPLIERS (owner list, copies sent only to chosen trades)
 ACCIDENT & NEAR-MISS REPORTS
 
 - 456 lines, 18 KB. Declares 10 names, 5 used elsewhere.
-- **Used elsewhere:** `INC_KINDS` (1), `incidentsBlock` (1), `openIncident` (1), `viewIncident` (1), `wireIncidents` (1)
+- **Used elsewhere:** `openIncident` (2), `INC_KINDS` (1), `incidentsBlock` (1), `viewIncident` (1), `wireIncidents` (1)
 - **Uses names from 13 files:** `core/helpers.js` (7), `photos/photos.js` (7), `core/sheet.js` (6), `core/fields.js` (3), `core/state.js` (3), `core/viewer.js` (2), `files/files.js` (2), `files/outbox.js` (2), `owner/owner.js` (2), `people/personal-details.js` (2), `safety/site-inductions.js` (2), `core/data.js` (1), `core/tabs-week.js` (1)
-- **Used by 4 files**
+- **Used by 5 files**
 
 ### `safety/cdm.js`
 

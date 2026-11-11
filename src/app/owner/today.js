@@ -48,7 +48,6 @@ const NL_SECTIONS = [
       "draw",
       "daywork",
       "samples",
-      "materials",
       "calc",
     ],
   ],
@@ -59,7 +58,7 @@ const NL_SECTIONS = [
     "People",
     ["people", "firms", "selfemp", "inductions", "wages", "time", "training", "chat"],
   ],
-  ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers", "materials"]],
+  ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers"]],
   /* Accounts: the money pages, their own area (James, Nov 2026) */
   ["money", "Accounts", ["accounts", "sales", "invoices", "cis", "costs", "wages"]],
   /* Estimating: its own area, apart from the money pages (James, Nov 2026) */
@@ -83,12 +82,14 @@ const NL_ICON = {
   setup:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
 };
+/* Orders and Materials are off James's menus (11 Nov 2026): trades' materials requests still reach him from
+   Today ("Materials asked for"); price requests come back under Estimating once the Job Pack Estimator is in */
 /* each section's page: groups of tabs, as in the layout pictures (a third item true = only James sees it) */
 const NL_GROUPS = {
   jobs: [
     ["Jobs and sites", ["projects", "signin", "planner", "daywork", "photos", "draw"]],
     ["Clients", ["clients", "leads", "portal", "samples"]],
-    ["Materials and tools", ["materials", "calc"]],
+    ["Vans, tools and plant", ["calc"]],
   ],
   people: [
     ["Your team", ["people", "firms", "selfemp", "inductions", "training", "chat"]],
@@ -100,7 +101,7 @@ const NL_GROUPS = {
   ],
   paper: [
     ["Health & safety", ["hs", "checks", "jobs", "me"]],
-    ["Company and suppliers", ["policies", "suppliers", "materials"]],
+    ["Company and suppliers", ["policies", "suppliers"]],
   ],
 };
 /* pages that live inside another page (an Accounts tab, a pop-up from Setup or the planner): listed on their
@@ -166,7 +167,7 @@ const NL_SUBS = [
     "veh",
     "🚐 Vehicles & plant",
     "jobs",
-    "Materials and tools",
+    "Vans, tools and plant",
     "van mot service servicing insurance road tax due",
     () => eqmView(),
   ],
@@ -174,17 +175,9 @@ const NL_SUBS = [
     "kit",
     "🧰 Tools & plant: who has what",
     "jobs",
-    "Materials and tools",
+    "Vans, tools and plant",
     "book out back in qr sticker equipment",
     () => kitView(),
-  ],
-  [
-    "orders",
-    "📦 Orders & deliveries",
-    "jobs",
-    "Materials and tools",
-    "purchase order delivery price ask quote merchant",
-    () => nlSub("suppliers", { merTab: "orders" }),
   ],
   [
     "portalset",

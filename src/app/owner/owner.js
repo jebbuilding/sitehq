@@ -29,6 +29,7 @@ import { backupCard, wireBackup } from "./backup.js";
 import { companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
 import { openMonthly } from "./reports.js";
+import { qaSetupCard, qaSetupWire } from "./today-desk.js";
 import { acView } from "../people/access.js";
 import { detailsDone, myDetails, openDetails } from "../people/personal-details.js";
 import { pvView } from "../people/portal-access.js";
@@ -898,6 +899,7 @@ function ownerSetup() {
     <div class="card"><div class="cardbody" style="border:0"><b>Your mobile number</b><div class="who">Trades can call or video call you from Chat with this.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="op-tel" type="tel" maxlength="20" value="${esc(S.f.opTel != null ? S.f.opTel : (S.settings || {}).ownerPhone || "")}" placeholder="e.g. 07700 900123" style="flex:1;min-width:180px" aria-label="Your mobile number"><button class="btn primary" id="op-save" type="button">Save</button></div></div></div>
     <div class="card"><div class="cardbody" style="border:0"><b>🪪 My own details</b><div class="who">${detailsDone(myDetails()) ? "✓ Filled in. " : ""}Your name, trade, CSCS card, next of kin and medical info. Used to fill in inductions, toolbox talks, briefings and other forms for you automatically, the same as the trades.</div><div><button class="btn ${detailsDone(myDetails()) ? "" : "primary"}" id="op-det" type="button">${detailsDone(myDetails()) ? "Check my details" : "Fill in my details"}</button></div></div></div>
+    ${qaSetupCard()}
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
     ${companyCard()}
     ${lhCard()}
@@ -963,6 +965,7 @@ function ownerSetup() {
   };
   $("op-save").addEventListener("pointerdown", (e) => e.preventDefault());
   $("op-save").onclick = opSave;
+  qaSetupWire();
   $("op-tel").addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
