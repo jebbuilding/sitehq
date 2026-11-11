@@ -48,9 +48,12 @@ test("ci: the existing tests and the infrastructure checks run on pushes and pul
   assert.ok(runScripts(ci.jobs.infra.steps).includes("npm run test:infra"));
 });
 
-test("ci: dev is deployed only from a push to main, after the tests and infra checks pass", () => {
+test("ci: dev is deployed only from a push to main, after the quick checks and infra checks pass; the full suite still runs", () => {
   const job = ci.jobs["deploy-dev"];
-  assert.deepEqual([...job.needs].sort(), ["infra", "test"]);
+  assert.deepEqual([...job.needs].sort(), ["infra", "quick"]);
+  assert.ok(ci.jobs.test, "the full suite is still a job of the run, so a promotion (which needs the whole run green) waits for it");
+  const quickRuns = ci.jobs.quick.steps.map((s: { run?: string }) => s.run || "").join("\n");
+  assert.ok(!/npm test\b/.test(quickRuns), "the quick job does not run the full suite");
   assert.match(job.if, /github\.event_name == 'push'/);
   assert.match(job.if, /github\.ref == 'refs\/heads\/main'/);
   assert.equal(job.environment, undefined, "no GitHub Environment: the dev role trusts the main branch itself");

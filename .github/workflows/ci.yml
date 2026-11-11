@@ -12,6 +12,21 @@ permissions:
   contents: read
 
 jobs:
+  quick:
+    # The checks that take a couple of minutes: the build, the structure and formatting checks, the backend's own
+    # unit tests. Dev deploys once these and the infra checks pass; the full suite below runs alongside and is what
+    # a promotion to production requires (promote.yml checks the whole run passed).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: node scripts/build.mjs
+      - run: node scripts/modules.mjs --check
+      - run: npx prettier --check src/app --log-level warn
+      - run: node --test server/test/*.test.mjs
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -44,7 +59,7 @@ jobs:
 
   deploy-dev:
     name: deploy to dev
-    needs: [test, infra]
+    needs: [quick, infra]
     # Skipped (not failed) until the dev deploy role exists and its ARN is set as a variable.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN_DEV != ''
     runs-on: ubuntu-latest
