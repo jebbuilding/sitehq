@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 211 files, 4193 KB, 107492 lines.
+- 211 files, 4193 KB, 107496 lines.
 - 2175 names declared at the top level (the shared scope); 1099 of them are used by a file other than the one that declares them.
 - 2281 file-to-file dependencies (file A uses at least one name from file B).
 - 23 statements run while the page loads, all in `core/boot.js`.
@@ -1050,7 +1050,7 @@ SITE INDUCTIONS BY PERSON (owner): who has been inducted to which sites
 
 INVITE TO THE APP: owner gives a trade an account and emails them how to sign in
 
-- 68 lines, 3.0 KB. Declares 6 names, 4 used elsewhere.
+- 72 lines, 3.4 KB. Declares 6 names, 4 used elsewhere.
 - **Used elsewhere:** `canInvite` (2), `inviteBoxHtml` (1), `invitePerson` (1), `inviteTicked` (1)
 - **Uses names from 5 files:** `core/helpers.js` (2), `core/sheet.js` (2), `core/state.js` (2), `core/tabs-week.js` (1), `owner/company-details.js` (1)
 - **Used by 2 files**

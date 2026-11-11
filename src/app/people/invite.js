@@ -9,14 +9,16 @@ export { canInvite, inviteBoxHtml, invitePerson, inviteTicked };
    (S.invites, our own hosting only), the form shows "Invite them to the app". Saving with it ticked asks the
    server to make their sign-in account and email them; their details go straight into their own profile
    (sheets/<id>), so they turn up as a trade on the app and are not asked for them again. An existing
-   "not on the app" record is moved, not deleted. */
+   "not on the app" record is moved, not deleted.
+   The box starts ticked for someone new – adding a trade normally means giving them the app – and unticked when
+   editing someone already kept "not on the app", so changing their details never emails them by surprise. */
 const INV_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const canInvite = () => !!(S.invites && ownerMode());
 function inviteBoxHtml(rec) {
   if (!canInvite()) return "";
   return `<div class="card inv-box">
-    <label class="inl inv-tick"><input type="checkbox" id="dt-inv"> <b>Invite them to the app</b></label>
-    <div class="who">They'll get an email with the link. They sign in with their email address and a code we email them each time – no password. Fill in their email address below.${rec ? " Their details move across with them." : ""}</div>
+    <label class="inl inv-tick"><input type="checkbox" id="dt-inv" ${rec ? "" : "checked"}> <b>Invite them to the app</b></label>
+    <div class="who">They'll get an email with the link. They sign in with their email address and a code we email them each time – no password. Fill in their email address below.${rec ? " Their details move across with them." : " Untick this for someone who won't use the app."}</div>
   </div>`;
 }
 const inviteTicked = () => canInvite() && !!($("dt-inv") && $("dt-inv").checked);
@@ -32,7 +34,9 @@ function inviteErrMsg(e) {
 /* Returns true when done (form closed); false when the form should stay open. */
 async function invitePerson(out, rec, role, roleCompany) {
   if (!INV_EMAIL.test(out.email || "")) {
-    showErr("Put in their email address – the invite goes there.");
+    showErr(
+      "Put in their email address – the invite goes there. If they won't use the app, untick “Invite them to the app”.",
+    );
     return false;
   }
   out.email = out.email.toLowerCase();

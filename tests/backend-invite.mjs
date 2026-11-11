@@ -39,7 +39,10 @@ async function fillTrade(page, { name, email, mobile = "07700 900123" }) {
   await page.selectOption("#dt-role", "employee");
   await page.check("#dt-ok");
 }
-const toastText = (page) => page.waitForSelector("#toast:not([hidden]), .toast", { timeout: 4000 }).then((el) => el.textContent(), () => "");
+/** The first toast with words in it, waiting up to 8 s – an empty toast element can already be in the page. */
+const toastText = (page) =>
+  page.waitForFunction(() => [...document.querySelectorAll("#toast, .toast")].map((t) => t.textContent.trim()).find(Boolean), null, { timeout: 8000 })
+    .then((h) => h.jsonValue(), () => "");
 const sheets = async () => Object.fromEntries((await local.store.list("sheets")).map((d) => [d.id, d.data]));
 
 try {
@@ -48,9 +51,8 @@ try {
   check((await owner.textContent("#pp-add")).trim() === "+ Add a trade", "the button says “+ Add a trade”");
   await owner.click("#pp-add");
   await owner.waitForSelector("#dt-inv");
-  check(true, "the form offers “Invite them to the app”");
+  check(await owner.isChecked("#dt-inv"), "the form offers “Invite them to the app”, already ticked for someone new");
   await fillTrade(owner, { name: "Alex Newman", email: "Alex.Newman@Example.TEST" });
-  await owner.check("#dt-inv");
   await shot(owner, "form");
   await owner.click("#f-save");
   const t = await toastText(owner);
@@ -102,8 +104,13 @@ try {
   await owner.check("#dt-inv");
   await owner.click("#f-save");
   const err2 = await owner.waitForSelector(".err:not(:empty), #f-err:not(:empty)").then((e) => e.textContent(), () => "");
-  check(/Put in their email address/.test(err2), "no email address: asked for one");
-  await owner.click("#f-cancel");
+  check(/Put in their email address/.test(err2) && /untick/.test(err2), "no email address: asked for one, or to untick");
+  /* unticked: kept as "not on the app", as before – no account, no email */
+  await owner.uncheck("#dt-inv");
+  await owner.click("#f-save");
+  await owner.waitForSelector("#dt-inv", { state: "detached" }).catch(() => {});
+  const offNow = (await local.store.list("offapp")).map((d) => d.data.details.fullName);
+  check(offNow.includes("No Email") && local.mail.length === 1, "unticked: saved as “not on the app”, nothing emailed");
 
   /* someone already listed as "not on the app" is invited later: their record moves across */
   // written through the API, as the owner, so the owner's open page hears about it
@@ -112,6 +119,7 @@ try {
   await owner.waitForSelector('.pp-edit[data-w="off:t-old"]', { state: "attached" });
   await owner.evaluate(() => document.querySelector('.pp-edit[data-w="off:t-old"]').click()); // the button sits in a folded row
   await owner.waitForSelector("#dt-inv");
+  check(!(await owner.isChecked("#dt-inv")), "editing someone kept “not on the app”: the box starts unticked");
   await owner.check("#dt-ok");
   await owner.check("#dt-inv");
   await owner.click("#f-save");

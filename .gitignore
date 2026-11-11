@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 dist/
 # infrastructure: synthesised templates and bundled Lambda code
 infra/cdk.out/
