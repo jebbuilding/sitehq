@@ -94,6 +94,9 @@ export interface ProjectConfig {
   project: string;
   /** owner/name of the GitHub repository allowed to deploy. */
   githubRepo: string;
+  /** GitHub's numeric ids for the owner and the repository: GitHub also sends the token subject as
+   *  repo:<owner>@<owner id>/<repo>@<repo id>:…, so the deploy roles accept that exact form too. `gh api repos/<owner>/<repo>` shows them. */
+  githubRepoIds: { owner: number; repo: number };
   /**
    * Where the Lambda code comes from, relative to the repository root. If a file does not
    * exist yet, the stack deploys infra/placeholder/handler.mjs instead and says so.
@@ -122,6 +125,7 @@ const PROD_ACCOUNT = env("SITEHQ_PROD_ACCOUNT", PLACEHOLDERS.prodAccount);
 export const config: ProjectConfig = {
   project: "sitehq",
   githubRepo: GITHUB_REPO,
+  githubRepoIds: { owner: 352964822, repo: 1447190975 },
   server: {
     httpEntry: "server/handlers/http.mjs",
     wsEntry: "server/handlers/ws.mjs",

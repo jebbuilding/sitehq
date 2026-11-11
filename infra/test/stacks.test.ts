@@ -568,13 +568,20 @@ test("deploy roles: dev only from main, prod only from the production GitHub Env
     return statements[0].Condition.StringEquals;
   };
   const issuer = "token.actions.githubusercontent.com";
+  const [owner, repo] = config.githubRepo.split("/");
   assert.deepEqual(trust(two.dev), {
     [`${issuer}:aud`]: "sts.amazonaws.com",
-    [`${issuer}:sub`]: `repo:${config.githubRepo}:ref:refs/heads/main`,
+    [`${issuer}:sub`]: [
+      `repo:${config.githubRepo}:ref:refs/heads/main`,
+      `repo:${owner}@${config.githubRepoIds.owner}/${repo}@${config.githubRepoIds.repo}:ref:refs/heads/main`,
+    ],
   });
   assert.deepEqual(trust(two.prod), {
     [`${issuer}:aud`]: "sts.amazonaws.com",
-    [`${issuer}:sub`]: `repo:${config.githubRepo}:environment:production`,
+    [`${issuer}:sub`]: [
+      `repo:${config.githubRepo}:environment:production`,
+      `repo:${owner}@${config.githubRepoIds.owner}/${repo}@${config.githubRepoIds.repo}:environment:production`,
+    ],
   });
 });
 

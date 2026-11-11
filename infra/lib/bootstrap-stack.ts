@@ -23,6 +23,13 @@ export interface BootstrapStackProps extends StackProps {
  *  - the email identity that sign-in codes are sent from, with its DNS records, so that it has
  *    been verified by the time the main stack creates the user pool
  */
+/** The subject as configured, plus the same subject with GitHub's owner and repository ids spelled in. */
+export function subjectForms(project: ProjectConfig, subject: string): string[] {
+  const [owner, repo] = project.githubRepo.split("/");
+  const withIds = subject.replace(`repo:${owner}/${repo}:`, `repo:${owner}@${project.githubRepoIds.owner}/${repo}@${project.githubRepoIds.repo}:`);
+  return withIds === subject ? [subject] : [subject, withIds];
+}
+
 export class BootstrapStack extends Stack {
   readonly deployRole: iam.Role;
 
@@ -49,8 +56,9 @@ export class BootstrapStack extends Stack {
         {
           StringEquals: {
             [`${GITHUB_ISSUER}:aud`]: "sts.amazonaws.com",
-            // exact match, no wildcard: one branch (dev) or one GitHub Environment (prod)
-            [`${GITHUB_ISSUER}:sub`]: e.githubSubject,
+            // exact matches, no wildcard: one branch (dev) or one GitHub Environment (prod), in both forms GitHub
+            // sends the subject in – repo:owner/name:… and repo:owner@<id>/name@<id>:… (seen from Nov 2026)
+            [`${GITHUB_ISSUER}:sub`]: subjectForms(project, e.githubSubject),
           },
         },
         "sts:AssumeRoleWithWebIdentity",
