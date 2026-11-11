@@ -4,6 +4,7 @@ import { S, ownerMode } from "../core/state.js";
 import { curTab, empTabs, render } from "../core/tabs-week.js";
 import { openFile } from "../files/in-app-files.js";
 import { coData } from "./company-details.js";
+import { NL_BY, coTileOf, nlBrandHtml } from "./today.js";
 import { tsiCardHtml, tsiWire } from "./trade-signin.js";
 import { amForeman } from "../people/foreman.js";
 import { qrsTradeScan } from "../planner/qr-stickers.js";
@@ -101,22 +102,18 @@ function tlApply() {
     .reduce((s, [k]) => s + (badge[k] || 0), 0);
   const cur = inBar.has(t) ? t : "more";
   const co = (coData().name || "SiteHQ").trim();
-  const tile = co
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
+  const tile = coTileOf(co);
   /* the letters in the square beside the page title, as on James's */
   if (hd) hd.dataset.tile = tile;
   bar.innerHTML =
-    `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(tile)}</span><b>SiteHQ</b></div>` +
+    nlBrandHtml(co) +
     items
       .map(([k, l, i]) => {
         const n = k === "more" ? moreN : k === "home" ? 0 : badge[k] || 0;
         return `<button type="button" class="nl-b tl-b" data-t="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic"><span class="tl-i" aria-hidden="true">${i}</span>${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l">${esc(l)}</span></button>`;
       })
-      .join("");
+      .join("") +
+    NL_BY;
   bar.querySelectorAll(".tl-b").forEach((b) => (b.onclick = () => tlGo(b.dataset.t)));
 }
 /* 🏠 Today */

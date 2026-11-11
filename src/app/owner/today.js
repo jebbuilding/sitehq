@@ -16,7 +16,19 @@ import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
-export { NL_SUBS, nlApply, nlGo, nlName, nlOn, nlOpenTab, nlSectionView, todayView };
+export {
+  NL_BY,
+  NL_SUBS,
+  coTileOf,
+  nlApply,
+  nlBrandHtml,
+  nlGo,
+  nlName,
+  nlOn,
+  nlOpenTab,
+  nlSectionView,
+  todayView,
+};
 /* Switched on per device with the "✨ New look" button in the header (kept in jeb.newlook); off = the app as before.
    The old tab row stays in the page, hidden, and the section pages open a tab by pressing its button, so every tab
    behaves exactly as it does from the tab row. Layout agreed in docs/mockups/new-layout. */
@@ -219,6 +231,27 @@ function nlSet(v) {
 /* The new look is the layout, on every screen, for good (James, Nov 2026): there is no switch back. Only automated
    test browsers (navigator.webdriver) start in the old look, which the older tests are written for, and keep the
    switch; tests/features/h416.js switches it on itself. */
+/* the company's letters for its square: a leading word in capitals ("JEB"), else the first letters of its words */
+const coTileOf = (name) => {
+  const n = String(name || "").trim();
+  return (/^[A-Z]{2,4}\b/.exec(n) || [
+    n
+      .split(/\s+/)
+      .map((w) => w[0] || "")
+      .join("")
+      .slice(0, 3)
+      .toUpperCase(),
+  ])[0];
+};
+/* the top of the side menu (iPad, computer): the company first – its square, the first word bold and the rest under
+   it – as in James's "JEB first, SiteHQ small" design (Nov 2026); used by the owner's, trades' and clients' menus */
+function nlBrandHtml(name) {
+  const n = String(name || "").trim();
+  const [w1, ...rest] = n.split(/\s+/);
+  return `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(coTileOf(n))}</span><span class="nl-bn"><b>${esc(w1 || "SiteHQ")}</b>${rest.length ? `<span>${esc(rest.join(" "))}</span>` : ""}</span></div>`;
+}
+/* the small credit at the foot of the side menu: SiteHQ by Stranix */
+const NL_BY = `<div class="nl-by" aria-label="SiteHQ by Stranix"><span class="nl-sq">Site<span>HQ</span></span><span>by</span><svg viewBox="-124 -124 248 248" width="12" height="12" aria-hidden="true"><polyline points="86.6,-5 86.6,-50 0,-100 -86.6,-50 86.6,50 0,100 -86.6,50 -86.6,5" fill="none" stroke="#D0101C" stroke-width="36" stroke-linejoin="miter" stroke-miterlimit="4"/></svg><b>STRANIX</b></div>`;
 const nlOn = () => {
   /* My forms (S.preview: James filling in forms as himself) keeps the new look too */
   if (!navigator.webdriver) return !!S.owner;
@@ -310,21 +343,15 @@ function nlApply() {
   const cur = S.preview ? "paper" : nlSecOf(S.otab),
     badge = S.badgeNow || {};
   const coName = (coData().name || "SiteHQ").trim();
-  const tile = (/^[A-Z]{2,4}\b/.exec(coName) || [
-    coName
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 3)
-      .toUpperCase(),
-  ])[0];
+  const tile = coTileOf(coName);
   bar.innerHTML =
-    `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(tile)}</span><b>SiteHQ</b></div>` +
+    nlBrandHtml(coName) +
     NL_SECTIONS.map(([k, name, tabs]) => {
       const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
       return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "sales" ? "Invoices" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
     }).join("") +
-    `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>`;
+    `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>` +
+    NL_BY;
   $("nl-add").onclick = qaOpen;
   /* the page title: the date above it on Today */
   const hd = document.querySelector("header.top>div");

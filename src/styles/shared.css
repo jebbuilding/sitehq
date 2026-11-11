@@ -440,5 +440,18 @@ body:has(.np) .scrim.sh-np{z-index:37}body:has(.np) .sheet.sh-np{z-index:38}
 .wc-t{width:100%;border-collapse:collapse}.wc-t td,.wc-t th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}.wc-t .num{text-align:right;white-space:nowrap}.wc-t .wc-tot td{font-weight:700}
 /* a pop-up form hides the "PDF saved – Print" bar, which would sit over its buttons */
 body:has(#sheet:not([hidden])) .pdfbar{display:none}
+/* the opening screen: the company first, "SiteHQ by Stranix" small (core/opening-screen.js; James chose "JEB first, SiteHQ small" from the Stranix logo set, Nov 2026) */
+.ohq{position:fixed;inset:0;z-index:100;background:#FFFFFF;color:#1c1a1a;display:flex;flex-direction:column;align-items:center;padding:64px 28px calc(36px + env(safe-area-inset-bottom));box-sizing:border-box;transition:opacity .35s ease}
+.ohq.ohq-out{opacity:0;pointer-events:none}
+.ohq-mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+.ohq-tile{width:132px;height:132px;border-radius:30px;background:var(--brand);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:600;font-size:46px;letter-spacing:.04em;margin-bottom:16px}
+.ohq-name{font-family:var(--f-display);font-size:32px;font-weight:600;line-height:1.1}
+.ohq-sub{font-size:15px;font-weight:500;color:#5f5757}
+.ohq-foot{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:22px}
+.ohq-how[hidden]{display:none}.ohq-how{text-align:center;color:#5f5757;line-height:1.45}.ohq-how b{display:block;color:#1c1a1a;font-size:17px;margin-bottom:4px}
+.ohq-by{display:flex;align-items:center;gap:7px;font-family:"Montserrat",var(--f-body);font-size:11px;font-weight:500;color:#5f5757;line-height:1}.ohq-by b{font-weight:800;letter-spacing:.06em;color:#16181D}
+.ohq-sq{font-size:15px;font-weight:800;letter-spacing:-.01em;color:#16181D}.ohq-sq span{color:#D0101C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ohq{background:#141011;color:#f1ebeb}:root:not([data-theme="light"]) .ohq-name,:root:not([data-theme="light"]) .ohq-how b{color:#f1ebeb}:root:not([data-theme="light"]) .ohq-sub,:root:not([data-theme="light"]) .ohq-how,:root:not([data-theme="light"]) .ohq-by{color:#ab9e9e}:root:not([data-theme="light"]) .ohq-sq,:root:not([data-theme="light"]) .ohq-by b{color:#FFFFFF}:root:not([data-theme="light"]) .ohq-sq span{color:#E3151F}}
+:root[data-theme="dark"] .ohq{background:#141011;color:#f1ebeb}:root[data-theme="dark"] .ohq-name,:root[data-theme="dark"] .ohq-how b{color:#f1ebeb}:root[data-theme="dark"] .ohq-sub,:root[data-theme="dark"] .ohq-how,:root[data-theme="dark"] .ohq-by{color:#ab9e9e}:root[data-theme="dark"] .ohq-sq,:root[data-theme="dark"] .ohq-by b{color:#FFFFFF}:root[data-theme="dark"] .ohq-sq span{color:#E3151F}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}

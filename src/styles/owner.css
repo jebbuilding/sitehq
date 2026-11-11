@@ -235,3 +235,15 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .tsi-st{display:flex;flex-direction:column;gap:2px;margin:2px 0 10px}
 .tsi-st b{font-size:18px}
 .tsi-pick{display:block;margin-top:10px}
+/* the side menu (iPad, computer): the company first, "SiteHQ by Stranix" small at the foot (James, Nov 2026) */
+.nl-by{display:none}
+@media (min-width:900px){
+  .nl-brand{border-bottom:1px solid var(--line);margin-bottom:10px;padding-bottom:16px}
+  .nl-tile2{width:48px;height:48px;border-radius:12px;font-size:17px;background:var(--brand);color:#FFFFFF;flex:none}
+  .nl-bn{display:flex;flex-direction:column;gap:2px;line-height:1.1;min-width:0}
+  .nl-bn b{font-family:var(--f-display);font-weight:600;font-size:20px;letter-spacing:.02em;color:var(--ink)}
+  .nl-bn span{font-size:14px;font-weight:600;color:var(--muted)}
+  .nl-by{margin-top:auto;padding:16px 8px 4px;display:flex;align-items:center;gap:7px;font-family:"Montserrat",var(--f-body);font-size:11px;font-weight:500;color:var(--muted);line-height:1}
+  .nl-by b{font-weight:800;letter-spacing:.06em;color:var(--ink)}
+  .nl-sq{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}.nl-sq span{color:#D0101C}
+}

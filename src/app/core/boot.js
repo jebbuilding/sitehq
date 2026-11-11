@@ -13,6 +13,7 @@ import { initDictation } from "./dictation.js";
 import { $ } from "./helpers.js";
 import { wrapDb } from "./live-feed.js";
 import { refreshNowWx, startNowBar } from "./now-bar.js";
+import { initOpening } from "./opening-screen.js";
 import { initReportIssue } from "./report-issue.js";
 import { initSheet } from "./sheet.js";
 import { initSpellCheck } from "./spell-check.js";
@@ -58,6 +59,7 @@ initSpellCheck();
 initDictation();
 initPhotoTest();
 initJobStory();
+initOpening();
 
 /* get the platform, work out who is signed in, start the app */
 (async () => {
