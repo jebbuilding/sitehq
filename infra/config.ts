@@ -140,7 +140,7 @@ export const config: ProjectConfig = {
       account: DEV_ACCOUNT,
       region: REGION,
       domain: DOMAIN,
-      subdomain: "sitehq", // the first, temporary site: sitehq.jevul.com in Jasper's account, synthetic data only
+      subdomain: "sitehq-dev", // sitehq-dev.jevul.com in Jasper's account: synthetic data, every merge to main lands here
       hostedZoneId: env("SITEHQ_DEV_HOSTED_ZONE_ID", PLACEHOLDERS.hostedZoneId),
       hostedZoneName: env("SITEHQ_DEV_HOSTED_ZONE_NAME", DOMAIN),
       githubOidcProvider: "create",
@@ -165,7 +165,7 @@ export const config: ProjectConfig = {
       account: PROD_ACCOUNT,
       region: REGION,
       domain: DOMAIN,
-      subdomain: "app",
+      subdomain: "sitehq", // sitehq.jevul.com: the pilot production site in Jasper's account (Nov 2026), promoted by hand
       hostedZoneId: env("SITEHQ_PROD_HOSTED_ZONE_ID", PLACEHOLDERS.hostedZoneId),
       hostedZoneName: env("SITEHQ_PROD_HOSTED_ZONE_NAME", DOMAIN),
       // One GitHub provider per account: if prod shares dev's account, dev's stack has made it.
