@@ -226,3 +226,5 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .brf-l{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;width:100%;text-align:left;min-height:44px;padding:6px 4px;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;cursor:pointer}
 .brf-l.warn span:nth-child(2){color:var(--danger);font-weight:600}
 .brf-i{font-size:18px}
+/* the trades in the new look (owner/trade-look.js): the bar's emoji, the same size as the owner's icons */
+.tl-b .tl-i{font-size:21px;line-height:1}

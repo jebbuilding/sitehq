@@ -35,6 +35,7 @@ import {
   wireSentTodos,
   wireTradeTodos,
 } from "../owner/todo-lists.js";
+import { tlApply, tlHome, tlMore } from "../owner/trade-look.js";
 import { whatsNewHTML, wireWhatsNew, wnCapture } from "../owner/whats-new.js";
 import { acTabAllowed } from "../people/access.js";
 import { cmpPage } from "../people/companies.js";
@@ -380,6 +381,7 @@ function render() {
   renderTabs();
   renderWeek();
   nlApply();
+  tlApply();
   $("offline").hidden = navigator.onLine !== false;
   const t = curTab();
   if (ownerMode()) {
@@ -572,6 +574,8 @@ function render() {
         photos: "My photos",
         invoices: "My invoices",
         plans: "Sites",
+        home: "Today",
+        more: "More",
         jobs: "My forms",
         training: "Training",
         chat: "Chat",
@@ -588,6 +592,8 @@ function render() {
     $("who").textContent = S.myProfile.name + (S.preview ? " · preview" : "");
     (
       ({
+        home: tlHome,
+        more: tlMore,
         signin: SIGNIN.view,
         mydw: myDayworkView,
         draw: drawView,
