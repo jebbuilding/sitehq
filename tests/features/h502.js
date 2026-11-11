@@ -64,7 +64,7 @@ const PDF=Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 
  await q.click('#tlbar .tl-b[data-t=more]');await q.waitForTimeout(400);
  const mm=await q.innerText('#main');
  ok(['Forms','Calculator','Training','Materials','Merchants|Suppliers','Brochures'].every(w=>new RegExp(w).test(mm)),'More has Forms, Calculator, Training, Materials, Merchants and Brochures');
- ok(!/Day work|My reports/.test(mm),'but not Day work or Reports');
+ ok(/Day work/.test(mm)&&!/My reports/.test(mm),'Day work is back, Reports is not');
  await q.screenshot({path:OUT+'bc-3-trade-more.png',fullPage:true});
  await q.click('.tl-go[data-t=brochures]');await q.waitForTimeout(400);
  const bt=await q.innerText('#main');

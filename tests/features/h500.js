@@ -42,7 +42,7 @@ async function open(b,vp){const ctx=await b.newContext({viewport:vp,deviceScaleF
  await p.screenshot({path:OUT+'trade-new-1-today.png'});
  await p.click('#tlbar .tl-b[data-t=more]');await p.waitForTimeout(400);
  const mm=await p.innerText('#main');
- ok(/Policies/.test(mm)&&/My details/.test(mm)&&/Forms/.test(mm)&&/Training/.test(mm)&&!/Photos|Day work|My reports/.test(mm),'More has the rest (Forms, Training and the others) – without Day work or Reports');
+ ok(/Policies/.test(mm)&&/My details/.test(mm)&&/Forms/.test(mm)&&/Training/.test(mm)&&/Day work/.test(mm)&&!/Photos|My reports|Timesheet/.test(mm),'More has the rest (Forms, Training and the others) – Day work back; without Timesheets or work or Reports');
  await p.screenshot({path:OUT+'trade-new-2-more.png'});
  await p.click('.tl-go[data-t=policies]');await p.waitForTimeout(400);
  ok(await p.evaluate(()=>window.__S.tab==='policies')&&await p.isVisible('#tlbar .tl-b[data-t=more][aria-current]'),'Policies opens from More, with More still lit');

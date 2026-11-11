@@ -15,7 +15,7 @@ import { signOnly } from "../sites/sign-in-book.js";
 export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
 /* The trades get the same look as James (body.nl-on, the styles in owner.css): no wall of buttons at the top, but a bar
    along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 🏗️ Sites, 📷 Photos and
-   ☰ More. The trades don't see anything to do with timesheets or day work (James, Nov 2026): no Time or Day work pages,
+   ☰ More. The trades have no timesheets (James, Nov 2026): no Time page (Day work is in More),
    and Sign in is the plain site sign-in book (sites/sign-in-book.js, siPlain). Today lists their dates from the planner
    (today and what's coming up), whether they're signed in, and what's waiting for them (forms, things to sign, checks
    due, talks, policies, chat), each a tap away; big buttons for the things they do most. More lists every other page they're allowed (Setup › People & access), in
@@ -29,17 +29,17 @@ const TL_BAR = [
   ["more", "More", "☰"],
 ];
 const TL_GROUPS = [
-  ["Work", ["foreman", "jobs", "signin", "plans", "draw", "calc"]],
+  ["Work", ["foreman", "jobs", "mydw", "signin", "plans", "draw", "calc"]],
   ["Materials and merchants", ["materials", "suppliers", "brochures"]],
   ["Safety and training", ["training"]],
   ["Policies and insurance", ["policies"]],
   ["Money", ["receipts", "invoices"]],
   ["You and the team", ["chat", "details"]],
 ];
-/* left out of More (James, Nov 2026): day work (nothing to do with timesheets or day work) and Reports; an
+/* left out of More (James, Nov 2026): Reports (Day work came back, 11 Nov 2026); an
    accident or near miss is reported from the button on Today, and a van check by scanning its sticker */
 /* Sign in is on Today and at the top of Sites, found by the phone's location (owner/trade-signin.js) */
-const TL_MORE_HIDE = ["mydw", "checks", "signin"];
+const TL_MORE_HIDE = ["checks", "signin"];
 let tlLanded = false;
 const tlOn = () => {
   if (S.owner || ownerMode() || S.client) return false;
@@ -47,7 +47,7 @@ const tlOn = () => {
   return !!store.get("jeb.tradelook", false);
 };
 /* the tabs this person has, as [key, label] (role access and sign-in-only already applied) */
-const TL_HIDE = ["time", "mydw"];
+const TL_HIDE = ["time"];
 const tlTabs = () =>
   (amForeman() ? [["foreman", "🦺 Foreman"]] : [])
     .concat(empTabs())
