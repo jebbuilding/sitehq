@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 213 files, 4213 KB, 107915 lines.
-- 2201 names declared at the top level (the shared scope); 1106 of them are used by a file other than the one that declares them.
+- 213 files, 4215 KB, 107955 lines.
+- 2203 names declared at the top level (the shared scope); 1107 of them are used by a file other than the one that declares them.
 - 2298 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 195 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -268,9 +268,9 @@ CLIENT PORTAL
 
 quick enquiry: a few details + the visit time, into the planner, with a reminder an hour before
 
-- 600 lines, 28 KB. Declares 7 names, 4 used elsewhere.
+- 618 lines, 29 KB. Declares 8 names, 4 used elsewhere.
 - **Used elsewhere:** `viewClient` (22), `quickEnquiry` (3), `initQuickEnquiry` (1), `VISIT_REMIND_MIN` (1)
-- **Uses names from 31 files:** `core/helpers.js` (9), `clients/address-book.js` (6), `clients/stages-planner.js` (5), `clients/clients.js` (4), `core/sheet.js` (4), `core/state.js` (4), `files/files.js` (4), `clients/portal.js` (3), `clients/documents.js` (2), `clients/gdpr-consent.js` (2), `clients/sketches.js` (2), `core/viewer.js` (2), `owner/deleted-items.js` (2), `sites/job-details.js` (2), `sites/maps-pins.js` (2), `chat/chat.js` (1), `clients/address-book-jobs.js` (1), `clients/more-jobs.js` (1), `clients/record-pdf.js` (1), `clients/web-enquiries.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `owner/delete-client-site.js` (1), `planner/board.js` (1), `planner/diary.js` (1), `purchasing/samples.js` (1), `safety/training.js` (1), `sales/job-file.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
+- **Uses names from 31 files:** `core/helpers.js` (9), `clients/address-book.js` (6), `clients/stages-planner.js` (6), `clients/clients.js` (4), `core/sheet.js` (4), `core/state.js` (4), `files/files.js` (4), `clients/portal.js` (3), `clients/documents.js` (2), `clients/gdpr-consent.js` (2), `clients/sketches.js` (2), `core/viewer.js` (2), `owner/deleted-items.js` (2), `sites/job-details.js` (2), `sites/maps-pins.js` (2), `chat/chat.js` (1), `clients/address-book-jobs.js` (1), `clients/more-jobs.js` (1), `clients/record-pdf.js` (1), `clients/web-enquiries.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `owner/delete-client-site.js` (1), `planner/board.js` (1), `planner/diary.js` (1), `purchasing/samples.js` (1), `safety/training.js` (1), `sales/job-file.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 24 files**
 
 ### `clients/record-pdf.js`
@@ -313,8 +313,8 @@ SKETCHES & PHOTO PAGES (clients)
 
 CLIENT STAGES <-> PLANNER
 
-- 244 lines, 11 KB. Declares 10 names, 7 used elsewhere.
-- **Used elsewhere:** `clAddr` (20), `clAddPlan` (2), `clNextPlan` (1), `clPlanListHtml` (1), `clPlans` (1), `clStepsHtml` (1), `wireClSteps` (1)
+- 266 lines, 11 KB. Declares 11 names, 8 used elsewhere.
+- **Used elsewhere:** `clAddr` (20), `clAddPlan` (2), `clAddrLines` (1), `clNextPlan` (1), `clPlanListHtml` (1), `clPlans` (1), `clStepsHtml` (1), `wireClSteps` (1)
 - **Uses names from 12 files:** `core/helpers.js` (9), `core/sheet.js` (4), `clients/clients.js` (2), `clients/quick-enquiry.js` (2), `sites/job-details.js` (2), `clients/review-ask.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `planner/board.js` (1), `planner/diary.js` (1)
 - **Used by 22 files**
 
@@ -1798,7 +1798,7 @@ DRAWING COMPARE: two versions of a drawing laid over each other – what's new i
 
 JOB DETAILS FOR TRADES (kept on the site record, which trades can read)
 
-- 918 lines, 35 KB. Declares 43 names, 16 used elsewhere.
+- 918 lines, 36 KB. Declares 43 names, 16 used elsewhere.
 - **Used elsewhere:** `empTypeOf` (11), `sjMaster` (5), `syncSiteJobs` (4), `editSiteJob` (2), `siteJobCard` (2), `wireSjPhotos` (2), `clientJobCard` (1), `editSiteVis` (1), `siteFromClient` (1), `siteFront` (1), `siteSumHtml` (1), `sjClientOK` (1), `sjCopy` (1), `sjEffective` (1), `sjPayload` (1), `wireSiteSum` (1)
 - **Uses names from 17 files:** `core/helpers.js` (5), `clients/clients.js` (4), `core/sheet.js` (4), `clients/address-book.js` (3), `files/files.js` (3), `owner/owner.js` (3), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `people/employment-types.js` (1), `photos/photos.js` (1), `safety/training.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
 - **Used by 23 files**
