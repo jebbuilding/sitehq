@@ -121,6 +121,27 @@ function myDetailsView() {
   $("dt-edit").onclick = () => openDetails();
   wireProfilePhoto();
 }
+/* "Works for us as": the employment type, and which page that puts them on (People / Self-employed trades / Companies) */
+const PP_ROLE_OF = {
+  employed: "employee",
+  cis: "sub",
+  selfemp: "sub",
+  company: "company",
+  agency: "company",
+  other: "employee",
+};
+function ppEmpOf(id) {
+  const t = S.team[id] || {};
+  const e = t.details && t.details.empType;
+  if (e && (!t.role || PP_ROLE_OF[e] === t.role)) return e;
+  return t.role === "sub"
+    ? "cis"
+    : t.role === "company"
+      ? "company"
+      : t.role === "employee"
+        ? "employed"
+        : e || "";
+}
 function peopleView() {
   const ids = teamIds();
   const f = S.f.ppl || "";
@@ -183,12 +204,19 @@ function peopleView() {
       <div class="cardbody">${
         String(id).startsWith("off:")
           ? `<div class="actions"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">Edit details</button></div>`
-          : `<div class="actions" style="align-items:center"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">${d ? "Edit details" : "Fill in details for them"}</button><label for="pp-role-${esc(id)}" class="inl" style="font-size:14px;color:var(--ink)">Treat as<select id="pp-role-${esc(id)}" class="pp-role" data-w="${esc(id)}" style="width:auto;margin-left:6px"><option value="" ${!(S.team[id] || {}).role ? "selected" : ""}>From their details${(() => {
-              const e = d && d.empType;
-              return e
-                ? " (" + (e === "cis" || e === "selfemp" ? "subcontractor" : "employee") + ")"
-                : "";
-            })()}</option><option value="employee" ${(S.team[id] || {}).role === "employee" ? "selected" : ""}>Employee</option><option value="sub" ${(S.team[id] || {}).role === "sub" ? "selected" : ""}>Subcontractor</option><option value="company" ${(S.team[id] || {}).role === "company" ? "selected" : ""}>From another company</option></select></label>${roleOf(id) === "company" || roleOf(id) === "sub" ? `<label class="inl pp-coL">Company<input class="pp-co" data-w="${esc(id)}" maxlength="80" value="${esc(companyOf(id))}" placeholder="Company they're from" style="width:auto;min-width:160px"></label>` : ""}
+          : `<div class="actions" style="align-items:center"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">${d ? "Edit details" : "Fill in details for them"}</button><label for="pp-role-${esc(id)}" class="inl" style="font-size:14px;color:var(--ink)">Works for us as<select id="pp-role-${esc(id)}" class="pp-role" data-w="${esc(id)}" style="width:auto;margin-left:6px">${(() => {
+              /* one choice keeps their details and the page they're on in step (James, Nov 2026) */
+              const cur = ppEmpOf(id);
+              return (
+                (cur ? "" : `<option value="" selected>Choose…</option>`) +
+                Object.entries(EMP_TYPES)
+                  .map(
+                    ([k, l]) =>
+                      `<option value="${k}"${k === cur ? " selected" : ""}>${esc(l)}</option>`,
+                  )
+                  .join("")
+              );
+            })()}</select></label>${roleOf(id) === "company" || roleOf(id) === "sub" ? `<label class="inl pp-coL">Company<input class="pp-co" data-w="${esc(id)}" maxlength="80" value="${esc(companyOf(id))}" placeholder="Company they're from" style="width:auto;min-width:160px"></label>` : ""}
         <button type="button" class="pillbtn pr-send" data-w="${esc(id)}">Send ${esc(nameOf(id))} a reminder</button></div>`
       }${
         d
@@ -365,11 +393,29 @@ function peopleView() {
           const w = sel.dataset.w;
           sel.blur();
           try {
+            const v = sel.value;
+            if (!v) return;
             const cur = Object.assign({}, S.team[w] || {});
-            if (sel.value) cur.role = sel.value;
-            else delete cur.role;
+            const role = PP_ROLE_OF[v] || "employee";
+            cur.role = role;
+            cur.details = Object.assign({}, cur.details || {}, { empType: v });
             await S.db.doc("sheets/" + w).set(cur);
-            toast(sel.value === "company" ? "Saved. Now type the company they're from." : "Saved");
+            S.team[w] = cur;
+            const page =
+              role === "sub"
+                ? "Subcontractors"
+                : role === "company"
+                  ? "Other companies"
+                  : "Employees";
+            toast(
+              nameOf(w) +
+                " is now " +
+                EMP_TYPES[v] +
+                (role === "company" ? ". Type the company they're from." : "") +
+                " · they're under " +
+                page +
+                " at the top of this page",
+            );
             render();
           } catch (e) {
             toast("Couldn't save");
