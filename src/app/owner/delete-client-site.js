@@ -1,5 +1,6 @@
 /* ===== Delete a client or a site (PIN protected) ===== */
 import { clientSites } from "../clients/address-book.js";
+import { saveClient } from "../clients/clients.js";
 import { ptCl, ptOf } from "../clients/portal.js";
 import { clAddr } from "../clients/stages-planner.js";
 import { askOwnerPin } from "../core/dictation.js";
@@ -136,6 +137,40 @@ async function deleteSiteNow(site, quiet, withDocs) {
       await S.db.doc("todos/sj-" + sr.id).delete();
     } catch (e) {}
   }
+  /* gone from everywhere (James, Nov 2026): the site's own notes – programme, site diary, building control – and every
+     client that pointed at it (their site, their other sites, their other jobs' sites) no longer does */
+  try {
+    const mine = (L) => (L || []).filter((x) => x && same(x.site, site));
+    for (const r of mine(S.programmes)
+      .concat(mine(S.siteDiary))
+      .concat(mine(S.bcReports))
+      .filter((r) => r.id))
+      await S.db.doc("todos/" + r.id).delete();
+    S.programmes = (S.programmes || []).filter((x) => !same(x.site, site));
+    S.siteDiary = (S.siteDiary || []).filter((x) => !same(x.site, site));
+    S.bcReports = (S.bcReports || []).filter((x) => !same(x.site, site));
+  } catch (e) {}
+  try {
+    for (const c of S.clients || []) {
+      const hit =
+        same(c.site, site) ||
+        (c.sites || []).some((n) => same(n, site)) ||
+        (c.moreJobs || []).some((j) => same(j.site, site));
+      if (!hit) continue;
+      await saveClient(
+        Object.assign({}, c, {
+          site: same(c.site, site) ? "" : c.site || "",
+          sites: (c.sites || []).filter((n) => !same(n, site)),
+          moreJobs: (c.moreJobs || []).map((j) =>
+            same(j.site, site) ? Object.assign({}, j, { site: "" }) : j,
+          ),
+          notes: (c.notes || []).concat([
+            { text: "Site deleted: " + site, at: Date.now(), auto: true },
+          ]),
+        }),
+      );
+    }
+  } catch (e) {}
   try {
     const gone = ((S.settings || {}).deletedSites || [])
       .filter((n) => !same(n, site))
