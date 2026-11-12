@@ -74,7 +74,7 @@ function leaversBlock() {
         const due =
           t.leftAt && Date.now() - t.leftAt > 80 * 864e5 && t.details && !t.details.removedAt;
         return `<div class="citem"><span><b>${esc(nameOf(id))}</b><br><span class="who">Left ${t.leftAt ? stamp(t.leftAt) : ""}${t.details && t.details.removedAt ? " · personal details deleted" : ""}</span>${due ? '<br><span class="sub" style="color:var(--danger)">Personal details should be deleted now (3 months since leaving)</span>' : ""}</span>
-      <span style="display:flex;gap:6px;flex:none">${t.details && !t.details.removedAt ? `<button type="button" class="pillbtn lv-wipe" data-w="${esc(id)}">Delete details</button>` : ""}<button type="button" class="pillbtn lv-back" data-w="${esc(id)}">Bring back</button></span></div>`;
+      <span style="display:flex;gap:6px;flex:none">${t.details && !t.details.removedAt ? `<button type="button" class="pillbtn lv-wipe" data-w="${esc(id)}">Delete details</button>` : ""}<button type="button" class="pillbtn lv-back" data-w="${esc(id)}">Bring back</button><button type="button" class="pillbtn lv-gone" data-w="${esc(id)}">🗑 Delete for good</button></span></div>`;
       })
       .join("")}</div></details>`;
 }
@@ -99,6 +99,36 @@ function wireLeavers() {
   $("main")
     .querySelectorAll(".lv-wipe")
     .forEach((b) => (b.onclick = () => openLeaver(b.dataset.w)));
+  $("main")
+    .querySelectorAll(".lv-gone")
+    .forEach((b) => (b.onclick = () => lvDeleteForGood(b.dataset.w)));
+}
+/* James (Nov 2026): delete someone who has left for good – they go from every list in the app. Their profile record
+   (sheets/{id}) is deleted, so it goes to Deleted items for 30 days first like every delete; the work records the law
+   says must be kept (timesheets, pay, accident reports, inductions, RAMS signatures) stay stored, out of sight. */
+function lvDeleteForGood(id) {
+  const name = nameOf(id);
+  const d = document.createElement("div");
+  d.className = "dimask";
+  d.innerHTML = `<div class="dimbox" role="dialog" aria-labelledby="lvg-h"><b id="lvg-h">Delete ${esc(name)} for good?</b>
+    <p>They'll go from every list in the app. It goes to <b>Setup › Deleted items</b> for 30 days first, so you can put it back if it was a mistake.</p>
+    <p class="who">Work records the law says you must keep (timesheets, pay, accident reports, inductions and RAMS signatures) stay stored, out of sight. Remove them from the page's Share menu too, if you haven't.</p>
+    <div class="dimbtns"><button type="button" class="btn" id="lvg-x">Keep them</button><button type="button" class="btn danger" id="lvg-ok">🗑 Delete for good</button></div></div>`;
+  document.body.appendChild(d);
+  d.querySelector("#lvg-x").onclick = () => d.remove();
+  d.onclick = (e) => e.target === d && d.remove();
+  d.querySelector("#lvg-ok").onclick = async () => {
+    d.querySelector("#lvg-ok").disabled = true;
+    try {
+      await S.db.doc("sheets/" + id).delete();
+      d.remove();
+      toast(name + " deleted · in Setup › Deleted items for 30 days");
+      render();
+    } catch (e) {
+      d.querySelector("#lvg-ok").disabled = false;
+      toast("Couldn't delete. Check your connection.");
+    }
+  };
 }
 function accessNotice() {
   return `<div class="notice"><b>Who can open the app.</b> Invite each trade by email as an <b>Editor</b> from the page's Share menu, and keep "Anyone with the link" turned off. When someone leaves, use <b>They've left</b> on their card below, then remove them in the Share menu straight away.</div>`;
