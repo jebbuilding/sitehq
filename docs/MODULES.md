@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 214 files, 4226 KB, 108256 lines.
-- 2215 names declared at the top level (the shared scope); 1112 of them are used by a file other than the one that declares them.
+- 214 files, 4232 KB, 108368 lines.
+- 2218 names declared at the top level (the shared scope); 1112 of them are used by a file other than the one that declares them.
 - 2311 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 196 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -1411,7 +1411,7 @@ ACCIDENT & NEAR-MISS REPORTS
 
 🏛️ CDM 2015 documents: duty holder appointments, pre-construction information, construction phase plan, CDM checklist, F10 check, H&S file index
 
-- 2185 lines, 90 KB. Declares 11 names, 2 used elsewhere.
+- 2297 lines, 97 KB. Declares 14 names, 2 used elsewhere.
 - **Used elsewhere:** `cdmMaker` (1), `cdmSignState` (1)
 - **Uses names from 16 files:** `core/helpers.js` (6), `core/sheet.js` (4), `core/state.js` (3), `photos/photos.js` (3), `safety/site-inductions.js` (2), `clients/portal.js` (1), `clients/sign-offs.js` (1), `clients/stages-planner.js` (1), `core/tabs-week.js` (1), `files/files.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `safety/rams-maker.js` (1), `sites/job-details.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
 - **Used by 1 files**
