@@ -92,6 +92,91 @@ function cdmNotifiable(cd) {
     pd = +cd.personDays || wd * Math.max(1, +cd.avgWorkers || mx || 1);
   return { notifiable: (wd > 30 && mx > 20) || pd > 500, wd, mx, pd };
 }
+/* JEB's CDM project assessment (James's "CDM project assessment & notification guide", Nov 2026): from what's filled in
+   below it gives JEB's four-level working scale (an internal guide, not an HSE scoring system), the two F10 tests,
+   what every project needs (a CPP), what more than one contractor brings (principal designer and principal contractor
+   appointed in writing, a health & safety file), the documents that level points to, and the details still missing.
+   A single significant hazard can call for more planning whatever the level, so the hazards ticked count. */
+const CDM_LEVELS = [
+  null,
+  [
+    "Basic",
+    "lower complexity / risk",
+    "a short site-specific CPP; standard risk assessments; site rules, welfare and emergency arrangements; brief the people doing the work",
+  ],
+  [
+    "Enhanced",
+    "moderate complexity / risk",
+    "a more detailed CPP; task-specific RAMS where useful; trades, sequencing, access, welfare, services and emergency arrangements; coordinate contractors",
+  ],
+  [
+    "Comprehensive",
+    "high risk / complexity",
+    "a detailed CPP and work sequence; specific controls for structural work, excavations, work at height and temporary works; planned supervision, inspections and subcontractor coordination",
+  ],
+  [
+    "Complex project",
+    "very high / many interfaces",
+    "project-wide management; detailed logistics and programme; clear responsibilities and coordination; review and monitor controls throughout; consider specialist H&S support",
+  ],
+];
+function cdmAssess(cd) {
+  const N = cdmNotifiable(cd);
+  const r = cd.risks || {};
+  const many = cd.contractors !== "one";
+  const big = ["struct", "exc", "demo", "lift", "confined", "fragile"].filter((k) => r[k]);
+  let level = 1;
+  if (many || r.wah || r.occ || N.wd > 10) level = 2;
+  if (big.length) level = 3;
+  if (N.notifiable || N.mx > 20 || (big.length >= 3 && N.mx >= 10)) level = 4;
+  /* James can set the level himself (cd.levelSet 1–4), e.g. to plan a level 2 job in more detail */
+  const auto = level;
+  if (+cd.levelSet >= 1 && +cd.levelSet <= 4) level = +cd.levelSet;
+  const docs = ["cpp", "emerg", "welfare", "welfarepack", "notice", "check", "f10"];
+  if (cd.clientType === "domestic") docs.push("dominfo");
+  if (many) docs.push("appoint", "brappoint", "pci", "subcon", "hsf");
+  if (level >= 3) docs.push("drr", "tw", "log");
+  if (r.exc || r.svc) docs.push("dig");
+  if (r.hot) docs.push("hotpermit");
+  const need = [
+    ["client", "Client"],
+    ["desc", "Description of the work"],
+    ["start", "Start date"],
+    ["workDays", "Working days on site"],
+    ["maxWorkers", "Most people on site at once"],
+    ["manager", "Site manager"],
+    ["firstAid", "First aider"],
+    ["hospital", "Nearest A&E"],
+    ["assembly", "Fire assembly point"],
+    ["welfare", "Welfare arrangements"],
+    ["asbestos", "Asbestos (survey or not needed)"],
+    ["services", "Existing services"],
+  ];
+  if (many) need.push(["pdName", "Principal designer"]);
+  if (level >= 3) need.push(["engineer", "Structural engineer"]);
+  const missing = need.filter(([k]) => !String(cd[k] || "").trim()).map((x) => x[1]);
+  return { level, auto, N, many, big, docs: [...new Set(docs)], missing };
+}
+function cdmAssessHtml(cd) {
+  const A = cdmAssess(cd);
+  const L = CDM_LEVELS[A.level];
+  const dl = (k) => (CDM_DOCS.find((x) => x[0] === k) || [k, k])[1];
+  return `<div class="card cdm-ass"><div class="flabel" style="margin:0">📋 Project assessment</div>
+    <div class="cdm-lvl cdm-l${A.level}"><b>Level ${A.level} – ${esc(L[0])}</b><span class="who">${esc(L[1])}${A.level !== A.auto ? " · you chose this (worked out: Level " + A.auto + ")" : ""}</span></div>
+    <label class="cdm-lset">Level<select id="cdm-lset"><option value="">Worked out for me (Level ${A.auto})</option>${[1, 2, 3, 4].map((n) => `<option value="${n}"${+cd.levelSet === n ? " selected" : ""}>Level ${n} – ${esc(CDM_LEVELS[n][0])}</option>`).join("")}</select></label>
+    <div class="who">Plan for: ${esc(L[2])}.</div>
+    <ul class="cdm-must">
+      <li>✅ <b>Every project:</b> a construction phase plan (CPP) before work starts, kept up to date.</li>
+      ${A.many ? `<li>👥 <b>More than one contractor:</b> the client appoints a principal designer and principal contractor in writing, and a health &amp; safety file is handed over at the end.</li>` : `<li>👤 One contractor: no principal designer or H&amp;S file needed – tick "More than one contractor" below if subbies or other trades come in.</li>`}
+      <li>${A.N.notifiable ? `⚠️ <b>Notifiable:</b> the client sends an F10 to HSE before the construction phase starts` : `F10: <b>not notifiable</b> on these numbers`} <span class="who">(${A.N.wd} working days, ${A.N.mx} at most at once, ${A.N.pd} person-days; notifiable if over 30 days with over 20 at once, or over 500 person-days)</span></li>
+      ${A.big.length ? `<li>🔺 Significant hazards ticked: ${A.big.map((k) => esc(((CDM_RISKS.find((x) => x[0] === k) || [k, k])[1] || "").split(" (")[0])).join(", ")} – plan these in detail whatever the level.</li>` : ""}
+    </ul>
+    <div class="who"><b>Documents for this level:</b> ${A.docs.map((k) => esc(dl(k).split(" (")[0])).join(" · ")}</div>
+    <div class="actions" style="margin:6px 0 0"><button type="button" class="btn primary" id="cdm-need">Tick the documents this level needs</button><a class="btn" href="https://www.hse.gov.uk/forms/notification/f10.htm" target="_blank" rel="noopener">🌐 Fill in the F10 on the HSE website ↗</a></div>
+    <div class="who">You can tick any other document below for this job as well, whatever the level.</div>
+    ${A.missing.length ? `<div class="notice warn" style="margin-top:8px"><b>Still to fill in below:</b> ${A.missing.map(esc).join(", ")}</div>` : `<div class="notice" style="margin-top:8px">✓ The key details are all filled in.</div>`}
+    <div class="who" style="margin-top:6px">JEB's own working scale, not an HSE score. Use your judgement, and review the plan as the work, risks or contractors change.</div></div>`;
+}
 function cdmSections(cd, pick) {
   const co = coData();
   const N = cdmNotifiable(cd);
@@ -1942,7 +2027,7 @@ function cdmMaker(site0) {
           .join(""),
     ).join("");
     $("cdm-body").innerHTML =
-      `<div class="flabel">1. Which document(s)?</div><div class="actions" style="margin:0"><button type="button" class="btn" id="cdm-none">Clear</button><button type="button" class="btn" id="cdm-todo">Tick the ones not made yet</button><button type="button" class="btn" id="cdm-all">Tick all</button></div><div>${docsHtml}</div>
+      `<div id="cdm-assess">${cdmAssessHtml(cd)}</div><div class="flabel">1. Which document(s)?</div><div class="actions" style="margin:0"><button type="button" class="btn" id="cdm-none">Clear</button><button type="button" class="btn" id="cdm-todo">Tick the ones not made yet</button><button type="button" class="btn" id="cdm-all">Tick all</button></div><div>${docsHtml}</div>
       ${cd._from ? `<div class="notice" style="margin:6px 0">📌 Remembered from last time${cd._from > 1 ? " (" + esc(stamp(cd._from)) + ")" : ""}: everything you put in before is filled in below. Just check anything that's changed.</div>` : cd._carried ? `<div class="notice" style="margin:6px 0">📌 First CDM document for this site. Your usual details (hours, site rules, welfare, first aid) are copied from your last site: check them.</div>` : ""}
       <div class="flabel">2. Check the details</div><label>Site<select id="cdm-site">${sites.map((n) => `<option ${n === site ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
       <label>Client (fills in their details)<select id="cdm-cl"><option value="">Choose a client…</option>${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cd.clientId ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select></label>
@@ -1988,6 +2073,33 @@ function cdmMaker(site0) {
       pk = {};
       document.querySelectorAll(".cdd:checked").forEach((i) => (pk[i.dataset.k] = 1));
     };
+    /* the assessment follows what is typed and ticked; its button ticks the documents the level needs */
+    const reAssess = () => {
+      read();
+      $("cdm-assess").innerHTML = cdmAssessHtml(cd);
+      wireNeed();
+    };
+    const wireNeed = () => {
+      if ($("cdm-lset"))
+        $("cdm-lset").onchange = (e) => {
+          read();
+          cd.levelSet = e.target.value;
+          $("cdm-assess").innerHTML = cdmAssessHtml(cd);
+          wireNeed();
+        };
+      if ($("cdm-need"))
+        $("cdm-need").onclick = () => {
+          read();
+          pk = {};
+          cdmAssess(cd).docs.forEach((k) => (pk[k] = 1));
+          draw();
+          toast("Ticked the documents this level needs");
+        };
+    };
+    wireNeed();
+    document
+      .querySelectorAll("#cdm-body .cdf, #cdm-body .cdr")
+      .forEach((i) => i.addEventListener("change", reAssess));
     $("cdm-site").onchange = (e) => {
       read();
       site = e.target.value;

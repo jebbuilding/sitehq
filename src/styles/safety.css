@@ -9,3 +9,10 @@
 .ppk{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}.ppk-chips{display:flex;flex-wrap:wrap;gap:6px}.ppk-chip{display:inline-flex;align-items:center;gap:4px;background:var(--soft,#f4eeee);border:1px solid var(--line);border-radius:16px;padding:4px 4px 4px 10px;font-size:14px}
 .ppk-q{width:100%}.ppk-list{border:1px solid var(--line);border-radius:10px;max-height:240px;overflow:auto;background:var(--card,#fff);display:flex;flex-direction:column}.ppk-opt{display:flex;align-items:center;gap:8px;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:10px;font-size:15px;color:var(--ink);cursor:pointer}.ppk-opt[aria-pressed="true"]{background:rgba(127,25,29,.07);font-weight:600}.ppk-tick{font-size:18px}.ppk-add{color:var(--brand);font-weight:600}.ppk-done{border:0;background:var(--brand);color:#fff;padding:10px;font-weight:700;cursor:pointer}.cdm-risks{display:flex;flex-direction:column}
 .eqshow{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 10px}
+/* the CDM project assessment (safety/cdm.js, JEB's four-level scale) */
+.cdm-ass{padding:12px 14px;margin:0 0 12px}
+.cdm-lvl{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin:8px 0 4px;padding:8px 12px;border-radius:12px;border-left:6px solid #2e7d32;background:var(--soft)}
+.cdm-lvl b{font-size:18px}
+.cdm-l2{border-left-color:#d4a017}.cdm-l3{border-left-color:#e07b00}.cdm-l4{border-left-color:var(--danger)}
+.cdm-must{margin:8px 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.cdm-lset{display:block;max-width:360px;margin:4px 0 6px}
