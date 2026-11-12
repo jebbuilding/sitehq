@@ -375,6 +375,7 @@ function viewClient(c) {
     ${!c.frontPhoto ? `<div class="fhaddrow"><span class="who">🏠 Photo of the front of the house</span><label class="btn primary fhpickbtn">📷 Take photo<input type="file" class="cv-fhin" accept="image/*" capture="environment"></label><label class="btn fhpickbtn">🖼 Choose<input type="file" class="cv-fhin" id="cv-fhadd" accept="image/*"></label></div>` : ""}
     ${c.frontPhoto ? `<button type="button" class="fhhero" id="cv-fh"><img src="${blobUrl(c.frontPhoto)}" alt="Front of the property">${addr ? `<span>📍 ${esc(addr)}</span>` : ""}</button>` : ""}
     <div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}" style="text-decoration:none">📞 Call</a><a class="btn" href="sms:${esc(tel)}" style="text-decoration:none;color:var(--ink)">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}" style="text-decoration:none;color:var(--ink)">✉ Email</a>` : ""}${addr || c.lat != null ? `<button class="btn maplink" type="button" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Map</button>` : ""}<button class="btn" id="cv-msg" type="button">💬 Message in app</button></div>
+    <div class="actions">${c.site ? `<button class="btn primary" id="cv-gosite" type="button">🏗️ Open the site</button>` : `<button class="btn primary" id="cv-site" type="button">🏗️ Make it a site</button><span class="who">Moves them to On site</span>`}</div>
     ${c.visit && c.visit.date >= iso(new Date()) ? `<div class="notice" style="margin-top:10px">📅 Visit booked <b>${esc(shortDay(c.visit.date))} ${esc(c.visit.time || "")}</b> · reminder ${VISIT_REMIND_MIN / 60} hour before <button type="button" class="linkbtn" id="cv-ics">📲 Add to phone calendar</button></div>` : ""}
     ${c.quick ? `<div class="notice warn" style="margin-top:10px">⚡ Quick enquiry: only the basics so far. <button type="button" class="btn primary" id="cv-full" style="margin-left:6px">Fill in the full form</button></div>` : ""}
     ${clStepsHtml(c)}
@@ -443,7 +444,7 @@ ${clMediaHtml(c)}
     <div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
       const j = (S.jobFiles || []).find((x) => x.clientId === c.id);
       return j && (j.items || []).length ? " (" + j.items.length + ")" : "";
-    })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button>${c.site ? `<button class="btn" id="cv-gosite" type="button">Open the site</button>` : `<button class="btn hv" id="cv-site" type="button">Make it a site</button>`}</div>
+    })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button></div>
     ${clDocsHtml(c)}
     ${(c.recordPdfs || []).length ? `<div class="card" style="margin-top:12px;padding:10px 12px"><b>📄 Client PDFs saved to this job</b>${c.recordPdfs.map((r, i) => `<div class="attrow"><button type="button" class="incrow cv-rpo" data-i="${i}"><span class="attic" aria-hidden="true">📄</span><span><b>${esc(r.name)}</b><br><span class="who">${esc(stamp(r.at))}${r.pages ? " · " + r.pages + " page" + (r.pages === 1 ? "" : "s") : ""}</span></span></button><button type="button" class="iconbtn cv-rpd" data-i="${i}" aria-label="Download" title="Download">⬇</button><button type="button" class="iconbtn cv-rpx" data-i="${i}" aria-label="Delete" title="Delete" style="color:var(--danger)">🗑</button></div>`).join("")}</div>` : ""}
     <div class="actions" style="margin-top:18px;justify-content:flex-end"><button class="btn delbtn" id="cv-delete" type="button">🗑 Delete client</button></div>`);
@@ -560,7 +561,10 @@ ${clMediaHtml(c)}
         const rec = await saveClient(
           Object.assign({}, c, {
             site: name,
-            stage: ["enquiry", "visit", "quote"].includes(c.stage) ? "won" : c.stage,
+            /* a site means work is on: they move to On site (James, Nov 2026) */
+            stage: ["enquiry", "visit", "quote", "won", "contact"].includes(c.stage)
+              ? "onsite"
+              : c.stage,
             notes: (c.notes || []).concat([
               { text: "Added as a site: " + name, at: Date.now(), auto: true },
             ]),
