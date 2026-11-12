@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 213 files, 4207 KB, 107813 lines.
+- 213 files, 4207 KB, 107817 lines.
 - 2197 names declared at the top level (the shared scope); 1105 of them are used by a file other than the one that declares them.
 - 2298 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -268,7 +268,7 @@ CLIENT PORTAL
 
 quick enquiry: a few details + the visit time, into the planner, with a reminder an hour before
 
-- 595 lines, 27 KB. Declares 7 names, 4 used elsewhere.
+- 599 lines, 27 KB. Declares 7 names, 4 used elsewhere.
 - **Used elsewhere:** `viewClient` (22), `quickEnquiry` (3), `initQuickEnquiry` (1), `VISIT_REMIND_MIN` (1)
 - **Uses names from 31 files:** `core/helpers.js` (9), `clients/address-book.js` (6), `clients/stages-planner.js` (5), `clients/clients.js` (4), `core/sheet.js` (4), `core/state.js` (4), `files/files.js` (4), `clients/portal.js` (3), `clients/documents.js` (2), `clients/gdpr-consent.js` (2), `clients/sketches.js` (2), `core/viewer.js` (2), `owner/deleted-items.js` (2), `sites/job-details.js` (2), `sites/maps-pins.js` (2), `chat/chat.js` (1), `clients/address-book-jobs.js` (1), `clients/more-jobs.js` (1), `clients/record-pdf.js` (1), `clients/web-enquiries.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `owner/delete-client-site.js` (1), `planner/board.js` (1), `planner/diary.js` (1), `purchasing/samples.js` (1), `safety/training.js` (1), `sales/job-file.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 24 files**
