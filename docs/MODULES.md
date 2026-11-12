@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 213 files, 4211 KB, 107885 lines.
-- 2200 names declared at the top level (the shared scope); 1106 of them are used by a file other than the one that declares them.
+- 213 files, 4213 KB, 107915 lines.
+- 2201 names declared at the top level (the shared scope); 1106 of them are used by a file other than the one that declares them.
 - 2298 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 195 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -1078,7 +1078,7 @@ SITE INDUCTIONS BY PERSON (owner): who has been inducted to which sites
 
 LEAVERS
 
-- 105 lines, 5.5 KB. Declares 4 names, 4 used elsewhere.
+- 135 lines, 7.4 KB. Declares 5 names, 4 used elsewhere.
 - **Used elsewhere:** `accessNotice` (1), `leaversBlock` (1), `openLeaver` (1), `wireLeavers` (1)
 - **Uses names from 6 files:** `core/helpers.js` (4), `core/sheet.js` (4), `core/state.js` (1), `core/tabs-week.js` (1), `core/viewer.js` (1), `owner/owner.js` (1)
 - **Used by 1 files**
