@@ -12,6 +12,7 @@ import { planEntries } from "../planner/time-off.js";
 import { tradeMakersHtml, wireTradeMakers } from "../purchasing/merchants.js";
 import { openIncident } from "../safety/accidents.js";
 import { KINDS } from "../safety/checklists.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { signOnly } from "../sites/sign-in-book.js";
 export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
 /* The trades get the same look as James (body.nl-on, the styles in owner.css): no wall of buttons at the top, but a bar
@@ -181,7 +182,7 @@ function tlHome() {
           ? dates
               .map(
                 (p) =>
-                  `<div class="nl-row tl-date"><b>${esc(when(p))}</b><span>${esc(p.site || p.title || "Booked")}</span>${p.site && p.title ? `<span class="who">${esc(String(p.title).replace(" – " + p.site, ""))}</span>` : ""}${p.type === "holiday" ? `<span class="who">Time off</span>` : ""}</div>`,
+                  `<div class="nl-row tl-date"><b>${esc(when(p))}</b><span>${esc((p.site && siteLabel(p.site)) || p.title || "Booked")}</span>${p.site && jobNameOf(p.site) ? `<span class="who">📍 ${esc(p.site)}</span>` : ""}${p.site && p.title ? `<span class="who">${esc(String(p.title).replace(" – " + p.site, ""))}</span>` : ""}${p.type === "holiday" ? `<span class="who">Time off</span>` : ""}</div>`,
               )
               .join("")
           : `<div class="who">Nothing booked for you on the planner yet.</div>`

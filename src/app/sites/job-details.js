@@ -21,9 +21,11 @@ export {
   editSiteJob,
   editSiteVis,
   empTypeOf,
+  jobNameOf,
   siteFromClient,
   siteFront,
   siteJobCard,
+  siteLabel,
   siteSumHtml,
   sjClientOK,
   sjCopy,
@@ -832,17 +834,22 @@ function siteFrontPick(site) {
   };
   inp.click();
 }
+/* a job's own name (James, Nov 2026: "a job name that I can add that then comes up as the job for everyone to see",
+   as one person can have several jobs): sites/{id}.jobName; shown as the job's title with the address under it */
+const jobNameOf = (site) => String((siteRec(site) || {}).jobName || "").trim();
+const siteLabel = (site) => jobNameOf(site) || site;
 function siteSumHtml(site, compact, inner) {
   const sr = siteRec(site) || {};
+  const jn = jobNameOf(site);
   const c = siteClient(site);
   const work = (c && c.work) || sr.project || "";
   const tel = c ? String(c.phone || "").replace(/\s+/g, "") : "";
   if (compact)
-    return `<div class="sscompact"><b>📍 ${esc(site)}</b>${work ? ` · ${esc(work)}` : ""}${c ? ` · 👤 ${esc(c.name)}${tel ? ` <a href="tel:${esc(tel)}" class="sstel">📞 ${esc(c.phone)}</a>` : ""}${c.email ? ` <a href="mailto:${esc(c.email)}" class="sstel">✉ ${esc(c.email)}</a>` : ""}` : ""}</div>`;
+    return `<div class="sscompact">${jn ? `<b class="ssjname">🔨 ${esc(jn)}</b> · ` : ""}<b>📍 ${esc(site)}</b>${work ? ` · ${esc(work)}` : ""}${c ? ` · 👤 ${esc(c.name)}${tel ? ` <a href="tel:${esc(tel)}" class="sstel">📞 ${esc(c.phone)}</a>` : ""}${c.email ? ` <a href="mailto:${esc(c.email)}" class="sstel">✉ ${esc(c.email)}</a>` : ""}` : ""}</div>`;
   const row = (l, v) =>
     v ? `<div class="drow"><span>${esc(l)}</span><span>${v}</span></div>` : "";
   return `<div class="sitesum">
-    <div class="sshead">${siteFront(site) ? `<button type="button" class="ssphb" id="ss-front" title="Change the front photo"><img class="ssph" src="${blobUrl(siteFront(site))}" alt="Front of the property"><span>📷 Change</span></button>` : `<button type="button" class="ssphb ssphadd" id="ss-front">🏠<span>Add front photo</span></button>`}<div style="flex:1"><div class="who">Job address</div><button type="button" class="maplink ssaddr" data-addr="${esc((c && clAddr(c)) || site)}">📍 ${esc((c && clAddr(c)) || site)}</button>${work ? `<div class="sswork">${esc(work)}</div>` : ""}</div>
+    <div class="sshead">${siteFront(site) ? `<button type="button" class="ssphb" id="ss-front" title="Change the front photo"><img class="ssph" src="${blobUrl(siteFront(site))}" alt="Front of the property"><span>📷 Change</span></button>` : `<button type="button" class="ssphb ssphadd" id="ss-front">🏠<span>Add front photo</span></button>`}<div style="flex:1">${jn ? `<div class="ssjname">🔨 ${esc(jn)}</div>` : ""}<div class="who">Job address</div><button type="button" class="maplink ssaddr" data-addr="${esc((c && clAddr(c)) || site)}">📍 ${esc((c && clAddr(c)) || site)}</button>${work ? `<div class="sswork">${esc(work)}</div>` : ""}</div>
       <button type="button" class="pillbtn" id="ss-edit">✎ Edit</button></div>
     <div class="actions"><a class="btn primary" href="${esc(gmapDir(sr.lat != null ? sr.lat + "," + sr.lon : site))}" target="_blank" rel="noopener">🚗 Directions</a><button type="button" class="btn maplink" data-addr="${esc(site)}">📍 Maps &amp; share</button><button type="button" class="btn hv" id="pj-pin">Drop a pin</button></div>
     ${c ? `<button type="button" class="btn sjbig sscltab" id="ss-cltab">👤 Client details: <b>${esc(c.name)}</b> ›</button>` : ""}<button type="button" class="btn sjbig" id="ss-perm">👁 Who sees what on this site ›</button>
@@ -862,6 +869,7 @@ function wireSiteSum(site) {
     const cl = siteClient(site);
     openSheet(
       `<h3 id="sheettitle">Job details</h3><div class="who">${esc(site)}</div>
+      <label for="ss-jname">Job name (everyone sees this as the job)<input id="ss-jname" maxlength="60" value="${esc(sr.jobName || "")}" placeholder="e.g. Jones kitchen extension"></label>
       <label for="ss-work">Type of work<input id="ss-work" maxlength="80" list="ss-wl" value="${esc((cl && cl.work) || sr.project || "")}" placeholder="e.g. Single-storey extension"><datalist id="ss-wl">${CL_WORK.map((w) => `<option value="${esc(w)}">`).join("")}</datalist></label>
       <label for="ss-cl">Client<select id="ss-cl"><option value="">No client</option>${clList()
         .sort((a, b) => String(a.name).localeCompare(String(b.name)))
@@ -876,7 +884,10 @@ function wireSiteSum(site) {
         const w = $("ss-work").value.trim(),
           cid = $("ss-cl").value;
         try {
-          if (sr.id) await S.db.doc("sites/" + sr.id).update({ project: w });
+          if (sr.id)
+            await S.db
+              .doc("sites/" + sr.id)
+              .update({ project: w, jobName: $("ss-jname").value.trim().replace(/\s+/g, " ") });
           if (cl && cl.id !== cid) {
             const r = Object.assign({}, cl);
             if (same(r.site, site)) r.site = "";

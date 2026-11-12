@@ -4,6 +4,7 @@ import { $, addDays, esc, hrs, iso } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { allTeam, nameOf } from "./owner.js";
 import { nlGo, nlOpenTab } from "./today.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { smOpen } from "../sites/sites-map.js";
 import { siteClient } from "../sites/summary.js";
@@ -54,7 +55,7 @@ function tdSitesCard() {
           sites
             .map(
               (s) =>
-                `<button type="button" class="td-row td-s" data-s="${esc(s.n)}"><span class="td-top"><b>${esc(s.n)}</b>${s.on.length ? `<span class="tag ok">${s.on.length} on site</span>` : ""}</span><span class="who">${esc([s.c ? s.c.name : "", s.on.length ? s.on.map(nameOf).join(", ") : "", s.wk ? hrs(s.wk) + " h this week" : "No hours this week"].filter(Boolean).join(" · "))}</span></button>`,
+                `<button type="button" class="td-row td-s" data-s="${esc(s.n)}"><span class="td-top"><b>${esc(siteLabel(s.n))}</b>${s.on.length ? `<span class="tag ok">${s.on.length} on site</span>` : ""}</span><span class="who">${esc([jobNameOf(s.n) ? s.n : "", s.c ? s.c.name : "", s.on.length ? s.on.map(nameOf).join(", ") : "", s.wk ? hrs(s.wk) + " h this week" : "No hours this week"].filter(Boolean).join(" · "))}</span></button>`,
             )
             .join("") +
           `</div>`

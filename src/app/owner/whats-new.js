@@ -336,7 +336,7 @@ function whatsNewHTML(t) {
                         })
                         .join("")}</div>`
                     : ""
-                }<div class="wnacts"><button type="button" class="pillbtn wnsn" data-k="${esc(wnKey(t, r))}" data-d="30">⏰ Remind me in 30 days</button><button type="button" class="pillbtn wnsn" data-k="${esc(wnKey(t, r))}" data-d="0">✕ Cancel this reminder</button></div>`,
+                }${ownerMode() ? `<div class="wnacts"><button type="button" class="pillbtn wnsn" data-k="${esc(wnKey(t, r))}" data-d="30">⏰ Remind me in 30 days</button><button type="button" class="pillbtn wnsn" data-k="${esc(wnKey(t, r))}" data-d="0">✕ Cancel this reminder</button></div>` : ""}`,
             )
             .join("")}`
         : ""

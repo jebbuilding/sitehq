@@ -11,6 +11,7 @@ import { onDay } from "../planner/time-off.js";
 import { openIncident } from "../safety/accidents.js";
 import { sdEdit } from "../sales/sales-edit.js";
 import { vrNew } from "../sales/variations.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
 import { siteClient } from "../sites/summary.js";
@@ -155,7 +156,7 @@ function tdjCard() {
       ? `<div class="tdw-wrap"><table class="tdj-t"><thead><tr><th>Job</th><th>Stage</th><th>Who</th><th class="num">This week</th></tr></thead><tbody>${jobs
           .map(
             (j) =>
-              `<tr class="tdj-r" data-s="${esc(j.n)}" tabindex="0"><td><b>${esc(j.n)}</b>${j.c ? `<br><small class="who">${esc([j.c.name, j.c.work].filter(Boolean).join(" – "))}</small>` : ""}</td><td>${j.c ? `<span class="tdj-st">${esc(clStage(j.c.stage))}</span>` : ""}</td><td class="who">${j.who.length ? j.who.map((w) => esc(nameOf(w))).join(", ") : "–"}</td><td class="num">${hrs(j.h)} h</td></tr>`,
+              `<tr class="tdj-r" data-s="${esc(j.n)}" tabindex="0"><td><b>${esc(siteLabel(j.n))}</b>${j.c || jobNameOf(j.n) ? `<br><small class="who">${esc([jobNameOf(j.n) ? j.n : "", j.c && j.c.name, j.c && j.c.work].filter(Boolean).join(" – "))}</small>` : ""}</td><td>${j.c ? `<span class="tdj-st">${esc(clStage(j.c.stage))}</span>` : ""}</td><td class="who">${j.who.length ? j.who.map((w) => esc(nameOf(w))).join(", ") : "–"}</td><td class="num">${hrs(j.h)} h</td></tr>`,
           )
           .join("")}</tbody></table></div>`
       : '<div class="who">No live jobs.</div>'

@@ -20,7 +20,7 @@ import {
   wireInduction,
 } from "../safety/site-inductions.js";
 import { docFolders } from "./doc-visibility.js";
-import { siteJobCard, sjCopy, wireSjPhotos } from "./job-details.js";
+import { jobNameOf, siteJobCard, siteLabel, sjCopy, wireSjPhotos } from "./job-details.js";
 import { jobCard, myJobs } from "./job-sheets.js";
 import { gmapDir, miniMap } from "./maps-pins.js";
 import {
@@ -109,7 +109,7 @@ function empSitesView() {
               .map((f) => {
                 const g = S.docs.filter((d) => docSite(d) === f),
                   un = toSign(f);
-                return `<button type="button" class="folder" data-f="${esc(f)}">${folderIcon()}<span class="fname">${esc(f)}</span><span class="fmeta">${g.length ? g.length + " file" + (g.length === 1 ? "" : "s") : "No files yet"}${indFor(f) ? " · induction" : ""}</span>${un ? `<span class="tag bad">${un} to sign</span>` : ""}</button>`;
+                return `<button type="button" class="folder" data-f="${esc(f)}">${folderIcon()}<span class="fname">${esc(siteLabel(f))}</span>${jobNameOf(f) ? `<span class="who">📍 ${esc(f)}</span>` : ""}<span class="fmeta">${g.length ? g.length + " file" + (g.length === 1 ? "" : "s") : "No files yet"}${indFor(f) ? " · induction" : ""}</span>${un ? `<span class="tag bad">${un} to sign</span>` : ""}</button>`;
               })
               .join("")}</div>`
           : `<div class="empty"><strong>No sites yet</strong>James will add each job here with its plans, RAMS and documents.</div>`
@@ -359,7 +359,7 @@ function plansView0() {
             );
           }
           return `<button type="button" class="folder" data-f="${esc(f)}">${folderIcon()}
-        <span class="fname">${esc(f)}</span>
+        <span class="fname">${esc(siteLabel(f))}</span>${jobNameOf(f) ? `<span class="who">📍 ${esc(f)}</span>` : ""}
         <span class="fmeta">${g.length ? `${g.length} file${g.length === 1 ? "" : "s"}${subs ? ` · ${subs} folder${subs === 1 ? "" : "s"}` : ""}` : "No files"}${ind ? " · induction" : ""}</span>
         ${un ? `<span class="tag bad">${un} to sign</span>` : ""}${missing ? `<span class="tag bad">${missing} RAMS signature${missing === 1 ? "" : "s"} missing</span>` : ""}</button>`;
         })

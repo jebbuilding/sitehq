@@ -15,7 +15,7 @@ import { EMP_TYPES } from "../people/employment-types.js";
 import { siteRec } from "../photos/photos.js";
 import { jcData } from "../sales/job-costs.js";
 import { sdR2 } from "../sales/sales-calc.js";
-import { empTypeOf } from "../sites/job-details.js";
+import { empTypeOf, jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
 import { siteClient } from "../sites/summary.js";
@@ -71,7 +71,7 @@ function jbView() {
         ? `<div class="jb-two"><section class="jb-list" aria-label="Jobs">${list
             .map(
               (x) =>
-                `<button type="button" class="jb-item" data-s="${esc(x.n)}"${x.n === sel ? ' aria-current="true"' : ""}><b>${esc(x.n)}</b><small>${esc(x.sub)}</small></button>`,
+                `<button type="button" class="jb-item" data-s="${esc(x.n)}"${x.n === sel ? ' aria-current="true"' : ""}><b>${esc(siteLabel(x.n))}</b><small>${esc([jobNameOf(x.n) ? x.n : "", x.sub].filter(Boolean).join(" · "))}</small></button>`,
             )
             .join("")}</section>${jbJobHtml(sel)}</div>`
         : `<div class="empty"><strong>No live jobs</strong>Add a site in Setup, or make an enquiry into a site.</div>`

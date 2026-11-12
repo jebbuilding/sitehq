@@ -82,3 +82,4 @@
 .bc-row{padding:12px 14px;margin:0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .bc-main{flex:1 1 220px;min-width:0}
 .bc-acts{display:flex;gap:6px}
+.ssjname{font-family:var(--f-display);font-weight:600;font-size:19px;color:var(--accent);margin-bottom:2px}
