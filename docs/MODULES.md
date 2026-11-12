@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 213 files, 4207 KB, 107817 lines.
+- 213 files, 4207 KB, 107821 lines.
 - 2197 names declared at the top level (the shared scope); 1105 of them are used by a file other than the one that declares them.
 - 2298 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -1087,7 +1087,7 @@ LEAVERS
 
 PERSONAL DETAILS & NEXT OF KIN
 
-- 257 lines, 11 KB. Declares 9 names, 7 used elsewhere.
+- 261 lines, 12 KB. Declares 9 names, 7 used elsewhere.
 - **Used elsewhere:** `myDetails` (6), `openDetails` (6), `detailsDone` (4), `meInfo` (4), `meBtn` (3), `DET_SECTIONS` (2), `renderDetailsNeeded` (1)
 - **Uses names from 10 files:** `core/sheet.js` (5), `core/helpers.js` (3), `people/reminders.js` (3), `core/state.js` (2), `files/outbox.js` (2), `core/privacy-notice.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/owner.js` (1), `people/employment-types.js` (1)
 - **Used by 14 files**
