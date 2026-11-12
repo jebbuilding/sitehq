@@ -1,6 +1,6 @@
 /* ================= JOBS DESK: Jobs & clients as in the layout picture – the jobs down the side, the chosen job beside ================= */
 import { openClientChat } from "../chat/chat.js";
-import { clShowToSee } from "../clients/address-book.js";
+import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { mjHas } from "../clients/more-jobs.js";
 import { ptOf } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
@@ -36,6 +36,7 @@ function jbView() {
     ["jobs", "Jobs"],
     ["clients", "Clients"],
     ["enq", "Enquiries" + (enq ? " " + enq : "")],
+    ["book", "📒 Address book"],
     ["planner", "Planner"],
     ["more", "More"],
   ];
@@ -93,7 +94,15 @@ function jbWireTabs() {
     (b) =>
       (b.onclick = () => {
         const v = b.dataset.v;
-        if (v === "clients") return nlOpenTab("clients");
+        /* the address book has its own tab (James, Nov 2026): the Clients page on its 📒 Address book list */
+        if (v === "book") {
+          clShowBook(true);
+          return nlGo("clients");
+        }
+        if (v === "clients") {
+          clShowBook(false);
+          return nlOpenTab("clients");
+        }
         if (v === "planner") return nlOpenTab("planner");
         if (v === "enq") {
           clShowToSee();

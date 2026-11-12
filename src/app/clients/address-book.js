@@ -31,6 +31,7 @@ export {
   clContactsHtml,
   clInvHtml,
   clMainHtml,
+  clShowBook,
   clShowToSee,
   clientSites,
   clientsView,
@@ -531,4 +532,9 @@ function clientsView() {
 /* open Clients on the enquiries still to see (from Jobs & clients › Enquiries) */
 function clShowToSee() {
   S.f.clf = "see";
+}
+/* the 📒 Address book list on Clients (its own tab in Jobs & clients), or back off it */
+function clShowBook(on) {
+  if (on) S.f.clf = "book";
+  else if (S.f.clf === "book") S.f.clf = "";
 }

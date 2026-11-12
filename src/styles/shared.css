@@ -453,5 +453,8 @@ body:has(#sheet:not([hidden])) .pdfbar{display:none}
 .ohq-sq{font-size:15px;font-weight:800;letter-spacing:-.01em;color:#16181D}.ohq-sq span{color:#D0101C}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ohq{background:#141011;color:#f1ebeb}:root:not([data-theme="light"]) .ohq-name,:root:not([data-theme="light"]) .ohq-how b{color:#f1ebeb}:root:not([data-theme="light"]) .ohq-sub,:root:not([data-theme="light"]) .ohq-how,:root:not([data-theme="light"]) .ohq-by{color:#ab9e9e}:root:not([data-theme="light"]) .ohq-sq,:root:not([data-theme="light"]) .ohq-by b{color:#FFFFFF}:root:not([data-theme="light"]) .ohq-sq span{color:#E3151F}}
 :root[data-theme="dark"] .ohq{background:#141011;color:#f1ebeb}:root[data-theme="dark"] .ohq-name,:root[data-theme="dark"] .ohq-how b{color:#f1ebeb}:root[data-theme="dark"] .ohq-sub,:root[data-theme="dark"] .ohq-how,:root[data-theme="dark"] .ohq-by{color:#ab9e9e}:root[data-theme="dark"] .ohq-sq,:root[data-theme="dark"] .ohq-by b{color:#FFFFFF}:root[data-theme="dark"] .ohq-sq span{color:#E3151F}
+/* SiteHQ by Stranix at the bottom of every page (James, Nov 2026); on an iPad or computer in the new look it is at the foot of the side menu instead */
+.appfoot{display:flex;align-items:center;justify-content:center;gap:7px;margin:18px 0 6px;font-family:"Montserrat",var(--f-body);font-size:11px;font-weight:500;color:var(--muted);line-height:1}.appfoot b{font-weight:800;letter-spacing:.06em;color:var(--ink)}
+@media (min-width:900px){body.nl-on .appfoot{display:none}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}

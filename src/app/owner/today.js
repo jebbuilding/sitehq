@@ -1,4 +1,5 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
+import { clShowBook } from "../clients/address-book.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
@@ -178,6 +179,17 @@ const NL_SUBS = [
     "Vans, tools and plant",
     "book out back in qr sticker equipment",
     () => kitView(),
+  ],
+  [
+    "addrbook",
+    "📒 Address book",
+    "jobs",
+    "Clients",
+    "contacts people phone numbers emails",
+    () => {
+      clShowBook(true);
+      nlGo("clients");
+    },
   ],
   [
     "portalset",
