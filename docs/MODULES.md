@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 214 files, 4222 KB, 108167 lines.
-- 2210 names declared at the top level (the shared scope); 1109 of them are used by a file other than the one that declares them.
+- 214 files, 4223 KB, 108215 lines.
+- 2212 names declared at the top level (the shared scope); 1109 of them are used by a file other than the one that declares them.
 - 2307 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 196 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -979,7 +979,7 @@ SEARCH (owner): one box that finds any client, site, job, person, merchant, draw
 
 TODAY CARDS: chat and sites on the Today page
 
-- 84 lines, 4.1 KB. Declares 3 names, 3 used elsewhere.
+- 85 lines, 4.1 KB. Declares 3 names, 3 used elsewhere.
 - **Used elsewhere:** `tdChatCard` (1), `tdSitesCard` (1), `tdWire` (1)
 - **Uses names from 9 files:** `chat/chat.js` (5), `core/helpers.js` (5), `core/state.js` (2), `owner/owner.js` (2), `owner/today.js` (2), `sites/project-pages.js` (2), `sites/sites-map.js` (1), `sites/summary.js` (1), `timesheets/time.js` (1)
 - **Used by 1 files**
@@ -988,7 +988,7 @@ TODAY CARDS: chat and sites on the Today page
 
 TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
-- 297 lines, 13 KB. Declares 13 names, 7 used elsewhere.
+- 298 lines, 13 KB. Declares 13 names, 7 used elsewhere.
 - **Used elsewhere:** `qaOpen` (1), `qaSetupCard` (1), `qaSetupWire` (1), `tdDeskWire` (1), `tdjCard` (1), `tdoCard` (1), `tdwCard` (1)
 - **Uses names from 17 files:** `core/helpers.js` (7), `owner/owner.js` (3), `core/state.js` (2), `owner/today.js` (2), `sites/project-pages.js` (2), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `photos/photos.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `safety/accidents.js` (1), `sales/sales-edit.js` (1), `sales/variations.js` (1), `sites/roll-call.js` (1), `sites/summary.js` (1), `timesheets/day-work.js` (1), `timesheets/time.js` (1)
 - **Used by 2 files**
@@ -1123,7 +1123,7 @@ PORTAL ACCESS: Setup › 🏡 Client portal – which parts of the portal client
 
 PROFILE PHOTOS
 
-- 456 lines, 20 KB. Declares 6 names, 4 used elsewhere.
+- 502 lines, 21 KB. Declares 8 names, 4 used elsewhere.
 - **Used elsewhere:** `avatarHtml` (7), `personPhoto` (2), `myDetailsView` (1), `peopleView` (1)
 - **Uses names from 19 files:** `people/personal-documents.js` (7), `core/helpers.js` (6), `owner/owner.js` (5), `files/files.js` (4), `people/leavers.js` (4), `people/personal-details.js` (4), `people/reminders.js` (3), `chat/chat.js` (2), `files/cut-outs.js` (2), `planner/holidays.js` (2), `timesheets/working-day.js` (2), `core/privacy-notice.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `people/employment-types.js` (1), `people/subcontractor-agreement.js` (1), `photos/photos.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 8 files**
