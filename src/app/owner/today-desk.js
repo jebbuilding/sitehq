@@ -174,13 +174,14 @@ function tdoCard() {
       .toUpperCase();
   return `<section class="nl-card tdo"><div class="nl-cardh"><h2>On site now</h2><span class="nl-big">${rows.length}</span></div>${
     rows.length
-      ? rows
-          .slice(0, 6)
+      ? `<div class="td-list">` +
+        rows
           .map(
             (r) =>
               `<div class="tdo-r"><span class="tdo-av" aria-hidden="true">${esc(ini(nameOf(r.who)))}</span><span><b>${esc(nameOf(r.who))}</b><br><small class="who">${esc(r.job || "No site")} · since ${esc(r.actualIn || r.start || "")}</small></span></div>`,
           )
-          .join("")
+          .join("") +
+        `</div>`
       : '<div class="who">Nobody has checked in yet today.</div>'
   }<button type="button" class="btn nl-wide" id="nl-roll">${rows.length ? `See all ${rows.length} and the sign-in book` : "Sign-in book"}</button></section>`;
 }

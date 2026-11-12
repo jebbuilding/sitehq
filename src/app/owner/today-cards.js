@@ -50,13 +50,14 @@ function tdSitesCard() {
   return `<section class="nl-card td-sites"><div class="nl-cardh"><h2>🏗️ Sites</h2><span class="nl-big">${sites.length}</span></div>
     ${
       sites.length
-        ? sites
-            .slice(0, 6)
+        ? `<div class="td-list">` +
+          sites
             .map(
               (s) =>
                 `<button type="button" class="td-row td-s" data-s="${esc(s.n)}"><span class="td-top"><b>${esc(s.n)}</b>${s.on.length ? `<span class="tag ok">${s.on.length} on site</span>` : ""}</span><span class="who">${esc([s.c ? s.c.name : "", s.on.length ? s.on.map(nameOf).join(", ") : "", s.wk ? hrs(s.wk) + " h this week" : "No hours this week"].filter(Boolean).join(" · "))}</span></button>`,
             )
-            .join("")
+            .join("") +
+          `</div>`
         : '<div class="who">No live sites.</div>'
     }
     <div class="td-btns"><button type="button" class="btn" id="td-sites">All sites</button><button type="button" class="btn" id="td-map">🗺️ Map</button></div></section>`;

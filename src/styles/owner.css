@@ -249,3 +249,6 @@ body.nl-on #h1[data-date=""]::before{display:none}
 }
 .qa-set{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 12px;margin:8px 0 10px}
 .wnacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.wnacts .pillbtn{min-height:36px;font-size:13px}
+/* Today: long lists scroll in their own box so the page doesn't grow and grow (James, Nov 2026) */
+.td-list{max-height:360px;overflow-y:auto;overscroll-behavior:contain;margin:0 -4px;padding:0 4px}
+.tdw-wrap{max-height:460px;overflow-y:auto;overscroll-behavior:contain}
