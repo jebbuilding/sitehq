@@ -18,6 +18,7 @@ import { hereNow, miniMap, parseLatLon } from "../sites/maps-pins.js";
 import { siteArchiveForClient } from "../sites/storage.js";
 import { DWS } from "../survey/door-window-survey.js";
 export {
+  CL_SOURCE,
   CL_STAGES,
   CL_WORK,
   clAddNote,

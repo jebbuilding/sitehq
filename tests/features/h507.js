@@ -15,8 +15,10 @@ const sue=async(p)=>{await p.evaluate(()=>{const v=document.getElementById('view
  await ctx.route(/^https?:\/\//,r=>r.abort());
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  await sue(p);
- ok(await p.isVisible('#cv-more'),'Sue\'s page has ＋ Another job');
- await p.click('#cv-more');await p.waitForTimeout(400);
+ ok(await p.isVisible('#cv-more')&&await p.isVisible('#cv-morefull'),'Sue\'s page has ＋ Another job (quick) and 📝 Another job – full details');
+ await p.click('#cv-morefull');await p.waitForTimeout(400);
+ ok(await p.isVisible('#mj-src')&&await p.isVisible('#mj-plan')&&await p.isVisible('#mj-note'),'the full form has everything a new enquiry has (how they found you, planning, a first note)');
+ await p.selectOption('#mj-src',{index:1});
  await p.fill('#mj-work','Garden wall');await p.fill('#mj-desc','Rebuild the front wall, 8 m');await p.selectOption('#mj-stage','quote');await p.fill('#mj-quote','4500');
  await p.selectOption('#mj-site','__new');await p.waitForTimeout(100);
  ok(await p.isVisible('#mj-addr'),'a new site at another address asks for the address');
@@ -41,6 +43,13 @@ const sue=async(p)=>{await p.evaluate(()=>{const v=document.getElementById('view
  await p.selectOption('#mj-stage','done');await p.click('#f-save');await p.waitForTimeout(1500);
  const r2=await p.evaluate(()=>window.__st['todos/c1']);
  ok((r2.moreJobs||[]).length===0&&(r2.pastJobs||[]).some(j=>j.work==='Garden wall'&&j.stage==='done')&&r2.stage==='onsite','Completed moves it to her earlier jobs; the loft is untouched');
+ /* a quick one: just what, stage and where */
+ await sue(p);
+ await p.click('#cv-more');await p.waitForTimeout(400);
+ ok(await p.isHidden('#mj-desc')&&await p.isHidden('#mj-addr')&&await p.isVisible('#mj-full')&&await p.isVisible('#mj-stage')&&await p.isVisible('#mj-site'),'＋ Another job is quick: what, stage and where, with 📝 Add the full details if wanted');
+ await p.screenshot({path:OUT+'mj-3-quick.png'});
+ await p.fill('#mj-work','New fence');await p.click('#f-save');await p.waitForTimeout(1200);
+ ok((await p.evaluate(()=>window.__st['todos/c1'].moreJobs||[])).some(j=>j.work==='New fence'&&j.stage==='enquiry'),'a quick job saves with just its name');
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h507: ${bad} failed`:'h507: all passed');await b.close();process.exit(bad?1:0);
 })();

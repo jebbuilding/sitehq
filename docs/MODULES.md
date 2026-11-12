@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 213 files, 4207 KB, 107821 lines.
-- 2197 names declared at the top level (the shared scope); 1105 of them are used by a file other than the one that declares them.
+- 213 files, 4209 KB, 107846 lines.
+- 2197 names declared at the top level (the shared scope); 1106 of them are used by a file other than the one that declares them.
 - 2298 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 195 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -205,8 +205,8 @@ CLIENT CHOICES: the client picks finishes in their portal within an allowance; o
 
 CLIENTS (owner only, stored in the private todos collection as kind:"client")
 
-- 774 lines, 34 KB. Declares 15 names, 11 used elsewhere.
-- **Used elsewhere:** `saveClient` (17), `clStage` (13), `clAddNote` (4), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `nmSortKey` (2), `clInitials` (1), `newEnquiryFor` (1), `nmParts` (1)
+- 775 lines, 34 KB. Declares 15 names, 12 used elsewhere.
+- **Used elsewhere:** `saveClient` (17), `clStage` (13), `clAddNote` (4), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `nmSortKey` (2), `CL_SOURCE` (1), `clInitials` (1), `newEnquiryFor` (1), `nmParts` (1)
 - **Uses names from 18 files:** `core/sheet.js` (5), `photos/photos.js` (5), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/record-pdf.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `files/outbox.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 24 files**
 
@@ -241,9 +241,9 @@ JOB STORY: the client's job told as it happens – progress photos, signed-off s
 
 MORE JOBS: a client with more than one job on the go – each with its own stage, estimate and site
 
-- 127 lines, 6.5 KB. Declares 4 names, 2 used elsewhere.
+- 150 lines, 8.3 KB. Declares 4 names, 2 used elsewhere.
 - **Used elsewhere:** `mjEdit` (2), `mjHas` (2)
-- **Uses names from 8 files:** `clients/clients.js` (4), `core/sheet.js` (4), `core/helpers.js` (3), `core/state.js` (2), `clients/address-book.js` (1), `clients/quick-enquiry.js` (1), `files/outbox.js` (1), `sites/project-pages.js` (1)
+- **Uses names from 8 files:** `clients/clients.js` (5), `core/sheet.js` (4), `core/helpers.js` (3), `core/state.js` (2), `clients/address-book.js` (1), `clients/quick-enquiry.js` (1), `files/outbox.js` (1), `sites/project-pages.js` (1)
 - **Used by 4 files**
 
 ### `clients/portal-calendar.js`
@@ -268,7 +268,7 @@ CLIENT PORTAL
 
 quick enquiry: a few details + the visit time, into the planner, with a reminder an hour before
 
-- 599 lines, 27 KB. Declares 7 names, 4 used elsewhere.
+- 600 lines, 28 KB. Declares 7 names, 4 used elsewhere.
 - **Used elsewhere:** `viewClient` (22), `quickEnquiry` (3), `initQuickEnquiry` (1), `VISIT_REMIND_MIN` (1)
 - **Uses names from 31 files:** `core/helpers.js` (9), `clients/address-book.js` (6), `clients/stages-planner.js` (5), `clients/clients.js` (4), `core/sheet.js` (4), `core/state.js` (4), `files/files.js` (4), `clients/portal.js` (3), `clients/documents.js` (2), `clients/gdpr-consent.js` (2), `clients/sketches.js` (2), `core/viewer.js` (2), `owner/deleted-items.js` (2), `sites/job-details.js` (2), `sites/maps-pins.js` (2), `chat/chat.js` (1), `clients/address-book-jobs.js` (1), `clients/more-jobs.js` (1), `clients/record-pdf.js` (1), `clients/web-enquiries.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `owner/delete-client-site.js` (1), `planner/board.js` (1), `planner/diary.js` (1), `purchasing/samples.js` (1), `safety/training.js` (1), `sales/job-file.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 24 files**
