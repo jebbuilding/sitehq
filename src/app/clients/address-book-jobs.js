@@ -1,5 +1,6 @@
 /* ================= ADDRESS BOOK JOBS: every enquiry / job a client has had, and one page per job with everything from that time ================= */
 import { clStage, openClientForm } from "./clients.js";
+import { mjEdit } from "./more-jobs.js";
 import { viewClient } from "./quick-enquiry.js";
 import { clPlans } from "./stages-planner.js";
 import { $, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
@@ -37,7 +38,22 @@ const CJOBS = (() => {
         cur: true,
         at: c.enqAt || c.created,
       });
-    return out.reverse();
+    /* other jobs on the go at the same time (clients/more-jobs.js) */
+    (c.moreJobs || []).forEach((m) =>
+      out.push(
+        Object.assign({}, m, {
+          key: "m-" + m.id,
+          start: m.enqAt || 0,
+          end: Infinity,
+          cur: true,
+          more: true,
+          at: m.enqAt,
+        }),
+      ),
+    );
+    return out
+      .sort((a, b) => (a.cur === b.cur ? (a.start || 0) - (b.start || 0) : a.cur ? 1 : -1))
+      .reverse();
   }
   const inW = (t, j) => {
     t = tsOf(t);
@@ -152,13 +168,18 @@ const CJOBS = (() => {
     ${sec("🎨 Samples lent", g.samples.length, g.samples.map(({ s, l }) => `<div class="dwsrow"><span>🎨 ${esc(s.name)}</span><span class="who">${esc(shortDay(iso(new Date(l.at))))}${s.out && s.out.client === c.id && s.out.at === l.at ? " · still out" : " · returned"}</span></div>`).join(""))}
     ${sec("🕒 History", g.auto.length, `<div class="who">${g.auto.map((n) => esc(stamp(n.at) + " · " + n.text)).join("<br>")}</div>`)}
     ${!g.notes.length && !g.media.length && !g.docs.length && !g.surveys.length && !g.signs.length ? `<div class="nothing" style="margin-top:12px">Nothing else was added during this job.</div>` : ""}
-    <div class="actions" style="margin-top:14px"><button type="button" class="btn" id="cj-open">👤 Open ${esc(c.name)}'s full record</button>${j.cur ? `<button type="button" class="btn" id="cj-edit">✎ Edit this enquiry</button>` : ""}</div>`);
+    <div class="actions" style="margin-top:14px"><button type="button" class="btn" id="cj-open">👤 Open ${esc(c.name)}'s full record</button>${j.cur ? `<button type="button" class="btn" id="cj-edit">✎ Edit this ${j.more ? "job" : "enquiry"}</button>` : ""}</div>`);
     const back = () => view((S.clients || []).find((x) => x.id === c.id) || c, key);
     $("cj-cl").onclick = $("cj-open").onclick = () => viewClient(c);
     if ($("cj-edit"))
       $("cj-edit").onclick = () => {
         closeViewer();
-        openClientForm(c, "enquiry");
+        if (j.more)
+          mjEdit(
+            c,
+            (c.moreJobs || []).find((m) => "m-" + m.id === j.key),
+          );
+        else openClientForm(c, "enquiry");
       };
     document
       .querySelectorAll(".cj-doc")

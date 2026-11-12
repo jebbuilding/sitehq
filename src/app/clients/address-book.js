@@ -10,6 +10,7 @@ import {
   openClientForm,
   saveClient,
 } from "./clients.js";
+import { mjHas } from "./more-jobs.js";
 import { quickEnquiry, viewClient } from "./quick-enquiry.js";
 import { clNextPlan } from "./stages-planner.js";
 import { webBtnHtml, webView } from "./web-enquiries.js";
@@ -274,11 +275,12 @@ function clientsView() {
   const isOpen = (c) => ["enquiry", "visit", "quote"].includes(c.stage),
     isCur = (c) => ["won", "onsite"].includes(c.stage);
   const F = {
-    see: ["Job to see", (c) => c.stage === "enquiry"],
-    cost: ["Job to cost", (c) => c.stage === "visit"],
-    sent: ["Estimate sent", (c) => c.stage === "quote"],
-    acc: ["Accepted", (c) => c.stage === "won"],
-    onsite: ["On site", (c) => c.stage === "onsite"],
+    /* a client shows under the stage of any of their jobs (clients/more-jobs.js) */
+    see: ["Job to see", (c) => mjHas(c, "enquiry")],
+    cost: ["Job to cost", (c) => mjHas(c, "visit")],
+    sent: ["Estimate sent", (c) => mjHas(c, "quote")],
+    acc: ["Accepted", (c) => mjHas(c, "won")],
+    onsite: ["On site", (c) => mjHas(c, "onsite")],
     done: ["Completed", (c) => c.stage === "done"],
     rej: ["Rejected", (c) => c.stage === "lost"],
     follow: [
@@ -353,7 +355,7 @@ function clientsView() {
     const lj = last.get(c.id);
     return (
       head +
-      `<div class="abcard s-${esc(c.stage)}"><button type="button" class="abmain cl-open" data-c="${esc(c.id)}">${c.frontPhoto ? `<img class="abav abph" src="${blobUrl(c.frontPhoto)}" alt="" loading="lazy">` : `<span class="abav">${esc(clInitials(c))}</span>`}<span class="abtxt"><span class="abname"><b>${esc(c.name)}</b> <span class="tag">${esc(clStage(c.stage))}</span>${F.follow[1](c) ? ' <span class="tag bad">Follow up</span>' : ""}</span>
+      `<div class="abcard s-${esc(c.stage)}"><button type="button" class="abmain cl-open" data-c="${esc(c.id)}">${c.frontPhoto ? `<img class="abav abph" src="${blobUrl(c.frontPhoto)}" alt="" loading="lazy">` : `<span class="abav">${esc(clInitials(c))}</span>`}<span class="abtxt"><span class="abname"><b>${esc(c.name)}</b> <span class="tag">${esc(clStage(c.stage))}</span>${(c.moreJobs || []).length ? ` <span class="tag day">+${c.moreJobs.length} more job${c.moreJobs.length === 1 ? "" : "s"}</span>` : ""}${F.follow[1](c) ? ' <span class="tag bad">Follow up</span>' : ""}</span>
       ${addr ? `<span class="abline">📍 ${esc(addr)}</span>` : ""}<span class="abline">${[c.phone ? "📞 " + esc(c.phone) : "", c.email ? "✉ " + esc(c.email) : ""].filter(Boolean).join(" · ") || '<span class="who">No contact details</span>'}</span>${(c.contacts || []).length ? `<span class="abline who">👥 Also: ${(c.contacts || []).map((x) => esc(x.name || x.phone || x.email) + (x.role ? " (" + esc(x.role) + ")" : "")).join(", ")}</span>` : ""}
       ${(() => {
         const np = clNextPlan(c);

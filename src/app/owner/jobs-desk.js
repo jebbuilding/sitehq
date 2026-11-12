@@ -1,6 +1,7 @@
 /* ================= JOBS DESK: Jobs & clients as in the layout picture – the jobs down the side, the chosen job beside ================= */
 import { openClientChat } from "../chat/chat.js";
 import { clShowToSee } from "../clients/address-book.js";
+import { mjHas } from "../clients/more-jobs.js";
 import { ptOf } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
 import { $, addDays, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
@@ -30,7 +31,7 @@ const jbStagesOf = (sr) =>
   sr && Array.isArray(sr.stages) && sr.stages.length ? sr.stages : JB_STAGES;
 function jbView() {
   const t = S.f.jbt || "jobs";
-  const enq = (S.clients || []).filter((c) => c.stage === "enquiry").length;
+  const enq = (S.clients || []).filter((c) => mjHas(c, "enquiry")).length;
   const tabs = [
     ["jobs", "Jobs"],
     ["clients", "Clients"],
