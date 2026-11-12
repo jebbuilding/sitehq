@@ -16,7 +16,14 @@ import { mjEdit } from "./more-jobs.js";
 import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
 import { clientPdf } from "./record-pdf.js";
 import { clMediaHtml, wireClMedia } from "./sketches.js";
-import { clAddPlan, clAddr, clPlanListHtml, clStepsHtml, wireClSteps } from "./stages-planner.js";
+import {
+  clAddPlan,
+  clAddr,
+  clAddrLines,
+  clPlanListHtml,
+  clStepsHtml,
+  wireClSteps,
+} from "./stages-planner.js";
 import { webEnqFiled } from "./web-enquiries.js";
 import { $, addDays, esc, gbp, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -247,11 +254,21 @@ function visitWatch() {
     break;
   }
 }
+/* the client's own details at the top of their page, apart from the job: name, phone, email (written out, tap to
+   email) and the address on separate lines (James, Nov 2026) */
+function clDetailsBox(c) {
+  const tel = String(c.phone || "").replace(/\s+/g, "");
+  const lines = clAddrLines(c);
+  return `<div class="card cldet"><div class="flabel" style="margin:0 0 6px">👤 Client details</div>
+    <div class="cldet-row"><span class="who">Name</span><b>${esc(c.name || "")}</b></div>
+    <div class="cldet-row"><span class="who">Phone</span>${tel ? `<a href="tel:${esc(tel)}">📞 ${esc(c.phone)}</a>` : '<span class="who">Not added</span>'}</div>
+    <div class="cldet-row"><span class="who">Email</span>${c.email ? `<a href="mailto:${esc(c.email)}" class="cldet-mail">✉ ${esc(c.email)}</a>` : '<span class="who">Not added</span>'}</div>
+    <div class="cldet-row"><span class="who">Address</span>${lines.length ? `<span class="cldet-addr">${lines.map(esc).join("<br>")}</span>` : '<span class="who">Not added</span>'}</div></div>`;
+}
 function viewClient(c) {
   const tel = (c.phone || "").replace(/\s+/g, "");
   const addr = [c.address, c.postcode].filter(Boolean).join(", ");
   const rows = [
-    ["Property", addr],
     ["Work", c.work],
     ["Budget", c.budget],
     ["Timescale", c.timescale],
@@ -376,10 +393,11 @@ function viewClient(c) {
     ${c.frontPhoto ? `<button type="button" class="fhhero" id="cv-fh"><img src="${blobUrl(c.frontPhoto)}" alt="Front of the property">${addr ? `<span>📍 ${esc(addr)}</span>` : ""}</button>` : ""}
     <div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}" style="text-decoration:none">📞 Call</a><a class="btn" href="sms:${esc(tel)}" style="text-decoration:none;color:var(--ink)">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}" style="text-decoration:none;color:var(--ink)">✉ Email</a>` : ""}${addr || c.lat != null ? `<button class="btn maplink" type="button" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Map</button>` : ""}<button class="btn" id="cv-msg" type="button">💬 Message in app</button></div>
     <div class="actions">${c.site ? `<button class="btn primary" id="cv-gosite" type="button">🏗️ Open the site</button>` : `<button class="btn primary" id="cv-site" type="button">🏗️ Make it a site</button><span class="who">Moves them to On site</span>`}</div>
+    ${clDetailsBox(c)}
     ${c.visit && c.visit.date >= iso(new Date()) ? `<div class="notice" style="margin-top:10px">📅 Visit booked <b>${esc(shortDay(c.visit.date))} ${esc(c.visit.time || "")}</b> · reminder ${VISIT_REMIND_MIN / 60} hour before <button type="button" class="linkbtn" id="cv-ics">📲 Add to phone calendar</button></div>` : ""}
     ${c.quick ? `<div class="notice warn" style="margin-top:10px">⚡ Quick enquiry: only the basics so far. <button type="button" class="btn primary" id="cv-full" style="margin-left:6px">Fill in the full form</button></div>` : ""}
     ${clStepsHtml(c)}
-    <div class="flabel" style="margin-top:12px">Contact &amp; details</div>
+    <div class="flabel" style="margin-top:12px">🔨 This job</div>
     <label for="cv-stage" style="max-width:320px">Stage<select id="cv-stage">${CL_STAGES.map(([k, l]) => `<option value="${k}" ${k === c.stage ? "selected" : ""}>${l}</option>`).join("")}</select></label>
     <div class="details" style="margin-top:10px">${rows.map(([l, v]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join("")}</div>
     ${clMainHtml(c)}${clContactsHtml(c)}${

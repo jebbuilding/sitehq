@@ -11,7 +11,16 @@ import { newId } from "../files/outbox.js";
 import { openPlanEditor } from "../planner/board.js";
 import { toHM } from "../planner/diary.js";
 import { siteFromClient, sjMaster } from "../sites/job-details.js";
-export { clAddPlan, clAddr, clNextPlan, clPlanListHtml, clPlans, clStepsHtml, wireClSteps };
+export {
+  clAddPlan,
+  clAddr,
+  clAddrLines,
+  clNextPlan,
+  clPlanListHtml,
+  clPlans,
+  clStepsHtml,
+  wireClSteps,
+};
 const CL_FLOW = ["enquiry", "visit", "quote", "won", "onsite", "done", "lost"];
 function clPlans(c) {
   return (S.plan || [])
@@ -56,6 +65,19 @@ function wireClSteps(c) {
       clPlanSeed(c, { title: c.name + ": ", type: "meeting" }),
     );
   };
+}
+/* the address on separate lines – street, town, postcode – for showing (James, Nov 2026: "address format needs improving") */
+function clAddrLines(c) {
+  const parts = String(c.address || "")
+    .split(/\n|,/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const pc = String(c.postcode || "")
+    .trim()
+    .toUpperCase();
+  if (pc && !parts.some((p) => p.toUpperCase().replace(/\s+/g, "") === pc.replace(/\s+/g, "")))
+    parts.push(pc);
+  return parts;
 }
 function clAddr(c) {
   return [c.address && c.address.split("\n").join(", "), c.postcode].filter(Boolean).join(", ");

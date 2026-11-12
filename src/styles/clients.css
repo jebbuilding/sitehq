@@ -93,3 +93,8 @@
 .cs-fileinp{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 /* another job (clients/more-jobs.js): the new-site address only shows when "a new site" is picked */
 .mj-addrw[hidden]{display:none}
+/* a client's own details at the top of their page (clients/quick-enquiry.js) */
+.cldet{padding:12px 14px;margin:10px 0}
+.cldet-row{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:start;padding:6px 0;border-top:1px solid var(--line)}
+.cldet-row a{font-weight:600;word-break:break-word}
+.cldet-addr{line-height:1.4}

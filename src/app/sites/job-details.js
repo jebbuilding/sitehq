@@ -838,7 +838,7 @@ function siteSumHtml(site, compact, inner) {
   const work = (c && c.work) || sr.project || "";
   const tel = c ? String(c.phone || "").replace(/\s+/g, "") : "";
   if (compact)
-    return `<div class="sscompact"><b>📍 ${esc(site)}</b>${work ? ` · ${esc(work)}` : ""}${c ? ` · 👤 ${esc(c.name)}${tel ? ` <a href="tel:${esc(tel)}" class="sstel">📞 ${esc(c.phone)}</a>` : ""}` : ""}</div>`;
+    return `<div class="sscompact"><b>📍 ${esc(site)}</b>${work ? ` · ${esc(work)}` : ""}${c ? ` · 👤 ${esc(c.name)}${tel ? ` <a href="tel:${esc(tel)}" class="sstel">📞 ${esc(c.phone)}</a>` : ""}${c.email ? ` <a href="mailto:${esc(c.email)}" class="sstel">✉ ${esc(c.email)}</a>` : ""}` : ""}</div>`;
   const row = (l, v) =>
     v ? `<div class="drow"><span>${esc(l)}</span><span>${v}</span></div>` : "";
   return `<div class="sitesum">
@@ -849,7 +849,7 @@ function siteSumHtml(site, compact, inner) {
     <div class="sscl">${
       c
         ? `${clMainHtml(c)}${clContactsHtml(c)}<div class="details" style="margin-top:8px">${[row("Type of work", esc(c.work || "")), row("Estimate", c.quote ? gbp(+c.quote) : ""), row("What they want", c.desc ? esc(c.desc.length > 160 ? c.desc.slice(0, 160) + "…" : c.desc) : "")].join("")}</div>
-      <div class="actions" style="margin-top:6px">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a><a class="btn" href="sms:${esc(tel)}">💬 Text</a>` : ""}<button type="button" class="btn" id="ss-client">👤 Open client page ›</button></div>`
+      <div class="actions" style="margin-top:6px">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a><a class="btn" href="sms:${esc(tel)}">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}">✉ Email</a>` : ""}<button type="button" class="btn" id="ss-client">👤 Open client page ›</button></div>`
         : `<div class="who"><b>No client linked to this job yet.</b></div><div class="actions"><button type="button" class="btn primary" id="ss-link">Link a client</button></div>`
     }</div>${inner || ""}</div>`;
 }
