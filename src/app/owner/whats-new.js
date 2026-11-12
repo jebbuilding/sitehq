@@ -4,7 +4,7 @@ import { ptManager } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
 import { $, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
-import { curTab } from "../core/tabs-week.js";
+import { curTab, render } from "../core/tabs-week.js";
 import { isSketch } from "../drawing/trade-drawings.js";
 import { openFile } from "../files/in-app-files.js";
 import { nfSeenAt, ownerFeed } from "./alerts.js";
@@ -70,6 +70,35 @@ function wnOpener(f) {
   }
   if (f.coll === "j") return x.jobId ? () => openJob(x.jobId) : null;
   return null;
+}
+/* James (Nov 2026): each "needs sorting" reminder can be put off for 30 days or cancelled. Kept owner-only in
+   todos/wnsnooze { kind "wnsnooze", keys { key: until (ms), or -1 = cancelled } }. The key is the tab, the reminder's
+   words without its numbers, and who/what it lists – so if something new comes up (another person, another
+   request) the reminder shows again. */
+const wnKey = (t, r) =>
+  [t, String(r.text || "").replace(/\d+/g, "#")]
+    .concat((r.items || []).map((i) => i.label).sort())
+    .join("|")
+    .slice(0, 400);
+function wnSnoozed(k) {
+  const u = ((S.wnSnooze || {}).keys || {})[k];
+  return u === -1 || (u && u > Date.now());
+}
+async function wnSnooze(k, days) {
+  const cur = Object.assign({ kind: "wnsnooze", keys: {} }, S.wnSnooze || {});
+  const keys = {};
+  /* tidy: drop ones that have run out */
+  Object.entries(cur.keys || {}).forEach(([a, u]) => {
+    if (u === -1 || u > Date.now()) keys[a] = u;
+  });
+  keys[k] = days ? Date.now() + days * 864e5 : -1;
+  const rec = { kind: "wnsnooze", keys, updated: Date.now() };
+  S.wnSnooze = rec;
+  try {
+    await S.db.doc("todos/wnsnooze").set(rec);
+  } catch (e) {
+    toast("Couldn't save. Check your connection.");
+  }
 }
 function wnReasons(t) {
   const b = S.badgeNow || {};
@@ -259,7 +288,7 @@ function wnReasons(t) {
 function whatsNewHTML(t) {
   if (WN.shut[t]) return "";
   const items = WN.tab === t ? WN.items : [];
-  const rs = wnReasons(t);
+  const rs = wnReasons(t).filter((r) => !wnSnoozed(wnKey(t, r)));
   if (!items.length && !rs.length) return "";
   WN.go = [];
   const reg = (fn) => {
@@ -307,7 +336,7 @@ function whatsNewHTML(t) {
                         })
                         .join("")}</div>`
                     : ""
-                }`,
+                }<div class="wnacts"><button type="button" class="pillbtn wnsn" data-k="${esc(wnKey(t, r))}" data-d="30">⏰ Remind me in 30 days</button><button type="button" class="pillbtn wnsn" data-k="${esc(wnKey(t, r))}" data-d="0">✕ Cancel this reminder</button></div>`,
             )
             .join("")}`
         : ""
@@ -342,6 +371,15 @@ function wireWhatsNew() {
       const el = $("wnbox");
       if (el) el.remove();
     };
+  document.querySelectorAll("#wnbox .wnsn").forEach(
+    (x) =>
+      (x.onclick = async () => {
+        const days = +x.dataset.d;
+        await wnSnooze(x.dataset.k, days);
+        toast(days ? "I'll remind you in " + days + " days" : "Reminder cancelled");
+        render();
+      }),
+  );
   document.querySelectorAll("#wnbox .wngo").forEach(
     (x) =>
       (x.onclick = () => {

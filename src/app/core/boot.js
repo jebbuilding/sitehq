@@ -218,6 +218,7 @@ initOpening();
         S.purchaseOrders = all.filter((t) => t.kind === "purchaseorder");
         S.siteDiary = all.filter((t) => t.kind === "sitediary");
         S.bcReports = all.filter((t) => t.kind === "bcreport");
+        S.wnSnooze = all.find((t) => t.kind === "wnsnooze") || null;
         S.programmes = all.filter((t) => t.kind === "programme");
         S.vatReturns = all.filter((t) => t.kind === "vatreturn");
         S.rfqs = all.filter((t) => t.kind === "rfq");

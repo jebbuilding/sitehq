@@ -248,3 +248,4 @@ body.nl-on #h1[data-date=""]::before{display:none}
   .nl-sq{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}.nl-sq span{color:#D0101C}
 }
 .qa-set{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 12px;margin:8px 0 10px}
+.wnacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.wnacts .pillbtn{min-height:36px;font-size:13px}
