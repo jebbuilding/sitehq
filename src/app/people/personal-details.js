@@ -139,6 +139,7 @@ function openDetails(target) {
     ${target && target.off ? `<label for="dt-role">Employee or subcontractor<select id="dt-role"><option value="sub" ${(target.rec || {}).role !== "employee" ? "selected" : ""}>Subcontractor</option><option value="employee" ${(target.rec || {}).role === "employee" ? "selected" : ""}>Employee</option><option value="company" ${(target.rec || {}).role === "company" ? "selected" : ""}>From another company</option></select></label><label for="dt-rco">Company they're from (if a subcontractor or another company)<input id="dt-rco" maxlength="80" value="${esc((target.rec || {}).roleCompany || "")}"></label>` : ""}
     ${DET_SECTIONS.map(([title, fields]) => `<div class="flabel" style="margin:6px 0 -4px;font-size:14px;color:var(--accent)">${esc(title)}</div>${fields.map((f) => detField(f, d, forOther)).join("")}`).join("")}
     <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="dt-ok" ${detailsDone(cur) ? "checked" : ""}> ${forOther ? "I've checked these details with them, and they've been told how JEB uses their information." : "These details are correct, and I've read how JEB Building Services uses my information (below)."}</label>
+    ${forOther ? `<div class="who">Not checked with them yet? Leave it unticked – you can save with just their name or email${target.off ? "" : ", and they'll be asked to check and confirm their details themselves when they next open the app"}.</div>` : ""}
     ${privacyBlock(false)}
     ${formFoot(!!(target && target.off && target.rec), forOther ? "Save details" : "Save my details")}`,
     async () => {
@@ -151,15 +152,17 @@ function openDetails(target) {
           if (req && !out[k] && !missing) missing = l;
         }),
       );
-      if (forOther && missing && !out.fullName) {
-        showErr("Please fill in their full name.");
+      /* James adding someone (Nov 2026): just a name or an email is enough to save; the rest can follow */
+      if (forOther && !out.fullName && !out.email) {
+        showErr("Put in at least their name or their email address.");
         return;
       }
       if (missing && !forOther) {
         showErr(`Please fill in: ${missing}.`);
         return;
       }
-      if (!$("dt-ok").checked) {
+      const okd = $("dt-ok").checked;
+      if (!okd && !forOther) {
         showErr(
           forOther
             ? "Tick the box to confirm you've checked the details with them."
@@ -169,7 +172,8 @@ function openDetails(target) {
       }
       out.postcode = out.postcode.toUpperCase();
       out.ni = out.ni.toUpperCase().replace(/\s+/g, " ");
-      out.confirmedAt = Date.now();
+      /* unticked for someone else: saved, but not confirmed – they're asked to check it themselves */
+      if (okd) out.confirmedAt = Date.now();
       if (forOther) out.enteredBy = "James";
       $("f-save").disabled = true;
       if (forOther) {
@@ -191,7 +195,7 @@ function openDetails(target) {
             });
             await S.db.doc("sheets/" + target.id).set(p);
             promptsOf(S.data.signoffs[target.id])
-              .filter((p) => p.status === "open" && p.form === "details")
+              .filter((p) => okd && p.status === "open" && p.form === "details")
               .forEach((p) => markPrompt(Object.assign({ who: target.id }, p), "done"));
           }
           closeForm();
