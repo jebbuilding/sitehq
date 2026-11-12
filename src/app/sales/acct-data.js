@@ -11,6 +11,7 @@ export {
   acCatKind,
   acCatName,
   acCfg,
+  acCsvRows,
   acMonths,
   acParseStatement,
   acRuleFor,

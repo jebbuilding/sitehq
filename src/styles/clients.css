@@ -98,3 +98,4 @@
 .cldet-row{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:start;padding:6px 0;border-top:1px solid var(--line)}
 .cldet-row a{font-weight:600;word-break:break-word}
 .cldet-addr{line-height:1.4}
+.ai-list{max-height:50vh;overflow:auto;margin:8px 0}

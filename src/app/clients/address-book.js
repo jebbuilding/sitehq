@@ -1,5 +1,6 @@
 /* ================= CLIENTS ADDRESS BOOK + JOB HISTORY ================= */
 import { CJOBS } from "./address-book-jobs.js";
+import { aiWire } from "./address-import.js";
 import {
   clInitials,
   clList,
@@ -392,7 +393,7 @@ function clientsView() {
     <div class="who absum" ${book ? "hidden" : ""}>${pipe ? gbp(pipe) + " in estimates sent · " : ""}${all.filter(isCur).length} accepted or on site${due.length ? ` · <button type="button" class="linkbtn" id="cl-due">${due.length} to follow up today</button>` : ""}</div>
     ${letters.length > (book ? 1 : 6) ? `<div class="abidx">${letters.map((L) => `<button type="button" class="abjump" data-l="${esc(L)}">${esc(L)}</button>`).join("")}</div>` : ""}
     <div class="ablist${book ? " bklist" : ""}">${shown.map(book ? bookRow : card).join("") || `<div class="empty"><strong>${all.length ? "Nobody matches" : "No clients yet"}</strong>${all.length ? "Try a different search or filter." : "Tap “New client” when someone gets in touch."}</div>`}</div>
-    <div class="actions" style="margin-top:12px"><button class="btn" id="cl-csv" type="button">Download address book (CSV)</button></div>
+    <div class="actions" style="margin-top:12px"><button class="btn" id="cl-csv" type="button">Download address book (CSV)</button><label class="btn fhpickbtn">📥 Upload an address book (CSV)<input type="file" id="cl-imp" accept=".csv,text/csv,text/plain" aria-label="Upload an address book CSV"></label></div>
     <div class="who">Only you can see clients.</div>`;
   $("cl-new").onclick = () => openClientForm(null, "contact");
   $("cl-enq").onclick = () => newEnquiryFor();
@@ -481,6 +482,7 @@ function clientsView() {
           render();
         }),
     );
+  aiWire();
   $("cl-csv").onclick = () => {
     const r = [
       [
