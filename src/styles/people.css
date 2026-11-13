@@ -42,3 +42,4 @@
 .cmp-filebtn{position:relative;overflow:hidden;min-height:44px}
 .cmp-filebtn input[type="file"]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .pv-polrow{display:flex;align-items:center;gap:8px;min-height:44px}
+.pa-offp{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}.pa-offp select{width:auto}

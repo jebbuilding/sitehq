@@ -20,6 +20,32 @@ const AC_ROLES = [
   ["agency", "Agency & other firms"],
 ];
 const AC_ALWAYS = new Set(["signin", "details"]);
+/* Office access (James, Nov 2026: "accounts access and manager access to different levels … in Setup like
+   everything else"): which of James's own areas a manager or an accounts person may open, and who has which.
+   Kept in settings/app.access.office { roles: { manager|accounts: { areas: [section keys] } }, people: { uid: role } }.
+   On claude.ai only James can open the office side; the setting takes effect when SiteHQ runs on our own server,
+   which will let those people in to just those areas (Jasper). */
+const AC_OFFICE = [
+  ["manager", "Manager"],
+  ["accounts", "Accounts"],
+];
+const AC_AREAS = [
+  ["jobs", "Jobs & clients"],
+  ["sales", "Estimates & invoices"],
+  ["people", "People"],
+  ["paper", "Paperwork"],
+  ["money", "Accounts"],
+  ["estim", "Estimating"],
+];
+const AC_OFFICE_PRESET = {
+  manager: ["jobs", "people", "paper", "estim"],
+  accounts: ["sales", "money"],
+};
+const acOffice = () => acAccess().office || {};
+const acOfficeAreas = (r) => {
+  const o = (acOffice().roles || {})[r];
+  return o && Array.isArray(o.areas) ? o.areas : AC_OFFICE_PRESET[r];
+};
 /* a sensible start for each role: employees and subbies see everything they do now; agency workers just what they
    need on site */
 const AC_PRESET = {
@@ -91,6 +117,12 @@ function acView(seg) {
           : `<div class="who">No one on the team yet.</div>`
       }
     </div></section>
+    <section class="card"><div class="cardbody"><b>🏢 Office access: managers and accounts</b>
+      <div class="who">Let someone into parts of your side of the app – a manager to run jobs, or someone to do the accounts. Tick what each can open, then choose who has it.</div>
+      <div class="tablewrap"><table class="pa-tbl"><thead><tr><th>Your area</th>${AC_OFFICE.map(([, l]) => `<th class="pa-c">${esc(l)}</th>`).join("")}</tr></thead><tbody>${AC_AREAS.map(([k, l]) => `<tr><td>${esc(l)}</td>${AC_OFFICE.map(([r]) => `<td class="pa-c"><label class="pa-hit"><input type="checkbox" class="pa-off" data-r="${r}" data-k="${k}"${acOfficeAreas(r).includes(k) ? " checked" : ""} aria-label="${esc(l)} for ${esc(r)}"></label></td>`).join("")}</tr>`).join("")}</tbody></table></div>
+      ${team.length ? team.map((id) => `<label class="inl pa-offp">${esc(nameOf(id))}<select class="pa-offr" data-w="${esc(id)}" aria-label="Office access for ${esc(nameOf(id))}"><option value="">No office access</option>${AC_OFFICE.map(([r, l]) => `<option value="${r}"${(acOffice().people || {})[id] === r ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>`).join("") : ""}
+      <div class="notice" style="margin-top:8px">On claude.ai only you can open your side of the app, so this is saved now and starts working when SiteHQ moves to our own server.</div>
+    </div></section>
     <div class="actions"><button type="button" class="btn primary" id="pa-save">Save who sees what</button></div>
     ${log.length ? `<section class="card"><div class="cardbody"><b>Changes</b>${log.map((x) => `<div class="drow"><span>${esc(x.details || x.title || "")}</span><span class="who">${esc(new Date(x.at || x.time || 0).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }))}</span></div>`).join("")}</div></section>` : ""}
     <div class="who">Today the app hides what isn't someone's. When SiteHQ moves to our own server, the server will refuse it as well.</div>`;
@@ -151,8 +183,34 @@ async function acSave() {
         `${nameOf(id)}: ${p.sites ? (p.sites.length ? "only " + p.sites.join(", ") : "no jobs") : "every job"}`,
       );
   });
+  const office = { roles: {}, people: {} };
+  AC_OFFICE.forEach(([r, l]) => {
+    office.roles[r] = {
+      areas: [...document.querySelectorAll(`#main .pa-off[data-r="${r}"]:checked`)].map(
+        (i) => i.dataset.k,
+      ),
+    };
+    const was = acOfficeAreas(r);
+    if (JSON.stringify(was) !== JSON.stringify(office.roles[r].areas))
+      said.push(
+        l +
+          " can open: " +
+          (office.roles[r].areas
+            .map((k) => (AC_AREAS.find((x) => x[0] === k) || [k, k])[1])
+            .join(", ") || "nothing"),
+      );
+  });
+  document.querySelectorAll("#main .pa-offr").forEach((sel) => {
+    if (sel.value) office.people[sel.dataset.w] = sel.value;
+    if ((acOffice().people || {})[sel.dataset.w] !== (sel.value || undefined))
+      said.push(
+        nameOf(sel.dataset.w) +
+          ": office access " +
+          (sel.value ? (AC_OFFICE.find((x) => x[0] === sel.value) || [0, sel.value])[1] : "none"),
+      );
+  });
   try {
-    const access = { roles, people, updated: Date.now() };
+    const access = { roles, people, office, updated: Date.now() };
     await S.db.doc("settings/app").update({ access });
     S.settings = Object.assign({}, S.settings, { access });
     if (said.length) await auditLog("Access", "Who sees what", said.join(" · "), null);

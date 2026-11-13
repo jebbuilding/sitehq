@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 215 files, 4246 KB, 108687 lines.
-- 2231 names declared at the top level (the shared scope); 1117 of them are used by a file other than the one that declares them.
+- 215 files, 4249 KB, 108745 lines.
+- 2236 names declared at the top level (the shared scope); 1117 of them are used by a file other than the one that declares them.
 - 2319 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 197 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -1042,7 +1042,7 @@ TRADES' SIGN IN BY LOCATION: on Today and Sites, the phone finds the site you're
 
 PEOPLE AND ACCESS: Setup › 👥 People & access – what each role sees, and which jobs each person sees
 
-- 166 lines, 8.9 KB. Declares 10 names, 3 used elsewhere.
+- 224 lines, 12 KB. Declares 15 names, 3 used elsewhere.
 - **Used elsewhere:** `acMySites` (1), `acTabAllowed` (1), `acView` (1)
 - **Uses names from 7 files:** `core/helpers.js` (3), `core/state.js` (2), `core/tabs-week.js` (2), `owner/owner.js` (2), `owner/deletion-record.js` (1), `people/employment-types.js` (1), `sites/job-details.js` (1)
 - **Used by 3 files**
