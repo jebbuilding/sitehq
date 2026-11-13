@@ -456,5 +456,7 @@ body:has(#sheet:not([hidden])) .pdfbar{display:none}
 /* SiteHQ by Stranix at the bottom of every page (James, Nov 2026); on an iPad or computer in the new look it is at the foot of the side menu instead */
 .appfoot{display:flex;align-items:center;justify-content:center;gap:7px;margin:18px 0 6px;font-family:"Montserrat",var(--f-body);font-size:11px;font-weight:500;color:var(--muted);line-height:1}.appfoot b{font-weight:800;letter-spacing:.06em;color:var(--ink)}
 @media (min-width:900px){body.nl-on .appfoot{display:none}}
+/* chat on a phone: the buttons on one line, the typing box and Send full width under them (James, Nov 2026) */
+@media (max-width:639px){.crow{flex-wrap:wrap;justify-content:flex-start}.crow textarea{order:10;flex:1 1 calc(100% - 96px)}.crow #cm-send{order:11;flex:none}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}
