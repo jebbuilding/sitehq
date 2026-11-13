@@ -92,3 +92,4 @@
 .stg-tick{width:30px;height:30px;flex:none;border-radius:15px;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--soft);color:var(--muted)}
 .stg-done .stg-tick{background:#2e7d32;color:#fff}
 .stg-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.stg-csok{color:#2e7d32;font-weight:600}
