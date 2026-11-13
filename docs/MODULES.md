@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 215 files, 4253 KB, 108819 lines.
-- 2238 names declared at the top level (the shared scope); 1117 of them are used by a file other than the one that declares them.
+- 215 files, 4258 KB, 108911 lines.
+- 2239 names declared at the top level (the shared scope); 1117 of them are used by a file other than the one that declares them.
 - 2322 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 197 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -214,9 +214,9 @@ CLIENT CHOICES: the client picks finishes in their portal within an allowance; o
 
 CLIENTS (owner only, stored in the private todos collection as kind:"client")
 
-- 775 lines, 34 KB. Declares 15 names, 12 used elsewhere.
+- 783 lines, 34 KB. Declares 15 names, 12 used elsewhere.
 - **Used elsewhere:** `saveClient` (19), `clStage` (13), `clAddNote` (4), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `nmSortKey` (2), `CL_SOURCE` (1), `clInitials` (1), `newEnquiryFor` (1), `nmParts` (1)
-- **Uses names from 18 files:** `core/sheet.js` (5), `photos/photos.js` (5), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/record-pdf.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `files/outbox.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
+- **Uses names from 18 files:** `core/sheet.js` (5), `photos/photos.js` (5), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `files/outbox.js` (2), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/record-pdf.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 26 files**
 
 ### `clients/documents.js`
@@ -800,7 +800,7 @@ IN-APP FILES (kept inside the app, not in the phone's downloads)
 SENDING (keeps work when signal drops)
 
 - 283 lines, 8.5 KB. Declares 23 names, 14 used elsewhere.
-- **Used elsewhere:** `newId` (80), `submitJob` (21), `sentToast` (5), `obPending` (4), `saveOrKeep` (4), `sphotoPut` (3), `sphotoWanted` (3), `flushOutbox` (2), `initOutbox` (1), `isNetErr` (1), `OB` (1), `obOpen` (1), `outboxBanner` (1), `refreshOutbox` (1)
+- **Used elsewhere:** `newId` (80), `submitJob` (21), `saveOrKeep` (7), `sentToast` (5), `obPending` (4), `sphotoPut` (3), `sphotoWanted` (3), `flushOutbox` (2), `initOutbox` (1), `isNetErr` (1), `OB` (1), `obOpen` (1), `outboxBanner` (1), `refreshOutbox` (1)
 - **Uses names from 6 files:** `core/helpers.js` (3), `files/files.js` (2), `people/reminders.js` (2), `core/sheet.js` (1), `core/state.js` (1), `core/tabs-week.js` (1)
 - **Used by 89 files**
 
@@ -1006,9 +1006,9 @@ NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side 
 
 TO-DO LISTS
 
-- 421 lines, 17 KB. Declares 14 names, 6 used elsewhere.
+- 431 lines, 17 KB. Declares 14 names, 6 used elsewhere.
 - **Used elsewhere:** `sentTodosHTML` (1), `todosOf` (1), `todoView` (1), `tradeTodosHTML` (1), `wireSentTodos` (1), `wireTradeTodos` (1)
-- **Uses names from 10 files:** `core/helpers.js` (7), `core/sheet.js` (4), `owner/owner.js` (4), `core/state.js` (3), `files/outbox.js` (2), `photos/photos.js` (2), `core/tabs-week.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `survey/door-window-survey.js` (1)
+- **Uses names from 10 files:** `core/helpers.js` (7), `core/sheet.js` (4), `owner/owner.js` (4), `core/state.js` (3), `files/outbox.js` (3), `photos/photos.js` (2), `core/tabs-week.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 1 files**
 
 ### `owner/trade-look.js`
@@ -1330,7 +1330,7 @@ SUPPLIERS (manufacturers): company details + their brochures, shown in Merchants
 
 MATERIALS & RECEIPTS (stored in the invoices collection with a kind)
 
-- 943 lines, 39 KB. Declares 24 names, 12 used elsewhere.
+- 1015 lines, 42 KB. Declares 25 names, 12 used elsewhere.
 - **Used elsewhere:** `isInv` (12), `openMat` (2), `MAT_ST` (1), `matCard` (1), `matCount` (1), `materialsView` (1), `openMatEditor` (1), `openReceipt` (1), `rcRow` (1), `receiptsView` (1), `UNITS` (1), `wireReceipts` (1)
 - **Uses names from 13 files:** `core/helpers.js` (8), `core/sheet.js` (6), `core/state.js` (4), `core/fields.js` (3), `files/files.js` (3), `owner/owner.js` (3), `core/viewer.js` (2), `files/outbox.js` (2), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `safety/training.js` (1), `sites/job-sheets.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 15 files**
@@ -1915,9 +1915,9 @@ QUICK SNAG: photo + voice → the snag written, pinned on the drawing and sent t
 
 STAGE SIGN-OFF: each job's stages, signed off as they're done, with a record of what's done and what isn't
 
-- 350 lines, 14 KB. Declares 12 names, 4 used elsewhere.
+- 352 lines, 15 KB. Declares 12 names, 4 used elsewhere.
 - **Used elsewhere:** `stgEdit` (1), `stgHtml` (1), `stgSign` (1), `stgWire` (1)
-- **Uses names from 9 files:** `core/helpers.js` (5), `clients/portal.js` (4), `core/sheet.js` (4), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `photos/photos.js` (1), `sites/job-details.js` (1), `sites/summary.js` (1)
+- **Uses names from 9 files:** `core/helpers.js` (5), `clients/portal.js` (4), `core/sheet.js` (4), `files/outbox.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `photos/photos.js` (1), `sites/job-details.js` (1), `sites/summary.js` (1)
 - **Used by 2 files**
 
 ### `sites/storage.js`
