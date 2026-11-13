@@ -24,6 +24,8 @@ export {
   jobNameOf,
   siteFromClient,
   siteFront,
+  siteHead,
+  siteHeadHtml,
   siteJobCard,
   siteLabel,
   siteSumHtml,
@@ -838,6 +840,21 @@ function siteFrontPick(site) {
    as one person can have several jobs): sites/{id}.jobName; shown as the job's title with the address under it */
 const jobNameOf = (site) => String((siteRec(site) || {}).jobName || "").trim();
 const siteLabel = (site) => jobNameOf(site) || site;
+/* how a site is headed on cards and lists: the job name big and the address small; with no name yet, the first line of
+   the address big and the rest small (James, Nov 2026) */
+function siteHead(site) {
+  const s = String(site || "");
+  const jn = jobNameOf(s);
+  if (jn) return { big: jn, small: s };
+  const i = s.indexOf(",");
+  return i > 0
+    ? { big: s.slice(0, i).trim(), small: s.slice(i + 1).trim() }
+    : { big: s, small: "" };
+}
+const siteHeadHtml = (site) => {
+  const h = siteHead(site);
+  return `<b>${esc(h.big)}</b>${h.small ? `<span class="who">📍 ${esc(h.small)}</span>` : ""}`;
+};
 function siteSumHtml(site, compact, inner) {
   const sr = siteRec(site) || {};
   const jn = jobNameOf(site);

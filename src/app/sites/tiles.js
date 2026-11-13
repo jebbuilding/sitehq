@@ -8,7 +8,7 @@ import { blobUrl } from "../files/files.js";
 import { deleteSitesPicker } from "../owner/delete-client-site.js";
 import { allTeam } from "../owner/owner.js";
 import { siteRec } from "../photos/photos.js";
-import { siteFront } from "./job-details.js";
+import { siteFront, siteHead, siteHeadHtml } from "./job-details.js";
 import { same } from "./project-pages.js";
 import { smOpen } from "./sites-map.js";
 import { storageHtml, wireStorage } from "./storage.js";
@@ -34,7 +34,7 @@ function siteTiles(sites) {
       .filter((p) => same(p.site, n))
       .sort((a, b) => (b.takenAt || 0) - (a.takenAt || 0))[0];
     const img = siteFront(n);
-    return `<button type="button" class="sttile" data-s="${esc(n)}" data-q="${esc([n, c && c.name, sr.project, c && c.work, c && c.postcode, c && c.phone].filter(Boolean).join(" ").toLowerCase())}">${img ? `<img src="${blobUrl(img)}" alt="" loading="lazy">` : `<span class="stini">${esc(initials(n))}</span>`}<span class="sttx"><b>${esc(n)}</b>${c ? `<span class="who">👤 ${esc(c.name)}${sr.project || c.work ? " · " + esc(sr.project || c.work) : ""}</span>` : sr.project ? `<span class="who">${esc(sr.project)}</span>` : ""}
+    return `<button type="button" class="sttile" data-s="${esc(n)}" data-q="${esc([n, sr.jobName, c && c.name, sr.project, c && c.work, c && c.postcode, c && c.phone].filter(Boolean).join(" ").toLowerCase())}">${img ? `<img src="${blobUrl(img)}" alt="" loading="lazy">` : `<span class="stini">${esc(initials(siteHead(n).big))}</span>`}<span class="sttx">${siteHeadHtml(n)}${c ? `<span class="who">👤 ${esc(c.name)}${sr.project || c.work ? " · " + esc(sr.project || c.work) : ""}</span>` : sr.project ? `<span class="who">${esc(sr.project)}</span>` : ""}
       <span class="stmeta">${on.length ? `<span class="tag ok">${on.length} on site now</span>` : ""}<span>${hrs(hm)} h this month</span>${last > 1e12 ? `<span class="who">· last ${esc(shortDay(iso(new Date(last))))}</span>` : ""}</span></span><span class="ppchev" aria-hidden="true">›</span></button>`;
   };
   $("main").innerHTML =

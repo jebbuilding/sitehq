@@ -2,6 +2,7 @@
 import { $, esc, iso, store } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
+import { siteHeadHtml, siteLabel } from "../sites/job-details.js";
 import { SIGNIN, signOnly } from "../sites/sign-in-book.js";
 import { otmAsk } from "../timesheets/overtime.js";
 import { checkInAt, checkOut } from "../timesheets/time.js";
@@ -95,15 +96,15 @@ function tsiCardHtml() {
   const open = tsiOpen();
   let body;
   if (open)
-    body = `<div class="tsi-st"><b>✅ Signed in at ${esc(open.site)}</b><span class="who">Since ${esc(open.in || "")} today${open.entry && open.entry.start !== open.in ? " · paid from " + esc(open.entry.start) : ""}</span></div>
+    body = `<div class="tsi-st"><b>✅ Signed in at ${esc(siteLabel(open.site))}</b><span class="who">Since ${esc(open.in || "")} today${open.entry && open.entry.start !== open.in ? " · paid from " + esc(open.entry.start) : ""}</span></div>
       <button type="button" class="btn danger nl-wide" id="tsi-out">Sign out</button>${open.entry ? `<button type="button" class="pillbtn" id="tsi-diff">⏱ Started early or working through lunch?</button>` : ""}`;
   else {
     const n = tsiNearest();
     const sites = tsiSites().map((x) => x.name);
-    const pick = `<label class="tsi-pick" for="tsi-site">Or choose the site<select id="tsi-site"><option value="">Choose…</option>${sites.map((s) => `<option${n && s === n.site ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label>`;
+    const pick = `<label class="tsi-pick" for="tsi-site">Or choose the site<select id="tsi-site"><option value="">Choose…</option>${sites.map((s) => `<option value="${esc(s)}"${n && s === n.site ? " selected" : ""}>${esc(siteLabel(s))}</option>`).join("")}</select></label>`;
     if (n && n.d <= TSI_NEAR_M)
-      body = `<div class="tsi-st"><span class="who">📡 You're at</span><b>${esc(n.site)}</b><span class="who">${Math.round(n.d)} m away</span></div>
-        <button type="button" class="btn primary nl-wide" id="tsi-in" data-site="${esc(n.site)}">📍 Sign in at ${esc(n.site)}</button>${pick}`;
+      body = `<div class="tsi-st"><span class="who">📡 You're at</span>${siteHeadHtml(n.site)}<span class="who">${Math.round(n.d)} m away</span></div>
+        <button type="button" class="btn primary nl-wide" id="tsi-in" data-site="${esc(n.site)}">📍 Sign in at ${esc(siteLabel(n.site))}</button>${pick}`;
     else if (!tsiPos || tsiAsking) body = `<div class="who">📡 Finding where you are…</div>${pick}`;
     else
       body = `<div class="who">${tsiPos.err === "denied" ? "📡 Location is turned off for this app – choose the site instead." : tsiPos.err ? "📡 Couldn't find where you are – choose the site instead." : "📡 You're not at one of our sites yet – choose it below."}</div>${pick}<button type="button" class="btn nl-wide" id="tsi-again">📡 Try again</button>`;

@@ -1,6 +1,7 @@
 /* ================= GENERIC FIELDS ================= */
 import { $, esc } from "./helpers.js";
 import { liveSite } from "./state.js";
+import { siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 export { lastOf, pickField, pickVal, wirePicks };
 function pickField(id, label, names, val, ph, required = true) {
@@ -10,7 +11,7 @@ function pickField(id, label, names, val, ph, required = true) {
   const other = val && !names.includes(val);
   return `<label for="${id}">${label}<select id="${id}" ${required ? "required" : ""} data-pick="1">
     <option value="" ${!val ? "selected" : ""} ${required ? "disabled" : ""}>${required ? "Choose…" : "None"}</option>
-    ${names.map((n) => `<option value="${esc(n)}" ${n === val ? "selected" : ""}>${esc(n)}</option>`).join("")}
+    ${names.map((n) => `<option value="${esc(n)}" ${n === val ? "selected" : ""}>${esc(siteLabel(n))}</option>`).join("")}
     <option value="__other" ${other ? "selected" : ""}>Other (type it in)</option></select></label>
     <input id="${id}-other" maxlength="100" placeholder="${esc(ph)}" aria-label="${esc(label)}, other" value="${other ? esc(val) : ""}" ${other ? "" : "hidden"}>`;
 }

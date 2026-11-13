@@ -40,6 +40,7 @@ import { myTrade, siteRec } from "../photos/photos.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { empIndTodo, openInduction } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dwTradeSheet } from "./day-work.js";
 import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
@@ -78,7 +79,7 @@ function clockCard() {
   const D = dayFor(S.me);
   if (open) {
     const s = siteRec(open.job) || {};
-    return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>On site</div><b class="cisite">${esc(open.job)}</b>${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
+    return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>On site</div><b class="cisite">${esc(siteLabel(open.job))}</b>${jobNameOf(open.job) ? `<div class="sub">📍 ${esc(open.job)}</div>` : ""}${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
     <button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button>
     <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button><button class="pillbtn ci-diff" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">⏱ Started early or working through lunch?</button>

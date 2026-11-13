@@ -13,7 +13,7 @@ import { tlOn } from "../owner/trade-look.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { empTypeOf } from "./job-details.js";
+import { empTypeOf, siteLabel } from "./job-details.js";
 import { QRSITE } from "./qr-sign-in.js";
 import { openRollCall } from "./roll-call.js";
 import { myName } from "../survey/door-window-survey.js";
@@ -278,9 +278,9 @@ const SIGNIN = (() => {
         .site || lastOf(S.mine.entries || [], () => true, "job");
     let h = `<div class="who" style="margin-bottom:8px">${siPlain() ? "Sign in when you arrive on site and sign out when you leave. This is the site's sign-in book, used for fire roll calls and health &amp; safety." : "Your timesheet check-in and check-out fill in the site sign-in book for you."}</div>`;
     if (openS)
-      h += `<div class="checkin"><b>✅ Signed in at ${esc(openS.site)}</b><div class="who">Since ${esc(openS.in)} today</div><button class="btn danger big" type="button" id="si-out">Sign out now</button></div>`;
+      h += `<div class="checkin"><b>✅ Signed in at ${esc(siteLabel(openS.site))}</b><div class="who">Since ${esc(openS.in)} today</div><button class="btn danger big" type="button" id="si-out">Sign out now</button></div>`;
     else if (openT)
-      h += `<div class="checkin"><b>✅ Signed in at ${esc(openT.job)}</b><div class="who">Since ${esc(openT.actualIn || openT.start)} today, from your timesheet check-in</div><button class="btn danger big" type="button" id="si-tout">Check out (signs you out too)</button></div>`;
+      h += `<div class="checkin"><b>✅ Signed in at ${esc(siteLabel(openT.job))}</b><div class="who">Since ${esc(openT.actualIn || openT.start)} today, from your timesheet check-in</div><button class="btn danger big" type="button" id="si-tout">Check out (signs you out too)</button></div>`;
     else
       h += `<div class="checkin"><b>📍 Sign in to site</b>${pickField("ci-site", "Site", siteNames(), last, "e.g. 12 Marine Way, Exmouth")}<button class="btn primary big" type="button" id="si-in">${siPlain() ? "Sign in now" : "Check in now (timesheet + sign-in)"}</button></div>`;
     const hist = (

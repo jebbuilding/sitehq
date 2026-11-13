@@ -43,6 +43,7 @@ import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
 import { sdSigCard, sdWireSig } from "../sales/sig-setup.js";
+import { siteHeadHtml } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
@@ -888,7 +889,7 @@ function ownerSetup() {
     ph,
   ) => `<details class="card" data-id="__${key}" ${S.open.has("__" + key) || !names.length ? "open" : ""}><summary><div class="nm">${title}<small>${names.length ? names.length + " in the list" : help}</small></div></summary>
     <div class="cardbody"><form class="addform" data-k="${key}" style="display:flex;gap:8px;flex-wrap:wrap"><input id="add-${key}" maxlength="100" placeholder="${esc(ph)}" aria-label="Add to ${esc(title)}" style="flex:1;min-width:200px"><button class="btn primary" type="submit">Add</button></form>
-    ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">Details</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : "Driver & checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
+    ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${key === "sites" ? siteHeadHtml(x.name) : esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">${x.jobName ? "Details" : "✎ Name & details"}</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : "Driver & checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
   $("main").innerHTML =
     `${stSeg}<div class="card"><div class="cardbody" style="border:0"><b>Working day</b>
       <div class="grid2"><label for="wd-s">Paid start<input id="wd-s" type="time" value="${esc(WS())}"></label><label for="wd-e">Paid finish<input id="wd-e" type="time" value="${esc(WE())}"></label></div>
@@ -1140,6 +1141,7 @@ function ownerSetup() {
           if (!x) return;
           openSheet(
             `<h3 id="sheettitle">Site details</h3>
+      <label for="sd-jname">Job name (shows big everywhere, with the address small under it)<input id="sd-jname" maxlength="60" value="${esc(x.jobName || "")}" placeholder="e.g. Carpenter renovation"></label>
       <label for="sd-name">Site address<input id="sd-name" required maxlength="120" value="${esc(x.name)}"></label>
       <div class="who">Use the full address with postcode, e.g. 9 Old Teignmouth Rd, Dawlish EX7 0NJ. It's printed on every photo. Changing it doesn't change older records.</div>
       <label for="sd-proj">Project name (printed on photos)<input id="sd-proj" maxlength="80" value="${esc(x.project || "")}" placeholder="e.g. La Falaise"></label>
@@ -1165,6 +1167,7 @@ function ownerSetup() {
                   lat: lm ? +lm[1] : null,
                   lon: lm ? +lm[2] : null,
                   name,
+                  jobName: $("sd-jname").value.trim().replace(/\s+/g, " "),
                   project: $("sd-proj").value.trim(),
                   plots: $("sd-plots")
                     .value.split(",")
