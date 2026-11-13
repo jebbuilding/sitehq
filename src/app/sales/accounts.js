@@ -47,6 +47,7 @@ import { csfView } from "./cash-flow.js";
 import { gpView } from "./getting-paid.js";
 import { jcView } from "./job-costs.js";
 import { sdCalc, sdR2, sdSales, sdSaveRec, sdStatus, sdTaxYear } from "./sales-calc.js";
+import { sdReceipt } from "./sales-sign.js";
 import { txView } from "./tax-aside.js";
 import { appView } from "./valuations.js";
 import { vtPeriodAsk, vtView } from "./vat-return.js";
@@ -685,13 +686,15 @@ async function acMatch(t, kind, id, who) {
     } else if (kind === "sale") {
       const d = sdSales().find((x) => x.id === id);
       if (!d) return;
-      await sdSaveRec(
+      const saved = await sdSaveRec(
         Object.assign({}, d, {
           payments: (d.payments || []).concat([
             { amt: t.amt, date: t.date, note: "Bank: " + t.desc.slice(0, 60) },
           ]),
         }),
       );
+      /* a payment in means a receipt out (James, Nov 2026): the receipt opens ready to send */
+      setTimeout(() => sdReceipt(saved, (saved.payments || []).length - 1), 300);
       await acUpdateTx({
         [t.rec + "|" + t.id]: {
           cat: "sales",

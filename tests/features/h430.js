@@ -87,6 +87,18 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#sd-pfconv');await p.waitForTimeout(600);
  all=await sales();const pf=all.find(x=>x.ik==='proforma');const conv=all.find(x=>x.fromPf===pf.id);
  ok(pf.status==='converted'&&conv&&conv.ik==='oneoff'&&conv.payments.length===1&&/made from pro forma 1 \(payment carried over\)/.test(await lastToast()),'paid pro forma turned into a proper invoice, payment carried over');
+ /* ---- + New pro forma, made into the proper invoice once the client is happy (not paid yet) ---- */
+ await p.click('#sd-close').catch(()=>{});await p.evaluate(()=>{document.getElementById('viewer').hidden=true;window.render&&window.render()});await p.waitForTimeout(300);
+ ok(/Receipt not sent/.test(await p.innerText('#main')),'an invoice with a payment but no receipt sent says 🧾 Receipt not sent');
+ await p.click('#sd-newpf');await p.waitForTimeout(300);
+ ok(await p.inputValue('#sd-ik')==='proforma','+ New pro forma starts a pro forma');
+ await p.fill('#sd-client','Mrs Happy');const hr=(await p.$$('#sd-lines .sd-line'))[0];await (await hr.$('.sd-ld')).fill('Deposit for windows');await (await hr.$('.sd-la')).fill('500');
+ await p.click('#sd-sent');await p.waitForTimeout(400);
+ await p.locator('.sd-row',{hasText:'Mrs Happy'}).first().click();await p.waitForTimeout(300);
+ ok(/happy – make the proper invoice/.test(await p.innerText('#sd-pfconv')),'the pro forma has ✅ Client\'s happy – make the proper invoice');
+ await p.click('#sd-pfconv');await p.waitForTimeout(600);
+ {const al=await sales();const pf2=al.find(x=>x.ik==='proforma'&&x.client==='Mrs Happy');const inv2=al.find(x=>x.fromPf===pf2.id);
+ ok(pf2.status==='converted'&&inv2&&!(inv2.payments||[]).length&&inv2.status==='awaiting','made into a proper invoice before any payment, ready to send');}
  }catch(e){console.log('FAIL',String(e.message).split('\n').slice(0,6).join(' | '));bad++}
  console.log(bad?'h430: '+bad+' FAILED':'h430: all passed');
  await b.close()})();

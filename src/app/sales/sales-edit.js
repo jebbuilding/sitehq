@@ -158,7 +158,7 @@ function sdEdit(d0) {
         .join("")}</select></label></div>
       <label class="inl" id="sd-afl"${sdIk(d) === "extra" ? "" : " hidden"}><input type="checkbox" id="sd-af"${d.af ? " checked" : ""}> Add this extra work to the final invoice (don't send it on its own)</label>
       <div id="sd-finrow"${sdIk(d) === "final" ? "" : " hidden"}><button type="button" class="btn" id="sd-fin">↻ Work out the final invoice from the estimate</button><span class="who"> The estimate, plus extra work saved for the final invoice, less the deposit and instalments already invoiced.</span></div>
-      ${sdIsPf(d) ? `<div class="notice">A pro forma asks for payment before the work. It isn't a VAT invoice and isn't counted as money invoiced. When it's paid, tap ✅ Paid – make the invoice.</div>` : ""}`
+      ${sdIsPf(d) ? `<div class="notice">A pro forma asks for payment before the work. It isn't a VAT invoice and isn't counted as money invoiced. Send it to the client first. When they're happy with it (or have paid), tap <b>✅ Client's happy – make the proper invoice</b>: it gets the next invoice number and opens ready to send.</div>` : ""}`
         : ""
     }
     ${(() => {
@@ -235,7 +235,7 @@ function sdEdit(d0) {
       ${
         est
           ? `<button type="button" class="btn" id="sd-sign">✍️ Ask the client to sign</button><button type="button" class="btn" id="sd-signhere">✍️ Client signs now on this device</button><button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-acc">✅ Accepted</button><button type="button" class="btn" id="sd-dec">✖ Declined</button><button type="button" class="btn" id="sd-toinv">🧾 Make an invoice</button>`
-          : `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-pay">💷 Record a payment</button>${sdIsPf(d) && d0.id && d.status !== "converted" ? `<button type="button" class="btn primary" id="sd-pfconv">✅ Paid – make the invoice</button>` : ""}`
+          : `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-pay">💷 Record a payment</button>${sdIsPf(d) && d0.id && d.status !== "converted" ? `<button type="button" class="btn primary" id="sd-pfconv">✅ Client's happy – make the proper invoice</button>` : ""}`
       }
       ${d0.id ? `<button type="button" class="linkdanger" id="sd-del">Delete</button>` : ""}
       <button type="button" class="btn" id="sd-close">Close</button>
