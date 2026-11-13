@@ -3,6 +3,7 @@ import { S } from "../core/state.js";
 import { allTeam } from "../owner/owner.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { acRcptParts } from "./acct-receipts.js";
+import { atpLinked, atpWaiting } from "./acct-trade-paid.js";
 import { sdCalc, sdCounts, sdR2, sdSales, sdStatus } from "./sales-calc.js";
 export {
   AC_CATS,
@@ -228,14 +229,16 @@ function acSaleMatches(t) {
     )
     .slice(0, 3);
 }
-/* trade invoices this payment out could be paying: approved or received, same amount */
+/* trade invoices this payment out could be paying: approved or received (or paid and not linked yet), same amount */
 function acTradeMatches(t) {
   if (t.amt >= 0) return [];
+  const linked = atpLinked(acAllTx());
   return allTeam("invoices")
     .filter(isInv)
     .filter(
       (v) =>
-        ["received", "approved", "sent"].includes(v.status || "sent") &&
+        (["received", "approved", "sent"].includes(v.status || "sent") ||
+          (v.status === "paid" && !linked.has(v.who + "|" + v.id))) &&
         Math.abs((+v.amount || 0) - Math.abs(t.amt)) < 0.015,
     )
     .slice(0, 3);
@@ -281,12 +284,19 @@ function acSums(from, to) {
         vatIn += p.vat;
       }),
     );
+  /* trades' invoices marked paid that aren't on a bank statement yet: a Subcontractors cost straight away */
+  const tradePaid = atpWaiting(from, to);
+  tradePaid.forEach((x) => {
+    byCat.subs = sdR2((byCat.subs || 0) - x.amt);
+    exp += x.amt;
+  });
   /* VAT charged: on invoices dated in the range (and not reverse charge) */
   const vatOut = sdSales()
     .filter((d) => sdCounts(d) && d.date >= from && d.date <= to)
     .reduce((a, d) => a + sdCalc(d).vat, 0);
   return {
     tx,
+    tradePaid,
     byCat,
     inc: sdR2(inc),
     exp: sdR2(exp),

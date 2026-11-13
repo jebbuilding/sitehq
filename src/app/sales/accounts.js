@@ -43,6 +43,7 @@ import {
 } from "./acct-reconcile.js";
 import { acRcptSheet, acRcptView } from "./acct-review.js";
 import { acSupView } from "./acct-suppliers.js";
+import { atpMatchBank } from "./acct-trade-paid.js";
 import { csfView } from "./cash-flow.js";
 import { gpView } from "./getting-paid.js";
 import { jcView } from "./job-costs.js";
@@ -139,10 +140,12 @@ function acOverView(tabs) {
       .filter((t) => t.date.startsWith(m) && t.amt > 0 && acCatKind(t.cat) !== "move")
       .reduce((a, t) => a + t.amt, 0),
   );
-  const mOut = months.map((m) =>
-    s.tx
-      .filter((t) => t.date.startsWith(m) && t.amt < 0 && acCatKind(t.cat) !== "move")
-      .reduce((a, t) => a - t.amt, 0),
+  const mOut = months.map(
+    (m) =>
+      s.tx
+        .filter((t) => t.date.startsWith(m) && t.amt < 0 && acCatKind(t.cat) !== "move")
+        .reduce((a, t) => a - t.amt, 0) +
+      s.tradePaid.filter((x) => x.date.startsWith(m)).reduce((a, x) => a + x.amt, 0),
   );
   const top = Math.max(1, ...mIn, ...mOut);
   const catRows = (kind) =>
@@ -188,7 +191,7 @@ function acOverView(tabs) {
     <div class="ac-cols">
       <section class="card"><div class="cardbody"><b>Profit and loss</b>
         <div class="flabel">Money in</div>${pl(catRows("in"), 1)}${unsortedIn ? `<div class="drow ac-uns"><span>Not sorted yet</span><span>${gbp(unsortedIn)}</span></div>` : ""}
-        <div class="flabel">Costs</div>${pl(catRows("out"), -1)}${unsortedOut ? `<div class="drow ac-uns"><span>Not sorted yet</span><span>${gbp(unsortedOut)}</span></div>` : ""}
+        <div class="flabel">Costs</div>${pl(catRows("out"), -1)}${s.tradePaid.length ? `<div class="who ac-tp">Subcontractors includes ${s.tradePaid.length} trade invoice${s.tradePaid.length === 1 ? "" : "s"} you've marked paid (${gbp(s.tradePaid.reduce((a, x) => a + x.amt, 0))}) that ${s.tradePaid.length === 1 ? "isn't" : "aren't"} on a bank statement yet – the payment is matched by itself when the statement comes in.</div>` : ""}${unsortedOut ? `<div class="drow ac-uns"><span>Not sorted yet</span><span>${gbp(unsortedOut)}</span></div>` : ""}
         <div class="drow sd-due"><span><b>Profit before tax</b></span><b>${gbp(s.profit)}</b></div>
         ${catRows("move").length ? `<div class="flabel">Not counted in profit</div>${pl(catRows("move"), -1)}` : ""}
       </div></section>
@@ -560,10 +563,19 @@ async function acImport(acc, file) {
       });
       delete rec.id;
       await S.db.doc("todos/" + id).set(rec);
+      /* keep the copy here up to date at once, so the matching below sees the new payments */
+      const here = Object.assign({ id }, rec);
+      if (S.acctx) {
+        const i = S.acctx.findIndex((x) => x.id === id);
+        if (i >= 0) S.acctx[i] = here;
+        else S.acctx.push(here);
+      }
     }
     const rm = await acMatchWaiting();
+    const tm = await atpMatchBank();
     toast(
       (rm ? `${rm} receipt${rm === 1 ? "" : "s"} matched · ` : "") +
+        (tm ? `${tm} paid trade invoice${tm === 1 ? "" : "s"} matched · ` : "") +
         `Brought in ${fresh.length} payment${fresh.length === 1 ? "" : "s"}${rows.length > newRows.length ? ` (${rows.length - newRows.length} already there)` : ""}${sorted ? `, ${sorted} sorted by your rules` : ""}${learned ? `, ${learned} sorted the way you did before` : ""}${lockedOut.length ? ` · ${lockedOut.length} left out: their month is locked` : ""}`,
     );
     S.f.acf = fresh.length - sorted - learned ? "sort" : "all";
@@ -703,10 +715,11 @@ async function acMatch(t, kind, id, who) {
       });
       toast(`Payment recorded on invoice ${d.number}`);
     } else {
-      await S.db
-        .doc(`sheets/${who}/invoices/${id}`)
-        .update({ status: "paid", paidAt: Date.now(), paidOn: t.date });
       const v = allTeam("invoices").find((x) => x.id === id && x.who === who) || {};
+      if (v.status !== "paid")
+        await S.db
+          .doc(`sheets/${who}/invoices/${id}`)
+          .update({ status: "paid", paidAt: Date.now(), paidOn: t.date });
       await acUpdateTx({
         [t.rec + "|" + t.id]: {
           cat: "subs",

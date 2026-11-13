@@ -59,7 +59,9 @@ fs.writeFileSync('h428-bank.csv',csv);
  await p.click('#ac-tabs button[data-v=bank]');await p.waitForTimeout(300);await p.click('#ac-f button[data-v=all]');await p.waitForTimeout(200);
  ok((await p.$$('.ac-rlink')).length===1,'📎 Receipt shown on the bank payment');
  /* match money in to the invoice, money out to Sam's invoice */
- await (await row('MRS TEST')).locator('.ac-match').click();await p.waitForTimeout(500);
+ await (await row('MRS TEST')).locator('.ac-match').click();await p.waitForTimeout(700);
+ /* matching a payment in opens the receipt ready to send: close it */
+ await p.evaluate(()=>{const c=document.getElementById('f-cancel');if(c&&c.offsetParent)c.click();const v=document.getElementById('viewer');if(v)v.hidden=true;});await p.waitForTimeout(300);
  const inv=(await st())['todos/sd-a'];
  ok(inv.payments.length===1&&inv.payments[0].amt===1200,'£1,200 recorded on invoice 7 (now paid)');
  await (await row('SAM TEST 0042')).locator('.ac-match').click();await p.waitForTimeout(500);
