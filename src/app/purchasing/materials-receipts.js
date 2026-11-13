@@ -828,11 +828,12 @@ function openMat(m) {
       owner
         ? `<label for="mt-reply" style="margin-top:12px">Message to ${esc(nameOf(m.who))} (optional)<textarea id="mt-reply" maxlength="300" placeholder="e.g. Blocks ordered from Travis Perkins, delivery Thursday AM. Breaker is in the yard.">${esc(m.reply || "")}</textarea></label>
       <div class="actions" style="margin-top:10px"><button class="btn primary" type="button" data-s="ordered">Ordered / sorted</button><button class="btn" type="button" data-s="delivered">Delivered</button><button class="btn" type="button" data-s="cancelled">Cancel</button></div>
-      <div class="actions"><button class="pillbtn" type="button" id="mt-copy">Copy list to send to supplier</button></div>`
+      <div class="actions"><button class="pillbtn" type="button" id="mt-copy">Copy list to send to supplier</button><button class="pillbtn" type="button" id="mt-pass">📤 Pass it on</button></div>`
         : `${m.reply ? `<div class="notice" style="margin-top:12px"><b>James:</b> ${esc(m.reply)}</div>` : ""}
       <div class="actions" style="margin-top:12px">${(m.status || "sent") === "sent" ? `<button class="btn" type="button" id="mt-edit">Edit list</button>` : ""}${m.status === "ordered" ? `<button class="btn primary" type="button" id="mt-got">Mark as delivered to site</button>` : ""}</div>`
     }
     <textarea id="mt-copytext" readonly hidden style="margin-top:8px;min-height:140px">${esc(matText(m))}</textarea>`);
+  if ($("mt-pass")) $("mt-pass").onclick = () => matPassOn(m);
   const vb = $("viewer-body");
   vb.querySelectorAll(".mi-ord").forEach(
     (cb) =>
@@ -940,4 +941,75 @@ function receiptsCsv(m) {
   );
   rows.push([], ["Total", "", "", "", list.reduce((a, r) => a + (+r.amount || 0), 0).toFixed(2)]);
   csvSave(`Receipts - ${monthLabel(m)}.csv`, rows);
+}
+
+/* James (Nov 2026): a trade's materials or tools request comes to him, and he can pass it on – to another trade on the
+   team (it lands in their Materials & tools, like a list he sends) or to someone else by text or email (a supplier,
+   a driver) – but never to a client. Noted on the request. */
+function matPassOn(m) {
+  const team = teamIds().filter((w) => w !== m.who);
+  openSheet(
+    `<h3 id="sheettitle">📤 Pass on ${esc(nameOf(m.who))}'s list</h3><div class="who">${esc(m.site || "")}${m.needBy ? " · needed by " + esc(shortDay(m.needBy)) : ""} · ${(m.items || []).length} item${(m.items || []).length === 1 ? "" : "s"}. Not to clients.</div>
+    <label for="mp-to">Pass it to<select id="mp-to"><option value="">Choose…</option>${team.length ? `<optgroup label="A trade on the team">${team.map((w) => `<option value="${esc(w)}">${esc(nameOf(w))}</option>`).join("")}</optgroup>` : ""}<option value="__other">Someone else – by text or email</option></select></label>
+    <div id="mp-other" hidden><label for="mp-tel">Their mobile (for a text)<input id="mp-tel" type="tel" maxlength="20"></label><label for="mp-mail">or their email<input id="mp-mail" type="email" maxlength="120"></label></div>
+    <label for="mp-note">Note (optional)<input id="mp-note" maxlength="200" placeholder="e.g. Can you pick these up on your way in?"></label>
+    ${formFoot(false, "📤 Pass it on")}`,
+    async () => {
+      const to = $("mp-to").value;
+      const note = $("mp-note").value.trim();
+      if (!to) return showErr("Choose who to pass it to.");
+      const text = (note ? note + "\n\n" : "") + matText(m);
+      const path = "sheets/" + m.who + "/invoices/" + m.id;
+      const passed = (m.passedTo || []).slice();
+      try {
+        if (to === "__other") {
+          const tel = $("mp-tel").value.replace(/\s+/g, "");
+          const mail = $("mp-mail").value.trim();
+          if (!tel && !mail) return showErr("Put their mobile or their email.");
+          window.open(
+            tel
+              ? "sms:" + tel + "?&body=" + encodeURIComponent(text)
+              : "mailto:" +
+                  mail +
+                  "?subject=" +
+                  encodeURIComponent("Materials for " + (m.site || "a job")) +
+                  "&body=" +
+                  encodeURIComponent(text),
+            "_blank",
+          );
+          passed.push({ to: tel || mail, at: Date.now() });
+        } else {
+          const now = Date.now();
+          await S.db.doc("sheets/" + to + "/invoices/ml-" + newId()).set({
+            kind: "materials",
+            site: m.site || "",
+            jobId: m.jobId || "",
+            jobTitle: m.jobTitle || "",
+            needBy: m.needBy || "",
+            urgent: !!m.urgent,
+            items: (m.items || []).map((i) => Object.assign({}, i, { ordered: false })),
+            notes: [note, "Passed on from " + nameOf(m.who) + "'s request"]
+              .filter(Boolean)
+              .join("\n"),
+            status: "sent",
+            reply: "",
+            sentAt: now,
+            created: now,
+            updated: now,
+            fromOwner: true,
+            toName: nameOf(to),
+          });
+          passed.push({ to: nameOf(to), at: now });
+        }
+        await S.db.doc(path).update({ passedTo: passed });
+        m.passedTo = passed;
+        closeForm();
+        toast("Passed on to " + passed[passed.length - 1].to);
+      } catch (e) {
+        showErr("Couldn't send it. Check your connection.");
+      }
+    },
+    "mp-to",
+  );
+  $("mp-to").onchange = () => ($("mp-other").hidden = $("mp-to").value !== "__other");
 }
