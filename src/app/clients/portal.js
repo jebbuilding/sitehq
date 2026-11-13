@@ -77,6 +77,7 @@ export {
   ptManager,
   ptMgrSubscribe,
   ptOf,
+  ptOnFor,
   ptRefresh,
   ptSrc,
   renderClient,
@@ -959,8 +960,13 @@ async function ptAutoLink() {
     } catch (e) {}
   }
 }
+/* James (Nov 2026): "some jobs don't need access" – the portal is off for a client until he turns it on for them
+   (c.portalOn). A client already joined, or already sent a code, counts as on. */
+const ptOnFor = (c) => !!(c && (c.portalOn || ptOf(ptCl(c)) || c.portalCode || c.portalUid));
 function ptClientBlock(c) {
   const p = ptOf(c);
+  if (!ptOnFor(c))
+    return `<div class="ptblock"><b>🏡 Client portal: off for this job</b><span class="who">${esc(c.name)} can't see anything. Turn it on to share documents, ask for sign-offs and invite them.</span><div class="actions"><button type="button" class="btn" id="pt-on">Turn the portal on for ${esc(c.name)}</button></div></div>`;
   const n = p ? null : (c.ptDocs || []).length + (c.ptSigns || []).length;
   return `<div class="ptblock"><b>🏡 Client portal${p ? ": connected" : c.portalCode ? ": waiting for them to join" : ""}</b>
     <span class="who">${p ? `${esc(p.name)}${p.lastAct ? ` · last active ${esc(stamp(p.lastAct))}` : ""}${p.lastWhat ? ` (${esc(p.lastWhat)})` : ""}` : `Share documents and ask for sign-offs now. They'll be waiting when ${esc(c.name)} joins.${n ? ` ${n} item${n === 1 ? "" : "s"} ready.` : ""}`}</span>
@@ -979,6 +985,25 @@ function ptClientBlock(c) {
     <div class="actions"><button type="button" class="btn primary" id="pt-manage">Open ${esc(c.name)}'s portal</button><button type="button" class="btn" id="pt-pv">👁 See what they see</button></div></div>`;
 }
 function wirePtClientBlock(c) {
+  if ($("pt-on"))
+    $("pt-on").onclick = async () => {
+      $("pt-on").disabled = true;
+      try {
+        const rec = await saveClient(
+          Object.assign({}, ptCl(c), {
+            portalOn: true,
+            notes: (ptCl(c).notes || []).concat([
+              { text: "Client portal turned on", at: Date.now(), auto: true },
+            ]),
+          }),
+        );
+        toast("Portal turned on for " + c.name);
+        viewClient(rec);
+      } catch (e) {
+        $("pt-on").disabled = false;
+        toast("Couldn't save. Check your connection.");
+      }
+    };
   if ($("pt-manage")) $("pt-manage").onclick = () => ptManager(c);
   if ($("pt-pv")) $("pt-pv").onclick = () => ptPreview(c);
   if ($("pt-chat")) $("pt-chat").onclick = () => openClientChat(c);

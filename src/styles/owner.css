@@ -252,3 +252,4 @@ body.nl-on #h1[data-date=""]::before{display:none}
 /* Today: long lists scroll in their own box so the page doesn't grow and grow (James, Nov 2026) */
 .td-list{max-height:360px;overflow-y:auto;overscroll-behavior:contain;margin:0 -4px;padding:0 4px}
 .tdw-wrap{max-height:460px;overflow-y:auto;overscroll-behavior:contain}
+.ld-now{align-items:center;margin:0 0 10px}.ld-now .who{flex:1 1 220px}

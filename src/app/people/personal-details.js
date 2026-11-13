@@ -122,10 +122,14 @@ function detField([k, l, req, type], d, noReq) {
     return `<label for="dt-${k}">${esc(l)}<select id="dt-${k}"><option value="">Choose…</option><option ${d[k] === "Yes" ? "selected" : ""}>Yes</option><option ${d[k] === "No" ? "selected" : ""}>No</option></select></label>`;
   return `<label for="dt-${k}">${esc(l)}<input id="dt-${k}" ${req ? "required" : ""} maxlength="120" type="${type || "text"}" value="${v}" ${k === "postcode" ? 'style="text-transform:uppercase"' : ""}></label>`;
 }
+/* James's own details (Nov 2026): he's the owner – no employment type, UTR, CIS company or business section; his
+   empType is "owner" so nothing treats him as a subcontractor */
+const OWNER_SKIP = ["empType", "utr", "company"];
 function openDetails(target) {
   if (target && !target.id && !target.off) target = undefined; // a click event is not a person
   // target: undefined = my own; {id} = a trade on the app (owner editing); {off:true,rec} = trade not on the app
   const forOther = !!target;
+  const meOwner = !target && ownerMode();
   const cur = !target
     ? myDetails() || {}
     : target.off
@@ -137,7 +141,16 @@ function openDetails(target) {
     `<h3 id="sheettitle">${!target ? "My details" : target.off && !target.rec ? "Add a trade not on the app" : "Details for " + esc(d.fullName || "trade")}</h3>
     <div class="who">${forOther ? "You're filling this in for them. " + (target.off ? "They won't have access to the app." : "They can still check and update it themselves.") : "Only you and James can see these. Keep them up to date, especially your next of kin."}</div>
     ${target && target.off ? `<label for="dt-role">Employee or subcontractor<select id="dt-role"><option value="sub" ${(target.rec || {}).role !== "employee" ? "selected" : ""}>Subcontractor</option><option value="employee" ${(target.rec || {}).role === "employee" ? "selected" : ""}>Employee</option><option value="company" ${(target.rec || {}).role === "company" ? "selected" : ""}>From another company</option></select></label><label for="dt-rco">Company they're from (if a subcontractor or another company)<input id="dt-rco" maxlength="80" value="${esc((target.rec || {}).roleCompany || "")}"></label>` : ""}
-    ${DET_SECTIONS.map(([title, fields]) => `<div class="flabel" style="margin:6px 0 -4px;font-size:14px;color:var(--accent)">${esc(title)}</div>${fields.map((f) => detField(f, d, forOther)).join("")}`).join("")}
+    ${meOwner ? `<div class="notice" style="margin:0">You're the owner, so you're not set up for CIS. Fill in what forms need – your timesheet and day sheet are under Setup › My own details.</div>` : ""}
+    ${DET_SECTIONS.filter(([title]) => !(meOwner && /^Your business/.test(title)))
+      .map(
+        ([title, fields]) =>
+          `<div class="flabel" style="margin:6px 0 -4px;font-size:14px;color:var(--accent)">${esc(title)}</div>${fields
+            .filter(([k]) => !(meOwner && OWNER_SKIP.includes(k)))
+            .map((f) => detField(f, d, forOther))
+            .join("")}`,
+      )
+      .join("")}
     <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="dt-ok" ${detailsDone(cur) ? "checked" : ""}> ${forOther ? "I've checked these details with them, and they've been told how JEB uses their information." : "These details are correct, and I've read how JEB Building Services uses my information (below)."}</label>
     ${forOther ? `<div class="who">Not checked with them yet? Leave it unticked – you can save with just their name or email${target.off ? "" : ", and they'll be asked to check and confirm their details themselves when they next open the app"}.</div>` : ""}
     ${privacyBlock(false)}
@@ -148,6 +161,11 @@ function openDetails(target) {
       DET_SECTIONS.forEach(([, fields]) =>
         fields.forEach(([k, l, req]) => {
           const el = $("dt-" + k);
+          /* a field not on the form (the owner's has no CIS or business fields) keeps what was there */
+          if (!el) {
+            out[k] = String(cur[k] || "");
+            return;
+          }
           out[k] = (el.value || "").trim();
           if (req && !out[k] && !missing) missing = l;
         }),
@@ -170,6 +188,7 @@ function openDetails(target) {
         );
         return;
       }
+      if (meOwner) out.empType = "owner";
       out.postcode = out.postcode.toUpperCase();
       out.ni = out.ni.toUpperCase().replace(/\s+/g, " ");
       /* unticked for someone else: saved, but not confirmed – they're asked to check it themselves */

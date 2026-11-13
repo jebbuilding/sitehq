@@ -1,5 +1,5 @@
 /* ================= BUILDING CONTROL: a site's inspection reports and certificates – uploaded, and shown in the client's portal ================= */
-import { ptSrc } from "../clients/portal.js";
+import { ptOnFor, ptSrc } from "../clients/portal.js";
 import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -88,7 +88,7 @@ function bcEdit(site, r0, files) {
     <label for="bc-stage">Stage<select id="bc-stage">${BC_STAGES.map((s) => `<option${(r.stage || "") === s ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label></div>
     <label for="bc-res">Result<select id="bc-res">${BC_RES.map(([k, l]) => `<option value="${k}"${(r.result || "") === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
     <label for="bc-note">Note (optional)<input id="bc-note" maxlength="200" value="${esc(r.note || "")}" placeholder="e.g. inspector Test Name, wants photos of the DPC"></label>
-    <label class="inl"><input type="checkbox" id="bc-client"${r0 ? (r.toClient ? " checked" : "") : " checked"}${c ? "" : " disabled"}> ${c ? `🏡 ${esc(c.name)} sees it in their portal` : "No client linked to this site"}</label>
+    <label class="inl"><input type="checkbox" id="bc-client"${r0 ? (r.toClient ? " checked" : "") : c && ptOnFor(c) ? " checked" : ""}${c ? "" : " disabled"}> ${c ? `🏡 ${esc(c.name)} sees it in their portal` : "No client linked to this site"}</label>
     ${formFoot(!!r0, "Save")}`,
     async () => {
       $("f-save").disabled = true;

@@ -5,6 +5,9 @@ import { curTab, render } from "../core/tabs-week.js";
 import { loadZip } from "./backup.js";
 import { coData } from "./company-details.js";
 export { LEADS };
+/* the weekly leads check is a claude.ai routine; its page has Run now, so James can look whenever he wants (Nov 2026).
+   On our own hosting the server runs the check, and this becomes a button that asks it to (Jasper). */
+const LD_ROUTINE = "https://claude.ai/code/routines/trig_015ep1VZsPEcc638ht9hGUVN";
 const LEADS = (() => {
   const CATS = [
     [
@@ -252,6 +255,7 @@ const LEADS = (() => {
     const all = L.rows.filter((r) => r.sent);
     const ns = L.rows.filter((r) => r.saved).length;
     let h = `<div class="who" style="margin-bottom:8px">New planning applications in East Devon, Exeter and Teignbridge, sorted by the kind of building work, so you can see who to write to each month. <span id="ld-meta">${esc(metaText())}</span></div>
+  <div class="actions ld-now"><a class="btn" href="${LD_ROUTINE}" target="_blank" rel="noopener">🔎 Look for new leads now ↗</a><span class="who">Opens the weekly check (every Monday 6:47am). Tap <b>Run now</b> there – new leads show here in about 15 minutes.</span></div>
   <div class="seg ld-tabs" role="tablist"><button type="button" class="pillbtn" data-v="leads" aria-pressed="${L.view === "leads"}">Leads</button><button type="button" class="pillbtn" data-v="sent" aria-pressed="${L.view === "sent"}">Letters sent${all.length ? " (" + all.length + ")" : ""}</button></div>`;
     if (L.view === "sent") {
       h += sentHtml(all);
