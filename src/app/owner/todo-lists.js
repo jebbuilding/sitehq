@@ -3,7 +3,7 @@ import { $, esc, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { newId, submitJob } from "../files/outbox.js";
+import { newId, saveOrKeep, submitJob } from "../files/outbox.js";
 import { coData } from "./company-details.js";
 import { allTeam, nameOf, roleShort, teamIds } from "./owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
@@ -136,9 +136,12 @@ function wireTodoRows(root, find, pathOf) {
     if (!c.disabled)
       c.onchange = async (e) => {
         try {
-          await S.db
-            .doc(path)
-            .update({ done: e.target.checked, doneAt: e.target.checked ? Date.now() : null });
+          await saveOrKeep(
+            path,
+            "update",
+            { done: e.target.checked, doneAt: e.target.checked ? Date.now() : null },
+            "To-do ticked",
+          );
         } catch (err) {
           e.target.checked = !e.target.checked;
           toast("Couldn't save");
@@ -212,10 +215,17 @@ function todoView() {
     $("td-text").value = "";
     $("td-text").blur();
     try {
-      await S.db
-        .doc("todos/" + newId())
-        .set({ text, due, site, urgent, done: false, created: Date.now() });
-      toast("Added");
+      const how = await saveOrKeep(
+        "todos/" + newId(),
+        "set",
+        { text, due, site, urgent, done: false, created: Date.now() },
+        "To-do: " + text.slice(0, 40),
+      );
+      toast(
+        how === "queued"
+          ? "No signal – saved on this phone, it sends when you're back online"
+          : "Added",
+      );
     } catch (err) {
       toast("Couldn't add");
       $("td-text").value = text;

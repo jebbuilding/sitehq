@@ -4,7 +4,7 @@ import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { newId } from "../files/outbox.js";
+import { newId, saveOrKeep } from "../files/outbox.js";
 import { siteRec } from "../photos/photos.js";
 import { siteLabel } from "./job-details.js";
 import { siteClient } from "./summary.js";
@@ -170,7 +170,9 @@ function stgWire(site) {
   if ($("stg-edit")) $("stg-edit").onclick = () => stgEdit(site);
 }
 async function stgSave(sr, patch) {
-  await S.db.doc("sites/" + sr.id).update(patch);
+  /* works with no signal too: kept on this phone and sent when there is */
+  const how = await saveOrKeep("sites/" + sr.id, "update", patch, "Stage sign-off");
+  if (how === "queued") toast("No signal – saved on this phone, it sends when you're back online");
   Object.assign(sr, patch);
 }
 /* sign a stage off (or take the tick off) */

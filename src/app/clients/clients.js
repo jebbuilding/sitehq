@@ -10,7 +10,7 @@ import { S, applyGone, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { openNotePage } from "../drawing/paving.js";
 import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
-import { newId } from "../files/outbox.js";
+import { newId, saveOrKeep } from "../files/outbox.js";
 import { VID_MAX, audExt, audTag, vidExt, wireVoice } from "../photos/photos.js";
 import { shrinkImage } from "../safety/training.js";
 import { syncSiteJobs } from "../sites/job-details.js";
@@ -75,7 +75,12 @@ async function clAddNote(c, text) {
     if (d.exists) cur = Object.assign({}, d.data(), { id: c.id });
   } catch (e) {}
   const notes = (cur.notes || []).concat([{ text, at: Date.now(), auto: true }]);
-  await S.db.doc("todos/" + c.id).update({ notes, updated: Date.now() });
+  await saveOrKeep(
+    "todos/" + c.id,
+    "update",
+    { notes, updated: Date.now() },
+    "Client note: " + (cur.name || ""),
+  );
   const i = (S.clients || []).findIndex((x) => x.id === c.id);
   if (i >= 0) S.clients[i] = Object.assign({}, S.clients[i], cur, { notes });
 }
@@ -115,7 +120,10 @@ async function saveClient(c) {
     )
       d.gdpr = old.gdpr;
   }
-  await S.db.doc("todos/" + c.id).set(d);
+  /* no signal on site: kept on this phone and sent when there is (James, Nov 2026: "working with no signal, for important
+     information taking") */
+  const how = await saveOrKeep("todos/" + c.id, "set", d, "Client: " + (d.name || ""));
+  if (how === "queued") toast("No signal – saved on this phone, it sends when you're back online");
   const i = (S.clients || []).findIndex((x) => x.id === c.id);
   const rec = Object.assign({}, d, { id: c.id });
   if (i >= 0) S.clients[i] = rec;
