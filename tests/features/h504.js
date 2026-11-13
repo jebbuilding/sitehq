@@ -26,12 +26,12 @@ async function open(b,geo){const ctx=await b.newContext({viewport:{width:390,hei
  ok(/You're at/.test(t)&&/4 Rolle Road, Exmouth/.test(t)&&/\d+ m away/.test(t),'it finds he\'s at 4 Rolle Road from the phone\'s location ('+t.replace(/\n/g,' | ')+')');
  await p.screenshot({path:OUT+'tsi-1-today.png'});
  await p.click('#tsi-in');await p.waitForTimeout(1200);
- const si=await p.evaluate(()=>Object.entries(window.__st).filter(([k])=>/^sheets\/emp1\/signins\//.test(k)).map(([k,v])=>v));
- ok(si.length>=1&&si.some(x=>x.site==='4 Rolle Road, Exmouth'&&x.open),'one tap signs him in at 4 Rolle Road');
+ const si=await p.evaluate(()=>Object.entries(window.__st).filter(([k])=>/^sheets\/emp1\/entries\//.test(k)).map(([k,v])=>v));
+ ok(si.length>=1&&si.some(x=>x.job==='4 Rolle Road, Exmouth'&&x.open&&x.checkIn),'one tap signs him in at 4 Rolle Road – his timesheet day starts');
  ok(/Signed in at 4 Rolle Road, Exmouth/.test(await p.innerText('#tsi-card'))&&await p.isVisible('#tsi-out'),'the card shows where he\'s signed in, with Sign out');
  await p.screenshot({path:OUT+'tsi-2-signed-in.png'});
- await p.click('#tsi-out');await p.waitForTimeout(1200);
- ok(await p.evaluate(()=>Object.entries(window.__st).filter(([k])=>/^sheets\/emp1\/signins\//.test(k)).every(([k,v])=>!v.open)),'Sign out signs him out');
+ await p.click('#tsi-out');await p.waitForTimeout(1200);if(await p.isVisible('#f-cancel'))await p.click('#f-cancel');await p.waitForTimeout(300);
+ ok(await p.evaluate(()=>Object.entries(window.__st).filter(([k])=>/^sheets\/emp1\/entries\//.test(k)).every(([k,v])=>!v.open)),'Sign out signs him out');
  await p.click('#tlbar .tl-b[data-t=plans]');await p.waitForTimeout(800);
  ok(await p.locator('#tsi-card').count()===1&&/4 Rolle Road/.test(await p.innerText('#tsi-card')),'the same card is at the top of Sites');
  await p.screenshot({path:OUT+'tsi-3-sites.png'});

@@ -5,13 +5,15 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { submitJob } from "../files/outbox.js";
 import { dayFor } from "./working-day.js";
-export { otmButtons, otmLine, otmOffer, otmWire };
+export { otmAsk, otmButtons, otmLine, otmOffer, otmWire };
 /* Checking in before the start of someone's usual day, or out after its finish, still pays the usual day – unless
    they ask for the extra as overtime. At check-out, if they arrived at least 10 minutes early or left at least 10
    minutes late, they're asked: tick early and/or late, say why, and it goes to James. On the owner's timesheet the
    entry shows "Overtime asked" with Approve / Decline: approving moves the paid start back to when they arrived
    (and/or the finish to when they left), works the lunch and hours out again, and the extra is shown as overtime.
-   The entry keeps ot: { early, late (minutes), why, status "asked"|"ok"|"no", at, okAt }. */
+   The entry keeps ot: { early, late, lunch (minutes), from, to (the times they say), why (they must give one, so the
+   change is logged), status "asked"|"ok"|"no", at, okAt }. They can also ask themselves (⏱ Different hours today?):
+   started early, finished late, worked through lunch (James, Nov 2026). Approving pays it and keeps what was there. */
 const OTM_MIN = 10;
 /* minutes outside the paid day, from the times they were actually on site */
 function otmExtra(e) {
@@ -31,7 +33,11 @@ const otmLen = (m) =>
 function otmLine(e) {
   const o = e && e.ot;
   if (!o) return "";
-  const parts = [o.early ? otmLen(o.early) + " early" : "", o.late ? otmLen(o.late) + " late" : ""]
+  const parts = [
+    o.early ? otmLen(o.early) + " early" : "",
+    o.late ? otmLen(o.late) + " late" : "",
+    o.lunch ? "worked through lunch" : "",
+  ]
     .filter(Boolean)
     .join(" + ");
   const st =
@@ -50,21 +56,44 @@ function otmOffer(e) {
 }
 function otmAsk(e, x) {
   x = x || otmExtra(e);
+  const D = dayFor(S.me);
+  const fin0 = e.finish || D.e;
+  const lunchMin = +e.breakMin || lunchBreak(e.start, fin0, D) || 0;
+  const done = !e.open;
   openSheet(
-    `<h3 id="sheettitle">⏱ Overtime?</h3>
-    <div class="who">You're paid ${esc(e.start)}–${esc(e.finish)} unless James approves overtime.</div>
-    ${x.early >= OTM_MIN ? `<label class="tick"><input type="checkbox" id="otm-e" checked> <span>Started early: on site from <b>${esc(e.actualIn)}</b> (${otmLen(x.early)} before ${esc(e.start)})</span></label>` : ""}
-    ${x.late >= OTM_MIN ? `<label class="tick"><input type="checkbox" id="otm-l" checked> <span>Finished late: on site until <b>${esc(e.actualOut)}</b> (${otmLen(x.late)} after ${esc(e.finish)})</span></label>` : ""}
-    <label for="otm-why">What was it for?<input id="otm-why" maxlength="160" placeholder="e.g. concrete pour, getting the roof covered before rain"></label>
+    `<h3 id="sheettitle">⏱ Different hours today?</h3>
+    <div class="who">You're paid ${esc(e.start)}–${esc(fin0)}${lunchMin ? " less " + lunchMin + " min lunch" : ""}. Tick what was different and say why – James approves it.</div>
+    <label class="tick"><input type="checkbox" id="otm-e"${x.early >= OTM_MIN ? " checked" : ""}> <span>Started early, at <input type="time" id="otm-et" value="${esc(e.actualIn || e.start)}" style="width:auto;display:inline-block">${x.early >= OTM_MIN ? ` (${otmLen(x.early)} before ${esc(e.start)})` : ""}</span></label>
+    <label class="tick"><input type="checkbox" id="otm-l"${x.late >= OTM_MIN ? " checked" : ""}> <span>${done ? "Finished" : "Working"} late, until <input type="time" id="otm-lt" value="${esc(e.actualOut || fin0)}" style="width:auto;display:inline-block">${x.late >= OTM_MIN ? ` (${otmLen(x.late)} after ${esc(fin0)})` : ""}</span></label>
+    ${lunchMin ? `<label class="tick"><input type="checkbox" id="otm-lu"> <span>Worked through lunch (${lunchMin} min)</span></label>` : ""}
+    <label for="otm-why">Why? (you must say, so it can be logged)<input id="otm-why" maxlength="160" placeholder="e.g. concrete pour, getting the roof covered before rain"></label>
     ${formFoot(false, "Ask James to pay it")}`,
     async () => {
-      const early = $("otm-e") && $("otm-e").checked ? x.early : 0,
-        late = $("otm-l") && $("otm-l").checked ? x.late : 0;
-      if (!early && !late) return showErr("Tick the time you want paid, or Cancel.");
+      const from = $("otm-et").value,
+        to = $("otm-lt").value;
+      const early =
+        $("otm-e").checked && from && toMin(from) < toMin(e.start)
+          ? toMin(e.start) - toMin(from)
+          : 0;
+      const late =
+        $("otm-l").checked && to && toMin(to) > toMin(fin0) ? toMin(to) - toMin(fin0) : 0;
+      const lunch = $("otm-lu") && $("otm-lu").checked ? lunchMin : 0;
+      if (!early && !late && !lunch)
+        return showErr("Tick what was different (with times outside your usual day), or Cancel.");
       const why = $("otm-why").value.trim();
-      if (!why) return showErr("Say what it was for – it helps James approve it.");
+      if (!why)
+        return showErr("Say what it was for – it has to be logged before James can pay it.");
       const data = Object.assign({}, e, {
-        ot: { early, late, why, status: "asked", at: Date.now() },
+        ot: {
+          early,
+          late,
+          lunch,
+          from: early ? from : "",
+          to: late ? to : "",
+          why,
+          status: "asked",
+          at: Date.now(),
+        },
         updated: Date.now(),
       });
       delete data.id;
@@ -76,7 +105,7 @@ function otmAsk(e, x) {
         closeForm();
         toast(
           r === "queued"
-            ? "Overtime asked (sends when you have signal)"
+            ? "Saved on this phone – sends to James when you have signal"
             : "Overtime sent to James to approve",
         );
         render();
@@ -105,9 +134,9 @@ function otmWire(root, who, list) {
         const ok = b.classList.contains("otm-ok");
         let up;
         if (ok) {
-          const start = e.ot.early ? e.actualIn : e.start,
-            finish = e.ot.late ? e.actualOut : e.finish;
-          const br = lunchBreak(start, finish, dayFor(id));
+          const start = e.ot.early ? e.ot.from || e.actualIn : e.start,
+            finish = e.ot.late ? e.ot.to || e.actualOut : e.finish;
+          const br = e.ot.lunch ? 0 : lunchBreak(start, finish, dayFor(id));
           up = {
             start,
             finish,
@@ -125,7 +154,7 @@ function otmWire(root, who, list) {
           await S.db.doc("sheets/" + id + "/entries/" + e.id).update(up);
           toast(
             ok
-              ? `Overtime approved: ${otmLen((e.ot.early || 0) + (e.ot.late || 0))} added`
+              ? `Overtime approved: ${otmLen((e.ot.early || 0) + (e.ot.late || 0) + (e.ot.lunch || 0))} added`
               : "Overtime declined – their usual day is paid",
           );
         } catch (err) {
@@ -140,5 +169,5 @@ const otmHours = (list) =>
   Math.round(
     list
       .filter((e) => e.ot && e.ot.status === "ok")
-      .reduce((a, e) => a + (e.ot.early || 0) + (e.ot.late || 0), 0) / 0.6,
+      .reduce((a, e) => a + (e.ot.early || 0) + (e.ot.late || 0) + (e.ot.lunch || 0), 0) / 0.6,
   ) / 100;

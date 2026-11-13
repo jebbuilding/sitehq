@@ -2,7 +2,9 @@
 import { $, esc, iso, store } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { SIGNIN } from "../sites/sign-in-book.js";
+import { SIGNIN, signOnly } from "../sites/sign-in-book.js";
+import { otmAsk } from "../timesheets/overtime.js";
+import { checkInAt, checkOut } from "../timesheets/time.js";
 export { tsiCardHtml, tsiSitesTop, tsiWire };
 /* James (Nov 2026): signing in goes on the trades' Today and in Sites, using the phone's location so it's easy. The
    card asks the phone where it is (once every few minutes, not on every screen), finds the nearest site that has a
@@ -35,7 +37,22 @@ function tsiNearest() {
     });
   return best;
 }
-const tsiOpen = () => (S.mine.signins || []).find((x) => x.date === iso(new Date()) && x.open);
+/* signed in now: a timesheet check-in (most trades) or a plain sign-in (people set to sign-in only) */
+const tsiTs = () => !signOnly(S.me);
+const tsiEntry = () =>
+  (S.mine.entries || []).find((e) => e.open && e.type === "hours" && e.date === iso(new Date()));
+const tsiOpen = () => {
+  const e = tsiTs() && tsiEntry();
+  if (e) return { site: e.job, in: e.actualIn || e.start, entry: e };
+  return (S.mine.signins || []).find((x) => x.date === iso(new Date()) && x.open);
+};
+/* today's finished timesheet day, for "Worked different hours today?" after signing out */
+const tsiDone = () =>
+  tsiTs() &&
+  (S.mine.entries || [])
+    .filter((e) => !e.open && e.type === "hours" && e.date === iso(new Date()) && e.checkIn)
+    .pop();
+const tsiIn = (site) => (tsiTs() ? checkInAt(site) : SIGNIN.signIn(site));
 function tsiLocate(force) {
   if (tsiAsking) return;
   if (!force && tsiPos && Date.now() - tsiPos.at < 5 * 60e3) return;
@@ -78,8 +95,8 @@ function tsiCardHtml() {
   const open = tsiOpen();
   let body;
   if (open)
-    body = `<div class="tsi-st"><b>✅ Signed in at ${esc(open.site)}</b><span class="who">Since ${esc(open.in || "")} today</span></div>
-      <button type="button" class="btn danger nl-wide" id="tsi-out">Sign out</button>`;
+    body = `<div class="tsi-st"><b>✅ Signed in at ${esc(open.site)}</b><span class="who">Since ${esc(open.in || "")} today${open.entry && open.entry.start !== open.in ? " · paid from " + esc(open.entry.start) : ""}</span></div>
+      <button type="button" class="btn danger nl-wide" id="tsi-out">Sign out</button>${open.entry ? `<button type="button" class="pillbtn" id="tsi-diff">⏱ Started early or working through lunch?</button>` : ""}`;
   else {
     const n = tsiNearest();
     const sites = tsiSites().map((x) => x.name);
@@ -91,24 +108,39 @@ function tsiCardHtml() {
     else
       body = `<div class="who">${tsiPos.err === "denied" ? "📡 Location is turned off for this app – choose the site instead." : tsiPos.err ? "📡 Couldn't find where you are – choose the site instead." : "📡 You're not at one of our sites yet – choose it below."}</div>${pick}<button type="button" class="btn nl-wide" id="tsi-again">📡 Try again</button>`;
   }
+  const dn = !open && tsiDone();
+  if (dn && !dn.ot)
+    body =
+      `<div class="who">✓ Signed out today – paid ${esc(dn.start)}–${esc(dn.finish)}.</div><button type="button" class="pillbtn" id="tsi-diff">⏱ Worked different hours today?</button>` +
+      body;
   return `<section class="nl-card" id="tsi-card"><div class="nl-cardh"><h2>📍 Sign in</h2><button type="button" class="pillbtn" id="tsi-book">Past sign-ins</button></div>${body}</section>`;
 }
 function tsiWire() {
   if ($("tsi-in"))
     $("tsi-in").onclick = async () => {
       $("tsi-in").disabled = true;
-      await SIGNIN.signIn($("tsi-in").dataset.site);
+      await tsiIn($("tsi-in").dataset.site);
+      tsiRefresh();
     };
   if ($("tsi-site"))
     $("tsi-site").onchange = async () => {
       const s = $("tsi-site").value;
       if (!s) return;
-      await SIGNIN.signIn(s);
+      await tsiIn(s);
+      tsiRefresh();
     };
   if ($("tsi-out"))
     $("tsi-out").onclick = async () => {
       $("tsi-out").disabled = true;
-      await SIGNIN.signOut(tsiOpen());
+      const o = tsiOpen();
+      if (o && o.entry) await checkOut(o.entry);
+      else await SIGNIN.signOut(o);
+      tsiRefresh();
+    };
+  if ($("tsi-diff"))
+    $("tsi-diff").onclick = () => {
+      const o = tsiOpen();
+      otmAsk((o && o.entry) || tsiDone());
     };
   if ($("tsi-again"))
     $("tsi-again").onclick = () => {

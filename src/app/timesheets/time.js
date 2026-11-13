@@ -43,9 +43,9 @@ import { shrinkImage } from "../safety/training.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dwTradeSheet } from "./day-work.js";
 import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
-import { otmLine, otmOffer } from "./overtime.js";
+import { otmAsk, otmLine, otmOffer } from "./overtime.js";
 import { dayFor, openMyDay } from "./working-day.js";
-export { checkIn, checkOut, empTime, entrySub, openEntry, sumH, typeTag };
+export { checkIn, checkInAt, checkOut, empTime, entrySub, openEntry, sumH, typeTag };
 function typeTag(e) {
   return e.open
     ? '<span class="tag ok">On site now</span>'
@@ -81,7 +81,7 @@ function clockCard() {
     return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>On site</div><b class="cisite">${esc(open.job)}</b>${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
     <button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button>
-    <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button>
+    <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button><button class="pillbtn ci-diff" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">⏱ Started early or working through lunch?</button>
     <div class="who">Your paid day: ${esc(dayLine(D))}. Arrive early or leave late and you're paid from ${esc(D.s)} to ${esc(D.e)} – or ask for overtime when you check out. The lunch is taken off automatically. <button type="button" class="linkbtn ci-day">Change my usual day</button></div></div>`;
   }
   const done = S.mine.entries.filter((e) => e.date === today && e.type === "hours" && !e.open);
@@ -97,7 +97,10 @@ function clockCard() {
     ${done.length ? `<div class="who">Today so far: ${done.map((e) => `${esc(e.job)} ${esc(e.start)}–${esc(e.finish)}`).join(", ")}</div>` : `<div class="who">Forgot to check in? Use <b>+ Timesheet</b> to add the day by hand.</div>`}</div>`;
 }
 async function checkIn() {
-  const site = pickVal("ci-site");
+  return checkInAt(pickVal("ci-site"));
+}
+/* check in at a site: records when they arrived, and the timesheet day is paid from their usual start (James, Nov 2026) */
+async function checkInAt(site) {
   if (!site) {
     toast("Choose the site first");
     return;
@@ -247,6 +250,15 @@ function empTime() {
         }),
     );
   if ($("main").querySelector(".ci-in")) $("main").querySelector(".ci-in").onclick = checkIn;
+  $("main")
+    .querySelectorAll(".ci-diff")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          const e = S.mine.entries.find((x) => x.id === b.dataset.id);
+          if (e) otmAsk(e);
+        }),
+    );
   const co = $("main").querySelector(".ci-out");
   if (co)
     co.onclick = () => {
