@@ -4,8 +4,7 @@ import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { mjHas } from "../clients/more-jobs.js";
 import { ptOf } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
-import { $, addDays, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
-import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { $, addDays, esc, gbp, iso, shortDay } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl } from "../files/files.js";
@@ -18,6 +17,7 @@ import { sdR2 } from "../sales/sales-calc.js";
 import { empTypeOf, jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
+import { stgEdit, stgSign } from "../sites/stage-signoff.js";
 import { siteClient } from "../sites/summary.js";
 export { jbView };
 /* Tabs: Jobs, Clients, Enquiries, Planner, More (everything else in the section). Jobs: the live jobs on the left
@@ -151,7 +151,7 @@ function jbJobHtml(n) {
   return `<section class="jb-job" aria-label="${esc(n)}">
     <div class="jb-card"><div class="jb-head"><div><h2>${esc(n)}</h2><span class="who">${esc(dates || "No client or dates yet")}</span></div>
       <div class="jb-acts">${c ? `<button type="button" class="btn" id="jb-msg">Message client</button><button type="button" class="btn primary" id="jb-sign">Sign-off to client</button>` : ""}<button type="button" class="btn" id="jb-open">Open the site page</button></div></div>
-      <div class="jb-stages" role="group" aria-label="Stages – tap one to move the job on">${st
+      <div class="jb-stages" role="group" aria-label="Stages – tap one to sign it off">${st
         .map(
           (s, i) =>
             `<button type="button" class="jb-st${i <= cur ? " done" : ""}${i === cur ? " now" : ""}" data-i="${i}" aria-pressed="${i === cur}"><span></span>${esc(s)}</button>`,
@@ -195,44 +195,9 @@ function jbWireJob(n) {
   };
   if ($("jb-msg")) $("jb-msg").onclick = () => (ptOf(c) ? openClientChat(c) : viewClient(c));
   if ($("jb-sign")) $("jb-sign").onclick = () => viewClient(c);
-  document.querySelectorAll("#main .jb-st").forEach(
-    (b) =>
-      (b.onclick = async () => {
-        if (!sr.id) return toast("Add this site in Setup first");
-        const i = +b.dataset.i;
-        try {
-          await S.db
-            .doc("sites/" + sr.id)
-            .update({ stage: sr.stage === i ? i - 1 : i, stages: jbStagesOf(sr) });
-          toast(jbStagesOf(sr)[i] + (sr.stage === i ? " not done yet" : " – job moved on"));
-        } catch (e) {
-          toast("Couldn't save. Check your connection.");
-        }
-      }),
-  );
-  $("jb-sted").onclick = () => {
-    if (!sr.id) return toast("Add this site in Setup first");
-    openSheet(
-      `<h3 id="sheettitle">✎ Stages for ${esc(n)}</h3><label for="jb-stl">One stage on each line<textarea id="jb-stl" rows="8">${esc(jbStagesOf(sr).join("\n"))}</textarea></label>${formFoot(false, "Save")}`,
-      async () => {
-        const stages = $("jb-stl")
-          .value.split("\n")
-          .map((x) => x.trim())
-          .filter(Boolean)
-          .slice(0, 12);
-        if (!stages.length) return showErr("Put at least one stage.");
-        try {
-          await S.db.doc("sites/" + sr.id).update({
-            stages,
-            stage: Math.min(sr.stage != null ? +sr.stage : -1, stages.length - 1),
-          });
-          closeForm();
-          toast("Stages saved");
-        } catch (e) {
-          showErr("Couldn't save. Check your connection.");
-        }
-      },
-      "jb-stl",
-    );
-  };
+  /* stages are signed off, with a record kept (sites/stage-signoff.js) */
+  document
+    .querySelectorAll("#main .jb-st")
+    .forEach((b) => (b.onclick = () => stgSign(n, +b.dataset.i)));
+  $("jb-sted").onclick = () => stgEdit(n);
 }

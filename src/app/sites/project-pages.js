@@ -38,6 +38,7 @@ import { RAMS_SIGN, docPath, docRow, wireDocs } from "./plans-specs.js";
 import { QRSITE } from "./qr-sign-in.js";
 import { sdiHtml, sdiWire } from "./site-diary.js";
 import { sqMap, sqOpen } from "./snag-quick.js";
+import { stgHtml, stgWire } from "./stage-signoff.js";
 import { arcWhy, siteArchive, siteRestore, storageHtml, wireStorage } from "./storage.js";
 import { siteTiles } from "./tiles.js";
 import { folderIcon, openDoc } from "./trade-sites.js";
@@ -296,6 +297,17 @@ function ownerProjects() {
       "Site diary",
       (S.siteDiary || []).filter((r) => same(r.site, site)).length + " notes",
     ],
+    [
+      "stages",
+      "Stages",
+      (() => {
+        const sr = siteRec(site) || {};
+        const st = sr.stages && sr.stages.length ? sr.stages : null;
+        return st
+          ? st.filter((x) => (sr.stageDone || {})[x]).length + " of " + st.length + " signed off"
+          : "Set them up";
+      })(),
+    ],
     ["bc", "Building control", (S.bcReports || []).filter((r) => same(r.site, site)).length],
     ["chat", "Chat", ""],
   ];
@@ -313,11 +325,13 @@ function ownerProjects() {
     diary: "📔",
     programme: "📊",
     bc: "🏛️",
+    stages: "✅",
     money: "🧾",
   };
   P.diary = sdiHtml(site);
   P.programme = pgHtml(site);
   P.bc = bcHtml(site);
+  P.stages = stgHtml(site);
   let tab = S.f.pjtab || "overview";
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
@@ -473,6 +487,7 @@ function ownerProjects() {
   wireInvoices(invs, true);
   if (tab === "diary") sdiWire(site);
   if (tab === "bc") bcWire(site);
+  if (tab === "stages") stgWire(site);
   if (tab === "programme") pgWire(site);
   if ($("dcm-open")) $("dcm-open").onclick = () => dcmOpen(site);
   wireInduction();

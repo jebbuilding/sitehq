@@ -219,6 +219,7 @@ initOpening();
         S.siteDiary = all.filter((t) => t.kind === "sitediary");
         S.bcReports = all.filter((t) => t.kind === "bcreport");
         S.wnSnooze = all.find((t) => t.kind === "wnsnooze") || null;
+        S.stageTpls = all.filter((t) => t.kind === "stagetpl");
         S.programmes = all.filter((t) => t.kind === "programme");
         S.vatReturns = all.filter((t) => t.kind === "vatreturn");
         S.rfqs = all.filter((t) => t.kind === "rfq");

@@ -83,3 +83,12 @@
 .bc-main{flex:1 1 220px;min-width:0}
 .bc-acts{display:flex;gap:6px}
 .ssjname{font-family:var(--f-display);font-weight:600;font-size:19px;color:var(--accent);margin-bottom:2px}
+/* stage sign-off (sites/stage-signoff.js) */
+.stg-top{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.stg-bar{height:10px;border-radius:5px;background:var(--soft);overflow:hidden}.stg-bar span{display:block;height:100%;background:#2e7d32}
+.stg-list{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.stg-row{display:flex;align-items:center;gap:12px;min-height:54px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.stg-row.stg-done{border-color:#2e7d32;background:color-mix(in srgb,#2e7d32 8%,var(--surface))}
+.stg-tick{width:30px;height:30px;flex:none;border-radius:15px;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--soft);color:var(--muted)}
+.stg-done .stg-tick{background:#2e7d32;color:#fff}
+.stg-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
