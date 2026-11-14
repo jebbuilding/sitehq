@@ -1,6 +1,7 @@
 /* ================= DAY WORK (chargeable hours you bill to clients) ================= */
 import { ptSrc } from "../clients/portal.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst, bossName } from "../core/company-names.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { $, esc, gbp, hrs, iso, parse, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -45,7 +46,7 @@ function dwTradeSheet(ym, ents) {
     bySite[k] = (bySite[k] || 0) + (+e.hours || 0);
   });
   return `<div class="tspaper"><div class="tshead"><button type="button" class="iconbtn ts-prev" aria-label="Previous month">‹</button><div><b>Day work sheet</b><span>${esc(name)} · ${esc(myName())}</span></div><button type="button" class="iconbtn ts-next" aria-label="Next month">›</button></div>
-    <div class="who" style="margin-bottom:6px">Chargeable hours only: extra work James bills to the client. Add with <b>🧱 + Add day work</b> (or + Day work / job time on Timesheets) and choose 🧱 Yes.</div>
+    <div class="who" style="margin-bottom:6px">Chargeable hours only: extra work ${esc(bossFirst())} bills to the client. Add with <b>🧱 + Add day work</b> (or + Day work / job time on Timesheets) and choose 🧱 Yes.</div>
     ${
       list.length
         ? `<div class="tswrap"><table class="tstable"><thead><tr><th>Date</th><th>Site · what you did</th><th class="num">Hrs</th></tr></thead><tbody>${list.map((e) => `<tr class="dwt-row tsrow" data-id="${esc(e.id)}"><td class="tsd"><b>${parse(e.date).getDate()}</b><span>${parse(e.date).toLocaleDateString("en-GB", { weekday: "short" })}</span></td><td class="tssite"><b>${esc(e.job || "No site")}</b><br>${esc(e.task || "")}${e.mats ? `<br><span class="who">Materials: ${esc(e.mats)}</span>` : ""}${(e.photos || []).length ? `<br><span class="who">📷 ${e.photos.length} photo${e.photos.length === 1 ? "" : "s"}</span>` : ""}${e.billed ? ' <span class="tag ok">Billed</span>' : e.approved ? ' <span class="tsok">✓</span>' : ""}</td><td class="num"><b>${hrs(e.hours)}</b></td></tr>`).join("")}</tbody></table></div>`
@@ -729,7 +730,7 @@ function pickPersonFor(type) {
   const ids = teamIds();
   openSheet(
     `<h3 id="sheettitle">${type === "job" ? "🧱 Add day work" : "📅 Add a timesheet day"}: who is it for?</h3>
-    <div class="seg pplgrp" id="pp-who"><button type="button" data-v="${esc(S.me)}">🙋 Me (${esc(S.ownerName || "James")})</button>${Object.entries(
+    <div class="seg pplgrp" id="pp-who"><button type="button" data-v="${esc(S.me)}">🙋 Me (${esc(bossName())})</button>${Object.entries(
       EMP_TYPES,
     )
       .concat([["", "Not set yet"]])
@@ -793,7 +794,7 @@ function myDayworkView() {
           const e = S.mine.entries.find((x) => x.id === r.dataset.id);
           if (!e) return;
           if (e.billed || (e.approved && !ownerMode() && !S.preview)) {
-            toast("This has been approved or billed. Ask James if it needs changing.");
+            toast(`This has been approved or billed. Ask ${bossFirst()} if it needs changing.`);
             return;
           }
           openEntry("job", e);

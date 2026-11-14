@@ -2,6 +2,7 @@
 import { clientSites } from "../clients/address-book.js";
 import { nmSortKey } from "../clients/clients.js";
 import { ptAskSign } from "../clients/portal.js";
+import { bossFirst } from "../core/company-names.js";
 import { pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
@@ -40,7 +41,7 @@ function drawView() {
         ? `<div class="flabel">My drawings (${list.length})</div><div class="drawgrid">${list
             .map(
               (p) =>
-                `<button type="button" class="drawtile" data-id="${esc(p.id)}"><img src="${blobUrl(p.assetId)}" alt="" loading="lazy"><span class="dtt"><b>${esc(p.title || "Drawing")}</b><span class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(p.site) : ""}</span>${p.check === "open" ? '<span class="tag day">Sent to James</span>' : p.check === "ok" ? '<span class="tag ok">James: right ✓</span>' : p.check === "change" ? '<span class="tag bad">Needs changing</span>' : ""}${p.signReq === "open" ? '<span class="tag bad">✍ Please check &amp; sign</span>' : p.signReq === "ok" ? '<span class="tag ok">✓ You approved</span>' : p.signReq === "change" ? '<span class="tag day">You asked for changes</span>' : ""}${
+                `<button type="button" class="drawtile" data-id="${esc(p.id)}"><img src="${blobUrl(p.assetId)}" alt="" loading="lazy"><span class="dtt"><b>${esc(p.title || "Drawing")}</b><span class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(p.site) : ""}</span>${p.check === "open" ? `<span class="tag day">Sent to ${esc(bossFirst())}</span>` : p.check === "ok" ? `<span class="tag ok">${esc(bossFirst())}: right ✓</span>` : p.check === "change" ? '<span class="tag bad">Needs changing</span>' : ""}${p.signReq === "open" ? '<span class="tag bad">✍ Please check &amp; sign</span>' : p.signReq === "ok" ? '<span class="tag ok">✓ You approved</span>' : p.signReq === "change" ? '<span class="tag day">You asked for changes</span>' : ""}${
                   own && p.signSent
                     ? (() => {
                         const st = dwSignStatus(p);
@@ -153,12 +154,12 @@ function drawOpen(p) {
   openViewer(`<h3 style="margin:0 0 6px">${esc(p.title || "Drawing")}</h3><div class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(p.site) : ""}</div>
     <button type="button" class="invimg" id="dw-big" style="margin:10px 0"><img src="${blobUrl(p.assetId)}" alt="${esc(p.title || "Drawing")}"></button>
     <label for="dw-title">Name<input id="dw-title" maxlength="80" value="${esc(p.title || "")}"></label>
-    ${pickField("dw-site", "Site (optional)", siteNames(), p.site || "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("dw-site", "Site (optional)", siteNames(), p.site || "", "e.g. 12 High Street", false)}
     ${
       !own && p.signReq
         ? `<div class="notice ${p.signReq === "open" ? "warn" : ""}" style="margin-top:10px">${
             p.signReq === "open"
-              ? `<b>✍ James has asked you to check and approve this drawing.</b>${p.caption ? `<br>“${esc(p.caption)}”` : ""}
+              ? `<b>✍ ${esc(bossFirst())} has asked you to check and approve this drawing.</b>${p.caption ? `<br>“${esc(p.caption)}”` : ""}
         ${p.signStmt ? `<div class="who" style="margin-top:6px">By signing you confirm: <b>${esc(p.signStmt)}</b></div>` : ""}${p.sheetAsset ? `<button type="button" class="btn" id="dw-sheetopen" style="margin-top:6px">📄 Open the sign-off sheet</button>` : ""}
         <label for="dw-sn" style="margin-top:8px">Comments (optional)<textarea id="dw-sn" maxlength="400" placeholder="e.g. Socket needs to move 300 left"></textarea></label>
         ${p.sheetAsset ? `<label for="dw-snm">Your full name<input id="dw-snm" maxlength="80" value="${esc(myName())}"></label><div><div class="checkhead"><span class="flabel" style="margin:0">Sign with your finger</span><button type="button" class="pillbtn" id="dw-sclr">Clear</button></div><canvas id="dw-sig" class="sigpad" aria-label="Signature box"></canvas></div>` : ""}
@@ -178,7 +179,7 @@ function drawOpen(p) {
           : ""
     }
     <div class="actions" style="margin-top:10px">${p.pageSrc || p.roomSrc ? `<button type="button" class="btn primary" id="dw-edit">✎ Open and keep drawing</button>` : ""}${own ? `<button type="button" class="btn primary" id="dw-vis">👁 Who can see${p.siteDoc ? ((p.seeWho || []).length ? " · 👤 " + p.seeWho.length + " trade" + (p.seeWho.length === 1 ? "" : "s") : " · 👷 trades") : ""}${p.clientDoc ? " · 🏡 client" : ""}${!p.siteDoc && !p.clientDoc ? " · 🔒 only me" : ""}</button><button type="button" class="btn primary" id="dw-ssheet">✍️ Client go-ahead / sign-off</button><button type="button" class="btn" id="dw-sign">✍️ Quick approval (trade / client)</button><button type="button" class="btn" id="dw-sheet">📋 Add to a client sign-off sheet</button><button type="button" class="btn" id="dw-job">🔨 Add to a job sheet</button>` : ""}<button type="button" class="btn" id="dw-dl">⬇ Save to my phone</button>
-      ${own ? `<button type="button" class="btn" id="dw-send">📤 Send to a trade</button>` : `<button type="button" class="btn" id="dw-send">📤 ${p.check === "open" ? "Sent to James ✓" : "Send to James to check"}</button>`}
+      ${own ? `<button type="button" class="btn" id="dw-send">📤 Send to a trade</button>` : `<button type="button" class="btn" id="dw-send">📤 ${p.check === "open" ? `Sent to ${bossFirst()} ✓` : `Send to ${bossFirst()} to check`}</button>`}
       <button type="button" class="btn" id="dw-saveinfo">Save name</button><button type="button" class="linkdanger" id="dw-del">Delete</button></div>`);
   const upd = async (patch) => {
     await myDoc("photos", p.id).update(patch);
@@ -413,7 +414,7 @@ function drawOpen(p) {
         signedName: nm || myName(),
         signImg: ok && dwSig ? dwSig.data() : "",
       });
-      toast(ok ? "Approved. James can see it." : "Sent back to James");
+      toast(ok ? `Approved. ${bossFirst()} can see it.` : `Sent back to ${bossFirst()}`);
       closeViewer();
       render();
     } catch (e) {
@@ -437,7 +438,7 @@ function drawOpen(p) {
       return;
     }
     if (p.check === "open") {
-      toast("Already sent to James");
+      toast(`Already sent to ${bossFirst()}`);
       return;
     }
     try {
@@ -446,7 +447,7 @@ function drawOpen(p) {
         title: $("dw-title").value.trim() || p.title,
         site: pickVal("dw-site") || p.site || "",
       });
-      toast("Sent to James to check");
+      toast(`Sent to ${bossFirst()} to check`);
       closeViewer();
       render();
     } catch (e) {

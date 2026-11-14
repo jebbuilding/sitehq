@@ -2,6 +2,7 @@
 import { chatTitle, openChat, unread, visibleChats } from "../chat/chat.js";
 import { ptManager } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { curTab, render } from "../core/tabs-week.js";
@@ -275,12 +276,15 @@ function wnReasons(t) {
       training: ["toolbox talk or training to do", "toolbox talks or training to do"],
       policies: ["policy to read and sign", "policies to read and sign"],
       chat: ["unread message", "unread messages"],
-      time: ["thing James has asked you to fill in", "things James has asked you to fill in"],
+      time: [
+        `thing ${bossFirst()} has asked you to fill in`,
+        `things ${bossFirst()} has asked you to fill in`,
+      ],
     };
     R(
       lab[t]
         ? `${n} ${lab[t][n === 1 ? 0 : 1]}. ${n === 1 ? "It's" : "They're"} in the list below.`
-        : `${n} ${pl(n, "thing", "things")} James has asked you to do here.`,
+        : `${n} ${pl(n, "thing", "things")} ${bossFirst()} has asked you to do here.`,
     );
   }
   return out;

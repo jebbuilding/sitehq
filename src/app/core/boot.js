@@ -78,7 +78,7 @@ initOpening();
     $("weekbar").hidden = true;
     $("tabs").hidden = true;
     $("main").innerHTML =
-      `<div class="empty"><strong>Sign in to use the app</strong>Open this page while signed in to claude.ai, using the email address James invited.</div>`;
+      `<div class="empty"><strong>Sign in to use the app</strong>Open this page while signed in to claude.ai, using the email address you were invited with.</div>`;
     return;
   }
   const dl2 = dl

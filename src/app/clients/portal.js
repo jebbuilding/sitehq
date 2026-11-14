@@ -37,6 +37,7 @@ import {
   cuQuickVoice,
   cuSend,
 } from "./uploads.js";
+import { bossFirst, coName, coShort } from "../core/company-names.js";
 import { mapDocs } from "../core/data.js";
 import { $, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -244,8 +245,8 @@ function renderClientJoin() {
     `<form class="card" id="cj-form" style="padding:16px;display:flex;flex-direction:column;gap:12px">
     <div>Follow your project, see your drawings and documents, message the team and sign things off, all in one place.</div>
     <label for="cj-name">Your name<input id="cj-name" required maxlength="80" placeholder="e.g. Sarah Jones"></label>
-    <label for="cj-code">Your portal code from James<input id="cj-code" required maxlength="12" placeholder="e.g. 4K7QXM" style="text-transform:uppercase;letter-spacing:2px"></label>
-    <div class="who">James sends you the code by text or email. Your details are only shared with James and the people he chooses.</div>
+    <label for="cj-code">Your portal code from ${esc(bossFirst())}<input id="cj-code" required maxlength="12" placeholder="e.g. 4K7QXM" style="text-transform:uppercase;letter-spacing:2px"></label>
+    <div class="who">${esc(bossFirst())} sends you the code by text or email. Your details are only shared with ${esc(bossFirst())} and the people they chooses.</div>
     <button class="btn primary" type="submit">Join</button><button class="linkbtn" type="button" id="cj-back">‹ Back</button></form>`;
   $("cj-back").onclick = () => {
     S.wcRole = "";
@@ -271,7 +272,7 @@ function renderClientJoin() {
       await S.db.doc("portal/" + S.me).set(d);
       startClient(d);
     } catch (err) {
-      toast("Couldn't join. Ask James to check he has shared the app with you.");
+      toast(`Couldn't join. Ask ${bossFirst()} to check they have shared the app with you.`);
     }
   };
 }
@@ -294,18 +295,18 @@ function renderClient() {
   $("who").textContent = (C.name || "") + (C.site ? " · " + C.site : "");
   if (C.revoked) {
     $("main").innerHTML =
-      `<div class="empty"><strong>Portal access has ended</strong>Contact James if you need anything for your project.</div>`;
+      `<div class="empty"><strong>Portal access has ended</strong>Contact ${esc(bossFirst())} if you need anything for your project.</div>`;
     return;
   }
   if (!C.linked) {
     $("main").innerHTML =
       `<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px"><b style="font-size:18px">Thanks, ${esc(C.name || "")}!</b>
-      <div>James will connect your account to your project. This page updates by itself as soon as he does.</div>
+      <div>${esc(bossFirst())} will connect your account to your project. This page updates by itself as soon as they does.</div>
       <div class="who">Code entered: <b>${esc(C.code || "")}</b>. Wrong code? <button type="button" class="linkbtn" id="cl-recode">Enter it again</button></div></div>`;
     $("cl-recode").onclick = () => {
       const c = prompt ? null : null;
       openSheet(
-        `<h3 id="sheettitle">Portal code</h3><label for="rc-c">Code from James<input id="rc-c" maxlength="12" style="text-transform:uppercase"></label>${formFoot(false, "Save")}`,
+        `<h3 id="sheettitle">Portal code</h3><label for="rc-c">Code from ${esc(bossFirst())}<input id="rc-c" maxlength="12" style="text-transform:uppercase"></label>${formFoot(false, "Save")}`,
         async () => {
           const code = normCode($("rc-c").value);
           if (code.length < 4) {
@@ -386,7 +387,7 @@ function renderClient() {
       }
       ${
         newDocs.length
-          ? `<div class="notice warn" style="display:flex;flex-direction:column;gap:6px"><b>📬 ${esc((S.settings || {}).ownerName || "James")} sent you ${newDocs.length === 1 ? "a new document" : newDocs.length + " new documents"}</b>${newDocs
+          ? `<div class="notice warn" style="display:flex;flex-direction:column;gap:6px"><b>📬 ${esc(bossFirst())} sent you ${newDocs.length === 1 ? "a new document" : newDocs.length + " new documents"}</b>${newDocs
               .slice(0, 4)
               .map(
                 (d) =>
@@ -427,7 +428,7 @@ function renderClient() {
               `<button type="button" class="incrow pt-sign" data-id="${esc(x.id)}"><span><b>${esc(x.title)}</b> <span class="tag ${x.status === "signed" ? "ok" : x.status === "changes" ? "bad" : "day"}">${x.status === "signed" ? "Signed" : x.status === "changes" ? "Changes asked" : "Please sign"}</span><br><span class="who">${esc(ptKind(x.kind)[1])}${x.amount ? " · " + gbp(+x.amount) : ""} · ${esc(stamp(x.created))}</span></span><span aria-hidden="true">›</span></button>`,
           )
           .join("")
-      : '<div class="empty"><strong>Nothing to sign yet</strong>When James needs your approval on a drawing, design, stage or extra cost, it appears here.</div>';
+      : `<div class="empty"><strong>Nothing to sign yet</strong>When ${esc(bossFirst())} needs your approval on a drawing, design, stage or extra cost, it appears here.</div>`;
   }
   const ptDocsOnly = PT.docs.filter((d) => !isImg(d.contentType)),
     ptPics = PT.docs.filter((d) => isImg(d.contentType));
@@ -437,12 +438,12 @@ function renderClient() {
     myDocs = (PT.ups || []).filter((u) => !/^image\//.test(u.type || ""));
   if (tab === "photos") {
     html += `<div class="ptquick"><label class="btn primary fhpickbtn">📷 Take a photo<input type="file" class="pt-qcam" accept="image/*" capture="environment"></label><label class="btn fhpickbtn">🖼 Choose photos<input type="file" class="pt-qpick" accept="image/*" multiple></label><label class="btn fhpickbtn">🎥 Video<input type="file" class="pt-qvid" accept="video/*" capture="environment"></label><button type="button" class="btn pt-qvoice">🎤 Voice note</button></div>
-      <div class="flabel">From James</div>${ptPics.length ? `<div class="phgrid">${ptPics.map((d) => `<button type="button" class="ph pt-doc" data-id="${esc(d.id)}"><img src="${blobUrl(d.assetId)}" alt="${esc(d.title || "Photo")}" loading="lazy">${d.title ? `<span class="phcap">${esc(d.title)}</span>` : ""}</button>`).join("")}</div>` : '<div class="nothing">No photos from James yet.</div>'}
+      <div class="flabel">From ${esc(bossFirst())}</div>${ptPics.length ? `<div class="phgrid">${ptPics.map((d) => `<button type="button" class="ph pt-doc" data-id="${esc(d.id)}"><img src="${blobUrl(d.assetId)}" alt="${esc(d.title || "Photo")}" loading="lazy">${d.title ? `<span class="phcap">${esc(d.title)}</span>` : ""}</button>`).join("")}</div>` : `<div class="nothing">No photos from ${esc(bossFirst())} yet.</div>`}
       <div class="flabel" style="margin-top:12px">Photos you've sent</div>${myPics.length ? cuListHtml(myPics, false) : '<div class="nothing">None yet. Tap the button above to send one.</div>'}`;
   }
   if (tab === "docs" && !PT.folder) {
-    html += `<div class="ptsend"><div><b>📤 Send documents to James</b><br><span class="who">For example a PDF, a quote you've had, or a form he needs.</span></div><button type="button" class="btn primary" id="pt-send">Send to James</button></div>
-      ${myDocs.length ? `<div class="flabel">You've sent</div>${cuListHtml(myDocs, false)}` : ""}<div class="flabel" style="margin-top:10px">From James</div>`;
+    html += `<div class="ptsend"><div><b>📤 Send documents to ${esc(bossFirst())}</b><br><span class="who">For example a PDF, a quote you've had, or a form he needs.</span></div><button type="button" class="btn primary" id="pt-send">Send to ${esc(bossFirst())}</button></div>
+      ${myDocs.length ? `<div class="flabel">You've sent</div>${cuListHtml(myDocs, false)}` : ""}<div class="flabel" style="margin-top:10px">From ${esc(bossFirst())}</div>`;
   }
   if (tab === "docs" && newDocs.length && !C._preview) {
     setTimeout(() => {
@@ -462,7 +463,7 @@ function renderClient() {
             ? `<button type="button" class="folder pt-fold" data-f="${k}"><span class="ficon">${folderIcon()}</span><span class="fname">${esc(l)}</span><span class="who">${n} file${n === 1 ? "" : "s"}</span></button>`
             : "";
         }).join("") ||
-        '<div class="empty"><strong>No documents yet</strong>Drawings, designs and certificates James shares with you appear here.</div>'
+        `<div class="empty"><strong>No documents yet</strong>Drawings, designs and certificates ${esc(bossFirst())} shares with you appear here.</div>`
       }</div>`;
     } else
       html += `<div class="actions"><button type="button" class="btn backbtn" id="pt-fback">‹ All folders</button><b>${esc((PT_FOLDERS.find((x) => x[0] === f) || [, ""])[1])}</b></div>${ptDocsOnly
@@ -476,8 +477,8 @@ function renderClient() {
   if (tab === "draw") {
     const dr = (PT.ups || []).filter((u) => u.kind === "drawing");
     html += `<button type="button" class="btn primary drawnew" id="pt-draw">✏️ Start a new drawing</button>
-      <div class="who" style="margin:6px 0 12px">Sketch an idea, a layout or where you'd like things. Add photos and measurements. When you save it, you can send it to James.</div>
-      ${dr.length ? `<div class="flabel">Drawings you've sent (${dr.length})</div>${cuListHtml(dr, false)}` : `<div class="empty"><strong>No drawings sent yet</strong>Your drawings appear here once you've sent them to James.</div>`}`;
+      <div class="who" style="margin:6px 0 12px">Sketch an idea, a layout or where you'd like things. Add photos and measurements. When you save it, you can send it to ${esc(bossFirst())}.</div>
+      ${dr.length ? `<div class="flabel">Drawings you've sent (${dr.length})</div>${cuListHtml(dr, false)}` : `<div class="empty"><strong>No drawings sent yet</strong>Your drawings appear here once you've sent them to ${esc(bossFirst())}.</div>`}`;
   }
   if (tab === "about") {
     html +=
@@ -495,8 +496,8 @@ function renderClient() {
   }
   if (tab === "chat") {
     html += chats.length
-      ? `<div class="chatlist">${chats.map((c) => `<button type="button" class="chatrow pt-chat" data-c="${esc(c.id)}"><span class="cmain"><b>${esc(c.name || "Your project")}</b><span class="who">${esc(c.lastText || "No messages yet")}</span></span>${unread(c) ? '<span class="badge">new</span>' : ""}</button>`).join("")}</div><div class="who" style="margin-top:8px">James and the trades working on your project can read and reply here.</div>`
-      : '<div class="empty"><strong>Messages aren\'t set up yet</strong>James will open a chat for your project.</div>';
+      ? `<div class="chatlist">${chats.map((c) => `<button type="button" class="chatrow pt-chat" data-c="${esc(c.id)}"><span class="cmain"><b>${esc(c.name || "Your project")}</b><span class="who">${esc(c.lastText || "No messages yet")}</span></span>${unread(c) ? '<span class="badge">new</span>' : ""}</button>`).join("")}</div><div class="who" style="margin-top:8px">${esc(bossFirst())} and the trades working on your project can read and reply here.</div>`
+      : `<div class="empty"><strong>Messages aren't set up yet</strong>${esc(bossFirst())} will open a chat for your project.</div>`;
   }
   if (C._preview)
     html =
@@ -657,7 +658,7 @@ function ptSignView(x) {
       <label class="inl ptconfirm"><input type="checkbox" id="ps-ok"> ${esc(x.statement || K[2])}</label>
       <label for="ps-name">Your full name<input id="ps-name" maxlength="80" value="${esc((S.client && S.client.name) || "")}"></label>
       <div><div class="checkhead"><span class="flabel" style="margin:0">Sign with your finger</span><button type="button" class="pillbtn" id="ps-clear">Clear</button></div><canvas id="ps-sig" class="sigpad" aria-label="Signature box"></canvas></div>
-      <label for="ps-com">Comments (optional)<textarea id="ps-com" maxlength="1000" placeholder="Anything you'd like James to know"></textarea></label>
+      <label for="ps-com">Comments (optional)<textarea id="ps-com" maxlength="1000" placeholder="Anything you'd like ${esc(bossFirst())} to know"></textarea></label>
       <div class="actions"><button type="button" class="btn primary" id="ps-sign">✍ Sign and approve</button><button type="button" class="btn" id="ps-chg">I need changes</button></div>`
     }`);
   $("viewer-body")
@@ -729,7 +730,7 @@ function ptSignView(x) {
         lastWhat: (ok ? "signed off: " : "asked for changes to: ") + x.title,
       });
       Object.assign(x, d);
-      toast(ok ? "Signed. Thank you!" : "Sent to James");
+      toast(ok ? "Signed. Thank you!" : `Sent to ${bossFirst()}`);
       ptSignView(x);
       render();
     } catch (e) {
@@ -756,13 +757,13 @@ function startPortalOwner() {
 }
 const ptOf = (c) => (c && c.portalUid ? (S.portal || []).find((p) => p.id === c.portalUid) : null);
 function ptInvite(c) {
-  const txt = `Hi ${String(c.name).split(" ")[0]}, it's James at JEB Building Services. You can follow your project, see your drawings and sign things off in our client portal:\n\n1. Open this link: ${APP_LINK}\n   (You'll need a free Claude account, using the email I've invited.)\n2. Tap "I'm a JEB client"\n3. Enter your code: ${c.portalCode}\n\nAny problems, give me a call.`;
+  const txt = `Hi ${String(c.name).split(" ")[0]}, it's ${bossFirst()} at ${coName()}. You can follow your project, see your drawings and sign things off in our client portal:\n\n1. Open this link: ${APP_LINK}\n   (You'll need a free Claude account, using the email I've invited.)\n2. Tap "I'm a ${coShort()} client"\n3. Enter your code: ${c.portalCode}\n\nAny problems, give me a call.`;
   openSheet(
     `<h3 id="sheettitle">Invite ${esc(c.name)}</h3>
     <div class="notice"><b>Step 1:</b> share the app with them. In Claude, open the app's <b>Share</b> menu, add their email address and give them <b>can use</b> access (not editor). <span class="who">They'll need a free Claude account with that email.</span></div>
     <div class="notice"><b>Step 2:</b> send them this message with their code <b class="ptcode">${esc(c.portalCode)}</b>. When they join, they're connected to ${esc(c.name)} automatically and you'll get a pop-up.</div>
     <textarea readonly style="min-height:150px">${esc(txt)}</textarea>
-    <div class="plgrid">${c.phone ? `<a class="btn primary" href="sms:${esc(String(c.phone).replace(/\s+/g, ""))}?&body=${encodeURIComponent(txt)}">💬 Text</a><a class="btn" href="https://wa.me/${esc(String(c.phone).replace(/\D/g, "").replace(/^0/, "44"))}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}?subject=${encodeURIComponent("Your JEB client portal")}&body=${encodeURIComponent(txt)}">✉ Email</a>` : ""}<button type="button" class="btn" id="pi-copy">📋 Copy</button></div>
+    <div class="plgrid">${c.phone ? `<a class="btn primary" href="sms:${esc(String(c.phone).replace(/\s+/g, ""))}?&body=${encodeURIComponent(txt)}">💬 Text</a><a class="btn" href="https://wa.me/${esc(String(c.phone).replace(/\D/g, "").replace(/^0/, "44"))}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}?subject=${encodeURIComponent(`Your ${coShort()} client portal`)}&body=${encodeURIComponent(txt)}">✉ Email</a>` : ""}<button type="button" class="btn" id="pi-copy">📋 Copy</button></div>
     <div class="actions"><button type="button" class="btn" id="f-cancel">Done</button></div>`,
     null,
   );

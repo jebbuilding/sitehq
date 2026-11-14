@@ -1,4 +1,5 @@
 /* ================= POLICIES & INSURANCE ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, fsize, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, docRef, ownerMode } from "../core/state.js";
@@ -83,7 +84,7 @@ function policiesView() {
                 return `<button type="button" class="folder" data-f="${esc(k)}"><span class="ficon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2h8A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg></span><span class="fname">${esc(l)}</span><span class="who">${n} document${n === 1 ? "" : "s"}</span>${u ? `<span class="badge">${u}</span>` : ""}</button>`;
               })
               .join("")}</div>`
-          : '<div class="empty"><strong>Nothing here yet</strong>James\'s company policies and insurance certificates will appear here.</div>'
+          : `<div class="empty"><strong>Nothing here yet</strong>${esc(bossFirst())}'s company policies and insurance certificates will appear here.</div>`
       }`;
     $("main").insertAdjacentHTML("afterbegin", companyCard());
     wireCompany();
@@ -156,7 +157,7 @@ function policiesView() {
             toast(
               r === "queued"
                 ? "Saved. It will send when you have signal."
-                : "Thanks, James can see you've read it",
+                : `Thanks, ${bossFirst()} can see you've read it`,
             );
             render();
           } catch (e) {

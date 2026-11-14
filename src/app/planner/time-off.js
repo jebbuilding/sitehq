@@ -1,4 +1,5 @@
 /* ================= PLANNER & TIME OFF ================= */
+import { bossFirst } from "../core/company-names.js";
 import { addDays, esc, iso, parse } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { planPeopleNames, planSeen, planTimeTxt } from "./views.js";
@@ -82,7 +83,7 @@ function entryChip(p, owner) {
   return `<button type="button" class="pentry t-${esc(p.type)}" data-p="${esc(p.id)}"><span class="pbar"></span><span class="pmain">
     <span class="ptop"><span class="ptype">${esc(PTYPES[p.type] || "")}</span>${planTimeTxt(p) ? `<span class="ptime">${esc(planTimeTxt(p))}</span>` : ""}${multi ? `<span class="ptime">${esc(multi)}</span>` : ""}</span>
     <b class="ptitle">${esc(p.title)}</b>
-    <span class="sub">${[p.site, p.jobTitle, names.join(", ")].filter(Boolean).map(esc).join(" · ")}${p.pending ? " · waiting for James" : ""}${owner && p.vis === "me" ? " · only you" : owner && p.vis === "people" ? " · only the people on it" : ""}</span>
+    <span class="sub">${[p.site, p.jobTitle, names.join(", ")].filter(Boolean).map(esc).join(" · ")}${p.pending ? ` · waiting for ${bossFirst()}` : ""}${owner && p.vis === "me" ? " · only you" : owner && p.vis === "people" ? " · only the people on it" : ""}</span>
     ${p.notes ? `<span class="pnote">${esc(p.notes.length > 140 ? p.notes.slice(0, 140) + "…" : p.notes)}</span>` : ""}${(p.files || []).length ? `<span class="who">📎 ${p.files.length} attached</span>` : ""}${
       owner
         ? (() => {

@@ -1,4 +1,5 @@
 /* ================= WORKING DAY: each person's usual start, finish and lunch, or the standard day if they haven't set one ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, dayLine, esc, toMin, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -24,7 +25,7 @@ function openMyDay(id) {
   const mine = id === S.me;
   openSheet(
     `<h3 id="sheettitle">⏰ ${mine ? "My usual working day" : esc(nameOf(id)) + "'s usual working day"}</h3>
-    <div class="who">${mine ? "Fills in your start, finish and lunch each day, and sets the times you're paid from when you check in and out. You can still change any single day by hand. James can see and change this too." : "Their check-in, check-out and new days use these times. They can see and change it too. Leave it on the standard day if they work your normal hours."}</div>
+    <div class="who">${mine ? `Fills in your start, finish and lunch each day, and sets the times you're paid from when you check in and out. You can still change any single day by hand. ${bossFirst()} can see and change this too.` : "Their check-in, check-out and new days use these times. They can see and change it too. Leave it on the standard day if they work your normal hours."}</div>
     <div class="grid2"><label for="md-s">Start<input id="md-s" type="time" value="${esc(D.s)}"></label><label for="md-e">Finish<input id="md-e" type="time" value="${esc(D.e)}"></label></div>
     <div class="grid2"><label for="md-la">Unpaid lunch starts<input id="md-la" type="time" value="${esc(D.la)}"></label><label for="md-lm">Lunch length<select id="md-lm">${[0, 15, 20, 30, 45, 60].map((m) => `<option value="${m}" ${D.lm === m ? "selected" : ""}>${m ? m + " min" : "No unpaid lunch"}</option>`).join("")}</select></label></div>
     <div class="who">Standard day: ${esc(dayLine({ s: WS(), e: WE(), la: "13:00", lm: 30 }))}.</div>

@@ -1,4 +1,5 @@
 /* ================= FILES ================= */
+import { bossFirst } from "../core/company-names.js";
 import { toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { loadScript } from "./in-app-files.js";
@@ -161,9 +162,9 @@ function uploadErr(e) {
     : c === "unsupported_type"
       ? "That file type can't be stored. Use a PDF, a Word document or a photo (JPG or PNG)."
       : c === "not_granted" || c === "capability_disabled"
-        ? "You don't have permission to upload. Ask James to make you an Editor on this page."
+        ? `You don't have permission to upload. Ask ${bossFirst()} to make you an Editor on this page.`
         : c === "quota_or_state"
-          ? "Storage is full. Ask James to remove old files."
+          ? `Storage is full. Ask ${bossFirst()} to remove old files.`
           : "Upload didn't go through. Check your connection and try again.";
 }
 const blobUrl = (id) => "/_blob/" + id;

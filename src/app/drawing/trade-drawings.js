@@ -1,4 +1,5 @@
 /* ================= DRAWINGS: trades draw it out (with photos and writing), send to James to check ================= */
+import { bossFirst } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
@@ -18,15 +19,17 @@ const SK_CAT = "Drawings & sketches";
 const isSketch = (p) => p && p.kind === "sketch";
 function skState(p) {
   if (p.mine) return ["none", "My drawing"];
-  if (p.fromOwner && !p.check) return ["none", "Drawing from James"];
-  if (p.check === "ok") return ["ok", "✓ James says it's right"];
+  if (p.fromOwner && !p.check) return ["none", `Drawing from ${bossFirst()}`];
+  if (p.check === "ok") return ["ok", `✓ ${bossFirst()} says it's right`];
   if (p.check === "change") return ["change", "✗ Needs changing"];
-  if (p.check === "open") return ["open", "Waiting for James to check"];
+  if (p.check === "open") return ["open", `Waiting for ${bossFirst()} to check`];
   return ["none", "Drawing"];
 }
 function newDrawing() {
   if (!S.assets) {
-    toast("You don't have permission to upload. Ask James to make you an Editor on this page.");
+    toast(
+      `You don't have permission to upload. Ask ${bossFirst()} to make you an Editor on this page.`,
+    );
     return;
   }
   openNotePage({ title: "", onSave: (r) => drawingDetails(r) });
@@ -38,10 +41,10 @@ function drawingDetails(r) {
     `<h3 id="sheettitle">Send your drawing</h3>
     <img src="${blobUrl(r.preview)}" alt="Your drawing" style="max-height:38vh;max-width:100%;border-radius:8px;align-self:center;border:1px solid var(--line)">
     <label for="sk-title">What is it?<input id="sk-title" maxlength="80" value="${esc(r.title || "")}" placeholder="e.g. Drainage run to rear manhole"></label>
-    ${pickField("sk-site", "Site address", siteNames(), lastSite, "e.g. 9 Old Teignmouth Rd, Dawlish EX7 0NJ", false)}
-    <label for="sk-note">Message to James (optional)<textarea id="sk-note" maxlength="400" placeholder="e.g. Is this the right fall and position for the inspection chamber?"></textarea></label>
-    <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" id="sk-ask" checked> Ask James to check it's right</label>
-    ${formFoot(false, "Send to James")}`,
+    ${pickField("sk-site", "Site address", siteNames(), lastSite, "e.g. 9 Station Road, Anytown AB1 2CD", false)}
+    <label for="sk-note">Message to ${esc(bossFirst())} (optional)<textarea id="sk-note" maxlength="400" placeholder="e.g. Is this the right fall and position for the inspection chamber?"></textarea></label>
+    <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" id="sk-ask" checked> Ask ${esc(bossFirst())} to check it's right</label>
+    ${formFoot(false, `Send to ${bossFirst()}`)}`,
     async () => {
       const title = $("sk-title").value.trim();
       if (!title) {
@@ -67,7 +70,7 @@ function drawingDetails(r) {
           created: now,
         });
         closeForm();
-        toast(ask ? "Sent to James to check" : "Drawing saved");
+        toast(ask ? `Sent to ${bossFirst()} to check` : "Drawing saved");
         render();
       } catch (e) {
         showErr(uploadErr(e));
@@ -91,7 +94,10 @@ function sketchViewer(p, owner, who) {
     <div class="details" style="margin-top:10px">${[
       ["Site", p.site],
       ["Message", p.caption],
-      ["Drawn by", p.fromOwner ? "James" : owner ? nameOf(who) : S.myProfile && S.myProfile.name],
+      [
+        "Drawn by",
+        p.fromOwner ? bossFirst() : owner ? nameOf(who) : S.myProfile && S.myProfile.name,
+      ],
       ["Sent to", p.fromOwner && owner && !p.mine ? nameOf(who) : ""],
       ["Trade", p.trade],
       ["Sent", stamp(p.created)],
@@ -100,7 +106,7 @@ function sketchViewer(p, owner, who) {
       .filter((x) => x[1])
       .map(([l, v]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(v)}</span></div>`)
       .join("")}</div>
-    ${hist.length ? `<div class="flabel" style="margin-top:10px">${owner ? "Your replies" : "James's replies"}</div>${hist.map((h) => `<div class="who">${h.ok ? "✓ Right" : "✗ Needs changing"} · ${stamp(h.at)}${h.note ? ": " + esc(h.note) : ""}</div>`).join("")}` : ""}
+    ${hist.length ? `<div class="flabel" style="margin-top:10px">${owner ? "Your replies" : `${bossFirst()}'s replies`}</div>${hist.map((h) => `<div class="who">${h.ok ? "✓ Right" : "✗ Needs changing"} · ${stamp(h.at)}${h.note ? ": " + esc(h.note) : ""}</div>`).join("")}` : ""}
     ${markupBlock(p, owner)}
     ${
       owner && who && !mineO
@@ -109,7 +115,7 @@ function sketchViewer(p, owner, who) {
       <div class="actions"><button class="btn primary" id="sk-ok" type="button">✓ Looks right</button><button class="btn" id="sk-chg" type="button">✗ Needs changing</button><button class="btn" id="v-mark" type="button">✎ Draw on it &amp; send back</button></div>`
         : ""
     }
-    <div class="actions" style="margin-top:12px">${!owner || mineO ? `<button class="btn primary" id="sk-edit" type="button">✎ ${mineO ? "Open and change" : "Change the drawing"}</button>${!owner && p.check !== "open" ? `<button class="btn" id="sk-ask2" type="button">Ask James to check</button>` : ""}` : ""}<button class="btn" id="v-save" type="button">Save picture</button>${!owner || mineO ? `<button class="btn" id="v-del" type="button">Delete</button>` : ""}</div>`);
+    <div class="actions" style="margin-top:12px">${!owner || mineO ? `<button class="btn primary" id="sk-edit" type="button">✎ ${mineO ? "Open and change" : "Change the drawing"}</button>${!owner && p.check !== "open" ? `<button class="btn" id="sk-ask2" type="button">Ask ${esc(bossFirst())} to check</button>` : ""}` : ""}<button class="btn" id="v-save" type="button">Save picture</button>${!owner || mineO ? `<button class="btn" id="v-del" type="button">Delete</button>` : ""}</div>`);
   const path = "sheets/" + (owner ? who : S.me) + "/photos/" + p.id;
   if (!owner)
     myOpenPrompts()
@@ -190,7 +196,7 @@ function sketchViewer(p, owner, who) {
               versions,
               editedAt: Date.now(),
             });
-            toast(mineO ? "Drawing saved" : "Changed and sent back to James to check");
+            toast(mineO ? "Drawing saved" : `Changed and sent back to ${bossFirst()} to check`);
             render();
             sketchViewer(p, owner, who);
           } catch (e) {
@@ -204,7 +210,7 @@ function sketchViewer(p, owner, who) {
       try {
         await S.db.doc(path).update({ check: "open" });
         p.check = "open";
-        toast("Sent to James to check");
+        toast(`Sent to ${bossFirst()} to check`);
         render();
         sketchViewer(p, false);
       } catch (e) {
@@ -260,7 +266,7 @@ function ownerDrawing() {
         `<h3 id="sheettitle">Send your drawing</h3>
       <img src="${blobUrl(r.preview)}" alt="Your drawing" style="max-height:38vh;max-width:100%;border-radius:8px;align-self:center;border:1px solid var(--line)">
       <label for="od-title">What is it?<input id="od-title" maxlength="80" value="${esc(r.title || "")}" placeholder="e.g. Setting out for the extension"></label>
-      ${pickField("od-site", "Site address", siteNames(), "", "e.g. 12 Marine Way, Exmouth", false)}
+      ${pickField("od-site", "Site address", siteNames(), "", "e.g. 12 High Street", false)}
       <fieldset class="od-who"><legend>Send to</legend><label class="inl" style="font-size:15px;color:var(--ink);font-weight:600"><input type="checkbox" value="${esc(S.me)}" checked> Just keep it for me</label>${ids.map((id) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(id)}"> ${esc(nameOf(id))}</label>`).join("")}</fieldset>
       <label for="od-note">Message (optional)<textarea id="od-note" maxlength="400" placeholder="e.g. Set the footings out like this. Check it matches the plan before digging."></textarea></label>
       ${formFoot(false, "Send drawing")}`,

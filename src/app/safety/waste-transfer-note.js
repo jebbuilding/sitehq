@@ -1133,7 +1133,7 @@ const WTN = (() => {
     openSheet(
       `<h3 id="sheettitle">♻️ ${w.id ? "Edit" : "Add"} waste transfer site</h3><div class="who">A tip, transfer station or skip yard you take waste to. Picking it on a waste transfer note fills in Section C (or B) and the transfer address.</div>
     ${f("name", "Site name (as you call it)", w.name, "e.g. EMS Hill Barton", 'required maxlength="60"')}${f("company", "Company name", w.company, "e.g. EMS Waste Services Ltd", "required")}${f("contact", "Contact name (optional)", w.contact, "")}
-    ${f("addr", "Address", w.addr, "Hill Barton Business Park, Sidmouth Road, Clyst St Mary, Exeter")}${f("postcode", "Postcode", w.postcode, "EX5 1DR")}${f("phone", "Phone", w.phone, "")}${f("email", "Email (where to send the note)", w.email, "", 'type="email"')}
+    ${f("addr", "Address", w.addr, "e.g. Unit 4, Business Park, Anytown")}${f("postcode", "Postcode", w.postcode, "AB1 2CD")}${f("phone", "Phone", w.phone, "")}${f("email", "Email (where to send the note)", w.email, "", 'type="email"')}
     <div class="who" style="margin-top:4px"><b>Their registrations</b> – ask the site; they must tell you.</div>
     ${f("permitNo", "Environmental permit number", w.permitNo, "EPR/…")}${f("permitBy", "Issued by", w.permitBy, "Environment Agency")}${f("exempt", "Waste exemption details (if instead of a permit)", w.exempt, "")}
     ${f("carrierNo", "Waste carrier registration", w.carrierNo, "CBDU…")}<label for="ws-carrierKind">Carrier, broker or dealer?<select id="ws-carrierKind"><option value="">– leave blank –</option>${["Carrier", "Broker", "Dealer", "Carrier & broker", "Carrier, broker & dealer"].map((x) => `<option ${x === w.carrierKind ? "selected" : ""}>${x}</option>`).join("")}</select></label>

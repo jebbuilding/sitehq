@@ -1,4 +1,5 @@
 /* ================= SUBCONTRACTOR AGREEMENT: fill in, both sign on the device (or print to sign), saved in their personal documents ================= */
+import { coName, coShort } from "../core/company-names.js";
 import { $, esc, iso, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -66,8 +67,8 @@ const SUBAG = (() => {
       start: iso(new Date()),
       end: "",
       work: d.trade
-        ? `${d.trade} work on JEB Building Services sites, as asked for and agreed job by job.`
-        : "Building work on JEB Building Services sites, as asked for and agreed job by job.",
+        ? `${d.trade} work on ${coName()} sites, as asked for and agreed job by job.`
+        : `Building work on ${coName()} sites, as asked for and agreed job by job.`,
       rateType: L.rateType || "day",
       rate: "",
       payTerms: L.payTerms || "week",
@@ -77,10 +78,10 @@ const SUBAG = (() => {
       insExp: "",
       tools:
         L.tools ||
-        "Own hand and power tools (PAT tested, 110V on site). JEB supplies materials and plant unless agreed otherwise.",
+        `Own hand and power tools (PAT tested, 110V on site). ${coShort()} supplies materials and plant unless agreed otherwise.`,
       ppe:
         L.ppe ||
-        "Own boots, hi-vis, gloves, eye and ear protection. JEB supplies task-specific PPE (e.g. RPE, harnesses) when needed.",
+        `Own boots, hi-vis, gloves, eye and ear protection. ${coShort()} supplies task-specific PPE (e.g. RPE, harnesses) when needed.`,
       defects: L.defects || "12",
       notice: L.notice || "7",
       retention: L.retention || "0",
@@ -91,7 +92,7 @@ const SUBAG = (() => {
   /* the clauses – plain English, written for a small building firm (not legal advice) */
   function clauses(a) {
     const co = coData();
-    const C = co.name || "JEB Building Services";
+    const C = co.name || coName();
     const rateTxt = {
       day: `a day rate of £${a.rate || "____"} for an 8-hour day (part days pro rata)`,
       hour: `an hourly rate of £${a.rate || "____"}`,

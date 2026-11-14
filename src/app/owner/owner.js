@@ -1,4 +1,5 @@
 /* ================= OWNER ================= */
+import { bossName } from "../core/company-names.js";
 import { startEmployee } from "../core/data.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
@@ -58,6 +59,7 @@ export {
   allTeam,
   checkDetail,
   companyOf,
+  crewIds,
   nameOf,
   ownerInvoices,
   ownerPhotos,
@@ -66,6 +68,7 @@ export {
   roleOf,
   roleShort,
   roleTag,
+  sheetOf,
   startPreview,
   teamIds,
   teamPlusMe,
@@ -76,6 +79,14 @@ function teamIds() {
     .filter((id) => id !== S.me && !(S.team[id] || {}).left)
     .sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
 }
+/* everyone who works, the account holder included (James, Nov 2026: "treat me the same way as anyone else"): for the
+   planner, time off, holidays, kit and labour rates. The account holder's own records are in S.mine. */
+function crewIds() {
+  return S.owner && S.me ? [S.me].concat(teamIds()) : teamIds();
+}
+function sheetOf(coll, id) {
+  return (id === S.me ? S.mine[coll] : (S.data[coll] || {})[id]) || [];
+}
 function allIds() {
   return Object.keys(S.team).filter((id) => id !== S.me);
 }
@@ -85,8 +96,7 @@ function nameOf(id) {
     const o = S.offapp.find((x) => "off:" + x.id === id);
     return (o && o.details && o.details.fullName) || "Trade";
   }
-  if (id && id === S.me && S.owner)
-    return (S.myProfile && S.myProfile.name) || S.ownerName || "James";
+  if (id && id === S.me && S.owner) return (S.myProfile && S.myProfile.name) || bossName();
   return (S.team[id] && S.team[id].name) || S.names[id] || "New employee";
 }
 function allTeam(coll) {
@@ -530,7 +540,7 @@ function openStartFor(id) {
       "Site",
       siteNames(),
       lastOf(S.data.entries[id] || [], () => true, "job"),
-      "e.g. 12 Marine Way, Exmouth",
+      "e.g. 12 High Street",
     )}
     <div class="grid2"><label for="sf-date">Date<input id="sf-date" type="date" value="${iso(new Date())}"></label><label for="sf-start">Start time<input id="sf-start" type="time" value="${st}"></label></div>
     ${formFoot(false, "Start")}`,
@@ -562,7 +572,7 @@ function openStartFor(id) {
           checkIn: true,
           notes: "",
           approved: false,
-          startedBy: S.ownerName || "James",
+          startedBy: bossName(),
           created: now,
           updated: now,
         });
@@ -598,7 +608,7 @@ function openStopFor(id, e) {
         hours: h,
         outAt: Date.now(),
         updated: Date.now(),
-        stoppedBy: S.ownerName || "James",
+        stoppedBy: bossName(),
       });
       delete d.id;
       delete d.who;
@@ -910,7 +920,7 @@ function ownerSetup() {
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
     <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button></div>
-    ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 Marine Way, Exmouth")}
+    ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 High Street")}
     ${Object.entries(KINDS)
       .map(([k, K]) =>
         sec(
@@ -1146,7 +1156,7 @@ function ownerSetup() {
             `<h3 id="sheettitle">Site details</h3>
       <label for="sd-jname">Job name (shows big everywhere, with the address small under it)<input id="sd-jname" maxlength="60" value="${esc(x.jobName || "")}" placeholder="e.g. Carpenter renovation"></label>
       <label for="sd-name">Site address<input id="sd-name" required maxlength="120" value="${esc(x.name)}"></label>
-      <div class="who">Use the full address with postcode, e.g. 9 Old Teignmouth Rd, Dawlish EX7 0NJ. It's printed on every photo. Changing it doesn't change older records.</div>
+      <div class="who">Use the full address with postcode, e.g. 9 Station Road, Anytown AB1 2CD. It's printed on every photo. Changing it doesn't change older records.</div>
       <label for="sd-proj">Project name (printed on photos)<input id="sd-proj" maxlength="80" value="${esc(x.project || "")}" placeholder="e.g. La Falaise"></label>
       <label for="sd-loc">Site location (latitude, longitude)<input id="sd-loc" maxlength="60" value="${x.lat != null ? esc(x.lat + ", " + x.lon) : ""}" placeholder="e.g. 50.5744373, -3.4704849"></label>
       <div class="who">Used on photos when the phone doesn't record a location. In Google Maps, press and hold on the site, then copy the numbers that appear.</div>

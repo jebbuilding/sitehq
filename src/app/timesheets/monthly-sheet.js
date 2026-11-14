@@ -1,5 +1,6 @@
 /* ================= PAPER-STYLE MONTHLY TIMESHEET (trades) ================= */
 import { openDM } from "../chat/chat.js";
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, hrs, iso, parse, toast } from "../core/helpers.js";
 import { closeForm, openSheet } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -103,7 +104,7 @@ function tsPaper(ym, ents, who) {
     ${ym !== today.slice(0, 7) ? `<div style="text-align:center;margin:-4px 0 6px"><button type="button" class="pillbtn ts-now">Back to this month</button></div>` : ""}
     <div class="tsgrid">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Wk"].map((x) => `<div class="tsdow">${x}</div>`).join("")}${grid}</div>
     <div class="tstots"><div><span>Timesheet hours</span><b>${hrs(totH)}</b></div><div><span>Job log hours</span><b>${hrs(totJ)}</b></div><div><span>Days off booked</span><b>${offDays}</b></div></div>
-    <div class="who" style="margin-top:6px">Tap a day to ${who ? "see, change or approve" : "add or see"} it. ✓ = approved${who ? "" : " by James"}. 🌴 = time off from the Planner.</div></div>`;
+    <div class="who" style="margin-top:6px">Tap a day to ${who ? "see, change or approve" : "add or see"} it. ✓ = approved${who ? "" : ` by ${bossFirst()}`}. 🌴 = time off from the Planner.</div></div>`;
 }
 function wireTsPaper(root, who, again) {
   root = root || $("main");
@@ -372,7 +373,7 @@ function tsDay(di) {
   }
   openSheet(
     `<h3 id="sheettitle">${esc(parse(di).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}</h3>
-    ${off ? `<div class="notice" style="margin:0;background:#e9f6ec">🌴 <b>${esc(off.kind || "Time off")}${off.half ? " (half day)" : ""}</b>${off.pending ? " · requested, waiting for James" : ""}${off.why ? " · " + esc(off.why) : ""}</div>` : ""}
+    ${off ? `<div class="notice" style="margin:0;background:#e9f6ec">🌴 <b>${esc(off.kind || "Time off")}${off.half ? " (half day)" : ""}</b>${off.pending ? ` · requested, waiting for ${bossFirst()}` : ""}${off.why ? " · " + esc(off.why) : ""}</div>` : ""}
     ${list.map((e) => `<button type="button" class="entry tsdayrow" data-id="${esc(e.id)}"><div class="main"><div class="job">${typeTag(e)}${e.approved ? '<span class="tag ok">Approved</span>' : ""}${esc(e.job || "No site given")}</div><div class="sub">${entrySub(e)}</div></div><div class="amt">${hrs(e.hours)} h</div></button>`).join("") || '<div class="nothing">Nothing logged this day.</div>'}
     <div class="actions"><button type="button" class="btn primary" id="tsd-h">+ Timesheet</button><button type="button" class="btn" id="tsd-j">🧱 + Day work / job time</button></div>
     <div class="formactions"><span></span><button type="button" class="btn" id="f-cancel">Close</button></div>`,
@@ -395,7 +396,7 @@ function tsDay(di) {
         const e = S.mine.entries.find((x) => x.id === b.dataset.id);
         if (!e) return;
         if (e.approved) {
-          toast("This entry has been approved. Ask James if it needs changing.");
+          toast(`This entry has been approved. Ask ${bossFirst()} if it needs changing.`);
           return;
         }
         closeForm();

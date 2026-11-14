@@ -5,7 +5,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf, teamIds } from "../owner/owner.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { openPlanEditor, pbPlanWeek, pbSiteOf, pbSiteShort, siteHue } from "./board.js";
 import { onDay, planEntries } from "./time-off.js";
@@ -72,7 +72,7 @@ function plWhereHtml(shown) {
     (bySite[s] = bySite[s] || []).push(p);
   });
   const busy = new Set(work.flatMap(plPeople).concat(off.flatMap(plPeople)));
-  const free = teamIds().filter((w) => !busy.has(w));
+  const free = crewIds().filter((w) => !busy.has(w));
   const wkend = d.getDay() === 0 || d.getDay() === 6;
   const person = (w, p) =>
     `<button type="button" class="pl-person" data-p="${esc(p ? p.id : "")}" data-w="${esc(w)}">${w === S.me ? `<span class="pav pavi" style="width:34px;height:34px;font-size:12px">${esc(initials(myName()))}</span>` : avatarHtml(w, 34)}<span><b>${esc(w === S.me ? "You" : nameOf(w))}</b>${p && p.time ? `<small>${esc(p.time)}</small>` : ""}</span></button>`;

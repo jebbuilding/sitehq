@@ -1,4 +1,5 @@
 /* ================= SUPPLIERS (owner list, copies sent only to chosen trades) ================= */
+import { bossFirst, coName } from "../core/company-names.js";
 import { $, esc, gbp, toast } from "../core/helpers.js";
 import { TR } from "../core/live-feed.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -330,7 +331,7 @@ function suppliersView() {
             .join("")}</div>`,
       )
       .join("")}
-    ${!list.length ? `<div class="empty"><strong>No merchants yet</strong>${owner ? "Add your merchants, hire companies and the like, with your account details." : "James hasn't shared any merchants with you yet."}</div>` : !shown.length ? '<div class="nothing">No merchants match that search.</div>' : ""}`;
+    ${!list.length ? `<div class="empty"><strong>No merchants yet</strong>${owner ? "Add your merchants, hire companies and the like, with your account details." : `${bossFirst()} hasn't shared any merchants with you yet.`}</div>` : !shown.length ? '<div class="nothing">No merchants match that search.</div>' : ""}`;
   if ($("sup-add")) $("sup-add").onclick = () => openSupplier(null);
   if ($("mer-who")) $("mer-who").onclick = () => whoSeesDlg();
   $("main")
@@ -394,12 +395,12 @@ function suppliersView() {
 }
 function openSupplier(sp) {
   const ed = !!sp;
-  sp = sp || { vis: "all", cat: "Builders merchant", accountName: "JEB Building Services" };
+  sp = sp || { vis: "all", cat: "Builders merchant", accountName: coName() };
   const team = teamIds();
   openSheet(
     `<h3 id="sheettitle">${ed ? "Edit merchant" : "Add a merchant"}</h3>
     <label for="su-name">Supplier name<input id="su-name" required maxlength="80" value="${esc(sp.name || "")}" placeholder="e.g. Travis Perkins"></label>
-    <label for="su-loc">Branch (location)<input id="su-loc" maxlength="60" value="${esc(sp.loc || "")}" placeholder="e.g. Exmouth"></label>
+    <label for="su-loc">Branch (location)<input id="su-loc" maxlength="60" value="${esc(sp.loc || "")}" placeholder="e.g. Exeter"></label>
     <label for="su-cat">Type<select id="su-cat">${SUP_CATS.map((c) => `<option ${c === sp.cat ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></label>
     ${SUP_FIELDS.map(([k, l]) =>
       k === "hours"

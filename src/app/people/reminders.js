@@ -1,4 +1,5 @@
 /* ================= REMINDERS (owner asks someone to fill in a form) ================= */
+import { bossFirst, coShort } from "../core/company-names.js";
 import { $, addDays, esc, iso, monday, shortDay, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -112,7 +113,7 @@ const PROMPT_FORMS = {
     },
   ],
   markup: [
-    "Look at James's notes on your photo",
+    "Look at the notes on your photo",
     "photos",
     (ref) => {
       const p = S.mine.photos.find((x) => x.id === ref);
@@ -121,7 +122,7 @@ const PROMPT_FORMS = {
     },
   ],
   sketchnew: [
-    "Look at James's drawing",
+    "Look at the drawing you were sent",
     "photos",
     (ref) => {
       const p = S.mine.photos.find((x) => x.id === ref);
@@ -130,7 +131,7 @@ const PROMPT_FORMS = {
     },
   ],
   sketchchk: [
-    "Look at James's reply on your drawing",
+    "Look at the reply on your drawing",
     "photos",
     (ref) => {
       const p = S.mine.photos.find((x) => x.id === ref);
@@ -138,8 +139,8 @@ const PROMPT_FORMS = {
       else toast("That drawing has been removed");
     },
   ],
-  issuereply: ["James replied about the app problem you reported", null, null],
-  sent: ["James sent you", "plans", (ref) => SENDTO.openRef(ref)],
+  issuereply: ["There's a reply about the app problem you reported", null, null],
+  sent: ["Sent to you", "plans", (ref) => SENDTO.openRef(ref)],
   other: ["Something else (see note)", null, null],
 };
 const promptsOf = (list) => (list || []).filter((s) => s.type === "prompt");
@@ -154,7 +155,7 @@ function promptLabel(p) {
 function doPrompt(p) {
   const f = PROMPT_FORMS[p.form];
   if (!f || !f[2]) {
-    toast("Read James's note, then tap Done when it's sorted");
+    toast(`Read ${bossFirst()}'s note, then tap Done when it's sorted`);
     return;
   }
   if (f[1]) {
@@ -277,25 +278,25 @@ function installCard() {
     ? [
         "Open this page in <b>Safari</b> (if you came from an email or WhatsApp, tap ⋯ or the compass and choose <b>Open in Safari</b>).",
         "Tap the <b>Share</b> button (square with an arrow).",
-        "Tap <b>Add to Home Screen</b>, call it <b>JEB</b>, then <b>Add</b>.",
-        "Open JEB from the new icon and sign in once more. It stays signed in after that.",
+        `Tap <b>Add to Home Screen</b>, call it <b>${esc(coShort())}</b>, then <b>Add</b>.`,
+        `Open ${coShort()} from the new icon and sign in once more. It stays signed in after that.`,
       ]
     : sam
       ? [
           "Tap <b>≡</b> at the bottom right.",
           "Tap <b>Add page to</b>, then <b>Home screen</b>.",
-          "Use the <b>JEB</b> icon from now on.",
+          `Use the <b>${esc(coShort())}</b> icon from now on.`,
         ]
       : android
         ? [
             "Tap <b>⋮</b> at the top right of Chrome.",
             "Tap <b>Add to home screen</b>, then <b>Add</b>.",
-            "Use the <b>JEB</b> icon from now on.",
+            `Use the <b>${esc(coShort())}</b> icon from now on.`,
           ]
         : [
             "Bookmark this page, or drag it to your desktop, so you can open it straight away next time.",
           ];
-  return `<div class="notice install"><b>Save JEB to your ${ios || android ? "phone's home screen" : "computer"}</b> so you can open it with one tap, without going back to the invite.
+  return `<div class="notice install"><b>Save ${esc(coShort())} to your ${ios || android ? "phone's home screen" : "computer"}</b> so you can open it with one tap, without going back to the invite.
     ${inApp ? '<div class="sub" style="color:var(--danger)">You\'re viewing this inside another app. Open it in your normal browser first.</div>' : ""}
     <ol>${steps.map((x) => `<li>${x}</li>`).join("")}</ol>
     <div class="actions"><button type="button" class="btn primary" id="inst-done">Done, I've saved it</button><button type="button" class="pillbtn" id="inst-later">Remind me later</button></div></div>`;
@@ -305,7 +306,7 @@ function wireInstall() {
   if (d)
     d.onclick = () => {
       store.set("jeb.installed", true);
-      toast("Great. Use the JEB icon from now on.");
+      toast(`Great. Use the ${coShort()} icon from now on.`);
       render();
     };
   const l = $("inst-later");
@@ -318,7 +319,7 @@ function wireInstall() {
 function promptBanner() {
   const ps = myOpenPrompts();
   if (!ps.length) return "";
-  return `<div class="notice warn prompts"><b>James has asked you to:</b>${ps
+  return `<div class="notice warn prompts"><b>${esc(bossFirst())} has asked you to:</b>${ps
     .map(
       (
         p,
@@ -349,7 +350,13 @@ function maybePopPrompts() {
   fresh.forEach((p) => S.promptsShown.add(p.id));
   sd.forEach((x) => S.promptsShown.add("eq-" + x.eq.id + "-" + iso(new Date())));
   openSheet(
-    `<h3 id="sheettitle">${fresh.length ? "James has asked you to…" : "Check due"}</h3>${fresh.length ? promptBanner().replace("notice warn prompts", "prompts").replace("<b>James has asked you to:</b>", "") : ""}${sd.length ? schedBanner().replace("notice warn prompts sched", "prompts sched") : ""}
+    `<h3 id="sheettitle">${fresh.length ? `${bossFirst()} has asked you to…` : "Check due"}</h3>${
+      fresh.length
+        ? promptBanner()
+            .replace("notice warn prompts", "prompts")
+            .replace(`<b>${esc(bossFirst())} has asked you to:</b>`, "")
+        : ""
+    }${sd.length ? schedBanner().replace("notice warn prompts sched", "prompts sched") : ""}
     <div class="formactions"><span></span><button type="button" class="btn" id="f-cancel">Later</button></div>`,
     () => {},
     null,

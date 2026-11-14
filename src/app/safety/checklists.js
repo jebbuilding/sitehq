@@ -5,7 +5,7 @@ const KINDS = {
     name: "Vehicle",
     plural: "Vehicles",
     reading: "Mileage",
-    ph: "e.g. WK21 JEB – Ford Transit Custom",
+    ph: "e.g. AB21 CDE – Ford Transit Custom",
     items: [
       ["tyres", "Tyres: tread, pressure, no cuts or bulges"],
       ["wheels", "Wheel nuts secure"],

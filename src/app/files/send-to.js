@@ -1,5 +1,6 @@
 /* ================= SEND TO…: one dialog to send any file to trades and/or clients, tell them, and keep a copy on the job ================= */
 import { PT_FOLDERS, ptOf, ptSrc } from "../clients/portal.js";
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -136,7 +137,7 @@ const SENDTO = (() => {
       .join(
         "",
       )}</datalist><div class="who" style="margin-top:4px">Several addresses: put a comma between them. On the tab it opens the share sheet with the file attached (Mail, WhatsApp…); on a computer it downloads the file and opens a ready-written email for you to attach it to.</div></fieldset>
-    <div class="who">Trades get a “James sent you…” alert in their app that opens it; clients see it as new in their portal.</div>
+    <div class="who">Trades get a “${esc(bossFirst())} sent you…” alert in their app that opens it; clients see it as new in their portal.</div>
     ${formFoot(false, "Send")}`,
       async () => {
         const tr = [...document.querySelectorAll(".st-t:checked")].map((x) => x.value),

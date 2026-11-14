@@ -1,4 +1,5 @@
 /* ================= PERSONAL DETAILS & NEXT OF KIN ================= */
+import { bossFirst, bossName, coName, coShort } from "../core/company-names.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { privacyBlock } from "../core/privacy-notice.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -92,16 +93,16 @@ function saveErrMsg(e) {
   const c = e && e.code;
   if (c === "invalid_argument" || c === "not_granted" || c === "revoked")
     return (
-      "This phone isn't allowed to save. Ask James to check you're an Editor on the app, then close and reopen it. (Code: " +
+      `This phone isn't allowed to save. Ask ${bossFirst()} to check you're an Editor on the app, then close and reopen it. (Code: ` +
       c +
       ")"
     );
   if (c === "quota_exceeded")
-    return "The app's storage is full. Tell James. (Code: quota_exceeded)";
+    return `The app's storage is full. Tell ${bossFirst()}. (Code: quota_exceeded)`;
   return (
     "Couldn't save" +
     (c ? " (code: " + c + ")" : "") +
-    ". Close the app, open it again and try once more. If it keeps happening, send James a screenshot of this message."
+    `. Close the app, open it again and try once more. If it keeps happening, send ${bossFirst()} a screenshot of this message.`
   );
 }
 function detailsDone(d) {
@@ -139,7 +140,7 @@ function openDetails(target) {
   const d = Object.assign({ fullName: nm || "" }, cur);
   openSheet(
     `<h3 id="sheettitle">${!target ? "My details" : target.off && !target.rec ? "Add a trade not on the app" : "Details for " + esc(d.fullName || "trade")}</h3>
-    <div class="who">${forOther ? "You're filling this in for them. " + (target.off ? "They won't have access to the app." : "They can still check and update it themselves.") : "Only you and James can see these. Keep them up to date, especially your next of kin."}</div>
+    <div class="who">${forOther ? "You're filling this in for them. " + (target.off ? "They won't have access to the app." : "They can still check and update it themselves.") : `Only you and ${bossFirst()} can see these. Keep them up to date, especially your next of kin.`}</div>
     ${target && target.off ? `<label for="dt-role">Employee or subcontractor<select id="dt-role"><option value="sub" ${(target.rec || {}).role !== "employee" ? "selected" : ""}>Subcontractor</option><option value="employee" ${(target.rec || {}).role === "employee" ? "selected" : ""}>Employee</option><option value="company" ${(target.rec || {}).role === "company" ? "selected" : ""}>From another company</option></select></label><label for="dt-rco">Company they're from (if a subcontractor or another company)<input id="dt-rco" maxlength="80" value="${esc((target.rec || {}).roleCompany || "")}"></label>` : ""}
     ${meOwner ? `<div class="notice" style="margin:0">You're the owner, so you're not set up for CIS. Fill in what forms need – your timesheet and day sheet are under Setup › My own details.</div>` : ""}
     ${DET_SECTIONS.filter(([title]) => !(meOwner && /^Your business/.test(title)))
@@ -151,7 +152,7 @@ function openDetails(target) {
             .join("")}`,
       )
       .join("")}
-    <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="dt-ok" ${detailsDone(cur) ? "checked" : ""}> ${forOther ? "I've checked these details with them, and they've been told how JEB uses their information." : "These details are correct, and I've read how JEB Building Services uses my information (below)."}</label>
+    <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="dt-ok" ${detailsDone(cur) ? "checked" : ""}> ${forOther ? `I've checked these details with them, and they've been told how ${coShort()} uses their information.` : `These details are correct, and I've read how ${coName()} uses my information (below).`}</label>
     ${forOther ? `<div class="who">Not checked with them yet? Leave it unticked – you can save with just their name or email${target.off ? "" : ", and they'll be asked to check and confirm their details themselves when they next open the app"}.</div>` : ""}
     ${privacyBlock(false)}
     ${formFoot(!!(target && target.off && target.rec), forOther ? "Save details" : "Save my details")}`,
@@ -193,7 +194,7 @@ function openDetails(target) {
       out.ni = out.ni.toUpperCase().replace(/\s+/g, " ");
       /* unticked for someone else: saved, but not confirmed – they're asked to check it themselves */
       if (okd) out.confirmedAt = Date.now();
-      if (forOther) out.enteredBy = "James";
+      if (forOther) out.enteredBy = bossName();
       $("f-save").disabled = true;
       if (forOther) {
         try {
@@ -274,7 +275,7 @@ function renderDetailsNeeded() {
   $("main").innerHTML =
     `<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">
     <b style="font-family:var(--f-display);font-size:19px">One more step</b>
-    <div>Before you start, fill in your details and your <b>next of kin</b>, so James knows who to contact in an emergency. It takes about two minutes.</div>
+    <div>Before you start, fill in your details and your <b>next of kin</b>, so ${esc(bossFirst())} knows who to contact in an emergency. It takes about two minutes.</div>
     <button class="btn primary" id="dt-start" type="button">Fill in my details</button></div>`;
   $("dt-start").onclick = () => openDetails();
 }

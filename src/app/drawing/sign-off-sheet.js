@@ -427,7 +427,7 @@ const SIGNSHEET = (() => {
       `<h3 id="sheettitle">✍️ ${solo ? "New sign-off sheet" : "Client go-ahead"}</h3><div class="who">A one-page sheet with ${solo ? "your pictures" : "this drawing"}, what they're agreeing to and a signature box. The client can sign it on this device now${solo ? "" : ", in their portal"}, or on a printed copy.</div>
     <label for="ss-cl">Client<select id="ss-cl"><option value="">No client</option><option value="__manual" ${o.manual || (solo && !sc) ? "selected" : ""}>✏️ Type their details in (not in Clients)</option>${cls.map((c) => `<option value="${esc(c.id)}" ${!o.manual && sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}${ptOf(c) ? "" : " (not on the portal yet)"}</option>`).join("")}</select></label>
     <div id="ss-man" class="ssman"><label for="ss-mname">Client name<input id="ss-mname" maxlength="80" autocomplete="off" placeholder="e.g. Mr & Mrs Smith"></label>
-    <label for="ss-maddr">Property address<input id="ss-maddr" maxlength="160" autocomplete="off" placeholder="e.g. 4 Rolle Road, Exmouth EX8 2AB"></label>
+    <label for="ss-maddr">Property address<input id="ss-maddr" maxlength="160" autocomplete="off" placeholder="e.g. 4 High Street"></label>
     <div class="grid2"><label for="ss-mtel">Phone (optional)<input id="ss-mtel" type="tel" maxlength="30" autocomplete="off"></label><label for="ss-mmail">Email (optional)<input id="ss-mmail" type="email" maxlength="120" autocomplete="off"></label></div>
     <div class="who">Only kept on this sheet – they won't be added to your Clients.</div></div>
     <label for="ss-kind">What needs the go-ahead<select id="ss-kind">${PT_KINDS.filter((k) =>
@@ -445,7 +445,7 @@ const SIGNSHEET = (() => {
     <details class="pmdet" ${solo ? "hidden" : ""}><summary>Also ask trades to sign (optional)</summary>
     <fieldset class="od-who"><legend>Trades</legend>${ids.map((id) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" class="ss-t" value="${esc(id)}"> ${esc(nameOf(id))}</label>`).join("") || '<span class="who">No trades on the app yet.</span>'}</fieldset>
     <label class="tick"><input type="checkbox" id="ss-site"> <span>Put it on the site – every trade on that site can open and sign it (in <b>Sites</b>)</span></label>
-    ${pickField("ss-sitev", "Site", siteNames(), p.site || "", "e.g. 12 Marine Way, Exmouth", false)}</details>
+    ${pickField("ss-sitev", "Site", siteNames(), p.site || "", "e.g. 12 High Street", false)}</details>
     <div class="who" id="ss-prog"></div>${formFoot(false, "✍️ Make the sheet")}`,
       async () => {
         const title = $("ss-title").value.trim() || "Sign-off";

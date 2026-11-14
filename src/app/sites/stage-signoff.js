@@ -1,5 +1,6 @@
 /* ================= STAGE SIGN-OFF: each job's stages, signed off as they're done, with a record of what's done and what isn't ================= */
 import { ptKind, ptOf, ptOnFor, ptSrc } from "../clients/portal.js";
+import { bossName } from "../core/company-names.js";
 import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -182,7 +183,7 @@ function stgSign(site, i) {
   const st = stgList(sr);
   const s = st[i];
   const d = stgDoneOf(sr)[s];
-  const me = (S.myProfile && S.myProfile.name) || S.ownerName || "James";
+  const me = (S.myProfile && S.myProfile.name) || bossName();
   /* the client can sign a stage off too, in their portal, if James asks (James, Nov 2026) */
   const c = siteClient(site);
   const askCl = !!(c && ptOnFor(c));

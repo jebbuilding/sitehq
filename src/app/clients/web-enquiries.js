@@ -266,7 +266,7 @@ function webView() {
     ${stay.length ? `<section class="card"><div class="cardbody"><b>How long people stay on each page</b><div class="who">The average time a page was on someone's screen.</div>${stay.map(([k, v, n]) => `<div class="we-bar"><span>${esc(webPageName(k))}</span><span class="we-track"><span style="width:${Math.round((v / stayMax) * 100)}%"></span></span><b>${esc(mmss(v))}</b></div>`).join("")}</div></section>` : ""}
     ${entry.length ? `<section class="card"><div class="cardbody"><b>The first page people land on</b>${entry.map(([k, v]) => bar(webPageName(k), v, visits)).join("")}</div></section>` : ""}
     ${places.length ? `<section class="card"><div class="cardbody"><b>Where they are</b><div class="who">Town or area, roughly, from their internet connection – nothing about who they are.</div>${places.map(([k, v]) => bar(k, v, visits)).join("")}</div></section>` : ""}`
-        : `<div class="nothing">No visits counted yet. The counter starts when the website goes live on jebbuilding.co.uk with the SiteHQ counter switched on (in Jasper's list). It counts visits without cookies and never records who someone is, so there's no cookie banner needed for it.</div>`
+        : `<div class="nothing">No visits counted yet. The counter starts when your website goes live with the SiteHQ counter switched on (in Jasper's list). It counts visits without cookies and never records who someone is, so there's no cookie banner needed for it.</div>`
     }
   </div>`);
   const vb = $("viewer-body");

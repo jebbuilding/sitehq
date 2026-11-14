@@ -120,7 +120,7 @@ function eqmBook(eq, k) {
     `<h3 id="sheettitle">📅 Book in: ${esc(eq.name)} – ${esc(l)}</h3>
     <div class="who">Due ${esc(ukDate((eq.dates || {})[k]))}. It goes on the planner${eq.assignee ? ` and ${esc(nameOf(eq.assignee))} can see it` : ""}.</div>
     <div class="grid2"><label for="eqm-date">Booked for<input id="eqm-date" type="date" value="${esc(bk.date || "")}"></label><label for="eqm-time">Time (optional)<input id="eqm-time" type="time" value="${esc(bk.time || "")}"></label></div>
-    <label for="eqm-where">Where (garage or who's coming)<input id="eqm-where" maxlength="80" value="${esc(bk.where || (eq.info || {}).garage || "")}" placeholder="e.g. Exmouth Motors"></label>
+    <label for="eqm-where">Where (garage or who's coming)<input id="eqm-where" maxlength="80" value="${esc(bk.where || (eq.info || {}).garage || "")}" placeholder="e.g. Town Motors"></label>
     <label for="eqm-note">Note (optional)<input id="eqm-note" maxlength="120" value="${esc(bk.note || "")}" placeholder="e.g. Drop off 8am, courtesy van"></label>
     ${formFoot(!!bk.date, bk.date ? "Save the booking" : "Book it in")}`,
     async () => {

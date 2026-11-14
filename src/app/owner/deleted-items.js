@@ -1,6 +1,7 @@
 /* ===== DELETED ITEMS: photos and files the owner deletes go here first, come off everywhere they were used, and are removed for good after 30 days (or straight away from Setup) ===== */
 import { saveClient } from "../clients/clients.js";
 import { ptCl, ptOf } from "../clients/portal.js";
+import { bossFirst } from "../core/company-names.js";
 import { mapDocs } from "../core/data.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { $, esc, stamp, toast } from "../core/helpers.js";
@@ -430,7 +431,7 @@ async function binRestoreRefs(refs) {
 /* move something to Deleted items: o = {assets:[ids], title, sub, type, thumb} */
 async function binDelete(o) {
   if (!ownerMode()) {
-    toast("Only James can delete this");
+    toast(`Only ${bossFirst()} can delete this`);
     return false;
   }
   const assets = [...new Set((o.assets || []).filter(Boolean))];

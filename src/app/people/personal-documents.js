@@ -1,4 +1,5 @@
 /* ================= PERSONAL DOCUMENTS (driving licence etc.) ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -31,7 +32,7 @@ const pdocsOf = (list) =>
 function pdocRow(x, owner) {
   const n = x.expires ? daysTo(x.expires) : null;
   return `<div class="entry pdoc" data-p="${esc(x.id)}"><div class="main"><div class="job">${esc(x.label || PDOC_TYPES[x.kind] || "Document")}</div>
-    <div class="sub">${[x.number ? "No. " + x.number : "", x.expires ? (n < 0 ? "Expired " : "Expires ") + shortDay(x.expires) : "", (x.photos || []).length + " file" + ((x.photos || []).length === 1 ? "" : "s"), "added " + stamp(x.created) + (x.byOwner ? " by James" : "")].filter(Boolean).map(esc).join(" · ")}${x.expires && n <= 30 ? " " + dueTagN(n) : ""}</div>
+    <div class="sub">${[x.number ? "No. " + x.number : "", x.expires ? (n < 0 ? "Expired " : "Expires ") + shortDay(x.expires) : "", (x.photos || []).length + " file" + ((x.photos || []).length === 1 ? "" : "s"), "added " + stamp(x.created) + (x.byOwner ? ` by ${bossFirst()}` : "")].filter(Boolean).map(esc).join(" · ")}${x.expires && n <= 30 ? " " + dueTagN(n) : ""}</div>
     ${x.note ? `<div class="sub">${esc(x.note)}</div>` : ""}
     <div class="filerow">${(x.photos || []).map((id, i) => `<button type="button" class="pillbtn pd-open" data-i="${i}">Open${(x.photos || []).length > 1 ? " " + (i + 1) : ""}</button>`).join("")}${owner ? `<button type="button" class="pillbtn pd-save">Download</button>` : ""}<button type="button" class="linkdanger pd-del">Remove</button></div></div></div>`;
 }
@@ -95,7 +96,7 @@ function openPdoc(kind, forWho) {
     <label for="pd-file">Photos or PDF (add the front and back if it's a card)<input id="pd-file" type="file" accept="image/*,application/pdf,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple required></label>
     <div class="grid2"><label for="pd-num">Number (optional)<input id="pd-num" maxlength="60"></label><label for="pd-exp">Expiry date (optional)<input id="pd-exp" type="date"></label></div>
     <label for="pd-note">Note (optional)<input id="pd-note" maxlength="200" placeholder="e.g. Licence categories B, BE, C1"></label>
-    <div class="who">Personal documents only. Cards, tickets and qualifications go in Training. ${owner ? "Only you and " + esc(nameOf(forWho)) + " can see this." : "Only you and James can see this."}</div>
+    <div class="who">Personal documents only. Cards, tickets and qualifications go in Training. ${owner ? "Only you and " + esc(nameOf(forWho)) + " can see this." : `Only you and ${bossFirst()} can see this.`}</div>
     ${formFoot(false, "Save")}`,
     async () => {
       const k = $("pd-kind").value,
@@ -174,7 +175,7 @@ function myPdocsBlock() {
   return `<div class="day" id="pd-mine"><div class="dayh"><span>My personal documents</span><span class="sum">${list.length}</span></div>
     ${needLic ? `<div class="notice warn" style="margin:0">You said you hold a driving licence. Please add a photo of the front and back.</div>` : ""}
     <div class="actions">${needLic ? `<button class="btn primary" type="button" id="pd-lic">Add my driving licence</button>` : ""}<button class="btn ${needLic ? "" : "primary"}" type="button" id="pd-add">+ Add a document</button></div>
-    ${list.map((x) => pdocRow(x, false)).join("") || '<div class="nothing">Nothing added yet. Add your driving licence, passport, proof of address or anything else personal James asks for.</div>'}</div>`;
+    ${list.map((x) => pdocRow(x, false)).join("") || `<div class="nothing">Nothing added yet. Add your driving licence, passport, proof of address or anything else personal ${esc(bossFirst())} asks for.</div>`}</div>`;
 }
 function wireMyPdocs() {
   const box = $("pd-mine");

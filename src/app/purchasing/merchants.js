@@ -1,4 +1,5 @@
 /* ================= MERCHANTS: who sees what (merchants and suppliers/brochures), and copies of suppliers sent to the trades allowed to see them ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { TR } from "../core/live-feed.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -93,7 +94,7 @@ function scheduleMkSync() {
 function tradeMakersHtml() {
   const L = mkCopies(S.mine.signoffs);
   if (!L.length)
-    return '<div class="nothing">James hasn\'t shared any suppliers with you yet.</div>';
+    return `<div class="nothing">${esc(bossFirst())} hasn't shared any suppliers with you yet.</div>`;
   return L.map((r) => {
     const tel = String(r.phone || "").replace(/\s+/g, "");
     const web = r.website ? (/^https?:/.test(r.website) ? r.website : "https://" + r.website) : "";

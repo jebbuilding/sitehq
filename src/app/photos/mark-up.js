@@ -1,4 +1,5 @@
 /* ================= PHOTO MARK-UP (owner draws / writes and sends back) ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -621,6 +622,6 @@ function markupSend(p, who) {
 function markupBlock(p, owner) {
   const ms = p.markups || [];
   if (!ms.length) return "";
-  return `<div class="mkblock"><div class="flabel" style="margin:0">${owner ? "Your mark-ups sent back" : "James's notes on this photo"}</div>
-    ${ms.map((m, i) => `<div class="mkitem"><img src="${blobUrl(m.assetId)}" alt="Marked-up photo ${i + 1}"><div>${m.note ? `<b>${esc(m.note)}</b><br>` : ""}<span class="who">${owner ? "Sent" : "From James"} ${stamp(m.created)}</span><br><button type="button" class="pillbtn mk-save" data-a="${esc(m.assetId)}">Save</button></div></div>`).join("")}</div>`;
+  return `<div class="mkblock"><div class="flabel" style="margin:0">${owner ? "Your mark-ups sent back" : `${bossFirst()}'s notes on this photo`}</div>
+    ${ms.map((m, i) => `<div class="mkitem"><img src="${blobUrl(m.assetId)}" alt="Marked-up photo ${i + 1}"><div>${m.note ? `<b>${esc(m.note)}</b><br>` : ""}<span class="who">${owner ? "Sent" : `From ${bossFirst()}`} ${stamp(m.created)}</span><br><button type="button" class="pillbtn mk-save" data-a="${esc(m.assetId)}">Save</button></div></div>`).join("")}</div>`;
 }

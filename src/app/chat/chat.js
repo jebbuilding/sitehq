@@ -4,6 +4,7 @@ import { contactsHtml, wireChatSearch, wireContactButtons, wireContacts } from "
 import { ptChatMembers } from "../clients/portal-calendar.js";
 import { ptChatId, ptOf } from "../clients/portal.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst, bossName, coShort } from "../core/company-names.js";
 import { mapDocs } from "../core/data.js";
 import { pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, toast } from "../core/helpers.js";
@@ -62,9 +63,11 @@ function chatPeople() {
   if (ownerMode())
     return teamIds()
       .map((id) => ({ id, name: nameOf(id) }))
-      .concat([{ id: S.me, name: S.ownerName || "James" }]);
+      .concat([{ id: S.me, name: bossName() }]);
   return (S.settings.people || []).concat(
-    S.settings.ownerId ? [{ id: S.settings.ownerId, name: S.settings.ownerName || "James" }] : [],
+    S.settings.ownerId
+      ? [{ id: S.settings.ownerId, name: S.settings.ownerName || bossName() }]
+      : [],
   );
 }
 function personName(id) {
@@ -73,7 +76,8 @@ function personName(id) {
   if (p) return p.name;
   const c = S.chats.find((x) => x.names && x.names[id]);
   if (c) return c.names[id] + " (client)";
-  if (S.client && S.settings && id === S.settings.ownerId) return S.settings.ownerName || "James";
+  if (S.client && S.settings && id === S.settings.ownerId)
+    return S.settings.ownerName || bossName();
   return "Someone";
 }
 function visibleChats() {
@@ -239,7 +243,7 @@ function chatView() {
         .map((c) => {
           const t = chatTitle(c);
           const u = unread(c);
-          return `<button type="button" class="chatrow" data-c="${esc(c.id)}" data-s="${esc((t + " " + (c.site || "") + " " + (c.lastText || "") + " " + (c.lastName || "")).toLowerCase())}"><span class="avatar ${c.kind}">${c.kind === "team" ? "JEB" : esc(initials(t))}</span>
+          return `<button type="button" class="chatrow" data-c="${esc(c.id)}" data-s="${esc((t + " " + (c.site || "") + " " + (c.lastText || "") + " " + (c.lastName || "")).toLowerCase())}"><span class="avatar ${c.kind}">${c.kind === "team" ? esc(coShort().slice(0, 4)) : esc(initials(t))}</span>
       <span class="cmain"><span class="ctop"><b>${esc(t)}</b><span class="ctime">${chatTime(c.lastAt)}</span></span>
       <span class="clast">${c.site ? `<span class="mtag">${esc(c.site)}</span> ` : ""}${c.archived ? '<span class="tag">Closed</span>' : ""}${c.ownerOnly ? '<span class="tag">Announcements</span>' : ""}${c.lastText ? `${c.kind !== "dm" && c.lastName ? esc(c.lastBy === S.me ? "You" : c.lastName) + ": " : ""}${esc(c.lastText)}` : "No messages yet"}</span></span>
       ${u ? '<span class="udot" aria-label="Unread"></span>' : ""}</button>`;
@@ -274,7 +278,7 @@ function chatView() {
 function openSiteChatPicker() {
   openSheet(
     `<h3 id="sheettitle">Add a site chat</h3>
-    ${pickField("sc-site", "Which site?", siteNames(), "", "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("sc-site", "Which site?", siteNames(), "", "e.g. 12 High Street")}
     <div class="who">If there's already a chat for that site, it opens that one.</div>
     ${formFoot(false, "Open site chat")}`,
     async () => {
@@ -386,7 +390,7 @@ function openNewChat() {
     }</div>
       <div class="who" id="nc-hint">Pick one person for a private chat${canGroup ? ", several for a group, or Everyone for the whole team" : ", or Everyone for the whole team"}.</div></div>
     <label for="nc-name" id="nc-namel" hidden>Group name<input id="nc-name" maxlength="60" placeholder="e.g. Kennford team"></label>
-    ${owner ? `<div id="nc-sitew" hidden>${pickField("nc-site", "Job / site this chat is about (optional)", siteNames(), "", "e.g. 12 Marine Way, Exmouth", false)}</div>` : ""}
+    ${owner ? `<div id="nc-sitew" hidden>${pickField("nc-site", "Job / site this chat is about (optional)", siteNames(), "", "e.g. 12 High Street", false)}</div>` : ""}
     ${formFoot(false, "Start chat")}`,
     async () => {
       const all = $("nc-who").querySelector(".nc-all").getAttribute("aria-pressed") === "true";
@@ -583,7 +587,7 @@ function openChatEditor(c) {
     `<h3 id="sheettitle">${c ? "Chat settings" : "New group chat"}</h3>
     ${c && c.kind !== "group" ? "" : `<label for="ce-cname">Chat name<input id="ce-cname" required maxlength="60" placeholder="e.g. 12 Marine Way team" value="${esc(c ? c.name || "" : "")}"></label>`}
     ${c && c.kind !== "group" ? "" : `<div><div class="flabel">Who's in it?</div><div class="seg whopick" id="ce-who"><button type="button" class="ce-all" data-v="__all" aria-pressed="${c && Array.isArray(c.members) && ids.length && ids.every((id) => c.members.includes(id))}">👥 Everyone</button>${ids.map((id) => `<button type="button" data-v="${esc(id)}" aria-pressed="${c ? Array.isArray(c.members) && c.members.includes(id) : false}">${esc(nameOf(id))}</button>`).join("") || '<span class="nothing">No employees yet.</span>'}</div></div>`}
-    ${c && c.kind === "dm" ? "" : pickField("ce-site", "Job / site this chat is about (optional)", siteNames(), c ? c.site || "" : "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${c && c.kind === "dm" ? "" : pickField("ce-site", "Job / site this chat is about (optional)", siteNames(), c ? c.site || "" : "", "e.g. 12 High Street", false)}
     ${c && c.kind === "dm" ? "" : `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="ce-only" ${c && c.ownerOnly ? "checked" : ""}> Announcements only: only you can post</label>`}
     ${c ? `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="ce-arch" ${c.archived ? "checked" : ""}> Close this chat (people can read it but not post)</label>` : ""}
     ${formFoot(!!c && c.kind !== "team", c ? "Save" : "Create chat")}`,
@@ -759,8 +763,8 @@ function renderChatHead() {
   $("composer").hidden = !can;
   $("chat-closed").hidden = can;
   $("chat-closed").textContent = c.archived
-    ? "This chat has been closed by James. You can still read it."
-    : "Only James can post in this chat.";
+    ? `This chat has been closed by ${bossFirst()}. You can still read it.`
+    : `Only ${bossFirst()} can post in this chat.`;
 }
 function renderMsgs() {
   const box = $("chat-msgs");
@@ -998,7 +1002,7 @@ function syncSettings() {
     const people = teamIds().map((id) => ({ id, name: nameOf(id) }));
     const want = {
       ownerId: S.me,
-      ownerName: S.ownerName || "James",
+      ownerName: bossName(),
       people,
       allowDm: !!S.settings.allowDm,
     };
@@ -1095,7 +1099,7 @@ function initChat() {
     if (!f) return;
     if (!S.assets) {
       toast(
-        "You don't have permission to send photos. Ask James to make you an Editor on this page.",
+        `You don't have permission to send photos. Ask ${bossFirst()} to make you an Editor on this page.`,
       );
       return;
     }
@@ -1107,7 +1111,7 @@ function initChat() {
     wireVoice($("cm-voice"), (f) => {
       if (!S.assets) {
         toast(
-          "You don't have permission to send voice notes. Ask James to make you an Editor on this page.",
+          `You don't have permission to send voice notes. Ask ${bossFirst()} to make you an Editor on this page.`,
         );
         return;
       }
@@ -1126,7 +1130,7 @@ function initChat() {
       if (!f) return;
       if (!S.assets) {
         toast(
-          "You don't have permission to send videos. Ask James to make you an Editor on this page.",
+          `You don't have permission to send videos. Ask ${bossFirst()} to make you an Editor on this page.`,
         );
         return;
       }
@@ -1144,7 +1148,7 @@ function initChat() {
     if (!f) return;
     if (!S.assets) {
       toast(
-        "You don't have permission to send photos. Ask James to make you an Editor on this page.",
+        `You don't have permission to send photos. Ask ${bossFirst()} to make you an Editor on this page.`,
       );
       return;
     }

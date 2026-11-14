@@ -4,7 +4,7 @@ import { S } from "../core/state.js";
 export { JOB_DET, JOB_KINDS, doneKey, jobCard, jobDetRead, jobProgress, myJobs, taskDone };
 const JOB_KINDS = { job: "Job sheet", snag: "Snag list" };
 const JOB_DET = [
-  ["ref", "Job / reference no.", "e.g. JEB-0142"],
+  ["ref", "Job / reference no.", "e.g. JOB-0142"],
   ["client", "Client", "e.g. Mrs Jane Smith"],
   ["phone", "Client phone", ""],
   ["address", "Address of the works", "only needed if there's no site"],

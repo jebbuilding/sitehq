@@ -3,7 +3,7 @@ import { $, addDays, esc, iso, parse, shortDay } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf, sheetOf } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { leaveCard, pbPending, wireLeave } from "./board.js";
 import { leaveOf } from "./time-off.js";
@@ -139,13 +139,13 @@ function holCardHtml() {
 }
 /* James's view: everyone's figures, and the settings */
 function holOwnerHtml() {
-  const ids = teamIds().filter((id) => holAllow(id) > 0);
+  const ids = crewIds().filter((id) => holAllow(id) > 0);
   const c = holCfg();
   return `<details class="card hol-card"${S.open.has("__holo") ? " open" : ""} data-id="__holo"><summary><div class="nm">🌴 Holidays<small>${ids.length} people with a holiday allowance</small></div></summary><div class="cardbody">
     ${
       ids
         .map((id) => {
-          const s = holSum(id, S.data.signoffs[id]);
+          const s = holSum(id, sheetOf("signoffs", id));
           return `<div class="drow hol-row"><span><b>${esc(nameOf(id))}</b> <span class="who">${holN(s.allow)} a year</span></span><span class="who">${holN(s.taken)} taken · ${holN(s.booked)} booked${s.waiting ? ` · ${holN(s.waiting)} waiting` : ""} · <b class="${s.left < 0 ? "hol-neg" : ""}">${holN(s.left)} left</b></span></div>`;
         })
         .join("") ||
@@ -167,7 +167,7 @@ function holWire() {
 }
 function holSettings() {
   const c = holCfg();
-  const ids = teamIds();
+  const ids = crewIds();
   openSheet(
     `<h3 id="sheettitle">🌴 Holiday year and allowances</h3>
     <div class="grid2"><label for="hol-start">Holiday year starts<select id="hol-start">${["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m) => `<option value="${m}-01"${c.start === m + "-01" ? " selected" : ""}>1 ${parse("2026-" + m + "-01").toLocaleDateString("en-GB", { month: "long" })}</option>`).join("")}</select></label><label for="hol-days">Days a year (full time)<input id="hol-days" type="number" inputmode="decimal" min="0" max="60" step="0.5" value="${esc(c.days)}"></label></div>

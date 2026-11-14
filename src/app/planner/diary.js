@@ -1,6 +1,7 @@
 /* ================= DIARY / SCHEDULER BOARD (people down the side, hours across) ================= */
 import { pdClientDatesOn } from "../clients/portal-calendar.js";
 import { viewClient } from "../clients/quick-enquiry.js";
+import { bossName } from "../core/company-names.js";
 import { $, addDays, dayLabel, esc, iso, monday, parse, toMin, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -19,7 +20,7 @@ function diaryRows(owner) {
   const ids = owner ? [S.me].concat(teamIds()) : [S.me];
   return ids.map((id) => ({
     id,
-    name: id === S.me ? (owner ? (S.ownerName || "James") + " (you)" : "You") : nameOf(id),
+    name: id === S.me ? (owner ? bossName() + " (you)" : "You") : nameOf(id),
   }));
 }
 function diaryHtml(shown, owner) {

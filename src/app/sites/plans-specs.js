@@ -1,4 +1,5 @@
 /* ================= PLANS & SPECS ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, fsize, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
 import { S, docRef, ownerMode } from "../core/state.js";
@@ -234,7 +235,7 @@ function openSign(d) {
         );
         render();
       } catch (e) {
-        showErr("Couldn't save. Ask James to check you're an Editor on this page.");
+        showErr(`Couldn't save. Ask ${bossFirst()} to check you're an Editor on this page.`);
         $("f-save").disabled = false;
       }
     },

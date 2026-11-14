@@ -1,4 +1,5 @@
 /* ================= SITE DIARY: a daily diary for each site that writes itself, plus James's own note ================= */
+import { bossName } from "../core/company-names.js";
 import {
   $,
   addDays,
@@ -157,7 +158,7 @@ function sdiWire(site) {
         date: cur,
         note,
         weather: (old && old.weather) || sdiWx(site, cur) || "",
-        byName: S.ownerName || "James",
+        byName: bossName(),
         updated: Date.now(),
       };
       try {

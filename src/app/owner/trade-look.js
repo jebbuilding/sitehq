@@ -1,4 +1,5 @@
 /* ================= TRADES' LOOK: the trades' app in the new look – a Today page, five buttons along the bottom and everything else under More ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, addDays, esc, iso, shortDay, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { curTab, empTabs, render } from "../core/tabs-week.js";
@@ -236,7 +237,7 @@ function tlBrochures() {
                   `<button type="button" class="nl-row2 tl-bro" data-id="${esc(d.id)}"><span class="nl-rl">📄 ${esc(d.title || d.fileName || "Brochure")}<span class="who"> ${esc(d.uploaded ? shortDay(iso(new Date(d.uploaded))) : "")}${d.note ? " · " + esc(d.note) : ""}</span></span><span class="nl-chev" aria-hidden="true">›</span></button>`,
               )
               .join("")
-          : `<div class="who">Nothing sent to you yet. When James sends you a brochure or a supplier's details, it's here.</div>`
+          : `<div class="who">Nothing sent to you yet. When ${esc(bossFirst())} sends you a brochure or a supplier's details, it's here.</div>`
       }
     </section>
     <section class="nl-card"><div class="nl-cardh"><h2>🏭 Suppliers and their brochures</h2></div>${tradeMakersHtml()}</section>

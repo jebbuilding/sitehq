@@ -5,7 +5,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
-import { allTeam, nameOf, teamPlusMe } from "../owner/owner.js";
+import { allTeam, crewIds, nameOf } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { wcCalc } from "../people/wage-calc.js";
 import { acAllTx, acCatKind, acCatName } from "./acct-data.js";
@@ -438,7 +438,7 @@ function jcJobView(tabs, site) {
 /* what each person costs an hour (wages + on-costs, or their agreed rate) */
 function jcRates() {
   const s = jcSet();
-  const ids = teamPlusMe();
+  const ids = crewIds();
   openSheet(
     `<h3 id="sheettitle">⚙️ What each person costs you an hour</h3>
     <div class="who">Used for the labour cost on each job: their hourly pay plus your on-costs (NI, pension, holiday, van). For subbies who send invoices for a job, the invoice is the cost instead. The charge rates for cost-plus jobs are your day-work rates.</div>

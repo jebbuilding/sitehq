@@ -1,4 +1,5 @@
 /* ================= FOREMAN (extra access) ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, hrs, shortDay, stamp } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, inWeek, ownerMode } from "../core/state.js";
@@ -28,7 +29,7 @@ function openProxyPick(type) {
     `<h3 id="sheettitle">${type === "hours" ? "Timesheet" : "Job time"} for someone else</h3>
     <label for="px-who">Who is it for?<select id="px-who"><option value="">Choose…</option>${ppl.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}<option value="__other">Someone not on the app…</option></select></label>
     <label for="px-name" id="px-namel" hidden>Their full name<input id="px-name" maxlength="80" placeholder="e.g. Dave Smith (labourer)"></label>
-    <div class="who">It goes straight to James under their name, marked as filled in by you.</div>
+    <div class="who">It goes straight to ${esc(bossFirst())} under their name, marked as filled in by you.</div>
     ${formFoot(false, "Next")}`,
     () => {
       const v = $("px-who").value;
@@ -69,7 +70,7 @@ function foremanView() {
       ${wk.map((e) => `<div class="entry"><div class="main"><div class="job"><b>${esc(e.forName)}</b> · ${esc(e.type === "hours" ? "Timesheet" : "Job time")}</div><div class="sub">${esc(shortDay(e.date))} · ${esc(e.job)}${e.type === "hours" ? ` · ${esc(e.start)}–${esc(e.finish)}` : ` · ${esc(e.task || "")}`} · ${hrs(e.hours)} h</div></div></div>`).join("") || '<div class="nothing">None this week.</div>'}</div>
     <div class="day"><div class="dayh"><span>Site inductions on your phone</span><span class="sum">${vis.length} done</span></div>
       <div class="who">For visitors, delivery drivers or workers who don't have the app. Hand them your phone to read, tick and sign.</div>
-      ${inds.length ? inds.map((i) => `<div class="citem"><span><b>${esc(i.site)}</b><br><span class="who">${vis.filter((v) => v.inductionId === i.id).length} done by you</span></span><button type="button" class="btn primary fm-ind" data-i="${esc(i.id)}">Induct someone</button></div>`).join("") : '<div class="nothing">James hasn\'t set up any site inductions yet.</div>'}
+      ${inds.length ? inds.map((i) => `<div class="citem"><span><b>${esc(i.site)}</b><br><span class="who">${vis.filter((v) => v.inductionId === i.id).length} done by you</span></span><button type="button" class="btn primary fm-ind" data-i="${esc(i.id)}">Induct someone</button></div>`).join("") : `<div class="nothing">${esc(bossFirst())} hasn't set up any site inductions yet.</div>`}
       ${vis
         .slice(0, 15)
         .map(

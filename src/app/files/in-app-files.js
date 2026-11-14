@@ -1,4 +1,5 @@
 /* ================= IN-APP FILES (kept inside the app, not in the phone's downloads) ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -260,7 +261,10 @@ async function openFile(id, name, type) {
       );
       FV.pages.forEach((p) => FV.obs.observe(p.el));
     } catch (e) {
-      fvMsg("Couldn't open this PDF", "The file may be damaged. Ask James to upload it again.");
+      fvMsg(
+        "Couldn't open this PDF",
+        `The file may be damaged. Ask ${bossFirst()} to upload it again.`,
+      );
     }
     return;
   }

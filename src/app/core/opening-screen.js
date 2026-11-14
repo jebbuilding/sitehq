@@ -1,5 +1,6 @@
 /* ================= OPENING SCREEN: the company first, SiteHQ by Stranix small, while the app opens ================= */
 import { $, store } from "./helpers.js";
+import { S } from "./state.js";
 import { coData } from "../owner/company-details.js";
 import { coTileOf } from "../owner/today.js";
 export { initOpening };
@@ -36,6 +37,9 @@ function initOpening() {
   }
   ohqCompany(store.get("jeb.ohqCo", ""));
   const t = setInterval(() => {
+    /* the company's own name as soon as it arrives (a phone opening the app for the first time) */
+    const cn = ((S.settings || {}).company || {}).name;
+    if (cn && $("ohq-name") && $("ohq-name").textContent !== cn) ohqCompany(cn);
     const m = $("main");
     const txt = (m && m.textContent) || "";
     if (/Sign in to use the app/.test(txt)) {

@@ -1,5 +1,6 @@
 /* ================= SITE INDUCTIONS ================= */
 import { phoneOf } from "../chat/calls.js";
+import { bossFirst, bossName, coName } from "../core/company-names.js";
 import { $, addDays, esc, iso, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -31,11 +32,11 @@ export {
   wireInduction,
 };
 const IND_DETAILS = [
-  ["pc", "Principal contractor", "JEB Building Services"],
-  ["manager", "Site manager / supervisor and phone", "James Bray · 07917 646970"],
+  ["pc", "Principal contractor", ""],
+  ["manager", "Site manager / supervisor and phone", ""],
   ["firstaider", "First aider", ""],
   ["firstaid", "First aid kit is kept", ""],
-  ["hospital", "Nearest A&E", "Royal Devon & Exeter Hospital, Barrack Road, Exeter EX2 5DW"],
+  ["hospital", "Nearest A&E", ""],
   ["assembly", "Fire assembly point", ""],
   ["welfare", "Toilets, drinking water and break area", ""],
   ["hours", "Working hours", "8:00am – 5:00pm Monday to Friday. No noisy work before 8:00am."],
@@ -48,7 +49,7 @@ const IND_DETAILS = [
   [
     "rules",
     "Site rules",
-    "Sign in with James on arrival. Keep access routes clear. No smoking or vaping except in the agreed area. Secure the site, tools and materials at the end of each day. Be polite to neighbours and the client.",
+    `Sign in with the site manager on arrival. Keep access routes clear. No smoking or vaping except in the agreed area. Secure the site, tools and materials at the end of each day. Be polite to neighbours and the client.`,
   ],
 ];
 const IND_ITEMS = [
@@ -217,8 +218,7 @@ function pplOptions() {
   );
   return [...new Set(ids)]
     .map((id) => {
-      const n =
-        id === own ? S.ownerName || (S.settings || {}).ownerName || "James Bray" : nameOf(id);
+      const n = id === own ? bossName() : nameOf(id);
       const t = phoneOf(id);
       return { id, name: n, label: n + (t ? " · " + t : "") };
     })
@@ -522,7 +522,7 @@ function openInduction(ind, onDevice, count) {
       <div><div class="flabel">They are a</div><div class="seg" id="in-role">${VIS_ROLES.map((r, i) => `<button type="button" data-v="${esc(r)}" aria-pressed="${i === 0}">${esc(r)}</button>`).join("")}</div></div>`
         : ""
     }
-    <div><b>${esc(ind.site)}</b><div class="who">JEB Building Services</div></div>
+    <div><b>${esc(ind.site)}</b><div class="who">${esc(coName())}</div></div>
     <div class="details">${detailsHtml(ind.details)}</div>
     ${
       (ind.rulesDocs || []).length
@@ -535,12 +535,12 @@ function openInduction(ind, onDevice, count) {
     <div id="in-items">${ind.items.map((t, i) => `<label class="tick" for="in-t${i}"><input type="checkbox" id="in-t${i}" data-i="${i}"><span>${esc(t)}</span></label>`).join("")}</div></div>
     <div class="flabel" style="margin:0">Your details</div>${autoFilled ? `<div class="who">✓ Filled in from <b>My details</b>. Change anything that's different today.</div>` : onDevice ? "" : `<div class="who">Tip: fill in <b>My details</b> once and this fills itself in next time.</div>`}
     <div class="grid2"><label for="in-name">Full name<input id="in-name" required maxlength="80" value="${onDevice ? "" : esc(w.fullName || S.myProfile.name)}"></label>
-    <label for="in-company">Company<input id="in-company" maxlength="80" value="${onDevice ? "" : esc(w.company || "JEB Building Services")}"></label></div>
+    <label for="in-company">Company<input id="in-company" maxlength="80" value="${onDevice ? "" : esc(w.company || coName())}"></label></div>
     <div class="grid2"><label for="in-trade">${onDevice ? "Trade or reason for visit" : "Trade"}<input id="in-trade" maxlength="60" placeholder="e.g. Carpenter" value="${esc(w.trade || "")}"></label>
     <label for="in-cscs">CSCS or other card number (optional)<input id="in-cscs" maxlength="60" value="${esc(w.cscs || "")}"></label></div>
     <div class="grid2"><label for="in-ecn">Emergency contact name<input id="in-ecn" required maxlength="80" value="${esc(w.ecName || "")}"></label>
     <label for="in-ecp">Emergency contact phone<input id="in-ecp" type="tel" required maxlength="30" value="${esc(w.ecPhone || "")}"></label></div>
-    <label for="in-med">Anything we should know, e.g. a medical condition (optional, only James sees this)<textarea id="in-med" maxlength="400">${esc(w.medical || "")}</textarea></label>
+    <label for="in-med">Anything we should know, e.g. a medical condition (optional, only ${esc(bossFirst())} sees this)<textarea id="in-med" maxlength="400">${esc(w.medical || "")}</textarea></label>
     <div><div class="checkhead"><span class="flabel" style="margin:0">Sign with your finger</span><button type="button" class="pillbtn" id="sig-clear">Clear</button></div>
     <canvas id="sig" class="sigpad" aria-label="Signature box"></canvas></div>
     <div class="who">By signing you confirm you have received this induction and understood it. Your name, signature, the date and time are stored with this job.</div>
@@ -558,7 +558,7 @@ function openInduction(ind, onDevice, count) {
       const n = ind.items.length - ticks.filter(Boolean).length;
       if (n) {
         showErr(
-          `Tick every point (${n} left). If you don't understand one, ask ${onDevice ? "before signing" : "James before signing"}.`,
+          `Tick every point (${n} left). If you don't understand one, ask ${onDevice ? "before signing" : `${bossFirst()} before signing`}.`,
         );
         return;
       }
@@ -608,7 +608,7 @@ function openInduction(ind, onDevice, count) {
                 signature: sig.data(),
                 signedAt: now,
                 created: now,
-                recordedBy: fm ? myName() + " (foreman)" : S.ownerName || "James",
+                recordedBy: fm ? myName() + " (foreman)" : bossName(),
               },
             }),
           );
@@ -653,7 +653,7 @@ function openInduction(ind, onDevice, count) {
         );
         render();
       } catch (e) {
-        showErr("Couldn't save. Ask James to check you're an Editor on this page.");
+        showErr(`Couldn't save. Ask ${bossFirst()} to check you're an Editor on this page.`);
         $("f-save").disabled = false;
       }
     },
@@ -805,7 +805,7 @@ function sigPad(cv) {
 function viewRecord(rec, owner) {
   const w = rec.worker || {};
   openViewer(`<h3 style="font-family:var(--f-display);margin:0">Site induction record</h3>
-    <div class="who">${esc(rec.site)} · JEB Building Services</div>
+    <div class="who">${esc(rec.site)} · ${esc(coName())}</div>
     <div class="details" style="margin-top:10px">${detailsHtml(rec.details)}</div>
     ${rec.rulesAgreed ? `<div class="flabel" style="margin-top:12px">Site rules</div><div class="tick done"><span class="tickmark">✓</span><span>Read the site rules (${esc((rec.rulesAgreed.docs || []).join(", "))}) and agreed to follow them.</span></div>` : ""}
     <div class="flabel" style="margin-top:12px">Points confirmed</div>
@@ -825,7 +825,7 @@ function viewRecord(rec, owner) {
       .join("")}</div>
     <div class="flabel" style="margin-top:12px">Signature</div>
     <img src="${esc(rec.signature)}" alt="Signature of ${esc(rec.name)}" style="background:#fff;border:1px solid var(--line);border-radius:8px;max-width:360px;width:100%">
-    <div class="who">Signed electronically ${stamp(rec.signedAt)}${rec.onDevice ? " in person on " + (rec.type === "visitind" ? esc(rec.recordedBy || "the foreman") + "'s phone" : "James's device") : ""}${rec.deliveredAt && rec.deliveredAt - rec.signedAt > 600000 ? ` (received ${stamp(rec.deliveredAt)})` : ""}</div>
+    <div class="who">Signed electronically ${stamp(rec.signedAt)}${rec.onDevice ? " in person on " + (rec.type === "visitind" ? esc(rec.recordedBy || "the foreman") + "'s phone" : `${bossFirst()}'s device`) : ""}${rec.deliveredAt && rec.deliveredAt - rec.signedAt > 600000 ? ` (received ${stamp(rec.deliveredAt)})` : ""}</div>
     <div class="actions" style="margin-top:12px"><button class="btn primary" id="rec-pdf" type="button">Download PDF</button></div>`);
   $("rec-pdf").onclick = () => pdfRecord(rec);
 }
@@ -887,7 +887,7 @@ async function pdfRecord(rec) {
   doc.setFillColor(...BRGB());
   doc.rect(0, 0, W, 6, "F");
   await pdfLogo(doc, W - M, 11, 52, 24);
-  text("JEB BUILDING SERVICES", 9, "bold", 0, 6);
+  text(coName().toUpperCase(), 9, "bold", 0, 6);
   text("Site induction record", 18, "bold", 0, 2);
   text(rec.site, 12, "bold", 0, 4);
   const w = rec.worker || {};
@@ -961,8 +961,8 @@ async function pdfRecord(rec) {
   y += 30;
   text(
     rec.onDevice
-      ? `Signed electronically by ${rec.name} on ${stamp(rec.signedAt)}, in person on a JEB Building Services device.`
-      : `Signed electronically by ${rec.name} on ${stamp(rec.signedAt)} using the JEB Building Services staff app, signed in to their own account.`,
+      ? `Signed electronically by ${rec.name} on ${stamp(rec.signedAt)}, in person on a ${coName()} device.`
+      : `Signed electronically by ${rec.name} on ${stamp(rec.signedAt)} using the ${coName()} staff app, signed in to their own account.`,
     9,
     "normal",
     0,
@@ -1023,7 +1023,7 @@ async function registerPdf(ind) {
   doc.setFillColor(...BRGB());
   doc.rect(0, 0, W, 6, "F");
   await pdfLogo(doc, W - M, 11, 52, 24);
-  text("JEB BUILDING SERVICES", 9, "bold", 0, 6);
+  text(coName().toUpperCase(), 9, "bold", 0, 6);
   text("Site induction register", 18, "bold", 0, 2);
   text(ind.site, 12, "bold", 0, 1);
   const d = ind.details || {};

@@ -34,7 +34,7 @@ function mjEdit(c, j0, full) {
       .map(([k, l]) => `<option value="${k}"${k === j.stage ? " selected" : ""}>${esc(l)}</option>`)
       .join("")}</select></label>
     <label for="mj-site">Where<select id="mj-site"><option value="">Not a site yet</option>${sites.map((s) => `<option${same(s, curSite) ? " selected" : ""}>${esc(s)}</option>`).join("")}<option value="__new">➕ A new site at another address…</option></select></label></div>
-    <label for="mj-addr" id="mj-addrw" class="mj-addrw" hidden>Address of the new site<input id="mj-addr" maxlength="120" placeholder="e.g. 7 Beach Road, Exmouth EX8 1AA"></label>
+    <label for="mj-addr" id="mj-addrw" class="mj-addrw" hidden>Address of the new site<input id="mj-addr" maxlength="120" placeholder="e.g. 7 High Street"></label>
     ${full ? "" : `<button type="button" class="btn" id="mj-full">📝 Add the full details</button>`}
     <div id="mj-more"${full ? "" : " hidden"}>
     <label for="mj-desc">What they want (optional)<textarea id="mj-desc" maxlength="2000" placeholder="e.g. Rebuild the front wall, 8 m, brick to match">${esc(j.desc || "")}</textarea></label>

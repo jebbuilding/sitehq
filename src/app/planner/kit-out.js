@@ -5,7 +5,7 @@ import { S, siteNames } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { loadScript } from "../files/in-app-files.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf } from "../owner/owner.js";
 import { qrsOwnerOpen, qrsPrint } from "./qr-stickers.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo } from "../safety/expiry-dates.js";
@@ -106,7 +106,7 @@ function kitBook(e) {
   const sites = siteNames();
   openSheet(
     `<h3 id="sheettitle">Book out: ${esc(e.name)}${e.tag ? " (" + esc(e.tag) + ")" : ""}</h3>
-    <label for="kit-who">To<select id="kit-who"><option value="">Nobody – just a site</option>${teamIds()
+    <label for="kit-who">To<select id="kit-who"><option value="">Nobody – just a site</option>${crewIds()
       .map(
         (id) =>
           `<option value="${esc(id)}"${(e.out || {}).who === id ? " selected" : ""}>${esc(nameOf(id))}</option>`,

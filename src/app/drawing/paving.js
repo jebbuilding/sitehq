@@ -11407,7 +11407,7 @@ async function openNotePage(opts) {
     d.innerHTML = `<form class="dimbox npsetup"><b>🏷 Drawing details</b><div class="who">Shown in the title box on the drawing and on the PDF.</div>
       <label>What drawing is this?${doc.pages.length > 1 ? ` <span class="who">(this page: ${esc(pgx.name || "Page " + (pg + 1))})</span>` : ""}<select class="ni-type"><option value="">Choose…</option>${NP_TYPES.map((t) => `<option ${pgx.type === t ? "selected" : ""}>${esc(t)}</option>`).join("")}<option value="__other" ${pgx.type && !known ? "selected" : ""}>Other (type it in)</option></select></label>
       <input class="ni-other" maxlength="60" placeholder="e.g. Garage conversion layout" value="${esc(pgx.type && !known ? pgx.type : "")}" ${pgx.type && !known ? "" : "hidden"}>
-      ${pickField("ni-job", "Job", siteNames(), doc.site || opts.site || "", "e.g. 12 Marine Way, Exmouth", false)}
+      ${pickField("ni-job", "Job", siteNames(), doc.site || opts.site || "", "e.g. 12 High Street", false)}
       <div class="grid2"><label>Date<input type="date" class="ni-date" value="${esc(inf.date || iso(new Date()))}"></label><label>Scale<select class="ni-scale">${NP_SCALES.map((v) => `<option value="${v}" ${(+doc.scale || 0) === v ? "selected" : ""}>${v ? "1:" + v : "Not to scale"}</option>`).join("")}</select></label></div>
       ${(() => {
         const cl =

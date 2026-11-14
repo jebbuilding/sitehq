@@ -1,4 +1,5 @@
 /* ================= RISK ASSESSMENTS / RAMS (from James's CDM 2015 pack, 4.1) ================= */
+import { bossName, coName, coShort } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -72,7 +73,7 @@ function raAll(owner) {
 function raBlock(owner) {
   const list = raAll(owner);
   return `<div class="day"><div class="dayh"><span>Risk assessments &amp; method statements</span><span class="sum">${list.length}</span></div>
-    <div class="who">One per activity, e.g. "Blockwork to first floor" or "Steel beam installation". Based on JEB's CDM 2015 RAMS template.</div>
+    <div class="who">One per activity, e.g. "Blockwork to first floor" or "Steel beam installation". Based on ${esc(coShort())}'s CDM 2015 RAMS template.</div>
     <div class="actions"><button class="btn primary" id="ra-new" type="button">+ New risk assessment</button></div>
     ${
       list
@@ -115,7 +116,7 @@ function openRaForm(base) {
   openSheet(
     `<h3 id="sheettitle">${base && base.id ? "Copy of risk assessment" : "New risk assessment"}</h3>
     <label for="ra-act">Activity<input id="ra-act" required maxlength="120" value="${esc(r.activity || "")}" placeholder="e.g. Blockwork to first floor"></label>
-    ${pickField("ra-site", "Project / address", siteNames(), r.site || lastOf(S.mine.entries, () => true, "job"), "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("ra-site", "Project / address", siteNames(), r.site || lastOf(S.mine.entries, () => true, "job"), "e.g. 12 High Street")}
     <div class="grid2"><label for="ra-by">Prepared by<input id="ra-by" maxlength="80" value="${esc(me)}"></label><label for="ra-date">Date<input id="ra-date" type="date" value="${iso(new Date())}"></label></div>
     <div><div class="flabel">Persons at risk</div>${tick("ra-who", RA_WHO, r.atRisk)}</div>
     <label for="ra-plant">Plant, tools and equipment<input id="ra-plant" maxlength="300" value="${esc(r.plant || "")}" placeholder="e.g. Mixer, block splitter, scaffold"></label>
@@ -131,7 +132,7 @@ function openRaForm(base) {
       <label for="ra-m2">Sequence of work<textarea id="ra-m2" maxlength="3000" style="min-height:110px">${esc(r.method.seq || "")}</textarea></label>
       <label for="ra-m3">Inspection / checks during work<textarea id="ra-m3" maxlength="2000">${esc(r.method.checks || "")}</textarea></label>
       <label for="ra-m4">Completion, clear-up and handover<textarea id="ra-m4" maxlength="2000">${esc(r.method.finish || "")}</textarea></label></div>
-    <label for="ra-em">Emergency / rescue arrangements<textarea id="ra-em" maxlength="1000" placeholder="e.g. Nearest A&E: Royal Devon and Exeter, Barrack Rd. First aider: …">${esc(r.emergency || "")}</textarea></label>
+    <label for="ra-em">Emergency / rescue arrangements<textarea id="ra-em" maxlength="1000" placeholder="e.g. Nearest A&E: County Hospital, Station Rd. First aider: …">${esc(r.emergency || "")}</textarea></label>
     <div class="who">After saving you can get the team to sign the briefing record on your phone.</div>
     ${formFoot(false, "Save risk assessment")}`,
     async () => {
@@ -310,7 +311,7 @@ function viewRa(r, owner) {
     ["Prepared by / date", [r.preparedBy, shortDay(r.date)].filter(Boolean).join(" · ")],
     [
       "Reviewed by PC / date",
-      r.reviewedAt ? `${r.reviewedBy || "James Bray"} · ${stamp(r.reviewedAt)}` : "Not yet",
+      r.reviewedAt ? `${esc(r.reviewedBy || bossName())} · ${stamp(r.reviewedAt)}` : "Not yet",
     ],
     ["Persons at risk", (r.atRisk || []).join(", ")],
     ["Plant, tools and equipment", r.plant],
@@ -365,9 +366,7 @@ function viewRa(r, owner) {
   if ($("rv-review"))
     $("rv-review").onclick = async () => {
       try {
-        await S.db
-          .doc(raPath(r))
-          .update({ reviewedAt: Date.now(), reviewedBy: S.ownerName || "James Bray" });
+        await S.db.doc(raPath(r)).update({ reviewedAt: Date.now(), reviewedBy: bossName() });
         closeViewer();
         toast("Marked as reviewed");
       } catch (e) {
@@ -488,7 +487,7 @@ async function raPdf(r) {
   doc.setFillColor(...BRGB());
   doc.rect(0, 0, W, 6, "F");
   await pdfLogo(doc, W - M, 10, 50, 23);
-  text("JEB BUILDING SERVICES", 9, "bold", 0, 6);
+  text(coName().toUpperCase(), 9, "bold", 0, 6);
   text("Risk assessment & method statement", 16, "bold", 0, 2);
   text(r.activity, 12, "bold", 0, 4);
   const kv = (l, v) => {
@@ -509,9 +508,7 @@ async function raPdf(r) {
   kv("Prepared by / date", [r.preparedBy, r.date].filter(Boolean).join(" / "));
   kv(
     "Reviewed by PC / date",
-    r.reviewedAt
-      ? (r.reviewedBy || "James Bray") + " / " + stamp(r.reviewedAt)
-      : "Not yet reviewed",
+    r.reviewedAt ? (r.reviewedBy || bossName()) + " / " + stamp(r.reviewedAt) : "Not yet reviewed",
   );
   kv("Persons at risk", (r.atRisk || []).join(", "));
   kv("Plant, tools and equipment", r.plant);

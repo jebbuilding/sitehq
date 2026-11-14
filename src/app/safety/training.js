@@ -1,4 +1,5 @@
 /* ================= TRAINING & TOOLBOX TALKS ================= */
+import { bossFirst, coName } from "../core/company-names.js";
 import { pickField, pickVal } from "../core/fields.js";
 import { $, esc, parse, shortDay, stamp, toast } from "../core/helpers.js";
 import {
@@ -193,7 +194,7 @@ function trainingView() {
       ${done.length ? `<div class="day"><div class="dayh"><span>Done</span><span class="sum">${done.length}</span></div>${done.map((t) => talkCard(t, false)).join("")}</div>` : ""}
       <div class="day"><div class="dayh"><span>My cards and certificates</span><span class="sum">${certs.length}</span></div>
       <div class="actions"><button class="btn primary" id="addCert" type="button">+ Add card or certificate</button></div>
-      ${certs.length ? certs.map((c) => certRow(c, false)).join("") : '<div class="nothing">Add your CSCS card, first aid, PASMA, plant tickets and so on, with a photo. James will be reminded before they expire.</div>'}</div>`;
+      ${certs.length ? certs.map((c) => certRow(c, false)).join("") : `<div class="nothing">Add your CSCS card, first aid, PASMA, plant tickets and so on, with a photo. ${esc(bossFirst())} will be reminded before they expire.</div>`}</div>`;
     $("addCert").onclick = openCert;
     wireCerts(certs, false);
   }
@@ -220,7 +221,7 @@ function openCert() {
       const f = $("ce-file").files[0];
       if (f && !S.assets) {
         showErr(
-          "You don't have permission to upload. Ask James to make you an Editor on this page.",
+          `You don't have permission to upload. Ask ${bossFirst()} to make you an Editor on this page.`,
         );
         return;
       }
@@ -278,7 +279,7 @@ function openTalkEditor(kind, t) {
     `<h3 id="sheettitle">${t ? "Edit" : "New"} ${kind === "training" ? "training" : "toolbox talk"}</h3>
     ${!t && kind === "toolbox" ? `<label for="tk-tpl">Start from a ready-made talk<select id="tk-tpl"><option value="">Write my own</option>${TALK_TEMPLATES.map((x, i) => `<option value="${i}">${esc(x[0])}</option>`).join("")}</select></label>` : ""}
     <label for="tk-title">Title<input id="tk-title" required maxlength="100" value="${esc(t ? t.title : "")}" placeholder="${kind === "training" ? "e.g. How to use the new laser level" : "e.g. Working at height"}"></label>
-    ${pickField("tk-site", "Site (optional)", siteNames(), t ? t.site || "" : "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("tk-site", "Site (optional)", siteNames(), t ? t.site || "" : "", "e.g. 12 High Street", false)}
     <label for="tk-body">What workers need to read<textarea id="tk-body" style="min-height:220px" maxlength="8000">${esc(t ? t.body : "")}</textarea></label>
     <label for="tk-file">Attach a document, e.g. a PDF or image (optional)<input id="tk-file" type="file" accept="application/pdf,image/*,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>
     ${t && t.fileId ? `<div class="who">Attached: ${esc(t.fileName)}. Choose a new file to replace it.</div>` : ""}
@@ -377,7 +378,7 @@ function openTalk(id) {
     : "";
   let html = `<span class="tag ${t.kind === "training" ? "" : "day"}">${t.kind === "training" ? "Training" : "Toolbox talk"}</span>
     <h3 style="font-family:var(--f-display);font-size:24px;margin:6px 0 0;color:var(--accent);text-transform:uppercase;letter-spacing:.02em">${esc(t.title)}</h3>
-    <div class="who">${t.site ? esc(t.site) + " · " : ""}JEB Building Services${t.due ? " · sign by " + shortDay(t.due) : ""}</div>
+    <div class="who">${t.site ? esc(t.site) + " · " : ""}${esc(coName())}${t.due ? " · sign by " + shortDay(t.due) : ""}</div>
     <div class="talkbody">${esc(t.body)}</div>${attach}`;
   if (owner) {
     const ids = talkAssignees(t);
@@ -583,7 +584,7 @@ async function talkPdf(t) {
   doc.setFillColor(...BRGB());
   doc.rect(0, 0, W, 6, "F");
   await pdfLogo(doc, W - M, 11, 52, 24);
-  text("JEB BUILDING SERVICES", 9, "bold", 0, 6);
+  text(coName().toUpperCase(), 9, "bold", 0, 6);
   text((t.kind === "training" ? "Training" : "Toolbox talk") + " register", 18, "bold", 0, 2);
   text(t.title, 12, "bold", 0, 1);
   if (t.site) text(t.site, 10, "normal", 0, 1);

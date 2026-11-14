@@ -246,7 +246,7 @@ function drawShare(p, upd) {
   const sd = p.siteDoc ? (S.docs || []).find((x) => x.id === p.siteDoc) : null;
   openSheet(
     `<h3 id="sheettitle">👁 Who can see "${esc(p.title || "Drawing")}"</h3>
-    ${pickField("dv-site", "Site", siteNames(), p.site || "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("dv-site", "Site", siteNames(), p.site || "", "e.g. 12 High Street", false)}
     ${audienceHtml({ all: !!p.siteDoc && !(p.seeWho || []).length, who: p.seeWho || [], client: !!p.clientDoc, clientId: p.clientId }, p.site)}
     <div class="flabel">Folder in the site's Plans & drawings</div><div id="dv-fbox">${folderPick("dv-fold", p.site, "plans", sd ? sd.path || "" : p.sitePath != null ? p.sitePath : "Drawings")}</div>
     <div class="who">Trades see it as a PDF at its scale, so they can measure it. When you change the drawing, their copy updates. To send it to one trade's own Drawings instead, use 📤 Send to a trade.</div><div class="who" id="dv-prog"></div>

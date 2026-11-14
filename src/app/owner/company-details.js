@@ -1,4 +1,5 @@
 /* ================= COMPANY DETAILS card (Policies & insurance, seen by everyone) ================= */
+import { bossName, coName } from "../core/company-names.js";
 import { $, esc, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -24,13 +25,16 @@ import { WTN } from "../safety/waste-transfer-note.js";
 import { QRSITE } from "../sites/qr-sign-in.js";
 export { coData, companyCard, wireCompany };
 const CO_FIELDS = [
-  ["name", "Company name", "JEB Building Services"],
-  ["owner", "Owner / contact", "James Bray"],
-  ["address", "Business address", "e.g. 1 High St, Exmouth EX8 1AA"],
+  ["name", "Company name", "e.g. Smith Building Ltd"],
+  ["shortName", "Short name for the app icon and labels", "e.g. SBL"],
+  ["owner", "Owner / contact", "e.g. Alex Smith"],
+  ["town", "Town you're based in", "e.g. Exeter"],
+  ["workArea", "Areas you work in", "e.g. Exeter, East Devon and Teignbridge"],
+  ["address", "Business address", "e.g. 1 High Street"],
   ["mobile", "Mobile", ""],
   ["phone", "Office phone", ""],
   ["email", "Email", ""],
-  ["oohName", "Emergency / out-of-hours contact", "e.g. James Bray"],
+  ["oohName", "Emergency / out-of-hours contact", "e.g. Alex Smith"],
   ["oohPhone", "Emergency / out-of-hours number", ""],
   ["oohName2", "Second emergency contact (optional)", ""],
   ["oohPhone2", "Second emergency number (optional)", ""],
@@ -50,8 +54,8 @@ const CO_FIELDS = [
 ];
 function coData() {
   const c = Object.assign({}, (S.settings || {}).company || {});
-  if (!c.name) c.name = "JEB Building Services";
-  if (!c.owner) c.owner = (S.settings || {}).ownerName || S.ownerName || "James Bray";
+  if (!c.name) c.name = coName();
+  if (!c.owner) c.owner = bossName();
   if (!c.mobile) c.mobile = (S.settings || {}).ownerPhone || "";
   return c;
 }

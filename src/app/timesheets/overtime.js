@@ -1,4 +1,5 @@
 /* ================= OVERTIME: trades ask for an early start or late finish to be paid; James approves it ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, calcHours, esc, lunchBreak, toMin, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -62,12 +63,12 @@ function otmAsk(e, x) {
   const done = !e.open;
   openSheet(
     `<h3 id="sheettitle">⏱ Different hours today?</h3>
-    <div class="who">You're paid ${esc(e.start)}–${esc(fin0)}${lunchMin ? " less " + lunchMin + " min lunch" : ""}. Tick what was different and say why – James approves it.</div>
+    <div class="who">You're paid ${esc(e.start)}–${esc(fin0)}${lunchMin ? " less " + lunchMin + " min lunch" : ""}. Tick what was different and say why – ${esc(bossFirst())} approves it.</div>
     <label class="tick"><input type="checkbox" id="otm-e"${x.early >= OTM_MIN ? " checked" : ""}> <span>Started early, at <input type="time" id="otm-et" value="${esc(e.actualIn || e.start)}" style="width:auto;display:inline-block">${x.early >= OTM_MIN ? ` (${otmLen(x.early)} before ${esc(e.start)})` : ""}</span></label>
     <label class="tick"><input type="checkbox" id="otm-l"${x.late >= OTM_MIN ? " checked" : ""}> <span>${done ? "Finished" : "Working"} late, until <input type="time" id="otm-lt" value="${esc(e.actualOut || fin0)}" style="width:auto;display:inline-block">${x.late >= OTM_MIN ? ` (${otmLen(x.late)} after ${esc(fin0)})` : ""}</span></label>
     ${lunchMin ? `<label class="tick"><input type="checkbox" id="otm-lu"> <span>Worked through lunch (${lunchMin} min)</span></label>` : ""}
     <label for="otm-why">Why? (you must say, so it can be logged)<input id="otm-why" maxlength="160" placeholder="e.g. concrete pour, getting the roof covered before rain"></label>
-    ${formFoot(false, "Ask James to pay it")}`,
+    ${formFoot(false, `Ask ${bossFirst()} to pay it`)}`,
     async () => {
       const from = $("otm-et").value,
         to = $("otm-lt").value;
@@ -82,7 +83,9 @@ function otmAsk(e, x) {
         return showErr("Tick what was different (with times outside your usual day), or Cancel.");
       const why = $("otm-why").value.trim();
       if (!why)
-        return showErr("Say what it was for – it has to be logged before James can pay it.");
+        return showErr(
+          `Say what it was for – it has to be logged before ${bossFirst()} can pay it.`,
+        );
       const data = Object.assign({}, e, {
         ot: {
           early,
@@ -105,8 +108,8 @@ function otmAsk(e, x) {
         closeForm();
         toast(
           r === "queued"
-            ? "Saved on this phone – sends to James when you have signal"
-            : "Overtime sent to James to approve",
+            ? `Saved on this phone – sends to ${bossFirst()} when you have signal`
+            : `Overtime sent to ${bossFirst()} to approve`,
         );
         render();
       } catch (err) {

@@ -58,15 +58,18 @@ const ACS = (() => {
       `<h3 id="sheettitle">🏢 Your company</h3><div class="who">Step 1 of 3. Shown to everyone on the app and on your paperwork. Your logo, insurance and the rest are in Setup › Company details.</div>
       ${field("name", "Company name", c.name, "e.g. Smith Building Ltd")}
       ${field("owner", "Account holder (you)", c.owner, "Your full name")}
-      <label for="acs-address">Business address<textarea id="acs-address" maxlength="300" placeholder="e.g. 1 High St, Exmouth EX8 1AA">${esc(c.address || "")}</textarea></label>
+      <div class="grid2">${field("shortName", "Short name (for the app icon)", c.shortName || "", "e.g. SBL")}${field("town", "Town you're based in", c.town || "", "e.g. Exeter")}</div>
+      <label for="acs-address">Business address<textarea id="acs-address" maxlength="300" placeholder="e.g. 1 High Street">${esc(c.address || "")}</textarea></label>
       <div class="grid2">${field("mobile", "Mobile", c.mobile, "", "tel")}${field("phone", "Office phone", c.phone, "", "tel")}</div>
       ${field("email", "Email", c.email, "", "email")}
       ${formFoot(false, "Save and next")}`,
       () => {
         const v = {};
-        ["name", "owner", "address", "mobile", "phone", "email"].forEach((k) => {
-          v[k] = $("acs-" + k).value.trim();
-        });
+        ["name", "shortName", "owner", "town", "address", "mobile", "phone", "email"].forEach(
+          (k) => {
+            v[k] = $("acs-" + k).value.trim();
+          },
+        );
         if (!v.name || !v.owner) {
           showErr("Add the company name and your name.");
           return;
@@ -84,7 +87,7 @@ const ACS = (() => {
     const c = co();
     openSheet(
       `<h3 id="sheettitle">🚑 Emergency contacts</h3><div class="who">Step 2 of 3. Who your people call if something goes wrong on a job, day or night. Shown to everyone on the app with the company details. (Each person's own next of kin goes in their own details.)</div>
-      ${field("oohName", "Emergency / out-of-hours contact", c.oohName || c.owner, "e.g. James Bray")}
+      ${field("oohName", "Emergency / out-of-hours contact", c.oohName || c.owner, "e.g. Alex Smith")}
       ${field("oohPhone", "Their number", c.oohPhone || c.mobile, "e.g. 07700 900123", "tel")}
       ${field("oohName2", "If they can't be reached: who? (optional)", c.oohName2, "e.g. office manager")}
       ${field("oohPhone2", "Their number (optional)", c.oohPhone2, "", "tel")}

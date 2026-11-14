@@ -292,8 +292,8 @@ function openClientForm(c, mode) {
       <div class="fhbtns"><b>Photo of the front</b><span class="who">Take one now, or choose one you've already taken.</span>
         <span style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn primary fhpickbtn">📷 Take photo<input type="file" id="cf-fhcam" accept="image/*" capture="environment" data-cam="1"></label><label class="btn fhpickbtn">🖼 Choose<input type="file" id="cf-fhpick" accept="image/*" data-cam="1"></label>
         <button type="button" class="linkdanger" id="cf-fhx" ${c.frontPhoto ? "" : "hidden"}>Remove</button></span></div></div>
-    <div class="addrrow"><label for="cf-addr">Address<input id="cf-addr" maxlength="300" autocomplete="street-address" value="${esc(String(c.address || "").replace(/\s*\n\s*/g, ", "))}" placeholder="e.g. 12 Marine Way, Exmouth"></label>
-      <label for="cf-pc">Postcode<input id="cf-pc" maxlength="10" autocomplete="postal-code" value="${esc(c.postcode || "")}" placeholder="EX8 1AA" style="text-transform:uppercase"></label></div>
+    <div class="addrrow"><label for="cf-addr">Address<input id="cf-addr" maxlength="300" autocomplete="street-address" value="${esc(String(c.address || "").replace(/\s*\n\s*/g, ", "))}" placeholder="e.g. 12 High Street"></label>
+      <label for="cf-pc">Postcode<input id="cf-pc" maxlength="10" autocomplete="postal-code" value="${esc(c.postcode || "")}" placeholder="AB1 2CD" style="text-transform:uppercase"></label></div>
     <details class="pindet" ${c.lat != null ? "open" : ""}><summary>📍 Add a map pin (optional)</summary>
       <span style="display:flex;gap:6px;margin-top:6px"><input id="cf-pin" style="flex:1" value="${c.lat != null ? esc((+c.lat).toFixed(6) + ", " + (+c.lon).toFixed(6)) : ""}" placeholder="Paste from Maps, e.g. 50.6197, -3.4135" aria-label="Map pin"><button type="button" class="pillbtn" id="cf-here">📡 Here</button></span>
       <div class="mmwrap" id="cf-mm">${c.lat != null ? miniMap(c.lat, c.lon, { label: "Property", still: true }) : ""}</div>
@@ -301,7 +301,7 @@ function openClientForm(c, mode) {
     <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" id="cf-invdiff" ${c.invAddress ? "checked" : ""}> Invoice address is different</label>
     <div id="cf-invbox" ${c.invAddress ? "" : "hidden"} class="cfinv"><label for="cf-invname">Invoice to (name or company)<input id="cf-invname" maxlength="100" value="${esc(c.invName || "")}" placeholder="e.g. Smith Lettings Ltd"></label>
       <div class="addrrow"><label for="cf-invaddr">Invoice address<input id="cf-invaddr" maxlength="300" value="${esc(String(c.invAddress || "").replace(/\s*\n\s*/g, ", "))}" placeholder="e.g. 4 High St, Exeter"></label>
-      <label for="cf-invpc">Postcode<input id="cf-invpc" maxlength="10" value="${esc(c.invPostcode || "")}" placeholder="EX1 1AA" style="text-transform:uppercase"></label></div>
+      <label for="cf-invpc">Postcode<input id="cf-invpc" maxlength="10" value="${esc(c.invPostcode || "")}" placeholder="AB1 2CD" style="text-transform:uppercase"></label></div>
       <div class="grid2"><label for="cf-invemail">Email invoices to<input id="cf-invemail" type="email" maxlength="120" value="${esc(c.invEmail || "")}" placeholder="if different"></label></div></div>
     <div class="flabel" style="margin-top:4px">🔑 Keys &amp; alarm <span class="who">(only you see these)</span></div>
     <div class="grid2"><label for="cf-keyloc">Where the house key is<input id="cf-keyloc" maxlength="200" value="${esc(c.keyLoc || "")}" placeholder="e.g. Key safe by the back door"></label><label for="cf-keycode">Key safe code<input id="cf-keycode" maxlength="40" value="${esc(c.keyCode || "")}" autocomplete="off" placeholder="e.g. 4821"></label></div>

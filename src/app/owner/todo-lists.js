@@ -1,4 +1,5 @@
 /* ================= TO-DO LISTS ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
@@ -50,7 +51,7 @@ function tradeTodosHTML() {
   const done = list.filter((t) => t.done);
   if (!list.length) return "";
   return `<div class="day" id="td-trade"><div class="dayh"><span>My to-do list</span><span class="sum">${open.length} to do</span></div>
-    <div class="who">Jobs James has asked you to do. Tick each one when it's done and James will see it.</div>
+    <div class="who">Jobs ${esc(bossFirst())} has asked you to do. Tick each one when it's done and ${esc(bossFirst())} will see it.</div>
     ${open.map((t) => todoRow(t, {})).join("") || '<div class="nothing">All done.</div>'}
     ${
       done.length

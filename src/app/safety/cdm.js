@@ -2,6 +2,7 @@
 import { ptSrc } from "../clients/portal.js";
 import { soAll } from "../clients/sign-offs.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { coShort } from "../core/company-names.js";
 import { $, esc, iso, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, liveSite, siteNames } from "../core/state.js";
@@ -175,7 +176,7 @@ function cdmAssessHtml(cd) {
     <div class="actions" style="margin:6px 0 0"><button type="button" class="btn primary" id="cdm-need">Tick the documents this level needs</button><a class="btn" href="https://www.hse.gov.uk/forms/notification/f10.htm" target="_blank" rel="noopener">🌐 Fill in the F10 on the HSE website ↗</a></div>
     <div class="who">You can tick any other document below for this job as well, whatever the level.</div>
     ${A.missing.length ? `<div class="notice warn" style="margin-top:8px"><b>Still to fill in below:</b> ${A.missing.map(esc).join(", ")}</div>` : `<div class="notice" style="margin-top:8px">✓ The key details are all filled in.</div>`}
-    <div class="who" style="margin-top:6px">JEB's own working scale, not an HSE score. Use your judgement, and review the plan as the work, risks or contractors change.</div></div>`;
+    <div class="who" style="margin-top:6px">${esc(coShort())}'s own working scale, not an HSE score. Use your judgement, and review the plan as the work, risks or contractors change.</div></div>`;
 }
 function cdmSections(cd, pick) {
   const co = coData();
@@ -1605,7 +1606,7 @@ async function welfarePackPdf(cd) {
     "These rules apply to everyone on site. Please read and follow them at all times.",
   );
   t(
-    `Document ref: JEB-HS-11  |  Version 1.0  |  Issued: ${ukDate(iso(new Date()))}`,
+    `Document ref: ${coShort()}-HS-11  |  Version 1.0  |  Issued: ${ukDate(iso(new Date()))}`,
     8.5,
     "normal",
     0,

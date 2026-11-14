@@ -1,5 +1,6 @@
 /* ================= PROFILE PHOTOS ================= */
 import { initials, openDM } from "../chat/chat.js";
+import { bossFirst } from "../core/company-names.js";
 import { $, dayLine, esc, shortDay, stamp, toast } from "../core/helpers.js";
 import { privacyBlock } from "../core/privacy-notice.js";
 import { S } from "../core/state.js";
@@ -43,7 +44,7 @@ function avatarHtml(id, size, name) {
 }
 function profilePhotoCard() {
   const p = personPhoto(S.me);
-  return `<div class="card ppcard"><div class="pphead">${avatarHtml(S.me, 84, myName())}<div><b style="font-size:18px">${esc(myName())}</b><div class="who">${p ? "This is the photo James and the team see." : "Add a photo of yourself so James and the team know who's who."}</div>
+  return `<div class="card ppcard"><div class="pphead">${avatarHtml(S.me, 84, myName())}<div><b style="font-size:18px">${esc(myName())}</b><div class="who">${p ? `This is the photo ${bossFirst()} and the team see.` : `Add a photo of yourself so ${bossFirst()} and the team know who's who.`}</div>
     <div class="actions" style="margin-top:6px"><label class="btn primary fhpickbtn">📷 ${p ? "Change my photo" : "Add my photo"}<input type="file" id="pp-photo" accept="image/*"></label>${p ? `<button type="button" class="linkdanger" id="pp-photox">Remove</button>` : ""}</div></div></div></div>`;
 }
 function wireProfilePhoto() {

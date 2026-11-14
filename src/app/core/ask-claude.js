@@ -1,4 +1,5 @@
 /* ================= ASK CLAUDE (helper in the top corner) ================= */
+import { bossFirst, bossName, coName, coShort, coTown } from "./company-names.js";
 import { $, esc, nowHM, toast } from "./helpers.js";
 import { S, ownerMode, siteNames } from "./state.js";
 import { EMP_TABS, OWN_TABS, curTab, empTabs } from "./tabs-week.js";
@@ -26,7 +27,7 @@ const TAB_HELP = {
   policies: "company policies and insurance to read",
   calc: "area m², volume m³, materials needed, normal calculator",
   details: "personal details, next of kin, personal documents (licence, passport)",
-  todo: "James's private to-do list",
+  todo: "the owner's private to-do list",
   projects: "each site's page: photos, documents, key dates, site chat",
   people: "everyone's details, documents, leavers",
   setup: "sites, vehicles and plant, dates, working day, backup",
@@ -37,10 +38,10 @@ function aiRules() {
   const tabs = (owner ? OWN_TABS : empTabs())
     .map(([k, l]) => `- ${l}: ${TAB_HELP[k] || ""}`)
     .join("\n");
-  const name = owner ? S.ownerName || "James Bray" : (S.myProfile && S.myProfile.name) || "a trade";
+  const name = owner ? bossName() : (S.myProfile && S.myProfile.name) || "a trade";
   const trade = myTrade();
-  return `You are Claude, an AI assistant built into "SiteHQ", the site management app used by JEB Building Services, a building company in Exmouth, Devon, UK, run by James Bray.
-You are talking to ${name}${owner ? " (James, the owner)" : `, one of the trades${trade ? " (" + trade + ")" : ""}`}. Today is ${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, ${nowHM()}. They are on the "${((owner ? OWN_TABS : EMP_TABS).find((t) => t[0] === curTab()) || [, "Time"])[1]}" tab.
+  return `You are Claude, an AI assistant built into "SiteHQ", the site management app used by ${coName()}, a building company${coTown() ? " in " + coTown() : ""} in the UK, run by ${bossName()}.
+You are talking to ${name}${owner ? ` (${bossFirst()}, the owner)` : `, one of the trades${trade ? " (" + trade + ")" : ""}`}. Today is ${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, ${nowHM()}. They are on the "${((owner ? OWN_TABS : EMP_TABS).find((t) => t[0] === curTab()) || [, "Time"])[1]}" tab.
 Paid day: ${WS()}–${WE()}, the 10am break is paid, the 1pm half hour is unpaid.
 Sites in the app: ${siteNames().slice(0, 40).join("; ") || "none yet"}.
 
@@ -51,8 +52,8 @@ How to answer:
 - Plain, friendly UK English for someone on a building site, usually on a phone. Keep it short. Use short numbered steps for "how do I".
 - You can't see or change anything in the app (no records, timesheets or other people's details). Tell them which tab and button to use.
 - Help with building questions too: quantities and maths (show the working), materials, methods, UK Building Regs basics, toolbox talk notes, wording for messages, RAMS outlines.
-- For anything safety-critical, structural, gas, electrics, asbestos, or tax/legal, give general guidance only and say to check with James or a qualified person. In an emergency tell them to call 999 first.
-- Never invent company rules; if you don't know how JEB does something, say to ask James.`;
+- For anything safety-critical, structural, gas, electrics, asbestos, or tax/legal, give general guidance only and say to check with ${bossFirst()} or a qualified person. In an emergency tell them to call 999 first.
+- Never invent company rules; if you don't know how ${coShort()} does something, say to ask ${bossFirst()}.`;
 }
 function aiMd(t) {
   let h = esc(t);
@@ -105,7 +106,7 @@ function aiDraw(streamText) {
               `<div class="ai-m ${t.role === "user" ? "me" : "bot"}">${t.role === "user" ? esc(t.content).replace(/\n/g, "<br>") : aiMd(t.content)}</div>`,
           )
           .join("")
-      : `<div class="ai-hello"><b>Hi${ownerMode() ? " James" : S.myProfile && S.myProfile.name ? " " + esc(S.myProfile.name.split(" ")[0]) : ""}.</b> Ask me how to do something in the app, or anything about the job: quantities, materials, methods, wording a message.<div class="ai-sugg">${sugg.map((s) => `<button type="button" class="pillbtn ai-s">${esc(s)}</button>`).join("")}</div></div>`) +
+      : `<div class="ai-hello"><b>Hi${ownerMode() ? " " + esc(bossFirst()) : S.myProfile && S.myProfile.name ? " " + esc(S.myProfile.name.split(" ")[0]) : ""}.</b> Ask me how to do something in the app, or anything about the job: quantities, materials, methods, wording a message.<div class="ai-sugg">${sugg.map((s) => `<button type="button" class="pillbtn ai-s">${esc(s)}</button>`).join("")}</div></div>`) +
     (streamText != null
       ? `<div class="ai-m bot">${streamText ? aiMd(streamText) : '<span class="ai-think">Thinking…</span>'}</div>`
       : "");

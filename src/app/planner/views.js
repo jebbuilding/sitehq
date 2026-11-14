@@ -1,5 +1,6 @@
 /* ================= PLANNER: more detail, list view, day view, import ================= */
 import { chatPeople } from "../chat/chat.js";
+import { bossFirst } from "../core/company-names.js";
 import {
   $,
   addDays,
@@ -75,7 +76,7 @@ function openPlanDetail(p) {
     return;
   }
   if (p.pending) {
-    toast("Waiting for James to answer");
+    toast(`Waiting for ${bossFirst()} to answer`);
     return;
   }
   if (!owner)

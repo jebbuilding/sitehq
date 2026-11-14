@@ -1,4 +1,5 @@
 /* ================= REPORT AN ISSUE with the app ================= */
+import { bossFirst } from "./company-names.js";
 import { $, esc, stamp, toast } from "./helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "./sheet.js";
 import { S, ownerMode } from "./state.js";
@@ -47,20 +48,20 @@ function openIssueForm() {
   const cur = curTab();
   openSheet(
     `<h3 id="sheettitle">⚠ Report a problem with the app</h3>
-    <div class="who">Tell James what went wrong. It goes straight to him with your phone details so it can be fixed.</div>
+    <div class="who">Tell ${esc(bossFirst())} what went wrong. It goes straight to them with your phone details so it can be fixed.</div>
     <label for="is-text">What happened?<textarea id="is-text" required maxlength="2000" style="min-height:110px" placeholder="e.g. When I tap Take photo on the Photos tab nothing happens. iPhone, Claude app."></textarea></label>
     <label for="is-where">Where in the app?<select id="is-where">${tabs.map(([k, l]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${esc(l)}</option>`).join("")}<option value="other">Somewhere else / everywhere</option></select></label>
     <fieldset class="is-sev"><legend>How bad is it?</legend>${ISS_SEV.map(([k, l], i) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="radio" name="is-sev" value="${k}" ${i === 1 ? "checked" : ""}> ${esc(l)}</label>`).join("")}</fieldset>
     <label for="is-ph">Screenshots or photos (optional)<input id="is-ph" type="file" accept="image/*" multiple></label>
     <div class="who">Tip: take a screenshot of the problem first (on iPhone press the side button and volume up together), then add it here.</div>
-    ${formFoot(false, ownerMode() ? "Save" : "Send to James")}
+    ${formFoot(false, ownerMode() ? "Save" : `Send to ${bossFirst()}`)}
     ${
       mine.length
         ? `<div class="flabel" style="margin-top:14px">Your reports</div>${mine
             .slice(0, 10)
             .map(
               (x) =>
-                `<div class="issmine"><span class="tag ${x.status === "fixed" ? "ok" : ""}">${x.status === "fixed" ? "Fixed" : x.status === "seen" ? "Seen" : "Sent"}</span> ${esc(String(x.text || "").slice(0, 90))}<br><span class="who">${esc(stamp(x.created))}${x.reply ? " · James: " + esc(x.reply) : ""}</span></div>`,
+                `<div class="issmine"><span class="tag ${x.status === "fixed" ? "ok" : ""}">${x.status === "fixed" ? "Fixed" : x.status === "seen" ? "Seen" : "Sent"}</span> ${esc(String(x.text || "").slice(0, 90))}<br><span class="who">${esc(stamp(x.created))}${x.reply ? ` · ${bossFirst()}: ` + esc(x.reply) : ""}</span></div>`,
             )
             .join("")}`
         : ""
@@ -100,7 +101,7 @@ function openIssueForm() {
             ? "Saved. It will send when you have signal."
             : ownerMode()
               ? "Saved"
-              : "Sent to James. Thanks!",
+              : `Sent to ${bossFirst()}. Thanks!`,
         );
         render();
       } catch (e) {

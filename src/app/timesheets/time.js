@@ -1,4 +1,5 @@
 /* ================= EMPLOYEE: TIME ================= */
+import { bossFirst, bossName } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import {
   $,
@@ -92,7 +93,7 @@ function clockCard() {
     "Site",
     siteNames(),
     lastOf(S.mine.entries, () => true, "job"),
-    "e.g. 12 Marine Way, Exmouth",
+    "e.g. 12 High Street",
     true,
     nstGroups(),
   )}
@@ -142,7 +143,7 @@ async function checkInAt(site) {
         : "Checked in at " + actual) + (st !== actual ? " · paid from " + st : ""),
     );
   } catch (e) {
-    toast("Couldn't check in. Ask James to check you're an Editor.");
+    toast(`Couldn't check in. Ask ${bossFirst()} to check you're an Editor.`);
   }
 }
 async function checkOut(e) {
@@ -248,7 +249,7 @@ function empTime() {
           const e = S.mine.entries.find((x) => x.id === r.dataset.id);
           if (!e) return;
           if (e.approved || e.billed) {
-            toast("This has been approved or billed. Ask James if it needs changing.");
+            toast(`This has been approved or billed. Ask ${bossFirst()} if it needs changing.`);
             return;
           }
           openEntry("job", e);
@@ -322,7 +323,7 @@ function empTime() {
           const e = S.mine.entries.find((x) => x.id === b.dataset.id);
           if (!e) return;
           if (e.approved) {
-            toast("This entry has been approved. Ask James if it needs changing.");
+            toast(`This entry has been approved. Ask ${bossFirst()} if it needs changing.`);
             return;
           }
           openEntry(e.type, e);
@@ -354,7 +355,7 @@ function openEntry(type, e, forWho) {
   openSheet(
     `<h3 id="sheettitle">${e ? "Edit" : "Add"} ${type === "hours" ? "timesheet day" : "day work / job time"}</h3>${px ? `<div class="notice" style="margin:0">For <b>${esc(px.name)}</b>, filled in by you.</div>` : ""}${forWho ? `<div class="who">For <b>${esc(nameOf(forWho))}</b>. They'll see the change straight away.</div>` : ""}
     <label for="f-date">Date<input id="f-date" type="date" required value="${esc(defDate)}"></label>
-    ${pickField("f-job", "Site or job", siteNames(), e ? e.job : lastOf(srcEntries, () => true, "job"), "e.g. 12 Marine Way, Exmouth", true, nstGroups())}
+    ${pickField("f-job", "Site or job", siteNames(), e ? e.job : lastOf(srcEntries, () => true, "job"), "e.g. 12 High Street", true, nstGroups())}
     ${
       type === "hours"
         ? `<div class="grid3">
@@ -382,7 +383,7 @@ function openEntry(type, e, forWho) {
         <label class="btn fhpickbtn" style="margin-top:6px">📷 Add photos<input type="file" id="f-ph" accept="image/*" multiple data-cam="1"></label><span class="who" id="f-phn"></span>
         <div class="who">They're also saved to the site's photos.</div></div>`
     }
-    <label for="f-notes">Notes (optional)<textarea id="f-notes" maxlength="300" placeholder="${type === "hours" ? "Anything James should know" : "Anything that slowed it down or changed"}">${esc(e ? e.notes : "")}</textarea></label>
+    <label for="f-notes">Notes (optional)<textarea id="f-notes" maxlength="300" placeholder="${type === "hours" ? `Anything ${bossFirst()} should know` : "Anything that slowed it down or changed"}">${esc(e ? e.notes : "")}</textarea></label>
     ${formFoot(!!e)}`,
     saveEntry,
     "f-job",
@@ -539,7 +540,7 @@ async function saveEntry() {
     delete base._src;
     const out = Object.assign(base, { created: (editing && editing.created) || Date.now() }, data, {
       approved: true,
-      editedBy: S.ownerName || "James",
+      editedBy: bossName(),
       editedAt: Date.now(),
     });
     if (!out.open) {
@@ -576,7 +577,7 @@ async function saveEntry() {
     sentToast(r, "Saved:");
     render();
   } catch (err) {
-    showErr("Couldn't save. Ask James to check you're an Editor on this page.");
+    showErr(`Couldn't save. Ask ${bossFirst()} to check you're an Editor on this page.`);
     $("f-save").disabled = false;
   }
 }

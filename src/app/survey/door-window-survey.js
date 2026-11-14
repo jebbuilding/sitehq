@@ -4,6 +4,7 @@ import { clStage, saveClient } from "../clients/clients.js";
 import { ptCl } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst, bossName, coShort } from "../core/company-names.js";
 import { pickField, pickVal } from "../core/fields.js";
 import { $, esc, fsize, gbp, hrs, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import {
@@ -985,7 +986,7 @@ const DWS = (() => {
       "New supply needed – separate circuit / RCD",
       "Supplied by client's own electrician",
     ],
-    by: ["JEB to arrange", "Door supplier's fitter", "Client's electrician", "Not decided"],
+    by: ["Builder to arrange", "Door supplier's fitter", "Client's electrician", "Not decided"],
     fix: [
       "Behind the opening (on the inside face)",
       "Between the reveals",
@@ -3029,7 +3030,7 @@ const DWS = (() => {
   <div class="wsbody">
    <section class="wspanel"><h2>Job <span class="wslbl">goes on the PDF</span></h2>
     <div class="wsrow"><label class="wf">Choose a client<select id="wsx-j-pick"></select></label><label class="wf">Site<select id="wsx-j-site"></select></label></div>
-    <div class="wsrow"><label class="wf">Client<input id="wsx-j-client"></label><label class="wf">Address / deliver to<input id="wsx-j-addr"></label><label class="wf">Surveyed by<input id="wsx-j-by"></label><label class="wf">Date<input id="wsx-j-date" type="date"></label><label class="wf">Supplier<input id="wsx-j-sup" list="wsx-sups" placeholder="Window company"><datalist id="wsx-sups"><option value="Exeter Window Store, 10-11 Apple Lane, Sidmouth Road, Exeter EX2 5GL"></option></datalist></label><label class="wf">Our ref<input id="wsx-j-ref"></label></div>
+    <div class="wsrow"><label class="wf">Client<input id="wsx-j-client"></label><label class="wf">Address / deliver to<input id="wsx-j-addr"></label><label class="wf">Surveyed by<input id="wsx-j-by"></label><label class="wf">Date<input id="wsx-j-date" type="date"></label><label class="wf">Supplier<input id="wsx-j-sup" list="wsx-sups" placeholder="Window company"><datalist id="wsx-sups"></datalist></label><label class="wf">Our ref<input id="wsx-j-ref"></label></div>
     <div class="who" id="wsx-j-link"></div></section>
    <div class="wsgrid">
     <section class="wspanel" aria-label="Opening">
@@ -4900,7 +4901,7 @@ function jobsView() {
       .join("")}</div>`;
   html += list.length
     ? `<div class="day">${list.map((j) => jobCard(j, owner)).join("")}</div>`
-    : `<div class="empty"><strong>${f === "open" ? "No open jobs" : "Nothing here"}</strong>${owner ? "Create a job sheet or snag list, choose who it's for, and add the tasks." : "Job sheets and snag lists James gives you will appear here."}</div>`;
+    : `<div class="empty"><strong>${f === "open" ? "No open jobs" : "Nothing here"}</strong>${owner ? "Create a job sheet or snag list, choose who it's for, and add the tasks." : `Job sheets and snag lists ${bossFirst()} gives you will appear here.`}</div>`;
   if (owner) html += DWS.jobsHtml() + WTN.jobsHtml();
   $("main").innerHTML = html;
   if (owner) {
@@ -5137,8 +5138,7 @@ function openPhotoFull(id) {
     else closeViewer();
   };
 }
-const myName = () =>
-  ownerMode() ? S.ownerName || "James" : (S.myProfile && S.myProfile.name) || "Someone";
+const myName = () => (ownerMode() ? bossName() : (S.myProfile && S.myProfile.name) || "Someone");
 async function setTask(j, t, patch, files) {
   const cur = taskDone(j, t) || {};
   const data = Object.assign(
@@ -5176,7 +5176,7 @@ function openTaskExtra(j, t) {
       const pics = [...($("te-photos").files || [])];
       if (pics.length && !S.assets) {
         showErr(
-          "You don't have permission to upload photos. Ask James to make you an Editor on this page.",
+          `You don't have permission to upload photos. Ask ${bossFirst()} to make you an Editor on this page.`,
         );
         return;
       }
@@ -5233,11 +5233,11 @@ function openJobEditor(kind, j) {
   openSheet(
     `<h3 id="sheettitle">${j ? "Edit" : "New"} ${JOB_KINDS[kind].toLowerCase()}</h3>
     <label for="je-title">Title<input id="je-title" required maxlength="100" placeholder="${kind === "snag" ? "e.g. Final snags before handover" : "e.g. First fix – kitchen and utility"}" value="${esc(j ? j.title : "")}"></label>
-    ${pickField("je-site", "Site (optional)", siteNames(), defSite, "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("je-site", "Site (optional)", siteNames(), defSite, "e.g. 12 High Street", false)}
     <details class="jedet" ${j && j.det && Object.values(j.det).some(Boolean) ? "open" : ""}><summary><b>📝 Job details for the PDF</b> <span class="who">(fill in anything you want on the sheet)</span></summary>
       <div class="grid2">${JOB_DET.map(([k, l, ph, t]) => `<label for="jd-${k}">${esc(l)}<input id="jd-${k}" ${t ? `type="${t}"` : ""} maxlength="160" placeholder="${esc(ph || "")}" value="${esc((j && j.det && j.det[k]) || "")}"></label>`).join("")}</div>
       <label for="jd-scope">Description of the works<textarea id="jd-scope" maxlength="3000" placeholder="e.g. Remove existing kitchen, re-wire to new layout, plaster walls and ceiling, fit new kitchen units and worktops">${esc((j && j.det && j.det.scope) || "")}</textarea></label>
-      <label for="jd-mats">Materials &amp; who supplies them<textarea id="jd-mats" maxlength="2000" placeholder="e.g. Units and worktops supplied by client. Plasterboard, skim and fixings by JEB">${esc((j && j.det && j.det.mats) || "")}</textarea></label>
+      <label for="jd-mats">Materials &amp; who supplies them<textarea id="jd-mats" maxlength="2000" placeholder="e.g. Units and worktops supplied by client. Plasterboard, skim and fixings by ${esc(coShort())}">${esc((j && j.det && j.det.mats) || "")}</textarea></label>
       <label for="jd-hs">Health &amp; safety / special notes<textarea id="jd-hs" maxlength="1500" placeholder="e.g. Asbestos survey clear. Isolate power before starting. Dust sheets in the hallway">${esc((j && j.det && j.det.hs) || "")}</textarea></label></details>
     <div><div class="flabel">Who is it for? (optional: leave blank to keep it in the office)</div>
       ${ids.length ? `<div class="seg" id="je-who">${ids.map((id) => `<button type="button" data-v="${esc(id)}" aria-pressed="${j ? (j.assignees || []).includes(id) : false}">${esc(nameOf(id) + roleShort(id))}</button>`).join("")}</div>` : '<div class="nothing">No employees yet. Share the app with them first.</div>'}</div>

@@ -4,6 +4,7 @@ import { clientSites } from "../clients/address-book.js";
 import { clStage } from "../clients/clients.js";
 import { viewClient } from "../clients/quick-enquiry.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst } from "../core/company-names.js";
 import { pickField, pickVal } from "../core/fields.js";
 import {
   $,
@@ -25,7 +26,7 @@ import { isImg, uploadFile } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { noBin } from "../owner/deleted-items.js";
-import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { allTeam, crewIds, nameOf, sheetOf, teamIds } from "../owner/owner.js";
 import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
@@ -240,9 +241,9 @@ function pbTaken() {
   const yr = String(new Date().getFullYear());
   openViewer(
     `<h3 style="font-family:var(--f-display);font-size:22px;margin:0 0 4px;color:var(--accent)">Time off taken in ${yr}</h3><div class="who">Approved working days off, not counting weekends.</div><div class="details" style="margin-top:8px">${
-      teamIds()
+      crewIds()
         .map((id) => {
-          const ls = leaveOf(S.data.signoffs[id]).filter(
+          const ls = leaveOf(sheetOf("signoffs", id)).filter(
             (l) => l.status === "approved" && l.from.startsWith(yr),
           );
           const tot = {};
@@ -268,7 +269,7 @@ function pbFind() {
     `<h3 id="sheettitle">🔍 Search &amp; filter the planner</h3>
     <label for="pf-q">Search<input id="pf-q" type="search" value="${esc(S.f.pq || "")}" placeholder="e.g. skip, scaffold, Kahn"></label>
     <label for="pf-site">Site or job<select id="pf-site"><option value="">All sites and jobs</option>${siteOpts.map((x) => `<option value="${esc(x)}" ${x === (S.f.psite || "") ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
-    <label for="pf-who">Person<select id="pf-who"><option value="">Everyone</option>${teamIds()
+    <label for="pf-who">Person<select id="pf-who"><option value="">Everyone</option>${crewIds()
       .map(
         (id) =>
           `<option value="${esc(id)}" ${id === (S.f.pwho || "") ? "selected" : ""}>${esc(nameOf(id))}</option>`,
@@ -760,12 +761,12 @@ function pbDaySheet(shown) {
               const sr = p.site ? siteRec(p.site) : null;
               const addr = p.site || "";
               const others = (p.people || []).filter((x) => x !== S.me).map(nameOf);
-              return `<button type="button" class="pb-dsi t-${esc(p.type)}" data-p="${esc(p.id)}" style="${pbChipStyle(p)}"><span class="pb-dst">${p.time ? esc(p.time) + (p.endTime ? "–" + esc(p.endTime) : "") : "All day"}</span><span class="pb-dsm"><b>${esc(p.title)}</b>${addr ? `<span>📍 ${esc(addr)}</span>` : ""}${others.length ? `<span>👥 With ${esc(others.join(", "))}</span>` : ""}${p.notes ? `<span class="pb-dsn">${esc(p.notes.length > 160 ? p.notes.slice(0, 160) + "…" : p.notes)}</span>` : ""}</span></button>${addr ? `<div class="actions pb-dsa"><button type="button" class="pillbtn maplink" data-addr="${esc(addr)}" data-label="${esc(p.title)}">📍 Directions</button>${co.mobile || co.phone ? `<a class="pillbtn" href="tel:${esc(String(co.mobile || co.phone).replace(/\s+/g, ""))}" style="text-decoration:none">📞 Call ${esc((co.owner || "James").split(" ")[0])}</a>` : ""}</div>` : ""}`;
+              return `<button type="button" class="pb-dsi t-${esc(p.type)}" data-p="${esc(p.id)}" style="${pbChipStyle(p)}"><span class="pb-dst">${p.time ? esc(p.time) + (p.endTime ? "–" + esc(p.endTime) : "") : "All day"}</span><span class="pb-dsm"><b>${esc(p.title)}</b>${addr ? `<span>📍 ${esc(addr)}</span>` : ""}${others.length ? `<span>👥 With ${esc(others.join(", "))}</span>` : ""}${p.notes ? `<span class="pb-dsn">${esc(p.notes.length > 160 ? p.notes.slice(0, 160) + "…" : p.notes)}</span>` : ""}</span></button>${addr ? `<div class="actions pb-dsa"><button type="button" class="pillbtn maplink" data-addr="${esc(addr)}" data-label="${esc(p.title)}">📍 Directions</button>${co.mobile || co.phone ? `<a class="pillbtn" href="tel:${esc(String(co.mobile || co.phone).replace(/\s+/g, ""))}" style="text-decoration:none">📞 Call ${esc(bossFirst())}</a>` : ""}</div>` : ""}`;
             })
             .join("")
         : off
           ? ""
-          : '<div class="nothing">Nothing booked. Check with James.</div>'
+          : `<div class="nothing">Nothing booked. Check with ${esc(bossFirst())}.</div>`
     }</div>`;
   };
   return card(today, "Today") + card(tom, "Tomorrow");
@@ -1189,7 +1190,7 @@ function openKeyDates(site, jobId) {
   ];
   openSheet(
     `<h3 id="sheettitle">Key dates for a job</h3>
-    ${pickField("kd-site", "Site", siteNames(), jj ? jj.site : site, "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("kd-site", "Site", siteNames(), jj ? jj.site : site, "e.g. 12 High Street")}
     <label for="kd-job">Job sheet (optional)<select id="kd-job"><option value="">Whole site, not one job sheet</option>${jobs.map((j) => `<option value="${esc(j.id)}" ${j.id === jobId ? "selected" : ""}>${esc(j.title)} · ${esc(j.site)}</option>`).join("")}</select></label>
     <div><div class="checkhead"><span class="flabel" style="margin:0">Dates</span><span class="who">Name, date, and an end date if it runs over several days</span></div><div id="kd-rows"></div>
       <button type="button" class="pillbtn" id="kd-add" style="margin-top:6px">+ Add another date</button></div>
@@ -1329,7 +1330,7 @@ function leaveCard(l, owner) {
     <div class="job"><span class="tag ${st[1]}">${st[0]}</span>${owner ? esc(nameOf(l.who)) + " · " : ""}${esc(LEAVE_TYPES[l.leaveType] || "Time off")}</div>
     <div class="sub">${shortDay(l.from)}${l.to !== l.from ? " – " + shortDay(l.to) : ""}${l.half ? " · half day (" + esc(l.half) + ")" : ""} · ${days} working day${days === 1 ? "" : "s"}</div>
     ${l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}
-    ${l.reply ? `<div class="sub"><b>James:</b> ${esc(l.reply)}</div>` : ""}
+    ${l.reply ? `<div class="sub"><b>${esc(bossFirst())}:</b> ${esc(l.reply)}</div>` : ""}
     <div class="sub">${l.requestedAt || l.created ? "Requested " + stamp(l.requestedAt || l.created) : "Waiting for an answer"}${l.answeredAt ? " · answered " + stamp(l.answeredAt) : ""}</div>
     <div class="filerow">${owner && l.status === "pending" ? `<button type="button" class="btn primary lv-yes" style="padding:7px 14px">Approve</button><button type="button" class="btn lv-no" style="padding:7px 14px">Decline</button>` : ""}
     ${!owner && l.status === "pending" ? `<button type="button" class="linkdanger lv-cancel">Cancel request</button>` : ""}</div></div></div>`;
@@ -1416,7 +1417,7 @@ function answerLeave(l, yes) {
     );
 }
 function openLeave(owner) {
-  const ids = teamIds();
+  const ids = crewIds();
   const today = iso(new Date());
   openSheet(
     `<h3 id="sheettitle">${owner ? "Book time off" : "Request time off"}</h3>
@@ -1466,7 +1467,7 @@ function openLeave(owner) {
           }
           await S.db
             .doc("sheets/" + w + "/signoffs/" + id)
-            .set(Object.assign(data, { answeredAt: now, reply: "Booked by James" }));
+            .set(Object.assign(data, { answeredAt: now, reply: `Booked by ${bossFirst()}` }));
           await S.db.doc("plan/leave-" + id).set({
             from,
             to,
@@ -1489,7 +1490,7 @@ function openLeave(owner) {
         toast(
           r === "queued"
             ? "Request kept on this phone. It will send when you have signal."
-            : "Request sent to James",
+            : `Request sent to ${bossFirst()}`,
         );
         render();
       } catch (e) {
@@ -1519,7 +1520,7 @@ function openLeave(owner) {
   upd();
 }
 function openPlanEditor(p, date, copy) {
-  const ids = teamIds();
+  const ids = crewIds();
   const isNew = !p;
   if (copy) p = null;
   const src = p || copy || null;
@@ -1540,7 +1541,7 @@ function openPlanEditor(p, date, copy) {
       .join("")}</div></div>
     <div class="grid2"><label for="pe-from">From<input id="pe-from" type="date" required value="${esc(p ? p.from : date)}"></label><label for="pe-to">To<input id="pe-to" type="date" required value="${esc(p ? p.to || p.from : copy ? date : date)}"></label></div>
     <div class="grid2"><label for="pe-time">Start time (optional)<input id="pe-time" type="time" value="${esc(src ? src.time || "" : "")}"></label><label for="pe-etime">End time (optional)<input id="pe-etime" type="time" value="${esc(src ? src.endTime || "" : "")}"></label></div>
-    ${pickField("pe-site", "Site (optional)", siteNames(), src ? src.site || "" : "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("pe-site", "Site (optional)", siteNames(), src ? src.site || "" : "", "e.g. 12 High Street", false)}
     <label for="pe-job">Job sheet (optional)<select id="pe-job"><option value="">Not linked to a job sheet</option>${S.jobs
       .filter((j) => j.status !== "closed" || (src && src.jobId === j.id))
       .map(

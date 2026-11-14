@@ -1,5 +1,6 @@
 /* ================= CALLS FROM CHAT ================= */
 import { CH } from "./chat.js";
+import { bossFirst, bossName } from "../core/company-names.js";
 import { esc } from "../core/helpers.js";
 import { openSheet } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -27,10 +28,7 @@ function callTargets(c) {
       : Array.isArray(c.members)
         ? c.members
         : [];
-  if (!owner)
-    return [
-      { id: "james", name: S.ownerName || "James", tel: (S.settings || {}).ownerPhone || "" },
-    ];
+  if (!owner) return [{ id: "james", name: bossName(), tel: (S.settings || {}).ownerPhone || "" }];
   return ids.filter((id) => id !== S.me).map((id) => ({ id, name: nameOf(id), tel: phoneOf(id) }));
 }
 function openCallSheet() {
@@ -49,7 +47,7 @@ function openCallSheet() {
               p.tel
                 ? `<span class="who">${esc(p.tel)}</span>
       <div class="callbtns"><a class="btn primary" href="tel:${esc(p.tel.replace(/\s+/g, ""))}">📞 Call</a><a class="btn" href="https://wa.me/${esc(intlNum(p.tel))}" target="_blank" rel="noopener">🎥 WhatsApp video</a>${apple ? `<a class="btn" href="facetime:${esc(p.tel.replace(/\s+/g, ""))}">FaceTime</a>` : ""}</div>`
-                : `<span class="sub">${ownerMode() ? "No mobile number in their details yet." : "James hasn't added his number yet."}</span>`
+                : `<span class="sub">${ownerMode() ? "No mobile number in their details yet." : `${bossFirst()} hasn't added their number yet.`}</span>`
             }</div>`,
         )
         .join("") || '<div class="nothing">Nobody else in this chat.</div>'

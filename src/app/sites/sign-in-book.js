@@ -188,7 +188,7 @@ const SIGNIN = (() => {
     const g = x.guest;
     openSheet(
       `<h3 id="sheettitle">✎ Change sign-in</h3>${g ? guestFields(g) : who !== S.me ? `<div class="who">${esc(nameOf(who))}</div>` : ""}
-    ${pickField("se-site", "Site", siteNames(), x.site || "", "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("se-site", "Site", siteNames(), x.site || "", "e.g. 12 High Street")}
     <label for="se-date">Date<input type="date" id="se-date" value="${esc(x.date || iso(new Date()))}"></label>
     <div class="grid2"><label for="se-in">Time in<input type="time" id="se-in" value="${esc(x.in || "")}" required></label><label for="se-out">Time out (blank = still on site)<input type="time" id="se-out" value="${esc(x.out || "")}"></label></div>
     ${formFoot(true, "Save")}`,
@@ -282,7 +282,7 @@ const SIGNIN = (() => {
     else if (openT)
       h += `<div class="checkin"><b>✅ Signed in at ${esc(siteLabel(openT.job))}</b><div class="who">Since ${esc(openT.actualIn || openT.start)} today, from your timesheet check-in</div><button class="btn danger big" type="button" id="si-tout">Check out (signs you out too)</button></div>`;
     else
-      h += `<div class="checkin"><b>📍 Sign in to site</b>${pickField("ci-site", "Site", siteNames(), last, "e.g. 12 Marine Way, Exmouth")}<button class="btn primary big" type="button" id="si-in">${siPlain() ? "Sign in now" : "Check in now (timesheet + sign-in)"}</button></div>`;
+      h += `<div class="checkin"><b>📍 Sign in to site</b>${pickField("ci-site", "Site", siteNames(), last, "e.g. 12 High Street")}<button class="btn primary big" type="button" id="si-in">${siPlain() ? "Sign in now" : "Check in now (timesheet + sign-in)"}</button></div>`;
     const hist = (
       siPlain()
         ? []
@@ -461,7 +461,7 @@ const SIGNIN = (() => {
       `<h3 id="sheettitle">📍 Sign someone in</h3><div class="who">For someone without the app on them, who forgot, or who isn't on the app at all.</div>
     <label for="sa-who">Who<select id="sa-who">${ids.map((id) => `<option value="${esc(id)}">${esc(nameOf(id))}${compOf(id) ? " · " + esc(compOf(id)) : ""}</option>`).join("")}<option value="__guest" ${ids.length ? "" : "selected"}>✏️ Someone not on the list (type their name)</option></select></label>
     ${guestFields()}
-    ${pickField("sa-site", "Site", siteNames(), site0 || "", "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("sa-site", "Site", siteNames(), site0 || "", "e.g. 12 High Street")}
     <div class="grid2"><label for="sa-in">Time in<input type="time" id="sa-in" value="${nowHM2()}"></label><label for="sa-out">Time out (if they've gone)<input type="time" id="sa-out"></label></div>
     ${formFoot(false, "Sign in")}`,
       async () => {
