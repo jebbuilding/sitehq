@@ -26,7 +26,6 @@ import { openViewer } from "../core/viewer.js";
 import { isSketch, ownerDrawing } from "../drawing/trade-drawings.js";
 import { blobUrl, saveAsset } from "../files/files.js";
 import { newId } from "../files/outbox.js";
-import { ACS } from "./account-setup.js";
 import { backupCard, wireBackup } from "./backup.js";
 import { companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
@@ -908,9 +907,6 @@ function ownerSetup() {
       <div><button class="btn primary" id="wd-save" type="button">Save working day</button></div></div></div>
     <div class="card"><div class="cardbody" style="border:0"><b>📷 Site photos for trades</b><div class="who">Trades see a <b>Site photos</b> tab on each of their sites.</div>
       <div class="seg" id="tp-seg"><button type="button" data-v="all" aria-pressed="${(S.settings || {}).tradePhotos !== "james"}">Everyone's photos for the site</button><button type="button" data-v="james" aria-pressed="${(S.settings || {}).tradePhotos === "james"}">Only my photos (and their own)</button></div></div></div>
-    <div class="card"><div class="cardbody" style="border:0"><b>Your mobile number</b><div class="who">Trades can call or video call you from Chat with this.</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="op-tel" type="tel" maxlength="20" value="${esc(S.f.opTel != null ? S.f.opTel : (S.settings || {}).ownerPhone || "")}" placeholder="e.g. 07700 900123" style="flex:1;min-width:180px" aria-label="Your mobile number"><button class="btn primary" id="op-save" type="button">Save</button></div></div></div>
-    ${ACS.cardHtml("setup")}
     <div class="card"><div class="cardbody" style="border:0"><b>🪪 My own details</b><div class="who">${detailsDone(myDetails()) ? "✓ Filled in. " : ""}Your name, trade, CSCS card, next of kin and medical info. Used to fill in inductions, toolbox talks, briefings and other forms for you automatically, the same as the trades.</div><div><button class="btn ${detailsDone(myDetails()) ? "" : "primary"}" id="op-det" type="button">${detailsDone(myDetails()) ? "Check my details" : "Fill in my details"}</button><button class="btn op-me" data-t="time" type="button">⏱️ My timesheet</button><button class="btn op-me" data-t="mydw" type="button">🧱 My day sheet</button></div></div></div>
     ${qaSetupCard()}
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
@@ -942,7 +938,6 @@ function ownerSetup() {
   lhWire();
   sdWireSig();
   $("op-det").onclick = () => openDetails();
-  ACS.wire();
   /* James working like a trade (Nov 2026): his own timesheet and day sheet, as the trades fill them in */
   document.querySelectorAll(".op-me").forEach(
     (b) =>
@@ -952,49 +947,7 @@ function ownerSetup() {
         window.scrollTo(0, 0);
       }),
   );
-  $("op-tel").addEventListener("input", (e) => {
-    S.f.opTel = e.target.value;
-  });
-  $("op-tel").addEventListener("change", () => opSave());
-  const opSave = async () => {
-    const el = $("op-tel");
-    if (!el) return;
-    const v = (S.f.opTel != null ? S.f.opTel : el.value).trim();
-    if (v === ((S.settings || {}).ownerPhone || "")) {
-      S.f.opTel = null;
-      if (v) toast("Number saved");
-      return;
-    }
-    if (v && v.replace(/\D/g, "").length < 10) {
-      toast("That number looks too short");
-      return;
-    }
-    $("op-save").disabled = true;
-    try {
-      await S.db.doc("settings/app").update({ ownerPhone: v });
-      S.settings = Object.assign({}, S.settings, { ownerPhone: v });
-      S.f.opTel = null;
-      toast(v ? "Number saved" : "Number removed");
-      if ($("op-tel")) $("op-tel").blur();
-    } catch (e) {
-      try {
-        await S.db.doc("settings/app").set(Object.assign({}, S.settings, { ownerPhone: v }));
-        toast("Number saved");
-      } catch (x) {
-        toast("Couldn't save. Check your connection.");
-      }
-    }
-    if ($("op-save")) $("op-save").disabled = false;
-  };
-  $("op-save").addEventListener("pointerdown", (e) => e.preventDefault());
-  $("op-save").onclick = opSave;
   qaSetupWire();
-  $("op-tel").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      opSave();
-    }
-  });
   $("main")
     .querySelectorAll("#tp-seg button")
     .forEach(

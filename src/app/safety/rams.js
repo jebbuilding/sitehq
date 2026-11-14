@@ -12,6 +12,7 @@ import { allTeam, nameOf } from "../owner/owner.js";
 import { meBtn, meInfo } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 export { openRaForm, raAll, raBlock, viewRa, wireRa };
 const RA_HAZARDS = [
   [
@@ -458,9 +459,10 @@ async function raPdf(r) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 14;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -469,9 +471,9 @@ async function raPdf(r) {
       .replace(/×/g, "x")
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
   const need = (h) => {
-    if (y + h > 284) {
+    if (y + h > (LH.bot || 284)) {
       doc.addPage();
-      y = 16;
+      y = LH.top || 16;
     }
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.5) => {
@@ -484,10 +486,12 @@ async function raPdf(r) {
     });
     y += gap;
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 10, 50, 23);
-  text(coName().toUpperCase(), 9, "bold", 0, 6);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 10, 50, 23);
+    text(coName().toUpperCase(), 9, "bold", 0, 6);
+  }
   text("Risk assessment & method statement", 16, "bold", 0, 2);
   text(r.activity, 12, "bold", 0, 4);
   const kv = (l, v) => {
@@ -563,9 +567,9 @@ async function raPdf(r) {
     ];
     const lines = cells.map((c, i) => doc.splitTextToSize(clean(c), cols[i][1] - 2));
     const h = Math.max(...lines.map((l) => l.length)) * 3.7 + 2;
-    if (y + h > 284) {
+    if (y + h > (LH.bot || 284)) {
       doc.addPage();
-      y = 16;
+      y = LH.top || 16;
       hdr();
     }
     let x = M;
@@ -610,6 +614,7 @@ async function raPdf(r) {
   });
   if (!(r.briefed || []).length) text("No signatures yet.", 9.5);
   try {
+    lhFinish(doc, LH);
     await S.dl.save({
       filename: `RAMS - ${clean(r.activity)
         .replace(/[^\w\s-]/g, "")

@@ -21,6 +21,7 @@ import {
   stampPhoto,
 } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 export { INC_KINDS, incidentsBlock, openIncident, viewIncident, wireIncidents };
 const INC_KINDS = {
   injury: "Accident (someone hurt)",
@@ -369,9 +370,10 @@ async function incidentPdf(x, rows) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -379,9 +381,9 @@ async function incidentPdf(x, rows) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
   const need = (h) => {
-    if (y + h > 282) {
+    if (y + h > (LH.bot || 282)) {
       doc.addPage();
-      y = 18;
+      y = LH.top || 18;
     }
   };
   const text = (t, size = 10, style = "normal", gap = 1.6) => {
@@ -394,10 +396,12 @@ async function incidentPdf(x, rows) {
     });
     y += gap;
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 11, 52, 24);
-  text(coName().toUpperCase(), 9, "bold", 6);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 11, 52, 24);
+    text(coName().toUpperCase(), 9, "bold", 6);
+  }
   text("Accident / incident report", 18, "bold", 2);
   text(x.site, 12, "bold", 4);
   if (x.riddor) text("Possible RIDDOR report needed - check hse.gov.uk/riddor", 10, "bold", 3);
@@ -445,6 +449,7 @@ async function incidentPdf(x, rows) {
     } catch (e) {}
   }
   try {
+    lhFinish(doc, LH);
     await S.dl.save({
       filename: `Incident ${x.date} ${clean(x.site)
         .replace(/[^\w\s-]/g, "")

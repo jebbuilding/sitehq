@@ -8,7 +8,7 @@ import { loadImage, logoId } from "../photos/photos.js";
 import { sdSet } from "./sales-calc.js";
 import { sdHeadLines, sdImgData, sdPdf } from "./sales-pdf.js";
 import { sdQuickLetterhead, sdSaveSet, sdSettings } from "./sales-settings.js";
-export { lhCard, lhLogoId, lhPics, lhPutBot, lhPutTop, lhWire };
+export { lhCard, lhFinish, lhFrame, lhLogoId, lhPics, lhPutBot, lhPutTop, lhWire };
 /* The letterhead is kept with the estimate and invoice settings (todos/salesset). Two ways in:
    - a PDF, photo or scan of the letterhead (the exact look): its top (logo, address, line) and bottom (line, foot
      lines) are found on the page and kept as two pictures, lhTop { id, h } and lhBot { id, y, h } (mm on A4), drawn
@@ -54,6 +54,33 @@ function lhPutBot(doc, pics) {
   const b = pics.bot;
   doc.addImage(b.u, b.f, 0, b.y, 210, b.h, "lhbot", "FAST");
   return b.y;
+}
+/* every other document on the letterhead too (James, Nov 2026: "the uploaded letterhead can this be used for all
+   documents"): lhFrame() is the room the letterhead leaves on the page – the document's own writing starts at `top`
+   and stops at `bot` (mm) – or { pics: null } when there's no letterhead picture or Setup has it on letters only (the
+   PDF then keeps its own coloured bar and logo). lhFinish() puts the letterhead's top and foot on every upright A4
+   page once the PDF is laid out. */
+async function lhFrame() {
+  const none = { pics: null, top: 0, bot: 0 };
+  if (sdSet().lhAll === false) return none;
+  let pics = null;
+  try {
+    pics = await lhPics();
+  } catch (e) {}
+  if (!pics) return none;
+  const t = pics.top;
+  const th = t.h > 44 ? 44 : t.h;
+  return { pics, top: Math.max(th, 24) + 8, bot: pics.bot ? pics.bot.y - 6 : 282 };
+}
+function lhFinish(doc, fr) {
+  if (!fr || !fr.pics) return;
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i);
+    if (doc.internal.pageSize.getWidth() > 215) continue;
+    lhPutTop(doc, fr.pics, 44);
+    lhPutBot(doc, fr.pics);
+  }
 }
 /* ---------- a PDF, photo or scan of the letterhead → the top and bottom as pictures ---------- */
 const LH_PX = 1654; /* A4 width at 200 dots an inch */
@@ -268,6 +295,7 @@ function lhCard() {
       <div class="notice">This was read from a Word file, so the app lays it out itself: the words are right but the fonts and spacing won't match exactly. For an exact copy, bring in a <b>PDF</b> of your letterhead (in Word: File › Save As › PDF), or a photo or scan of it.</div>`
           : `<div class="notice warn">Not set up yet: estimates and invoices come out without your letterhead. Bring in a PDF of your letterhead (in Word: File › Save As › PDF) – or a photo or scan of it, or the Word file itself.</div>`
     }
+    ${pics ? `<label class="inl lh-allrow"><input type="checkbox" id="lh-all" ${s.lhAll === false ? "" : "checked"}> Put it on all documents too: policies, RAMS, inductions, toolbox talks, reports, agreements and the rest (drawings and posters keep their own look)</label>` : ""}
     <div class="actions"><span class="btn ${pics ? "" : "primary "}sd-filebtn">📄 ${has ? "Bring in a new letterhead" : "Bring in my letterhead"}<input type="file" class="lh-file" accept="${LH_ACCEPT}" aria-label="Bring in my letterhead (PDF, picture or Word)"></span>${has ? `<button type="button" class="btn" id="lh-pdf">👁 See a sample page</button>` : ""}${has && !pics ? `<button type="button" class="btn" id="lh-edit">✎ Change the lines or logo</button>` : ""}</div>
   </div></div>`;
 }
@@ -280,6 +308,15 @@ function lhWire() {
     if (f) await lhBringIn(f);
   };
   if ($("lh-edit")) $("lh-edit").onclick = () => sdSettings();
+  if ($("lh-all"))
+    $("lh-all").onchange = async (e) => {
+      await sdSaveSet({ lhAll: e.target.checked });
+      toast(
+        e.target.checked
+          ? "Your letterhead goes on all documents"
+          : "Your letterhead goes on letters only",
+      );
+    };
   if ($("lh-pdf")) $("lh-pdf").onclick = lhSample;
   const nudge = async (d) => {
     const v = Math.max(-20, Math.min(40, lhBotUp() + d));

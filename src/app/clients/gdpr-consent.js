@@ -16,6 +16,7 @@ import { coData } from "../owner/company-details.js";
 import { auditFirst } from "../owner/deletion-record.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 export { clGdprHtml, wireClGdpr };
 const GDPR_TXT =
   "I have read and accept the privacy (GDPR) policy, and I agree to my details being kept and used to carry out my job.";
@@ -370,9 +371,10 @@ async function gdprPdfBlob(c) {
   const g = c.gdpr;
   await loadJsPdf();
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const co = coData();
   const clean = (t) =>
     String(t || "")
@@ -380,13 +382,15 @@ async function gdprPdfBlob(c) {
       .replace(/[‘’]/g, "'")
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 10, 50, 22);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text(clean(co.name.toUpperCase()), M, y);
-  y += 9;
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 10, 50, 22);
+    doc.setFontSize(9);
+    doc.text(clean(co.name.toUpperCase()), M, y);
+    y += 9;
+  }
   doc.setFontSize(17);
   doc.text("Privacy policy (GDPR) consent", M, y);
   y += 10;
@@ -432,6 +436,7 @@ async function gdprPdfBlob(c) {
   }
   doc.setDrawColor(150);
   doc.line(M, y, M + 70, y);
+  lhFinish(doc, LH);
   return {
     blob: doc.output("blob"),
     name:

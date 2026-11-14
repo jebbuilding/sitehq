@@ -31,7 +31,7 @@ const CO_FIELDS = [
   ["town", "Town you're based in", "e.g. Exeter"],
   ["workArea", "Areas you work in", "e.g. Exeter, East Devon and Teignbridge"],
   ["address", "Business address", "e.g. 1 High Street"],
-  ["mobile", "Mobile", ""],
+  ["mobile", "Mobile (trades call or video call you on this from Chat)", ""],
   ["phone", "Office phone", ""],
   ["email", "Email", ""],
   ["oohName", "Emergency / out-of-hours contact", "e.g. Alex Smith"],

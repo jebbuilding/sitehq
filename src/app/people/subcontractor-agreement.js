@@ -13,6 +13,7 @@ import { auditLog } from "../owner/deletion-record.js";
 import { nameOf } from "../owner/owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { myName } from "../survey/door-window-survey.js";
 export { SUBAG };
 const SUBAG = (() => {
@@ -193,6 +194,7 @@ const SUBAG = (() => {
   async function buildPdf(a, sig) {
     await loadJsPdf();
     const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+    const LH = await lhFrame();
     const W = 210,
       H = 297,
       M = 16,
@@ -215,27 +217,31 @@ const SUBAG = (() => {
       doc.text(clean(t), x, yy, al ? { align: al } : undefined);
     };
     const need = (h) => {
-      if (y + h > H - 16) {
+      if (y + h > (LH.bot || H - 16)) {
         doc.addPage();
-        y = 18;
+        y = LH.top || 18;
         return true;
       }
       return false;
     };
-    doc.setFillColor(...BR);
-    doc.rect(0, 0, W, 4, "F");
-    await pdfLogo(doc, W - M, 8, 36, 16);
-    T((co.name || "").toUpperCase(), M, 13, 8, "bold", BR);
-    T("Subcontractor agreement", M, 21, 16, "bold");
+    /* on the letterhead the title goes under its top; otherwise the coloured bar, logo and company name */
+    const Y0 = LH.pics ? LH.top - 15 : 0;
+    if (!LH.pics) {
+      doc.setFillColor(...BR);
+      doc.rect(0, 0, W, 4, "F");
+      await pdfLogo(doc, W - M, 8, 36, 16);
+      T((co.name || "").toUpperCase(), M, 13, 8, "bold", BR);
+    }
+    T("Subcontractor agreement", M, 21 + Y0, 16, "bold");
     T(
       `${a.name}${a.company ? " (" + a.company + ")" : ""}${a.trade ? " · " + a.trade : ""}`,
       M,
-      27,
+      27 + Y0,
       10,
       "normal",
       [90, 80, 80],
     );
-    y = 34;
+    y = 34 + Y0;
     /* key details box */
     const kv = [
       ["Subcontractor", a.name + (a.company ? ", " + a.company : "")],
@@ -322,12 +328,13 @@ const SUBAG = (() => {
       T(
         `${co.name} · Subcontractor agreement · ${a.name} · page ${i} of ${n}`,
         M,
-        H - 8,
+        LH.pics ? LH.bot + 4 : H - 8,
         7,
         "normal",
         [130, 120, 120],
       );
     }
+    lhFinish(doc, LH);
     return doc.output("blob");
   }
   /* ---- the form ---- */

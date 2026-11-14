@@ -39,6 +39,7 @@ import { MAT_ST, matCount } from "../purchasing/materials-receipts.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { WTN } from "../safety/waste-transfer-note.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import {
   JOB_DET,
   JOB_KINDS,
@@ -5708,9 +5709,10 @@ async function jobPdf(j) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -5718,9 +5720,9 @@ async function jobPdf(j) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·°]/g, "");
   const need = (h) => {
-    if (y + h > 282) {
+    if (y + h > (LH.bot || 282)) {
       doc.addPage();
-      y = 18;
+      y = LH.top || 18;
     }
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -5742,9 +5744,11 @@ async function jobPdf(j) {
       fr.readAsDataURL(b);
     });
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 11, 52, 24);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 11, 52, 24);
+  }
   text(coData().name.toUpperCase(), 9, "bold", 0, 6);
   text(JOB_KINDS[j.kind] || "Job sheet", 18, "bold", 0, 2);
   text(j.title, 12, "bold", 0, 2);
@@ -5852,6 +5856,7 @@ async function jobPdf(j) {
     .replace(/[^\w\s-]/g, "")
     .trim()}.pdf`;
   try {
+    lhFinish(doc, LH);
     await S.dl.save({ filename: fn, data: doc.output("blob") });
   } catch (e) {
     if (!(e && e.code === "declined")) toast("Download didn't go through");

@@ -14,6 +14,7 @@ import { allVisitInds } from "../people/foreman.js";
 import { meInfo, myDetails } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { shrinkImage } from "./training.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { RAMS_SIGN } from "../sites/plans-specs.js";
 import { same } from "../sites/project-pages.js";
 import { QRSITE } from "../sites/qr-sign-in.js";
@@ -858,9 +859,10 @@ async function pdfRecord(rec) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -868,9 +870,9 @@ async function pdfRecord(rec) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
   const need = (h) => {
-    if (y + h > 282) {
+    if (y + h > (LH.bot || 282)) {
       doc.addPage();
-      y = 18;
+      y = LH.top || 18;
     }
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -884,10 +886,12 @@ async function pdfRecord(rec) {
     });
     y += gap;
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 11, 52, 24);
-  text(coName().toUpperCase(), 9, "bold", 0, 6);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 11, 52, 24);
+    text(coName().toUpperCase(), 9, "bold", 0, 6);
+  }
   text("Site induction record", 18, "bold", 0, 2);
   text(rec.site, 12, "bold", 0, 4);
   const w = rec.worker || {};
@@ -976,6 +980,7 @@ async function pdfRecord(rec) {
     .replace(/[^\w\s-]/g, "")
     .trim()} - ${iso(new Date(rec.signedAt))}.pdf`;
   try {
+    lhFinish(doc, LH);
     await S.dl.save({ filename: fn, data: doc.output("blob") });
   } catch (e) {
     if (!(e && e.code === "declined")) toast("Download didn't go through");
@@ -995,9 +1000,10 @@ async function registerPdf(ind) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -1005,9 +1011,9 @@ async function registerPdf(ind) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·°]/g, "");
   const need = (h) => {
-    if (y + h > 282) {
+    if (y + h > (LH.bot || 282)) {
       doc.addPage();
-      y = 18;
+      y = LH.top || 18;
     }
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -1020,10 +1026,12 @@ async function registerPdf(ind) {
     });
     y += gap;
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 11, 52, 24);
-  text(coName().toUpperCase(), 9, "bold", 0, 6);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 11, 52, 24);
+    text(coName().toUpperCase(), 9, "bold", 0, 6);
+  }
   text("Site induction register", 18, "bold", 0, 2);
   text(ind.site, 12, "bold", 0, 1);
   const d = ind.details || {};
@@ -1098,6 +1106,7 @@ async function registerPdf(ind) {
   });
   if (!rows.length) text("Nobody has signed yet.", 10);
   try {
+    lhFinish(doc, LH);
     await S.dl.save({
       filename: `Induction register - ${clean(ind.site)
         .replace(/[^\w\s-]/g, "")

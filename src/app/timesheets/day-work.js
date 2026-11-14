@@ -18,6 +18,7 @@ import { myDetails, openDetails } from "../people/personal-details.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { empTypeOf } from "../sites/job-details.js";
 import { siteClient } from "../sites/summary.js";
 import { myName } from "../survey/door-window-survey.js";
@@ -574,9 +575,10 @@ async function dwPdf(site, items, money, showSite) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 14;
-  let y = 18;
+  let y = LH.top || 18;
   const co = coData();
   const c = showSite ? null : siteClient(site);
   const clean = (t) =>
@@ -585,13 +587,15 @@ async function dwPdf(site, items, money, showSite) {
       .replace(/[‘’]/g, "'")
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 10, 50, 22);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text(clean(co.name.toUpperCase()), M, y);
-  y += 8;
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 10, 50, 22);
+    doc.setFontSize(9);
+    doc.text(clean(co.name.toUpperCase()), M, y);
+    y += 8;
+  }
   doc.setFontSize(18);
   doc.text("Day work sheet", M, y);
   y += 7;
@@ -638,9 +642,9 @@ async function dwPdf(site, items, money, showSite) {
               : " (@ " + gbp(e.rate) + ")")
           : nameOf(e.who) + ": " + (e.task || "") + (e.mats ? " - materials: " + e.mats : ""));
       const lines = doc.splitTextToSize(clean(desc), 94);
-      if (y + lines.length * 4.4 > 275) {
+      if (y + lines.length * 4.4 > (LH.bot ? LH.bot - 6 : 275)) {
         doc.addPage();
-        y = 18;
+        y = LH.top || 18;
       }
       const m = money(e);
       tot += m;
@@ -663,7 +667,12 @@ async function dwPdf(site, items, money, showSite) {
   y += 16;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
+  if (LH.pics && y > LH.bot) {
+    doc.addPage();
+    y = LH.top;
+  }
   doc.text("Client signature: ____________________________     Date: ______________", M, y);
+  lhFinish(doc, LH);
   const fn =
     clean(site)
       .replace(/[^\w\s-]/g, "")

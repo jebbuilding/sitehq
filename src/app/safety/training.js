@@ -23,6 +23,7 @@ import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { meBtn, meInfo } from "../people/personal-details.js";
 import { BRGB, loadImage, pdfLogo, readExif } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 export { expiryState, myTalkTodo, openCert, openTalk, shrinkImage, trainingView };
 const TALK_TEMPLATES = [
   [
@@ -555,9 +556,10 @@ async function talkPdf(t) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (x) =>
     String(x || "")
       .replace(/[–—]/g, "-")
@@ -566,9 +568,9 @@ async function talkPdf(t) {
       .replace(/•/g, "-")
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·°]/g, "");
   const need = (h) => {
-    if (y + h > 282) {
+    if (y + h > (LH.bot || 282)) {
       doc.addPage();
-      y = 18;
+      y = LH.top || 18;
     }
   };
   const text = (s, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -581,10 +583,12 @@ async function talkPdf(t) {
     });
     y += gap;
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 11, 52, 24);
-  text(coName().toUpperCase(), 9, "bold", 0, 6);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 11, 52, 24);
+    text(coName().toUpperCase(), 9, "bold", 0, 6);
+  }
   text((t.kind === "training" ? "Training" : "Toolbox talk") + " register", 18, "bold", 0, 2);
   text(t.title, 12, "bold", 0, 1);
   if (t.site) text(t.site, 10, "normal", 0, 1);
@@ -635,6 +639,7 @@ async function talkPdf(t) {
     .replace(/[^\w\s-]/g, "")
     .trim()}.pdf`;
   try {
+    lhFinish(doc, LH);
     await S.dl.save({ filename: fn, data: doc.output("blob") });
   } catch (e) {
     if (!(e && e.code === "declined")) toast("Download didn't go through");

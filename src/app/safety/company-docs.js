@@ -11,6 +11,7 @@ import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { daysTo } from "./expiry-dates.js";
 import { loadJsPdf } from "./site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { sdSet } from "../sales/sales-calc.js";
 export { CDOCS };
 /* James, Nov 2026: "we need to be able to add documents that are tied to the company that is using the app and the
@@ -360,7 +361,8 @@ const CDOCS = (() => {
       const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
       const W = 210,
         M = 18;
-      let y = 18;
+      const LH = await lhFrame();
+      let y = LH.top || 18;
       const clean = (x) =>
         String(x || "")
           .replace(/[–—]/g, "-")
@@ -368,9 +370,9 @@ const CDOCS = (() => {
           .replace(/[“”]/g, '"')
           .replace(/[^\x09\x0A\x0D\x20-\x7E£·°]/g, "");
       const need = (h) => {
-        if (y + h > 280) {
+        if (y + h > (LH.bot || 280)) {
           doc.addPage();
-          y = 18;
+          y = LH.top || 18;
         }
       };
       const text = (s, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -383,10 +385,12 @@ const CDOCS = (() => {
         });
         y += gap;
       };
-      doc.setFillColor(...BRGB());
-      doc.rect(0, 0, W, 6, "F");
-      await pdfLogo(doc, W - M, 11, 52, 24);
-      text(coName().toUpperCase(), 9, "bold", 0, 6);
+      if (!LH.pics) {
+        doc.setFillColor(...BRGB());
+        doc.rect(0, 0, W, 6, "F");
+        await pdfLogo(doc, W - M, 11, 52, 24);
+        text(coName().toUpperCase(), 9, "bold", 0, 6);
+      }
       text(n[1], 20, "bold", 0, 2);
       const now = Date.now(),
         today = new Date(now).toISOString().slice(0, 10);
@@ -434,9 +438,14 @@ const CDOCS = (() => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(120);
-        doc.text(clean(`${coName()} · ${n[1]} · page ${i} of ${pages}`), M, 290);
+        doc.text(
+          clean(`${coName()} · ${n[1]} · page ${i} of ${pages}`),
+          M,
+          LH.pics ? LH.bot + 4 : 290,
+        );
         doc.setTextColor(0);
       }
+      lhFinish(doc, LH);
       const fn = `${n[1]} - ${clean(coName())
         .replace(/[^\w\s-]/g, "")
         .trim()}.pdf`;

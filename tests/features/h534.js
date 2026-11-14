@@ -1,7 +1,7 @@
 // Account holder set-up (made-up data, new look, iPad size): Today has "Set up your account" with three steps; Your
 // company saves the company name and the account holder, then Emergency contacts opens; that saves the company's
 // emergency contact, then the account holder's own details open (the same form as everyone); Finish set-up saves
-// acctSetupAt and the Today card goes; Setup still has it as "✓ Your account is set up"; the company card shows the
+// acctSetupAt and the Today card goes; Setup shows the company details once; the company card shows the
 // emergency contact; People lists the account holder like everyone else, tagged Owner · account holder.
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');
@@ -43,7 +43,7 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  await go('today');
  ok(await p.locator('#acs-card').count()===0,'and the card leaves Today');
  await go('setup');
- ok(/Your account is set up/.test(await p.innerText('#acs-card')),'Setup still has it: ✓ Your account is set up');
+ ok(await p.locator('#acs-card').count()===0&&await p.locator('#main .cocard').count()===1&&!/Your mobile number/.test(await p.innerText('#main')),'Setup shows the company details once (no set-up card, no separate mobile number box)');
  const ct=await p.innerText('.cocard');
  ok(/Emergency contact/.test(ct)&&/07700900101/.test(ct)&&/Sam Test/.test(ct),'the company card shows the emergency contact and first aider');
  await go('people');

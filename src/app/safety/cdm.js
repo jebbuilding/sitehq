@@ -13,6 +13,7 @@ import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
 import { ukDate } from "./rams-maker.js";
 import { indFor, loadJsPdf } from "./site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { sjMaster } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
@@ -1718,9 +1719,13 @@ async function cdmPdf(sections, cd) {
   await loadJsPdf();
   const co = coData();
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18,
+  const TOP = LH.top || 18,
+    BOT = LH.bot || 280,
+    FOOT = LH.pics ? LH.bot + 4 : 290;
+  let y = TOP,
     first = true;
   const clean = (t) =>
     String(t == null ? "" : t)
@@ -1729,16 +1734,17 @@ async function cdmPdf(sections, cd) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·°]/g, "");
   const need = (h) => {
-    if (y + h > 280) {
+    if (y + h > BOT) {
       foot();
       doc.addPage();
-      y = 18;
+      y = TOP;
       band();
     }
   };
   let page = 0;
   const band = () => {
     page++;
+    if (LH.pics) return;
     doc.setFillColor(...BRGB());
     doc.rect(0, 0, W, 5, "F");
   };
@@ -1751,9 +1757,9 @@ async function cdmPdf(sections, cd) {
         `${co.name} · ${cd.project || ""} · CDM 2015 documents · prepared ${ukDate(iso(new Date()))}`,
       ),
       M,
-      290,
+      FOOT,
     );
-    doc.text("Page " + page, W - M, 290, { align: "right" });
+    doc.text("Page " + page, W - M, FOOT, { align: "right" });
     doc.setTextColor(0);
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -1852,12 +1858,14 @@ async function cdmPdf(sections, cd) {
     if (!first) {
       foot();
       doc.addPage();
-      y = 18;
+      y = TOP;
     }
     band();
     first = false;
-    if (page === 1) await pdfLogo(doc, W - M, 10, 48, 22);
-    text(co.name.toUpperCase(), 8.5, "bold", 0, 5);
+    if (!LH.pics) {
+      if (page === 1) await pdfLogo(doc, W - M, 10, 48, 22);
+      text(co.name.toUpperCase(), 8.5, "bold", 0, 5);
+    }
     text(sec.title, 17, "bold", 0, 3);
     for (const [k, a, b2] of sec.blocks) {
       if (k === "h") text(a, 11, "bold", 0, 2);
@@ -1887,6 +1895,7 @@ async function cdmPdf(sections, cd) {
     }
   }
   foot();
+  lhFinish(doc, LH);
   return doc.output("blob");
 }
 function cdmMaker(site0) {
