@@ -30,6 +30,11 @@ const CO_FIELDS = [
   ["mobile", "Mobile", ""],
   ["phone", "Office phone", ""],
   ["email", "Email", ""],
+  ["oohName", "Emergency / out-of-hours contact", "e.g. James Bray"],
+  ["oohPhone", "Emergency / out-of-hours number", ""],
+  ["oohName2", "Second emergency contact (optional)", ""],
+  ["oohPhone2", "Second emergency number (optional)", ""],
+  ["firstAid", "First aider(s)", "e.g. Sam (first aid at work, until 2027)"],
   ["website", "Website", ""],
   ["reviewUrl", "Google review link", "e.g. https://g.page/r/…/review"],
   ["companyNo", "Company number", ""],
@@ -70,6 +75,20 @@ function companyCard(viewer) {
     row("Mobile", c.mobile ? `<a href="tel:${esc(tel(c.mobile))}">📞 ${esc(c.mobile)}</a>` : ""),
     row("Office phone", c.phone ? `<a href="tel:${esc(tel(c.phone))}">📞 ${esc(c.phone)}</a>` : ""),
     row("Email", c.email ? `<a href="mailto:${esc(c.email)}">✉ ${esc(c.email)}</a>` : ""),
+    /* the company's emergency contacts (account set-up, Nov 2026) */
+    row(
+      "🚑 Emergency contact",
+      c.oohPhone
+        ? `${esc(c.oohName || "")} <a href="tel:${esc(tel(c.oohPhone))}">📞 ${esc(c.oohPhone)}</a>`
+        : "",
+    ),
+    row(
+      "If they can't be reached",
+      c.oohPhone2
+        ? `${esc(c.oohName2 || "")} <a href="tel:${esc(tel(c.oohPhone2))}">📞 ${esc(c.oohPhone2)}</a>`
+        : "",
+    ),
+    row("First aider(s)", esc(c.firstAid || "")),
     row(
       "Address",
       c.address

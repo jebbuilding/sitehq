@@ -4,6 +4,7 @@ import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, empTabs, render } from "../core/tabs-week.js";
+import { ACS } from "./account-setup.js";
 import { brfCardHtml, brfWire } from "./briefing.js";
 import { coData } from "./company-details.js";
 import { jbView } from "./jobs-desk.js";
@@ -478,6 +479,7 @@ function todayView() {
   const needs = NL_NEEDS.filter(([k]) => badge[k] > 0);
   $("main").innerHTML = `<div class="nl-today">
     <button type="button" class="nl-search" id="nl-search"><span aria-hidden="true">🔍</span> Search a job, a name, or RAMS, MOT, snags…</button>
+    ${ACS.cardHtml("today")}
     ${brfCardHtml()}
     ${
       needs.length
@@ -499,6 +501,7 @@ function todayView() {
     ${webEnqNew().length ? `<button type="button" class="nl-card nl-web" id="nl-web"><b>🌐 ${webEnqNew().length} new enquir${webEnqNew().length === 1 ? "y" : "ies"} from your website</b><span class="who">Tap to see and make quick enquiries</span></button>` : ""}
   </div>`;
   $("nl-search").onclick = () => searchOpen("");
+  ACS.wire();
   brfWire();
   tdWire();
   tdDeskWire();

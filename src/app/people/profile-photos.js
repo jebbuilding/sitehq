@@ -155,7 +155,10 @@ function peopleView() {
         .filter((o) => !rf || (o.role || "sub") === rf)
         .map((o) => ({ id: "off:" + o.id, off: o, d: o.details || null })),
     );
-  const missing = rows.filter((r) => !r.off && !detailsDone(r.d));
+  /* the account holder is in People like everyone else (James, Nov 2026) – under Everyone and Employees */
+  if (S.owner && S.me && (!rf || rf === "employee"))
+    rows.unshift({ id: S.me, d: myDetails(), me: true });
+  const missing = rows.filter((r) => !r.off && !r.me && !detailsDone(r.d));
   $("main").innerHTML =
     `<div class="actions"><button class="btn primary" id="pp-add" type="button">+ Add a trade not on the app</button><button class="btn pr-send" type="button">Send a reminder</button>${missing.length ? `<button class="btn" id="pp-askdet" type="button">Ask everyone missing details</button>` : ""}</div>${remindersPanel()}
     <div class="actions"><button class="btn" id="pp-ec" type="button">Download emergency contacts (CSV)</button><button class="btn" id="pp-all" type="button">Download all details (CSV)</button></div>
@@ -200,23 +203,25 @@ function peopleView() {
         ({
           id,
           d,
-        }) => `<details class="card" data-id="__p${esc(id)}" ${S.open.has("__p" + id) ? "open" : ""}><summary>${String(id).startsWith("off:") ? "" : `<button type="button" class="pmav pmav-s pp-avbtn" data-w="${esc(id)}" title="Change photo" aria-label="Change or remove ${esc(nameOf(id))}'s photo">${avatarHtml(id, 44)}<span class="pmavcam" aria-hidden="true">📷</span></button>`}<div class="nm">${esc(nameOf(id))} ${roleTag(id)}<small>${d ? esc([d.trade, EMP_TYPES[d.empType]].filter(Boolean).join(" · ")) + " · confirmed " + stamp(d.confirmedAt) : "Details not filled in yet"}</small><span class="pphint">Tap to see all their details</span></div><span class="ppchev" aria-hidden="true">›</span></summary>
+        }) => `<details class="card" data-id="__p${esc(id)}" ${S.open.has("__p" + id) ? "open" : ""}><summary>${String(id).startsWith("off:") || id === S.me ? "" : `<button type="button" class="pmav pmav-s pp-avbtn" data-w="${esc(id)}" title="Change photo" aria-label="Change or remove ${esc(nameOf(id))}'s photo">${avatarHtml(id, 44)}<span class="pmavcam" aria-hidden="true">📷</span></button>`}<div class="nm">${esc(nameOf(id))} ${roleTag(id)}<small>${d ? esc([d.trade, EMP_TYPES[d.empType]].filter(Boolean).join(" · ")) + " · confirmed " + stamp(d.confirmedAt) : "Details not filled in yet"}</small><span class="pphint">Tap to see all their details</span></div><span class="ppchev" aria-hidden="true">›</span></summary>
       <div class="cardbody">${
         String(id).startsWith("off:")
           ? `<div class="actions"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">Edit details</button></div>`
-          : `<div class="actions" style="align-items:center"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">${d ? "Edit details" : "Fill in details for them"}</button><label for="pp-role-${esc(id)}" class="inl" style="font-size:14px;color:var(--ink)">Works for us as<select id="pp-role-${esc(id)}" class="pp-role" data-w="${esc(id)}" style="width:auto;margin-left:6px">${(() => {
-              /* one choice keeps their details and the page they're on in step (James, Nov 2026) */
-              const cur = ppEmpOf(id);
-              return (
-                (cur ? "" : `<option value="" selected>Choose…</option>`) +
-                Object.entries(EMP_TYPES)
-                  .map(
-                    ([k, l]) =>
-                      `<option value="${k}"${k === cur ? " selected" : ""}>${esc(l)}</option>`,
-                  )
-                  .join("")
-              );
-            })()}</select></label>${roleOf(id) === "company" || roleOf(id) === "sub" ? `<label class="inl pp-coL">Company<input class="pp-co" data-w="${esc(id)}" maxlength="80" value="${esc(companyOf(id))}" placeholder="Company they're from" style="width:auto;min-width:160px"></label>` : ""}
+          : id === S.me
+            ? `<div class="actions"><button type="button" class="btn primary" id="pp-me">${d ? "Edit my details" : "Fill in my details"}</button></div>`
+            : `<div class="actions" style="align-items:center"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">${d ? "Edit details" : "Fill in details for them"}</button><label for="pp-role-${esc(id)}" class="inl" style="font-size:14px;color:var(--ink)">Works for us as<select id="pp-role-${esc(id)}" class="pp-role" data-w="${esc(id)}" style="width:auto;margin-left:6px">${(() => {
+                /* one choice keeps their details and the page they're on in step (James, Nov 2026) */
+                const cur = ppEmpOf(id);
+                return (
+                  (cur ? "" : `<option value="" selected>Choose…</option>`) +
+                  Object.entries(EMP_TYPES)
+                    .map(
+                      ([k, l]) =>
+                        `<option value="${k}"${k === cur ? " selected" : ""}>${esc(l)}</option>`,
+                    )
+                    .join("")
+                );
+              })()}</select></label>${roleOf(id) === "company" || roleOf(id) === "sub" ? `<label class="inl pp-coL">Company<input class="pp-co" data-w="${esc(id)}" maxlength="80" value="${esc(companyOf(id))}" placeholder="Company they're from" style="width:auto;min-width:160px"></label>` : ""}
         <button type="button" class="pillbtn pr-send" data-w="${esc(id)}">Send ${esc(nameOf(id))} a reminder</button></div>`
       }${
         d
@@ -444,6 +449,7 @@ function peopleView() {
         missing.map((r) => r.id),
         { form: "details" },
       );
+  if ($("pp-me")) $("pp-me").onclick = () => openDetails();
   $("pp-ec").onclick = () => {
     const r = [
       [
@@ -463,6 +469,7 @@ function peopleView() {
           ({
             sub: "Subcontractor",
             employee: "Employee",
+            owner: "Owner",
             company: "From " + (companyOf(id) || "another company"),
           }[roleOf(id)] || "not set") +
           ")",

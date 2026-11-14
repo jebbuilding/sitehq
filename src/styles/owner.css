@@ -253,3 +253,9 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .td-list{max-height:360px;overflow-y:auto;overscroll-behavior:contain;margin:0 -4px;padding:0 4px}
 .tdw-wrap{max-height:460px;overflow-y:auto;overscroll-behavior:contain}
 .ld-now{align-items:center;margin:0 0 10px}.ld-now .who{flex:1 1 220px}
+
+/* account set-up card (Today and Setup) */
+.acs-card .acs-steps{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.acs-card .acs-step{min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.acs-card .acs-step[aria-pressed="true"]{background:var(--soft)}
+.acs-card .acs-tick{font-weight:700;color:var(--accent)}

@@ -25,6 +25,7 @@ import { openViewer } from "../core/viewer.js";
 import { isSketch, ownerDrawing } from "../drawing/trade-drawings.js";
 import { blobUrl, saveAsset } from "../files/files.js";
 import { newId } from "../files/outbox.js";
+import { ACS } from "./account-setup.js";
 import { backupCard, wireBackup } from "./backup.js";
 import { companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
@@ -132,7 +133,7 @@ function roleTag(id) {
         : r === "company"
           ? '<span class="tag rco">🏢 ' + esc(companyOf(id) || "Another company") + "</span>"
           : r === "owner"
-            ? ""
+            ? '<span class="tag rown">Owner · account holder</span>'
             : '<span class="tag">Not set</span>')
   );
 }
@@ -899,6 +900,7 @@ function ownerSetup() {
       <div class="seg" id="tp-seg"><button type="button" data-v="all" aria-pressed="${(S.settings || {}).tradePhotos !== "james"}">Everyone's photos for the site</button><button type="button" data-v="james" aria-pressed="${(S.settings || {}).tradePhotos === "james"}">Only my photos (and their own)</button></div></div></div>
     <div class="card"><div class="cardbody" style="border:0"><b>Your mobile number</b><div class="who">Trades can call or video call you from Chat with this.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="op-tel" type="tel" maxlength="20" value="${esc(S.f.opTel != null ? S.f.opTel : (S.settings || {}).ownerPhone || "")}" placeholder="e.g. 07700 900123" style="flex:1;min-width:180px" aria-label="Your mobile number"><button class="btn primary" id="op-save" type="button">Save</button></div></div></div>
+    ${ACS.cardHtml("setup")}
     <div class="card"><div class="cardbody" style="border:0"><b>🪪 My own details</b><div class="who">${detailsDone(myDetails()) ? "✓ Filled in. " : ""}Your name, trade, CSCS card, next of kin and medical info. Used to fill in inductions, toolbox talks, briefings and other forms for you automatically, the same as the trades.</div><div><button class="btn ${detailsDone(myDetails()) ? "" : "primary"}" id="op-det" type="button">${detailsDone(myDetails()) ? "Check my details" : "Fill in my details"}</button><button class="btn op-me" data-t="time" type="button">⏱️ My timesheet</button><button class="btn op-me" data-t="mydw" type="button">🧱 My day sheet</button></div></div></div>
     ${qaSetupCard()}
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
@@ -930,6 +932,7 @@ function ownerSetup() {
   lhWire();
   sdWireSig();
   $("op-det").onclick = () => openDetails();
+  ACS.wire();
   /* James working like a trade (Nov 2026): his own timesheet and day sheet, as the trades fill them in */
   document.querySelectorAll(".op-me").forEach(
     (b) =>

@@ -13,7 +13,7 @@ const page_src=fs.readFileSync('timesheets.html','utf8')
  await ctx.route(/^https?:\/\//,r=>{if(r.request().url().includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});r.abort()});
  try{
  await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body><script>window.__IMG="'+img+'";</script>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2500);await p.keyboard.press('Escape');
- await p.evaluate(async()=>{await window.__S.db.doc('sheets/emp1').update({photo:'img1'});window.__S.team.emp1.photo='img1';window.__S.tab='people';window.__S.otab='people';window.render()});await p.waitForTimeout(600);
+ await p.evaluate(async()=>{await window.__S.db.doc('sheets/emp1').update({photo:'img1'});window.__S.team.emp1.photo='img1';window.__S.tab='people';window.__S.otab='people';window.__S.f.prole='';window.render()});await p.waitForTimeout(600);
  const n=await p.locator('.pp-avbtn').count();console.log('list avatar buttons',n);
  await p.click('.pp-avbtn[data-w=emp1]');await p.waitForTimeout(300);console.log('dialog',await p.isVisible('.ppd-rm'),'| details opened?',await p.evaluate(()=>{const d=document.querySelector('details[data-id="__pemp1"]');return d&&d.open}));
  await p.click('.ppd-rm');await p.click('.ppd-rm');await p.waitForTimeout(800);console.log('photo gone',await p.evaluate(()=>String(window.__st['sheets/emp1'].photo)));
