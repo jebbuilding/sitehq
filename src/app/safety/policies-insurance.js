@@ -9,6 +9,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { companyCard, wireCompany } from "../owner/company-details.js";
 import { nameOf, teamIds } from "../owner/owner.js";
+import { CDOCS } from "./company-docs.js";
 import { daysTo, dueTagN } from "./expiry-dates.js";
 export { isPolDoc, myPolTodo, policiesView };
 const POL_CATS = {
@@ -86,8 +87,9 @@ function policiesView() {
               .join("")}</div>`
           : `<div class="empty"><strong>Nothing here yet</strong>${esc(bossFirst())}'s company policies and insurance certificates will appear here.</div>`
       }`;
-    $("main").insertAdjacentHTML("afterbegin", companyCard());
+    $("main").insertAdjacentHTML("afterbegin", companyCard() + CDOCS.cardHtml());
     wireCompany();
+    CDOCS.wire();
     $("main")
       .querySelectorAll(".folder")
       .forEach(

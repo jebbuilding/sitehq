@@ -16,3 +16,10 @@
 .cdm-l2{border-left-color:#d4a017}.cdm-l3{border-left-color:#e07b00}.cdm-l4{border-left-color:var(--danger)}
 .cdm-must{margin:8px 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 .cdm-lset{display:block;max-width:360px;margin:4px 0 6px}
+
+/* company documents checklist (Policies & insurance, owner) */
+.cdx-card .cdx-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.cdx-card .cdx-main{flex:1 1 260px;min-width:0}
+.cdx-card .cdx-btns{display:flex;flex-wrap:wrap;gap:6px}
+.cdx-card .cdx-btns .pillbtn{min-height:44px}
+.cdx-card .cdx-btns .pillbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
