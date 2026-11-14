@@ -44,6 +44,7 @@ import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dwTradeSheet } from "./day-work.js";
 import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
+import { nstClientId, nstGroups, nstIs } from "./non-site-time.js";
 import { otmAsk, otmLine, otmOffer } from "./overtime.js";
 import { dayFor, openMyDay } from "./working-day.js";
 export { checkIn, checkInAt, checkOut, empTime, entrySub, openEntry, sumH, typeTag };
@@ -79,7 +80,7 @@ function clockCard() {
   const D = dayFor(S.me);
   if (open) {
     const s = siteRec(open.job) || {};
-    return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>On site</div><b class="cisite">${esc(siteLabel(open.job))}</b>${jobNameOf(open.job) ? `<div class="sub">📍 ${esc(open.job)}</div>` : ""}${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
+    return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>${nstIs(open.job) ? "Clocked in" : "On site"}</div><b class="cisite">${esc(siteLabel(open.job))}</b>${jobNameOf(open.job) ? `<div class="sub">📍 ${esc(open.job)}</div>` : ""}${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
     <button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button>
     <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button><button class="pillbtn ci-diff" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">⏱ Started early or working through lunch?</button>
@@ -92,6 +93,8 @@ function clockCard() {
     siteNames(),
     lastOf(S.mine.entries, () => true, "job"),
     "e.g. 12 Marine Way, Exmouth",
+    true,
+    nstGroups(),
   )}
     <button class="btn primary big ci-in" type="button">Check in now</button>
     <div class="who">⏰ Your usual day: ${esc(dayLine(D))}${D.own ? "" : " (standard)"} · <button type="button" class="linkbtn ci-day">Change</button></div>
@@ -128,6 +131,7 @@ async function checkInAt(site) {
     created: now,
     updated: now,
   };
+  if (nstClientId(site)) data.clientId = nstClientId(site);
   S.mine.entries = S.mine.entries.concat([Object.assign({ id }, data)]);
   render();
   try {
@@ -350,7 +354,7 @@ function openEntry(type, e, forWho) {
   openSheet(
     `<h3 id="sheettitle">${e ? "Edit" : "Add"} ${type === "hours" ? "timesheet day" : "day work / job time"}</h3>${px ? `<div class="notice" style="margin:0">For <b>${esc(px.name)}</b>, filled in by you.</div>` : ""}${forWho ? `<div class="who">For <b>${esc(nameOf(forWho))}</b>. They'll see the change straight away.</div>` : ""}
     <label for="f-date">Date<input id="f-date" type="date" required value="${esc(defDate)}"></label>
-    ${pickField("f-job", "Site", siteNames(), e ? e.job : lastOf(srcEntries, () => true, "job"), "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("f-job", "Site or job", siteNames(), e ? e.job : lastOf(srcEntries, () => true, "job"), "e.g. 12 Marine Way, Exmouth", true, nstGroups())}
     ${
       type === "hours"
         ? `<div class="grid3">
@@ -451,9 +455,11 @@ async function saveEntry() {
     approved: false,
   };
   if (!data.date || !data.job) {
-    showErr("Choose the date and the site.");
+    showErr("Choose the date and the site or job.");
     return;
   }
+  const nstCl = nstClientId(data.job);
+  if (nstCl) data.clientId = nstCl;
   if (formType === "hours") {
     data.start = $("f-start").value;
     if ($("f-open") && $("f-open").checked) {
