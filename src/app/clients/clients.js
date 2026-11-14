@@ -36,7 +36,7 @@ const CL_STAGES = [
   ["visit", "Job to cost"],
   ["quote", "Estimate sent"],
   ["won", "Accepted"],
-  ["onsite", "On site"],
+  ["onsite", "Active site"],
   ["done", "Completed"],
   ["lost", "Rejected"],
   ["contact", "📒 Address book (no job yet)"],
