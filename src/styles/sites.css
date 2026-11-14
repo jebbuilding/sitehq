@@ -93,3 +93,5 @@
 .stg-done .stg-tick{background:#2e7d32;color:#fff}
 .stg-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
 .stg-csok{color:#2e7d32;font-weight:600}
+/* the job name at the top of each site's page (James, Nov 2026) */
+.ss-namebar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px}.ss-nmain{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}.ss-nbig{font-family:var(--f-display);font-size:22px;line-height:1.2;color:var(--ink);overflow-wrap:anywhere}.ss-namebar .btn,.ss-namebar .pillbtn{min-height:44px}

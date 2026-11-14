@@ -27,8 +27,10 @@ import {
   editSiteJob,
   editSiteVis,
   siteJobCard,
+  siteNameBar,
   siteSumHtml,
   syncSiteJobs,
+  wireSiteNameBar,
   wireSiteSum,
 } from "./job-details.js";
 import { jkOpen } from "./job-pack.js";
@@ -123,7 +125,7 @@ function ownerProjects() {
       )
       .join("")}
     </tbody><tfoot><tr><td colspan="3"><b>Total</b></td><td class="num"><b>${hrs(sumH(list, () => true))} h</b></td></tr></tfoot></table></div>`;
-  let html = `<div class="filters">
+  let html = `${siteNameBar(site)}<div class="filters">
     <div><div class="flabel">Period</div><div class="seg" id="pj-range">${[
       ["all", "All time"],
       ["month", "This month"],
@@ -378,6 +380,7 @@ function ownerProjects() {
     syncSiteJobs();
   }
   wireSiteSum(site);
+  wireSiteNameBar(site);
   if ($("mkrams")) $("mkrams").onclick = () => ramsMaker(site);
   if ($("jk-open")) $("jk-open").onclick = () => jkOpen(site);
   if ($("sq-new")) $("sq-new").onclick = () => sqOpen(site);

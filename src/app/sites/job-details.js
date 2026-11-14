@@ -28,6 +28,7 @@ export {
   siteHeadHtml,
   siteJobCard,
   siteLabel,
+  siteNameBar,
   siteSumHtml,
   sjClientOK,
   sjCopy,
@@ -35,6 +36,7 @@ export {
   sjMaster,
   sjPayload,
   syncSiteJobs,
+  wireSiteNameBar,
   wireSiteSum,
   wireSjPhotos,
 };
@@ -855,6 +857,42 @@ const siteHeadHtml = (site) => {
   const h = siteHead(site);
   return `<b>${esc(h.big)}</b>${h.small ? `<span class="who">📍 ${esc(h.small)}</span>` : ""}`;
 };
+/* the top of each site's page: the job name big (or "Name this job" if it hasn't one), the address small, and one tap
+   to name it or change the name (James, Nov 2026: "needs to be in each site information at the top to choose the name") */
+function siteNameBar(site) {
+  const sr = siteRec(site) || {};
+  const jn = jobNameOf(site);
+  const can = S.owner && sr.id;
+  return `<div class="ss-namebar">${
+    jn
+      ? `<div class="ss-nmain"><b class="ss-nbig">🔨 ${esc(jn)}</b><span class="who">📍 ${esc(site)}</span></div>${can ? `<button type="button" class="pillbtn" id="ss-name">✎ Change name</button>` : ""}`
+      : `<div class="ss-nmain"><b class="ss-nbig">📍 ${esc(site)}</b>${can ? `<span class="who">No job name yet</span>` : ""}</div>${can ? `<button type="button" class="btn primary" id="ss-name">✎ Name this job</button>` : ""}`
+  }</div>`;
+}
+function wireSiteNameBar(site) {
+  if (!$("ss-name")) return;
+  $("ss-name").onclick = () => {
+    const sr = siteRec(site) || {};
+    openSheet(
+      `<h3 id="sheettitle">✎ Job name</h3><div class="who">📍 ${esc(site)}</div>
+      <label for="ss-nm">What do you call this job? (shows big everywhere, with the address small under it)<input id="ss-nm" maxlength="60" value="${esc(sr.jobName || "")}" placeholder="e.g. Jones kitchen extension"></label>
+      ${formFoot(false, "Save")}`,
+      async () => {
+        try {
+          await S.db
+            .doc("sites/" + sr.id)
+            .update({ jobName: $("ss-nm").value.trim().replace(/\s+/g, " ") });
+          closeForm();
+          toast("Name saved");
+          render();
+        } catch (e) {
+          showErr("Couldn't save. Check your connection.");
+        }
+      },
+      "ss-nm",
+    );
+  };
+}
 function siteSumHtml(site, compact, inner) {
   const sr = siteRec(site) || {};
   const jn = jobNameOf(site);
@@ -866,7 +904,7 @@ function siteSumHtml(site, compact, inner) {
   const row = (l, v) =>
     v ? `<div class="drow"><span>${esc(l)}</span><span>${v}</span></div>` : "";
   return `<div class="sitesum">
-    <div class="sshead">${siteFront(site) ? `<button type="button" class="ssphb" id="ss-front" title="Change the front photo"><img class="ssph" src="${blobUrl(siteFront(site))}" alt="Front of the property"><span>📷 Change</span></button>` : `<button type="button" class="ssphb ssphadd" id="ss-front">🏠<span>Add front photo</span></button>`}<div style="flex:1">${jn ? `<div class="ssjname">🔨 ${esc(jn)}</div>` : ""}<div class="who">Job address</div><button type="button" class="maplink ssaddr" data-addr="${esc((c && clAddr(c)) || site)}">📍 ${esc((c && clAddr(c)) || site)}</button>${work ? `<div class="sswork">${esc(work)}</div>` : ""}</div>
+    <div class="sshead">${siteFront(site) ? `<button type="button" class="ssphb" id="ss-front" title="Change the front photo"><img class="ssph" src="${blobUrl(siteFront(site))}" alt="Front of the property"><span>📷 Change</span></button>` : `<button type="button" class="ssphb ssphadd" id="ss-front">🏠<span>Add front photo</span></button>`}<div style="flex:1"><div class="who">Job address</div><button type="button" class="maplink ssaddr" data-addr="${esc((c && clAddr(c)) || site)}">📍 ${esc((c && clAddr(c)) || site)}</button>${work ? `<div class="sswork">${esc(work)}</div>` : ""}</div>
       <button type="button" class="pillbtn" id="ss-edit">✎ Edit</button></div>
     <div class="actions"><a class="btn primary" href="${esc(gmapDir(sr.lat != null ? sr.lat + "," + sr.lon : site))}" target="_blank" rel="noopener">🚗 Directions</a><button type="button" class="btn maplink" data-addr="${esc(site)}">📍 Maps &amp; share</button><button type="button" class="btn hv" id="pj-pin">Drop a pin</button></div>
     ${c ? `<button type="button" class="btn sjbig sscltab" id="ss-cltab">👤 Client details: <b>${esc(c.name)}</b> ›</button>` : ""}<button type="button" class="btn sjbig" id="ss-perm">👁 Who sees what on this site ›</button>
