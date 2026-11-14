@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 216 files, 4269 KB, 109161 lines.
-- 2254 names declared at the top level (the shared scope); 1126 of them are used by a file other than the one that declares them.
+- 216 files, 4270 KB, 109172 lines.
+- 2255 names declared at the top level (the shared scope); 1126 of them are used by a file other than the one that declares them.
 - 2335 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 198 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
@@ -1258,7 +1258,7 @@ VEHICLES & PLANT: one register for vans, trailers, diggers and small plant – w
 
 PROGRAMME: a job's stages in order, linked ("can't start until…"), with delay days; dates move when one slips
 
-- 406 lines, 18 KB. Declares 13 names, 4 used elsewhere.
+- 417 lines, 18 KB. Declares 14 names, 4 used elsewhere.
 - **Used elsewhere:** `pgClientHtml` (1), `pgHtml` (1), `pgRec` (1), `pgWire` (1)
 - **Uses names from 7 files:** `core/helpers.js` (7), `core/sheet.js` (3), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `sites/site-diary.js` (1), `sites/summary.js` (1)
 - **Used by 2 files**

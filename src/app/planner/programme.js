@@ -56,6 +56,8 @@ const PG_PRESETS = {
     ["Snag and clean", 1],
   ],
 };
+/* the timer for redrawing the programme table after a change (below, where the table is wired up) */
+let pgRedrawT = 0;
 const pgId = (site) => "prog-" + sdiSlug(site);
 const pgRec = (site) => (S.programmes || []).find((p) => p.id === pgId(site)) || null;
 const pgIsWork = (d) => d.getDay() !== 0 && d.getDay() !== 6;
@@ -314,10 +316,19 @@ function pgWire(site) {
           });
         })),
   );
-  /* any change to the table redraws the dates straight away (not saved until Save) */
-  document
-    .querySelectorAll(".pg-tbl input, .pg-tbl select, #pg-start")
-    .forEach((el) => (el.onchange = () => redo(() => {})));
+  /* any change to the table redraws the dates straight away (not saved until Save). The redraw waits a moment and
+     is skipped when a button is being pressed: typing a number then tapping Save straight away fires the change as
+     the box loses focus, and redrawing then would swallow the tap on Save (the button's own action reads the table) */
+  document.querySelectorAll(".pg-tbl input, .pg-tbl select, #pg-start").forEach(
+    (el) =>
+      (el.onchange = () => {
+        clearTimeout(pgRedrawT);
+        pgRedrawT = setTimeout(() => redo(() => {}), 250);
+      }),
+  );
+  $("main")
+    .querySelectorAll("button")
+    .forEach((b) => b.addEventListener("pointerdown", () => clearTimeout(pgRedrawT)));
   document.querySelectorAll(".pg-tick").forEach(
     (b) =>
       (b.onclick = () => {
