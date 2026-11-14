@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 219 files, 4289 KB, 109560 lines.
+- 219 files, 4289 KB, 109565 lines.
 - 2271 names declared at the top level (the shared scope); 1137 of them are used by a file other than the one that declares them.
 - 2414 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -1510,7 +1510,7 @@ TRAINING & TOOLBOX TALKS
 
 WASTE TRANSFER NOTE (WMC2A layout): sections A–D, signed on the tab, one-page PDF, sent on
 
-- 1301 lines, 54 KB. Declares 1 names, 1 used elsewhere.
+- 1306 lines, 54 KB. Declares 1 names, 1 used elsewhere.
 - **Used elsewhere:** `WTN` (2)
 - **Uses names from 17 files:** `core/helpers.js` (6), `core/sheet.js` (5), `core/state.js` (2), `core/viewer.js` (2), `photos/photos.js` (2), `safety/site-inductions.js` (2), `clients/stages-planner.js` (1), `core/dictation.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `files/files.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/send-to.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `owner/deletion-record.js` (1)
 - **Used by 2 files**

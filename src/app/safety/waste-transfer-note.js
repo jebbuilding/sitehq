@@ -134,7 +134,12 @@ const WTN = (() => {
         qty: "",
       },
       B: Object.assign(party("client"), {
-        council: "EDDC",
+        /* the council the company used last (another firm starts blank) */
+        council:
+          [...(S.wtns || [])]
+            .sort((a, b) => (b.created || 0) - (a.created || 0))
+            .map((n) => (n.B || {}).council)
+            .find(Boolean) || "",
         hier: true,
         is: {
           producer: true,
@@ -305,7 +310,7 @@ const WTN = (() => {
    ${p.role === "client" ? `<label class="wf">Client<select id="wt-${k}-cl" ${d}>${clOpts}</select></label>` : p.role === "supplier" ? `<label class="wf">Supplier<select id="wt-${k}-sup" ${d}>${supOpts}</select></label>` : ""}
    ${isB ? `<label class="ck"><input type="checkbox" id="wt-B-hier" ${p.hier ? "checked" : ""} ${d}>By signing in Section D the transferor confirms the waste hierarchy has been applied (Regulation 12, Waste (England and Wales) Regulations 2011)</label>` : ""}
    <div class="row"><label class="wf">${isB ? "B1" : "C1"} Full name<input id="wt-${k}-name" value="${esc(p.name)}" ${d}></label><label class="wf">Company name<input id="wt-${k}-company" value="${esc(p.company)}" ${d} placeholder="leave blank for a householder"></label><label class="wf" style="grid-column:1/-1">Address<input id="wt-${k}-addr" value="${esc(p.addr)}" ${d}></label><label class="wf">Postcode<input id="wt-${k}-postcode" value="${esc(p.postcode)}" ${d}></label>
-   ${isB ? `<label class="wf">SIC code (2007)<input id="wt-B-sic" value="${esc(p.sic)}" ${d} placeholder="blank for a householder"></label><label class="wf">B2 Unitary authority / council<input id="wt-B-council" list="wt-councils" value="${esc(p.council)}" ${d} placeholder="e.g. EDDC"><datalist id="wt-councils">${["EDDC – East Devon District Council", "Exeter City Council", "Teignbridge District Council", "Mid Devon District Council", "South Hams District Council", "Torbay Council", "Plymouth City Council", "Devon County Council", "Somerset Council", "Dorset Council"].map((x) => `<option value="${x}">`).join("")}</datalist></label>` : `<label class="ck" style="align-self:end"><input type="checkbox" id="wt-C-isLA" ${p.isLA ? "checked" : ""} ${d}>C2 The local authority?</label>`}</div>
+   ${isB ? `<label class="wf">SIC code (2007)<input id="wt-B-sic" value="${esc(p.sic)}" ${d} placeholder="blank for a householder"></label><label class="wf">B2 Unitary authority / council<input id="wt-B-council" list="wt-councils" value="${esc(p.council)}" ${d} placeholder="e.g. your district council"><datalist id="wt-councils">${[...new Set((S.wtns || []).map((n) => (n.B || {}).council).filter(Boolean))].map((x) => `<option value="${esc(x)}">`).join("")}</datalist></label>` : `<label class="ck" style="align-self:end"><input type="checkbox" id="wt-C-isLA" ${p.isLA ? "checked" : ""} ${d}>C2 The local authority?</label>`}</div>
    <h5>${isB ? "B3" : "C3"} Are you…</h5><div class="row" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
    ${isB ? ck("producer", "The producer of the waste?") + ck("importer", "The importer of the waste?") + ck("la", "The local authority?") : ""}
    ${ck("permit", "The holder of an environmental permit?")}<label class="wf">Permit number<input id="wt-${k}-permitNo" value="${esc(p.permitNo)}" ${d}></label><label class="wf">Issued by<input id="wt-${k}-permitBy" value="${esc(p.permitBy)}" ${d}></label>
@@ -1132,7 +1137,7 @@ const WTN = (() => {
       `<label for="ws-${id}">${lab}<input id="ws-${id}" value="${esc(val || "")}" ${ph ? `placeholder="${esc(ph)}"` : ""} ${extra || ""}></label>`;
     openSheet(
       `<h3 id="sheettitle">♻️ ${w.id ? "Edit" : "Add"} waste transfer site</h3><div class="who">A tip, transfer station or skip yard you take waste to. Picking it on a waste transfer note fills in Section C (or B) and the transfer address.</div>
-    ${f("name", "Site name (as you call it)", w.name, "e.g. EMS Hill Barton", 'required maxlength="60"')}${f("company", "Company name", w.company, "e.g. EMS Waste Services Ltd", "required")}${f("contact", "Contact name (optional)", w.contact, "")}
+    ${f("name", "Site name (as you call it)", w.name, "e.g. Town recycling centre", 'required maxlength="60"')}${f("company", "Company name", w.company, "e.g. Anytown Waste Ltd", "required")}${f("contact", "Contact name (optional)", w.contact, "")}
     ${f("addr", "Address", w.addr, "e.g. Unit 4, Business Park, Anytown")}${f("postcode", "Postcode", w.postcode, "AB1 2CD")}${f("phone", "Phone", w.phone, "")}${f("email", "Email (where to send the note)", w.email, "", 'type="email"')}
     <div class="who" style="margin-top:4px"><b>Their registrations</b> – ask the site; they must tell you.</div>
     ${f("permitNo", "Environmental permit number", w.permitNo, "EPR/…")}${f("permitBy", "Issued by", w.permitBy, "Environment Agency")}${f("exempt", "Waste exemption details (if instead of a permit)", w.exempt, "")}
