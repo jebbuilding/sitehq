@@ -31,7 +31,7 @@ function htRow(p, today) {
   const to = p.to || p.from;
   const days = workDays(p.from, to, p.half);
   const now = p.from <= today && to >= today;
-  const who = (p.people || []).map((id) => (id === S.me ? "You" : nameOf(id))).join(", ");
+  const who = (p.people || []).map((id) => nameOf(id)).join(", ");
   return `<button type="button" class="ht-row${now ? " ht-now" : ""}" data-p="${esc(p.id)}"><span class="ht-when"><b>${esc(shortDay(p.from))}${to !== p.from ? " – " + esc(shortDay(to)) : ""}</b><small>${days} working day${days === 1 ? "" : "s"}</small></span><span class="ht-who"><b>${esc(who || "Nobody chosen")}</b><small>${esc(htKind(p))}${p.vis === "people" ? " · only them and you see it" : p.vis === "me" ? " · only you see it" : ""}</small></span>${now ? '<span class="tag ok">Off now</span>' : ""}</button>`;
 }
 function htHtml(entries) {

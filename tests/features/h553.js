@@ -28,7 +28,7 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  const vis=await p.evaluate(()=>{const c=document.querySelector('.dy-adchip').getBoundingClientRect(),w=document.querySelector('.dy-wrap').getBoundingClientRect();return c.left>=w.left&&c.left<w.right});
  ok(vis,'Day: the all-day stage is in view, not scrolled off to the left');
  const g=await p.evaluate(()=>[...document.querySelectorAll('.dy-grp b')].map(e=>e.textContent));
- ok(g.includes('You')&&g.includes('Subcontractors')&&g.includes('Other companies'),'Day: people grouped ('+g.join(', ')+')');
+ ok(g.includes('Owner')&&g.includes('Subcontractors')&&g.includes('Other companies'),'Day: people grouped ('+g.join(', ')+')');
  await mode('where');
  const job=await p.evaluate(()=>[...document.querySelectorAll('.pl-job')].map(e=>e.textContent));
  ok(job.includes('Dig and pour foundations'),'Who\'s where: the job nobody is on shows its stage only ('+job.join(' | ')+')');

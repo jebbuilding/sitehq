@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 225 files, 4405 KB, 112080 lines.
+- 225 files, 4405 KB, 112075 lines.
 - 2306 names declared at the top level (the shared scope); 1164 of them are used by a file other than the one that declares them.
-- 2493 file-to-file dependencies (file A uses at least one name from file B).
+- 2492 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 208 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -55,9 +55,9 @@ The de facto shared API: names used by the most files.
 | `sdR2` | `sales/sales-calc.js` | 24 files |
 | `submitJob` | `files/outbox.js` | 22 files |
 | `viewClient` | `clients/quick-enquiry.js` | 22 files |
-| `bossName` | `core/company-names.js` | 21 files |
 | `myName` | `survey/door-window-survey.js` | 21 files |
 | `siteClient` | `sites/summary.js` | 21 files |
+| `bossName` | `core/company-names.js` | 20 files |
 
 ## Variables changed from another file
 
@@ -386,9 +386,9 @@ BOOT: get the platform (database, user, files, downloads), work out who is signe
 COMPANY NAMES: the company's and account holder's names, from the company details
 
 - 35 lines, 1.4 KB. Declares 6 names, 5 used elsewhere.
-- **Used elsewhere:** `bossFirst` (52), `bossName` (21), `coName` (19), `coShort` (15), `coTown` (4)
+- **Used elsewhere:** `bossFirst` (52), `bossName` (20), `coName` (19), `coShort` (15), `coTown` (4)
 - **Uses names from 1 files:** `core/state.js` (1)
-- **Used by 68 files**
+- **Used by 67 files**
 
 ### `core/data.js`
 
@@ -1231,7 +1231,7 @@ PHOTO MULTI-SELECT + DOWNLOAD AS ZIP
 
 PLANNER v2: full-screen board (people × days), job timeline, tidy menu, day sheet for trades
 
-- 1810 lines, 75 KB. Declares 33 names, 17 used elsewhere.
+- 1806 lines, 75 KB. Declares 33 names, 17 used elsewhere.
 - **Used elsewhere:** `openPlanEditor` (8), `keyDatesFor` (5), `keyTimeline` (3), `pbPending` (2), `answerLeave` (1), `leaveCard` (1), `openKeyDates` (1), `openLeave` (1), `openPlanView` (1), `pbEntryDays` (1), `pbPlanWeek` (1), `pbSiteOf` (1), `pbSiteShort` (1), `pbStageName` (1), `plannerView` (1), `siteHue` (1), `wireLeave` (1)
 - **Uses names from 34 files:** `core/helpers.js` (10), `planner/time-off.js` (9), `core/sheet.js` (6), `core/state.js` (6), `planner/planner-extras.js` (6), `owner/owner.js` (5), `planner/views.js` (5), `planner/diary.js` (4), `planner/holidays.js` (3), `core/fields.js` (2), `core/viewer.js` (2), `files/files.js` (2), `files/outbox.js` (2), `planner/holiday-tab.js` (2), `planner/plant-care.js` (2), `chat/chat.js` (1), `clients/address-book.js` (1), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `owner/today.js` (1), `people/profile-photos.js` (1), `photos/photos.js` (1), `planner/course-booking.js` (1), `planner/weather-plan.js` (1), `safety/training.js` (1), `sites/job-sheets.js` (1), `sites/project-pages.js` (1), `sites/roll-call.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 17 files**
@@ -1249,9 +1249,9 @@ COURSE BOOKING: book people out on a training course, with the course's details,
 
 DIARY / SCHEDULER BOARD (people down the side, hours across)
 
-- 401 lines, 17 KB. Declares 8 names, 5 used elsewhere.
+- 400 lines, 17 KB. Declares 8 names, 5 used elsewhere.
 - **Used elsewhere:** `toHM` (2), `diaryHtml` (1), `diaryRows` (1), `dyGroupName` (1), `wireDiary` (1)
-- **Uses names from 13 files:** `core/helpers.js` (9), `owner/owner.js` (4), `clients/portal-calendar.js` (1), `clients/quick-enquiry.js` (1), `core/company-names.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `planner/views.js` (1), `safety/expiry-dates.js` (1), `sites/roll-call.js` (1), `timesheets/working-day.js` (1)
+- **Uses names from 12 files:** `core/helpers.js` (9), `owner/owner.js` (4), `clients/portal-calendar.js` (1), `clients/quick-enquiry.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `planner/views.js` (1), `safety/expiry-dates.js` (1), `sites/roll-call.js` (1), `timesheets/working-day.js` (1)
 - **Used by 3 files**
 
 ### `planner/holiday-person.js`

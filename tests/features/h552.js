@@ -1,5 +1,5 @@
 // Planner (new look, iPad size; made-up Kahn Test as a subcontractor and Lee Test from another company): the Board
-// groups people under You, Subcontractors and Other companies; the Jobs view has a heading line per job and a line per
+// groups people under Owner, Subcontractors and Other companies; the Jobs view has a heading line per job and a line per
 // stage under it with its own name (the site not repeated), and tapping a job folds its stages away.
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');
@@ -19,7 +19,7 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  const mode=async m=>{await p.evaluate(m=>{const o=document.getElementById('ohq');if(o)o.hidden=true;const S=window.__S;S.otab='planner';S.f.pmode=m;window.render()},m);await p.waitForTimeout(600);};
  await mode('board');
  const groups=await p.evaluate(()=>[...document.querySelectorAll('.pb-grp b')].map(e=>e.textContent));
- ok(groups.includes('You')&&groups.includes('Subcontractors')&&groups.includes('Other companies'),'the Board groups people: '+groups.join(', '));
+ ok(groups.includes('Owner')&&groups.includes('Subcontractors')&&groups.includes('Other companies'),'the Board groups people: '+groups.join(', '));
  const order=await p.evaluate(()=>[...document.querySelectorAll('.pb-grid .pb-grp, .pb-grid .pb-name[data-w]')].map(e=>e.classList.contains('pb-grp')?'#'+e.querySelector('b').textContent:e.dataset.w).join(' '));
  ok(/#Subcontractors sub1/.test(order)&&/#Other companies co1/.test(order),'each person sits under their group ('+order+')');
  /* two made-up programmes, then the Jobs view */

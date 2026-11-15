@@ -22,7 +22,7 @@ function crsOpen(p) {
     `<h3 id="sheettitle">🎓 ${p ? "Change the course" : "Book someone on a course"}</h3>
     <label for="crs-name">Course<input id="crs-name" required maxlength="120" value="${esc(v.title || "")}" placeholder="e.g. SMSTS, CSCS Level 1, PASMA, First aid at work"></label>
     <div class="flabel">Who's going</div>
-    <div class="crs-ppl">${ids.map((id) => `<label class="inl crs-p"><input type="checkbox" class="crs-who" value="${esc(id)}"${(v.people || []).includes(id) ? " checked" : ""}> ${esc(id === S.me ? "You" : nameOf(id))}</label>`).join("")}</div>
+    <div class="crs-ppl">${ids.map((id) => `<label class="inl crs-p"><input type="checkbox" class="crs-who" value="${esc(id)}"${(v.people || []).includes(id) ? " checked" : ""}> ${esc(nameOf(id))}</label>`).join("")}</div>
     <div class="grid2"><label for="crs-from">First day<input id="crs-from" type="date" required value="${esc(v.from)}"></label>
     <label for="crs-to">Last day<input id="crs-to" type="date" required value="${esc(v.to || v.from)}"></label></div>
     <div class="grid2"><label for="crs-t0">Starts (optional)<input id="crs-t0" type="time" value="${esc(v.time || "")}"></label>

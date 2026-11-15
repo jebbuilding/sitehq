@@ -40,7 +40,7 @@ function plClashes(entries, days) {
       const off = mine.find((p) => p.type === "holiday");
       const work = mine.filter(plBookable);
       const sites = [...new Set(work.map((p) => pbSiteOf(p) || p.title))];
-      const nm = w === S.me ? "You" : nameOf(w);
+      const nm = nameOf(w);
       const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" });
       if (off && work.length)
         out.push({ who: w, day: di, msg: `${nm} is booked on ${day} but is off that day` });
@@ -82,7 +82,7 @@ function plWhereHtml(shown) {
   const free = crewIds().filter((w) => !busy.has(w));
   const wkend = d.getDay() === 0 || d.getDay() === 6;
   const person = (w, p) =>
-    `<button type="button" class="pl-person" data-p="${esc(p ? p.id : "")}" data-w="${esc(w)}">${w === S.me ? `<span class="pav pavi" style="width:34px;height:34px;font-size:12px">${esc(initials(myName()))}</span>` : avatarHtml(w, 34)}<span><b>${esc(w === S.me ? "You" : nameOf(w))}</b>${p && p.type !== "holiday" ? `<small>${p.time ? esc(p.time) + " · " : ""}${esc(pbStageName(p.title, pbSiteOf(p)))}</small>` : p && p.time ? `<small>${esc(p.time)}</small>` : ""}</span></button>`;
+    `<button type="button" class="pl-person" data-p="${esc(p ? p.id : "")}" data-w="${esc(w)}">${w === S.me ? `<span class="pav pavi" style="width:34px;height:34px;font-size:12px">${esc(initials(myName()))}</span>` : avatarHtml(w, 34)}<span><b>${esc(nameOf(w))}</b>${p && p.type !== "holiday" ? `<small>${p.time ? esc(p.time) + " · " : ""}${esc(pbStageName(p.title, pbSiteOf(p)))}</small>` : p && p.time ? `<small>${esc(p.time)}</small>` : ""}</span></button>`;
   const clash = plClashes(shown, [d]);
   return `<div class="pl-where">
     <div class="pl-wnav"><button type="button" class="iconbtn" id="pl-wprev" aria-label="Day before">‹</button><b>${esc(d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}${di === today ? " · Today" : ""}</b><button type="button" class="iconbtn" id="pl-wnext" aria-label="Day after">›</button>${di !== today ? `<button type="button" class="pillbtn" id="pl-wtoday">Today</button>` : ""}</div>

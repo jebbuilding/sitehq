@@ -375,7 +375,7 @@ function pbBoardHtml(shown, entries) {
   <div class="pb-wrap"><div class="pb-grid" style="grid-template-columns:78px repeat(${days.length},minmax(${days.length > 5 ? 48 : 60}px,1fr))">
     <div class="pb-corner"><button type="button" class="pb-we" id="pb-we" title="${showWe ? "Hide" : "Show"} weekend">${showWe ? "Mon–Sun" : "+ Sat/Sun"}</button></div>${days.map((d) => `<div class="pb-dh ${iso(d) === today ? "today" : ""} ${d.getDay() === 0 || d.getDay() === 6 ? "wkend" : ""}"><small>${esc(d.toLocaleDateString("en-GB", { weekday: "short" }))}</small><b>${d.getDate()}</b></div>`).join("")}
     <div class="pb-name pb-freen"><small>Free</small></div>${freeRow}
-    ${rows.map((r, i) => `${r.grp !== undefined && (i === 0 || rows[i - 1].grp !== r.grp) && rows.some((x) => x.grp !== rows[0].grp) ? `<div class="pb-grp"><b>${esc(dyGroupName(r.grp))}</b> <span class="who">${rows.filter((x) => x.grp === r.grp).length}</span></div>` : ""}<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.id === S.me ? "Me" : r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
+    ${rows.map((r, i) => `${r.grp !== undefined && (i === 0 || rows[i - 1].grp !== r.grp) && rows.some((x) => x.grp !== rows[0].grp) ? `<div class="pb-grp"><b>${esc(dyGroupName(r.grp))}</b> <span class="who">${rows.filter((x) => x.grp === r.grp).length}</span></div>` : ""}<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
     ${unRow}
   </div></div>
   ${
@@ -573,11 +573,7 @@ function pbWireBoard(shown, entries) {
         toast(
           "Moved" +
             (shift ? " to " + shortDay(data.from) : "") +
-            (toW !== fromW
-              ? toW
-                ? " · " + (toW === S.me ? "you" : nameOf(toW))
-                : " · not assigned"
-              : ""),
+            (toW !== fromW ? (toW ? " · " + nameOf(toW) : " · not assigned") : ""),
         );
         render();
       } catch (err) {
