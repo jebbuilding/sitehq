@@ -30,7 +30,7 @@ import { allTeam, crewIds, nameOf, sheetOf, teamIds } from "../owner/owner.js";
 import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
-import { diaryHtml, diaryRows, wireDiary } from "./diary.js";
+import { diaryHtml, diaryRows, dyGroupName, wireDiary } from "./diary.js";
 import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
 import {
   plClashHtml,
@@ -368,7 +368,7 @@ function pbBoardHtml(shown, entries) {
   <div class="pb-wrap"><div class="pb-grid" style="grid-template-columns:78px repeat(${days.length},minmax(${days.length > 5 ? 48 : 60}px,1fr))">
     <div class="pb-corner"><button type="button" class="pb-we" id="pb-we" title="${showWe ? "Hide" : "Show"} weekend">${showWe ? "Mon–Sun" : "+ Sat/Sun"}</button></div>${days.map((d) => `<div class="pb-dh ${iso(d) === today ? "today" : ""} ${d.getDay() === 0 || d.getDay() === 6 ? "wkend" : ""}"><small>${esc(d.toLocaleDateString("en-GB", { weekday: "short" }))}</small><b>${d.getDate()}</b></div>`).join("")}
     <div class="pb-name pb-freen"><small>Free</small></div>${freeRow}
-    ${rows.map((r) => `<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.id === S.me ? "Me" : r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
+    ${rows.map((r, i) => `${r.grp !== undefined && (i === 0 || rows[i - 1].grp !== r.grp) && rows.some((x) => x.grp !== rows[0].grp) ? `<div class="pb-grp"><b>${esc(dyGroupName(r.grp))}</b> <span class="who">${rows.filter((x) => x.grp === r.grp).length}</span></div>` : ""}<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.id === S.me ? "Me" : r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
     ${unRow}
   </div></div>
   ${
@@ -583,6 +583,22 @@ function pbWireBoard(shown, entries) {
   });
 }
 /* ---------- job timeline: each site's stages across the coming weeks ---------- */
+/* a stage's name without the site on the end ("Plaster – 12 Marine Way" under the 12 Marine Way heading is "Plaster") */
+function pbStageName(t, site) {
+  const short = String(pbSiteShort(site) || "").toLowerCase();
+  const parts = String(t || "").split(/\s+[–-]\s+/);
+  if (parts.length > 1) {
+    const last = parts[parts.length - 1].toLowerCase();
+    const full = String(site || "").toLowerCase();
+    if (
+      (short && last.includes(short)) ||
+      full.startsWith(last) ||
+      last.startsWith(full.split(",")[0])
+    )
+      parts.pop();
+  }
+  return pbShort(parts.join(" – "));
+}
 function pbStagesHtml(shown) {
   const start = monday(parse(pbPlanWeek()));
   const weeks = 12;
@@ -605,33 +621,36 @@ function pbStagesHtml(shown) {
     const d = addDays(start, i * 7);
     return `<div class="pbs-wh" style="left:${i * 7 * colW}px;width:${7 * colW}px">${esc(d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }))}</div>`;
   }).join("");
-  return `<div class="who" style="margin-bottom:6px">One row per site, a bar for each booking or stage. Hold and drag a bar to move it; you'll be asked whether to move the later stages with it. <button type="button" class="linkbtn" id="pbs-add">📌 Add key dates / stages</button></div>
+  return `<div class="who" style="margin-bottom:6px">Each job with its stages under it – tap a job to fold it away. Hold and drag a bar to move it; you'll be asked whether to move the later stages with it. <button type="button" class="linkbtn" id="pbs-add">📌 Add key dates / stages</button></div>
   <div class="pb-wrap"><div class="pbs" style="width:${150 + days * colW}px"><div class="pbs-head"><div class="pbs-corner">Site</div><div class="pbs-weeks" style="width:${days * colW}px">${wkHead}</div></div>
   ${
+    /* one job = a heading line (tap to fold its stages away) and one line per stage or booking under it, the full name
+       on the left and its bar across the weeks (James, Nov 2026: the Jobs view "is too crowded") */
     sites
       .map((s) => {
         const rows = list
           .filter((p) => same(pbSiteOf(p), s))
-          .sort((a, b) => a.from.localeCompare(b.from));
-        const lanes = [];
-        rows.forEach((p) => {
-          const a = dx(p.from),
-            b = dx(p.to || p.from) + 1;
-          let k = lanes.findIndex((l) => l <= a);
-          if (k < 0) {
-            lanes.push(b);
-            k = lanes.length - 1;
-          } else lanes[k] = b;
-          p.__lane = k;
-        });
-        return `<div class="pbs-row" style="height:${Math.max(1, lanes.length) * 30 + 8}px"><div class="pbs-name"><b>${esc(pbSiteShort(s))}</b><small>${rows.length} booked</small></div><div class="pbs-lane" style="width:${days * colW}px" data-site="${esc(s)}">${Array.from({ length: weeks }, (_, i) => `<i class="pbs-wl" style="left:${i * 7 * colW}px"></i>`).join("")}${dx(today) >= 0 && dx(today) < days ? `<i class="pbs-today" style="left:${dx(today) * colW}px;width:${colW}px"></i>` : ""}
-      ${rows
-        .map((p) => {
-          const a = dx(p.from),
-            b = Math.min(days, dx(p.to || p.from) + 1);
-          return `<button type="button" class="pbs-bar t-${esc(p.type)} drag" data-p="${esc(p.id)}" style="left:${a * colW}px;width:${Math.max(colW, (b - a) * colW - 2)}px;top:${4 + p.__lane * 30}px;${pbChipStyle(p)}" title="${esc(p.title)}">${esc(pbShort(p.title))}${(p.people || []).length ? ` <small>${esc(p.people.map((id) => nameOf(id).split(" ")[0]).join(", "))}</small>` : ""}</button>`;
-        })
-        .join("")}</div></div>`;
+          .sort(
+            (a, b) =>
+              a.from.localeCompare(b.from) || (a.to || a.from).localeCompare(b.to || b.from),
+          );
+        const folded = (S.f.pbsFold || []).includes(s);
+        const deco = `${Array.from({ length: weeks }, (_, i) => `<i class="pbs-wl" style="left:${i * 7 * colW}px"></i>`).join("")}${dx(today) >= 0 && dx(today) < days ? `<i class="pbs-today" style="left:${dx(today) * colW}px;width:${colW}px"></i>` : ""}`;
+        const lo = Math.min(...rows.map((p) => dx(p.from))),
+          hi = Math.min(days, Math.max(...rows.map((p) => dx(p.to || p.from) + 1)));
+        const head = `<div class="pbs-row pbs-site"><div class="pbs-name"><button type="button" class="pbs-fold" data-s="${esc(s)}" aria-expanded="${!folded}"><span aria-hidden="true">${folded ? "▸" : "▾"}</span> <b>${esc(pbSiteShort(s))}</b></button><small>${rows.length} ${rows.length === 1 ? "stage or booking" : "stages and bookings"}</small></div><div class="pbs-lane" style="width:${days * colW}px" data-site="${esc(s)}">${deco}<i class="pbs-sum" style="left:${lo * colW}px;width:${Math.max(colW, (hi - lo) * colW - 2)}px;--pc:hsl(${siteHue(s)} 55% 42%)"></i></div></div>`;
+        if (folded) return head;
+        return (
+          head +
+          rows
+            .map((p) => {
+              const x0 = dx(p.from),
+                x1 = Math.min(days, dx(p.to || p.from) + 1);
+              const who = (p.people || []).map((id) => nameOf(id).split(" ")[0]).join(", ");
+              return `<div class="pbs-row pbs-stage"><div class="pbs-name" title="${esc(p.title)}"><span class="pbs-sn">${esc(pbStageName(p.title, s))}</span>${who ? `<small>${esc(who)}</small>` : ""}</div><div class="pbs-lane" style="width:${days * colW}px" data-site="${esc(s)}">${deco}<button type="button" class="pbs-bar t-${esc(p.type)} drag" data-p="${esc(p.id)}" style="left:${x0 * colW}px;width:${Math.max(colW, (x1 - x0) * colW - 2)}px;top:4px;${pbChipStyle(p)}" title="${esc(p.title)}">${x1 - x0 > 3 ? `${x1 - x0} days` : x1 - x0 > 1 ? `${x1 - x0}d` : ""}</button></div></div>`;
+            })
+            .join("")
+        );
       })
       .join("") ||
     '<div class="nothing" style="padding:14px">Nothing booked against a site in the next 12 weeks. Use 📌 Add key dates / stages.</div>'
@@ -639,6 +658,18 @@ function pbStagesHtml(shown) {
   </div></div>`;
 }
 function pbWireStages(shown) {
+  $("main")
+    .querySelectorAll(".pbs-fold")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          const f = new Set(S.f.pbsFold || []);
+          if (f.has(b.dataset.s)) f.delete(b.dataset.s);
+          else f.add(b.dataset.s);
+          S.f.pbsFold = [...f];
+          render();
+        }),
+    );
   const add = $("pbs-add");
   if (add) add.onclick = () => openKeyDates("", "");
   const colW = 22;

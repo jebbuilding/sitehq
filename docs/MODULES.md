@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 222 files, 4373 KB, 111450 lines.
-- 2287 names declared at the top level (the shared scope); 1147 of them are used by a file other than the one that declares them.
+- 222 files, 4375 KB, 111501 lines.
+- 2290 names declared at the top level (the shared scope); 1148 of them are used by a file other than the one that declares them.
 - 2461 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 205 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -962,7 +962,7 @@ PLANNING LEADS (owner only): moved in from the Devon Planning Leads page
 OWNER
 
 - 1158 lines, 52 KB. Declares 27 names, 18 used elsewhere.
-- **Used elsewhere:** `nameOf` (79), `allTeam` (44), `teamIds` (43), `crewIds` (5), `roleOf` (3), `roleShort` (3), `allIds` (2), `checkDetail` (2), `roleTag` (2), `sheetOf` (2), `startPreview` (2), `teamPlusMe` (2), `companyOf` (1), `ownerInvoices` (1), `ownerPhotos` (1), `ownerSetup` (1), `ownerTime` (1), `weekEntries` (1)
+- **Used elsewhere:** `nameOf` (79), `allTeam` (44), `teamIds` (43), `crewIds` (5), `roleOf` (4), `roleShort` (3), `allIds` (2), `checkDetail` (2), `roleTag` (2), `sheetOf` (2), `startPreview` (2), `teamPlusMe` (2), `companyOf` (1), `ownerInvoices` (1), `ownerPhotos` (1), `ownerSetup` (1), `ownerTime` (1), `weekEntries` (1)
 - **Uses names from 37 files:** `core/helpers.js` (14), `core/state.js` (5), `timesheets/filters.js` (5), `core/sheet.js` (4), `photos/photos.js` (4), `safety/expiry-dates.js` (4), `core/fields.js` (3), `timesheets/overtime.js` (3), `timesheets/time.js` (3), `timesheets/working-day.js` (3), `core/tabs-week.js` (2), `drawing/trade-drawings.js` (2), `files/files.js` (2), `owner/backup.js` (2), `owner/company-details.js` (2), `owner/today-desk.js` (2), `people/reminders.js` (2), `purchasing/invoices.js` (2), `safety/checklists.js` (2), `sales/letterhead-setup.js` (2), `core/company-names.js` (1), `core/data.js` (1), `core/dictation.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `owner/deletion-record.js` (1), `owner/reports.js` (1), `people/access.js` (1), `people/portal-access.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `purchasing/materials-receipts.js` (1), `sites/job-details.js` (1), `sites/roll-call.js` (1), `timesheets/day-work.js` (1), `timesheets/monthly-sheet.js` (1), `timesheets/pay-summary.js` (1)
 - **Used by 86 files**
 
@@ -1231,18 +1231,18 @@ PHOTO MULTI-SELECT + DOWNLOAD AS ZIP
 
 PLANNER v2: full-screen board (people × days), job timeline, tidy menu, day sheet for trades
 
-- 1765 lines, 72 KB. Declares 32 names, 15 used elsewhere.
+- 1796 lines, 74 KB. Declares 33 names, 15 used elsewhere.
 - **Used elsewhere:** `openPlanEditor` (8), `keyDatesFor` (5), `keyTimeline` (3), `pbPending` (2), `answerLeave` (1), `leaveCard` (1), `openKeyDates` (1), `openPlanView` (1), `pbEntryDays` (1), `pbPlanWeek` (1), `pbSiteOf` (1), `pbSiteShort` (1), `plannerView` (1), `siteHue` (1), `wireLeave` (1)
-- **Uses names from 32 files:** `core/helpers.js` (10), `planner/time-off.js` (8), `core/sheet.js` (6), `core/state.js` (6), `planner/planner-extras.js` (6), `owner/owner.js` (5), `planner/views.js` (5), `planner/diary.js` (3), `planner/holidays.js` (3), `core/fields.js` (2), `core/viewer.js` (2), `files/files.js` (2), `files/outbox.js` (2), `planner/plant-care.js` (2), `chat/chat.js` (1), `clients/address-book.js` (1), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `owner/today.js` (1), `people/profile-photos.js` (1), `photos/photos.js` (1), `planner/weather-plan.js` (1), `safety/training.js` (1), `sites/job-sheets.js` (1), `sites/project-pages.js` (1), `sites/roll-call.js` (1), `survey/door-window-survey.js` (1)
+- **Uses names from 32 files:** `core/helpers.js` (10), `planner/time-off.js` (8), `core/sheet.js` (6), `core/state.js` (6), `planner/planner-extras.js` (6), `owner/owner.js` (5), `planner/views.js` (5), `planner/diary.js` (4), `planner/holidays.js` (3), `core/fields.js` (2), `core/viewer.js` (2), `files/files.js` (2), `files/outbox.js` (2), `planner/plant-care.js` (2), `chat/chat.js` (1), `clients/address-book.js` (1), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `owner/today.js` (1), `people/profile-photos.js` (1), `photos/photos.js` (1), `planner/weather-plan.js` (1), `safety/training.js` (1), `sites/job-sheets.js` (1), `sites/project-pages.js` (1), `sites/roll-call.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 16 files**
 
 ### `planner/diary.js`
 
 DIARY / SCHEDULER BOARD (people down the side, hours across)
 
-- 377 lines, 16 KB. Declares 6 names, 4 used elsewhere.
-- **Used elsewhere:** `toHM` (2), `diaryHtml` (1), `diaryRows` (1), `wireDiary` (1)
-- **Uses names from 13 files:** `core/helpers.js` (9), `owner/owner.js` (3), `clients/portal-calendar.js` (1), `clients/quick-enquiry.js` (1), `core/company-names.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `planner/views.js` (1), `safety/expiry-dates.js` (1), `sites/roll-call.js` (1), `timesheets/working-day.js` (1)
+- 397 lines, 17 KB. Declares 8 names, 5 used elsewhere.
+- **Used elsewhere:** `toHM` (2), `diaryHtml` (1), `diaryRows` (1), `dyGroupName` (1), `wireDiary` (1)
+- **Uses names from 13 files:** `core/helpers.js` (9), `owner/owner.js` (4), `clients/portal-calendar.js` (1), `clients/quick-enquiry.js` (1), `core/company-names.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `planner/views.js` (1), `safety/expiry-dates.js` (1), `sites/roll-call.js` (1), `timesheets/working-day.js` (1)
 - **Used by 3 files**
 
 ### `planner/holidays.js`
