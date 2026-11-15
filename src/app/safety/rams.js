@@ -13,7 +13,7 @@ import { meBtn, meInfo } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
-export { openRaForm, raAll, raBlock, viewRa, wireRa };
+export { RA_WHO, openRaForm, raAll, raBlock, raPdf, viewRa, wireRa };
 const RA_HAZARDS = [
   [
     "Work at height (scaffold, roof, loft)",
@@ -446,12 +446,13 @@ function openRaBrief(r, owner) {
     $("rb-save").disabled = false;
   };
 }
-async function raPdf(r) {
-  if (!S.dl) {
+/* keep: give back the PDF ({ blob, fn }) instead of downloading it – for the RAMS the CDM page makes and files */
+async function raPdf(r, keep) {
+  if (!S.dl && !keep) {
     toast("Downloads only work when the page is opened in claude.ai");
     return;
   }
-  toast("Making the PDF…");
+  if (!keep) toast("Making the PDF…");
   try {
     await loadJsPdf();
   } catch (e) {
@@ -613,12 +614,14 @@ async function raPdf(r) {
     y += 15;
   });
   if (!(r.briefed || []).length) text("No signatures yet.", 9.5);
+  const fn = `RAMS - ${clean(r.activity)
+    .replace(/[^\w\s-]/g, "")
+    .trim()} - ${r.date || iso(new Date())}.pdf`;
+  lhFinish(doc, LH);
+  if (keep) return { blob: doc.output("blob"), fn };
   try {
-    lhFinish(doc, LH);
     await S.dl.save({
-      filename: `RAMS - ${clean(r.activity)
-        .replace(/[^\w\s-]/g, "")
-        .trim()} - ${r.date || iso(new Date())}.pdf`,
+      filename: fn,
       data: doc.output("blob"),
     });
   } catch (e) {

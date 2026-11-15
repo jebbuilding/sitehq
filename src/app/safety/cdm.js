@@ -7,10 +7,11 @@ import { $, esc, iso, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, liveSite, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { uploadFile } from "../files/files.js";
+import { uploadErr, uploadFile } from "../files/files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
+import { CDMRA } from "./cdm-rams.js";
 import { ukDate } from "./rams-maker.js";
 import { indFor, loadJsPdf } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
@@ -2066,6 +2067,14 @@ function cdmMaker(site0) {
     } catch (e) {}
   };
   let cd = load();
+  /* the hazards this site's RAMS already cover are ticked for you */
+  const fromRams = () => {
+    cd.risks = cd.risks || {};
+    const h = CDMRA.hazardsFromRams(site);
+    cd._ramsTick = h.filter((k) => !cd.risks[k]);
+    h.forEach((k) => (cd.risks[k] = 1));
+  };
+  fromRams();
   const madeOf = (k) =>
     (S.docs || [])
       .filter((d) => same(d.site, site) && Array.isArray(d.cdm) && d.cdm.includes(k))
@@ -2108,6 +2117,7 @@ function cdmMaker(site0) {
       <div class="flabel">Site & emergency</div>${F("clientPhone", "Client phone number(s)", "e.g. Kate: 07793 674654, Ben: 07813 621226")}${F("latlon", "Site location (latitude, longitude)", "e.g. 50.666541, -3.5365747. Grid reference and eastings work themselves out")}${F("bcRef", "Building Control ref")}${F("alarm", "How to raise the fire alarm", "e.g. Ring the bell or sound the klaxon at the fire point")}${F("agentPhone", "Site manager's phone")}${F("manager", "Site manager")}${F("firstAid", "First aider(s)")}${F("firstAidKit", "First aid kit kept")}${F("hospital", "Nearest A&E")}${F("assembly", "Fire assembly point")}${F("w3w", "what3words", "e.g. grin.sadly.shuttered")}${F("hours", "Working hours")}${F("welfare", "Welfare arrangements", "", "ta")}${F("inUse", "Parts of the home still in use / kept separate")}${F("access", "Access, parking & deliveries")}
       <div class="flabel">Existing information</div>${F("asbestos", "Asbestos", "e.g. survey 12/05/2026 - none found")}${F("services", "Existing services", "e.g. gas meter front left, drains run under extension")}${F("groundInfo", "Ground conditions", "e.g. clay, see soil report")}${F("designRisks", "Significant design / construction risks", "", "ta")}${F("otherInfo", "Anything else", "", "ta")}
       <div class="flabel">Hazards on this site</div><div class="who">Tick each kind of work or risk this job has. They go into the plan and the RAMS, and they set the level: structural work, excavations, demolition, lifting, confined spaces or a fragile roof make it Level 3 or more; excavations or services add a permit to dig, and hot works a hot works permit.</div><div class="cdm-risks">${CDM_RISKS.map(([k, l]) => `<label class="tick"><input type="checkbox" class="cdr" data-k="${k}" ${cd.risks && cd.risks[k] ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}</div>
+      ${cd._ramsTick && cd._ramsTick.length ? `<div class="who">✓ Ticked from this site's RAMS: ${cd._ramsTick.map((k) => esc(((CDM_RISKS.find((x) => x[0] === k) || [k, k])[1] || "").split(" (")[0])).join(", ")}</div>` : ""}<div id="cdm-rabox">${CDMRA.boxHtml(site, cd.risks)}</div>
       <div class="flabel">3. Make</div><button type="button" class="btn" id="cdm-keep">💾 Save these details for next time (don't make anything yet)</button>
       <div class="seg" id="cdm-out"><button type="button" data-v="pack" aria-pressed="true">📕 One full CDM pack (PDF)</button><button type="button" data-v="sep" aria-pressed="false">Separate PDFs</button></div>
       <div class="flabel">Who can see it?</div><div class="seg" id="cdm-vis"><button type="button" data-v="me" aria-pressed="${vis === "me"}">🔒 Only me</button><button type="button" data-v="trades" aria-pressed="${vis === "trades"}">👷 Me and the trades on this site</button></div>
@@ -2145,7 +2155,28 @@ function cdmMaker(site0) {
       read();
       $("cdm-assess").innerHTML = cdmAssessHtml(cd);
       wireNeed();
+      raBox();
     };
+    /* 📝 Make the RAMS: written from the ticked hazards and filed in the site's RAMS, without leaving this page */
+    const raBox = () => {
+      if (!$("cdm-rabox")) return;
+      $("cdm-rabox").innerHTML = CDMRA.boxHtml(site, cd.risks);
+      const b = $("cdm-mkra");
+      if (b)
+        b.onclick = async () => {
+          read();
+          b.disabled = true;
+          b.textContent = "Making the RAMS…";
+          try {
+            const n = await CDMRA.make(site, cd.risks, cd);
+            toast(`${n} RAMS made and filed in ${site} › RAMS`);
+          } catch (e) {
+            toast("Couldn't make them: " + uploadErr(e));
+          }
+          raBox();
+        };
+    };
+    raBox();
     /* choosing a level (in the box or on the scale) ticks the documents that level needs; more can be ticked after */
     const pickLevel = (v) => {
       read();
@@ -2179,6 +2210,7 @@ function cdmMaker(site0) {
       read();
       site = e.target.value;
       cd = load();
+      fromRams();
       pk = {};
       const f = CDM_DOCS.find(([k]) => !madeOf(k));
       if (f) pk[f[0]] = 1;
