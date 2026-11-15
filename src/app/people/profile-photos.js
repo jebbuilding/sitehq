@@ -520,6 +520,6 @@ function peopleView() {
     csvSave("Team details.csv", r);
   };
   /* holiday requests waiting for an answer, and everyone's holidays */
-  $("main").insertAdjacentHTML("afterbegin", holTeamHtml());
+  $("main").insertAdjacentHTML("afterbegin", holTeamHtml(true));
   holTeamWire();
 }

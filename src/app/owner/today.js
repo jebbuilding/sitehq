@@ -11,7 +11,6 @@ import { jbView } from "./jobs-desk.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
-import { holSettings } from "../planner/holidays.js";
 import { kitView } from "../planner/kit-out.js";
 import { eqmView } from "../planner/plant-care.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
@@ -204,11 +203,11 @@ const NL_SUBS = [
   ],
   [
     "hols",
-    "🌴 Holiday year and allowances",
+    "🌴 Holidays: requests, booked and allowances",
     "people",
     "Time and pay",
-    "leave time off bank holidays",
-    () => holSettings(),
+    "leave time off bank holidays holiday year allowance",
+    () => nlSub("planner", { pmode: "hol" }),
   ],
 ];
 function nlSub(otab, f) {

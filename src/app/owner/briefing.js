@@ -121,7 +121,11 @@ function brfLines() {
   safe(() => {
     const n = pbPending().length;
     if (n)
-      add("🌴", `${n} holiday request${n === 1 ? "" : "s"} waiting for an answer`, toTab("people"));
+      add(
+        "🌴",
+        `${n} holiday request${n === 1 ? "" : "s"} waiting for an answer`,
+        toTab("planner", { pmode: "hol" }),
+      );
   });
   safe(() => {
     const n = eqmToBook().length;

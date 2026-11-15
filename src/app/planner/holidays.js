@@ -4,6 +4,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { crewIds, nameOf, sheetOf } from "../owner/owner.js";
+import { nlGo } from "../owner/today.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { leaveCard, pbPending, wireLeave } from "./board.js";
 import { hpOpen } from "./holiday-person.js";
@@ -17,6 +18,7 @@ export {
   holDays,
   holN,
   holOwnerHtml,
+  holPlanOnly,
   holSettings,
   holSum,
   holTeamHtml,
@@ -100,6 +102,31 @@ function holDays(l, from, to) {
 }
 /* days the owner has put down as taken outside the app for a holiday year (planner/holiday-person.js) */
 const holAdj = (uid, yFrom) => ((holCfg().adj || {})[uid] || {})[yFrom] || { days: 0, note: "" };
+/* a holiday put straight on the planner (+ Add to planner, type Holiday / off) with no leave record behind it: it
+   counts in the figures too, as approved (sick days and appointments don't) */
+const holPlanOnly = (uid) =>
+  (S.plan || [])
+    .concat(S.owner ? S.planPrivate || [] : [])
+    .filter(
+      (p) =>
+        p.type === "holiday" &&
+        !p.leaveId &&
+        !/^leave-/.test(p.id || "") &&
+        Array.isArray(p.people) &&
+        p.people.includes(uid) &&
+        !/sick|appointment/i.test(p.title || ""),
+    )
+    .map((p) => ({
+      id: "plan:" + p.id,
+      type: "leave",
+      leaveType: "holiday",
+      from: p.from,
+      to: p.to || p.from,
+      half: "",
+      status: "approved",
+      note: p.notes || "",
+      _plan: p.id,
+    }));
 /* someone's figures for the holiday year round a date */
 function holSum(uid, list, at) {
   const c = holCfg();
@@ -107,14 +134,16 @@ function holSum(uid, list, at) {
   const today = iso(new Date());
   const allow = holAllow(uid);
   const bank = HOL_BANK.filter((d) => d >= Y.from && d <= Y.to && new Date(d).getDay() % 6 !== 0);
-  const hol = leaveOf(list).filter(
-    (l) =>
-      (l.leaveType || "holiday") === "holiday" &&
-      l.status !== "declined" &&
-      l.status !== "cancelled" &&
-      (l.to || l.from) >= Y.from &&
-      l.from <= Y.to,
-  );
+  const hol = leaveOf(list)
+    .concat(holPlanOnly(uid))
+    .filter(
+      (l) =>
+        (l.leaveType || "holiday") === "holiday" &&
+        l.status !== "declined" &&
+        l.status !== "cancelled" &&
+        (l.to || l.from) >= Y.from &&
+        l.from <= Y.to,
+    );
   let taken = 0,
     booked = 0,
     waiting = 0;
@@ -226,7 +255,7 @@ function holSettings() {
   );
 }
 /* the team page: holiday requests waiting for an answer (with what each person has left), then everyone's figures */
-function holTeamHtml() {
+function holTeamHtml(link) {
   const pending = pbPending();
   return `<section class="card hol-team"><div class="cardbody"><b>🌴 Holiday requests${pending.length ? ` <span class="badge">${pending.length}</span>` : ""}</b>
     ${
@@ -238,9 +267,14 @@ function holTeamHtml() {
             })
             .join("")
         : `<div class="nothing">No holiday requests waiting.</div>`
-    }</div></section>${holOwnerHtml()}`;
+    }${link ? `<div class="actions"><button type="button" class="btn" id="hol-tab">🗓 Holidays booked – on the planner</button></div>` : ""}</div></section>${holOwnerHtml()}`;
 }
 function holTeamWire() {
   wireLeave(true, $("main"));
+  if ($("hol-tab"))
+    $("hol-tab").onclick = () => {
+      S.f.pmode = "hol";
+      nlGo("planner");
+    };
   holWire();
 }

@@ -12,6 +12,7 @@ import { allIds, nameOf } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { avatarHtml, personPhoto } from "../people/profile-photos.js";
 import { loadImage } from "../photos/photos.js";
+import { hpOpen } from "../planner/holiday-person.js";
 import { LEAVE_TYPES, leaveOf } from "../planner/time-off.js";
 import { empTypeOf } from "../sites/job-details.js";
 import { signOnly } from "../sites/sign-in-book.js";
@@ -104,6 +105,7 @@ function tsPaper(ym, ents, who) {
     ${ym !== today.slice(0, 7) ? `<div style="text-align:center;margin:-4px 0 6px"><button type="button" class="pillbtn ts-now">Back to this month</button></div>` : ""}
     <div class="tsgrid">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Wk"].map((x) => `<div class="tsdow">${x}</div>`).join("")}${grid}</div>
     <div class="tstots"><div><span>Timesheet hours</span><b>${hrs(totH)}</b></div><div><span>Job log hours</span><b>${hrs(totJ)}</b></div><div><span>Days off booked</span><b>${offDays}</b></div></div>
+    ${who && ownerMode() ? `<div style="text-align:center;margin-top:6px"><button type="button" class="pillbtn ts-hol">🌴 ${esc(nameOf(who))}'s holidays ›</button></div>` : ""}
     <div class="who" style="margin-top:6px">Tap a day to ${who ? "see, change or approve" : "add or see"} it. ✓ = approved${who ? "" : ` by ${bossFirst()}`}. 🌴 = time off from the Planner.</div></div>`;
 }
 function wireTsPaper(root, who, again) {
@@ -118,6 +120,7 @@ function wireTsPaper(root, who, again) {
   };
   const q = (c) => root.querySelector(c);
   if (q(".ts-prev")) q(".ts-prev").onclick = () => mv(-1);
+  if (q(".ts-hol")) q(".ts-hol").onclick = () => hpOpen(who, S.f[key] + "-01");
   if (q(".ts-next")) q(".ts-next").onclick = () => mv(1);
   if (q(".ts-now"))
     q(".ts-now").onclick = () => {
@@ -305,7 +308,7 @@ function tsDayOwner(di, who, again) {
   const off = tsLeave(di, who);
   openSheet(
     `<h3 id="sheettitle">${esc(nameOf(who))} · ${esc(parse(di).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}</h3>
-    ${off ? `<div class="notice" style="margin:0;background:#e9f6ec">🌴 <b>${esc(off.kind || "Time off")}${off.half ? " (half day)" : ""}</b>${off.pending ? " · requested, waiting for you to approve in the Planner" : ""}${off.why ? " · " + esc(off.why) : ""}</div>` : ""}
+    ${off ? `<div class="notice" style="margin:0;background:#e9f6ec">🌴 <b>${esc(off.kind || "Time off")}${off.half ? " (half day)" : ""}</b>${off.pending ? " · requested, waiting for you to approve in the Planner" : ""}${off.why ? " · " + esc(off.why) : ""} <button type="button" class="linkbtn" id="tsd-hol">Change it ›</button></div>` : ""}
     ${
       list
         .map(
@@ -320,6 +323,7 @@ function tsDayOwner(di, who, again) {
     () => {},
     null,
   );
+  if ($("tsd-hol")) $("tsd-hol").onclick = () => hpOpen(who, di);
   document.querySelectorAll(".tdo-appr").forEach(
     (cb) =>
       (cb.onchange = async () => {

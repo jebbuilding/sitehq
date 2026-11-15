@@ -23,6 +23,7 @@ import { newId } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { myOpenPrompts } from "../people/reminders.js";
 import { openPlanEditor } from "./board.js";
+import { hpOpen } from "./holiday-person.js";
 import { PTYPES, VIS, entryChip, onDay, planEntries } from "./time-off.js";
 import { same } from "../sites/project-pages.js";
 import { openJob } from "../survey/door-window-survey.js";
@@ -77,6 +78,11 @@ function openPlanDetail(p) {
   }
   if (p.pending) {
     toast(`Waiting for ${bossFirst()} to answer`);
+    return;
+  }
+  /* a holiday for one person: their holiday page, where it can be changed and counts in their days */
+  if (owner && p.type === "holiday" && Array.isArray(p.people) && p.people.length === 1) {
+    hpOpen(p.people[0], p.from);
     return;
   }
   if (!owner)

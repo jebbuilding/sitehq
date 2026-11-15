@@ -6,7 +6,7 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
 import { nameOf, sheetOf } from "../owner/owner.js";
-import { holAdj, holCfg, holDays, holN, holSum } from "./holidays.js";
+import { holAdj, holCfg, holDays, holN, holPlanOnly, holSum } from "./holidays.js";
 import { LEAVE_TYPES, leaveOf } from "./time-off.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { empTypeOf } from "../sites/job-details.js";
@@ -32,6 +32,7 @@ function hpOpen(uid, at) {
   const adj = holAdj(uid, s.Y.from);
   const today = iso(new Date());
   const list = leaveOf(sheetOf("signoffs", uid))
+    .concat(holPlanOnly(uid))
     .filter((l) => (l.to || l.from) >= s.Y.from && l.from <= s.Y.to)
     .sort((a, b) => a.from.localeCompare(b.from));
   const stat = (l) =>
@@ -59,7 +60,7 @@ function hpOpen(uid, at) {
         .map((l) => {
           const st = stat(l);
           const n = holDays(l, s.Y.from, s.Y.to);
-          return `<div class="hp-row" data-l="${esc(l.id)}"><div class="hp-main"><span class="tag ${st[1]}">${st[0]}</span> <b>${esc(shortDay(l.from))}${l.to && l.to !== l.from ? " – " + esc(shortDay(l.to)) : ""}</b>${l.half ? " (half day)" : ""}<div class="who">${esc(LEAVE_TYPES[l.leaveType] || "Time off")} · ${holN(n)} working day${n === 1 ? "" : "s"}${l.note ? " · " + esc(l.note) : ""}</div></div><button type="button" class="btn hp-ed">✎ Change</button><button type="button" class="linkdanger hp-del">Delete</button></div>`;
+          return `<div class="hp-row" data-l="${esc(l.id)}"><div class="hp-main"><span class="tag ${st[1]}">${st[0]}</span>${l._plan ? ' <span class="tag">Put on the planner</span>' : ""} <b>${esc(shortDay(l.from))}${l.to && l.to !== l.from ? " – " + esc(shortDay(l.to)) : ""}</b>${l.half ? " (half day)" : ""}<div class="who">${esc(LEAVE_TYPES[l.leaveType] || "Time off")} · ${holN(n)} working day${n === 1 ? "" : "s"}${l.note ? " · " + esc(l.note) : ""}</div></div><button type="button" class="btn hp-ed">✎ Change</button><button type="button" class="linkdanger hp-del">Delete</button></div>`;
         })
         .join("") || '<div class="nothing">Nothing in this holiday year yet.</div>'
     }
@@ -111,8 +112,11 @@ function hpOpen(uid, at) {
           return;
         }
         try {
-          await S.db.doc("sheets/" + uid + "/signoffs/" + l.id).delete();
-          hpLocal(uid, l.id, null);
+          if (l._plan) await hpUnplan(uid, l._plan);
+          else {
+            await S.db.doc("sheets/" + uid + "/signoffs/" + l.id).delete();
+            hpLocal(uid, l.id, null);
+          }
           await S.db
             .doc("plan/leave-" + l.id)
             .delete()
@@ -124,6 +128,16 @@ function hpOpen(uid, at) {
         }
       };
     });
+}
+/* take someone off a holiday that was put straight on the planner (the whole entry if it was only them) */
+async function hpUnplan(uid, pid) {
+  const priv = (S.planPrivate || []).find((x) => x.id === pid);
+  const p = priv || (S.plan || []).find((x) => x.id === pid);
+  if (!p) return;
+  const ref = S.db.doc((priv ? "planprivate/" : "plan/") + pid);
+  const rest = (p.people || []).filter((x) => x !== uid);
+  if (rest.length) await ref.update({ people: rest, updated: Date.now() });
+  else await ref.delete();
 }
 /* add a holiday (any dates, past ones too) or change one */
 function hpEdit(uid, l, back) {
@@ -163,7 +177,9 @@ function hpEdit(uid, l, back) {
         !l || l.status === "approved" || ($("hp-appr") && $("hp-appr").checked)
           ? "approved"
           : l.status;
-      const id = l ? l.id : "leave-" + newId();
+      /* one put straight on the planner becomes a proper holiday record when it's changed */
+      const fromPlan = l && l._plan;
+      const id = l && !fromPlan ? l.id : "leave-" + newId();
       const rec = {
         from,
         to,
@@ -175,7 +191,7 @@ function hpEdit(uid, l, back) {
       };
       $("f-save").disabled = true;
       try {
-        if (l) {
+        if (l && !fromPlan) {
           await S.db.doc("sheets/" + uid + "/signoffs/" + id).update(rec);
           hpLocal(uid, id, Object.assign({}, l, rec));
         } else {
@@ -208,6 +224,7 @@ function hpEdit(uid, l, back) {
             }),
           );
         }
+        if (fromPlan) await hpUnplan(uid, fromPlan);
         toast(l ? "Changed" : "Added");
         hpOpen(uid, back || from);
       } catch (e) {
