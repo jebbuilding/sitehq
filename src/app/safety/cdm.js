@@ -122,6 +122,60 @@ const CDM_LEVELS = [
     "project-wide management; detailed logistics and programme; clear responsibilities and coordination; review and monitor controls throughout; consider specialist H&S support",
   ],
 ];
+/* the scale, to help choose (James, Nov 2026: "a page that opens up … to help choose the right level") */
+const CDM_SCALE = [
+  null,
+  {
+    jobs: "Small, simple jobs: a kitchen or bathroom refit, small internal changes, a garden wall, repairs.",
+    when: "One contractor, a short job (10 working days or less), no work at height or in an occupied home, and none of the bigger hazards.",
+  },
+  {
+    jobs: "Everyday building jobs: a re-roof from a scaffold, a garage conversion, refurbishing a lived-in home, a job with several trades.",
+    when: "More than one contractor, or work at height, or working in or next to an occupied home, or more than 10 working days.",
+  },
+  {
+    jobs: "Jobs with structural or high-risk work: an extension with foundations and steels, knocking walls through, underpinning, demolition, a basement.",
+    when: "Any of the bigger hazards ticked: structural alterations or propping, excavations, demolition, lifting, confined spaces, fragile roofs.",
+  },
+  {
+    jobs: "Big or busy projects: new builds, several homes, large commercial jobs.",
+    when: "Notifiable to HSE (over 30 working days with more than 20 on site at once, or over 500 person days), more than 20 people on site at once, or three or more bigger hazards with 10 or more people.",
+  },
+];
+function cdmScaleOpen(cd, onPick) {
+  const auto = cdmAssess(Object.assign({}, cd, { levelSet: "" })).level;
+  const dl = (k) => (CDM_DOCS.find((x) => x[0] === k) || [k, k])[1].split(" (")[0];
+  const box = document.createElement("div");
+  box.className = "dimask cdm-scmask";
+  box.innerHTML = `<div class="dimbox cdm-scale" role="dialog" aria-modal="true" aria-labelledby="cdm-sct"><h3 id="cdm-sct">📏 The CDM scale – which level is this job?</h3>
+    <div class="who">${esc(coShort())}'s own working scale, to plan the right amount of paperwork. Pick the level that fits; choosing it ticks that level's documents, and you can tick more after.</div>
+    ${[1, 2, 3, 4]
+      .map((n) => {
+        const L = CDM_LEVELS[n],
+          sc = CDM_SCALE[n];
+        const docs = cdmAssess(Object.assign({}, cd, { levelSet: n })).docs;
+        return `<section class="cdm-scl cdm-l${n}${n === auto ? " cdm-scauto" : ""}"><div class="cdm-sch"><b>Level ${n} – ${esc(L[0])}</b><span class="who">${esc(L[1])}</span>${n === auto ? '<span class="tag ok">Suggested for this job</span>' : ""}</div>
+          <div><b>Jobs like:</b> ${esc(sc.jobs)}</div><div><b>When:</b> ${esc(sc.when)}</div><div><b>Plan for:</b> ${esc(L[2])}.</div>
+          <div class="who"><b>Documents it ticks:</b> ${docs.map((k) => esc(dl(k))).join(" · ")}</div>
+          <button type="button" class="btn ${n === auto ? "primary" : ""} cdm-scpick" data-n="${n}">Choose Level ${n}</button></section>`;
+      })
+      .join("")}
+    <div class="who">A single big hazard can need more planning whatever the level – use your judgement.</div>
+    <div class="actions"><button type="button" class="btn" id="cdm-scx">Close</button></div></div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.querySelector("#cdm-scx").onclick = close;
+  box.onclick = (e) => {
+    if (e.target === box) close();
+  };
+  box.querySelectorAll(".cdm-scpick").forEach(
+    (b) =>
+      (b.onclick = () => {
+        close();
+        onPick(+b.dataset.n);
+      }),
+  );
+}
 function cdmAssess(cd) {
   const N = cdmNotifiable(cd);
   const r = cd.risks || {};
@@ -137,7 +191,10 @@ function cdmAssess(cd) {
   const docs = ["cpp", "emerg", "welfare", "welfarepack", "notice", "check", "f10"];
   if (cd.clientType === "domestic") docs.push("dominfo");
   if (many) docs.push("appoint", "brappoint", "pci", "subcon", "hsf");
-  if (level >= 3) docs.push("drr", "tw", "log");
+  /* each level ticks more (James, Nov 2026: "when i have chosen the level it ticks the boxes for that level") */
+  if (level >= 2) docs.push("subcon", "log");
+  if (level >= 3) docs.push("drr", "tw");
+  if (level >= 4) docs.push("pci", "hsf");
   if (r.exc || r.svc) docs.push("dig");
   if (r.hot) docs.push("hotpermit");
   const need = [
@@ -174,7 +231,7 @@ function cdmAssessHtml(cd) {
       ${A.big.length ? `<li>🔺 Significant hazards ticked: ${A.big.map((k) => esc(((CDM_RISKS.find((x) => x[0] === k) || [k, k])[1] || "").split(" (")[0])).join(", ")} – plan these in detail whatever the level.</li>` : ""}
     </ul>
     <div class="who"><b>Documents for this level:</b> ${A.docs.map((k) => esc(dl(k).split(" (")[0])).join(" · ")}</div>
-    <div class="actions" style="margin:6px 0 0"><button type="button" class="btn primary" id="cdm-need">Tick the documents this level needs</button><a class="btn" href="https://www.hse.gov.uk/forms/notification/f10.htm" target="_blank" rel="noopener">🌐 Fill in the F10 on the HSE website ↗</a></div>
+    <div class="actions" style="margin:6px 0 0"><button type="button" class="btn primary" id="cdm-scale">📏 See the scale</button><button type="button" class="btn" id="cdm-need">Tick the documents this level needs</button><a class="btn" href="https://www.hse.gov.uk/forms/notification/f10.htm" target="_blank" rel="noopener">🌐 Fill in the F10 on the HSE website ↗</a></div>
     <div class="who">You can tick any other document below for this job as well, whatever the level.</div>
     ${A.missing.length ? `<div class="notice warn" style="margin-top:8px"><b>Still to fill in below:</b> ${A.missing.map(esc).join(", ")}</div>` : `<div class="notice" style="margin-top:8px">✓ The key details are all filled in.</div>`}
     <div class="who" style="margin-top:6px">${esc(coShort())}'s own working scale, not an HSE score. Use your judgement, and review the plan as the work, risks or contractors change.</div></div>`;
@@ -2050,7 +2107,7 @@ function cdmMaker(site0) {
       <div class="flabel">Who's who</div>${F("pcName", "Principal contractor")}${F("pdName", "Principal designer", "e.g. the architect, if appointed")}${F("designer", "Architect / designer")}${F("engineer", "Structural engineer")}${F("otherContractors", "Other contractors / subcontractors", "e.g. electrician, roofer")}${F("bc", "Building control")}${F("planning", "Planning / Building Control ref")}
       <div class="flabel">Site & emergency</div>${F("clientPhone", "Client phone number(s)", "e.g. Kate: 07793 674654, Ben: 07813 621226")}${F("latlon", "Site location (latitude, longitude)", "e.g. 50.666541, -3.5365747. Grid reference and eastings work themselves out")}${F("bcRef", "Building Control ref")}${F("alarm", "How to raise the fire alarm", "e.g. Ring the bell or sound the klaxon at the fire point")}${F("agentPhone", "Site manager's phone")}${F("manager", "Site manager")}${F("firstAid", "First aider(s)")}${F("firstAidKit", "First aid kit kept")}${F("hospital", "Nearest A&E")}${F("assembly", "Fire assembly point")}${F("w3w", "what3words", "e.g. grin.sadly.shuttered")}${F("hours", "Working hours")}${F("welfare", "Welfare arrangements", "", "ta")}${F("inUse", "Parts of the home still in use / kept separate")}${F("access", "Access, parking & deliveries")}
       <div class="flabel">Existing information</div>${F("asbestos", "Asbestos", "e.g. survey 12/05/2026 - none found")}${F("services", "Existing services", "e.g. gas meter front left, drains run under extension")}${F("groundInfo", "Ground conditions", "e.g. clay, see soil report")}${F("designRisks", "Significant design / construction risks", "", "ta")}${F("otherInfo", "Anything else", "", "ta")}
-      <div class="flabel">Hazards on this site (tick)</div><div class="cdm-risks">${CDM_RISKS.map(([k, l]) => `<label class="tick"><input type="checkbox" class="cdr" data-k="${k}" ${cd.risks && cd.risks[k] ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}</div>
+      <div class="flabel">Hazards on this site</div><div class="who">Tick each kind of work or risk this job has. They go into the plan and the RAMS, and they set the level: structural work, excavations, demolition, lifting, confined spaces or a fragile roof make it Level 3 or more; excavations or services add a permit to dig, and hot works a hot works permit.</div><div class="cdm-risks">${CDM_RISKS.map(([k, l]) => `<label class="tick"><input type="checkbox" class="cdr" data-k="${k}" ${cd.risks && cd.risks[k] ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}</div>
       <div class="flabel">3. Make</div><button type="button" class="btn" id="cdm-keep">💾 Save these details for next time (don't make anything yet)</button>
       <div class="seg" id="cdm-out"><button type="button" data-v="pack" aria-pressed="true">📕 One full CDM pack (PDF)</button><button type="button" data-v="sep" aria-pressed="false">Separate PDFs</button></div>
       <div class="flabel">Who can see it?</div><div class="seg" id="cdm-vis"><button type="button" data-v="me" aria-pressed="${vis === "me"}">🔒 Only me</button><button type="button" data-v="trades" aria-pressed="${vis === "trades"}">👷 Me and the trades on this site</button></div>
@@ -2089,13 +2146,21 @@ function cdmMaker(site0) {
       $("cdm-assess").innerHTML = cdmAssessHtml(cd);
       wireNeed();
     };
+    /* choosing a level (in the box or on the scale) ticks the documents that level needs; more can be ticked after */
+    const pickLevel = (v) => {
+      read();
+      cd.levelSet = v ? String(v) : "";
+      pk = {};
+      cdmAssess(cd).docs.forEach((k) => (pk[k] = 1));
+      draw();
+      toast(`Level ${cdmAssess(cd).level} – its documents are ticked. Tick any others you need.`);
+    };
     const wireNeed = () => {
-      if ($("cdm-lset"))
-        $("cdm-lset").onchange = (e) => {
+      if ($("cdm-lset")) $("cdm-lset").onchange = (e) => pickLevel(e.target.value);
+      if ($("cdm-scale"))
+        $("cdm-scale").onclick = () => {
           read();
-          cd.levelSet = e.target.value;
-          $("cdm-assess").innerHTML = cdmAssessHtml(cd);
-          wireNeed();
+          cdmScaleOpen(cd, (n) => pickLevel(n));
         };
       if ($("cdm-need"))
         $("cdm-need").onclick = () => {
