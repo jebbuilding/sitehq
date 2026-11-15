@@ -510,6 +510,7 @@ ${clMediaHtml(c)}
     closeViewer();
     openClientForm(c, "enquiry");
   };
+  PROP.wireView();
   if ($("cv-full"))
     $("cv-full").onclick = () => {
       closeViewer();

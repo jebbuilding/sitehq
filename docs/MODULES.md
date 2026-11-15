@@ -6,11 +6,11 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 222 files, 4365 KB, 111282 lines.
+- 222 files, 4369 KB, 111382 lines.
 - 2280 names declared at the top level (the shared scope); 1147 of them are used by a file other than the one that declares them.
-- 2454 file-to-file dependencies (file A uses at least one name from file B).
+- 2457 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
-- Dependency cycles: 204 files depend on each other in a loop (directly or through other files); the other 18 files are outside any loop.
+- Dependency cycles: 205 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
 ## The most widely used names
 
@@ -21,7 +21,7 @@ The de facto shared API: names used by the most files.
 | `esc` | `core/helpers.js` | 181 files |
 | `S` | `core/state.js` | 181 files |
 | `$` | `core/helpers.js` | 176 files |
-| `toast` | `core/helpers.js` | 154 files |
+| `toast` | `core/helpers.js` | 155 files |
 | `render` | `core/tabs-week.js` | 129 files |
 | `openSheet` | `core/sheet.js` | 113 files |
 | `closeForm` | `core/sheet.js` | 112 files |
@@ -33,24 +33,24 @@ The de facto shared API: names used by the most files.
 | `shortDay` | `core/helpers.js` | 71 files |
 | `ownerMode` | `core/state.js` | 69 files |
 | `coData` | `owner/company-details.js` | 53 files |
+| `uploadFile` | `files/files.js` | 53 files |
 | `stamp` | `core/helpers.js` | 52 files |
-| `uploadFile` | `files/files.js` | 52 files |
 | `bossFirst` | `core/company-names.js` | 51 files |
 | `gbp` | `core/helpers.js` | 51 files |
-| `blobUrl` | `files/files.js` | 48 files |
+| `blobUrl` | `files/files.js` | 49 files |
 | `openViewer` | `core/viewer.js` | 46 files |
 | `allTeam` | `owner/owner.js` | 44 files |
 | `teamIds` | `owner/owner.js` | 43 files |
+| `uploadErr` | `files/files.js` | 42 files |
 | `same` | `sites/project-pages.js` | 41 files |
-| `uploadErr` | `files/files.js` | 41 files |
 | `addDays` | `core/helpers.js` | 40 files |
 | `loadJsPdf` | `safety/site-inductions.js` | 39 files |
+| `openFile` | `files/in-app-files.js` | 39 files |
 | `parse` | `core/helpers.js` | 39 files |
-| `openFile` | `files/in-app-files.js` | 38 files |
 | `closeViewer` | `core/viewer.js` | 37 files |
 | `BRGB` | `photos/photos.js` | 36 files |
 | `siteNames` | `core/state.js` | 32 files |
-| `shrinkImage` | `safety/training.js` | 29 files |
+| `shrinkImage` | `safety/training.js` | 30 files |
 | `store` | `core/helpers.js` | 28 files |
 | `sdR2` | `sales/sales-calc.js` | 24 files |
 | `submitJob` | `files/outbox.js` | 22 files |
@@ -277,16 +277,16 @@ CLIENT PORTAL
 
 PROPERTY INFO: a client's services and access – stop cock, meters, fuse boards, boiler, parking, skip
 
-- 109 lines, 5.4 KB. Declares 1 names, 1 used elsewhere.
+- 208 lines, 9.8 KB. Declares 1 names, 1 used elsewhere.
 - **Used elsewhere:** `PROP` (2)
-- **Uses names from 1 files:** `core/helpers.js` (2)
+- **Uses names from 4 files:** `core/helpers.js` (3), `files/files.js` (3), `files/in-app-files.js` (1), `safety/training.js` (1)
 - **Used by 2 files**
 
 ### `clients/quick-enquiry.js`
 
 quick enquiry: a few details + the visit time, into the planner, with a reminder an hour before
 
-- 619 lines, 29 KB. Declares 8 names, 4 used elsewhere.
+- 620 lines, 29 KB. Declares 8 names, 4 used elsewhere.
 - **Used elsewhere:** `viewClient` (22), `quickEnquiry` (3), `initQuickEnquiry` (1), `VISIT_REMIND_MIN` (1)
 - **Uses names from 32 files:** `core/helpers.js` (9), `clients/address-book.js` (6), `clients/stages-planner.js` (6), `clients/clients.js` (4), `core/sheet.js` (4), `core/state.js` (4), `files/files.js` (4), `clients/portal.js` (3), `clients/documents.js` (2), `clients/gdpr-consent.js` (2), `clients/sketches.js` (2), `core/viewer.js` (2), `owner/deleted-items.js` (2), `sites/job-details.js` (2), `sites/maps-pins.js` (2), `chat/chat.js` (1), `clients/address-book-jobs.js` (1), `clients/more-jobs.js` (1), `clients/property-info.js` (1), `clients/record-pdf.js` (1), `clients/web-enquiries.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `owner/delete-client-site.js` (1), `planner/board.js` (1), `planner/diary.js` (1), `purchasing/samples.js` (1), `safety/training.js` (1), `sales/job-file.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 24 files**
@@ -422,7 +422,7 @@ GENERIC FIELDS
 HELPERS: page lookups, dates, money and hours formatting, toast, working-day times, local storage
 
 - 123 lines, 3.3 KB. Declares 21 names, 20 used elsewhere.
-- **Used elsewhere:** `esc` (181), `$` (176), `toast` (154), `iso` (111), `shortDay` (71), `stamp` (52), `gbp` (51), `addDays` (40), `parse` (39), `store` (28), `hrs` (15), `monday` (14), `dayLabel` (6), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
+- **Used elsewhere:** `esc` (181), `$` (176), `toast` (155), `iso` (111), `shortDay` (71), `stamp` (52), `gbp` (51), `addDays` (40), `parse` (39), `store` (28), `hrs` (15), `monday` (14), `dayLabel` (6), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
 - **Uses names from 0 files:** none
 - **Used by 199 files**
 
@@ -800,18 +800,18 @@ FILE IT: save any PDF the app makes into a client's job file and/or a site's doc
 FILES
 
 - 195 lines, 6.5 KB. Declares 19 names, 12 used elsewhere.
-- **Used elsewhere:** `uploadFile` (52), `blobUrl` (48), `uploadErr` (41), `saveAsset` (15), `csvSave` (10), `isImg` (10), `isWord` (4), `assetBlob` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
+- **Used elsewhere:** `uploadFile` (53), `blobUrl` (49), `uploadErr` (42), `saveAsset` (15), `csvSave` (10), `isImg` (10), `isWord` (4), `assetBlob` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
 - **Uses names from 5 files:** `core/state.js` (2), `core/company-names.js` (1), `core/helpers.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1)
-- **Used by 87 files**
+- **Used by 88 files**
 
 ### `files/in-app-files.js`
 
 IN-APP FILES (kept inside the app, not in the phone's downloads)
 
 - 688 lines, 21 KB. Declares 29 names, 12 used elsewhere.
-- **Used elsewhere:** `openFile` (38), `getFileBlob` (15), `loadPdfJs` (7), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `loadScript` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1)
+- **Used elsewhere:** `openFile` (39), `getFileBlob` (15), `loadPdfJs` (7), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `loadScript` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1)
 - **Uses names from 11 files:** `files/scale-ruler.js` (8), `files/files.js` (4), `core/helpers.js` (3), `core/state.js` (2), `owner/deleted-items.js` (2), `core/company-names.js` (1), `core/tabs-week.js` (1), `files/cut-outs.js` (1), `files/print.js` (1), `files/send-to.js` (1), `photos/photos.js` (1)
-- **Used by 56 files**
+- **Used by 57 files**
 
 ### `files/outbox.js`
 
@@ -1529,9 +1529,9 @@ SITE INDUCTIONS
 TRAINING & TOOLBOX TALKS
 
 - 647 lines, 31 KB. Declares 19 names, 6 used elsewhere.
-- **Used elsewhere:** `shrinkImage` (29), `expiryState` (2), `myTalkTodo` (1), `openCert` (1), `openTalk` (1), `trainingView` (1)
+- **Used elsewhere:** `shrinkImage` (30), `expiryState` (2), `myTalkTodo` (1), `openCert` (1), `openTalk` (1), `trainingView` (1)
 - **Uses names from 16 files:** `core/sheet.js` (8), `core/helpers.js` (6), `files/files.js` (4), `photos/photos.js` (4), `core/state.js` (3), `owner/owner.js` (3), `core/company-names.js` (2), `core/fields.js` (2), `core/viewer.js` (2), `files/outbox.js` (2), `people/personal-details.js` (2), `safety/site-inductions.js` (2), `sales/letterhead-setup.js` (2), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `owner/company-details.js` (1)
-- **Used by 32 files**
+- **Used by 33 files**
 
 ### `safety/waste-transfer-note.js`
 
