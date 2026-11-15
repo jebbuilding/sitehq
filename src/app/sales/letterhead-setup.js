@@ -48,11 +48,14 @@ function lhPutTop(doc, pics, room) {
   doc.addImage(t.u, t.f, 0, 0, 210 * k, t.h * k, "lhtop", "FAST");
   return t.h * k;
 }
-/* the bottom of the letterhead on this page. Returns where it starts (mm), or 0 if there is no picture. */
+/* the bottom of the letterhead on this page. Returns where it starts (mm), or 0 if there is no picture. It is printed
+   on the first page only (James, Nov 2026: the address at the bottom "should only be on the first page"); later pages
+   keep the same space, so the writing and page numbers sit in the same place. */
 function lhPutBot(doc, pics) {
   if (!pics || !pics.bot) return 0;
   const b = pics.bot;
-  doc.addImage(b.u, b.f, 0, b.y, 210, b.h, "lhbot", "FAST");
+  if (doc.internal.getCurrentPageInfo().pageNumber === 1)
+    doc.addImage(b.u, b.f, 0, b.y, 210, b.h, "lhbot", "FAST");
   return b.y;
 }
 /* every other document on the letterhead too (James, Nov 2026: "the uploaded letterhead can this be used for all

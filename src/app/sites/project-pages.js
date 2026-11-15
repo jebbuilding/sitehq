@@ -37,7 +37,7 @@ import {
 import { jkOpen } from "./job-pack.js";
 import { jobCard } from "./job-sheets.js";
 import { dropPin } from "./maps-pins.js";
-import { RAMS_SIGN, docPath, docRow, wireDocs } from "./plans-specs.js";
+import { RAMS_SIGN, docPath, docPickBar, docRow, wireDocs } from "./plans-specs.js";
 import { QRSITE } from "./qr-sign-in.js";
 import { sdiHtml, sdiWire } from "./site-diary.js";
 import { sqMap, sqOpen } from "./snag-quick.js";
@@ -198,7 +198,7 @@ function ownerProjects() {
       const p = docPath(d) || "";
       (groups[p] = groups[p] || []).push(d);
     });
-    return `<div class="actions"><button type="button" class="btn primary pj-up" data-c="${k}">${up}</button></div>${
+    return `<div class="actions"><button type="button" class="btn primary pj-up" data-c="${k}">${up}</button></div>${list.length ? docPickBar() : ""}${
       list.length
         ? Object.keys(groups)
             .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))

@@ -50,6 +50,11 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  fs.writeFileSync(OUT+'lh-policy.pdf',Buffer.from(pol,'binary'));
  const pages=(pol.match(/\/Type \/Page[^s]/g)||[]).length;
  ok(imgs(pol)>=2&&/Health and safety policy/.test(pol),'the health and safety policy the app writes is on the letterhead ('+pages+' pages)');
+ /* the letterhead's foot (with the address) on the first page only */
+ const p2=await b.newPage();await p2.setContent('<canvas id=c></canvas>');await p2.addScriptTag({content:fs.readFileSync('pdfjspkg/package/build/pdf.min.js','utf8')});
+ const feet=await p2.evaluate(async([data,wk])=>{pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([wk],{type:'text/javascript'}));const bin=atob(data);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const doc=await pdfjsLib.getDocument({data:u}).promise;const out=[];for(let n=1;n<=doc.numPages;n++){const pg=await doc.getPage(n);const v=pg.getViewport({scale:1});const c=document.getElementById('c');c.width=v.width;c.height=v.height;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:g,viewport:v}).promise;const d=g.getImageData(0,Math.round(v.height*0.93),c.width,Math.round(v.height*0.07)).data;let teal=0;for(let i=0;i<d.length;i+=4)if(d[i]<60&&d[i+1]>90&&d[i+1]<140&&d[i+2]>90&&d[i+2]<130)teal++;out.push(teal);}return out;},[Buffer.from(pol,'binary').toString('base64'),fs.readFileSync('pdfjspkg/package/build/pdf.worker.min.js','utf8')]);
+ await p2.close();
+ ok(feet.length>=2&&feet[0]>50&&feet.slice(1).every(n=>n===0),'the letterhead foot (with the address) is on the first page only ('+feet.join(', ')+')');
  /* the switch in Setup › My letterhead */
  await p.evaluate(()=>{window.__S.otab='setup';window.__S.f.stab='setup';window.render()});await p.waitForTimeout(500);
  ok(await p.locator('#lh-all').isChecked(),'Setup › My letterhead: "Put it on all documents too" is ticked to start');

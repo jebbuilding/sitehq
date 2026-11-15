@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 221 files, 4354 KB, 111055 lines.
-- 2277 names declared at the top level (the shared scope); 1145 of them are used by a file other than the one that declares them.
-- 2450 file-to-file dependencies (file A uses at least one name from file B).
+- 221 files, 4358 KB, 111133 lines.
+- 2279 names declared at the top level (the shared scope); 1146 of them are used by a file other than the one that declares them.
+- 2451 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 204 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -269,9 +269,9 @@ CLIENT PORTAL: SHARED JOB CALENDAR
 CLIENT PORTAL
 
 - 1477 lines, 67 KB. Declares 35 names, 25 used elsewhere.
-- **Used elsewhere:** `ptOf` (14), `ptSrc` (13), `ptCl` (11), `PT` (8), `ptKind` (5), `ptAskSign` (3), `ptManager` (3), `ptChatId` (2), `ptMgrSubscribe` (2), `ptOnFor` (2), `APP_LINK` (1), `newCode` (1), `PT_FOLDERS` (1), `PT_KINDS` (1), `ptAttach` (1), `ptClientBlock` (1), `ptInvite` (1), `ptRefresh` (1), `renderClient` (1), `renderClientJoin` (1), `renderWelcomeChoice` (1), `startClient` (1), `startPortalOwner` (1), `wireAttDl` (1), `wirePtClientBlock` (1)
+- **Used elsewhere:** `ptOf` (14), `ptSrc` (13), `ptCl` (11), `PT` (8), `ptKind` (5), `ptAskSign` (3), `ptManager` (3), `APP_LINK` (2), `ptChatId` (2), `ptMgrSubscribe` (2), `ptOnFor` (2), `newCode` (1), `PT_FOLDERS` (1), `PT_KINDS` (1), `ptAttach` (1), `ptClientBlock` (1), `ptInvite` (1), `ptRefresh` (1), `renderClient` (1), `renderClientJoin` (1), `renderWelcomeChoice` (1), `startClient` (1), `startPortalOwner` (1), `wireAttDl` (1), `wirePtClientBlock` (1)
 - **Uses names from 34 files:** `clients/portal-calendar.js` (12), `clients/choices.js` (7), `clients/uploads.js` (7), `core/helpers.js` (7), `files/files.js` (5), `chat/chat.js` (4), `clients/address-book.js` (4), `clients/job-story.js` (4), `core/sheet.js` (4), `clients/clients.js` (3), `core/company-names.js` (3), `owner/client-look.js` (3), `owner/owner.js` (3), `core/state.js` (2), `core/viewer.js` (2), `owner/company-details.js` (2), `photos/photos.js` (2), `sites/job-details.js` (2), `sites/maps-pins.js` (2), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/data.js` (1), `core/tabs-week.js` (1), `drawing/trade-drawings.js` (1), `files/attachment-picker.js` (1), `files/cut-outs.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `people/portal-access.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sites/plans-specs.js` (1), `sites/project-pages.js` (1), `sites/trade-sites.js` (1)
-- **Used by 36 files**
+- **Used by 37 files**
 
 ### `clients/quick-enquiry.js`
 
@@ -1690,7 +1690,7 @@ JOB FILE: every document, plan, price and photo for a job, in folders, tied to t
 
 LETTERHEAD SETUP: one place in Setup to bring in the letterhead every PDF uses
 
-- 350 lines, 15 KB. Declares 19 names, 8 used elsewhere.
+- 353 lines, 16 KB. Declares 19 names, 8 used elsewhere.
 - **Used elsewhere:** `lhLogoId` (14), `lhPics` (13), `lhPutTop` (13), `lhFinish` (10), `lhFrame` (10), `lhPutBot` (10), `lhCard` (1), `lhWire` (1)
 - **Uses names from 9 files:** `core/helpers.js` (4), `sales/sales-pdf.js` (3), `sales/sales-settings.js` (3), `files/files.js` (2), `photos/photos.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `sales/sales-calc.js` (1)
 - **Used by 27 files**
@@ -1888,8 +1888,8 @@ MAPS & PINS: tap any address to open it in maps, drop a pin and send it
 
 PLANS & SPECS
 
-- 275 lines, 13 KB. Declares 13 names, 11 used elsewhere.
-- **Used elsewhere:** `docPath` (4), `RAMS_SIGN` (3), `DOC_CATS` (2), `docRow` (2), `mySign` (2), `openSign` (2), `unsignedRams` (2), `wireDocs` (2), `catName` (1), `docSite` (1), `plansView` (1)
+- 326 lines, 15 KB. Declares 15 names, 12 used elsewhere.
+- **Used elsewhere:** `docPath` (4), `RAMS_SIGN` (3), `DOC_CATS` (2), `docRow` (2), `mySign` (2), `openSign` (2), `unsignedRams` (2), `wireDocs` (2), `catName` (1), `docPickBar` (1), `docSite` (1), `plansView` (1)
 - **Uses names from 15 files:** `core/sheet.js` (6), `core/helpers.js` (5), `core/state.js` (3), `owner/deleted-items.js` (3), `owner/owner.js` (3), `core/viewer.js` (2), `files/in-app-files.js` (2), `sites/doc-visibility.js` (2), `sites/trade-sites.js` (2), `core/company-names.js` (1), `core/tabs-week.js` (1), `files/files.js` (1), `files/outbox.js` (1), `safety/rams.js` (1), `safety/site-inductions.js` (1)
 - **Used by 10 files**
 
@@ -1899,16 +1899,16 @@ OWNER: SITE PROJECT PAGES
 
 - 605 lines, 26 KB. Declares 4 names, 3 used elsewhere.
 - **Used elsewhere:** `same` (41), `projectSites` (5), `ownerProjects` (1)
-- **Uses names from 32 files:** `core/helpers.js` (10), `sites/job-details.js` (8), `photos/photos.js` (6), `purchasing/materials-receipts.js` (5), `sites/storage.js` (5), `chat/chat.js` (4), `planner/board.js` (4), `sites/plans-specs.js` (4), `core/state.js` (3), `owner/owner.js` (3), `planner/programme.js` (3), `safety/site-inductions.js` (3), `files/files.js` (2), `purchasing/invoices.js` (2), `sites/building-control.js` (2), `sites/site-diary.js` (2), `sites/snag-quick.js` (2), `sites/stage-signoff.js` (2), `sites/trade-sites.js` (2), `core/tabs-week.js` (1), `owner/delete-client-site.js` (1), `planner/time-off.js` (1), `safety/cdm-rams.js` (1), `safety/rams-maker.js` (1), `sites/drawing-compare.js` (1), `sites/job-pack.js` (1), `sites/job-sheets.js` (1), `sites/maps-pins.js` (1), `sites/qr-sign-in.js` (1), `sites/tiles.js` (1), `survey/door-window-survey.js` (1), `timesheets/time.js` (1)
+- **Uses names from 32 files:** `core/helpers.js` (10), `sites/job-details.js` (8), `photos/photos.js` (6), `purchasing/materials-receipts.js` (5), `sites/plans-specs.js` (5), `sites/storage.js` (5), `chat/chat.js` (4), `planner/board.js` (4), `core/state.js` (3), `owner/owner.js` (3), `planner/programme.js` (3), `safety/site-inductions.js` (3), `files/files.js` (2), `purchasing/invoices.js` (2), `sites/building-control.js` (2), `sites/site-diary.js` (2), `sites/snag-quick.js` (2), `sites/stage-signoff.js` (2), `sites/trade-sites.js` (2), `core/tabs-week.js` (1), `owner/delete-client-site.js` (1), `planner/time-off.js` (1), `safety/cdm-rams.js` (1), `safety/rams-maker.js` (1), `sites/drawing-compare.js` (1), `sites/job-pack.js` (1), `sites/job-sheets.js` (1), `sites/maps-pins.js` (1), `sites/qr-sign-in.js` (1), `sites/tiles.js` (1), `survey/door-window-survey.js` (1), `timesheets/time.js` (1)
 - **Used by 43 files**
 
 ### `sites/qr-sign-in.js`
 
 QR SITE SIGN-IN: a public page (the user's own Google Sheet + script) for induction and sign in / out by QR code
 
-- 377 lines, 15 KB. Declares 1 names, 1 used elsewhere.
+- 401 lines, 16 KB. Declares 1 names, 1 used elsewhere.
 - **Used elsewhere:** `QRSITE` (4)
-- **Uses names from 9 files:** `core/helpers.js` (5), `core/sheet.js` (4), `safety/site-inductions.js` (4), `photos/photos.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `owner/company-details.js` (1), `sites/project-pages.js` (1)
+- **Uses names from 10 files:** `core/helpers.js` (5), `core/sheet.js` (4), `safety/site-inductions.js` (4), `photos/photos.js` (2), `clients/portal.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `owner/company-details.js` (1), `sites/project-pages.js` (1)
 - **Used by 4 files**
 
 ### `sites/roll-call.js`

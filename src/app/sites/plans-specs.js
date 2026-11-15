@@ -19,6 +19,7 @@ export {
   RAMS_SIGN,
   catName,
   docPath,
+  docPickBar,
   docRow,
   docSite,
   mySign,
@@ -58,7 +59,7 @@ function signStatus(d) {
 }
 function docRow(d, owner) {
   const s = !owner && d.cat === "rams" ? mySign(d.id) : null;
-  return `<div class="entry doc" data-d="${esc(d.id)}"><div class="main">
+  return `<div class="entry doc" data-d="${esc(d.id)}">${owner ? `<label class="dpick" title="Select"><input type="checkbox" class="d-pick" aria-label="Select ${esc(d.title || d.fileName || "document")}"></label>` : ""}<div class="main">
     <div class="job"><span class="tag ${d.cat === "plans" ? "day" : d.cat === "rams" ? "bad" : ""}">${esc(catName(d.cat))}</span>${s ? '<span class="tag ok">Signed</span>' : ""}${d._priv ? '<span class="tag" title="Only you can see this">🔒 Only me</span>' : ""}${(d.who || []).length && !d._priv ? `<span class="tag" title="${esc(d.who.map(nameOf).join(", "))}">👤 ${d.who.length} trade${d.who.length === 1 ? "" : "s"}</span>` : ""}${d.clientShared ? '<span class="tag" title="Sent to the client portal">🏡 Client</span>' : ""}${esc(d.title || d.fileName)}</div>
     <div class="sub">${esc(d.site || "General")}${docPath(d) ? " › " + esc(docPath(d).split("/").join(" › ")) : ""} · ${esc(d.fileName || "")}${d.size ? ` · ${fsize(d.size)}` : ""} · added ${stamp(d.uploaded)}</div>
     ${owner && d.cat === "rams" && RAMS_SIGN ? signStatus(d) : ""}
@@ -67,7 +68,57 @@ function docRow(d, owner) {
     ${!owner && d.cat === "rams" && !s && RAMS_SIGN ? `<button type="button" class="btn primary d-sign" style="padding:7px 14px">Read and sign</button>` : ""}
     ${owner && d.cat === "rams" && d.raId ? `<button type="button" class="pillbtn d-ra">📋 Edit / brief</button>` : ""}${owner ? `<button type="button" class="linkdanger d-del">Remove</button>` : ""}</div></div></div>`;
 }
+/* tick boxes to delete one, some or all (James, Nov 2026: "on all rams and documents tick boxes should be there to be
+   able to delete single items or all of them") – they go to Deleted items like Remove */
+const docPickBar = () =>
+  `<div class="docpick"><label class="inl"><input type="checkbox" class="d-all"> Select all</label><button type="button" class="linkdanger d-delsel" disabled>🗑 Delete selected</button></div>`;
+function wireDocPick() {
+  const bar = $("main").querySelector(".docpick");
+  if (!bar) return;
+  const all = bar.querySelector(".d-all"),
+    del = bar.querySelector(".d-delsel");
+  const picks = () => [...$("main").querySelectorAll(".d-pick")];
+  const chosen = () => picks().filter((i) => i.checked);
+  const upd = () => {
+    const n = chosen().length;
+    del.disabled = !n;
+    del.dataset.armed = "";
+    del.textContent = n ? `🗑 Delete selected (${n})` : "🗑 Delete selected";
+    all.checked = n > 0 && n === picks().length;
+  };
+  all.onchange = () => {
+    picks().forEach((i) => (i.checked = all.checked));
+    upd();
+  };
+  picks().forEach((i) => (i.onchange = upd));
+  del.onclick = async () => {
+    const sel = chosen()
+      .map((i) => S.docs.find((x) => x.id === i.closest(".doc").dataset.d))
+      .filter(Boolean);
+    if (!sel.length) return;
+    if (del.dataset.armed !== "1") {
+      del.dataset.armed = "1";
+      del.textContent = `Tap again to delete ${sel.length === 1 ? "it" : "all " + sel.length}`;
+      return;
+    }
+    del.disabled = true;
+    let n = 0;
+    for (const d of sel)
+      try {
+        const ok = await binDelete({
+          assets: [d.assetId],
+          title: (d.title || d.name || d.fileName || "Document") + (d.site ? " · " + d.site : ""),
+          type: d.contentType || d.type || "application/pdf",
+          thumb: binIsImg(d.contentType || d.type || "") ? d.assetId : "",
+        });
+        if (ok) n++;
+      } catch (e) {}
+    toast(`${n} removed · in Setup › Deleted items for ${BIN_DAYS} days`);
+    render();
+  };
+}
 function wireDocs(owner) {
+  if (owner) wireDocPick();
   $("main")
     .querySelectorAll(".doc")
     .forEach((row) => {

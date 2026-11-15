@@ -1,4 +1,5 @@
 /* ================= QR SITE SIGN-IN: a public page (the user's own Google Sheet + script) for induction and sign in / out by QR code ================= */
+import { APP_LINK } from "../clients/portal.js";
 import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -93,8 +94,8 @@ const QRSITE = (() => {
     const r = recOf(site),
       ind = indFor(site);
     const stale = r && ind && (r.version || 0) < (ind.version || 1);
-    return `<div class="card qrcard${r ? "" : " todo"}"><div class="cardbody" style="border:0"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><div><b>📱 QR sign-in for this site</b><div class="who">${r ? `Live since ${esc(shortDay(iso(new Date(r.at))))}${stale ? ' · <b style="color:var(--danger)">induction changed – send it again</b>' : ""}` : "Put a QR code on the site office: visitors do the induction once, then sign in and out on their own phone."}</div></div>
-    <button type="button" class="btn ${r && !stale ? "" : "primary"} qr-go" data-site="${esc(site)}">${r ? "Poster / update" : "Set up QR sign-in"}</button></div></div></div>`;
+    return `<div class="card qrcard${r ? "" : " todo"}"><div class="cardbody" style="border:0"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><div><b>📱 QR sign-in for this site</b><div class="who">${r ? `Live since ${esc(shortDay(iso(new Date(r.at))))}${stale ? ' · <b style="color:var(--danger)">induction changed – send it again</b>' : ""}` : "Print a QR poster for the site office: anyone on SiteHQ scans it to sign in and out. For visitors who aren't on the app, set up the visitors' QR too."}</div></div>
+    <div class="actions" style="margin:0">${r ? "" : `<button type="button" class="btn primary qr-app" data-site="${esc(site)}">📄 QR poster</button>`}<button type="button" class="btn ${r && !stale ? "" : r ? "primary" : ""} qr-go" data-site="${esc(site)}">${r ? "Poster / update" : "Set up for visitors too"}</button></div></div></div></div>`;
   }
   function open(site) {
     const c = cfg();
@@ -207,12 +208,13 @@ const QRSITE = (() => {
     };
     $("qq-pdf").onclick = (e) => poster(site, e.currentTarget);
   }
-  async function poster(site, btn) {
+  /* appOnly: the QR opens SiteHQ itself – no setup (James, Nov 2026: "qr codes for sites is to difficult to make work") */
+  async function poster(site, btn, appOnly) {
     const lab = btn.textContent;
     btn.disabled = true;
     btn.textContent = "Making the poster…";
     try {
-      const q = await qrOf(linkFor(site));
+      const q = await qrOf(appOnly ? APP_LINK : linkFor(site));
       await loadJsPdf();
       const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
       const W = 210,
@@ -233,7 +235,14 @@ const QRSITE = (() => {
       doc.text(doc.splitTextToSize(site, W - 40), W / 2, 52, { align: "center" });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(14);
-      doc.text("Scan with your phone camera to sign IN and OUT", W / 2, 66, { align: "center" });
+      doc.text(
+        appOnly
+          ? "Working here? Scan with your phone camera to open SiteHQ"
+          : "Scan with your phone camera to sign IN and OUT",
+        W / 2,
+        66,
+        { align: "center" },
+      );
       const n = q.getModuleCount(),
         size = 140,
         cell = size / n,
@@ -248,11 +257,18 @@ const QRSITE = (() => {
       let y = y0 + size + 16;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(15);
-      [
-        "1.  First time here? Read the site induction and tick to confirm.",
-        "2.  Sign in with your name, company and mobile.",
-        "3.  Scan again when you leave and tap Sign out.",
-      ].forEach((t) => {
+      (appOnly
+        ? [
+            "1.  Scan the code – SiteHQ opens.",
+            "2.  Tap Sign in to site and choose this site.",
+            "3.  Scan again when you leave and tap Sign out.",
+          ]
+        : [
+            "1.  First time here? Read the site induction and tick to confirm.",
+            "2.  Sign in with your name, company and mobile.",
+            "3.  Scan again when you leave and tap Sign out.",
+          ]
+      ).forEach((t) => {
         doc.text(t, 24, y);
         y += 9;
       });
@@ -261,7 +277,9 @@ const QRSITE = (() => {
       doc.setTextColor(90, 80, 80);
       y += 4;
       doc.text(
-        "Everyone on site must sign in – it's how we know who's here in an emergency.",
+        appOnly
+          ? "Everyone on site must sign in. Visitors not on SiteHQ: see the site manager."
+          : "Everyone on site must sign in – it's how we know who's here in an emergency.",
         W / 2,
         y,
         { align: "center" },
@@ -367,6 +385,12 @@ const QRSITE = (() => {
     );
   }
   document.addEventListener("click", (e) => {
+    const a = e.target.closest && e.target.closest(".qr-app");
+    if (a) {
+      e.preventDefault();
+      poster(a.dataset.site, a, true);
+      return;
+    }
     const b = e.target.closest && e.target.closest(".qr-go");
     if (b) {
       e.preventDefault();
