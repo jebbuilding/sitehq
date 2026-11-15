@@ -31,6 +31,7 @@ import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
 import { diaryHtml, diaryRows, dyGroupName, wireDiary } from "./diary.js";
+import { htHtml, htWire } from "./holiday-tab.js";
 import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
 import {
   plClashHtml,
@@ -64,6 +65,7 @@ export {
   keyTimeline,
   leaveCard,
   openKeyDates,
+  openLeave,
   openPlanEditor,
   openPlanView,
   pbEntryDays,
@@ -819,12 +821,13 @@ function pbHeader(owner, mode) {
         ["day", "Day"],
         ["stages", "Jobs"],
         ["month", "Month"],
+        ["hol", "🌴 Holidays"],
       ]
     : [
         ["week", "Week"],
         ["month", "Month"],
       ];
-  return `<div class="pb-top">${mode !== "day" && mode !== "where" ? `<button type="button" class="iconbtn" id="pb-prev" aria-label="Previous week">‹</button><b class="pb-lab">${esc(lab)}</b><button type="button" class="iconbtn" id="pb-next" aria-label="Next week">›</button>${pbPlanWeek() !== iso(monday(new Date())) ? `<button type="button" class="pillbtn" id="pb-today">Today</button>` : ""}` : `<b class="pb-lab"></b>`}
+  return `<div class="pb-top">${mode !== "day" && mode !== "where" && mode !== "hol" ? `<button type="button" class="iconbtn" id="pb-prev" aria-label="Previous week">‹</button><b class="pb-lab">${esc(lab)}</b><button type="button" class="iconbtn" id="pb-next" aria-label="Next week">›</button>${pbPlanWeek() !== iso(monday(new Date())) ? `<button type="button" class="pillbtn" id="pb-today">Today</button>` : ""}` : `<b class="pb-lab"></b>`}
     </div><div class="pb-top pb-top2"><div class="seg pb-seg" id="pb-mode">${views.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div><button type="button" class="iconbtn" id="pb-menu" aria-label="More" title="More">⋯</button></div>`;
 }
 function pbWireHeader(owner) {
@@ -863,7 +866,7 @@ function plannerView() {
     S.f.pmode || (owner ? (nlOn() && window.innerWidth < 700 ? "where" : "board") : "week");
   if (owner && mode === "diary") mode = "day";
   if (owner && mode === "week") mode = "board";
-  if (!owner && ["where", "board", "day", "stages", "diary", "year", "list"].includes(mode))
+  if (!owner && ["where", "board", "day", "stages", "diary", "year", "list", "hol"].includes(mode))
     mode = "week";
   const entries = planEntries();
   const who = owner ? S.f.pwho || "" : "";
@@ -887,7 +890,9 @@ function plannerView() {
   let html = pbHeader(owner, mode);
   const today = iso(new Date());
   if (!owner) html += pbDaySheet(shown);
-  if (mode === "where") {
+  if (mode === "hol") {
+    html += htHtml(entries);
+  } else if (mode === "where") {
     html += plWhereHtml(shown);
   } else if (mode === "board") {
     html += pbBoardHtml(shown, entries);
@@ -990,7 +995,7 @@ function plannerView() {
     ? []
     : leaveOf(S.mine.signoffs).sort((a, b) => b.from.localeCompare(a.from));
   /* holidays: an employee's own figures, or everyone's for James */
-  html += owner ? holOwnerHtml() : holCardHtml();
+  if (mode !== "hol") html += owner ? holOwnerHtml() : holCardHtml();
   if (!owner)
     html += `<div class="day"><div class="dayh"><span>My time-off requests</span><span class="sum">${myLeave.length}</span></div>${myLeave.length ? myLeave.map((l) => leaveCard(l, false)).join("") : '<div class="nothing">No requests yet.</div>'}</div>`;
   if (false) {
@@ -1029,6 +1034,7 @@ function plannerView() {
   pbWireHeader(owner);
   holWire();
   if (mode === "where") plWireWhere(entries);
+  if (mode === "hol") htWire(entries);
   if (mode === "board") pbWireBoard(shown, entries);
   if ($("pb-reqline")) $("pb-reqline").onclick = pbRequests;
   if (mode === "stages") pbWireStages(shown);
