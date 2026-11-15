@@ -190,3 +190,13 @@
 .ht-row .ht-who{display:flex;flex-direction:column;flex:1;min-width:0}
 .ht-row small{color:var(--muted);font-size:12px}
 @media (max-width:520px){.ht-row{flex-wrap:wrap;gap:4px 12px}.ht-row .ht-when{min-width:0}}
+
+/* planner › one person's holidays (owner) */
+.hol-row[data-w]{cursor:pointer;border-radius:8px;min-height:44px;align-items:center}
+.hol-row[data-w]:hover{background:var(--soft)}
+.hp-yr{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+.hp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}
+.hp-row .hp-main{flex:1 1 220px;min-width:0}
+.hp-row .btn{min-height:44px;padding:6px 12px}
+.hp-inl{flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap}
+.hp-inl input{width:100px;min-height:44px;margin-left:auto}

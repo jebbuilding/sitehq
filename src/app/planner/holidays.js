@@ -6,10 +6,24 @@ import { render } from "../core/tabs-week.js";
 import { crewIds, nameOf, sheetOf } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { leaveCard, pbPending, wireLeave } from "./board.js";
+import { hpOpen } from "./holiday-person.js";
 import { leaveOf } from "./time-off.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { empTypeOf } from "../sites/job-details.js";
-export { holCardHtml, holOwnerHtml, holSettings, holTeamHtml, holTeamWire, holWire, holYear };
+export {
+  holAdj,
+  holCardHtml,
+  holCfg,
+  holDays,
+  holN,
+  holOwnerHtml,
+  holSettings,
+  holSum,
+  holTeamHtml,
+  holTeamWire,
+  holWire,
+  holYear,
+};
 /* Employees see a 🌴 My holidays card on their planner: how many days they get this holiday year, how many they've
    taken, how many are booked (approved, still to come), how many are waiting for an answer, and how many are left –
    with the bank holidays, and their holidays listed. James sets the holiday year (when it starts), the usual
@@ -84,6 +98,8 @@ function holDays(l, from, to) {
   }
   return l.half && n ? n - 0.5 : n;
 }
+/* days the owner has put down as taken outside the app for a holiday year (planner/holiday-person.js) */
+const holAdj = (uid, yFrom) => ((holCfg().adj || {})[uid] || {})[yFrom] || { days: 0, note: "" };
 /* someone's figures for the holiday year round a date */
 function holSum(uid, list, at) {
   const c = holCfg();
@@ -110,6 +126,7 @@ function holSum(uid, list, at) {
       booked += n - holDays(l, Y.from, today < Y.to ? today : Y.to);
     }
   });
+  taken += +holAdj(uid, Y.from).days || 0;
   const bankUse = c.bankIn ? bank.length : 0;
   const left = allow - bankUse - taken - booked;
   return { Y, allow, bank, bankUse, taken, booked, waiting, left, hol };
@@ -146,11 +163,12 @@ function holOwnerHtml() {
       ids
         .map((id) => {
           const s = holSum(id, sheetOf("signoffs", id));
-          return `<div class="drow hol-row"><span><b>${esc(nameOf(id))}</b> <span class="who">${holN(s.allow)} a year</span></span><span class="who">${holN(s.taken)} taken · ${holN(s.booked)} booked${s.waiting ? ` · ${holN(s.waiting)} waiting` : ""} · <b class="${s.left < 0 ? "hol-neg" : ""}">${holN(s.left)} left</b></span></div>`;
+          return `<div class="drow hol-row" role="button" tabindex="0" data-w="${esc(id)}" title="See and change ${esc(nameOf(id))}'s holidays"><span><b>${esc(nameOf(id))}</b> <span class="who">${holN(s.allow)} a year</span></span><span class="who">${holN(s.taken)} taken · ${holN(s.booked)} booked${s.waiting ? ` · ${holN(s.waiting)} waiting` : ""} · <b class="${s.left < 0 ? "hol-neg" : ""}">${holN(s.left)} left</b> ›</span></div>`;
         })
         .join("") ||
       `<div class="nothing">No employees yet. Subcontractors don't get holiday pay, so they aren't listed unless you give them an allowance.</div>`
     }
+    <div class="who">Tap someone to change their holidays, add ones they've already had, or adjust their days.</div>
     <div class="actions"><button type="button" class="btn" id="hol-set">⚙ Holiday year and allowances</button></div>
     <div class="who">Holiday year starts ${esc(parse("2026-" + c.start).toLocaleDateString("en-GB", { day: "numeric", month: "long" }))} · ${holN(c.days)} days for a full-time employee${c.bankIn ? ", bank holidays included" : " plus bank holidays"}.</div>
   </div></details>`;
@@ -164,6 +182,15 @@ function holWire() {
       }),
   );
   if ($("hol-set")) $("hol-set").onclick = holSettings;
+  document.querySelectorAll(".hol-row[data-w]").forEach((r) => {
+    r.onclick = () => hpOpen(r.dataset.w);
+    r.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        hpOpen(r.dataset.w);
+      }
+    };
+  });
 }
 function holSettings() {
   const c = holCfg();

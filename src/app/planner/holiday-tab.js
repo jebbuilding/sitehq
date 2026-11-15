@@ -3,6 +3,7 @@ import { $, esc, iso, parse, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { nameOf } from "../owner/owner.js";
 import { openLeave } from "./board.js";
+import { hpOpen } from "./holiday-person.js";
 import { holSettings, holTeamHtml, holTeamWire, holYear } from "./holidays.js";
 import { workDays } from "./time-off.js";
 import { openPlanDetail } from "./views.js";
@@ -40,7 +41,7 @@ function htHtml(entries) {
     parse(k + "-01").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   return `<div class="ht-page">
     <div class="ht-acts"><button type="button" class="btn primary" id="ht-book">🌴 Book time off for someone</button><button type="button" class="btn" id="ht-set">⚙ Holiday year and allowances</button></div>
-    ${holTeamHtml()}
+    ${/* everyone's figures open here: tap a person to change their holidays */ holTeamHtml().replace('<details class="card hol-card" data-id="__holo">', '<details class="card hol-card" open data-id="__holo">')}
     <section class="card"><div class="cardbody"><b>🗓 Holidays booked</b> <span class="who">${ahead.length ? ahead.length + " from today on" : ""}</span>
       ${
         months.length
@@ -70,7 +71,11 @@ function htWire(entries) {
     (b) =>
       (b.onclick = () => {
         const p = entries.find((x) => x.id === b.dataset.p);
-        if (p) openPlanDetail(p);
+        if (!p) return;
+        /* a booked holiday opens that person's holiday page, where it can be changed */
+        const w = (p.people || [])[0];
+        if (p.leaveId && w) hpOpen(w, p.from);
+        else openPlanDetail(p);
       }),
   );
 }
