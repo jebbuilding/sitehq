@@ -38,6 +38,8 @@ function jbView() {
     ["enq", "Enquiries" + (enq ? " " + enq : "")],
     ["book", "📒 Address book"],
     ["planner", "Planner"],
+    /* Health & safety (CDM and RAMS) along the top of Jobs (James, Nov 2026) */
+    ["hs", "🦺 Health & safety"],
     ["more", "More"],
   ];
   const seg = `<div class="jb-tabs" role="tablist" aria-label="Show">${tabs.map(([k, l]) => `<button type="button" role="tab" data-v="${k}" aria-selected="${t === k}">${esc(l)}</button>`).join("")}</div>`;
@@ -104,6 +106,7 @@ function jbWireTabs() {
           return nlOpenTab("clients");
         }
         if (v === "planner") return nlOpenTab("planner");
+        if (v === "hs") return nlOpenTab("hs");
         if (v === "enq") {
           clShowToSee();
           return nlOpenTab("clients");

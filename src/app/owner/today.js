@@ -42,6 +42,8 @@ const NL_SECTIONS = [
     [
       "projects",
       "signin",
+      /* Health & safety (CDM and RAMS) under Jobs & clients too (James, Nov 2026) */
+      "hs",
       "clients",
       "leads",
       "planner",
@@ -89,7 +91,7 @@ const NL_ICON = {
 /* each section's page: groups of tabs, as in the layout pictures (a third item true = only James sees it) */
 const NL_GROUPS = {
   jobs: [
-    ["Jobs and sites", ["projects", "signin", "planner", "daywork", "photos", "draw"]],
+    ["Jobs and sites", ["projects", "signin", "hs", "planner", "daywork", "photos", "draw"]],
     ["Clients", ["clients", "leads", "portal", "samples"]],
     ["Vans, tools and plant", ["calc"]],
   ],

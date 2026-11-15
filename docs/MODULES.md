@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 220 files, 4312 KB, 110097 lines.
+- 220 files, 4313 KB, 110102 lines.
 - 2274 names declared at the top level (the shared scope); 1140 of them are used by a file other than the one that declares them.
 - 2436 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -934,7 +934,7 @@ permanent deletion record: every PIN-unlocked delete is written here first, chai
 
 JOBS DESK: Jobs & clients as in the layout picture – the jobs down the side, the chosen job beside
 
-- 203 lines, 10 KB. Declares 6 names, 1 used elsewhere.
+- 206 lines, 10 KB. Declares 6 names, 1 used elsewhere.
 - **Used elsewhere:** `jbView` (1)
 - **Uses names from 20 files:** `core/helpers.js` (6), `owner/owner.js` (3), `owner/today.js` (3), `sites/job-details.js` (3), `clients/address-book.js` (2), `core/state.js` (2), `sites/project-pages.js` (2), `sites/stage-signoff.js` (2), `chat/chat.js` (1), `clients/more-jobs.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `core/tabs-week.js` (1), `files/files.js` (1), `people/employment-types.js` (1), `photos/photos.js` (1), `sales/job-costs.js` (1), `sales/sales-calc.js` (1), `sites/roll-call.js` (1), `sites/summary.js` (1)
 - **Used by 1 files**
@@ -1015,7 +1015,7 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 564 lines, 22 KB. Declares 23 names, 11 used elsewhere.
+- 566 lines, 22 KB. Declares 23 names, 11 used elsewhere.
 - **Used elsewhere:** `nlGo` (4), `nlOpenTab` (4), `coTileOf` (3), `NL_BY` (2), `nlBrandHtml` (2), `nlSectionView` (2), `NL_SUBS` (1), `nlApply` (1), `nlName` (1), `nlOn` (1), `todayView` (1)
 - **Uses names from 19 files:** `owner/today-desk.js` (5), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `clients/address-book.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/search.js` (1), `planner/holidays.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 11 files**
