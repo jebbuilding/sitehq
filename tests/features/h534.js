@@ -43,7 +43,7 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  await go('today');
  ok(await p.locator('#acs-card').count()===0,'and the card leaves Today');
  await go('setup');
- ok(await p.locator('#acs-card').count()===0&&await p.locator('#main .cocard').count()===1&&!/Your mobile number/.test(await p.innerText('#main')),'Setup shows the company details once (no set-up card, no separate mobile number box)');
+ ok(await p.locator('#acs-card').count()===0&&await p.locator('#main .cocard').count()===1&&!/Your mobile number|My own details/.test(await p.innerText('#main')),'Setup shows the company details once (no set-up card, no separate mobile number box, no own details – those are in People)');
  const ct=await p.innerText('.cocard');
  ok(/Emergency contact/.test(ct)&&/07700900101/.test(ct)&&/Sam Test/.test(ct),'the company card shows the emergency contact and first aider');
  await go('people');

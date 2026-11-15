@@ -8,7 +8,7 @@ import { render } from "../core/tabs-week.js";
 import { personPhotoDlg, personPhotoSet } from "../files/cut-outs.js";
 import { blobUrl, csvSave, uploadErr, uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
-import { companyOf, nameOf, roleOf, roleTag, teamIds } from "../owner/owner.js";
+import { companyOf, nameOf, roleOf, roleTag, startPreview, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "./employment-types.js";
 import { accessNotice, leaversBlock, openLeaver, wireLeavers } from "./leavers.js";
 import { DET_SECTIONS, detailsDone, myDetails, openDetails } from "./personal-details.js";
@@ -209,7 +209,7 @@ function peopleView() {
         String(id).startsWith("off:")
           ? `<div class="actions"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">Edit details</button></div>`
           : id === S.me
-            ? `<div class="actions"><button type="button" class="btn primary" id="pp-me">${d ? "Edit my details" : "Fill in my details"}</button></div>`
+            ? `<div class="actions"><button type="button" class="btn primary" id="pp-me">${d ? "✎ Edit my details" : "Fill in my details"}</button><button type="button" class="btn op-me" data-t="time">⏱️ My timesheet</button><button type="button" class="btn op-me" data-t="mydw">🧱 My day sheet</button></div>`
             : `<div class="actions" style="align-items:center"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">${d ? "Edit details" : "Fill in details for them"}</button><label for="pp-role-${esc(id)}" class="inl" style="font-size:14px;color:var(--ink)">Works for us as<select id="pp-role-${esc(id)}" class="pp-role" data-w="${esc(id)}" style="width:auto;margin-left:6px">${(() => {
                 /* one choice keeps their details and the page they're on in step (James, Nov 2026) */
                 const cur = ppEmpOf(id);
@@ -451,6 +451,15 @@ function peopleView() {
         { form: "details" },
       );
   if ($("pp-me")) $("pp-me").onclick = () => openDetails();
+  /* the account holder's own timesheet and day sheet, filled in like the trades' (moved here from Setup, Nov 2026) */
+  document.querySelectorAll(".op-me").forEach(
+    (b) =>
+      (b.onclick = () => {
+        S.tab = b.dataset.t;
+        startPreview();
+        window.scrollTo(0, 0);
+      }),
+  );
   $("pp-ec").onclick = () => {
     const r = [
       [

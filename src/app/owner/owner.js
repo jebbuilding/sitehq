@@ -32,7 +32,6 @@ import { auditFirst } from "./deletion-record.js";
 import { openMonthly } from "./reports.js";
 import { qaSetupCard, qaSetupWire } from "./today-desk.js";
 import { acView } from "../people/access.js";
-import { detailsDone, myDetails, openDetails } from "../people/personal-details.js";
 import { pvView } from "../people/portal-access.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
 import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
@@ -907,7 +906,6 @@ function ownerSetup() {
       <div><button class="btn primary" id="wd-save" type="button">Save working day</button></div></div></div>
     <div class="card"><div class="cardbody" style="border:0"><b>📷 Site photos for trades</b><div class="who">Trades see a <b>Site photos</b> tab on each of their sites.</div>
       <div class="seg" id="tp-seg"><button type="button" data-v="all" aria-pressed="${(S.settings || {}).tradePhotos !== "james"}">Everyone's photos for the site</button><button type="button" data-v="james" aria-pressed="${(S.settings || {}).tradePhotos === "james"}">Only my photos (and their own)</button></div></div></div>
-    <div class="card"><div class="cardbody" style="border:0"><b>🪪 My own details</b><div class="who">${detailsDone(myDetails()) ? "✓ Filled in. " : ""}Your name, trade, CSCS card, next of kin and medical info. Used to fill in inductions, toolbox talks, briefings and other forms for you automatically, the same as the trades.</div><div><button class="btn ${detailsDone(myDetails()) ? "" : "primary"}" id="op-det" type="button">${detailsDone(myDetails()) ? "Check my details" : "Fill in my details"}</button><button class="btn op-me" data-t="time" type="button">⏱️ My timesheet</button><button class="btn op-me" data-t="mydw" type="button">🧱 My day sheet</button></div></div></div>
     ${qaSetupCard()}
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
     ${companyCard()}
@@ -937,16 +935,6 @@ function ownerSetup() {
   wireCompany();
   lhWire();
   sdWireSig();
-  $("op-det").onclick = () => openDetails();
-  /* James working like a trade (Nov 2026): his own timesheet and day sheet, as the trades fill them in */
-  document.querySelectorAll(".op-me").forEach(
-    (b) =>
-      (b.onclick = () => {
-        S.tab = b.dataset.t;
-        startPreview();
-        window.scrollTo(0, 0);
-      }),
-  );
   qaSetupWire();
   $("main")
     .querySelectorAll("#tp-seg button")

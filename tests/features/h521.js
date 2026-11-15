@@ -13,9 +13,9 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:430,height:900},deviceScaleFactor:2});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  await ctx.route(/^https?:\/\//,r=>r.abort());
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
- await p.evaluate(()=>{window.__S.otab='setup';window.__S.f.stab='setup';window.render()});await p.waitForTimeout(400);
- ok(await p.locator('.op-me[data-t=time]').count()===1&&await p.locator('.op-me[data-t=mydw]').count()===1,'Setup › My own details has ⏱️ My timesheet and 🧱 My day sheet');
- await p.click('#op-det');await p.waitForTimeout(400);
+ await p.evaluate(()=>{window.__S.otab='people';window.__S.f.prole='';window.render()});await p.waitForTimeout(400);
+ ok(await p.locator('.op-me[data-t=time]').count()===1&&await p.locator('.op-me[data-t=mydw]').count()===1,'People › their own card has ⏱️ My timesheet and 🧱 My day sheet');
+ await p.evaluate(()=>document.getElementById('pp-me').click());await p.waitForTimeout(400);
  const f=await p.innerText('#sheet');
  ok(await p.locator('#dt-empType').count()===0&&await p.locator('#dt-utr').count()===0&&!/Your business/.test(f),'his details form has no employment type, UTR or business section');
  ok(/not set up for CIS/.test(f),'and says he\'s not set up for CIS');
@@ -25,8 +25,8 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  const prof=await p.evaluate(()=>(window.__S.myProfile||{}).details||{});
  ok(prof.empType==='owner'&&prof.fullName==='James Test','saved, as the owner (not CIS)');
  await p.click('#f-cancel').catch(()=>{});
- await p.evaluate(()=>{document.getElementById('sheet').hidden=true;window.__S.otab='setup';window.render()});await p.waitForTimeout(300);
- await p.click('.op-me[data-t=time]');await p.waitForTimeout(800);
+ await p.evaluate(()=>{document.getElementById('sheet').hidden=true;window.__S.otab='people';window.__S.f.prole='';window.render()});await p.waitForTimeout(300);
+ await p.evaluate(()=>document.querySelector('.op-me[data-t=time]').click());await p.waitForTimeout(800);
  ok(await p.evaluate(()=>window.__S.preview===true&&window.__S.tab==='time'),'My timesheet opens his own timesheet, like a trade');
  await p.screenshot({path:OUT+'me-1-timesheet.png'});
  await p.evaluate(()=>{window.__S.preview=false;window.__S.otab='leads';window.render()});await p.waitForTimeout(500);
