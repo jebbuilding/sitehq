@@ -17,6 +17,8 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#nl-tog');await p.waitForTimeout(500);
  await p.click('.nl-b[data-s=jobs]');await p.waitForTimeout(500);
  ok(await p.isVisible('.jb-tabs')&&(await p.$$('.jb-item')).length>=2,'Jobs & clients: tabs and the jobs down the side');
+ const tl=await p.evaluate(()=>[...document.querySelectorAll('.jb-tabs button')].map(b=>b.textContent.trim()));
+ ok(tl.every(t=>/^[^A-Za-z]/.test(t)),'every tab starts with its emoji: '+tl.join(' | '));
  await p.click('.jb-item[data-s="4 Rolle Road, Exmouth"]');await p.waitForTimeout(400);
  let m=await p.innerText('.jb-job');
  ok(/4 Rolle Road, Exmouth/.test(m)&&/Sue Jones/.test(m),'the chosen job, with its client');

@@ -33,14 +33,15 @@ function jbView() {
   const t = S.f.jbt || "jobs";
   const enq = (S.clients || []).filter((c) => mjHas(c, "enquiry")).length;
   const tabs = [
-    ["jobs", "Jobs"],
-    ["clients", "Clients"],
-    ["enq", "Enquiries" + (enq ? " " + enq : "")],
+    /* every tab with its emoji (James, Nov 2026) */
+    ["jobs", "🏗️ Jobs"],
+    ["clients", "👥 Clients"],
+    ["enq", "📬 Enquiries" + (enq ? " " + enq : "")],
     ["book", "📒 Address book"],
-    ["planner", "Planner"],
+    ["planner", "🗓️ Planner"],
     /* Health & safety (CDM and RAMS) along the top of Jobs (James, Nov 2026) */
     ["hs", "🦺 Health & safety"],
-    ["more", "More"],
+    ["more", "➕ More"],
   ];
   const seg = `<div class="jb-tabs" role="tablist" aria-label="Show">${tabs.map(([k, l]) => `<button type="button" role="tab" data-v="${k}" aria-selected="${t === k}">${esc(l)}</button>`).join("")}</div>`;
   if (t === "more") {

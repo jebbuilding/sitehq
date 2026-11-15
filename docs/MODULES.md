@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 225 files, 4405 KB, 112075 lines.
+- 225 files, 4405 KB, 112076 lines.
 - 2306 names declared at the top level (the shared scope); 1164 of them are used by a file other than the one that declares them.
 - 2492 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -943,7 +943,7 @@ permanent deletion record: every PIN-unlocked delete is written here first, chai
 
 JOBS DESK: Jobs & clients as in the layout picture – the jobs down the side, the chosen job beside
 
-- 219 lines, 11 KB. Declares 6 names, 1 used elsewhere.
+- 220 lines, 11 KB. Declares 6 names, 1 used elsewhere.
 - **Used elsewhere:** `jbView` (1)
 - **Uses names from 20 files:** `core/helpers.js` (7), `owner/owner.js` (3), `owner/today.js` (3), `sites/job-details.js` (3), `clients/address-book.js` (2), `core/state.js` (2), `sites/project-pages.js` (2), `sites/stage-signoff.js` (2), `chat/chat.js` (1), `clients/more-jobs.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `core/tabs-week.js` (1), `files/files.js` (1), `people/employment-types.js` (1), `photos/photos.js` (1), `sales/job-costs.js` (1), `sales/sales-calc.js` (1), `sites/roll-call.js` (1), `sites/summary.js` (1)
 - **Used by 1 files**
