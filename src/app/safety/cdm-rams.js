@@ -1,7 +1,8 @@
 /* ================= CDM RAMS: the RAMS a job's ticked hazards need, made and filed from the CDM page ================= */
 import { bossName, coName } from "../core/company-names.js";
-import { $, esc, iso, toast } from "../core/helpers.js";
+import { $, esc, iso, store, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
 import { uploadErr, uploadFile } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { allTeam } from "../owner/owner.js";
@@ -493,16 +494,16 @@ const CDMRA = (() => {
      it's for and Claude do the rest") */
   const ownHtml = () =>
     `<div class="cdm-raown"><b>+ A RAMS that isn't on the list</b><div class="actions" style="margin:4px 0 0"><button type="button" class="btn" id="cdm-raown1">✍ Fill it in myself</button><button type="button" class="btn" id="cdm-raown2">✨ Claude writes it</button></div><div class="who">Either way it opens in the RAMS form to check and save, and is filed in this site's RAMS like the others.</div></div>`;
-  function boxHtml(site, risks) {
-    return boxHtml0(site, risks).replace(/<\/div>$/, ownHtml() + "</div>");
+  function boxHtml(site, risks, onSite) {
+    return boxHtml0(site, risks, onSite).replace(/<\/div>$/, ownHtml() + "</div>");
   }
-  function boxHtml0(site, risks) {
+  function boxHtml0(site, risks, onSite) {
     const need = needed(risks);
     const got = have(site);
     const todo = need.filter((k) => !got.has(k));
     const done = need.filter((k) => got.has(k));
     if (!need.length)
-      return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b><div class="who">Tick the hazards above and the RAMS this job needs show here, ready to make in one tap.</div></div>`;
+      return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b><div class="who">${onSite ? "No hazards ticked for this job yet. Tick them in 🦺 Health &amp; safety › CDM documents and the RAMS they need show here – or make one below." : "Tick the hazards above and the RAMS this job needs show here, ready to make in one tap."}</div></div>`;
     return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b>
       ${done.length ? `<div class="who">✓ Already on ${esc(site)}: ${done.map((k) => esc(LIB[k].activity)).join(" · ")}</div>` : ""}
       ${todo.length ? `<div class="who">To make: ${todo.map((k) => `<b>${esc(LIB[k].activity)}</b>`).join(" · ")}</div><button type="button" class="btn primary" id="cdm-mkra">📝 Make ${todo.length === 1 ? "the RAMS" : "these " + todo.length + " RAMS"} and file ${todo.length === 1 ? "it" : "them"} in ${esc(site)} › RAMS</button><div class="who">Written from the hazards, with controls, PPE, permits and a step-by-step method – check them and add anything specific to this job.</div>` : `<div class="who">✓ Every hazard ticked has its RAMS on this site.</div>`}</div>`;
@@ -710,5 +711,51 @@ Reply with JSON only, in this shape:
     }
     return n;
   }
-  return { boxHtml, make, file, wireOwn, claudeDraft, hazardsFromRams, needed, have, LIB };
+  /* the same box on each site's RAMS tab (James, Nov 2026: "add that to rams tab too"): the hazards saved on the
+     site's CDM page, plus those its RAMS already cover */
+  function siteCd(site) {
+    const rec = (S.cdmRecs || []).find((x) => same(x.site, site));
+    const cd = Object.assign({}, store.get("jeb.cdm." + site, null) || {}, (rec && rec.cd) || {});
+    cd.risks = Object.assign({}, cd.risks || {});
+    hazardsFromRams(site).forEach((k) => (cd.risks[k] = 1));
+    return cd;
+  }
+  const siteBoxHtml = (site) =>
+    `<div id="pj-rabox">${boxHtml(site, siteCd(site).risks, true)}</div>`;
+  function wireSite(site) {
+    if (!$("pj-rabox")) return;
+    const cd = siteCd(site);
+    const b = $("cdm-mkra");
+    if (b)
+      b.onclick = async () => {
+        b.disabled = true;
+        b.textContent = "Making the RAMS…";
+        try {
+          const n = await make(site, cd.risks, cd);
+          toast(`${n} RAMS made and filed in ${site} › RAMS`);
+        } catch (e) {
+          toast("Couldn't make them: " + uploadErr(e));
+        }
+        render();
+      };
+    wireOwn(
+      site,
+      cd,
+      async () => {},
+      () => render(),
+    );
+  }
+  return {
+    boxHtml,
+    siteBoxHtml,
+    wireSite,
+    make,
+    file,
+    wireOwn,
+    claudeDraft,
+    hazardsFromRams,
+    needed,
+    have,
+    LIB,
+  };
 })();

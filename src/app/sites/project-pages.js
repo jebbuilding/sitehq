@@ -19,6 +19,7 @@ import { pgHtml, pgRec, pgWire } from "../planner/programme.js";
 import { planEntries } from "../planner/time-off.js";
 import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv, matCard, openMat, rcRow, wireReceipts } from "../purchasing/materials-receipts.js";
+import { CDMRA } from "../safety/cdm-rams.js";
 import { ramsMaker } from "../safety/rams-maker.js";
 import { indFor, indSectionWithId, wireInduction } from "../safety/site-inductions.js";
 import { bcHtml, bcWire } from "./building-control.js";
@@ -240,6 +241,7 @@ function ownerProjects() {
       dPlans,
     );
   P.rams =
+    CDMRA.siteBoxHtml(site) +
     `<div class="notice ramsmk"><b>📝 Make RAMS for this site</b><span class="who">Start from your existing RAMS, tick the ones this job needs and fill in the blanks (address, client, dates, first aiders…). They're saved here as Word files.</span><button type="button" class="btn primary" id="mkrams">📝 Make RAMS from my set</button></div>` +
     dSec(
       "rams",
@@ -382,6 +384,7 @@ function ownerProjects() {
   wireSiteSum(site);
   wireSiteNameBar(site);
   if ($("mkrams")) $("mkrams").onclick = () => ramsMaker(site);
+  CDMRA.wireSite(site);
   if ($("jk-open")) $("jk-open").onclick = () => jkOpen(site);
   if ($("sq-new")) $("sq-new").onclick = () => sqOpen(site);
   if ($("sq-new2")) $("sq-new2").onclick = () => sqOpen(site);
