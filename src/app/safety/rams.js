@@ -6,11 +6,13 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
+import { uploadErr } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { meBtn, meInfo } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
+import { CDMRA } from "./cdm-rams.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 export { RA_PERMITS, RA_PPE, RA_WHO, openRaForm, raAll, raBlock, raPdf, viewRa, wireRa };
@@ -327,7 +329,14 @@ function viewRa(r, owner) {
     ["Permits needed", r.permit],
   ].filter((x) => x[1]);
   const m = r.method || {};
-  openViewer(`<span class="tag">Risk assessment &amp; method statement</span><h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 6px;color:var(--accent);text-transform:uppercase">${esc(r.activity)}</h3>
+  const filedDoc = (S.docs || []).find((d) => d.cat === "rams" && d.raId && d.raId === r.id);
+  const filedLine =
+    !owner || !r.site
+      ? ""
+      : filedDoc
+        ? `<div class="notice" style="margin:4px 0 8px">📂 Filed in <b>${esc(r.site)} › RAMS</b> for the trades to read and sign. <button type="button" class="linkbtn" id="rv-site">Open the site's RAMS</button></div>`
+        : `<div class="notice warn" style="margin:4px 0 8px">Not in ${esc(r.site)} › RAMS yet, so the trades on the site can't read and sign it. <button type="button" class="btn primary" id="rv-file">📂 File it in ${esc(r.site)} › RAMS</button></div>`;
+  openViewer(`<span class="tag">Risk assessment &amp; method statement</span><h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 6px;color:var(--accent);text-transform:uppercase">${esc(r.activity)}</h3>${filedLine}
     <div class="details">${rows.map(([l, v]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join("")}</div>
     <div class="flabel" style="margin-top:12px">Risk assessment</div>
     ${(r.rows || [])
@@ -369,12 +378,44 @@ function viewRa(r, owner) {
     c.id = "copy";
     openRaForm(c);
   };
+  if ($("rv-site"))
+    $("rv-site").onclick = () => {
+      closeViewer();
+      S.otab = "projects";
+      S.f.projList = false;
+      S.f.proj = r.site;
+      render();
+      S.f.pjtab = "rams";
+      render();
+    };
+  if ($("rv-file"))
+    $("rv-file").onclick = async () => {
+      $("rv-file").disabled = true;
+      try {
+        await CDMRA.file(r.site, r);
+        closeViewer();
+        toast("Filed in " + r.site + " › RAMS");
+      } catch (e) {
+        $("rv-file").disabled = false;
+        toast("Couldn't file it: " + uploadErr(e));
+      }
+    };
   if ($("rv-review"))
     $("rv-review").onclick = async () => {
       try {
         await S.db.doc(raPath(r)).update({ reviewedAt: Date.now(), reviewedBy: bossName() });
+        /* reviewed: into the site's RAMS for everyone there to read and sign */
+        let filed = false;
+        if (r.site && !filedDoc)
+          try {
+            await CDMRA.file(
+              r.site,
+              Object.assign({}, r, { reviewedAt: Date.now(), reviewedBy: bossName() }),
+            );
+            filed = true;
+          } catch (e) {}
         closeViewer();
-        toast("Marked as reviewed");
+        toast(filed ? "Reviewed and filed in " + r.site + " › RAMS" : "Marked as reviewed");
       } catch (e) {
         toast("Couldn't save");
       }

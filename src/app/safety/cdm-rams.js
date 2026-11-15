@@ -492,12 +492,13 @@ const CDMRA = (() => {
   ];
   /* a RAMS that isn't on the list (James, Nov 2026: "option 1 fill in everything manually, 2nd option fill in what
      it's for and Claude do the rest") */
-  const ownHtml = () =>
-    `<div class="cdm-raown"><b>+ A RAMS that isn't on the list</b><div class="actions" style="margin:4px 0 0"><button type="button" class="btn" id="cdm-raown1">✍ Fill it in myself</button><button type="button" class="btn" id="cdm-raown2">✨ Claude writes it</button></div><div class="who">Either way it opens in the RAMS form to check and save, and is filed in this site's RAMS like the others.</div></div>`;
-  function boxHtml(site, risks, onSite) {
-    return boxHtml0(site, risks, onSite).replace(/<\/div>$/, ownHtml() + "</div>");
+  const ownHtml = (px) =>
+    `<div class="cdm-raown"><b>+ A RAMS that isn't on the list</b><div class="actions" style="margin:4px 0 0"><button type="button" class="btn" id="${px}-raown1">✍ Fill it in myself</button><button type="button" class="btn" id="${px}-raown2">✨ Claude writes it</button></div><div class="who">Either way it opens in the RAMS form to check and save, and is filed in this site's RAMS like the others.</div></div>`;
+  function boxHtml(site, risks, onSite, px) {
+    px = px || "cdm";
+    return boxHtml0(site, risks, onSite, px).replace(/<\/div>$/, ownHtml(px) + "</div>");
   }
-  function boxHtml0(site, risks, onSite) {
+  function boxHtml0(site, risks, onSite, px) {
     const need = needed(risks);
     const got = have(site);
     const todo = need.filter((k) => !got.has(k));
@@ -506,7 +507,7 @@ const CDMRA = (() => {
       return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b><div class="who">${onSite ? "No hazards ticked for this job yet. Tick them in 🦺 Health &amp; safety › CDM documents and the RAMS they need show here – or make one below." : "Tick the hazards above and the RAMS this job needs show here, ready to make in one tap."}</div></div>`;
     return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b>
       ${done.length ? `<div class="who">✓ Already on ${esc(site)}: ${done.map((k) => esc(LIB[k].activity)).join(" · ")}</div>` : ""}
-      ${todo.length ? `<div class="who">To make: ${todo.map((k) => `<b>${esc(LIB[k].activity)}</b>`).join(" · ")}</div><button type="button" class="btn primary" id="cdm-mkra">📝 Make ${todo.length === 1 ? "the RAMS" : "these " + todo.length + " RAMS"} and file ${todo.length === 1 ? "it" : "them"} in ${esc(site)} › RAMS</button><div class="who">Written from the hazards, with controls, PPE, permits and a step-by-step method – check them and add anything specific to this job.</div>` : `<div class="who">✓ Every hazard ticked has its RAMS on this site.</div>`}</div>`;
+      ${todo.length ? `<div class="who">To make: ${todo.map((k) => `<b>${esc(LIB[k].activity)}</b>`).join(" · ")}</div><button type="button" class="btn primary" id="${px}-mkra">📝 Make ${todo.length === 1 ? "the RAMS" : "these " + todo.length + " RAMS"} and file ${todo.length === 1 ? "it" : "them"} in ${esc(site)} › RAMS</button><div class="who">Written from the hazards, with controls, PPE, permits and a step-by-step method – check them and add anything specific to this job.</div>` : `<div class="who">✓ Every hazard ticked has its RAMS on this site.</div>`}</div>`;
   }
   /* file a risk assessment in the site's RAMS as a PDF (for one made by hand or by Claude) */
   async function file(site, d) {
@@ -589,7 +590,8 @@ Reply with JSON only, in this shape:
     });
   }
   /* the box's two buttons; reopen(): back to the CDM page afterwards */
-  function wireOwn(site, cd, beforeLeave, reopen) {
+  function wireOwn(site, cd, beforeLeave, reopen, px) {
+    px = px || "cdm";
     const done = async (d) => {
       try {
         await file(site, d);
@@ -599,13 +601,13 @@ Reply with JSON only, in this shape:
       }
       reopen();
     };
-    const b1 = $("cdm-raown1");
+    const b1 = $(px + "-raown1");
     if (b1)
       b1.onclick = async () => {
         await beforeLeave();
         openRaForm(blank(site, cd), done);
       };
-    const b2 = $("cdm-raown2");
+    const b2 = $(px + "-raown2");
     if (b2)
       b2.onclick = () => {
         const box = document.createElement("div");
@@ -616,7 +618,14 @@ Reply with JSON only, in this shape:
           <div class="who" id="cdm-raerr" style="color:var(--danger)"></div>
           <div class="actions"><button type="button" class="btn" id="cdm-rax">Cancel</button><button type="button" class="btn primary" id="cdm-rago">✨ Write it</button></div></div>`;
         document.body.appendChild(box);
-        const close = () => box.remove();
+        const esc0 = (e) => {
+          if (e.key === "Escape") close();
+        };
+        const close = () => {
+          box.remove();
+          document.removeEventListener("keydown", esc0);
+        };
+        document.addEventListener("keydown", esc0);
         box.querySelector("#cdm-rax").onclick = close;
         box.querySelector("#cdm-raw").focus();
         box.querySelector("#cdm-rago").onclick = async () => {
@@ -720,12 +729,13 @@ Reply with JSON only, in this shape:
     hazardsFromRams(site).forEach((k) => (cd.risks[k] = 1));
     return cd;
   }
-  const siteBoxHtml = (site) =>
-    `<div id="pj-rabox">${boxHtml(site, siteCd(site).risks, true)}</div>`;
-  function wireSite(site) {
-    if (!$("pj-rabox")) return;
+  const siteBoxHtml = (site, id) =>
+    `<div id="${id || "pj-rabox"}">${boxHtml(site, siteCd(site).risks, true, (id || "pj-rabox").split("-")[0])}</div>`;
+  function wireSite(site, id) {
+    if (!$(id || "pj-rabox")) return;
     const cd = siteCd(site);
-    const b = $("cdm-mkra");
+    const px = (id || "pj-rabox").split("-")[0];
+    const b = $(px + "-mkra");
     if (b)
       b.onclick = async () => {
         b.disabled = true;
@@ -743,6 +753,7 @@ Reply with JSON only, in this shape:
       cd,
       async () => {},
       () => render(),
+      px,
     );
   }
   return {

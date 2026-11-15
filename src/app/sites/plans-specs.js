@@ -9,7 +9,8 @@ import { saveAsset } from "../files/files.js";
 import { FC, openFile } from "../files/in-app-files.js";
 import { submitJob } from "../files/outbox.js";
 import { BIN_DAYS, binDelete, binIsImg } from "../owner/deleted-items.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { viewRa } from "../safety/rams.js";
 import { sigPad } from "../safety/site-inductions.js";
 import { cdmShare, docMove } from "./doc-visibility.js";
 import { empSitesView, plansView0 } from "./trade-sites.js";
@@ -64,7 +65,7 @@ function docRow(d, owner) {
     ${s ? `<div class="sub">You signed this on ${stamp(s.signedAt)}</div>` : ""}
     <div class="filerow"><button type="button" class="pillbtn d-open">Open</button>${(d.versions || []).length ? `<button type="button" class="pillbtn d-vers">🕘 Previous versions (${d.versions.length})</button><span class="tag ok">Rev ${(d.versions || []).length + 1} · latest</span>` : ""}${FC.ids.has(d.assetId) ? '<span class="who">Kept in the app</span>' : ""}${owner ? `<button type="button" class="pillbtn d-save">Download</button><button type="button" class="pillbtn d-share">👁 Who can see</button><button type="button" class="pillbtn d-move">📁 Move</button>` : ""}
     ${!owner && d.cat === "rams" && !s && RAMS_SIGN ? `<button type="button" class="btn primary d-sign" style="padding:7px 14px">Read and sign</button>` : ""}
-    ${owner ? `<button type="button" class="linkdanger d-del">Remove</button>` : ""}</div></div></div>`;
+    ${owner && d.cat === "rams" && d.raId ? `<button type="button" class="pillbtn d-ra">📋 Edit / brief</button>` : ""}${owner ? `<button type="button" class="linkdanger d-del">Remove</button>` : ""}</div></div></div>`;
 }
 function wireDocs(owner) {
   $("main")
@@ -72,6 +73,13 @@ function wireDocs(owner) {
     .forEach((row) => {
       const d = S.docs.find((x) => x.id === row.dataset.d);
       if (!d) return;
+      const ra = row.querySelector(".d-ra");
+      if (ra)
+        ra.onclick = () => {
+          const r = allTeam("signoffs").find((x) => x.type === "ra" && x.id === d.raId);
+          if (r) viewRa(r, true);
+          else toast("That risk assessment has been removed");
+        };
       row.querySelector(".d-open").onclick = () =>
         openFile(d.assetId, d.fileName || d.title, d.contentType);
       const sv = row.querySelector(".d-save");

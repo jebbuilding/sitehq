@@ -12,9 +12,9 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { noBin } from "../owner/deleted-items.js";
 import { nameOf, teamIds } from "../owner/owner.js";
+import { CDMRA } from "../safety/cdm-rams.js";
 import { cdmMaker, cdmSignState } from "../safety/cdm.js";
 import { ramsMaker, ramsTemplates, ukDate } from "../safety/rams-maker.js";
-import { raBlock, wireRa } from "../safety/rams.js";
 import { indFor } from "../safety/site-inductions.js";
 import { same } from "./project-pages.js";
 export { cdmShare, docFolders, docMove, drawShare, hsView };
@@ -338,7 +338,10 @@ function drawShare(p, upd) {
 function hsView() {
   const sites = siteNames().filter(liveSite);
   const tpl = ramsTemplates();
-  const rams = (n) => (S.docs || []).filter((d) => d.cat === "rams" && same(d.site, n)).length;
+  const rams = (n) =>
+    (S.docs || []).filter((d) => d.cat === "rams" && same(d.site, n) && d.path !== "CDM").length;
+  const cdmN = (n) =>
+    (S.docs || []).filter((d) => d.cat === "rams" && same(d.site, n) && d.path === "CDM").length;
   const lg = (S.settings || {}).legal || null;
   const lgNew = lg && (lg.items || []).filter((x) => !(lg.seen || []).includes(x.id));
   $("main").innerHTML =
@@ -347,10 +350,9 @@ function hsView() {
       ${sites.length ? `<div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Site<select id="hs-cdmsite">${sites.map((n) => `<option>${esc(n)}</option>`).join("")}</select></label><button type="button" class="btn primary" id="hs-cdm">🏛️ Make CDM documents</button></div><div id="hs-cdmmade"></div>` : '<div class="who">Add a site first.</div>'}</div></div>
     <div class="card"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">📝 Make RAMS for a site</b>
       <div class="who">${tpl.length ? `Copies your ${tpl.length} Word RAMS to a site: tick the ones the job needs and fill in the blanks (address, client, dates, first aiders…).` : "Upload your RAMS as Word files to any site first (Sites › the site › RAMS). Then you can copy them to new sites from here."}</div>
-      ${sites.length ? `<div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Site<select id="hs-site">${sites.map((n) => `<option>${esc(n)}</option>`).join("")}</select></label><button type="button" class="btn primary" id="hs-mk" ${tpl.length ? "" : "disabled"}>📝 Make RAMS</button></div><div id="hs-ramsmade"></div>` : '<div class="who">Add a site first.</div>'}</div></div>
+      ${sites.length ? `<div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Site<select id="hs-site">${sites.map((n) => `<option${n === S.f.hsSite ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label><button type="button" class="btn" id="hs-mk" ${tpl.length ? "" : "disabled"}>📝 Make from my Word RAMS</button></div><div id="hs-rawrap"></div><div id="hs-ramsmade"></div>` : '<div class="who">Add a site first.</div>'}</div></div>
     <div class="card"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">📂 RAMS on your sites</b>
-      ${sites.map((n) => `<button type="button" class="incrow hs-rams" data-s="${esc(n)}" style="border-left-color:${rams(n) ? "var(--ok)" : "var(--danger)"}"><span><b>${esc(n)}</b><br><span class="who">${rams(n) ? rams(n) + " RAMS" : "No RAMS yet"} · ${indFor(n) ? "Induction set up" : "No induction yet"}</span></span><span aria-hidden="true">›</span></button>`).join("") || '<div class="who">No sites yet.</div>'}</div></div>
-    <div class="card"><div class="cardbody" style="border:0">${raBlock(true)}</div></div>
+      ${sites.map((n) => `<button type="button" class="incrow hs-rams" data-s="${esc(n)}" style="border-left-color:${rams(n) ? "var(--ok)" : "var(--danger)"}"><span><b>${esc(n)}</b><br><span class="who">${rams(n) ? rams(n) + " RAMS" : "No RAMS yet"}${cdmN(n) ? " · " + cdmN(n) + " CDM document" + (cdmN(n) === 1 ? "" : "s") : ""} · ${indFor(n) ? "Induction set up" : "No induction yet"}</span></span><span aria-hidden="true">›</span></button>`).join("") || '<div class="who">No sites yet.</div>'}</div></div>
     <div class="card"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">🛡️ Policies &amp; insurance</b><div class="who">${(S.policies || []).length} document${(S.policies || []).length === 1 ? "" : "s"} that everyone on the app can read.</div><div class="actions"><button type="button" class="btn" id="hs-pol">Open Policies &amp; insurance ›</button><button type="button" class="btn" id="hs-inc">⚠️ Accidents &amp; near misses ›</button></div></div></div>
     <div class="card ${lgNew && lgNew.length ? "lgnew" : ""}"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">📜 Legislation watch</b>
       <div class="who">Checked every month for changes to CDM 2015, health &amp; safety law, HSE guidance and the Building Regulations.${lg && lg.checkedAt ? ` Last checked <b>${esc(stamp(lg.checkedAt))}</b>.` : " The first check runs soon."}</div>
@@ -407,6 +409,15 @@ function hsView() {
     f();
   }
   if ($("hs-site")) {
+    /* the RAMS the site's hazards need, and a RAMS that isn't on the list, for the site picked (James, Nov 2026) */
+    const box = () => {
+      const s = $("hs-site").value;
+      S.f.hsSite = s;
+      $("hs-rawrap").innerHTML = CDMRA.siteBoxHtml(s, "hs-rabox");
+      CDMRA.wireSite(s, "hs-rabox");
+    };
+    $("hs-site").addEventListener("change", box);
+    box();
     const f = () => madeList($("hs-ramsmade"), $("hs-site").value, false);
     $("hs-site").addEventListener("change", f);
     f();
@@ -453,7 +464,4 @@ function hsView() {
     render();
     window.scrollTo(0, 0);
   };
-  try {
-    wireRa(true);
-  } catch (e) {}
 }

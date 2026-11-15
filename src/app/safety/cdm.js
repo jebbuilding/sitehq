@@ -164,7 +164,14 @@ function cdmScaleOpen(cd, onPick) {
     <div class="who">A single big hazard can need more planning whatever the level – use your judgement.</div>
     <div class="actions"><button type="button" class="btn" id="cdm-scx">Close</button></div></div>`;
   document.body.appendChild(box);
-  const close = () => box.remove();
+  const esc0 = (e) => {
+    if (e.key === "Escape") close();
+  };
+  const close = () => {
+    box.remove();
+    document.removeEventListener("keydown", esc0);
+  };
+  document.addEventListener("keydown", esc0);
   box.querySelector("#cdm-scx").onclick = close;
   box.onclick = (e) => {
     if (e.target === box) close();
