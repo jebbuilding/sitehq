@@ -4,7 +4,7 @@ import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { mjHas } from "../clients/more-jobs.js";
 import { ptOf } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
-import { $, addDays, esc, gbp, iso, shortDay } from "../core/helpers.js";
+import { $, addDays, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl } from "../files/files.js";
@@ -63,9 +63,14 @@ function jbView() {
           : j.start && j.start > today
             ? "Starts " + shortDay(j.start)
             : (siteClient(n) || {}).name || "";
-      return { n, k, sub: [sub, k ? k + " on site" : ""].filter(Boolean).join(" · ") };
+      return {
+        n,
+        k,
+        hold: !!sr.hold,
+        sub: [sub, k ? k + " on site" : ""].filter(Boolean).join(" · "),
+      };
     })
-    .sort((a, b) => b.k - a.k || a.n.localeCompare(b.n));
+    .sort((a, b) => a.hold - b.hold || b.k - a.k || a.n.localeCompare(b.n));
   const sel = list.find((x) => x.n === S.f.jbSel) ? S.f.jbSel : list.length ? list[0].n : "";
   $("main").innerHTML = `<div class="jb-page">${seg}
     ${
@@ -73,7 +78,7 @@ function jbView() {
         ? `<div class="jb-two"><section class="jb-list" aria-label="Jobs">${list
             .map(
               (x) =>
-                `<button type="button" class="jb-item" data-s="${esc(x.n)}"${x.n === sel ? ' aria-current="true"' : ""}><b>${esc(siteLabel(x.n))}</b><small>${esc([jobNameOf(x.n) ? x.n : "", x.sub].filter(Boolean).join(" · "))}</small></button>`,
+                `<button type="button" class="jb-item${x.hold ? " jb-held" : ""}" data-s="${esc(x.n)}"${x.n === sel ? ' aria-current="true"' : ""}><b>${esc(siteLabel(x.n))}</b><small>${x.hold ? '<span class="tag">🙈 Hidden for now</span> ' : ""}${esc([jobNameOf(x.n) ? x.n : "", x.sub].filter(Boolean).join(" · "))}</small></button>`,
             )
             .join("")}</section>${jbJobHtml(sel)}</div>`
         : `<div class="empty"><strong>No live jobs</strong>Add a site in Setup, or make an enquiry into a site.</div>`
@@ -152,7 +157,7 @@ function jbJobHtml(n) {
     .filter(Boolean)
     .join(" · ");
   return `<section class="jb-job" aria-label="${esc(n)}">
-    <div class="jb-card"><div class="jb-head"><div><h2>${esc(n)}</h2><span class="who">${esc(dates || "No client or dates yet")}</span></div>
+    <div class="jb-card"><div class="jb-head"><div><h2>${esc(n)}</h2><span class="who">${esc(dates || "No client or dates yet")}</span><label class="jb-hide"><input type="checkbox" id="jb-hide"${sr.hold ? " checked" : ""}> <span><b>Hide for now</b> – nobody else sees this job (trades, the planner, sign-in) until you untick it</span></label></div>
       <div class="jb-acts">${c ? `<button type="button" class="btn" id="jb-msg">Message client</button><button type="button" class="btn primary" id="jb-sign">Sign-off to client</button>` : ""}<button type="button" class="btn" id="jb-open">Open the site page</button></div></div>
       <div class="jb-stages" role="group" aria-label="Stages – tap one to sign it off">${st
         .map(
@@ -190,6 +195,14 @@ function jbWireJob(n) {
     nlGo("projects");
   };
   $("jb-open").onclick = () => openSite();
+  $("jb-hide").onchange = async (e) => {
+    if (!sr.id) return toast("Save this site in Setup first.");
+    const on = e.target.checked;
+    await S.db.doc("sites/" + sr.id).update({ hold: on, holdAt: on ? Date.now() : null });
+    toast(
+      on ? "Hidden for now – only you can see this job" : "Everyone on it can see this job again",
+    );
+  };
   $("jb-photos").onclick = () => openSite("photos");
   $("jb-costs").onclick = () => {
     S.f.act = "jobs";

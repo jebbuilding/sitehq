@@ -17,6 +17,7 @@ export {
   ownerMode,
   siteGone,
   siteNames,
+  siteOnHold,
   weekDays,
 };
 const S = {
@@ -69,12 +70,15 @@ function weekDays() {
   return Array.from({ length: 7 }, (_, i) => addDays(S.week, i));
 }
 const siteNames = () => {
-  const all = S.sites.filter((x) => !x.archived).map((x) => x.name);
+  const all = S.sites.filter((x) => !x.archived && !(x.hold && !ownerMode())).map((x) => x.name);
   /* Setup › People & access: a trade set to "only these jobs" gets just those */
   const mine = acMySites();
   return mine ? all.filter((n) => mine.some((m) => same(m, n))) : all;
 };
 const archivedSites = () => (S.sites || []).filter((x) => x.archived);
+/* a job the owner has ticked "Hide for now" on the jobs page: nobody but the owner sees it until it's unticked */
+const siteOnHold = (n) => !!n && (S.sites || []).some((x) => x.hold && same(x.name, n));
+const holdHid = (n) => !S.owner && siteOnHold(n);
 /* completed or rejected jobs (and their sites) don't appear in drop-downs */
 /* a site you've deleted: its name is hidden everywhere (unless a new site is later made with the same name) */
 const siteGone = (n) =>
@@ -103,16 +107,22 @@ function applyGone() {
         (d) =>
           !isPolDoc(d) &&
           !siteGone(d.site) &&
+          !holdHid(d.site) &&
           (S.owner || !(d.who || []).length || (d.who || []).includes(S.me)),
       );
     S.policies = (RAW.docs || []).filter(isPolDoc);
   }
-  if (RAW.inductions) S.inductions = RAW.inductions.filter((i) => !siteGone(i.site));
-  if (RAW.plan) S.plan = RAW.plan.filter((p) => !siteGone(p.site) && !clientGone(p.clientId));
+  if (RAW.inductions)
+    S.inductions = RAW.inductions.filter((i) => !siteGone(i.site) && !holdHid(i.site));
+  if (RAW.plan)
+    S.plan = RAW.plan.filter(
+      (p) => !siteGone(p.site) && !holdHid(p.site) && !clientGone(p.clientId),
+    );
   if (RAW.planPrivate)
     S.planPrivate = RAW.planPrivate.filter((p) => !siteGone(p.site) && !clientGone(p.clientId));
-  if (RAW.jobs) S.jobs = RAW.jobs.filter((j) => !siteGone(j.site));
-  if (RAW.chats) S.chats = RAW.chats.filter((c) => !(c.site && siteGone(c.site)));
+  if (RAW.jobs) S.jobs = RAW.jobs.filter((j) => !siteGone(j.site) && !holdHid(j.site));
+  if (RAW.chats)
+    S.chats = RAW.chats.filter((c) => !(c.site && (siteGone(c.site) || holdHid(c.site))));
 }
 const clActive = (c) => c && !["done", "lost"].includes(c.stage);
 const isArchivedSite = (n) => archivedSites().some((x) => same(x.name, n));

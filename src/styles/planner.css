@@ -168,3 +168,15 @@
 .pbs-fold{border:0;background:none;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;min-height:28px;display:flex;align-items:center;gap:4px}
 .pbs-row .pbs-name .pbs-sn{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pbs-sum{position:absolute;top:13px;height:14px;border-radius:7px;background:color-mix(in srgb,var(--pc) 35%,var(--surface));border:1px solid var(--pc)}
+
+/* planner › Day: all-day stages stay in view when the hours are scrolled; a heading per group of people */
+.dy-lane>.dy-allday{position:sticky;left:150px;right:auto;top:auto;margin-top:2px;width:max-content;max-width:calc(100vw - 200px);flex-wrap:wrap;overflow:visible;padding:0 4px}
+@media (max-width:520px){.dy-lane>.dy-allday{left:92px;max-width:calc(100vw - 120px)}}
+.dy-grp{position:sticky;left:0;width:max-content;padding:10px 10px 4px;font-size:13.5px;background:transparent}
+.pl-needs{font-size:12px;color:var(--muted);margin:6px 0 2px}
+/* planner › Jobs: a stage with people on it shows its name and who, both in full view */
+.pbs-row.pbs-stage{height:auto;min-height:34px}
+.pbs-row.pbs-stage .pbs-name{padding:3px 10px;line-height:1.25}
+.pbs-row.pbs-stage .pbs-name small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* planner › Day on a phone: the hours line up with the narrower name column */
+@media (max-width:520px){.dy-board .dy-corner{width:92px}}

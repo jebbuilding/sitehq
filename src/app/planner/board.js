@@ -71,6 +71,7 @@ export {
   pbPlanWeek,
   pbSiteOf,
   pbSiteShort,
+  pbStageName,
   plannerView,
   siteHue,
   wireLeave,

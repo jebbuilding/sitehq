@@ -1,7 +1,7 @@
 /* ================= OWNER: SITE PROJECT PAGES ================= */
 import { chatTitle, ensureSiteChat, openChat, siteMessages } from "../chat/chat.js";
 import { $, addDays, esc, gbp, hrs, iso, monday, shortDay, stamp, toast } from "../core/helpers.js";
-import { S, isArchivedSite, siteNames } from "../core/state.js";
+import { S, isArchivedSite, ownerMode, siteNames, siteOnHold } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl, csvSave } from "../files/files.js";
 import { deleteSiteFlow } from "../owner/delete-client-site.js";
@@ -61,6 +61,7 @@ function projectSites() {
   });
   [...set].forEach((n) => {
     if (isArchivedSite(n) && !same(n, S.f.proj)) set.delete(n);
+    if (siteOnHold(n) && !ownerMode()) set.delete(n);
   });
   if (S.f.proj && isArchivedSite(S.f.proj)) set.add(S.f.proj);
   const gone = (S.settings || {}).deletedSites || [];

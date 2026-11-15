@@ -259,3 +259,9 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .acs-card .acs-step{min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
 .acs-card .acs-step[aria-pressed="true"]{background:var(--soft)}
 .acs-card .acs-tick{font-weight:700;color:var(--accent)}
+
+/* jobs page: Hide for now */
+.jb-hide{display:flex;flex-direction:row;align-items:flex-start;font-weight:400;gap:8px;margin-top:8px;font-size:13.5px;color:var(--muted);cursor:pointer;min-height:44px}
+.jb-hide input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--accent)}
+.jb-hide b{color:var(--ink)}
+.jb-item.jb-held{opacity:.65}
