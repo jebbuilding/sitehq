@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 221 files, 4341 KB, 110768 lines.
-- 2277 names declared at the top level (the shared scope); 1143 of them are used by a file other than the one that declares them.
+- 221 files, 4349 KB, 110930 lines.
+- 2277 names declared at the top level (the shared scope); 1145 of them are used by a file other than the one that declares them.
 - 2445 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 204 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -20,8 +20,8 @@ The de facto shared API: names used by the most files.
 |---|---|---|
 | `S` | `core/state.js` | 181 files |
 | `esc` | `core/helpers.js` | 180 files |
-| `$` | `core/helpers.js` | 174 files |
-| `toast` | `core/helpers.js` | 153 files |
+| `$` | `core/helpers.js` | 175 files |
+| `toast` | `core/helpers.js` | 154 files |
 | `render` | `core/tabs-week.js` | 128 files |
 | `openSheet` | `core/sheet.js` | 113 files |
 | `closeForm` | `core/sheet.js` | 112 files |
@@ -43,9 +43,9 @@ The de facto shared API: names used by the most files.
 | `teamIds` | `owner/owner.js` | 43 files |
 | `same` | `sites/project-pages.js` | 41 files |
 | `addDays` | `core/helpers.js` | 40 files |
+| `uploadErr` | `files/files.js` | 40 files |
 | `loadJsPdf` | `safety/site-inductions.js` | 39 files |
 | `parse` | `core/helpers.js` | 39 files |
-| `uploadErr` | `files/files.js` | 39 files |
 | `openFile` | `files/in-app-files.js` | 38 files |
 | `closeViewer` | `core/viewer.js` | 37 files |
 | `BRGB` | `photos/photos.js` | 36 files |
@@ -377,7 +377,7 @@ BOOT: get the platform (database, user, files, downloads), work out who is signe
 COMPANY NAMES: the company's and account holder's names, from the company details
 
 - 35 lines, 1.4 KB. Declares 6 names, 5 used elsewhere.
-- **Used elsewhere:** `bossFirst` (51), `bossName` (20), `coName` (18), `coShort` (15), `coTown` (4)
+- **Used elsewhere:** `bossFirst` (51), `bossName` (20), `coName` (19), `coShort` (15), `coTown` (4)
 - **Uses names from 1 files:** `core/state.js` (1)
 - **Used by 67 files**
 
@@ -413,7 +413,7 @@ GENERIC FIELDS
 HELPERS: page lookups, dates, money and hours formatting, toast, working-day times, local storage
 
 - 123 lines, 3.3 KB. Declares 21 names, 20 used elsewhere.
-- **Used elsewhere:** `esc` (180), `$` (174), `toast` (153), `iso` (111), `shortDay` (71), `stamp` (52), `gbp` (51), `addDays` (40), `parse` (39), `store` (27), `hrs` (15), `monday` (14), `dayLabel` (6), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
+- **Used elsewhere:** `esc` (180), `$` (175), `toast` (154), `iso` (111), `shortDay` (71), `stamp` (52), `gbp` (51), `addDays` (40), `parse` (39), `store` (27), `hrs` (15), `monday` (14), `dayLabel` (6), `toMin` (5), `fsize` (4), `nowHM` (4), `calcHours` (3), `dayLine` (3), `lunchBreak` (3), `pad` (3)
 - **Uses names from 0 files:** none
 - **Used by 198 files**
 
@@ -791,7 +791,7 @@ FILE IT: save any PDF the app makes into a client's job file and/or a site's doc
 FILES
 
 - 195 lines, 6.5 KB. Declares 19 names, 12 used elsewhere.
-- **Used elsewhere:** `uploadFile` (52), `blobUrl` (48), `uploadErr` (39), `saveAsset` (15), `csvSave` (10), `isImg` (10), `isWord` (4), `assetBlob` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
+- **Used elsewhere:** `uploadFile` (52), `blobUrl` (48), `uploadErr` (40), `saveAsset` (15), `csvSave` (10), `isImg` (10), `isWord` (4), `assetBlob` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
 - **Uses names from 5 files:** `core/state.js` (2), `core/company-names.js` (1), `core/helpers.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1)
 - **Used by 86 files**
 
@@ -1429,16 +1429,16 @@ ACCIDENT & NEAR-MISS REPORTS
 
 CDM RAMS: the RAMS a job's ticked hazards need, made and filed from the CDM page
 
-- 566 lines, 23 KB. Declares 1 names, 1 used elsewhere.
+- 714 lines, 31 KB. Declares 1 names, 1 used elsewhere.
 - **Used elsewhere:** `CDMRA` (1)
-- **Uses names from 8 files:** `core/helpers.js` (2), `files/outbox.js` (2), `safety/rams.js` (2), `core/company-names.js` (1), `core/state.js` (1), `files/files.js` (1), `owner/owner.js` (1), `sites/project-pages.js` (1)
+- **Uses names from 8 files:** `safety/rams.js` (5), `core/helpers.js` (4), `core/company-names.js` (2), `files/files.js` (2), `files/outbox.js` (2), `core/state.js` (1), `owner/owner.js` (1), `sites/project-pages.js` (1)
 - **Used by 1 files**
 
 ### `safety/cdm.js`
 
 🏛️ CDM 2015 documents: duty holder appointments, pre-construction information, construction phase plan, CDM checklist, F10 check, H&S file index
 
-- 2404 lines, 103 KB. Declares 16 names, 2 used elsewhere.
+- 2413 lines, 103 KB. Declares 16 names, 2 used elsewhere.
 - **Used elsewhere:** `cdmMaker` (1), `cdmSignState` (1)
 - **Uses names from 19 files:** `core/helpers.js` (6), `core/sheet.js` (4), `core/state.js` (3), `photos/photos.js` (3), `files/files.js` (2), `safety/site-inductions.js` (2), `sales/letterhead-setup.js` (2), `clients/portal.js` (1), `clients/sign-offs.js` (1), `clients/stages-planner.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `owner/company-details.js` (1), `safety/cdm-rams.js` (1), `safety/rams-maker.js` (1), `sites/job-details.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
 - **Used by 1 files**
@@ -1501,8 +1501,8 @@ POLICIES & INSURANCE
 
 RISK ASSESSMENTS / RAMS (from James's CDM 2015 pack, 4.1)
 
-- 630 lines, 26 KB. Declares 15 names, 7 used elsewhere.
-- **Used elsewhere:** `raBlock` (2), `wireRa` (2), `openRaForm` (1), `RA_WHO` (1), `raAll` (1), `raPdf` (1), `viewRa` (1)
+- 635 lines, 26 KB. Declares 15 names, 9 used elsewhere.
+- **Used elsewhere:** `openRaForm` (2), `raBlock` (2), `wireRa` (2), `RA_PERMITS` (1), `RA_PPE` (1), `RA_WHO` (1), `raAll` (1), `raPdf` (1), `viewRa` (1)
 - **Uses names from 14 files:** `core/helpers.js` (6), `core/sheet.js` (4), `core/company-names.js` (3), `core/fields.js` (3), `core/state.js` (3), `core/viewer.js` (2), `files/outbox.js` (2), `owner/owner.js` (2), `people/personal-details.js` (2), `photos/photos.js` (2), `safety/site-inductions.js` (2), `sales/letterhead-setup.js` (2), `core/tabs-week.js` (1), `owner/company-details.js` (1)
 - **Used by 5 files**
 

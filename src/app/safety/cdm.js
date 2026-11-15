@@ -2175,6 +2175,15 @@ function cdmMaker(site0) {
           }
           raBox();
         };
+      CDMRA.wireOwn(
+        site,
+        cd,
+        async () => {
+          read();
+          await persist();
+        },
+        () => cdmMaker(site),
+      );
     };
     raBox();
     /* choosing a level (in the box or on the scale) ticks the documents that level needs; more can be ticked after */

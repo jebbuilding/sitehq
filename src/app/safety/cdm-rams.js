@@ -1,11 +1,11 @@
 /* ================= CDM RAMS: the RAMS a job's ticked hazards need, made and filed from the CDM page ================= */
-import { bossName } from "../core/company-names.js";
-import { esc, iso } from "../core/helpers.js";
+import { bossName, coName } from "../core/company-names.js";
+import { $, esc, iso, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
-import { uploadFile } from "../files/files.js";
+import { uploadErr, uploadFile } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { allTeam } from "../owner/owner.js";
-import { RA_WHO, raPdf } from "./rams.js";
+import { RA_PERMITS, RA_PPE, RA_WHO, openRaForm, raPdf } from "./rams.js";
 import { same } from "../sites/project-pages.js";
 export { CDMRA };
 /* James, Nov 2026: "we should have a box to auto make the rams … without going into the rams page but places them in
@@ -489,7 +489,14 @@ const CDMRA = (() => {
         .filter(Boolean),
     ),
   ];
+  /* a RAMS that isn't on the list (James, Nov 2026: "option 1 fill in everything manually, 2nd option fill in what
+     it's for and Claude do the rest") */
+  const ownHtml = () =>
+    `<div class="cdm-raown"><b>+ A RAMS that isn't on the list</b><div class="actions" style="margin:4px 0 0"><button type="button" class="btn" id="cdm-raown1">✍ Fill it in myself</button><button type="button" class="btn" id="cdm-raown2">✨ Claude writes it</button></div><div class="who">Either way it opens in the RAMS form to check and save, and is filed in this site's RAMS like the others.</div></div>`;
   function boxHtml(site, risks) {
+    return boxHtml0(site, risks).replace(/<\/div>$/, ownHtml() + "</div>");
+  }
+  function boxHtml0(site, risks) {
     const need = needed(risks);
     const got = have(site);
     const todo = need.filter((k) => !got.has(k));
@@ -499,6 +506,147 @@ const CDMRA = (() => {
     return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b>
       ${done.length ? `<div class="who">✓ Already on ${esc(site)}: ${done.map((k) => esc(LIB[k].activity)).join(" · ")}</div>` : ""}
       ${todo.length ? `<div class="who">To make: ${todo.map((k) => `<b>${esc(LIB[k].activity)}</b>`).join(" · ")}</div><button type="button" class="btn primary" id="cdm-mkra">📝 Make ${todo.length === 1 ? "the RAMS" : "these " + todo.length + " RAMS"} and file ${todo.length === 1 ? "it" : "them"} in ${esc(site)} › RAMS</button><div class="who">Written from the hazards, with controls, PPE, permits and a step-by-step method – check them and add anything specific to this job.</div>` : `<div class="who">✓ Every hazard ticked has its RAMS on this site.</div>`}</div>`;
+  }
+  /* file a risk assessment in the site's RAMS as a PDF (for one made by hand or by Claude) */
+  async function file(site, d) {
+    const pdf = await raPdf(d, true);
+    if (!pdf || !pdf.blob) return;
+    const up = await uploadFile(new File([pdf.blob], pdf.fn, { type: "application/pdf" }), pdf.fn);
+    await S.db.collection("docs").add({
+      site,
+      cat: "rams",
+      raId: d.id || "",
+      title: "RAMS - " + d.activity,
+      fileName: pdf.fn,
+      assetId: up.id,
+      contentType: "application/pdf",
+      size: pdf.blob.size,
+      uploaded: Date.now(),
+    });
+  }
+  /* a blank RAMS form for the site */
+  const blank = (site, cd) => ({
+    site,
+    rows: [],
+    atRisk: ["Operatives"],
+    ppe: ["Hard hat", "Hi-vis", "Safety boots", "Gloves"],
+    permit: "None",
+    method: { prep: "", seq: "", checks: "", finish: "" },
+    emergency: [
+      cd && cd.hospital ? "Nearest A&E: " + cd.hospital : "",
+      cd && cd.firstAid ? "First aider: " + cd.firstAid : "",
+      "In an emergency call 999 first.",
+    ]
+      .filter(Boolean)
+      .join(". "),
+  });
+  /* Claude writes a RAMS from a line saying what the work is; it comes back as the form's fields */
+  async function claudeDraft(site, what, cd) {
+    let sample = null;
+    try {
+      sample = await window.claude.use("sample");
+    } catch (e) {}
+    if (!sample) throw Object.assign(new Error("no claude"), { code: "no_claude" });
+    const hz = Object.keys((cd && cd.risks) || {}).join(", ");
+    const j = await sample.json(
+      `You are helping a UK building company (${coName()}) write a risk assessment and method statement (RAMS) under CDM 2015 for one activity on a construction site. Write it in plain, practical site English for the trades who will read and sign it.
+Activity: ${what}
+Site: ${site}${cd && cd.desc ? "\nThe job: " + cd.desc : ""}${hz ? "\nHazards already noted for the job: " + hz : ""}
+Reply with JSON only, in this shape:
+{"activity":"short title","atRisk":["Operatives","Client and family","Neighbours","Public" – only those that apply],"plant":"plant, tools and equipment","coshh":"materials / COSHH substances, or empty","ppe":[from "Hard hat","Hi-vis","Safety boots","Gloves","Eye protection","Ear protection","FFP3 dust mask","Harness"],"training":"training / cards needed","permit":"None" or "Hot work" or "Permit to dig" or "Other","rows":[{"h":"hazard","who":"Operatives" or "Everyone on site" or "Client and family" or "Neighbours" or "Public","l":likelihood 1-3 before controls,"s":severity 1-3,"c":"control measures","res":"Low" or "Medium" or "High" residual risk}] (3 to 8 rows),"method":{"prep":"preparation and site set-up","seq":"sequence of work, step by step","checks":"inspection / checks during work","finish":"completion, clear-up and handover"}}`,
+      { modelTier: "default" },
+    );
+    const b = blank(site, cd);
+    if (!j || typeof j !== "object") return b;
+    const pick = (v, ok) => (Array.isArray(v) ? v.filter((x) => ok.includes(x)) : []);
+    const n13 = (v) => Math.max(1, Math.min(3, Math.round(+v || 2)));
+    return Object.assign(b, {
+      activity: String(j.activity || what).slice(0, 120),
+      atRisk: pick(j.atRisk, RA_WHO).length ? pick(j.atRisk, RA_WHO) : b.atRisk,
+      plant: String(j.plant || "").slice(0, 300),
+      coshh: String(j.coshh || "").slice(0, 300),
+      ppe: pick(j.ppe, RA_PPE).length ? pick(j.ppe, RA_PPE) : b.ppe,
+      training: String(j.training || "").slice(0, 200),
+      permit: RA_PERMITS.includes(j.permit) ? j.permit : "None",
+      rows: (Array.isArray(j.rows) ? j.rows : [])
+        .filter((r) => r && r.h)
+        .slice(0, 10)
+        .map((r) => ({
+          h: String(r.h).slice(0, 200),
+          who: String(r.who || "Operatives"),
+          l: n13(r.l),
+          s: n13(r.s),
+          c: String(r.c || "").slice(0, 500),
+          res: ["Low", "Medium", "High"].includes(r.res) ? r.res : "Low",
+        })),
+      method: {
+        prep: String((j.method || {}).prep || "").slice(0, 2000),
+        seq: String((j.method || {}).seq || "").slice(0, 3000),
+        checks: String((j.method || {}).checks || "").slice(0, 2000),
+        finish: String((j.method || {}).finish || "").slice(0, 2000),
+      },
+    });
+  }
+  /* the box's two buttons; reopen(): back to the CDM page afterwards */
+  function wireOwn(site, cd, beforeLeave, reopen) {
+    const done = async (d) => {
+      try {
+        await file(site, d);
+        toast("RAMS filed in " + site + " › RAMS");
+      } catch (e) {
+        toast("Saved, but couldn't file the PDF: " + uploadErr(e));
+      }
+      reopen();
+    };
+    const b1 = $("cdm-raown1");
+    if (b1)
+      b1.onclick = async () => {
+        await beforeLeave();
+        openRaForm(blank(site, cd), done);
+      };
+    const b2 = $("cdm-raown2");
+    if (b2)
+      b2.onclick = () => {
+        const box = document.createElement("div");
+        box.className = "dimask";
+        box.innerHTML = `<div class="dimbox cdm-raai" role="dialog" aria-modal="true" aria-labelledby="cdm-rait"><h3 id="cdm-rait">✨ Claude writes the RAMS</h3>
+          <label for="cdm-raw">What's the work?<textarea id="cdm-raw" maxlength="500" rows="3" placeholder="e.g. Fitting a new staircase in an occupied house"></textarea></label>
+          <div class="who">Claude writes the hazards, controls, PPE, permits and the step-by-step method. It opens in the RAMS form for you to check and change before it's saved.</div>
+          <div class="who" id="cdm-raerr" style="color:var(--danger)"></div>
+          <div class="actions"><button type="button" class="btn" id="cdm-rax">Cancel</button><button type="button" class="btn primary" id="cdm-rago">✨ Write it</button></div></div>`;
+        document.body.appendChild(box);
+        const close = () => box.remove();
+        box.querySelector("#cdm-rax").onclick = close;
+        box.querySelector("#cdm-raw").focus();
+        box.querySelector("#cdm-rago").onclick = async () => {
+          const what = box.querySelector("#cdm-raw").value.trim();
+          const err = box.querySelector("#cdm-raerr");
+          if (!what) {
+            err.textContent = "Say what the work is first.";
+            return;
+          }
+          const go = box.querySelector("#cdm-rago");
+          go.disabled = true;
+          go.textContent = "Claude is writing it…";
+          err.textContent = "";
+          try {
+            const d = await claudeDraft(site, what, cd);
+            close();
+            await beforeLeave();
+            openRaForm(d, done);
+            toast("Written by Claude – check it, then Save");
+          } catch (e) {
+            go.disabled = false;
+            go.textContent = "✨ Write it";
+            err.textContent =
+              e && e.code === "no_claude"
+                ? "Claude isn't available on this device. Use Fill it in myself instead."
+                : e && e.code === "not_granted"
+                  ? "This app hasn't been allowed to use Claude. Allow it in the page's permissions, or fill it in yourself."
+                  : "Claude couldn't write it just now. Try again, or fill it in yourself.";
+          }
+        };
+      };
   }
   async function make(site, risks, cd) {
     const got = have(site);
@@ -562,5 +710,5 @@ const CDMRA = (() => {
     }
     return n;
   }
-  return { boxHtml, make, hazardsFromRams, needed, have, LIB };
+  return { boxHtml, make, file, wireOwn, claudeDraft, hazardsFromRams, needed, have, LIB };
 })();

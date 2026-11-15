@@ -13,7 +13,7 @@ import { meBtn, meInfo } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
-export { RA_WHO, openRaForm, raAll, raBlock, raPdf, viewRa, wireRa };
+export { RA_PERMITS, RA_PPE, RA_WHO, openRaForm, raAll, raBlock, raPdf, viewRa, wireRa };
 const RA_HAZARDS = [
   [
     "Work at height (scaffold, roof, loft)",
@@ -100,7 +100,8 @@ function wireRa(owner) {
         }),
     );
 }
-function openRaForm(base) {
+/* after(saved): called with the saved risk assessment instead of opening it (the CDM page files it and comes back) */
+function openRaForm(base, after) {
   const r = base
     ? JSON.parse(JSON.stringify(base))
     : {
@@ -200,6 +201,10 @@ function openRaForm(base) {
             ? "Saved on this phone. It sends when you have signal."
             : "Risk assessment saved",
         );
+        if (after) {
+          after(Object.assign({ id }, d));
+          return;
+        }
         render();
         if (rr !== "queued")
           setTimeout(() => {
