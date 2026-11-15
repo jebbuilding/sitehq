@@ -17,12 +17,20 @@ const htOff = (entries) =>
   entries
     .filter((p) => p.type === "holiday" && !p.pending)
     .sort((a, b) => a.from.localeCompare(b.from));
+/* the kind of time off from its planner line: "Sam Test – sick leave" → "Sick leave", "– off" → "Holiday" */
+const htKind = (p) => {
+  const k = String(p.title || "")
+    .split(" – ")
+    .slice(1)
+    .join(" – ");
+  return !k || k === "off" ? "Holiday" : k.charAt(0).toUpperCase() + k.slice(1);
+};
 function htRow(p, today) {
   const to = p.to || p.from;
   const days = workDays(p.from, to, p.half);
   const now = p.from <= today && to >= today;
   const who = (p.people || []).map((id) => (id === S.me ? "You" : nameOf(id))).join(", ");
-  return `<button type="button" class="ht-row${now ? " ht-now" : ""}" data-p="${esc(p.id)}"><span class="ht-when"><b>${esc(shortDay(p.from))}${to !== p.from ? " – " + esc(shortDay(to)) : ""}</b><small>${days} working day${days === 1 ? "" : "s"}</small></span><span class="ht-who"><b>${esc(who || "Nobody chosen")}</b><small>${esc(p.title || "Holiday")}${p.vis === "people" ? " · only them and you see it" : p.vis === "me" ? " · only you see it" : ""}</small></span>${now ? '<span class="tag ok">Off now</span>' : ""}</button>`;
+  return `<button type="button" class="ht-row${now ? " ht-now" : ""}" data-p="${esc(p.id)}"><span class="ht-when"><b>${esc(shortDay(p.from))}${to !== p.from ? " – " + esc(shortDay(to)) : ""}</b><small>${days} working day${days === 1 ? "" : "s"}</small></span><span class="ht-who"><b>${esc(who || "Nobody chosen")}</b><small>${esc(htKind(p))}${p.vis === "people" ? " · only them and you see it" : p.vis === "me" ? " · only you see it" : ""}</small></span>${now ? '<span class="tag ok">Off now</span>' : ""}</button>`;
 }
 function htHtml(entries) {
   const today = iso(new Date());
@@ -40,9 +48,9 @@ function htHtml(entries) {
   const mName = (k) =>
     parse(k + "-01").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   return `<div class="ht-page">
-    <div class="ht-acts"><button type="button" class="btn primary" id="ht-book">🌴 Book time off for someone</button><button type="button" class="btn" id="ht-set">⚙ Holiday year and allowances</button></div>
+    <div class="ht-acts"><button type="button" class="btn primary" id="ht-book">🌴 Book holiday or time off</button><button type="button" class="btn" id="ht-set">⚙ Holiday year and allowances</button></div>
     ${/* everyone's figures open here: tap a person to change their holidays */ holTeamHtml().replace('<details class="card hol-card" data-id="__holo">', '<details class="card hol-card" open data-id="__holo">')}
-    <section class="card"><div class="cardbody"><b>🗓 Holidays booked</b> <span class="who">${ahead.length ? ahead.length + " from today on" : ""}</span>
+    <section class="card"><div class="cardbody"><b>🗓 Holidays and time off booked</b> <span class="who">${ahead.length ? ahead.length + " from today on" : ""}</span>
       ${
         months.length
           ? months
@@ -51,7 +59,7 @@ function htHtml(entries) {
                   `<div class="flabel">${esc(mName(m.k))}</div>${m.list.map((p) => htRow(p, today)).join("")}`,
               )
               .join("")
-          : '<div class="nothing">No holidays booked from today on.</div>'
+          : '<div class="nothing">No holidays or time off booked from today on.</div>'
       }
     </div></section>
     <details class="card ht-past" data-id="__htpast"${S.open.has("__htpast") ? " open" : ""}><summary><div class="nm">Taken this holiday year<small>${past.length} since ${esc(shortDay(yr.from))}</small></div></summary><div class="cardbody">${past.map((p) => htRow(p, today)).join("") || '<div class="nothing">None yet.</div>'}</div></details>

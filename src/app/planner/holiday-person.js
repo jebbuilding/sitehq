@@ -7,7 +7,7 @@ import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
 import { nameOf, sheetOf } from "../owner/owner.js";
 import { holAdj, holCfg, holDays, holN, holPlanOnly, holSum } from "./holidays.js";
-import { LEAVE_TYPES, leaveOf } from "./time-off.js";
+import { LEAVE_TYPES, leaveOf, lvTitle } from "./time-off.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { empTypeOf } from "../sites/job-details.js";
 export { hpOpen };
@@ -54,6 +54,19 @@ function hpOpen(uid, at) {
     <div class="hp-yr"><button type="button" class="iconbtn" id="hp-prev" aria-label="Holiday year before">‹</button><b>${esc(ukDate(s.Y.from))} to ${esc(ukDate(s.Y.to))}</b><button type="button" class="iconbtn" id="hp-next" aria-label="Holiday year after">›</button></div>
     <div class="hol-boxes"><div><b>${holN(s.allow)}</b><span>a year</span></div><div><b>${holN(s.taken)}</b><span>taken</span></div><div><b>${holN(s.booked)}</b><span>booked</span></div>${s.waiting ? `<div><b>${holN(s.waiting)}</b><span>waiting</span></div>` : ""}<div class="hol-left"><b class="${s.left < 0 ? "hol-neg" : ""}">${holN(s.left)}</b><span>left</span></div></div>
     ${s.bankUse ? `<div class="who">${s.bankUse} bank holidays come out of the ${holN(s.allow)}.${adj.days ? ` Taken includes the adjustment of ${holN(adj.days)}.` : ""}</div>` : adj.days ? `<div class="who">Taken includes the adjustment of ${holN(adj.days)}.</div>` : ""}
+    ${(() => {
+      /* other time off this holiday year – recorded, not taken off the holiday allowance */
+      const tot = {};
+      list
+        .filter((l) => (l.leaveType || "holiday") !== "holiday" && l.status === "approved")
+        .forEach(
+          (l) => (tot[l.leaveType] = (tot[l.leaveType] || 0) + holDays(l, s.Y.from, s.Y.to)),
+        );
+      const t = Object.entries(tot);
+      return t.length
+        ? `<div class="who hp-other">Other time off (not taken off their holidays): ${t.map(([k, n]) => `${esc(LEAVE_TYPES[k] || k)} ${holN(n)} day${n === 1 ? "" : "s"}`).join(" · ")}</div>`
+        : "";
+    })()}
     <div class="flabel">Holidays and time off this holiday year</div>
     ${
       list
@@ -64,7 +77,7 @@ function hpOpen(uid, at) {
         })
         .join("") || '<div class="nothing">Nothing in this holiday year yet.</div>'
     }
-    <div class="actions"><button type="button" class="btn primary" id="hp-add">+ Add a holiday (already taken or to come)</button></div>
+    <div class="actions"><button type="button" class="btn primary" id="hp-add">+ Add holiday or time off (already taken or to come)</button></div>
     <div class="flabel">Days a year</div>
     <label class="hp-inl" for="hp-allow">Holiday allowance<input id="hp-allow" type="number" inputmode="decimal" min="0" max="60" step="0.5" placeholder="${holN(empTypeOf(uid) === "employed" ? c.days : 0)}" value="${esc((c.people || {})[uid] != null ? c.people[uid] : "")}"></label>
     <div class="who">Leave it empty for the usual ${holN(c.days)} days (employees). Change it for part time or longer service.</div>
@@ -163,7 +176,7 @@ function hpEdit(uid, l, back) {
     <label for="hp-half">Half day? (one day only)<select id="hp-half"><option value="">No, full day(s)</option><option value="morning"${v.half === "morning" ? " selected" : ""}>Morning off</option><option value="afternoon"${v.half === "afternoon" ? " selected" : ""}>Afternoon off</option></select></label>
     ${l && l.status !== "approved" ? `<label class="inl"><input type="checkbox" id="hp-appr"> Mark it as approved</label>` : ""}
     <label for="hp-lnote">Note (optional)<textarea id="hp-lnote" maxlength="300">${esc(v.note || "")}</textarea></label>
-    <div class="who">Past dates are fine – use this for holidays they've already had that weren't put in.</div>
+    <div class="who">Past dates are fine – use this for holidays they've already had that weren't put in. Only Holiday comes off their holiday days; unpaid, sick, maternity, paternity and bereavement leave are recorded but not counted against them.</div>
     ${formFoot(false, l ? "Save changes" : "Add it")}`,
     async () => {
       const from = $("hp-from").value,
@@ -208,14 +221,12 @@ function hpEdit(uid, l, back) {
         }
         if (status === "approved") {
           const old = (S.plan || []).find((p) => p.id === "leave-" + id);
-          const word =
-            leaveType === "holiday" ? "off" : (LEAVE_TYPES[leaveType] || "off").toLowerCase();
           await S.db.doc("plan/leave-" + id).set(
             Object.assign({}, old || {}, {
               from,
               to,
               type: "holiday",
-              title: nameOf(uid) + " – " + word,
+              title: lvTitle(nameOf(uid), leaveType),
               people: [uid],
               vis: (old && old.vis) || "all",
               leaveId: id,

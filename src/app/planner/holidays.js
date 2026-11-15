@@ -114,7 +114,7 @@ const holPlanOnly = (uid) =>
         !/^leave-/.test(p.id || "") &&
         Array.isArray(p.people) &&
         p.people.includes(uid) &&
-        !/sick|appointment/i.test(p.title || ""),
+        !/sick|appointment|unpaid|maternity|paternity|bereavement/i.test(p.title || ""),
     )
     .map((p) => ({
       id: "plan:" + p.id,

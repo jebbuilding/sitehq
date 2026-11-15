@@ -4,7 +4,7 @@ import { addDays, esc, iso, parse } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { planPeopleNames, planSeen, planTimeTxt } from "./views.js";
 import { myJobs } from "../sites/job-sheets.js";
-export { LEAVE_TYPES, PTYPES, VIS, entryChip, leaveOf, onDay, planEntries, workDays };
+export { LEAVE_TYPES, PTYPES, VIS, entryChip, leaveOf, lvTitle, onDay, planEntries, workDays };
 const PTYPES = {
   keydate: "Key date",
   work: "Work",
@@ -15,13 +15,21 @@ const PTYPES = {
   holiday: "Time off",
   other: "Other",
 };
+/* only "holiday" comes off someone's holiday allowance; the rest are recorded and shown, not counted against it
+   (James, Nov 2026: "book unpaid holiday, sick leave, maternity, bereavement leave") */
 const LEAVE_TYPES = {
   holiday: "Holiday",
-  unpaid: "Unpaid leave",
+  unpaid: "Unpaid holiday",
+  sick: "Sick leave",
+  maternity: "Maternity leave",
+  paternity: "Paternity leave",
+  bereavement: "Bereavement leave",
   appointment: "Appointment",
-  sick: "Sick",
   other: "Other",
 };
+/* the planner line for someone's time off: "Sam Test – off", "Sam Test – sick leave" */
+const lvTitle = (name, type) =>
+  name + " – " + (!type || type === "holiday" ? "off" : (LEAVE_TYPES[type] || "off").toLowerCase());
 const VIS = { all: "Everyone", people: "Only the people on it", me: "Only me" };
 function leaveOf(list) {
   return (list || []).filter((s) => s.type === "leave");

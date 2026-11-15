@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 224 files, 4397 KB, 111946 lines.
-- 2302 names declared at the top level (the shared scope); 1161 of them are used by a file other than the one that declares them.
+- 224 files, 4399 KB, 111974 lines.
+- 2304 names declared at the top level (the shared scope); 1162 of them are used by a file other than the one that declares them.
 - 2484 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 207 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
@@ -1231,9 +1231,9 @@ PHOTO MULTI-SELECT + DOWNLOAD AS ZIP
 
 PLANNER v2: full-screen board (people × days), job timeline, tidy menu, day sheet for trades
 
-- 1803 lines, 74 KB. Declares 33 names, 17 used elsewhere.
+- 1804 lines, 74 KB. Declares 33 names, 17 used elsewhere.
 - **Used elsewhere:** `openPlanEditor` (8), `keyDatesFor` (5), `keyTimeline` (3), `pbPending` (2), `answerLeave` (1), `leaveCard` (1), `openKeyDates` (1), `openLeave` (1), `openPlanView` (1), `pbEntryDays` (1), `pbPlanWeek` (1), `pbSiteOf` (1), `pbSiteShort` (1), `pbStageName` (1), `plannerView` (1), `siteHue` (1), `wireLeave` (1)
-- **Uses names from 33 files:** `core/helpers.js` (10), `planner/time-off.js` (8), `core/sheet.js` (6), `core/state.js` (6), `planner/planner-extras.js` (6), `owner/owner.js` (5), `planner/views.js` (5), `planner/diary.js` (4), `planner/holidays.js` (3), `core/fields.js` (2), `core/viewer.js` (2), `files/files.js` (2), `files/outbox.js` (2), `planner/holiday-tab.js` (2), `planner/plant-care.js` (2), `chat/chat.js` (1), `clients/address-book.js` (1), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `owner/today.js` (1), `people/profile-photos.js` (1), `photos/photos.js` (1), `planner/weather-plan.js` (1), `safety/training.js` (1), `sites/job-sheets.js` (1), `sites/project-pages.js` (1), `sites/roll-call.js` (1), `survey/door-window-survey.js` (1)
+- **Uses names from 33 files:** `core/helpers.js` (10), `planner/time-off.js` (9), `core/sheet.js` (6), `core/state.js` (6), `planner/planner-extras.js` (6), `owner/owner.js` (5), `planner/views.js` (5), `planner/diary.js` (4), `planner/holidays.js` (3), `core/fields.js` (2), `core/viewer.js` (2), `files/files.js` (2), `files/outbox.js` (2), `planner/holiday-tab.js` (2), `planner/plant-care.js` (2), `chat/chat.js` (1), `clients/address-book.js` (1), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `owner/today.js` (1), `people/profile-photos.js` (1), `photos/photos.js` (1), `planner/weather-plan.js` (1), `safety/training.js` (1), `sites/job-sheets.js` (1), `sites/project-pages.js` (1), `sites/roll-call.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 17 files**
 
 ### `planner/diary.js`
@@ -1249,16 +1249,16 @@ DIARY / SCHEDULER BOARD (people down the side, hours across)
 
 HOLIDAY PERSON: the owner's control over one person's holidays – fix, add, delete and adjust
 
-- 246 lines, 12 KB. Declares 4 names, 1 used elsewhere.
+- 257 lines, 13 KB. Declares 4 names, 1 used elsewhere.
 - **Used elsewhere:** `hpOpen` (4)
-- **Uses names from 11 files:** `core/helpers.js` (7), `planner/holidays.js` (6), `core/sheet.js` (4), `owner/owner.js` (2), `planner/time-off.js` (2), `core/company-names.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `safety/rams-maker.js` (1), `sites/job-details.js` (1)
+- **Uses names from 11 files:** `core/helpers.js` (7), `planner/holidays.js` (6), `core/sheet.js` (4), `planner/time-off.js` (3), `owner/owner.js` (2), `core/company-names.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `safety/rams-maker.js` (1), `sites/job-details.js` (1)
 - **Used by 4 files**
 
 ### `planner/holiday-tab.js`
 
 HOLIDAY TAB: the planner's 🌴 Holidays tab – requests to answer, holidays booked, taken, and days left
 
-- 81 lines, 4.6 KB. Declares 4 names, 2 used elsewhere.
+- 89 lines, 4.9 KB. Declares 5 names, 2 used elsewhere.
 - **Used elsewhere:** `htHtml` (1), `htWire` (1)
 - **Uses names from 8 files:** `core/helpers.js` (5), `planner/holidays.js` (4), `core/state.js` (1), `owner/owner.js` (1), `planner/board.js` (1), `planner/holiday-person.js` (1), `planner/time-off.js` (1), `planner/views.js` (1)
 - **Used by 1 files**
@@ -1321,8 +1321,8 @@ QR STICKERS: a sticker for every van, trailer, digger, machine, tool and ladder 
 
 PLANNER & TIME OFF
 
-- 97 lines, 3.7 KB. Declares 8 names, 8 used elsewhere.
-- **Used elsewhere:** `planEntries` (8), `onDay` (6), `leaveOf` (4), `LEAVE_TYPES` (3), `entryChip` (2), `PTYPES` (2), `VIS` (2), `workDays` (2)
+- 105 lines, 4.2 KB. Declares 9 names, 9 used elsewhere.
+- **Used elsewhere:** `planEntries` (8), `onDay` (6), `leaveOf` (4), `LEAVE_TYPES` (3), `entryChip` (2), `lvTitle` (2), `PTYPES` (2), `VIS` (2), `workDays` (2)
 - **Uses names from 5 files:** `core/helpers.js` (4), `planner/views.js` (3), `core/state.js` (2), `core/company-names.js` (1), `sites/job-sheets.js` (1)
 - **Used by 14 files**
 
