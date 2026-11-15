@@ -23,6 +23,7 @@ import { newId } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { myOpenPrompts } from "../people/reminders.js";
 import { openPlanEditor } from "./board.js";
+import { crsRows } from "./course-booking.js";
 import { hpOpen } from "./holiday-person.js";
 import { PTYPES, VIS, entryChip, onDay, planEntries } from "./time-off.js";
 import { same } from "../sites/project-pages.js";
@@ -108,6 +109,7 @@ function openPlanDetail(p) {
     ["Job sheet", p.jobTitle],
     ["People", names.join(", ")],
     ["Contact", [p.contact, p.phone].filter(Boolean).join(" · ")],
+    ...(p.type === "course" ? crsRows(p, owner) : []),
     owner
       ? [
           "Who can see it",

@@ -37,7 +37,7 @@ const AC_AREAS = [
   ["money", "Accounts"],
   ["estim", "Estimating"],
   /* James (Nov 2026): "managers and accounts can adjust holidays" – change, add, delete and adjust anyone's */
-  ["hol", "🌴 Holidays: change, add and adjust anyone's"],
+  ["hol", "🌴 Holidays & leave: change, add and adjust anyone's"],
 ];
 const AC_OFFICE_PRESET = {
   manager: ["jobs", "people", "paper", "estim", "hol"],

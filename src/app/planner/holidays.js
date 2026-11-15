@@ -165,7 +165,7 @@ function holCardHtml() {
   if (!holAllow(S.me)) return "";
   const s = holSum(S.me, S.mine.signoffs);
   const today = iso(new Date());
-  return `<details class="card hol-card"${S.open.has("__hol") ? " open" : ""} data-id="__hol"><summary><div class="nm">🌴 My holidays<small>${holN(s.left)} day${s.left === 1 ? "" : "s"} left this holiday year</small></div></summary><div class="cardbody">
+  return `<details class="card hol-card"${S.open.has("__hol") ? " open" : ""} data-id="__hol"><summary><div class="nm">🌴 My holidays & leave<small>${holN(s.left)} day${s.left === 1 ? "" : "s"} left this holiday year</small></div></summary><div class="cardbody">
     <div class="hol-boxes"><div><b>${holN(s.allow)}</b><span>a year</span></div><div><b>${holN(s.taken)}</b><span>taken</span></div><div><b>${holN(s.booked)}</b><span>booked</span></div>${s.waiting ? `<div><b>${holN(s.waiting)}</b><span>waiting</span></div>` : ""}<div class="hol-left"><b>${holN(s.left)}</b><span>left</span></div></div>
     <div class="who">Holiday year ${esc(ukDate(s.Y.from))} to ${esc(ukDate(s.Y.to))}${s.bankUse ? ` · ${s.bankUse} bank holidays come out of the ${holN(s.allow)}` : ""}.</div>
     ${
@@ -187,7 +187,7 @@ function holCardHtml() {
 function holOwnerHtml() {
   const ids = crewIds().filter((id) => holAllow(id) > 0);
   const c = holCfg();
-  return `<details class="card hol-card"${S.open.has("__holo") ? " open" : ""} data-id="__holo"><summary><div class="nm">🌴 Holidays<small>${ids.length} people with a holiday allowance</small></div></summary><div class="cardbody">
+  return `<details class="card hol-card"${S.open.has("__holo") ? " open" : ""} data-id="__holo"><summary><div class="nm">🌴 Holidays & leave<small>${ids.length} people with a holiday allowance</small></div></summary><div class="cardbody">
     ${
       ids
         .map((id) => {
@@ -267,7 +267,7 @@ function holTeamHtml(link) {
             })
             .join("")
         : `<div class="nothing">No holiday requests waiting.</div>`
-    }${link ? `<div class="actions"><button type="button" class="btn" id="hol-tab">🗓 Holidays booked – on the planner</button></div>` : ""}</div></section>${holOwnerHtml()}`;
+    }${link ? `<div class="actions"><button type="button" class="btn" id="hol-tab">🗓 Holidays & leave booked – on the planner</button></div>` : ""}</div></section>${holOwnerHtml()}`;
 }
 function holTeamWire() {
   wireLeave(true, $("main"));

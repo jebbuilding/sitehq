@@ -75,7 +75,7 @@ function plWhereHtml(shown) {
   const work = on.filter((p) => p.type !== "holiday");
   const bySite = {};
   work.forEach((p) => {
-    const s = pbSiteOf(p) || "Not at a site";
+    const s = p.type === "course" ? "🎓 On a course" : pbSiteOf(p) || "Not at a site";
     (bySite[s] = bySite[s] || []).push(p);
   });
   const busy = new Set(work.flatMap(plPeople).concat(off.flatMap(plPeople)));
@@ -101,7 +101,7 @@ function plWhereHtml(shown) {
                 <div class="pl-sh"><i></i><b>${esc(s)}</b><span class="who">${ppl.length ? `${ppl.length} ${ppl.length === 1 ? "person" : "people"}` : "Nobody booked yet"}</span></div>
                 <div class="pl-ppl">${ppl.map(([w, p]) => person(w, p)).join("")}</div>
                 ${unassigned.length ? `<div class="pl-needs">Needs someone:</div>` : ""}${unassigned.map((p) => `<button type="button" class="pl-job" data-p="${esc(p.id)}" title="${esc(p.title)}">${p.time ? esc(p.time) + " · " : ""}${esc(s === "Not at a site" ? p.title : pbStageName(p.title, s))}</button>`).join("")}
-                <button type="button" class="linkbtn pl-book" data-site="${esc(s === "Not at a site" ? "" : s)}">+ Book someone here</button>
+                ${s === "🎓 On a course" ? "" : `<button type="button" class="linkbtn pl-book" data-site="${esc(s === "Not at a site" ? "" : s)}">+ Book someone here</button>`}
               </div></section>`;
             })
             .join("")

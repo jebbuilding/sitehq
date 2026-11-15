@@ -30,6 +30,7 @@ import { allTeam, crewIds, nameOf, sheetOf, teamIds } from "../owner/owner.js";
 import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
+import { crsOpen } from "./course-booking.js";
 import { diaryHtml, diaryRows, dyGroupName, wireDiary } from "./diary.js";
 import { htHtml, htWire } from "./holiday-tab.js";
 import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
@@ -176,7 +177,8 @@ function pbMenu(anchor, owner) {
         ["send", "📣 Send this week to the team"],
         ["key", "📌 Key dates for a job"],
         ["stages", "🧱 Job timeline"],
-        ["leave", "🌴 Book time off for someone"],
+        ["leave", "🌴 Book holiday or leave for someone"],
+        ["course", "🎓 Book someone on a course"],
         ["req", `✅ Time-off requests${pending ? " (" + pending + ")" : ""}`],
         ["imp", "📥 Add lots (from a spreadsheet)"],
         ["find", "🔍 Search & filter"],
@@ -217,6 +219,7 @@ function pbMenu(anchor, owner) {
           S.f.pmode = "stages";
           render();
         } else if (k === "leave") openLeave(owner);
+        else if (k === "course") crsOpen();
         else if (k === "req") pbRequests();
         else if (k === "imp") openPlanImport();
         else if (k === "find") pbFind();
@@ -822,7 +825,7 @@ function pbHeader(owner, mode) {
         ["day", "Day"],
         ["stages", "Jobs"],
         ["month", "Month"],
-        ["hol", "🌴 Holidays"],
+        ["hol", "🌴 Holidays & leave"],
       ]
     : [
         ["week", "Week"],
@@ -1559,6 +1562,7 @@ function openLeave(owner) {
   upd();
 }
 function openPlanEditor(p, date, copy) {
+  if (p && !copy && p.type === "course") return crsOpen(p);
   const ids = crewIds();
   const isNew = !p;
   if (copy) p = null;
@@ -1573,6 +1577,8 @@ function openPlanEditor(p, date, copy) {
     `<h3 id="sheettitle">${isNew ? "Add to planner" : "Edit planner entry"}</h3>${pcl ? `<button type="button" class="btn backbtn" id="pe-client" style="align-self:flex-start">👤 Open client: ${esc(pcl.name)} (${esc(clStage(pcl.stage))})</button>` : ""}
     <label for="pe-title">What<input id="pe-title" required maxlength="100" placeholder="e.g. Kitchen fit, Building control visit, Skip delivery" value="${esc(src ? src.title : "")}"></label>
     <div><div class="flabel">Type</div><div class="seg" id="pe-type">${Object.entries(PTYPES)
+      /* courses have their own form (🎓 Book someone on a course) */
+      .filter(([k]) => k !== "course" || (p && p.type === "course"))
       .map(
         ([k, l]) =>
           `<button type="button" data-v="${k}" aria-pressed="${(src ? src.type : "work") === k}">${l}</button>`,

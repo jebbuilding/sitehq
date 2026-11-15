@@ -200,3 +200,8 @@
 .hp-row .btn{min-height:44px;padding:6px 12px}
 .hp-inl{flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap}
 .hp-inl input{width:100px;min-height:44px;margin-left:auto}
+
+/* planner › 🎓 book someone on a course */
+.crs-ppl{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:6px}
+.crs-ppl .crs-p{font-size:15px;color:var(--ink);font-weight:500;min-height:44px}
+.crs-ppl .crs-p input{width:22px;height:22px}

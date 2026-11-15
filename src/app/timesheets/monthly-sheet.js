@@ -105,7 +105,7 @@ function tsPaper(ym, ents, who) {
     ${ym !== today.slice(0, 7) ? `<div style="text-align:center;margin:-4px 0 6px"><button type="button" class="pillbtn ts-now">Back to this month</button></div>` : ""}
     <div class="tsgrid">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Wk"].map((x) => `<div class="tsdow">${x}</div>`).join("")}${grid}</div>
     <div class="tstots"><div><span>Timesheet hours</span><b>${hrs(totH)}</b></div><div><span>Job log hours</span><b>${hrs(totJ)}</b></div><div><span>Days off booked</span><b>${offDays}</b></div></div>
-    ${who && ownerMode() ? `<div style="text-align:center;margin-top:6px"><button type="button" class="pillbtn ts-hol">🌴 ${esc(nameOf(who))}'s holidays ›</button></div>` : ""}
+    ${who && ownerMode() ? `<div style="text-align:center;margin-top:6px"><button type="button" class="pillbtn ts-hol">🌴 ${esc(nameOf(who))}'s holidays & leave ›</button></div>` : ""}
     <div class="who" style="margin-top:6px">Tap a day to ${who ? "see, change or approve" : "add or see"} it. ✓ = approved${who ? "" : ` by ${bossFirst()}`}. 🌴 = time off from the Planner.</div></div>`;
 }
 function wireTsPaper(root, who, again) {

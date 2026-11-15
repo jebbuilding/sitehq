@@ -3,6 +3,7 @@ import { $, esc, iso, parse, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { nameOf } from "../owner/owner.js";
 import { openLeave } from "./board.js";
+import { crsOpen } from "./course-booking.js";
 import { hpOpen } from "./holiday-person.js";
 import { holSettings, holTeamHtml, holTeamWire, holYear } from "./holidays.js";
 import { workDays } from "./time-off.js";
@@ -15,10 +16,11 @@ export { htHtml, htWire };
    of type "holiday" (approved requests become plan/leave-<id>; "Book time off" adds one straight away). */
 const htOff = (entries) =>
   entries
-    .filter((p) => p.type === "holiday" && !p.pending)
+    .filter((p) => (p.type === "holiday" || p.type === "course") && !p.pending)
     .sort((a, b) => a.from.localeCompare(b.from));
 /* the kind of time off from its planner line: "Sam Test – sick leave" → "Sick leave", "– off" → "Holiday" */
 const htKind = (p) => {
+  if (p.type === "course") return "🎓 Course: " + (p.title || "");
   const k = String(p.title || "")
     .split(" – ")
     .slice(1)
@@ -48,9 +50,9 @@ function htHtml(entries) {
   const mName = (k) =>
     parse(k + "-01").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   return `<div class="ht-page">
-    <div class="ht-acts"><button type="button" class="btn primary" id="ht-book">🌴 Book holiday or time off</button><button type="button" class="btn" id="ht-set">⚙ Holiday year and allowances</button></div>
+    <div class="ht-acts"><button type="button" class="btn primary" id="ht-book">🌴 Book holiday or leave</button><button type="button" class="btn" id="ht-course">🎓 Book someone on a course</button><button type="button" class="btn" id="ht-set">⚙ Holiday year and allowances</button></div>
     ${/* everyone's figures open here: tap a person to change their holidays */ holTeamHtml().replace('<details class="card hol-card" data-id="__holo">', '<details class="card hol-card" open data-id="__holo">')}
-    <section class="card"><div class="cardbody"><b>🗓 Holidays and time off booked</b> <span class="who">${ahead.length ? ahead.length + " from today on" : ""}</span>
+    <section class="card"><div class="cardbody"><b>🗓 Holidays, leave and courses booked</b> <span class="who">${ahead.length ? ahead.length + " from today on" : ""}</span>
       ${
         months.length
           ? months
@@ -59,7 +61,7 @@ function htHtml(entries) {
                   `<div class="flabel">${esc(mName(m.k))}</div>${m.list.map((p) => htRow(p, today)).join("")}`,
               )
               .join("")
-          : '<div class="nothing">No holidays or time off booked from today on.</div>'
+          : '<div class="nothing">Nothing booked from today on.</div>'
       }
     </div></section>
     <details class="card ht-past" data-id="__htpast"${S.open.has("__htpast") ? " open" : ""}><summary><div class="nm">Taken this holiday year<small>${past.length} since ${esc(shortDay(yr.from))}</small></div></summary><div class="cardbody">${past.map((p) => htRow(p, today)).join("") || '<div class="nothing">None yet.</div>'}</div></details>
@@ -68,6 +70,7 @@ function htHtml(entries) {
 function htWire(entries) {
   holTeamWire();
   $("ht-book").onclick = () => openLeave(true);
+  $("ht-course").onclick = () => crsOpen();
   $("ht-set").onclick = holSettings;
   const past = document.querySelector("#main .ht-past");
   if (past)
@@ -82,7 +85,8 @@ function htWire(entries) {
         if (!p) return;
         /* a booked holiday opens that person's holiday page, where it can be changed */
         const w = (p.people || [])[0];
-        if (p.leaveId && w) hpOpen(w, p.from);
+        if (p.type === "course") openPlanDetail(p);
+        else if (p.leaveId && w) hpOpen(w, p.from);
         else openPlanDetail(p);
       }),
   );

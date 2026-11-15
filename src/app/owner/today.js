@@ -203,7 +203,7 @@ const NL_SUBS = [
   ],
   [
     "hols",
-    "🌴 Holidays: requests, booked and allowances",
+    "🌴 Holidays & leave: requests, booked and allowances",
     "people",
     "Time and pay",
     "leave time off bank holidays holiday year allowance",

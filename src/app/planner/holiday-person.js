@@ -50,7 +50,7 @@ function hpOpen(uid, at) {
   const prevY = iso(addDays(parse(s.Y.from), -1)),
     nextY = iso(addDays(parse(s.Y.to), 1));
   openSheet(
-    `<h3 id="sheettitle">🌴 ${esc(nameOf(uid))} – holidays</h3>
+    `<h3 id="sheettitle">🌴 ${esc(nameOf(uid))} – holidays & leave</h3>
     <div class="hp-yr"><button type="button" class="iconbtn" id="hp-prev" aria-label="Holiday year before">‹</button><b>${esc(ukDate(s.Y.from))} to ${esc(ukDate(s.Y.to))}</b><button type="button" class="iconbtn" id="hp-next" aria-label="Holiday year after">›</button></div>
     <div class="hol-boxes"><div><b>${holN(s.allow)}</b><span>a year</span></div><div><b>${holN(s.taken)}</b><span>taken</span></div><div><b>${holN(s.booked)}</b><span>booked</span></div>${s.waiting ? `<div><b>${holN(s.waiting)}</b><span>waiting</span></div>` : ""}<div class="hol-left"><b class="${s.left < 0 ? "hol-neg" : ""}">${holN(s.left)}</b><span>left</span></div></div>
     ${s.bankUse ? `<div class="who">${s.bankUse} bank holidays come out of the ${holN(s.allow)}.${adj.days ? ` Taken includes the adjustment of ${holN(adj.days)}.` : ""}</div>` : adj.days ? `<div class="who">Taken includes the adjustment of ${holN(adj.days)}.</div>` : ""}

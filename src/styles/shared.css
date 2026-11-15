@@ -458,5 +458,6 @@ body:has(#sheet:not([hidden])) .pdfbar{display:none}
 @media (min-width:900px){body.nl-on .appfoot{display:none}}
 /* chat on a phone: the buttons on one line, the typing box and Send full width under them (James, Nov 2026) */
 @media (max-width:639px){.crow{flex-wrap:wrap;justify-content:flex-start}.crow textarea{order:10;flex:1 1 calc(100% - 96px)}.crow #cm-send{order:11;flex:none}}
+.t-course{--pc:#7c3aed}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}

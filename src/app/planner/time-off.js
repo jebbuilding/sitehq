@@ -13,6 +13,7 @@ const PTYPES = {
   inspection: "Inspection",
   vehicle: "Vehicle / plant",
   holiday: "Time off",
+  course: "Training course",
   other: "Other",
 };
 /* only "holiday" comes off someone's holiday allowance; the rest are recorded and shown, not counted against it
