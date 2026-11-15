@@ -36,10 +36,12 @@ const AC_AREAS = [
   ["paper", "Paperwork"],
   ["money", "Accounts"],
   ["estim", "Estimating"],
+  /* James (Nov 2026): "managers and accounts can adjust holidays" – change, add, delete and adjust anyone's */
+  ["hol", "🌴 Holidays: change, add and adjust anyone's"],
 ];
 const AC_OFFICE_PRESET = {
-  manager: ["jobs", "people", "paper", "estim"],
-  accounts: ["sales", "money"],
+  manager: ["jobs", "people", "paper", "estim", "hol"],
+  accounts: ["sales", "money", "hol"],
 };
 const acOffice = () => acAccess().office || {};
 const acOfficeAreas = (r) => {

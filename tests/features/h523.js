@@ -2,6 +2,7 @@
 // what a Manager and an Accounts person can open (Jobs & clients, Estimates & invoices, People, Paperwork, Accounts,
 // Estimating) and a choice for each person. James gives Accounts Estimating too and makes Sam a Manager; saved in the
 // settings and noted in the changes; it says it starts working on our own server.
+// Both office roles start with 🌴 Holidays ticked (James, Nov 2026: "managers and accounts can adjust holidays").
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
@@ -16,6 +17,7 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  await p.evaluate(()=>{window.__S.otab='setup';window.__S.f.stab='access';window.render()});await p.waitForTimeout(400);
  const t=await p.innerText('#main');
  ok(/Office access: managers and accounts/.test(t)&&/Estimates & invoices/.test(t)&&/Estimating/.test(t),'People & access has Office access, with your areas for a Manager and Accounts');
+ ok(await p.isChecked('.pa-off[data-r=manager][data-k=hol]')&&await p.isChecked('.pa-off[data-r=accounts][data-k=hol]'),'managers and accounts both start with 🌴 Holidays (change, add and adjust)');
  ok(await p.isChecked('.pa-off[data-r=accounts][data-k=money]')&&!(await p.isChecked('.pa-off[data-r=accounts][data-k=estim]')),'Accounts starts with Accounts and Estimates & invoices');
  ok(/starts working when SiteHQ moves to our own server/.test(t),'it says it starts working on our own server');
  await p.check('.pa-off[data-r=accounts][data-k=estim]');await p.selectOption('.pa-offr[data-w=emp1]','manager');
