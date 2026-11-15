@@ -1,6 +1,6 @@
 // The RAMS box on a site's RAMS tab (made-up job at 4 Rolle Road, new look, iPad size): with work at height and hot
 // works saved as the job's hazards (CDM page), the site's 📄 RAMS tab shows 📝 RAMS for these hazards with both to make,
-// and the + A RAMS that isn't on the list options; Make files them in the site's RAMS (they show in the list on the
+// and the + RAMS that isn't on the list options; Make files them in the site's RAMS (they show in the list on the
 // tab); ✍ Fill it in myself opens the RAMS form and, once saved, it is filed too and the RAMS tab is back.
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');

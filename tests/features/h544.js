@@ -1,6 +1,6 @@
 // Health & safety tidy (made-up job at 4 Rolle Road): the page no longer has a separate Risk assessments & method
 // statements card; the 📝 Make RAMS for a site card has the RAMS box for the site picked – the RAMS the job's hazards
-// need with one-tap Make, and + A RAMS that isn't on the list – and making them files them in that site's RAMS;
+// need with one-tap Make, and + RAMS that isn't on the list – and making them files them in that site's RAMS;
 // ✍ Fill it in myself comes back to Health & safety with the same site still picked.
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');
@@ -22,8 +22,8 @@ const SITE='4 Rolle Road, Exmouth';
  ok(!/Risk assessments & method statements/.test(t)&&await p.locator('#ra-new').count()===0,'Health & safety has no separate Risk assessments & method statements card');
  await p.selectOption('#hs-site',SITE);await p.waitForTimeout(400);
  const box=await p.innerText('#hs-rabox');
- ok(/RAMS for these hazards/.test(box)&&/Excavations, foundations and drainage/.test(box)&&/A RAMS that isn't on the list/.test(box),'the Make RAMS card has the RAMS box for the site picked (excavations to make, and + A RAMS that isn\'t on the list)');
- ok(await p.locator('#hs-mk').count()===1&&/Word RAMS/.test(await p.innerText('#hs-mk')),'your own Word RAMS button is still there');
+ ok(/RAMS for these hazards/.test(box)&&/Excavations, foundations and drainage/.test(box)&&/RAMS that isn't on the list/.test(box),'the Make RAMS card has the RAMS box for the site picked (excavations to make, and + RAMS that isn\'t on the list)');
+ ok(await p.locator('#hs-mk').count()===1&&/Make from saved RAMS/.test(await p.innerText('#hs-mk')),'the Make from saved RAMS button is still there');
  await p.screenshot({path:OUT+'hs-rams.png'});
  await p.click('#hs-mkra');await p.waitForTimeout(4000);
  ok(await p.evaluate(s=>Object.values(window.__st).some(v=>v&&v.cat==='rams'&&v.site===s&&v.cdmKey==='exc'),SITE),'Make files the excavations RAMS in '+SITE+' › RAMS');

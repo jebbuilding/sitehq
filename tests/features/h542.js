@@ -1,5 +1,5 @@
-// A RAMS that isn't on the list, from the CDM page (made-up job at 4 Rolle Road; Claude is a stand-in that answers
-// with a made-up RAMS): the RAMS box has "+ A RAMS that isn't on the list" with ✍ Fill it in myself and ✨ Claude writes
+// RAMS that isn't on the list, from the CDM page (made-up job at 4 Rolle Road; Claude is a stand-in that answers
+// with a made-up RAMS): the RAMS box has "+ RAMS that isn't on the list" with ✍ Fill it in myself and ✨ Claude writes
 // it. Fill it in myself opens a blank RAMS form for the site; once saved it is filed in the site's RAMS as a PDF and the
 // CDM page opens again. Claude writes it asks what the work is, sends that to Claude, and opens the RAMS form filled in
 // with Claude's hazards, controls, PPE, permit and method to check; saved, it's filed the same way.
@@ -22,7 +22,7 @@ const SITE='4 Rolle Road, Exmouth';
  const openCdm=async()=>{await p.evaluate(()=>{document.getElementById('sheet').hidden=true;document.querySelector('.tab[data-t=hs]').click()});await p.waitForTimeout(500);await p.selectOption('#hs-cdmsite',SITE);await p.click('#hs-cdm');await p.waitForTimeout(600);};
  const filed=()=>p.evaluate(()=>Object.values(window.__st).filter(v=>v&&v.cat==='rams'&&v.raId!==undefined&&!v.cdmKey).map(v=>v.title));
  await openCdm();
- ok(/A RAMS that isn't on the list/.test(await p.innerText('#cdm-rabox'))&&await p.locator('#cdm-raown1').count()===1&&await p.locator('#cdm-raown2').count()===1,'the RAMS box has "+ A RAMS that isn\'t on the list" with ✍ Fill it in myself and ✨ Claude writes it');
+ ok(/RAMS that isn't on the list/.test(await p.innerText('#cdm-rabox'))&&await p.locator('#cdm-raown1').count()===1&&await p.locator('#cdm-raown2').count()===1,'the RAMS box has "+ RAMS that isn\'t on the list" with ✍ Fill it in myself and ✨ Claude writes it');
  await (await p.$('#cdm-rabox')).screenshot({path:OUT+'cdmra-own.png'});
  /* option 1: by hand */
  await p.click('#cdm-raown1');await p.waitForTimeout(500);

@@ -242,7 +242,7 @@ function ownerProjects() {
     );
   P.rams =
     CDMRA.siteBoxHtml(site) +
-    `<div class="notice ramsmk"><b>📝 Make RAMS for this site</b><span class="who">Start from your existing RAMS, tick the ones this job needs and fill in the blanks (address, client, dates, first aiders…). They're saved here as Word files.</span><button type="button" class="btn primary" id="mkrams">📝 Make RAMS from my set</button></div>` +
+    `<div class="notice ramsmk"><b>📝 Make RAMS for this site</b><span class="who">Start from your existing RAMS, tick the ones this job needs and fill in the blanks (address, client, dates, first aiders…). They're saved here as Word files.</span><button type="button" class="btn primary" id="mkrams">📝 Make from saved RAMS</button></div>` +
     dSec(
       "rams",
       "RAMS",

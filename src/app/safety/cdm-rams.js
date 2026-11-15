@@ -493,7 +493,7 @@ const CDMRA = (() => {
   /* a RAMS that isn't on the list (James, Nov 2026: "option 1 fill in everything manually, 2nd option fill in what
      it's for and Claude do the rest") */
   const ownHtml = (px) =>
-    `<div class="cdm-raown"><b>+ A RAMS that isn't on the list</b><div class="actions" style="margin:4px 0 0"><button type="button" class="btn" id="${px}-raown1">✍ Fill it in myself</button><button type="button" class="btn" id="${px}-raown2">✨ Claude writes it</button></div><div class="who">Either way it opens in the RAMS form to check and save, and is filed in this site's RAMS like the others.</div></div>`;
+    `<div class="cdm-raown"><b>+ RAMS that isn't on the list</b><div class="actions" style="margin:4px 0 0"><button type="button" class="btn" id="${px}-raown1">✍ Fill it in myself</button><button type="button" class="btn" id="${px}-raown2">✨ Claude writes it</button></div><div class="who">Either way it opens in the RAMS form to check and save, and is filed in this site's RAMS like the others.</div></div>`;
   function boxHtml(site, risks, onSite, px) {
     px = px || "cdm";
     return boxHtml0(site, risks, onSite, px).replace(/<\/div>$/, ownHtml(px) + "</div>");
