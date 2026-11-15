@@ -2,19 +2,22 @@
 import { ptSrc } from "../clients/portal.js";
 import { soAll } from "../clients/sign-offs.js";
 import { clAddr } from "../clients/stages-planner.js";
-import { coShort } from "../core/company-names.js";
+import { bossName, coShort } from "../core/company-names.js";
 import { $, esc, iso, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, liveSite, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { uploadErr, uploadFile } from "../files/files.js";
+import { getFileBlob } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
+import { nameOf } from "../owner/owner.js";
 import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
 import { CDMRA } from "./cdm-rams.js";
 import { ukDate } from "./rams-maker.js";
 import { indFor, loadJsPdf } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { sdSet } from "../sales/sales-calc.js";
 import { sjMaster } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
@@ -50,7 +53,7 @@ const CDM_DOCS = [
   ["appoint", "CDM duty holder appointments (client letter & acknowledgement)"],
   [
     "brappoint",
-    "Building Regulations dutyholder appointments (Part 2A): principal designer and principal contractor, in writing",
+    "Building Regulations duty holder appointments (Part 2A): principal designer and principal contractor, in writing",
   ],
   [
     "bccommence",
@@ -89,6 +92,40 @@ const CDM_GROUPS = [
   ["Permits", ["hotpermit", "dig"]],
   ["At handover", ["hsf", "bccs"]],
 ];
+/* who fills in and signs the company's part of the CDM documents (James, Nov 2026: "you choose who is filling out
+   the forms and it adds their details and signature"): the account holder, or someone made a Manager in Setup ›
+   People & access › Office access. Their name goes on each company signature line, with their saved signature and
+   the date. */
+function cdmSigners() {
+  const office = (((S.settings || {}).access || {}).office || {}).people || {};
+  return [["", bossName()]].concat(
+    Object.keys(office)
+      .filter((u) => office[u] === "manager" && S.team && S.team[u] && !S.team[u].left)
+      .map((u) => [u, nameOf(u)]),
+  );
+}
+const cdmSignerName = (cd) =>
+  cd.filledBy && S.team && S.team[cd.filledBy] ? nameOf(cd.filledBy) : bossName();
+const cdmSignerSigId = (cd) =>
+  cd.filledBy && S.team && S.team[cd.filledBy]
+    ? S.team[cd.filledBy].sigId || ""
+    : sdSet().sigId || "";
+async function cdmSignerSig(cd) {
+  const id = cdmSignerSigId(cd);
+  if (!id) return null;
+  try {
+    const blob = await getFileBlob(id);
+    const u = await new Promise((res) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => res(null);
+      fr.readAsDataURL(blob);
+    });
+    return u ? { u, f: /image\/jpe?g/.test(u) ? "JPEG" : "PNG" } : null;
+  } catch (e) {
+    return null;
+  }
+}
 function cdmNotifiable(cd) {
   const wd = +cd.workDays || 0,
     mx = +cd.maxWorkers || 0,
@@ -335,7 +372,7 @@ function cdmSections(cd, pick) {
         "sign",
         [
           ["Client", cd.client],
-          ["For " + co.name, co.owner],
+          ["For " + co.name, cdmSignerName(cd), "me"],
         ],
       ],
     ]);
@@ -578,7 +615,7 @@ function cdmSections(cd, pick) {
           ? "For a domestic client, the contractor (or principal contractor) submits the F10 as the client duties pass to them."
           : "The client is responsible for submitting the F10 (others may submit it on their behalf).",
       ],
-      ["sign", [["Checked by", co.owner]]],
+      ["sign", [["Checked by", cdmSignerName(cd), "me"]]],
     ]);
   if (pick.hsf)
     S2("Health & safety file - contents", [
@@ -612,13 +649,13 @@ function cdmSections(cd, pick) {
         "sign",
         [
           ["Handed to client", cd.client],
-          ["Handed over by", co.owner],
+          ["Handed over by", cdmSignerName(cd), "me"],
         ],
       ],
     ]);
   /* Building Control completion statement: since the October 2023 changes to the Building Regulations, the
      completion notice to building control goes with statements that, to the best of each one's knowledge, the work
-     complies and the building regulations dutyholders (principal contractor and principal designer) have met their
+     complies and the building regulations duty holders (principal contractor and principal designer) have met their
      duties */
   if (pick.bccs)
     S2("Building Control completion statement", [
@@ -678,8 +715,8 @@ function cdmSections(cd, pick) {
       [
         "sign",
         [
-          ["Principal contractor", (many ? cd.pcName : "") || co.name],
-          ["Signed for them by", co.owner],
+          ["Principal contractor", (many ? cd.pcName : "") || co.name, "nosign"],
+          ["Signed for them by", cdmSignerName(cd), "me"],
         ],
       ],
       ["h2", "3. Principal designer's statement"],
@@ -711,14 +748,14 @@ function cdmSections(cd, pick) {
         ],
       ],
     ]);
-  /* Building Regulations dutyholder appointments (Part 2A, from October 2023): separate from the CDM ones */
+  /* Building Regulations duty holder appointments (Part 2A, from October 2023): separate from the CDM ones */
   if (pick.brappoint)
-    S2("Building Regulations dutyholder appointments", [
+    S2("Building Regulations duty holder appointments", [
       ["h", "Principal designer and principal contractor (Part 2A)"],
       ["rows", head.filter(([k]) => !/^Principal/.test(k))],
       [
         "p",
-        "Since October 2023 the Building Regulations have their own dutyholders, separate from the CDM ones (they are often the same people). Where more than one contractor or designer works on the job, the client must appoint a principal designer to plan, manage and monitor the design work, and a principal contractor to plan, manage and monitor the building work, so that it complies with the Building Regulations. The appointments should be made in writing before the work starts." +
+        "Since October 2023 the Building Regulations have their own duty holders, separate from the CDM ones (they are often the same people). Where more than one contractor or designer works on the job, the client must appoint a principal designer to plan, manage and monitor the design work, and a principal contractor to plan, manage and monitor the building work, so that it complies with the Building Regulations. The appointments should be made in writing before the work starts." +
           (dom
             ? " For a domestic client: if these appointments are not made, the designer in control of the design work is the principal designer and the contractor in control of the building work is the principal contractor – this letter puts it in writing so everyone knows."
             : " For work done for a business, the appointments must be made in writing."),
@@ -745,8 +782,8 @@ function cdmSections(cd, pick) {
       [
         "sign",
         [
-          ["Principal contractor", (many ? cd.pcName : "") || co.name],
-          ["Signed for them by", co.owner],
+          ["Principal contractor", (many ? cd.pcName : "") || co.name, "nosign"],
+          ["Signed for them by", cdmSignerName(cd), "me"],
         ],
       ],
       ["h2", "3. The principal designer accepts"],
@@ -819,7 +856,7 @@ function cdmSections(cd, pick) {
           ["Structural engineer's calculations sent to building control", ""],
         ],
       ],
-      ["sign", [["Recorded by", cd.manager || co.owner]]],
+      ["sign", [["Recorded by", cdmSignerName(cd), "me"]]],
     ]);
   {
     const cons = String(cd.otherContractors || "")
@@ -888,7 +925,7 @@ function cdmSections(cd, pick) {
           "sign",
           [
             ["Received by (client)", cd.client],
-            ["For " + co.name, co.owner],
+            ["For " + co.name, cdmSignerName(cd), "me"],
           ],
         ],
       ]);
@@ -948,7 +985,7 @@ function cdmSections(cd, pick) {
               "",
             ],
             [
-              "I will tell the principal contractor about anything that may not comply, and co-operate with the other dutyholders",
+              "I will tell the principal contractor about anything that may not comply, and co-operate with the other duty holders",
               "",
             ],
             [
@@ -957,7 +994,7 @@ function cdmSections(cd, pick) {
             ],
           ],
         ],
-        ["sign", [["Checked by", co.owner]]],
+        ["sign", [["Checked by", cdmSignerName(cd), "me"]]],
       ]);
     if (pick.welfare)
       S2("Welfare facilities check", [
@@ -996,7 +1033,7 @@ function cdmSections(cd, pick) {
             ["Fire extinguishers at the fire point; escape routes kept clear", ""],
           ],
         ],
-        ["sign", [["Checked by", cd.manager || co.owner]]],
+        ["sign", [["Checked by", cdmSignerName(cd), "me"]]],
       ]);
     if (pick.emerg)
       S2("Emergency, fire & first aid plan", [
@@ -1177,7 +1214,7 @@ function cdmSections(cd, pick) {
           "rows",
           [
             ["Site", cd.address],
-            ["Issued by", cd.manager || co.owner],
+            ["Issued by", cdmSignerName(cd), "me"],
           ],
         ],
         [
@@ -1225,7 +1262,7 @@ function cdmSections(cd, pick) {
         [
           "sign",
           [
-            ["Issued by", cd.manager || co.owner],
+            ["Issued by", cdmSignerName(cd), "me"],
             ["Accepted by (operative)", ""],
             ["Fire watch / closed by", ""],
           ],
@@ -1274,7 +1311,7 @@ function cdmSections(cd, pick) {
         [
           "sign",
           [
-            ["Issued by", cd.manager || co.owner],
+            ["Issued by", cdmSignerName(cd), "me"],
             ["Accepted by", ""],
           ],
         ],
@@ -1798,6 +1835,8 @@ async function welfarePackPdf(cd) {
 }
 async function cdmPdf(sections, cd) {
   await loadJsPdf();
+  /* the signature of whoever is filling these in */
+  const SG = await cdmSignerSig(cd);
   const co = coData();
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
   const LH = await lhFrame();
@@ -1919,19 +1958,29 @@ async function cdmPdf(sections, cd) {
     y += ls.length * 4.2 + 1.6;
   };
   const sign = (list) => {
-    list.forEach(([role, name]) => {
+    list.forEach(([role, name, how]) => {
       need(18);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.text(doc.splitTextToSize(clean(role), 48)[0], M, y);
       doc.setFont("helvetica", "normal");
       doc.text(doc.splitTextToSize(clean(name || ""), 44)[0], M + 52, y);
-      doc.setDrawColor(120);
-      doc.line(M + 100, y, M + 150, y);
-      doc.line(M + 155, y, W - M, y);
-      doc.setFontSize(7);
-      doc.text("Signature", M + 100, y + 3.5);
-      doc.text("Date", M + 155, y + 3.5);
+      if (how !== "nosign") {
+        if (how === "me") {
+          if (SG)
+            try {
+              doc.addImage(SG.u, SG.f, M + 101, y - 11, 46, 10.5);
+            } catch (e) {}
+          doc.setFontSize(9);
+          doc.text(ukDate(iso(new Date())), M + 156, y - 1.5);
+        }
+        doc.setDrawColor(120);
+        doc.line(M + 100, y, M + 150, y);
+        doc.line(M + 155, y, W - M, y);
+        doc.setFontSize(7);
+        doc.text("Signature", M + 100, y + 3.5);
+        doc.text("Date", M + 155, y + 3.5);
+      }
       y += 12;
     });
   };
@@ -2132,6 +2181,14 @@ function cdmMaker(site0) {
       <label>Client (fills in their details)<select id="cdm-cl"><option value="">Choose a client…</option>${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cd.clientId ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select></label>
       <div class="seg" id="cdm-ct"><button type="button" data-v="domestic" aria-pressed="${cd.clientType === "domestic"}">🏠 Domestic client</button><button type="button" data-v="commercial" aria-pressed="${cd.clientType !== "domestic"}">🏢 Commercial client</button></div>
       <div class="seg" id="cdm-nc"><button type="button" data-v="one" aria-pressed="${cd.contractors === "one"}">One contractor</button><button type="button" data-v="many" aria-pressed="${cd.contractors !== "one"}">More than one contractor (subbies, other trades)</button></div>
+      <label>Filled in and signed by<select class="cdf" data-k="filledBy">${cdmSigners()
+        .map(
+          ([u, n]) =>
+            `<option value="${esc(u)}"${(cd.filledBy || "") === u ? " selected" : ""}>${esc(n)}</option>`,
+        )
+        .join(
+          "",
+        )}</select></label><div class="who">${cdmSignerSigId(cd) ? "Their name, signature and today's date go on the company's signature lines." : `No signature saved for ${esc(cdmSignerName(cd))} yet – add it in People (your own card) or a manager's My details, and it goes on automatically.`}</div>
       <div class="flabel">Project</div>${F("client", "Client name")}${F("project", "Project name")}${F("address", "Site address")}${F("desc", "Description of the work", "e.g. single-storey rear extension with steel beam", "ta")}
       <div class="grid2">${F("start", "Start date", "", "date")}${F("finish", "Finish date", "", "date")}</div><div class="grid2">${F("weeks", "Length (weeks)", "e.g. 16", "number")}${F("workDays", "Working days on site", "e.g. 80", "number")}</div>
       <div class="grid2">${F("maxWorkers", "Most people on site at once", "e.g. 6", "number")}${F("personDays", "Total person days (optional)", "worked out if blank", "number")}</div>

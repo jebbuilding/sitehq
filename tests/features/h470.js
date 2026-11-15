@@ -43,7 +43,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.evaluate(()=>{const v=document.querySelector('#viewer');if(v&&!v.hidden)document.querySelector('#viewer-close').click();const c=document.querySelector('#f-cancel');if(c&&c.offsetParent)c.click();});await p.waitForTimeout(300);
  await p.evaluate(()=>document.querySelector('.tab[data-t=hs]').click());await p.waitForTimeout(500);
  await p.selectOption('#hs-cdmsite','4 Rolle Road, Exmouth');await p.click('#hs-cdm');await p.waitForTimeout(500);
- ok(/Before you start[\s\S]*Building Regulations dutyholder appointments[\s\S]*Building Control commencement record/.test(await p.innerText('#cdm-body')),'Before you start lists the Building Regulations appointments and the commencement record');
+ ok(/Before you start[\s\S]*Building Regulations duty holder appointments[\s\S]*Building Control commencement record/.test(await p.innerText('#cdm-body')),'Before you start lists the Building Regulations appointments and the commencement record');
  await p.click('#cdm-none');await p.waitForTimeout(150);
  await p.check('.cdd[data-k=brappoint]');await p.check('.cdd[data-k=bccommence]');await p.check('.cdd[data-k=subcon]');
  await p.check('#cdm-dl');await p.click('#f-save');await p.waitForTimeout(4500);
@@ -51,7 +51,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const all=await p.evaluate(async(n)=>{let out='';for(const r of (window.__dl||[]).slice(-3)){const u=new Uint8Array(await r.data.arrayBuffer());let s='';u.forEach(x=>s+=String.fromCharCode(x));out+=s;}return out},n);
  fs.writeFileSync('h470-more.txt',all.length+'');
  const H=t=>all.includes(t);
- ok(H('Building Regulations dutyholder appointments')&&H('1. The client appoints')&&H('2. The principal contractor accepts')&&H('3. The principal designer accepts'),'the appointments letter: the client appoints, both accept');
+ ok(H('Building Regulations duty holder appointments')&&H('1. The client appoints')&&H('2. The principal contractor accepts')&&H('3. The principal designer accepts'),'the appointments letter: the client appoints, both accept');
  ok(H('designer in control'),'with the domestic client rule');
  ok(H('Building Control commencement record')&&H('When the work is regarded as commenced')&&H('Start notice'),'the commencement record: start notice and when it counts as started');
  ok(H('Building Regulations Part 2A')&&H('Building Regulations: each trade confirms')&&H('competent to carry out my part of the work'),'the contractor check now covers Building Regulations competence');

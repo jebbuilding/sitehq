@@ -25,6 +25,7 @@ import { openPromptSender, remindersPanel, wireReminders } from "./reminders.js"
 import { SUBAG } from "./subcontractor-agreement.js";
 import { loadImage } from "../photos/photos.js";
 import { holTeamHtml, holTeamWire } from "../planner/holidays.js";
+import { sdSigCard, sdWireSig } from "../sales/sig-setup.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dayFor, openMyDay } from "../timesheets/working-day.js";
 export { avatarHtml, myDetailsView, peopleView, personPhoto };
@@ -110,16 +111,20 @@ function wireProfilePhoto() {
       }
     };
 }
+/* someone given Manager in Setup › People & access › Office access */
+const ppIsManager = (uid) =>
+  ((((S.settings || {}).access || {}).office || {}).people || {})[uid] === "manager";
 function myDetailsView() {
   const d = myDetails() || {};
   $("main").innerHTML =
     `${profilePhotoCard()}<div class="actions"><button class="btn primary" id="dt-edit" type="button">Update my details</button></div>
     ${DET_SECTIONS.map(([title, fields]) => `<div class="day"><div class="dayh"><span>${esc(title)}</span></div><div class="details">${fields.map(([k, l]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(k === "empType" ? EMP_TYPES[d[k]] || "" : d[k] || "–")}</span></div>`).join("")}</div></div>`).join("")}
-    <div class="who">Last confirmed ${d.confirmedAt ? stamp(d.confirmedAt) : "never"}.</div>`;
+    <div class="who">Last confirmed ${d.confirmedAt ? stamp(d.confirmedAt) : "never"}.</div>${ppIsManager(S.me) ? sdSigCard() : ""}`;
   $("main").insertAdjacentHTML("afterbegin", myPdocsBlock());
   wireMyPdocs();
   $("main").insertAdjacentHTML("beforeend", privacyBlock(false));
   $("dt-edit").onclick = () => openDetails();
+  sdWireSig();
   wireProfilePhoto();
 }
 /* "Works for us as": the employment type, and which page that puts them on (People / Self-employed trades / Companies) */
@@ -209,7 +214,7 @@ function peopleView() {
         String(id).startsWith("off:")
           ? `<div class="actions"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">Edit details</button></div>`
           : id === S.me
-            ? `<div class="actions"><button type="button" class="btn primary" id="pp-me">${d ? "✎ Edit my details" : "Fill in my details"}</button><button type="button" class="btn op-me" data-t="time">⏱️ My timesheet</button><button type="button" class="btn op-me" data-t="mydw">🧱 My day sheet</button></div>`
+            ? `<div class="actions"><button type="button" class="btn primary" id="pp-me">${d ? "✎ Edit my details" : "Fill in my details"}</button><button type="button" class="btn op-me" data-t="time">⏱️ My timesheet</button><button type="button" class="btn op-me" data-t="mydw">🧱 My day sheet</button></div>${sdSigCard()}`
             : `<div class="actions" style="align-items:center"><button type="button" class="btn primary pp-edit" data-w="${esc(id)}">${d ? "Edit details" : "Fill in details for them"}</button><label for="pp-role-${esc(id)}" class="inl" style="font-size:14px;color:var(--ink)">Works for us as<select id="pp-role-${esc(id)}" class="pp-role" data-w="${esc(id)}" style="width:auto;margin-left:6px">${(() => {
                 /* one choice keeps their details and the page they're on in step (James, Nov 2026) */
                 const cur = ppEmpOf(id);
@@ -451,6 +456,7 @@ function peopleView() {
         { form: "details" },
       );
   if ($("pp-me")) $("pp-me").onclick = () => openDetails();
+  sdWireSig();
   /* the account holder's own timesheet and day sheet, filled in like the trades' (moved here from Setup, Nov 2026) */
   document.querySelectorAll(".op-me").forEach(
     (b) =>

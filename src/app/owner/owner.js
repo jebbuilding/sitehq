@@ -42,7 +42,6 @@ import { isInv } from "../purchasing/materials-receipts.js";
 import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
-import { sdSigCard, sdWireSig } from "../sales/sig-setup.js";
 import { siteHeadHtml } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
@@ -910,7 +909,6 @@ function ownerSetup() {
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
     ${companyCard()}
     ${lhCard()}
-    ${sdSigCard()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
     <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button></div>
@@ -934,7 +932,6 @@ function ownerSetup() {
   wireBackup();
   wireCompany();
   lhWire();
-  sdWireSig();
   qaSetupWire();
   $("main")
     .querySelectorAll("#tp-seg button")
