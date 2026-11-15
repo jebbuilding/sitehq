@@ -2,6 +2,7 @@
 import { initials } from "../chat/chat.js";
 import { docPicker } from "./documents.js";
 import { ptCl } from "./portal.js";
+import { PROP } from "./property-info.js";
 import { viewClient } from "./quick-enquiry.js";
 import { clientPdf } from "./record-pdf.js";
 import { $, esc, toast } from "../core/helpers.js";
@@ -306,6 +307,7 @@ function openClientForm(c, mode) {
     <div class="flabel" style="margin-top:4px">🔑 Keys &amp; alarm <span class="who">(only you see these)</span></div>
     <div class="grid2"><label for="cf-keyloc">Where the house key is<input id="cf-keyloc" maxlength="200" value="${esc(c.keyLoc || "")}" placeholder="e.g. Key safe by the back door"></label><label for="cf-keycode">Key safe code<input id="cf-keycode" maxlength="40" value="${esc(c.keyCode || "")}" autocomplete="off" placeholder="e.g. 4821"></label></div>
     <div class="grid2"><label for="cf-alarmloc">Where the alarm panel is<input id="cf-alarmloc" maxlength="200" value="${esc(c.alarmLoc || "")}" placeholder="e.g. Hallway cupboard, left of front door"></label><label for="cf-alarmcode">Alarm code<input id="cf-alarmcode" maxlength="40" value="${esc(c.alarmCode || "")}" autocomplete="off" placeholder="e.g. 1357"></label></div>
+    ${PROP.formHtml(c)}
     </div>
     <div id="cf-enqsec" class="cfsec" ${conOnly ? "hidden" : ""}>
     ${conOnly ? "" : `<div class="flabel" style="margin-top:6px">📝 The enquiry</div>`}
@@ -386,6 +388,7 @@ function openClientForm(c, mode) {
         keyCode: $("cf-keycode").value.trim(),
         alarmLoc: $("cf-alarmloc").value.trim(),
         alarmCode: $("cf-alarmcode").value.trim(),
+        prop: PROP.read() || (c && c.prop) || {},
         quick: false,
       });
       const pinV = $("cf-pin").value.trim();
@@ -751,6 +754,7 @@ function openClientForm(c, mode) {
   };
   (c.contacts || []).forEach(addCon);
   $("cf-addc").onclick = () => addCon().querySelector(".cc-n").focus();
+  PROP.wire();
   $("cf-invdiff").onchange = (e) => {
     $("cf-invbox").hidden = !e.target.checked;
   };

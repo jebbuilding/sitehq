@@ -99,3 +99,7 @@
 .cldet-row a{font-weight:600;word-break:break-word}
 .cldet-addr{line-height:1.4}
 .ai-list{max-height:50vh;overflow:auto;margin:8px 0}
+
+/* a client's property – services and access: one row per fuse board */
+.pr-board{display:grid;grid-template-columns:1fr minmax(130px,170px) 44px;gap:8px;align-items:end}
+.pr-board .pr-bdel{min-height:44px}

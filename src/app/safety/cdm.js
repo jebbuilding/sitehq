@@ -1510,10 +1510,11 @@ async function welfarePackPdf(cd) {
       os = npOSGB(ll[0], ll[1]);
     } catch (e) {}
     const f = (v, p, ng) => {
-      const a = Math.abs(v),
-        d = Math.floor(a),
-        mi = Math.floor((a - d) * 60),
-        se = Math.round(((a - d) * 60 - mi) * 60);
+      /* whole seconds first, so 59.6 seconds rolls over to the next minute (not 60) */
+      const t = Math.round(Math.abs(v) * 3600),
+        d = Math.floor(t / 3600),
+        mi = Math.floor((t % 3600) / 60),
+        se = t % 60;
       return `${String(d).padStart(p, "0")}°${String(mi).padStart(2, "0")}'${String(se).padStart(2, "0")}"${v < 0 ? ng[1] : ng[0]}`;
     };
     dms = f(ll[0], 2, "NS") + " , " + f(ll[1], 3, "EW");
@@ -1528,13 +1529,16 @@ async function welfarePackPdf(cd) {
   kv("Client(s)", cd.client, true);
   kv("Client contact details", cd.clientPhone);
   kv("Site address", addrLines.join("\n"), true);
-  kv("Grid reference", os ? os.grid : "");
-  kv("Lat, long (decimal)", ll.length >= 2 ? ll[0] + " , " + ll[1] : "");
+  /* the location and references are always there – a line to write on when not filled in (James, Nov 2026: "in
+     welfare unit notices can you add the 3 word position, lat and long, grid ref, planning app ref, building control ref") */
+  const BL = "________________________";
+  kv("what3words", w3 ? "/// " + w3 : BL);
+  kv("Lat, long (decimal)", ll.length >= 2 ? ll[0] + " , " + ll[1] : BL);
   kv("Lat, long (deg/min/sec)", dms);
+  kv("Grid reference", os ? os.grid : BL);
   kv("Easting / Northing", os ? `X ${os.e}  /  Y ${String(os.n).padStart(6, "0")}` : "");
-  kv("what3words", w3 ? "/// " + w3 : "");
-  kv("Planning ref", cd.planning);
-  kv("Building Control ref", cd.bcRef);
+  kv("Planning application ref", cd.planning || BL);
+  kv("Building Control ref", cd.bcRef || BL);
   kv("Site manager", agent);
   kv("Principal contractor", cd.pcName || co.name);
   kv("Nearest A&E", cd.hospital);
@@ -1593,6 +1597,8 @@ async function welfarePackPdf(cd) {
     y += 1;
     t("WHAT3WORDS:  /// " + w3, 13, "bold", 6);
   }
+  if (os) t("GRID REF:  " + os.grid, 12, "bold", 6);
+  if (ll.length >= 2) t("LAT, LONG:  " + ll[0] + " , " + ll[1], 12, "bold", 6);
   y += 4;
   t("THE FIRST AIDERS ON SITE ARE:", 13, "bold");
   y += 1;
@@ -1639,6 +1645,16 @@ async function welfarePackPdf(cd) {
   foot();
   /* 4. emergency phone numbers */
   await page("EMERGENCY TELEPHONE NUMBERS", "#b91c1c");
+  /* where you are, to read out to 999 */
+  t("THIS SITE: " + addrLines.join(", "), 12, "bold");
+  [
+    w3 ? "what3words /// " + w3 : "",
+    os ? "Grid ref " + os.grid : "",
+    ll.length >= 2 ? "Lat, long " + ll[0] + " , " + ll[1] : "",
+  ]
+    .filter(Boolean)
+    .forEach((l) => t(l, 11, "normal", 4));
+  y += 6;
   [
     ["Police", "999"],
     ["Fire & Rescue", "999"],

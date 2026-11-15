@@ -14,6 +14,7 @@ import { clDocsHtml, wireClDocs } from "./documents.js";
 import { clGdprHtml, wireClGdpr } from "./gdpr-consent.js";
 import { mjEdit } from "./more-jobs.js";
 import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
+import { PROP } from "./property-info.js";
 import { clientPdf } from "./record-pdf.js";
 import { clMediaHtml, wireClMedia } from "./sketches.js";
 import {
@@ -413,7 +414,7 @@ function viewClient(c) {
             )
             .join("")}</div></div>`
         : ""
-    }${clInvHtml(c)}
+    }${PROP.viewHtml(c)}${clInvHtml(c)}
     ${clGdprHtml(c)}
     ${
       clientSites(c).length

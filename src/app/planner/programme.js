@@ -136,9 +136,11 @@ function pgHtml(site) {
           .slice(0, i)
           .map(
             (o, j) =>
-              `<option value="${esc(o.id)}|end"${s.after === o.id && s.link !== "with" ? " selected" : ""}>${j + 1}. ${esc((o.name || "").slice(0, 30))} finishes</option><option value="${esc(o.id)}|with"${s.after === o.id && s.link === "with" ? " selected" : ""}>${j + 1}. ${esc((o.name || "").slice(0, 30))} starts (same day)</option>`,
+              `<option value="${esc(o.id)}|end"${s.after === o.id && s.link !== "with" ? " selected" : ""}>${j + 1}. ${esc((o.name || "").slice(0, 30))} finishes</option><option value="${esc(o.id)}|with"${s.after === o.id && s.link === "with" ? " selected" : ""}>${j + 1}. ${esc((o.name || "").slice(0, 30))} starts (at the same time)</option>`,
           )
-          .join("")}</select></td>
+          .join(
+            "",
+          )}</select>${i ? `<button type="button" class="pillbtn pg-par" aria-pressed="${s.after === st[i - 1].id && s.link === "with"}" title="Start at the same time as stage ${i}">⇉ Same time as ${i}</button>` : ""}</td>
         <td><input class="pg-lag" type="number" inputmode="numeric" min="0" max="200" value="${esc(s.lag || 0)}" aria-label="Delay days before stage ${i + 1}"></td>
         <td class="pg-dates">${esc(shortDay(d.from))}${d.to !== d.from ? " – " + esc(shortDay(d.to)) : ""}${lt ? ` <span class="tag bad">${lt} day${lt === 1 ? "" : "s"} late</span>` : ""}${!s.done && d.from <= today && d.to >= today ? ' <span class="tag day">Now</span>' : ""}</td>
         <td><button type="button" class="pillbtn pg-tick" aria-pressed="${!!s.done}" aria-label="Stage ${i + 1} done">${s.done ? "✓ " + esc(shortDay(s.actTo || d.to)) : "Done?"}</button></td>
@@ -290,7 +292,11 @@ function pgWire(site) {
   if ($("pg-add"))
     $("pg-add").onclick = () =>
       redo((p) => {
-        const last = p.stages[p.stages.length - 1];
+        const dt0 = pgCalc(p);
+        const last = p.stages.reduce(
+          (m, x) => (!m || (dt0[x.id] && dt0[m.id] && dt0[x.id].to >= dt0[m.id].to) ? x : m),
+          null,
+        );
         p.stages.push({
           id: newId(),
           name: "",
@@ -300,6 +306,19 @@ function pgWire(site) {
           lag: 0,
         });
       });
+  document.querySelectorAll(".pg-par").forEach(
+    (b) =>
+      (b.onclick = () =>
+        redo((p) => {
+          const i = +b.closest("tr").dataset.i;
+          const s = p.stages[i],
+            prev = p.stages[i - 1];
+          if (!s || !prev) return;
+          const on = s.after === prev.id && s.link === "with";
+          s.after = prev.id;
+          s.link = on ? "end" : "with";
+        })),
+  );
   document.querySelectorAll(".pg-x").forEach(
     (b) =>
       (b.onclick = () =>
