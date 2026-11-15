@@ -1,6 +1,6 @@
 # Current platform: claude.ai Artifact
 
-- Live version 407 (15 Nov 2026, from commit eff549b). Live URL: `https://claude.ai/artifact/FjLkyzz3jsxrGeowjY2fmh` (also reachable as `claude.ai/code/artifact/77495b28-024d-4d88-a9dc-16dc78e93450`). Owner: James's claude.ai account.
+- Live version 408 (15 Nov 2026, from commit 7278e46). Live URL: `https://claude.ai/artifact/FjLkyzz3jsxrGeowjY2fmh` (also reachable as `claude.ai/code/artifact/77495b28-024d-4d88-a9dc-16dc78e93450`). Owner: James's claude.ai account.
 - Runtime contract **0.2.90** (pinned; newer exist). Type definitions in `platform/types/`.
 - Capabilities: `assets`, `db` (25 rules – `platform/capabilities.json`), `downloads`, `sample`, `user` (`scopes:["profile"]`).
 
