@@ -144,3 +144,6 @@ body>.dimask.cb3-sg{z-index:320}
 .np-chainbar .np-ckbox[hidden],.np-chainbar .np-ckbox [hidden]{display:none}
 .np-chainbar .np-ck{min-height:40px}
 .np-chainbar .np-cks{width:80px;padding:6px 8px;font-size:15px}
+
+/* drawing › on a touch screen every tool button and tab is at least a finger's size */
+@media (pointer:coarse){.np-bar .np-t,.np-bar .np-libbtn,.np-bar .np-gt{min-height:44px}}

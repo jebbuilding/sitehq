@@ -30,6 +30,7 @@ import { cbpOpen } from "./cupboard-pack.js";
 import { cbsDraw, cbsIs, cbsPlan } from "./cupboard-shapes.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
+import { npFingerTap } from "./finger-tap.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
 import { hrView } from "./house-render.js";
 import { npJoinAt } from "./join-rooms.js";
@@ -1683,7 +1684,7 @@ async function openNotePage(opts) {
             .join("")}</select></div>
           <div class="nfrow nfphrow"><span class="nfl">Supply</span><div class="seg nfseg nfph"><button type="button" data-v="cu">Single phase</button><button type="button" data-v="cu3">Three phase</button></div></div>
           <div class="nfrow nfvprow"><span class="nfl">Scaled area</span><button type="button" class="nfb nfa-vp">🔍 Scale &amp; name</button></div>
-          <div class="nfrow nfacts"><button type="button" class="nfb nfa-lock">🔒 Lock</button><button type="button" class="nfb nfa-dim">📏 Dimension it</button><button type="button" class="nfb nfa-std">↺ Standard size</button><button type="button" class="nfb nfa-dup">⧉ Copy</button><button type="button" class="nfb nfa-del" style="color:#ff8a8a">🗑 Delete</button></div></div>
+          <div class="nfrow nfacts"><button type="button" class="nfb nfa-lock">🔒 Lock</button><button type="button" class="nfb nfa-fix" aria-pressed="false" title="Keep this wall or line at its length when the walls round it are moved">📏 Keep length</button><button type="button" class="nfb nfa-dim">📏 Dimension it</button><button type="button" class="nfb nfa-std">↺ Standard size</button><button type="button" class="nfb nfa-dup">⧉ Copy</button><button type="button" class="nfb nfa-del" style="color:#ff8a8a">🗑 Delete</button></div></div>
         <div class="nfstudw" hidden><div class="nfrow"><span class="nfl">Timber</span><div class="seg nfseg nfsd"><button type="button" data-v="100">100×50</button><button type="button" data-v="150">150×50</button></div></div>
           <div class="nfrow"><span class="nfl">Centres</span><div class="seg nfseg nfcc"><button type="button" data-v="400">400 mm</button><button type="button" data-v="600">600 mm</button></div></div>
           <div class="nfrow nfcorner" hidden><span class="nfl">Corners</span><div class="seg nfseg"><button type="button" data-v="3stud">3-stud</button><button type="button" data-v="cal">California</button><button type="button" data-v="blk">Blocked</button></div></div>
@@ -3277,7 +3278,7 @@ async function openNotePage(opts) {
         });
       }
     }
-    q(".np-selbar:not(.np-mbar)").hidden = !so || msel.size > 0;
+    q(".np-selbar:not(.np-mbar)").hidden = !so || msel.size > 0 || !q(".np-finebox").hidden;
     opBar(so && msel.size === 0 ? so : null);
     {
       const lbe = q(".np-lenbar");
@@ -3285,6 +3286,7 @@ async function openNotePage(opts) {
         so &&
         !msel.size &&
         !drag &&
+        q(".np-finebox").hidden &&
         doc.scale &&
         (so.t === "line" ||
           so.t === "arrow" ||
@@ -3925,7 +3927,16 @@ async function openNotePage(opts) {
             };
             return;
           }
-          drag = { kind: "end", i: sel, which: h.k, o: o0, c: ctr(so), pd: p, hp: h.p.slice() };
+          drag = {
+            kind: "end",
+            i: sel,
+            which: h.k,
+            o: o0,
+            c: ctr(so),
+            pd: p,
+            hp: h.p.slice(),
+            jn: e.shiftKey ? [] : joinedEnds(sel).filter((x) => x[2] === h.k),
+          };
           return;
         }
       }
@@ -4022,6 +4033,7 @@ async function openNotePage(opts) {
           pd: p,
           hp: p,
           att: attOf(doc.objs[i]),
+          jn: e.shiftKey ? [] : joinedEnds(i),
         };
         draw();
         return;
@@ -4258,12 +4270,24 @@ async function openNotePage(opts) {
           o[other] = [cw[0] + (f[0] - cm[0]), cw[1] + (f[1] - cm[1])];
           o[drag.which] = [cw[0] + (lp[0] - cm[0]), cw[1] + (lp[1] - cm[1])];
         } else {
-          let np = snapPt(p, { skip: drag.i });
+          let np = snapPt(p, { skip: drag.i, skipSet: new Set((drag.jn || []).map((x) => x[0])) });
           if (!npBoxy(o)) {
             const other = drag.which === "a" ? o.b : o.a;
             np = orthoB(other, np);
+            if (o.fix) {
+              const L0 = lenOf(drag.o.a, drag.o.b),
+                L = lenOf(other, np) || 1;
+              np = [
+                other[0] + ((np[0] - other[0]) * L0) / L,
+                other[1] + ((np[1] - other[1]) * L0) / L,
+              ];
+            }
           }
           o[drag.which] = np;
+          (drag.jn || []).forEach(([j, E]) => {
+            const x = doc.objs[j];
+            if (x && !x.fix) x[E] = np.slice();
+          });
         }
         live = liveFor(o) && { p, t: liveFor(o).t };
         draw();
@@ -4278,11 +4302,36 @@ async function openNotePage(opts) {
         if (snapOn) {
           const sp = snapPt([anc[0] + dx0, anc[1] + dy0], {
             skip: drag.i,
-            skipSet: new Set((drag.att || []).map((x) => x[0])),
+            skipSet: new Set(
+              (drag.att || []).map((x) => x[0]).concat((drag.jn || []).map((x) => x[0])),
+            ),
             noGrid: true,
           });
           dx = sp[0] - anc[0];
           dy = sp[1] - anc[1];
+        }
+        if (drag.jn && drag.jn.length && drag.o.a && drag.o.b) {
+          /* only straight out or straight in, so the walls joined to it stay square */
+          const L = lenOf(drag.o.a, drag.o.b) || 1,
+            n = [-(drag.o.b[1] - drag.o.a[1]) / L, (drag.o.b[0] - drag.o.a[0]) / L],
+            k = dx * n[0] + dy * n[1];
+          dx = n[0] * k;
+          dy = n[1] * k;
+          const held = drag.jn.some(([j, E, M, p0, far]) => {
+            const x = doc.objs[j];
+            return (
+              x &&
+              x.fix &&
+              Math.abs(lenOf(far, [drag.o[M][0] + dx, drag.o[M][1] + dy]) - lenOf(far, p0)) > 0.5
+            );
+          });
+          if (held) {
+            dx = dy = 0;
+            if (!drag.fixSaid) {
+              drag.fixSaid = 1;
+              toast("A wall joined to it is kept at its length (📏 in Properties)");
+            }
+          }
         }
         if (o.t === "img" || o.t === "text") {
           o.x = drag.o.x + dx;
@@ -4294,6 +4343,10 @@ async function openNotePage(opts) {
           o.a = [drag.o.a[0] + dx, drag.o.a[1] + dy];
           o.b = [drag.o.b[0] + dx, drag.o.b[1] + dy];
           if (drag.o.v) o.v = [drag.o.v[0] + dx, drag.o.v[1] + dy];
+          (drag.jn || []).forEach(([j, E, M]) => {
+            const x = doc.objs[j];
+            if (x) x[E] = o[M].slice();
+          });
         }
         (drag.att || []).forEach(([j, d0]) => {
           if (!doc.objs[j]) return;
@@ -4792,7 +4845,7 @@ async function openNotePage(opts) {
     } catch (e) {}
     requestAnimationFrame(size);
   };
-  bar.querySelectorAll(".np-gt").forEach((b) => (b.onclick = () => setGrp(b.dataset.gt)));
+  bar.querySelectorAll(".np-gt").forEach((b) => npFingerTap(b, () => setGrp(b.dataset.gt)));
   setGrp(bar.dataset.g || "draw");
   q(".np-moretools").onclick = () => {
     const c = bar.classList.toggle("compact");
@@ -4974,7 +5027,7 @@ async function openNotePage(opts) {
     if (t !== "move") sel = null;
     draw();
   };
-  ov.querySelectorAll(".np-t[data-t]").forEach((b) => (b.onclick = () => setTool(b.dataset.t)));
+  ov.querySelectorAll(".np-t[data-t]").forEach((b) => npFingerTap(b, () => setTool(b.dataset.t)));
   /* colour picker pop-up: line colour or block fill colour */
   function colourPop(mode, o) {
     const old = ov.querySelector(".np-colpop");
@@ -7262,16 +7315,51 @@ async function openNotePage(opts) {
     ["Left side", [-1, 0]],
     ["Right side", [1, 0]],
   ];
-  function elevAll() {
+  /* elevations stay in step with their plan: each elevation page remembers the plan page it came from (auto.from)
+     and what that plan looked like (auto.sig); opening it, or making a PDF, after the plan has changed draws it again
+     from the plan – anything added on the elevation by hand (not marked au) is kept */
+  const elevSig = (i) => {
+    const P = doc.pages[i];
+    if (!P) return "";
+    const st = doc.elevSet || {};
+    const up =
+      st.upper && st.upper !== "same" && doc.pages[+st.upper] ? doc.pages[+st.upper].objs : null;
+    const t = JSON.stringify([i === pg ? doc.objs : P.objs, st, up, doc.scale]);
+    let h = 5381;
+    for (let k = 0; k < t.length; k++) h = ((h << 5) + h + t.charCodeAt(k)) | 0;
+    return h.toString(36) + ":" + t.length;
+  };
+  function elevRefresh(i) {
+    const P = doc.pages[i];
+    if (!P || !P.auto) return false;
+    const j = doc.pages.findIndex((x) => x.pid && x.pid === P.auto.from);
+    if (j < 0 || elevSig(j) === P.auto.sig) return false;
+    doc.pages[pg].objs = doc.objs;
+    const back = pg;
+    pg = j;
+    doc.objs = doc.pages[j].objs;
+    try {
+      elevAll(true);
+    } finally {
+      pg = back;
+      doc.objs = doc.pages[pg].objs;
+    }
+    return true;
+  }
+  function elevAll(silent) {
+    const say = silent ? () => {} : toast;
     if (!doc.scale) {
-      toast("Set a scale in 📐 Paper first");
+      say("Set a scale in 📐 Paper first");
       return;
     }
     const B = elevBuild();
     if (!B) {
-      toast("Draw the walls first (Walls & structure), with the doors and windows in them");
+      say("Draw the walls first (Walls & structure), with the doors and windows in them");
       return;
     }
+    const pid = doc.pages[pg].pid || (doc.pages[pg].pid = "p" + Date.now().toString(36));
+    const sig = elevSig(pg);
+    let firstDone = -1;
     const st = B.st;
     const U = toUnits,
       col = "#111111",
@@ -7562,17 +7650,33 @@ async function openNotePage(opts) {
         ly: "notes",
       });
       objs.forEach((ob) => Object.keys(ob).forEach((k) => ob[k] === undefined && delete ob[k]));
-      doc.pages.push({ name: name + " elevation", type: "Elevation", objs });
+      objs.forEach((ob) => (ob.au = 1));
+      const ex = doc.pages.findIndex((x) => x.auto && x.auto.from === pid && x.auto.side === name);
+      if (ex >= 0) {
+        /* drawn again in its own page, keeping what was added by hand */
+        doc.pages[ex].objs = objs.concat((doc.pages[ex].objs || []).filter((o) => !o.au));
+        doc.pages[ex].auto.sig = sig;
+        if (firstDone < 0) firstDone = ex;
+      } else {
+        doc.pages.push({
+          name: name + " elevation",
+          type: "Elevation",
+          objs,
+          auto: { from: pid, side: name, sig },
+        });
+        if (firstDone < 0) firstDone = doc.pages.length - 1;
+      }
       made++;
     });
     if (!made) {
-      toast("Couldn't find walls to draw elevations from");
+      say("Couldn't find walls to draw elevations from");
       return;
     }
     dirty = true;
-    goPage(first);
+    if (silent) return;
+    goPage(firstDone >= 0 ? firstDone : first);
     toast(
-      `${made} elevations drawn, one a page. Change the roof, storeys or finish in 🏘️ and draw them again.`,
+      `${made} elevations drawn, one a page. They keep up with the plan: change the plan and they redraw when you open them.`,
     );
   }
   function elevMenu() {
@@ -8802,17 +8906,18 @@ async function openNotePage(opts) {
       localStorage.setItem("np.pad", pad.hidden ? "0" : "1");
     } catch (e) {}
   };
-  try {
-    if (
-      localStorage.getItem("np.pad") === "1" ||
-      (localStorage.getItem("np.pad") == null &&
-        window.matchMedia &&
-        window.matchMedia("(pointer:coarse)").matches)
-    ) {
+  {
+    /* open to start with on a touch screen, unless it was shut last time (when the browser can remember that) */
+    let on = !!(window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+    try {
+      const v = localStorage.getItem("np.pad");
+      if (v === "1" || v === "0") on = v === "1";
+    } catch (e) {}
+    if (on) {
       lb.querySelector(".nlb-pad").hidden = false;
       lb.querySelector(".nlb-padb").setAttribute("aria-pressed", "true");
     }
-  } catch (e) {}
+  }
   const lbKey = (k) => {
     const f = lbField || lb.querySelector(".nlb-l");
     if (lbFresh) {
@@ -9017,6 +9122,24 @@ async function openNotePage(opts) {
     dirty = true;
     draw();
     toast("Extended " + (doc.scale ? npFmtLen(realMm(best)) : ""));
+  }
+  /* walls joined end to end with this wall (or lines with this line): [index, its end, this one's end, where its
+     end was, where its far end is] – they stretch with it when it is pushed or pulled, so the corners stay joined */
+  function joinedEnds(i) {
+    const o = doc.objs[i];
+    if (!isSegObj(o) || o.bend) return [];
+    const out = [];
+    doc.objs.forEach((x, j) => {
+      if (j === i || !isSegObj(x) || x.bend || x.lk || (doc.layers && lyOff(x))) return;
+      if (!!npIsWall(o) !== !!npIsWall(x)) return;
+      ["a", "b"].forEach((E) =>
+        ["a", "b"].forEach((M) => {
+          if (lenOf(x[E], o[M]) < 0.75)
+            out.push([j, E, M, x[E].slice(), x[E === "a" ? "b" : "a"].slice()]);
+        }),
+      );
+    });
+    return out;
   }
   function cornerJoin(i, p, j, q2) {
     const A = doc.objs[i],
@@ -9949,6 +10072,9 @@ async function openNotePage(opts) {
       }
       fb.querySelector(".nfly").value = npLayerOf(o);
       fb.querySelector(".nfa-lock").textContent = o.lk ? "🔓 Unlock" : "🔒 Lock";
+      fb.querySelector(".nfa-fix").hidden = !isSegObj(o) || !!o.bend;
+      fb.querySelector(".nfa-fix").setAttribute("aria-pressed", String(!!o.fix));
+      fb.querySelector(".nfa-fix").textContent = o.fix ? "📏 Length kept ✓" : "📏 Keep length";
       {
         const nd = fb.querySelector(".nfa-dim");
         nd.hidden = ["text", "stroke", "dim", "ang", "arrow"].includes(o.t) || vpOf(o);
@@ -10268,10 +10394,13 @@ async function openNotePage(opts) {
   function fineOpen() {
     fb.hidden = false;
     fineFill();
+    /* the bars underneath step out of the way while it is open */
+    draw();
   }
   fb.querySelector(".nfx").onclick = () => {
     fb.hidden = true;
     addTimber = false;
+    draw();
   };
   {
     const cur = () => (sel != null ? doc.objs[sel] : null);
@@ -10510,6 +10639,11 @@ async function openNotePage(opts) {
             }
           })),
     );
+    fb.querySelector(".nfa-fix").onclick = () =>
+      upd((o) => {
+        if (o.fix) delete o.fix;
+        else o.fix = 1;
+      });
     fb.querySelector(".nfa-lock").onclick = () =>
       upd((o) => {
         o.lk = !o.lk;
@@ -10916,6 +11050,7 @@ async function openNotePage(opts) {
   }
   function goPage(i) {
     doc.pages[pg].objs = doc.objs;
+    if (elevRefresh(i)) setTimeout(() => toast("Brought up to date with the plan"), 50);
     msel.clear();
     chain = [];
     pg = i;
@@ -12267,6 +12402,7 @@ async function openNotePage(opts) {
     };
   q(".np-pdf").onclick = async () => {
     NP_SCX = 0;
+    if (doc.pages.some((x, i) => x.auto && elevRefresh(i))) draw();
     const btn = q(".np-pdf");
     if (!S.dl) {
       toast("Downloads only work when the page is opened in claude.ai");
