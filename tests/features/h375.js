@@ -20,8 +20,8 @@ const page_src=fs.readFileSync('timesheets.html','utf8');
  // V in the right pane with the point at the left edge (hinge left)
  await p.click('.np-t[data-t=line]');await drag(488,262,382,450);await drag(382,450,488,638);
  // label the middle pane fixed, top light TH
- await p.click('.np-t[data-t=text]');await p.mouse.click(bb.x+300,bb.y+450);await p.waitForTimeout(300);await p.fill('.np-text input','F');await p.keyboard.press('Enter');await p.waitForTimeout(300);
- await p.mouse.click(bb.x+170,bb.y+295);await p.waitForTimeout(300);await p.fill('.np-text input','TH');await p.keyboard.press('Enter');await p.waitForTimeout(300);
+ await p.click('.np-t[data-t=text]');await p.mouse.click(bb.x+300,bb.y+450);await p.waitForTimeout(300);await p.fill('.np-text .np-ttx','F');await p.click('.np-text [type=submit]');await p.waitForTimeout(300);
+ await p.mouse.click(bb.x+170,bb.y+295);await p.waitForTimeout(300);await p.fill('.np-text .np-ttx','TH');await p.click('.np-text [type=submit]');await p.waitForTimeout(300);
  await p.screenshot({path:'dr1.png'});
  const objs=await p.evaluate(()=>null);
  await p.click('.np-save');await p.waitForTimeout(1500);

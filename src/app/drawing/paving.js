@@ -1197,6 +1197,9 @@ const NP_LAYERS = [
 ];
 let NP_KLAY = null;
 
+/* a text box's look: o.wt weight (400 normal, 600 usual, 800 bold), o.it italic, o.al line up l / c / r */
+const npFont = (o) =>
+  `${o.it ? "italic " : ""}${o.wt || 600} ${o.size}px system-ui, -apple-system, sans-serif`;
 function npLayerOf(o) {
   if (o.ly) return o.ly;
   if (o.t === "dim" || o.t === "ang") return "dims";
@@ -1655,7 +1658,7 @@ async function openNotePage(opts) {
           <div class="nfrow nflinrow" style="flex-wrap:wrap"><span class="nfl">Linings</span><label style="flex:1 1 220px;display:flex;flex-direction:column;gap:3px;font-size:12px">Side 1<select class="nflin" data-s="1" style="min-height:40px;height:auto;font-size:14px;padding:6px 8px;width:100%;line-height:1.3">${NP_LINOPTS()}</select></label><label style="flex:1 1 220px;display:flex;flex-direction:column;gap:3px;font-size:12px">Side 2<select class="nflin" data-s="2" style="min-height:40px;height:auto;font-size:14px;padding:6px 8px;width:100%;line-height:1.3">${NP_LINOPTS()}</select></label><button type="button" class="nfb nflinsw">⇄ Swap sides</button></div>
           <div class="nfrow nfcallrow"><span class="nfl">Pointer</span><select class="nfc-lead"><option value="none">No arrow</option><option value="arrow">➜ Arrow</option><option value="dot">● Dot</option><option value="line">— Line</option></select><select class="nfc-box"><option value="">No box</option><option value="box">▭ Box</option><option value="round">▢ Rounded</option><option value="cloud">☁ Cloud</option><option value="under">_ Underline</option></select></div>
           <div class="nfrow nfbendrow"><span class="nfl">Curve</span><input type="range" class="nfbend" min="-100" max="100" step="1" style="flex:1"><button type="button" class="nfb nfbend0">Straight</button></div>
-          <form class="nfrow nftxrow"><span class="nfl">Text</span><input class="nftx" style="flex:1;min-width:120px"><input class="nftxs" inputmode="numeric" style="width:56px" aria-label="Text size"><button type="submit" class="btn primary">Set</button></form>
+          <form class="nfrow nftxrow"><span class="nfl">Text</span><textarea class="nftx" rows="3" maxlength="2000" style="flex:1;min-width:160px" aria-label="Text (Enter for a new line)"></textarea><input class="nftxs" inputmode="numeric" style="width:56px" aria-label="Text size"><button type="submit" class="btn primary">Set</button><div class="nftxsty" role="group" aria-label="How the text looks"><button type="button" class="np-tst nftst" data-k="b" title="Bold"><b>B</b></button><button type="button" class="np-tst nftst" data-k="i" title="Italic"><i>I</i></button><button type="button" class="np-tst nftst" data-k="al" data-v="l" title="Line up on the left">⇤</button><button type="button" class="np-tst nftst" data-k="al" data-v="c" title="Centre">↔</button><button type="button" class="np-tst nftst" data-k="al" data-v="r" title="Line up on the right">⇥</button><button type="button" class="np-tst nftst" data-k="sz" data-v="0.8" title="Smaller">A−</button><button type="button" class="np-tst nftst" data-k="sz" data-v="1.25" title="Bigger">A+</button></div></form>
           <div class="nfrow nflyrow"><span class="nfl">Layer</span><select class="nfly">${NP_LAYERS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></div>
           <div class="nfrow nflvrow" style="flex-wrap:wrap"><span class="nfl">Leaves (mm)</span><label class="nflv" data-f="a">Outer leaf<select data-f="a">${[75, 90, 100, 102.5, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="cav">Cavity<select data-f="cav">${[0, 25, 50, 75, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="ins">Insulation<select data-f="ins">${[0, 50, 75, 90, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="b">Inner leaf<select data-f="b">${[75, 90, 100, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label></div>
           <div class="nfrow nfunrow" style="flex-wrap:wrap"><span class="nfl">Bricks / blocks</span><label class="nflv">Type<select class="nfun-p"><option value="block">Block 440×215</option><option value="block140">Block 440×140</option><option value="bigblock">Large block 620×215</option><option value="brick">Brick 215×65</option><option value="brickimp">Brick 9″ × 2⅞″ (imperial, 228×73)</option><option value="thinjoint">Block 440×215, thin joint (3 mm)</option></select></label><label class="nflv">Length<input class="nfun-L" inputmode="numeric" style="width:70px"></label><label class="nflv">Height<input class="nfun-H" inputmode="numeric" style="width:70px"></label><label class="nflv">Joint<input class="nfun-J" inputmode="numeric" style="width:56px"></label></div>
@@ -1684,7 +1687,7 @@ async function openNotePage(opts) {
         <div class="nfrow"><label class="inl nfslow" style="color:#fff;font-size:13px"><input type="checkbox" class="nfslowc"> 🐢 Slow drag: your finger moves things 5× slower and snapping is off, for tiny moves</label></div>
         <form class="nfrow nfsize"><span class="nfl nflab">Length</span><input class="nfa" inputmode="decimal" aria-label="Length"><span class="nfx2">×</span><input class="nfb2" inputmode="decimal" aria-label="Height"><span class="nfu"></span><button type="submit" class="btn primary nfset">Set</button></form>
         <div class="who nfhint"></div></div></div>
-    <form class="np-text" hidden><input maxlength="200" placeholder="Type your text…" aria-label="Text"><select class="np-tlead" aria-label="Arrow"><option value="none">No arrow</option><option value="arrow">➜ Arrow to where I tapped</option><option value="dot">● Dot pointer</option><option value="line">— Line pointer</option></select><select class="np-tbox" aria-label="Box"><option value="">No box</option><option value="box">▭ Box</option><option value="round">▢ Rounded box</option><option value="cloud">☁ Cloud</option><option value="under">_ Underline</option></select><button class="btn primary" type="submit">Add</button><button class="btn np-tcancel" type="button">✕ Cancel</button></form>
+    <form class="np-text" hidden><textarea class="np-ttx" maxlength="2000" rows="3" placeholder="Type your text… (Enter for a new line)" aria-label="Text"></textarea><div class="np-tsty" role="group" aria-label="How the text looks"><button type="button" class="np-tst" data-k="b" aria-pressed="false" title="Bold"><b>B</b></button><button type="button" class="np-tst" data-k="i" aria-pressed="false" title="Italic"><i>I</i></button><button type="button" class="np-tst" data-k="al" data-v="l" aria-pressed="true" title="Line up on the left">⇤ Left</button><button type="button" class="np-tst" data-k="al" data-v="c" aria-pressed="false" title="Centre">↔ Centre</button><button type="button" class="np-tst" data-k="al" data-v="r" aria-pressed="false" title="Line up on the right">⇥ Right</button><select class="np-tsz" aria-label="Text size"><option value="0.7">Small</option><option value="1" selected>Medium</option><option value="1.5">Large</option><option value="2.2">Huge</option></select></div><select class="np-tlead" aria-label="Arrow"><option value="none">No arrow</option><option value="arrow">➜ Arrow to where I tapped</option><option value="dot">● Dot pointer</option><option value="line">— Line pointer</option></select><select class="np-tbox" aria-label="Box"><option value="">No box</option><option value="box">▭ Box</option><option value="round">▢ Rounded box</option><option value="cloud">☁ Cloud</option><option value="under">_ Underline</option></select><button class="btn primary" type="submit">Add</button><button class="btn np-tcancel" type="button">✕ Cancel</button></form>
     <div class="np-status"></div>`;
   if (!opts.render) {
     document.body.appendChild(ov);
@@ -2242,7 +2245,7 @@ async function openNotePage(opts) {
   function baseBox(o) {
     if (o.t === "img") return [o.x, o.y, o.w, o.h];
     if (o.t === "text") {
-      g.font = `600 ${o.size}px system-ui`;
+      g.font = npFont(o);
       const ls = String(o.s).split("\n");
       return [
         o.x,
@@ -2512,7 +2515,7 @@ async function openNotePage(opts) {
         ctx.fill();
       } else if (o.t === "text") {
         const lines = String(o.s).split("\n");
-        ctx.font = `600 ${o.size}px system-ui, -apple-system, sans-serif`;
+        ctx.font = npFont(o);
         const tw = Math.max(...lines.map((l) => ctx.measureText(l).width));
         ctx.fillRect(
           o.x - o.size * 0.2,
@@ -2684,7 +2687,7 @@ async function openNotePage(opts) {
       ctx.closePath();
       ctx.fill();
     } else if (o.t === "text") {
-      ctx.font = `600 ${o.size}px system-ui, -apple-system, sans-serif`;
+      ctx.font = npFont(o);
       ctx.textBaseline = "top";
       const lines = String(o.s).split("\n");
       if (o.box || o.lead) {
@@ -2760,7 +2763,15 @@ async function openNotePage(opts) {
         }
         ctx.restore();
       }
-      lines.forEach((l, i) => ctx.fillText(l, o.x, o.y + i * o.size * 1.25));
+      {
+        /* each line lined up left, centred or right within the widest */
+        const tw0 = Math.max(...lines.map((l) => ctx.measureText(l).width));
+        lines.forEach((l, i) => {
+          const lw = ctx.measureText(l).width;
+          const dx = o.al === "c" ? (tw0 - lw) / 2 : o.al === "r" ? tw0 - lw : 0;
+          ctx.fillText(l, o.x + dx, o.y + i * o.size * 1.25);
+        });
+      }
     } else if (o.t === "img") {
       const im = loadImg(o.src);
       if (im.complete && im.naturalWidth) {
@@ -3661,8 +3672,8 @@ async function openNotePage(opts) {
       textAt = snapOn ? snapPt(p) : p;
       const f = q(".np-text");
       f.hidden = false;
-      f.querySelector("input").value = "";
-      f.querySelector("input").focus();
+      f.querySelector(".np-ttx").value = "";
+      f.querySelector(".np-ttx").focus();
       return;
     }
     if (tool === "move" && addTimber && sel != null && isStudW(doc.objs[sel])) {
@@ -9595,6 +9606,22 @@ async function openNotePage(opts) {
         const tx = fb.querySelector(".nftx");
         if (document.activeElement !== tx) tx.value = labk ? o.lab || "" : o.s || "";
         fb.querySelector(".nftxs").value = Math.round(o.size || 20);
+        fb.querySelector(".nftxsty").hidden = o.t !== "text";
+        if (o.t === "text")
+          fb.querySelectorAll(".nftst").forEach((b) => {
+            const k = b.dataset.k;
+            if (k === "sz") return;
+            b.setAttribute(
+              "aria-pressed",
+              String(
+                k === "b"
+                  ? (o.wt || 600) >= 700
+                  : k === "i"
+                    ? !!o.it
+                    : (o.al || "l") === b.dataset.v,
+              ),
+            );
+          });
       }
       fb.querySelector(".nfly").value = npLayerOf(o);
       fb.querySelector(".nfa-lock").textContent = o.lk ? "🔓 Unlock" : "🔒 Lock";
@@ -9962,6 +9989,20 @@ async function openNotePage(opts) {
       upd((o) => {
         o.brk = e.target.value;
       });
+    fb.querySelectorAll(".nftst").forEach(
+      (b) =>
+        (b.onclick = () =>
+          upd((o) => {
+            if (o.t !== "text") return;
+            const k = b.dataset.k;
+            if (k === "b") o.wt = (o.wt || 600) >= 700 ? 600 : 800;
+            else if (k === "i") o.it = !o.it;
+            else if (k === "al") o.al = b.dataset.v === "l" ? undefined : b.dataset.v;
+            else if (k === "sz") o.size = Math.max(4, Math.round((o.size || 20) * +b.dataset.v));
+            if (!o.it) delete o.it;
+            if (!o.al) delete o.al;
+          })),
+    );
     fb.querySelector(".nftxrow").onsubmit = (e) => {
       e.preventDefault();
       upd((o) => {
@@ -10566,9 +10607,12 @@ async function openNotePage(opts) {
   const tf = q(".np-text");
   tf.onsubmit = (e) => {
     e.preventDefault();
-    const t = tf.querySelector("input").value.trim();
+    const t = tf
+      .querySelector(".np-ttx")
+      .value.replace(/[ \t]+$/gm, "")
+      .replace(/^\n+|\n+$/g, "");
     tf.hidden = true;
-    tf.querySelector("input").placeholder = "Type your text…";
+    tf.querySelector(".np-ttx").placeholder = "Type your text… (Enter for a new line)";
     if (dimAsk != null) {
       const o = doc.objs[dimAsk];
       dimAsk = null;
@@ -10588,8 +10632,22 @@ async function openNotePage(opts) {
     try {
       localStorage.setItem("np.tcall", lk + "|" + bk);
     } catch (e) {}
-    const o = { t: "text", x: textAt[0], y: textAt[1], s: t, c: col, size };
+    const o = {
+      t: "text",
+      x: textAt[0],
+      y: textAt[1],
+      s: t,
+      c: col,
+      size: Math.round(size * (+tf.querySelector(".np-tsz").value || 1)),
+    };
     if (bk) o.box = bk;
+    if (tf.querySelector('.np-tst[data-k="b"]').getAttribute("aria-pressed") === "true") o.wt = 800;
+    if (tf.querySelector('.np-tst[data-k="i"]').getAttribute("aria-pressed") === "true")
+      o.it = true;
+    {
+      const al = tf.querySelector('.np-tst[data-k="al"][aria-pressed="true"]');
+      if (al && al.dataset.v !== "l") o.al = al.dataset.v;
+    }
     if (lk !== "none") {
       o.lead = { p: textAt.slice(), k: lk };
       o.x = textAt[0] + size * 2.2;
@@ -10612,9 +10670,26 @@ async function openNotePage(opts) {
     tf.hidden = true;
     textAt = null;
     dimAsk = null;
-    tf.querySelector("input").placeholder = "Type your text…";
+    tf.querySelector(".np-ttx").placeholder = "Type your text… (Enter for a new line)";
   };
-  tf.querySelector("input").addEventListener("keydown", (e) => {
+  /* bold, italic, line-up and size for new text */
+  tf.querySelectorAll(".np-tst").forEach(
+    (b) =>
+      (b.onclick = () => {
+        if (b.dataset.k === "al")
+          tf.querySelectorAll('.np-tst[data-k="al"]').forEach((x) =>
+            x.setAttribute("aria-pressed", String(x === b)),
+          );
+        else b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
+      }),
+  );
+  tf.querySelector(".np-ttx").addEventListener("keydown", (e) => {
+    /* Ctrl/⌘ + Enter adds it; Enter on its own is a new line */
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      tf.querySelector('[type="submit"]').click();
+      return;
+    }
     if (e.key === "Escape") {
       e.preventDefault();
       q(".np-tcancel").click();
