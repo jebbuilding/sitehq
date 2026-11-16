@@ -40,6 +40,7 @@ import { dropPin } from "./maps-pins.js";
 import { RAMS_SIGN, docPath, docPickBar, docRow, wireDocs } from "./plans-specs.js";
 import { QRSITE } from "./qr-sign-in.js";
 import { sdiHtml, sdiWire } from "./site-diary.js";
+import { jhCardHtml, jhWire } from "./site-health.js";
 import { sqMap, sqOpen } from "./snag-quick.js";
 import { stgHtml, stgWire } from "./stage-signoff.js";
 import { arcWhy, siteArchive, siteRestore, storageHtml, wireStorage } from "./storage.js";
@@ -340,7 +341,7 @@ function ownerProjects() {
   let tab = S.f.pjtab || "overview";
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
-  P.overview = `${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}
+  P.overview = `${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}${jhCardHtml(site)}
     <div class="actions"><button type="button" class="btn" id="sq-new">📸 Snag</button><button type="button" class="btn" id="jk-open">📦 Send job details to someone not on the app</button></div>
     <div class="totals"><div class="tot"><div class="n">${hrs(sumH(ts, () => true))}</div><div class="l">Timesheet hours</div></div><div class="tot hi"><div class="n">${hrs(sumH(extra, () => true))}</div><div class="l">Extra work hours</div></div><div class="tot"><div class="n">${people.length}</div><div class="l">People worked here</div></div></div>
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
@@ -365,6 +366,7 @@ function ownerProjects() {
         `<div class="actions pjback"><button type="button" class="btn" data-t="overview" id="pj-back">‹ Back to overview</button><b class="pjsec">${ICON[tab] || ""} ${esc((T.find((t) => t[0] === tab) || [])[1] || "")}</b></div>`) +
     (P[tab] || "");
   $("main").innerHTML = html;
+  if (tab === "overview") jhWire(site);
   $("main")
     .querySelectorAll("#pj-back,.pjtile")
     .forEach(

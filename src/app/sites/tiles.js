@@ -10,6 +10,7 @@ import { allTeam } from "../owner/owner.js";
 import { siteRec } from "../photos/photos.js";
 import { siteFront, siteHead, siteHeadHtml } from "./job-details.js";
 import { same } from "./project-pages.js";
+import { jhAllHtml, jhAllWire } from "./site-health.js";
 import { smOpen } from "./sites-map.js";
 import { storageHtml, wireStorage } from "./storage.js";
 import { siteClient } from "./summary.js";
@@ -39,7 +40,7 @@ function siteTiles(sites) {
   };
   $("main").innerHTML =
     `<input type="search" id="st-q" class="stsearch" placeholder="🔍 Search sites and storage: address, client, job…" aria-label="Search sites" value="${esc(S.f.stq || "")}">
-    <div class="flabel" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Your sites (<span id="st-n">${sites.length}</span>)<button type="button" class="pillbtn" id="st-map" style="margin-left:auto">🗺️ Map of all sites</button><button type="button" class="pillbtn" id="st-del">🗑 Delete sites…</button></div><div class="stgrid">${sites.map(tile).join("")}</div><div class="nothing" id="st-none" hidden>No current sites match. Check Storage below.</div>` +
+    <div class="flabel" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Your sites (<span id="st-n">${sites.length}</span>)<button type="button" class="pillbtn" id="st-map" style="margin-left:auto">🗺️ Map of all sites</button><button type="button" class="pillbtn" id="st-del">🗑 Delete sites…</button></div>${jhAllHtml(sites)}<div class="stgrid">${sites.map(tile).join("")}</div><div class="nothing" id="st-none" hidden>No current sites match. Check Storage below.</div>` +
     storageHtml();
   $("main")
     .querySelectorAll(".sttile")
@@ -53,6 +54,7 @@ function siteTiles(sites) {
         }),
     );
   wireStorage();
+  jhAllWire();
   $("st-del").onclick = deleteSitesPicker;
   $("st-map").onclick = smOpen;
   const qi = $("st-q");

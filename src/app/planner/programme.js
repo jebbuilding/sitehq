@@ -6,7 +6,7 @@ import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
 import { sdiSlug } from "../sites/site-diary.js";
 import { siteClient } from "../sites/summary.js";
-export { pgClientHtml, pgHtml, pgRec, pgWire };
+export { pgCalc, pgClientHtml, pgHtml, pgRec, pgWire };
 /* On a site's 📊 Programme tab James lists the stages (or starts from a typical extension, loft or kitchen), each with
    how many working days it takes, what it can't start until (an earlier stage finishing, or the same day as one), and
    any delay days. The dates work themselves out from the start date, Monday to Friday. When a stage runs over (its

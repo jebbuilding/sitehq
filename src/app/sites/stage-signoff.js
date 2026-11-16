@@ -9,7 +9,7 @@ import { newId, saveOrKeep } from "../files/outbox.js";
 import { siteRec } from "../photos/photos.js";
 import { siteLabel } from "./job-details.js";
 import { siteClient } from "./summary.js";
-export { stgEdit, stgHtml, stgSign, stgWire };
+export { stgDoneOf, stgEdit, stgHtml, stgList, stgSign, stgWire };
 /* James (Nov 2026): "the stages of a project or build … should have stages that can be signed off to say they are
    completed and then a record of this should be kept … customisable as every job is different. Need basic templates
    to use and custom." A site's stages are sites/{id}.stages (the same list Jobs shows); signing one off saves
