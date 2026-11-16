@@ -1,5 +1,6 @@
 /* ===== design symbols: roof lights, stairs, furniture, landscaping, more elevation items ===== */
 import { npLbl, npStairs } from "./construction-details.js";
+import { npColDraw } from "./steel-parts.js";
 import { NP_X, npXSym } from "./symbols-more.js";
 import { npHexMix } from "./walls.js";
 export { NP_DES_BOX, npDesignLine, npDesignSym, npScallop };
@@ -231,6 +232,7 @@ function npDesignSym(ctx, o, x0, y0, w, h, cx, cy) {
       break;
     }
     case "column": {
+      if (npColDraw(ctx, o, x0, y0, w, h, cx, cy)) break;
       ctx.fillRect(x0, y0, w, h);
       ctx.strokeRect(x0, y0, w, h);
       break;
