@@ -46,6 +46,7 @@ import {
   rsWallsAsShapes,
   rsWallsFromRoom,
 } from "./room-sketch.js";
+import { npSmartShape } from "./smart-pen.js";
 import {
   NP_BEAM_TYPES,
   NP_COL_TYPES,
@@ -80,6 +81,7 @@ import { poPriceSheet } from "../purchasing/price-order.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { lhLogoId } from "../sales/letterhead-setup.js";
+import { sdSaveRec, sdSet } from "../sales/sales-calc.js";
 import { siteClient } from "../sites/summary.js";
 import { DWS, myName, siteFilePicker } from "../survey/door-window-survey.js";
 export {
@@ -1527,6 +1529,7 @@ async function openNotePage(opts) {
         return "draw";
       }
     })()}"><div class="np-gtabs" role="tablist">${[
+      ["easy", "⭐ Easy"],
       ["draw", "✏️ Draw"],
       ["edit", "✂️ Edit"],
       ["measure", "📏 Measure"],
@@ -1540,6 +1543,7 @@ async function openNotePage(opts) {
         "",
       )}</div><button type="button" class="np-t np-moretools" aria-label="Show all tools" aria-expanded="true" hidden>☰<small>Tools</small></button>
       ${[
+        ["smart", "✨", "Smart pen"],
         ["pen", "✎", "Pen"],
         ["hl", "🖍", "Highlighter"],
         ["erase", "⌫", "Rubber"],
@@ -1565,11 +1569,11 @@ async function openNotePage(opts) {
       ]
         .map(
           ([k, i, l]) =>
-            `<button type="button" class="np-t" data-t="${k}" ${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k] ? `data-g="${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k]}"` : ""} aria-pressed="${k === "pen"}" title="${l}" aria-label="${l}">${i}<small>${l.split(" ")[0]}</small></button>`,
+            `<button type="button" class="np-t" data-t="${k}" ${{ smart: "draw easy", pen: "draw", hl: "draw", erase: "draw edit easy", line: "draw easy", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure easy", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure easy", pwall: "draw easy", trim: "edit", extend: "edit", corner: "edit", rect: "draw easy", circle: "draw", arrow: "draw", text: "draw easy", box: "edit" }[k] ? `data-g="${{ smart: "draw easy", pen: "draw", hl: "draw", erase: "draw edit easy", line: "draw easy", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure easy", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure easy", pwall: "draw easy", trim: "edit", extend: "edit", corner: "edit", rect: "draw easy", circle: "draw", arrow: "draw", text: "draw easy", box: "edit" }[k]}"` : ""} aria-pressed="${k === "pen"}" title="${l}" aria-label="${l}">${i}<small>${l.split(" ")[0]}</small></button>`,
         )
         .join("")}
       <button type="button" class="np-t np-view" data-g="${opts.pro ? "none" : "draw insert"}" title="Switch symbols between plan (looking down) and elevation (looking at the front)" aria-label="Plan or elevation symbols">🏠<small>Plan</small></button>
-      <select class="np-shape" data-g="${opts.pro ? "none" : "draw insert"}" aria-label="More shapes"></select>${opts.pro ? `<button type="button" class="np-libbtn" data-g="draw insert" aria-label="Symbols library">📚 <span>Symbols…</span></button>` : ""}
+      <select class="np-shape" data-g="${opts.pro ? "none" : "draw insert"}" aria-label="More shapes"></select>${opts.pro ? `<button type="button" class="np-libbtn" data-g="draw insert easy" aria-label="Symbols library">📚 <span>Symbols…</span></button>` : ""}
       <button type="button" class="np-t np-snap" data-g="page edit" aria-pressed="true" title="Snap to grid and line ends" aria-label="Snap to grid">🧲<small>Snap</small></button>
       <button type="button" class="np-t np-setup" data-g="page" title="Paper size, scale and background" aria-label="Paper size and scale">📐<small>Paper</small></button>
       <button type="button" class="np-t" data-t="roomsk" data-g="draw measure" title="Room sketch: draw the room in one line, it straightens the walls, then tap each wall to type its length" aria-label="Room sketch">✍️<small>Room sketch</small></button>
@@ -1619,7 +1623,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
-    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
+    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span class="nlb-ll">Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span class="nlb-al">Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span class="nlb-au">°</span><span class="nlb-dirs" role="group" aria-label="Which way"><button type="button" class="btn nlb-dir" data-a="0" aria-label="Right">→</button><button type="button" class="btn nlb-dir" data-a="90" aria-label="Up">↑</button><button type="button" class="btn nlb-dir" data-a="180" aria-label="Left">←</button><button type="button" class="btn nlb-dir" data-a="270" aria-label="Down">↓</button></span><button type="button" class="btn nlb-padb" aria-pressed="false" title="Number pad">🔢</button><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button><div class="nlb-pad" hidden>${["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => `<button type="button" class="btn nlb-k" data-k="${k}">${k}</button>`).join("")}</div></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><span class="np-ckbox" hidden><select class="np-ck" aria-label="Kind of corner"><option value="">⌐ Sharp corner</option><option value="r">◜ Rounded corner</option><option value="c">◸ Cut corner (splay)</option></select><input class="np-cks" type="number" inputmode="decimal" step="any" value="300" aria-label="Size of the rounded or cut corner"><span class="np-cku">mm</span></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
       NP_PAVE,
     )
       .map(([k, v]) => `<option value="${k}">${v[0]}</option>`)
@@ -1818,6 +1822,9 @@ async function openNotePage(opts) {
   let snappedObj = false;
   /* CAD-style object snaps: ends, corners, centres, intersections, middles, perpendicular, along a line, then lining up with other points, then the grid */
   let snapMark = null;
+  /* the running total shown in the status bar (liveQty) */
+  let liveTxt = "",
+    liveT = 0;
   function snapPt(p, opt) {
     snappedObj = false;
     snapMark = null;
@@ -1932,22 +1939,39 @@ async function openNotePage(opts) {
       ay = null,
       bx = tol * 0.6,
       by = tol * 0.6;
-    doc.objs.forEach((o, i) => {
-      if (i === opt.skip) return;
-      const pts = o.t === "room" ? o.p : o.a && o.b && !npBoxy(o) ? [o.a, o.b] : [];
-      pts.forEach((q) => {
-        const dx = Math.abs(q[0] - p[0]),
-          dy = Math.abs(q[1] - p[1]);
-        if (dx < bx) {
-          bx = dx;
-          ax = q;
-        }
-        if (dy < by) {
-          by = dy;
-          ay = q;
-        }
-      });
-    });
+    const guidePts = (o) => {
+      if (o.t === "room") return o.p;
+      if (o.t === "text" || o.t === "img" || o.t === "circle") return [];
+      if (o.a && o.b && !npBoxy(o)) return [o.a, o.b];
+      if ((o.t === "rect" || npBoxy(o)) && o.a && o.b && !o.r) {
+        const [x, y, w, h] = baseBox(o);
+        return [
+          [x, y],
+          [x + w, y],
+          [x + w, y + h],
+          [x, y + h],
+        ];
+      }
+      return [];
+    };
+    doc.objs
+      .filter((o, i) => i !== opt.skip && !(doc.layers && lyHid(o)))
+      .map(guidePts)
+      .concat(opt.from ? [[opt.from]] : [])
+      .forEach((pts) =>
+        pts.forEach((q) => {
+          const dx = Math.abs(q[0] - p[0]),
+            dy = Math.abs(q[1] - p[1]);
+          if (dx < bx) {
+            bx = dx;
+            ax = q;
+          }
+          if (dy < by) {
+            by = dy;
+            ay = q;
+          }
+        }),
+      );
     if (opt.noGrid) {
       gx = p[0];
       gy = p[1];
@@ -3055,6 +3079,16 @@ async function openNotePage(opts) {
           g.stroke();
         }
         g.setLineDash([]);
+        {
+          const t = "Lined up";
+          g.font = `700 ${12 / s}px system-ui`;
+          const tw = g.measureText(t).width;
+          g.fillStyle = "rgba(255,255,255,.92)";
+          g.fillRect(m.p[0] + R * 1.2, m.p[1] + R * 1.1, tw + 8 / s, 17 / s);
+          g.fillStyle = "#15803d";
+          g.textBaseline = "middle";
+          g.fillText(t, m.p[0] + R * 1.2 + 4 / s, m.p[1] + R * 1.1 + 8.5 / s);
+        }
       } else {
         g.beginPath();
         if (m.k === "end") {
@@ -3092,6 +3126,7 @@ async function openNotePage(opts) {
           int: "Crossing",
           perp: "Square to",
           on: "On line",
+          same: "Same length as the last line",
         }[m.k];
         if (lab) {
           g.font = `700 ${12 / s}px system-ui`;
@@ -3251,7 +3286,10 @@ async function openNotePage(opts) {
         !msel.size &&
         !drag &&
         doc.scale &&
-        (so.t === "line" || so.t === "arrow" || (npLineShape(so) && !NP_OPENK.has(so.k)));
+        (so.t === "line" ||
+          so.t === "arrow" ||
+          (so.t === "rect" && !so.r && !vpOf(so)) ||
+          (npLineShape(so) && !NP_OPENK.has(so.k)));
       if (lineLike) {
         if (!(lbe.__o === so && !lbe.hidden && lbe.contains(document.activeElement))) {
           showLenBar(so);
@@ -3308,7 +3346,40 @@ async function openNotePage(opts) {
       ? `${doc.size} ${doc.orient === "port" ? "portrait" : "landscape"}`
       : "Long page";
     q(".np-status").innerHTML =
-      `<span>${esc(sz)} · ${esc(sc)}${doc.scale && doc.paper === "grid" ? ` · 1 square = ${esc(npFmtLen(realMm(50)))}` : ""}${snapOn ? " · 🧲 snap on" : ""}</span><span class="np-hint2">${tool === "move" ? "Tap something to select it. Drag to move, white dots to resize, ⟳ to turn." : "Two fingers to zoom and move around."}</span>`;
+      `<span>${esc(sz)} · ${esc(sc)}${doc.scale && doc.paper === "grid" ? ` · 1 square = ${esc(npFmtLen(realMm(50)))}` : ""}${snapOn ? " · 🧲 snap on" : ""}</span><button type="button" class="np-livq"${liveTxt ? "" : " hidden"} title="Open 🧮 Quantities">🧮 ${esc(liveTxt)}</button><span class="np-hint2">${tool === "move" ? "Tap something to select it. Drag to move, white dots to resize, ⟳ to turn." : "Two fingers to zoom and move around."}</span>`;
+    {
+      const lv = q(".np-livq");
+      lv.onclick = () => {
+        const b = q(".np-qty");
+        if (b) b.click();
+      };
+    }
+    liveQty();
+  }
+  /* what the drawing adds up to so far (floor area, wall length, beams), worked out a moment after each change */
+  function liveQty() {
+    clearTimeout(liveT);
+    liveT = setTimeout(() => {
+      let t = "";
+      if (opts.pro && doc.scale)
+        try {
+          const r = qtyCalc(doc.wallH || 2400);
+          const fl = r.rooms.reduce((a, x) => a + x.A, 0),
+            wl = Object.values(r.walls).reduce((a, w) => a + w.L, 0);
+          const bits = [];
+          if (fl) bits.push("Floor " + fl.toFixed(1) + " m²");
+          if (wl) bits.push("Walls " + wl.toFixed(1) + " m");
+          if (r.beams.length)
+            bits.push(r.beams.length + (r.beams.length === 1 ? " beam" : " beams"));
+          t = bits.join(" · ");
+        } catch (e) {}
+      if (t === liveTxt) return;
+      liveTxt = t;
+      const b = q(".np-livq");
+      if (!b) return;
+      b.hidden = !t;
+      b.textContent = "🧮 " + t;
+    }, 400);
   }
   function hit(pt) {
     const tol = (HR + 2) / s;
@@ -3969,14 +4040,18 @@ async function openNotePage(opts) {
     }
     sel = null;
     const pw = pwFor(wid);
-    const sp = tool === "pen" || tool === "hl" || tool === "roomsk" ? p : snapPt(p);
+    const sp =
+      tool === "pen" || tool === "hl" || tool === "smart" || tool === "roomsk" ? p : snapPt(p);
     cur =
       tool === "tape"
         ? { t: "dim", a: sp, b: sp, c: "#2563eb", w: Math.max(pw, 2), tape: true }
         : tool === "roomsk"
           ? { t: "stroke", p: [p], c: "#c2410c", w: pw, rsk: true }
-          : tool === "pen" || tool === "hl"
-            ? { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" }
+          : tool === "pen" || tool === "hl" || tool === "smart"
+            ? Object.assign(
+                { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" },
+                tool === "smart" ? { sm: 1 } : {},
+              )
             : Object.assign(
                 {
                   t: tool,
@@ -4263,8 +4338,20 @@ async function openNotePage(opts) {
       if (Math.hypot(p[0] - l[0], p[1] - l[1]) > 1.5 / s) cur.p.push(p);
     } else {
       let b = snapPt(p, { from: cur.a });
-      if (!snappedObj && (["line", "dim", "arrow"].includes(cur.t) || npLineShape(cur)))
+      if (!snappedObj && (["line", "dim", "arrow"].includes(cur.t) || npLineShape(cur))) {
         b = orthoB(cur.a, b, p);
+        const last = [...doc.objs]
+          .reverse()
+          .find((o) => o.t === cur.t && o.a && o.b && (o.t !== "shape" || o.k === cur.k));
+        if (last) {
+          const Lp = lenOf(last.a, last.b),
+            L = lenOf(cur.a, b);
+          if (L > 0 && Lp > 20 / s && Math.abs(L - Lp) < 10 / s) {
+            b = [cur.a[0] + ((b[0] - cur.a[0]) * Lp) / L, cur.a[1] + ((b[1] - cur.a[1]) * Lp) / L];
+            snapMark = { p: b, k: "same" };
+          }
+        }
+      }
       cur.b = b;
       live = liveFor(cur);
     }
@@ -4410,7 +4497,30 @@ async function openNotePage(opts) {
         Object.assign(cur, { ct: lastSteel.ct, cs: lastSteel.cs });
         colToSize(cur);
       }
-      doc.objs.push(cur);
+      let smartMade = null;
+      if (cur.t === "stroke" && cur.sm) {
+        delete cur.sm;
+        const r = npSmartShape(cur.p, 12 / s, (q) => snapPt(q));
+        if (r) {
+          smartMade = r.objs.map((o) => Object.assign(o, { c: cur.c, w: cur.w }));
+          toast(
+            {
+              line: "Straightened into a line",
+              lines: "Straightened into straight lines",
+              box: "Straightened into a box",
+              circle: "Made into a circle",
+              shape: "Straightened into a shape",
+            }[r.what] + " – Undo to keep it as drawn",
+          );
+        }
+      }
+      if (smartMade) {
+        /* Undo brings back the stroke as drawn */
+        doc.objs.push(cur);
+        snap();
+        doc.objs.pop();
+        doc.objs.push(...smartMade);
+      } else doc.objs.push(cur);
       if (cur.t === "shape" && (cur.k === "beam" || cur.k === "column")) {
         const ni = doc.objs.length - 1;
         setTimeout(() => {
@@ -4439,6 +4549,7 @@ async function openNotePage(opts) {
       if (
         cur.t === "line" ||
         cur.t === "arrow" ||
+        (cur.t === "rect" && !vpOf(cur)) ||
         (npLineShape(cur) && !NP_OPENK.has(cur.k) && cur.k !== "door")
       )
         showLenBar(cur);
@@ -5980,8 +6091,52 @@ async function openNotePage(opts) {
                 .join("")}</tbody></table></div>`
             : ""
         }
-        <div class="dimbtns"><button type="button" class="btn qcopy">📋 Copy as text</button>${mat.length && ownerMode() ? `<button type="button" class="btn qprice">💷 Price it and order</button>` : ""}<button type="button" class="btn primary qx">Close</button></div></div>`;
+        <div class="dimbtns"><button type="button" class="btn qcopy">📋 Copy as text</button>${mat.length && ownerMode() ? `<button type="button" class="btn qprice">💷 Price it and order</button><button type="button" class="btn qest">📝 Make a draft estimate</button>` : ""}<button type="button" class="btn primary qx">Close</button></div></div>`;
         d.querySelector(".qx").onclick = () => d.remove();
+        const qe = d.querySelector(".qest");
+        if (qe)
+          qe.onclick = async () => {
+            qe.disabled = true;
+            const vc = sdSet().vatReg === false ? "NV" : sdSet().vc || "S20";
+            const title =
+              (q(".np-title") && q(".np-title").value.trim()) || doc.title || "the drawing";
+            const lines = [{ h: 1, d: "Materials from " + title, vc }].concat(
+              mat.map(([a, b]) => {
+                const m = String(b).match(/^([\d,.]+)\s*(.*)$/);
+                return m
+                  ? {
+                      d: a,
+                      m: "q",
+                      q: +m[1].replace(/,/g, ""),
+                      u: m[2].slice(0, 12),
+                      r: "",
+                      vc,
+                      k: "mat",
+                    }
+                  : { d: a + " – " + b, a: "", vc, k: "mat" };
+              }),
+            );
+            try {
+              const r = await sdSaveRec({
+                type: "estimate",
+                status: "draft",
+                date: iso(new Date()),
+                site: doc.site || opts.site || "",
+                lines,
+              });
+              d.remove();
+              toast(
+                "Draft estimate " +
+                  r.number +
+                  " made with " +
+                  mat.length +
+                  " materials – price it in 💰 Estimates & invoices",
+              );
+            } catch (e) {
+              qe.disabled = false;
+              toast("Couldn't make the estimate. Check your connection.");
+            }
+          };
         const qp = d.querySelector(".qprice");
         if (qp)
           qp.onclick = () => {
@@ -8232,7 +8387,9 @@ async function openNotePage(opts) {
   }
 
   /* type an exact length and angle straight after drawing a line or wall */
-  let lenObj = null;
+  let lenObj = null,
+    lbField = null,
+    lbFresh = false;
   const lb = q(".np-lenbar");
   function showLenBar(o) {
     if (!doc.scale || !o || !o.a || !o.b) {
@@ -8240,6 +8397,21 @@ async function openNotePage(opts) {
       return;
     }
     lenObj = o;
+    const box = o.t === "rect";
+    lb.classList.toggle("nlb-box", box);
+    lb.querySelector(".nlb-ll").textContent = box ? "Width" : "Length";
+    lb.querySelector(".nlb-al").textContent = box ? "× Depth" : "Angle";
+    lb.querySelector(".nlb-au").textContent = box ? "mm" : "°";
+    lb.querySelector(".nlb-dirs").hidden = box;
+    lb.querySelector(".nlb-next").hidden = box;
+    lbField = lb.querySelector(".nlb-l");
+    lbFresh = true;
+    if (box) {
+      lb.querySelector(".nlb-l").value = Math.round(realMm(Math.abs(o.b[0] - o.a[0])));
+      lb.querySelector(".nlb-a").value = Math.round(realMm(Math.abs(o.b[1] - o.a[1])));
+      lb.hidden = false;
+      return;
+    }
     const L = realMm(lenOf(o.a, o.b));
     let an = (Math.atan2(-(o.b[1] - o.a[1]), o.b[0] - o.a[0]) * 180) / Math.PI;
     if (an < 0) an += 360;
@@ -8585,11 +8757,91 @@ async function openNotePage(opts) {
     const L = parseFloat(lb.querySelector(".nlb-l").value),
       A = parseFloat(lb.querySelector(".nlb-a").value);
     if (!(L > 0)) return;
+    if (o.t === "rect") {
+      if (!(A > 0)) return;
+      snap();
+      const sx = o.b[0] < o.a[0] ? -1 : 1,
+        sy = o.b[1] < o.a[1] ? -1 : 1;
+      o.b = [o.a[0] + sx * toUnits(L), o.a[1] + sy * toUnits(A)];
+      dirty = true;
+      draw();
+      lb.hidden = true;
+      toast("Box set to " + npFmtLen(L) + " × " + npFmtLen(A));
+      return;
+    }
     setLen(o, L, A);
     draw();
     lb.hidden = true;
     toast("Set to " + npFmtLen(L));
   };
+  /* which way: right, up, left, down */
+  lb.querySelectorAll(".nlb-dir").forEach(
+    (b) =>
+      (b.onclick = () => {
+        lb.querySelector(".nlb-a").value = b.dataset.a;
+        const o = lenObj;
+        const L = parseFloat(lb.querySelector(".nlb-l").value);
+        if (o && doc.objs.indexOf(o) >= 0 && L > 0) {
+          setLen(o, L, +b.dataset.a);
+          draw();
+        }
+      }),
+  );
+  /* the number pad: big keys for a finger, typing into the box last tapped (the length to start with) */
+  lb.querySelectorAll(".nlb-l,.nlb-a").forEach((x) =>
+    x.addEventListener("focus", () => {
+      lbField = x;
+      lbFresh = false;
+    }),
+  );
+  lb.querySelector(".nlb-padb").onclick = () => {
+    const pad = lb.querySelector(".nlb-pad");
+    pad.hidden = !pad.hidden;
+    lb.querySelector(".nlb-padb").setAttribute("aria-pressed", String(!pad.hidden));
+    try {
+      localStorage.setItem("np.pad", pad.hidden ? "0" : "1");
+    } catch (e) {}
+  };
+  try {
+    if (
+      localStorage.getItem("np.pad") === "1" ||
+      (localStorage.getItem("np.pad") == null &&
+        window.matchMedia &&
+        window.matchMedia("(pointer:coarse)").matches)
+    ) {
+      lb.querySelector(".nlb-pad").hidden = false;
+      lb.querySelector(".nlb-padb").setAttribute("aria-pressed", "true");
+    }
+  } catch (e) {}
+  const lbKey = (k) => {
+    const f = lbField || lb.querySelector(".nlb-l");
+    if (lbFresh) {
+      f.value = "";
+      lbFresh = false;
+    }
+    if (k === "⌫") f.value = f.value.slice(0, -1);
+    else if (k !== "." || !f.value.includes(".")) f.value += k;
+  };
+  lb.querySelectorAll(".nlb-k").forEach((b) => (b.onclick = () => lbKey(b.dataset.k)));
+  /* on a keyboard: just type the number after drawing, Enter to set */
+  ov.addEventListener(
+    "keydown",
+    (e) => {
+      if (lb.hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT"))
+        return;
+      if (/^[0-9.]$/.test(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const f = lb.querySelector(".nlb-l");
+        f.value = e.key;
+        lbFresh = false;
+        f.focus();
+      }
+    },
+    true,
+  );
   /* Next ➜: set this one, then start another of the same kind from its end (type a whole room from a laser measure) */
   lb.querySelector(".nlb-next").onclick = () => {
     const o = lenObj;
@@ -8800,6 +9052,47 @@ async function openNotePage(opts) {
         orientCavity(o);
       }
     });
+    const ck = q(".np-ck").value;
+    if (ck && A.t === "line" && B.t === "line" && !A.bend && !B.bend) {
+      const v = parseFloat(q(".np-cks").value) || 0;
+      const d0 = doc.scale ? toUnits(v) : v;
+      const endAt = (o) => (lenOf(o.a, P) < lenOf(o.b, P) ? "a" : "b");
+      const eA = endAt(A),
+        eB = endAt(B);
+      const far = (o, e) => o[e === "a" ? "b" : "a"];
+      const LA = lenOf(P, far(A, eA)),
+        LB = lenOf(P, far(B, eB));
+      const uA = [(far(A, eA)[0] - P[0]) / (LA || 1), (far(A, eA)[1] - P[1]) / (LA || 1)],
+        uB = [(far(B, eB)[0] - P[0]) / (LB || 1), (far(B, eB)[1] - P[1]) / (LB || 1)];
+      const th = Math.acos(Math.max(-1, Math.min(1, uA[0] * uB[0] + uA[1] * uB[1])));
+      /* how far back along each line the round / cut starts */
+      const t = ck === "r" ? d0 / Math.tan(th / 2) : d0;
+      if (!(d0 > 0) || !(th > 0.05) || th > Math.PI - 0.05 || t >= LA * 0.98 || t >= LB * 0.98) {
+        dirty = true;
+        draw();
+        toast(d0 > 0 ? "Corner made – too small to round or cut that much" : "Corner made");
+        return;
+      }
+      const PA = [P[0] + uA[0] * t, P[1] + uA[1] * t],
+        PB = [P[0] + uB[0] * t, P[1] + uB[1] * t];
+      A[eA] = PA;
+      B[eB] = PB;
+      const j = { t: "line", a: PA.slice(), b: PB.slice(), c: A.c, w: A.w };
+      ["ls", "ly"].forEach((k) => A[k] != null && (j[k] = A[k]));
+      if (ck === "r") {
+        /* a curve tangent to both lines, bowing out to the old corner */
+        const dx = PB[0] - PA[0],
+          dy = PB[1] - PA[1],
+          L = Math.hypot(dx, dy) || 1,
+          m = [(PA[0] + PB[0]) / 2, (PA[1] + PB[1]) / 2];
+        j.bend = ((P[0] - m[0]) * (-dy / L) + (P[1] - m[1]) * (dx / L)) / L || 0.0001;
+      }
+      doc.objs.splice(Math.max(doc.objs.indexOf(A), doc.objs.indexOf(B)) + 1, 0, j);
+      dirty = true;
+      draw();
+      toast(ck === "r" ? "Corner rounded" : "Corner cut across");
+      return;
+    }
     dirty = true;
     draw();
     toast("Corner made");
@@ -9059,6 +9352,19 @@ async function openNotePage(opts) {
     );
   function chainUI() {
     const cb = q(".np-chainbar");
+    q(".np-ckbox").hidden = tool !== "corner";
+    if (tool === "corner") {
+      q(".np-pvbox").hidden = true;
+      q(".np-pwk").hidden = true;
+      q(".np-pwclose").hidden = true;
+      q(".np-pwlen").hidden = true;
+      q(".np-chainok").hidden = true;
+      q(".np-cks").hidden = q(".np-cku").hidden = !q(".np-ck").value;
+      q(".np-cku").textContent = doc.scale ? "mm" : "on paper";
+      cb.hidden = false;
+      q(".np-chaintxt").textContent = "Tap one line or wall, then the other";
+      return;
+    }
     {
       const pv = tool === "pave" || tool === "pstrip";
       q(".np-pvbox").hidden = !pv;
@@ -9122,6 +9428,7 @@ async function openNotePage(opts) {
       q(".np-chainok").hidden = true;
     } else cb.hidden = true;
   }
+  q(".np-ck").onchange = () => chainUI();
   q(".np-chainx").onclick = () => {
     chain = [];
     chainUI();

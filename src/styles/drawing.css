@@ -124,3 +124,23 @@ body>.dimask.cb3-sg{z-index:320}
 .np-text .np-tst[aria-pressed="true"],.nftxrow .np-tst[aria-pressed="true"]{background:#fff;color:#1d1717;border-color:#fff}
 .np-text .np-tsz{min-height:44px}
 .nftxrow .nftx{font:inherit;font-size:15px;padding:6px;border-radius:8px}
+
+/* drawing › length bar: which way buttons and a big number pad */
+.np-lenbar .nlb-dirs{display:inline-flex;gap:4px}
+.np-lenbar .nlb-dir,.np-lenbar .nlb-padb{min-width:44px;min-height:44px;padding:0 8px;font-size:18px}
+.np-lenbar .nlb-pad{display:grid;grid-template-columns:repeat(3,64px);gap:6px;width:100%;justify-content:center;margin-top:6px}
+.np-lenbar .nlb-pad[hidden],.np-lenbar [hidden]{display:none}
+.np-lenbar .nlb-k{min-height:48px;font-size:20px;font-weight:700}
+
+/* drawing › the running total in the status bar */
+.np-status .np-livq{background:#2f2727;color:#fff;border:1px solid #5b4f50;border-radius:999px;padding:2px 10px;min-height:28px;font:inherit;font-weight:700;cursor:pointer}
+.np-status .np-livq[hidden]{display:none}
+
+/* drawing › ⭐ Easy: only the tools used most */
+.np-bar[data-g="easy"] [data-g~="easy"]{display:flex!important}
+
+/* drawing › Corner tool: sharp, rounded or cut */
+.np-chainbar .np-ckbox{display:inline-flex;gap:6px;align-items:center}
+.np-chainbar .np-ckbox[hidden],.np-chainbar .np-ckbox [hidden]{display:none}
+.np-chainbar .np-ck{min-height:40px}
+.np-chainbar .np-cks{width:80px;padding:6px 8px;font-size:15px}
