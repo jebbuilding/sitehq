@@ -632,6 +632,8 @@ async function openNotePage(opts) {
   /* the running total shown in the status bar (liveQty) */
   let liveTxt = "",
     liveT = 0;
+  /* a measurement just drawn, waiting to be pulled away from the thing it measures (James, Nov 2026) */
+  let dimPull = null;
   function snapPt(p, opt) {
     snappedObj = false;
     snapMark = null;
@@ -2377,6 +2379,17 @@ async function openNotePage(opts) {
     downXY = [e.clientX, e.clientY];
     const p = toPage(e.clientX, e.clientY);
     NP_SCX = tool === "vp" ? 0 : vpScaleAt(p);
+    /* a measurement just drawn: this press pulls it away from what it measures */
+    if (dimPull) {
+      if (tool === "dim" && doc.objs.indexOf(dimPull) >= 0) {
+        drag = { kind: "dimpull", o: dimPull, pd: p, hp: p };
+        dimPullTo(dimPull, p);
+        draw();
+        return;
+      }
+      dimPull = null;
+      chainUI();
+    }
     /* room sketch: with its tool picked, tapping one of its walls opens that wall's measurements
        (other tools work on the drawing as usual, so a door on a room wall can still be picked up and moved) */
     if (tool === "roomsk") {
@@ -2956,6 +2969,11 @@ async function openNotePage(opts) {
         eraseAt(p);
         return;
       }
+      if (drag.kind === "dimpull") {
+        dimPullTo(drag.o, p);
+        draw();
+        return;
+      }
       if (drag.kind === "band") {
         drag.b = p;
         draw();
@@ -3452,19 +3470,18 @@ async function openNotePage(opts) {
       }
       if (cur.t === "dim") {
         attachDim(cur);
-        const o = cur;
-        const pre = doc.scale ? String(Math.round(realMm(lenOf(o.a, o.b)) / 5) * 5) : "";
-        if (dimTk) o.tk = 1;
-        askMeasure(ov, pre, (v) => {
-          if (v) o.s = v;
-          if (doc.scale && v === pre + " mm") o.auto = true;
-          else delete o.auto;
-          dirty = true;
-          draw();
-        });
+        if (dimTk) cur.tk = 1;
+        dimPull = cur;
+        chainUI();
       }
       cur = null;
       draw();
+    }
+    if (ptrs.size === 0 && drag && drag.kind === "dimpull") {
+      const o = drag.o;
+      drag = null;
+      dimDone(o);
+      return;
     }
     if (ptrs.size === 0 && drag && drag.kind === "band") {
       const x0 = Math.min(drag.a[0], drag.b[0]),
@@ -3784,6 +3801,7 @@ async function openNotePage(opts) {
     };
   }
   const setTool = (t) => {
+    if (dimPull && t !== "dim") dimDone(dimPull);
     tool = t;
     chain = [];
     setTimeout(() => {
@@ -8279,9 +8297,49 @@ async function openNotePage(opts) {
       dimTk ? { tk: 1 } : {},
       extra || {},
     );
+  /* pull a measurement out to where the finger is, square to what it measures (in 50 mm steps with snap on) */
+  function dimPullTo(o, p) {
+    const n = dimN(o),
+      m = [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2];
+    let f = (p[0] - m[0]) * n[0] + (p[1] - m[1]) * n[1];
+    if (snapOn && doc.scale) {
+      const st = toUnits(50);
+      f = Math.round(f / st) * st;
+    }
+    if (Math.abs(f) < 3 / s) delete o.off;
+    else o.off = f;
+    dirty = true;
+  }
+  /* where it is now is where it stays; then its size */
+  function dimDone(o) {
+    dimPull = null;
+    chainUI();
+    draw();
+    if (doc.objs.indexOf(o) < 0) return;
+    const pre = doc.scale ? String(Math.round(realMm(lenOf(o.a, o.b)) / 5) * 5) : "";
+    askMeasure(ov, pre, (v) => {
+      if (v) o.s = v;
+      if (doc.scale && v === pre + " mm") o.auto = true;
+      else delete o.auto;
+      dirty = true;
+      draw();
+    });
+  }
   function chainUI() {
     const cb = q(".np-chainbar");
     q(".np-ckbox").hidden = tool !== "corner";
+    if (dimPull && tool === "dim") {
+      q(".np-pvbox").hidden = true;
+      q(".np-pwk").hidden = true;
+      q(".np-pwclose").hidden = true;
+      q(".np-pwlen").hidden = true;
+      cb.hidden = false;
+      q(".np-chaintxt").textContent =
+        "Now pull the measurement away from what it measures, then let go";
+      q(".np-chainok").hidden = false;
+      q(".np-chainok").textContent = "✓ Leave it on the line";
+      return;
+    }
     if (tool === "corner") {
       q(".np-pvbox").hidden = true;
       q(".np-pwk").hidden = true;
@@ -8359,6 +8417,10 @@ async function openNotePage(opts) {
   }
   q(".np-ck").onchange = () => chainUI();
   q(".np-chainx").onclick = () => {
+    if (dimPull) {
+      dimDone(dimPull);
+      return;
+    }
     chain = [];
     chainUI();
     draw();
@@ -8420,6 +8482,12 @@ async function openNotePage(opts) {
     draw();
   };
   q(".np-chainok").onclick = () => {
+    if (dimPull) {
+      const o = dimPull;
+      delete o.off;
+      dimDone(o);
+      return;
+    }
     if (tool === "pave" || tool === "pstrip") {
       finishPave();
       return;

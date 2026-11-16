@@ -2910,15 +2910,28 @@ const DWS = (() => {
         .map((w) => `<br><span style="color:var(--wsdim)">⚠ ${esc(w)}</span>`)
         .join("")}`;
   }
+  /* openings ticked in the schedule, to delete together (James, Nov 2026: "I need to be able to tick and then be able
+     to delete them") */
+  const wsTicked = new Set();
+  function tickBar() {
+    [...wsTicked].forEach((o) => items.includes(o) || wsTicked.delete(o));
+    const n = wsTicked.size;
+    g("ticks").hidden = !n;
+    g("tickn").textContent = n + " ticked";
+    const d = g("tickdel");
+    d.dataset.armed = "";
+    d.textContent = "🗑 Delete ticked";
+  }
   function list() {
     g("count").textContent = items.length + " opening" + (items.length === 1 ? "" : "s");
     g("list").innerHTML = items
       .map((o, i) => {
         const s = sizes(o),
           vh = s.fws.length > 1 ? 110 : 92;
-        return `<button type="button" class="wsitem" data-i="${i}" aria-current="${i === cur}"><span class="r">${o.ref}</span><svg viewBox="0 0 120 ${vh}" aria-hidden="true">${usingSketch(o) ? skImg(o, 120, vh) : draw(o, 120, vh, 6, CV, { dims: false })}</svg><span><b>${esc(o.name)}</b><small>${esc(o.loc || "–")} · ${esc(o.mat)} · ${esc(o.out)}${(o.photos || []).length ? " · 📷 " + o.photos.length : ""}</small></span><span class="z">${o.qty > 1 ? o.qty + " × " : ""}${s.W} × ${s.H}</span></button>`;
+        return `<div class="wsirow"><label class="wstick"><input type="checkbox" class="ws-tick" data-i="${i}"${wsTicked.has(o) ? " checked" : ""} aria-label="Tick ${esc(o.ref)}"></label><button type="button" class="wsitem" data-i="${i}" aria-current="${i === cur}"><span class="r">${o.ref}</span><svg viewBox="0 0 120 ${vh}" aria-hidden="true">${usingSketch(o) ? skImg(o, 120, vh) : draw(o, 120, vh, 6, CV, { dims: false })}</svg><span><b>${esc(o.name)}</b><small>${esc(o.loc || "–")} · ${esc(o.mat)} · ${esc(o.out)}${(o.photos || []).length ? " · 📷 " + o.photos.length : ""}</small></span><span class="z">${o.qty > 1 ? o.qty + " × " : ""}${s.W} × ${s.H}</span></button></div>`;
       })
       .join("");
+    tickBar();
   }
   const refresh = () => {
     handRender();
@@ -3064,7 +3077,7 @@ const DWS = (() => {
      <label class="wf">Notes for the manufacturer / fitter<textarea id="wsx-o-notes" rows="2" placeholder="e.g. Brick slips both sides, lintel looks low"></textarea></label>
      <div class="wsfoot"><button class="btn" type="button" data-new="window">+ Window</button><button class="btn" type="button" data-new="door">+ Door</button><button class="btn" type="button" data-new="bay">+ Bay</button><button class="btn" type="button" id="wsx-dup">⧉ Copy this one</button><button class="btn delbtn" type="button" id="wsx-del">🗑 Remove</button></div>
     </section>
-    <section class="wspanel" aria-label="Schedule"><h2>Schedule <span class="wslbl" id="wsx-count"></span></h2><div class="wslist" id="wsx-list"></div>
+    <section class="wspanel" aria-label="Schedule"><h2>Schedule <span class="wslbl" id="wsx-count"></span></h2><div class="wsticks" id="wsx-ticks" hidden><span id="wsx-tickn"></span><button type="button" class="pillbtn" id="wsx-tickall">☑ Tick all</button><button type="button" class="pillbtn" id="wsx-untick">Untick</button><button type="button" class="btn delbtn" id="wsx-tickdel">🗑 Delete ticked</button></div><div class="wslist" id="wsx-list"></div>
      <button type="button" class="btn primary" id="wsx-pdf2">📄 Make the PDF</button><div class="who">Make an order request for your window supplier, or a full survey PDF with everything in it.</div></section>
    </div></div>`;
     document.body.appendChild(d);
@@ -3561,7 +3574,56 @@ const DWS = (() => {
       azRender();
       refresh();
     });
+    g("list").addEventListener("change", (e) => {
+      const t = e.target.closest(".ws-tick");
+      if (!t) return;
+      const o = items[+t.dataset.i];
+      if (!o) return;
+      if (t.checked) wsTicked.add(o);
+      else wsTicked.delete(o);
+      tickBar();
+    });
+    g("tickall").onclick = () => {
+      items.forEach((o) => wsTicked.add(o));
+      list();
+    };
+    g("untick").onclick = () => {
+      wsTicked.clear();
+      list();
+    };
+    g("tickdel").onclick = (e) => {
+      const b = e.currentTarget;
+      const n = wsTicked.size;
+      if (!n) return;
+      if (n >= items.length) {
+        toast("A survey needs at least one opening – untick one to keep it");
+        return;
+      }
+      if (b.dataset.armed !== "1") {
+        b.dataset.armed = "1";
+        b.textContent = "Tap again to delete " + n;
+        setTimeout(() => {
+          if (b.dataset.armed === "1") tickBar();
+        }, 3000);
+        return;
+      }
+      read();
+      const keep = items[cur];
+      const refs = items.filter((o) => wsTicked.has(o)).map((o) => o.ref);
+      const left = items.filter((o) => !wsTicked.has(o));
+      items.splice(0, items.length, ...left);
+      wsTicked.clear();
+      const at = items.indexOf(keep);
+      load(at >= 0 ? at : 0);
+      toast(
+        refs.length === 1
+          ? refs[0] + " deleted"
+          : refs.length + " deleted (" + refs.join(", ") + ")",
+      );
+      dirty();
+    };
     g("list").addEventListener("click", (e) => {
+      if (e.target.closest(".wstick")) return;
       const b = e.target.closest(".wsitem");
       if (!b) return;
       read();
