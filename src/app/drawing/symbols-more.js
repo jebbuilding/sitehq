@@ -1,7 +1,7 @@
 /* ===== more symbols: kitchen, bathroom, furniture, electrics, heating, drainage, site plant, landscaping, fire, access, notes ===== */
 import { NP_LIB } from "./components.js";
 import { npLbl } from "./construction-details.js";
-import { npCanopy } from "./paving.js";
+import { npCanopy } from "./paving-draw.js";
 import { NP_DES_BOX } from "./symbols-design.js";
 import { npHexMix } from "./walls.js";
 export { NP_BASIC, NP_X, NP_XLAB, NP_XREAL, NP_XSHAPES, initSymbolsMore, npXSym };

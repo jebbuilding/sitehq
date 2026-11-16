@@ -1,6 +1,7 @@
 /* ===== construction details: stud wall connections, framing, headers, ground floor and floor details ===== */
 import { NP_BLD_BOX, NP_BLD_LINE, npBldLine, npBldSym } from "./components.js";
-import { NP_BATHNICE, NP_NICE, NP_REAL, npBath, npNice } from "./paving.js";
+import { NP_BATHNICE, NP_NICE, npBath, npNice } from "./nice-symbols.js";
+import { NP_REAL } from "./standard-sizes.js";
 import { NP_ANNO_BOX, NP_MEMBR, npAnnoLine, npAnnoSym, npFrame } from "./symbols-annotation.js";
 import { NP_DES_BOX, npDesignLine, npDesignSym } from "./symbols-design.js";
 import { npElevLine, npElevSym } from "./symbols-elevation.js";
