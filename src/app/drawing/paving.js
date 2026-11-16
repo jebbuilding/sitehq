@@ -32,6 +32,7 @@ import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
 import { hrView } from "./house-render.js";
+import { npJoinAt } from "./join-rooms.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
 import { rwDialog, rwElev, rwNotes, rwSection } from "./retaining-wall.js";
 import {
@@ -4560,6 +4561,20 @@ async function openNotePage(opts) {
     { passive: false },
   );
   function eraseAt(p) {
+    /* a line shared by two boxes / rooms: take out just that part, making one room */
+    if (drag && drag.joined && Math.hypot(p[0] - drag.joined[0], p[1] - drag.joined[1]) < 30 / s)
+      return;
+    {
+      const j = npJoinAt(doc.objs, p, (HR + 2) / s, doc.layers ? lyOff : null);
+      if (j) {
+        setObjs(j);
+        if (drag) drag.joined = p;
+        sel = null;
+        draw();
+        toast("Line in the middle taken out – one room now");
+        return;
+      }
+    }
     const i = hit(p);
     if (i != null && doc.objs[i].lk) {
       return;
