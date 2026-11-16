@@ -1626,7 +1626,7 @@ async function openNotePage(opts) {
       .join(
         "",
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
-      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
+      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="smaller" hidden>➖<small>Smaller</small></button><button type="button" class="np-sb" data-a="bigger" hidden>➕<small>Bigger</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
       <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="moveby">✥<small>Move by…</small></button><button type="button" class="np-mb" data-m="clip">📋<small>Copy</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
       <div class="np-finebox" hidden><div class="nfrow"><b>⚙ <span class="nfwhatis">Properties</span></b><button type="button" class="nfx" aria-label="Close">✕</button></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
@@ -2778,7 +2778,10 @@ async function openNotePage(opts) {
     ctx.restore();
   }
   /* handles of the selected object, in page units */
-  const HR = window.matchMedia && window.matchMedia("(pointer:coarse)").matches ? 16 : 13;
+  const HR =
+    window.matchMedia && window.matchMedia("(pointer:coarse)").matches
+      ? 22
+      : 13; /* bigger to grab with a finger */
   function handles(o) {
     const H = [];
     if (!o) return H;
@@ -2790,6 +2793,14 @@ async function openNotePage(opts) {
         H.push({ k: "a", p: rot(o.a, c, r) }, { k: "b", p: rot(o.b, c, r) });
       } else {
         H.push({ k: "size", p: rot([bx + bw, by + bh], c, r) });
+        /* a photo: any corner resizes it, the opposite corner staying put (James, Nov 2026: "I can't make it small by
+           moving the corner of the photo") */
+        if (o.t === "img" && !r)
+          H.push(
+            { k: "size", c: "tl", p: [bx, by] },
+            { k: "size", c: "tr", p: [bx + bw, by] },
+            { k: "size", c: "bl", p: [bx, by + bh] },
+          );
       }
       H.push({
         k: "rot",
@@ -3249,6 +3260,7 @@ async function openNotePage(opts) {
       }, 0);
     if (so && !so.lk) {
       q('.np-sb[data-a="flip"]').hidden = !(so.t === "shape" || so.t === "img");
+      q('.np-sb[data-a="smaller"]').hidden = q('.np-sb[data-a="bigger"]').hidden = so.t !== "img";
       {
         const ad = q('.np-sb[data-a="autodim"]');
         ad.hidden = ["text", "stroke", "dim", "ang", "arrow"].includes(so.t) || vpOf(so);
@@ -3807,7 +3819,17 @@ async function openNotePage(opts) {
           }
           if (h.k === "size") {
             const b = baseBox(so);
-            drag = { kind: "resize", i: sel, start: p, o: o0, bw: b[2], bh: b[3], pd: p, hp: p };
+            drag = {
+              kind: "resize",
+              i: sel,
+              start: p,
+              o: o0,
+              bw: b[2],
+              bh: b[3],
+              pd: p,
+              hp: p,
+              c: h.c || "br",
+            };
             return;
           }
           drag = { kind: "end", i: sel, which: h.k, o: o0, c: ctr(so), pd: p, hp: h.p.slice() };
@@ -4185,9 +4207,16 @@ async function openNotePage(opts) {
         const r = drag.o.r || 0;
         const ld = rot([dx0, dy0], [0, 0], -r);
         if (o.t === "img") {
-          const nw = Math.max(40, drag.o.w + ld[0]);
+          const cl = /l/.test(drag.c || ""),
+            ct = /t/.test(drag.c || "");
+          /* the bigger of the two moves decides the size, so a diagonal drag from any corner works */
+          const ex = cl ? -ld[0] : ld[0],
+            ey = ((ct ? -ld[1] : ld[1]) * drag.o.w) / drag.o.h;
+          const nw = Math.max(40, drag.o.w + (Math.abs(ex) >= Math.abs(ey) ? ex : ey));
           o.w = nw;
           o.h = (nw * drag.o.h) / drag.o.w;
+          if (cl) o.x = drag.o.x + drag.o.w - o.w;
+          if (ct) o.y = drag.o.y + drag.o.h - o.h;
         } else if (o.t === "text") {
           o.size = Math.max(8, Math.round((drag.o.size * (drag.bh + ld[1])) / drag.bh));
         }
@@ -5236,6 +5265,17 @@ async function openNotePage(opts) {
           }
         } else if (a === "flip") {
           o.fl = !o.fl;
+        } else if (a === "smaller" || a === "bigger") {
+          /* a photo a fifth smaller or a quarter bigger, about its middle */
+          const f = a === "smaller" ? 0.8 : 1.25;
+          if (o.w * f >= 40) {
+            const cx = o.x + o.w / 2,
+              cy = o.y + o.h / 2;
+            o.w *= f;
+            o.h *= f;
+            o.x = cx - o.w / 2;
+            o.y = cy - o.h / 2;
+          }
         } else if (a === "crop") {
           undo.pop();
           recropImg(o);
