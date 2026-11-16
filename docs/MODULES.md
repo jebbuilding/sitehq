@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 225 files, 4405 KB, 112076 lines.
-- 2306 names declared at the top level (the shared scope); 1164 of them are used by a file other than the one that declares them.
-- 2492 file-to-file dependencies (file A uses at least one name from file B).
+- 225 files, 4406 KB, 112113 lines.
+- 2307 names declared at the top level (the shared scope); 1165 of them are used by a file other than the one that declares them.
+- 2493 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 208 files depend on each other in a loop (directly or through other files); the other 17 files are outside any loop.
 
@@ -385,10 +385,10 @@ BOOT: get the platform (database, user, files, downloads), work out who is signe
 
 COMPANY NAMES: the company's and account holder's names, from the company details
 
-- 35 lines, 1.4 KB. Declares 6 names, 5 used elsewhere.
-- **Used elsewhere:** `bossFirst` (52), `bossName` (20), `coName` (19), `coShort` (15), `coTown` (4)
+- 55 lines, 2.1 KB. Declares 7 names, 6 used elsewhere.
+- **Used elsewhere:** `bossFirst` (52), `bossName` (20), `coName` (19), `coShort` (15), `coTown` (4), `coHome` (2)
 - **Uses names from 1 files:** `core/state.js` (1)
-- **Used by 67 files**
+- **Used by 68 files**
 
 ### `core/data.js`
 
@@ -952,9 +952,9 @@ JOBS DESK: Jobs & clients as in the layout picture – the jobs down the side, t
 
 PLANNING LEADS (owner only): moved in from the Devon Planning Leads page
 
-- 929 lines, 38 KB. Declares 2 names, 1 used elsewhere.
+- 943 lines, 39 KB. Declares 2 names, 1 used elsewhere.
 - **Used elsewhere:** `LEADS` (1)
-- **Uses names from 6 files:** `core/helpers.js` (5), `core/company-names.js` (3), `core/state.js` (2), `core/tabs-week.js` (2), `owner/backup.js` (1), `owner/company-details.js` (1)
+- **Uses names from 6 files:** `core/helpers.js` (5), `core/company-names.js` (4), `core/state.js` (2), `core/tabs-week.js` (2), `owner/backup.js` (1), `owner/company-details.js` (1)
 - **Used by 1 files**
 
 ### `owner/owner.js`
@@ -1978,9 +1978,9 @@ SITE DIARY: a daily diary for each site that writes itself, plus James's own not
 
 SITES MAP: every site and job on one map you can drag and zoom
 
-- 290 lines, 11 KB. Declares 10 names, 1 used elsewhere.
+- 293 lines, 11 KB. Declares 10 names, 1 used elsewhere.
 - **Used elsewhere:** `smOpen` (2)
-- **Uses names from 9 files:** `sites/maps-pins.js` (3), `core/helpers.js` (2), `core/state.js` (2), `core/viewer.js` (2), `clients/quick-enquiry.js` (1), `core/tabs-week.js` (1), `photos/photos.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
+- **Uses names from 10 files:** `sites/maps-pins.js` (3), `core/helpers.js` (2), `core/state.js` (2), `core/viewer.js` (2), `clients/quick-enquiry.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `photos/photos.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
 - **Used by 2 files**
 
 ### `sites/snag-quick.js`

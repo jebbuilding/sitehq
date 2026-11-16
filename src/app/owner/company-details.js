@@ -29,7 +29,7 @@ const CO_FIELDS = [
   ["shortName", "Short name for the app icon and labels", "e.g. SBL"],
   ["owner", "Owner / contact", "e.g. Alex Smith"],
   ["town", "Town you're based in", "e.g. Exeter"],
-  ["workArea", "Areas you work in", "e.g. Exeter, East Devon and Teignbridge"],
+  ["workArea", "Areas you work in", "e.g. the towns or council areas you cover"],
   ["address", "Business address", "e.g. 1 High Street"],
   ["mobile", "Mobile (trades call or video call you on this from Chat)", ""],
   ["phone", "Office phone", ""],

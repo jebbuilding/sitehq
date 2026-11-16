@@ -1,5 +1,5 @@
 /* ================= PLANNING LEADS (owner only): moved in from the Devon Planning Leads page ================= */
-import { bossFirst, coName, coTown } from "../core/company-names.js";
+import { bossFirst, coHome, coName, coTown } from "../core/company-names.js";
 import { $, esc, iso, store, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { curTab, render } from "../core/tabs-week.js";
@@ -44,7 +44,8 @@ const LEADS = (() => {
   ];
   const CAT = Object.fromEntries(CATS.map((c) => [c[0], c]));
   const SMALL = new Set(["small", "windows", "roof"]);
-  const COUNCILS = ["East Devon", "Exeter", "Teignbridge"];
+  /* the councils are the ones the leads come from (each firm's own area), not a built-in list */
+  const councils = () => [...new Set(L.rows.map((r) => r.council).filter(Boolean))].sort();
   const HOMEOWNER = new Set(["two", "single", "loft", "outbuilding", "small", "roof", "windows"]);
   const OUTCOMES = [
     ["", "Outcome…"],
@@ -66,7 +67,7 @@ const LEADS = (() => {
     newbuild: "a new home",
     commercial: "building works",
   };
-  const HOME = [50.62, -3.405];
+  /* distances are from the company's own place (Company details / the weather's home place) */
   const OUTCODE = {
     EX1: [50.727, -3.505],
     EX2: [50.708, -3.52],
@@ -116,9 +117,11 @@ const LEADS = (() => {
   };
   const LETTER_NAME = { homeowner: "Homeowner letter", original: "Original letter" };
   function miles(r) {
+    const HOME = coHome();
+    if (!HOME) return null;
     let oc = (r.postcode || "").split(" ")[0];
     if (!OUTCODE[oc]) oc = TOWN[r.town] || "";
-    const c = OUTCODE[oc];
+    const c = r.lat != null && r.lon != null ? [+r.lat, +r.lon] : OUTCODE[oc];
     if (!c) return null;
     const R = 3958.8,
       rad = (x) => (x * Math.PI) / 180,
@@ -134,7 +137,8 @@ const LEADS = (() => {
     loaded: false,
     sub: null,
     month: "",
-    council: new Set(COUNCILS),
+    /* councils switched off in the filter (none at first: every council shows) */
+    councilOff: new Set(),
     cat: null,
     picked: new Set(),
     pending: [],
@@ -187,7 +191,7 @@ const LEADS = (() => {
     return L.rows.filter(
       (r) =>
         (L.savedOnly ? r.saved : L.month === "all" || monthOf(r) === L.month) &&
-        L.council.has(r.council) &&
+        !L.councilOff.has(r.council) &&
         (!L.status || statusOf(r).k === L.status) &&
         (o.keepSent || !L.hideSent || !r.sent) &&
         (!L.within || (r._mi != null && r._mi <= L.within)) &&
@@ -255,7 +259,7 @@ const LEADS = (() => {
     if (!L.month || (L.month !== "all" && !ms.includes(L.month))) L.month = ms[0] || "all";
     const all = L.rows.filter((r) => r.sent);
     const ns = L.rows.filter((r) => r.saved).length;
-    let h = `<div class="who" style="margin-bottom:8px">New planning applications in ${esc(((S.settings || {}).company || {}).workArea || COUNCILS.join(", "))}, sorted by the kind of building work, so you can see who to write to each month. <span id="ld-meta">${esc(metaText())}</span></div>
+    let h = `<div class="who" style="margin-bottom:8px">New planning applications in ${esc(((S.settings || {}).company || {}).workArea || councils().join(", ") || "your area")}, sorted by the kind of building work, so you can see who to write to each month. <span id="ld-meta">${esc(metaText())}</span></div>
   <div class="actions ld-now"><a class="btn" href="${LD_ROUTINE}" target="_blank" rel="noopener">🔎 Look for new leads now ↗</a><span class="who">Opens the weekly check (every Monday 6:47am). Tap <b>Run now</b> there – new leads show here in about 15 minutes.</span></div>
   <div class="seg ld-tabs" role="tablist"><button type="button" class="pillbtn" data-v="leads" aria-pressed="${L.view === "leads"}">Leads</button><button type="button" class="pillbtn" data-v="sent" aria-pressed="${L.view === "sent"}">Letters sent${all.length ? " (" + all.length + ")" : ""}</button></div>`;
     if (L.view === "sent") {
@@ -273,7 +277,12 @@ const LEADS = (() => {
         (m) => `<option value="${m}" ${m === L.month ? "selected" : ""}>${monthName(m)}</option>`,
       )
       .join("")}</select>
-    <div class="seg">${COUNCILS.map((c) => `<button type="button" class="pillbtn ld-c" data-c="${c}" aria-pressed="${L.council.has(c)}">${c}</button>`).join("")}</div>
+    <div class="seg">${councils()
+      .map(
+        (c) =>
+          `<button type="button" class="pillbtn ld-c" data-c="${esc(c)}" aria-pressed="${!L.councilOff.has(c)}">${esc(c)}</button>`,
+      )
+      .join("")}</div>
     <select id="ld-within" aria-label="Distance from ${esc(coTown() || "your base")}">${[0, 5, 10, 15, 20, 30].map((n) => `<option value="${n}" ${L.within === n ? "selected" : ""}>${n ? "Within " + n + " miles" : "Any distance"}</option>`).join("")}</select>
     <select id="ld-status" aria-label="Status"><option value="">Any status</option><option value="wait" ${L.status === "wait" ? "selected" : ""}>Awaiting decision</option><option value="ok" ${L.status === "ok" ? "selected" : ""}>Approved (by month approved)</option><option value="no" ${L.status === "no" ? "selected" : ""}>Refused or withdrawn</option></select>
     <label class="ld-tog"><input type="checkbox" id="ld-saved" ${L.savedOnly ? "checked" : ""}> Saved only${ns ? " (" + ns + ")" : ""}</label>
@@ -372,7 +381,11 @@ const LEADS = (() => {
       )
       .join(
         "",
-      )}</select><select id="ld-sc" aria-label="Council"><option value="">All councils</option>${COUNCILS.map((c) => `<option ${L.sentCouncil === c ? "selected" : ""}>${c}</option>`).join("")}</select><span style="flex:1"></span><button type="button" class="btn primary" id="ld-xlsx" ${rows.length ? "" : "disabled"}>Download spreadsheet (Excel)</button></div><p class="who" style="margin:6px 0 10px">Every letter you mark as sent is recorded here with the date, so you can look back at who you wrote to.</p>`;
+      )}</select><select id="ld-sc" aria-label="Council"><option value="">All councils</option>${councils()
+      .map((c) => `<option ${L.sentCouncil === c ? "selected" : ""}>${esc(c)}</option>`)
+      .join(
+        "",
+      )}</select><span style="flex:1"></span><button type="button" class="btn primary" id="ld-xlsx" ${rows.length ? "" : "disabled"}>Download spreadsheet (Excel)</button></div><p class="who" style="margin:6px 0 10px">Every letter you mark as sent is recorded here with the date, so you can look back at who you wrote to.</p>`;
     if (!all.length)
       return (
         h +
@@ -712,8 +725,9 @@ const LEADS = (() => {
       (b) =>
         (b.onclick = () => {
           const v = b.dataset.c;
-          if (L.council.has(v) && L.council.size > 1) L.council.delete(v);
-          else L.council.add(v);
+          /* tap to hide a council's leads, tap again to show them; at least one stays on */
+          if (L.councilOff.has(v)) L.councilOff.delete(v);
+          else if (L.councilOff.size < councils().length - 1) L.councilOff.add(v);
           render();
         }),
     );

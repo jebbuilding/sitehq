@@ -1,5 +1,7 @@
 # Instructions for the "JEB weather update" scheduled task
 
+The routine itself is set up for one firm. For another firm, give it their app's link; on our own hosting the server fetches the forecast for each firm instead (Jasper's list).
+
 The weather-wise planner needs the 10-day forecast. Replace the whole of the task's instructions with the text between the lines below (it is the old text plus step 4b and "days" in step 5). Scheduled tasks made from the Claude app can reach the SiteHQ database; ones made any other way cannot, which is why this is done by hand.
 
 ---
@@ -11,7 +13,7 @@ Tools: use the ArtifactData tool (load it with ToolSearch "select:ArtifactData")
 Steps:
 1. ArtifactData get, collection "settings", doc_id "weather" (note its version; it may not exist yet). It has a "places" array; each place may already carry an AccuWeather "key" for a site, reuse those keys instead of searching again.
 2. ArtifactData list, collection "sites" (limit 200). Each document has a "name" (an address or village, e.g. "Kennford" or "12 Marine Way, Exmouth EX8 1AA") and maybe "lat"/"lon".
-3. Build the list of places: always Exmouth, Devon (key 322498, site ""), plus one per site. For a site with no key yet, search AccuWeather with the site name; if nothing is found, try just the postcode, then just the town/village part (the last part after a comma, without the postcode). Only accept a UK result (in Devon or nearby). If still nothing, skip that site. Sites that resolve to the same key can share one weather call.
+3. Build the list of places: always the company's own town first (site ""): ArtifactData get collection "settings" doc_id "app" and use company.town, else the town in company.address – for JEB Building Services that is Exmouth, Devon (key 322498) – then one per site. For a site with no key yet, search AccuWeather with the site name; if nothing is found, try just the postcode, then just the town/village part (the last part after a comma, without the postcode). Only accept a UK result near the company's own town. If still nothing, skip that site. Sites that resolve to the same key can share one weather call.
 4. For each distinct key call widgets-current-claude with queryParams {locationKey, unit:"metric", lang:"en"}. From the result take: currentConditions.iconCode (icon), currentConditions.phrase (phrase), currentConditions.temperatureValue (temp, °C), currentConditions.windSpeedImperial (wind, mph), and location.info.latitude / longitude (lat, lon), location.info.name (name).
 4b. Also for each distinct key call widgets-daily-claude with queryParams {locationKey, unit:"metric", lang:"en"} (the forecast, for the weather-wise planner). From the first 10 entries of dailyForecast make, for each, {"d": the YYYY-MM-DD part of its "date", "rain": day.rainProbabilityValue, "mm": day.extended.rainValue + night.extended.rainValue rounded to 1 decimal place, "max": day.temperature, "min": night.temperature, "gust": the number of km/h in day.extended.gusts, "phrase": day.iconPhrase}. If the forecast call fails for a key, leave "days" out for that place; it is not a reason to stop.
 5. Write ArtifactData set, collection "settings", doc_id "weather" (pass if_version from step 1 if the doc existed), with data exactly in this shape:

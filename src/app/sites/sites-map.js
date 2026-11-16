@@ -1,5 +1,6 @@
 /* ================= SITES MAP: every site and job on one map you can drag and zoom ================= */
 import { viewClient } from "../clients/quick-enquiry.js";
+import { coHome } from "../core/company-names.js";
 import { $, esc } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -130,8 +131,10 @@ function smFit() {
   const W = SM.el.clientWidth || 600,
     H = SM.el.clientHeight || 420;
   if (!pts.length) {
-    SM.z = 10;
-    [SM.x, SM.y] = smWorld(50.62, -3.41, SM.z); /* Exmouth */
+    /* nothing to show yet: over the company's own place, else the whole of the UK */
+    const h = coHome();
+    SM.z = h ? 10 : 6;
+    [SM.x, SM.y] = h ? smWorld(h[0], h[1], SM.z) : smWorld(54.2, -2.6, SM.z);
   } else {
     let z = 16;
     for (; z > 3; z--) {
