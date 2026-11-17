@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 242 files, 4534 KB, 115150 lines.
+- 242 files, 4535 KB, 115183 lines.
 - 2374 names declared at the top level (the shared scope); 1215 of them are used by a file other than the one that declares them.
 - 2563 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -215,7 +215,7 @@ CLIENT CHOICES: the client picks finishes in their portal within an allowance; o
 CLIENTS (owner only, stored in the private todos collection as kind:"client")
 
 - 787 lines, 34 KB. Declares 15 names, 12 used elsewhere.
-- **Used elsewhere:** `saveClient` (19), `clStage` (13), `clAddNote` (4), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `nmSortKey` (2), `CL_SOURCE` (1), `clInitials` (1), `newEnquiryFor` (1), `nmParts` (1)
+- **Used elsewhere:** `saveClient` (19), `clStage` (13), `clAddNote` (4), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `newEnquiryFor` (2), `nmSortKey` (2), `CL_SOURCE` (1), `clInitials` (1), `nmParts` (1)
 - **Uses names from 19 files:** `core/sheet.js` (5), `photos/photos.js` (5), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `files/outbox.js` (2), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/property-info.js` (1), `clients/quick-enquiry.js` (1), `clients/record-pdf.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 26 files**
 
@@ -709,7 +709,7 @@ PAVING DRAW: patio and drive materials drawn at real size, paths round a buildin
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 11812 lines, 443 KB. Declares 9 names, 5 used elsewhere.
+- 11826 lines, 444 KB. Declares 9 names, 5 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_SCX` (1), `setNpScx` (1)
 - **Uses names from 49 files:** `drawing/construction-details.js` (16), `drawing/room-sketch.js` (9), `drawing/walls.js` (7), `drawing/steel-parts.js` (6), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/plan-geometry.js` (5), `drawing/cupboard-maker.js` (4), `drawing/drawing-layers.js` (4), `drawing/retaining-wall.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `drawing/paving-draw.js` (3), `files/files.js` (3), `survey/door-window-survey.js` (3), `drawing/bend-lines.js` (2), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/smart-pen.js` (2), `drawing/standard-sizes.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `photos/photos.js` (2), `sales/sales-calc.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `drawing/find-rooms.js` (1), `drawing/finger-tap.js` (1), `drawing/house-render.js` (1), `drawing/join-rooms.js` (1), `drawing/undo-list.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `purchasing/price-order.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sales/letterhead-setup.js` (1), `sites/summary.js` (1)
 - **Used by 17 files**
@@ -1069,7 +1069,7 @@ PLANNING LEADS (owner only): moved in from the Devon Planning Leads page
 
 OWNER
 
-- 1173 lines, 52 KB. Declares 27 names, 18 used elsewhere.
+- 1174 lines, 53 KB. Declares 27 names, 18 used elsewhere.
 - **Used elsewhere:** `nameOf` (86), `teamIds` (46), `allTeam` (44), `crewIds` (6), `roleOf` (4), `roleShort` (3), `sheetOf` (3), `allIds` (2), `checkDetail` (2), `roleTag` (2), `startPreview` (2), `teamPlusMe` (2), `weekEntries` (2), `companyOf` (1), `ownerInvoices` (1), `ownerPhotos` (1), `ownerSetup` (1), `ownerTime` (1)
 - **Uses names from 41 files:** `core/helpers.js` (14), `core/state.js` (5), `timesheets/filters.js` (5), `core/sheet.js` (4), `photos/photos.js` (4), `safety/expiry-dates.js` (4), `core/fields.js` (3), `timesheets/overtime.js` (3), `timesheets/time.js` (3), `timesheets/working-day.js` (3), `core/tabs-week.js` (2), `drawing/trade-drawings.js` (2), `files/files.js` (2), `owner/backup.js` (2), `owner/company-details.js` (2), `owner/today-desk.js` (2), `people/reminders.js` (2), `purchasing/invoices.js` (2), `safety/checklists.js` (2), `sales/letterhead-setup.js` (2), `timesheets/plan-check.js` (2), `timesheets/stray-hours.js` (2), `core/company-names.js` (1), `core/data.js` (1), `core/dictation.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `owner/deletion-record.js` (1), `owner/reports.js` (1), `owner/week-wrap.js` (1), `people/access.js` (1), `people/portal-access.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `purchasing/materials-receipts.js` (1), `sites/job-details.js` (1), `sites/roll-call.js` (1), `timesheets/day-work.js` (1), `timesheets/monthly-sheet.js` (1), `timesheets/pay-summary.js` (1), `timesheets/quick-week.js` (1)
 - **Used by 93 files**
@@ -1123,9 +1123,9 @@ TODAY CARDS: chat and sites on the Today page
 
 TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
-- 299 lines, 13 KB. Declares 13 names, 7 used elsewhere.
+- 317 lines, 13 KB. Declares 13 names, 7 used elsewhere.
 - **Used elsewhere:** `qaOpen` (1), `qaSetupCard` (1), `qaSetupWire` (1), `tdDeskWire` (1), `tdjCard` (1), `tdoCard` (1), `tdwCard` (1)
-- **Uses names from 18 files:** `core/helpers.js` (7), `owner/owner.js` (3), `core/state.js` (2), `owner/today.js` (2), `sites/job-details.js` (2), `sites/project-pages.js` (2), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `photos/photos.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `safety/accidents.js` (1), `sales/sales-edit.js` (1), `sales/variations.js` (1), `sites/roll-call.js` (1), `sites/summary.js` (1), `timesheets/day-work.js` (1), `timesheets/time.js` (1)
+- **Uses names from 18 files:** `core/helpers.js` (7), `owner/owner.js` (3), `clients/clients.js` (2), `core/state.js` (2), `owner/today.js` (2), `sites/job-details.js` (2), `sites/project-pages.js` (2), `clients/quick-enquiry.js` (1), `photos/photos.js` (1), `planner/board.js` (1), `planner/time-off.js` (1), `safety/accidents.js` (1), `sales/sales-edit.js` (1), `sales/variations.js` (1), `sites/roll-call.js` (1), `sites/summary.js` (1), `timesheets/day-work.js` (1), `timesheets/time.js` (1)
 - **Used by 2 files**
 
 ### `owner/today.js`

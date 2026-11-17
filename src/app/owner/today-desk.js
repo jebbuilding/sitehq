@@ -1,5 +1,5 @@
 /* ================= TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet ================= */
-import { clStage } from "../clients/clients.js";
+import { clStage, newEnquiryFor } from "../clients/clients.js";
 import { quickEnquiry } from "../clients/quick-enquiry.js";
 import { $, addDays, esc, hrs, iso, parse, toast } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
@@ -204,7 +204,9 @@ function tdDeskWire() {
    none saved = QA_DEFAULT) – James, Nov 2026 */
 const QA_ITEMS = [
   ["photo", "📷", "Photo"],
-  ["enq", "⚡", "Enquiry"],
+  ["enq", "⚡", "Quick enquiry"],
+  /* the full enquiry: an existing client or a new one (James, Nov 2026: "in + Add include new enquiry") */
+  ["newenq", "📝", "New enquiry"],
   ["rcpt", "🧾", "Receipt"],
   ["hours", "⏱️", "Hours for someone"],
   ["dw", "🧱", "Day work"],
@@ -215,10 +217,23 @@ const QA_ITEMS = [
   ["draw", "✏️", "Drawing"],
   ["inc", "🚑", "Accident or near miss"],
 ];
-const QA_DEFAULT = ["photo", "enq", "rcpt", "hours", "todo", "plan", "est", "var", "draw"];
+const QA_DEFAULT = [
+  "photo",
+  "newenq",
+  "enq",
+  "rcpt",
+  "hours",
+  "todo",
+  "plan",
+  "est",
+  "var",
+  "draw",
+];
 const qaKeys = () => {
   const k = (S.settings || {}).qaItems;
-  return Array.isArray(k) ? k : QA_DEFAULT;
+  if (!Array.isArray(k)) return QA_DEFAULT;
+  /* a list saved before 📝 New enquiry was a choice gets it too, until + Add is saved again in Setup */
+  return k.includes("newenq") || (S.settings || {}).qaItemsV >= 2 ? k : ["newenq"].concat(k);
 };
 /* Setup: tick what goes in + Add */
 function qaSetupCard() {
@@ -237,17 +252,19 @@ function qaSetupWire() {
     }
     $("qa-save").disabled = true;
     try {
-      await S.db.doc("settings/app").update({ qaItems: keys });
+      await S.db.doc("settings/app").update({ qaItems: keys, qaItemsV: 2 });
     } catch (e) {
       try {
-        await S.db.doc("settings/app").set(Object.assign({}, S.settings, { qaItems: keys }));
+        await S.db
+          .doc("settings/app")
+          .set(Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 2 }));
       } catch (x) {
         toast("Couldn't save. Check your connection.");
         $("qa-save").disabled = false;
         return;
       }
     }
-    S.settings = Object.assign({}, S.settings, { qaItems: keys });
+    S.settings = Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 2 });
     toast("+ Add saved");
     $("qa-save").disabled = false;
   };
@@ -276,6 +293,7 @@ function qaOpen() {
         const k = b.dataset.k;
         if (k === "photo") openPhoto();
         else if (k === "enq") quickEnquiry();
+        else if (k === "newenq") newEnquiryFor();
         else if (k === "hours") pickPersonFor("hours");
         else if (k === "dw") pickPersonFor("job");
         else if (k === "inc") openIncident();

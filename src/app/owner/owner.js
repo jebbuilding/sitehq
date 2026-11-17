@@ -645,7 +645,8 @@ function startPreview() {
     S.employeeStarted = true;
     startEmployee();
   }
-  if (!empTabs().some((t) => t[0] === S.tab)) S.tab = empTabs()[0][0];
+  /* My forms opens on My timesheet, not on whichever trades' page was used last (James, Nov 2026: it went to Chat) */
+  S.tab = empTabs().some((t) => t[0] === "time") ? "time" : empTabs()[0][0];
   render();
 }
 async function downloadCsv() {

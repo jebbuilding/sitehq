@@ -2976,10 +2976,24 @@ async function openNotePage(opts) {
       drag.go = true;
     }
     let p = toPage(e.clientX, e.clientY);
-    fineNow = !!(slowDrag && drag && drag.pd && drag.kind !== "pan" && drag.kind !== "erase");
-    if (fineNow) {
-      const k = 0.2;
-      p = [drag.hp[0] + (p[0] - drag.pd[0]) * k, drag.hp[1] + (p[1] - drag.pd[1]) * k];
+    /* fine or full speed from how the finger moves (James, Nov 2026: "I need to be able to do both without changing
+       settings – can you do it from how I move it"): a quick move goes with the finger, a slow one moves the thing a
+       fraction as far (down to a quarter) for exact placing, with snapping off while it's fine. 🐢 Slow drag still
+       makes every move fine. Movement is added up as it goes, so speeding up or slowing down never makes it jump */
+    fineNow = false;
+    if (drag && drag.pd && drag.hp && !["pan", "erase", "band", "dimpull"].includes(drag.kind)) {
+      const now = performance.now();
+      if (!drag.ad) drag.ad = { raw: drag.pd, v: drag.hp, t: now - 16, x: downXY[0], y: downXY[1] };
+      const A = drag.ad;
+      const sp = Math.hypot(e.clientX - A.x, e.clientY - A.y) / Math.max(8, now - A.t);
+      const gain = slowDrag ? 0.2 : Math.max(0.25, Math.min(1, (sp - 0.05) / 0.45));
+      A.v = [A.v[0] + (p[0] - A.raw[0]) * gain, A.v[1] + (p[1] - A.raw[1]) * gain];
+      A.raw = p;
+      A.t = now;
+      A.x = e.clientX;
+      A.y = e.clientY;
+      fineNow = gain < 0.7;
+      p = A.v;
     }
     if (drag) {
       if (drag.kind === "pan") {
