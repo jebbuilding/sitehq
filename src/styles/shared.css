@@ -464,5 +464,9 @@ input.fpick{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:po
 label:has(> input.fpick){position:relative;overflow:hidden}
 /* the floating ⚠ Issues button keeps out of the way while a plan is being measured */
 body:has(.fvbody.measuring) #issbtn{display:none}
+/* pop-up boxes never run off the screen: a tall one scrolls inside it, its last row of buttons (Done / Save / Cancel)
+   pinned to the bottom so it can always be closed (James, Nov 2026: 'the done/save button is beyond the screen') */
+.dimask .dimbox{max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+.dimask .dimbox>.dimbtns:last-child{position:sticky;bottom:-16px;background:var(--surface,#fff);margin:0 -16px -16px;padding:10px 16px 14px;border-top:1px solid var(--line,#e5e5e5);z-index:2}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}

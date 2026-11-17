@@ -1169,6 +1169,7 @@ const DWS = (() => {
     "Pilkington Oak",
     "Pilkington Pelerine",
     "Pilkington Reeded",
+    "Pilkington Satin",
     "Pilkington Stippolyte",
     "Pilkington Sycamore",
     "Pilkington Taffeta",
