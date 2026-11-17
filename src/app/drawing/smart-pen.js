@@ -1,5 +1,5 @@
 /* ================= SMART PEN: a rough line, box, circle or shape drawn by finger straightens itself ================= */
-export { npSmartShape };
+export { npSmartShape, npsRectilinear };
 /* James (Nov 2026): "make such a killer system it rivals everything out there but still keeping it easy to use".
    The ✨ Smart pen: draw roughly, lift your finger, and npSmartShape(points, tol, snap) works out what you meant –
    a straight line (squared to level, upright or 45° when close), a box (corners squared), a circle, a run of walls

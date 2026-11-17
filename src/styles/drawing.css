@@ -147,3 +147,16 @@ body>.dimask.cb3-sg{z-index:320}
 
 /* drawing › on a touch screen every tool button and tab is at least a finger's size */
 @media (pointer:coarse){.np-bar .np-t,.np-bar .np-libbtn,.np-bar .np-gt{min-height:44px}}
+
+/* drawing › existing / to knock down / new walls */
+.np-finebox .nfstrow .nfst button{min-height:40px}
+
+/* drawing › the wall-run / corner / patio bar: dark buttons you can read (the arrows and ✕ were white on white), in a
+   compact row that wraps across the top rather than standing tall over the drawing */
+.np-chainbar{flex-wrap:wrap;max-width:calc(100% - 16px);justify-content:center}
+.np-chainbar .np-chaintxt{flex:1 1 220px;min-width:0}
+.np-chainbar .btn:not(.primary){background:#4a3f40;color:#fff;border:1px solid #6b5f60}
+.np-chainbar .np-pwdirs{display:inline-flex;gap:4px}
+.np-chainbar .np-pwd{min-width:44px;min-height:40px}
+.np-chainbar select{width:auto;max-width:220px;flex:0 1 auto;min-height:40px}
+.np-chainbar{width:max-content}

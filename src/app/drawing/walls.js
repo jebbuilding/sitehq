@@ -1,4 +1,5 @@
 /* ===== walls that join themselves: mitred corners, T-junctions, layered cavity walls, doors and windows cut into walls ===== */
+import { npWindowSwing } from "./window-plan.js";
 export {
   NP_LIN,
   NP_LINOPTS,
@@ -363,6 +364,21 @@ function npPattern(ctx, style, x0, x1, y0, y1, lw, col) {
   }
   ctx.restore();
 }
+/* a new wall's hatching: lines at 45°, close together */
+function npNewHatch(ctx, x0, x1, y0, y1, lw, col) {
+  const H = Math.abs(y1 - y0),
+    st = Math.max(H * 0.45, lw * 2.5, 2);
+  ctx.save();
+  ctx.lineWidth = Math.max(lw * 0.45, 0.5);
+  ctx.strokeStyle = col;
+  ctx.beginPath();
+  for (let x = x0 - H; x < x1 + H; x += st) {
+    ctx.moveTo(x, y1);
+    ctx.lineTo(x + H, y0);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
 function npDrawWalls(ctx, W) {
   const fillOf = (st, c, o) =>
     o && o.fill && (st === "solid" || st === "white" || st === "block")
@@ -393,9 +409,25 @@ function npDrawWalls(ctx, W) {
       ctx.lineTo(tB[k + 1], s1);
       ctx.lineTo(tA[k + 1], s1);
       ctx.closePath();
-      ctx.fillStyle = fillOf(ly[1], c, o);
+      /* existing and proposed (James, Nov 2026): a wall to knock down is left white (and drawn dashed below) */
+      ctx.fillStyle = o.st === "demo" ? "#ffffff" : fillOf(ly[1], c, o);
       ctx.fill();
-      if (ly[1] === "insul" || ly[1] === "stud") {
+      if (o.st === "new" && (ly[1] === "solid" || ly[1] === "block" || ly[1] === "white")) {
+        /* a new wall: hatched across */
+        ctx.save();
+        ctx.clip();
+        npNewHatch(
+          ctx,
+          Math.min(tA[k], tA[k + 1]),
+          Math.max(tB[k], tB[k + 1]),
+          Math.min(s0, s1),
+          Math.max(s0, s1),
+          w.lw,
+          c,
+        );
+        ctx.restore();
+      }
+      if (o.st !== "demo" && (ly[1] === "insul" || ly[1] === "stud")) {
         ctx.save();
         ctx.clip();
         npPattern(
@@ -422,6 +454,7 @@ function npDrawWalls(ctx, W) {
     ctx.strokeStyle = o.c || "#111";
     ctx.lineCap = "square";
     ctx.lineJoin = "miter";
+    if (o.st === "demo") ctx.setLineDash([w.lw * 4, w.lw * 3]);
     const tA = w.end.a.t,
       tB = w.end.b.t,
       nb = w.bs.length;
@@ -528,6 +561,7 @@ function npDrawWalls(ctx, W) {
           ctx.lineTo(x.t2 + ex, f);
           ctx.stroke();
         }
+        if (x.o && x.o.wo) npWindowSwing(ctx, x.o.wo, os, x.t1, x.t2, lo, hi, w.lw);
       }
     });
     if (o.k === "tstud") npDrawStuds(ctx, w);

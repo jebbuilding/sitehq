@@ -11,6 +11,7 @@ import { jbView } from "./jobs-desk.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
+import { pcTodayCard, pcTodayWire, wuTodayCard, wuTodayWire } from "./week-wrap.js";
 import { kitView } from "../planner/kit-out.js";
 import { eqmView } from "../planner/plant-care.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
@@ -494,6 +495,8 @@ function todayView() {
     }
     ${tdwCard()}
     ${jbTodayCard()}
+    ${pcTodayCard()}
+    ${wuTodayCard()}
     ${wpCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
@@ -507,6 +510,8 @@ function todayView() {
   tdWire();
   tdDeskWire();
   jbTodayWire();
+  pcTodayWire();
+  wuTodayWire();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();

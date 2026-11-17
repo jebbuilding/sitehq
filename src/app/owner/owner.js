@@ -31,6 +31,7 @@ import { companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
 import { openMonthly } from "./reports.js";
 import { qaSetupCard, qaSetupWire } from "./today-desk.js";
+import { wuOpen } from "./week-wrap.js";
 import { acView } from "../people/access.js";
 import { pvView } from "../people/portal-access.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
@@ -49,6 +50,7 @@ import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/fil
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
 import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
+import { pcCardHtml, pcWire } from "../timesheets/plan-check.js";
 import { qwOpen } from "../timesheets/quick-week.js";
 import { shCardHtml, shWire } from "../timesheets/stray-hours.js";
 import { openEntry, sumH, typeTag } from "../timesheets/time.js";
@@ -369,7 +371,7 @@ function ownerTime() {
     <div class="tot"><div class="n">${hrs(sumH(all, (e) => e.type === "job"))}</div><div class="l">Job log hours</div></div></div>
     ${all.length ? `<div class="who">Timesheet hours: employees ${hrs(sumH(all, (e) => e.type === "hours" && roleOf(e.who) === "employee"))} h · subcontractors ${hrs(sumH(all, (e) => e.type === "hours" && roleOf(e.who) === "sub"))} h${all.some((e) => !["employee", "sub", "owner"].includes(roleOf(e.who))) ? " · not set " + hrs(sumH(all, (e) => e.type === "hours" && !["employee", "sub", "owner"].includes(roleOf(e.who)))) + " h" : ""}</div>` : ""}
     <div class="actions"><button class="btn primary" id="ot-addh" type="button">+ Add a timesheet day</button><button class="btn hv" id="ot-addj" type="button">+ Add day work</button></div>
-    <div class="actions"><button class="btn primary" id="paysum" type="button">Weekly pay summary</button><button class="btn" id="csv" type="button">Download this week (CSV)</button>
+    <div class="actions"><button class="btn primary" id="paysum" type="button">Weekly pay summary</button><button class="btn" id="wu-open" type="button">📋 Week wrap-up</button><button class="btn" id="csv" type="button">Download this week (CSV)</button>
     <button class="btn" id="monthly" type="button">Monthly report by site</button>
     <button class="btn" id="preview" type="button">Fill in forms as me</button></div>`;
   if (!S.sites.length)
@@ -426,11 +428,13 @@ function ownerTime() {
             : `<div class="nothing">Nothing logged this week.</div>`
         }</div></details>`;
   });
-  html = goneWorkCard() + shCardHtml() + html;
+  html = goneWorkCard() + shCardHtml() + pcCardHtml() + html;
   $("main").innerHTML = html;
   wireFlt();
   wireGoneWork();
   shWire();
+  pcWire();
+  if ($("wu-open")) $("wu-open").onclick = () => wuOpen();
   $("csv").onclick = downloadCsv;
   $("paysum").onclick = openPaySummary;
   if ($("rollcall")) $("rollcall").onclick = openRollCall;

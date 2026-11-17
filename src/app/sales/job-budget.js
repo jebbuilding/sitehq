@@ -7,7 +7,7 @@ import { jcData, jcJob, jcSave } from "./job-costs.js";
 import { sdCalc, sdR2 } from "./sales-calc.js";
 import { jobProgress } from "../sites/job-sheets.js";
 import { same } from "../sites/project-pages.js";
-export { jbBudget, jbCard, jbTag, jbTodayCard, jbTodayWire, jbWire };
+export { jbBudget, jbCard, jbProblems, jbTag, jbTodayCard, jbTodayWire, jbWire };
 /* A fixed-price job's price is its accepted estimate (or what's been invoiced, if more). The budget for costs is the
    price less the profit James aims to make on it (j.target %, else the usual one in jcset.target, else 20%), split
    like the estimate: its labour lines pay for his team's hours and the subbies, its materials lines for materials
@@ -82,6 +82,13 @@ function jbBudget(d) {
     if (p) {
       lvl = "warn";
       msg = `${p.name} already ${gbp(p.spent - p.budget)} over its share of the budget`;
+    } else if (done >= 5 && parts[0].budget > 0) {
+      /* labour running ahead of the job (James, Nov 2026: "labour against the price, as the job goes") */
+      const pc = Math.round((parts[0].spent / parts[0].budget) * 100);
+      if (pc > done + 15) {
+        lvl = "warn";
+        msg = `Labour is running ahead: ${pc}% of its share used, and the job is ${done}% done`;
+      }
     }
   }
   return { tgt, budget, parts, done, doneFrom, typed, forecast, profitNow, profitEnd, lvl, msg };

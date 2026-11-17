@@ -1,5 +1,5 @@
 /* ================= WINDOW PLAN: a window in a wall drawn so it stands out on a plan ================= */
-export { npWindowPlan };
+export { npWindowPlan, npWindowSwing };
 /* James (Nov 2026): "windows in drawing you can't see them when they are on the drawing – see what other companies do
    and make it better". Drafting practice (a window fills the full depth of its wall, glass shown through the middle)
    plus what the plan apps do to make windows easy to spot (a light blue glass tint): the wall is cut white; bold jambs
@@ -64,6 +64,46 @@ function npWindowPlan(ctx, o, x0, y0, w, h) {
     ctx.lineTo(b[0], b[1]);
     ctx.lineTo(c[0], c[1]);
     ctx.lineTo(d[0], d[1]);
+    ctx.stroke();
+  }
+  ctx.restore();
+  if (v && o.wo) npWindowSwing(ctx, o.wo, o.os, x0, x0 + w, y0, y0 + h, lw);
+}
+/* how it opens (o.wo: sl / sr side hung, hinge left / right, th top hung, tt tilt & turn; none = fixed), drawn dashed
+   in the window's own terms: along it t1–t2, across the wall lo–hi, os the side outside (+1 = the hi side) */
+function npWindowSwing(ctx, wo, os, t1, t2, lo, hi, lw) {
+  if (!wo || !os) return;
+  const L = t2 - t1,
+    D = hi - lo;
+  const inward = wo === "tt";
+  const f = os > 0 !== inward ? hi : lo,
+    d = os > 0 !== inward ? 1 : -1;
+  ctx.save();
+  ctx.setLineDash([lw * 2.5, lw * 2]);
+  ctx.lineWidth = Math.max(lw * 0.6, 0.5);
+  if (wo === "th") {
+    /* top hung: the sash pushed out, seen from above */
+    const h = Math.min(D * 0.9, L * 0.35);
+    ctx.beginPath();
+    ctx.moveTo(t1, f);
+    ctx.lineTo(t1, f + d * h);
+    ctx.lineTo(t2, f + d * h);
+    ctx.lineTo(t2, f);
+    ctx.stroke();
+  } else {
+    /* side hung (or tilt & turn): the sash swung open on its hinge, with its arc */
+    const left = wo !== "sr",
+      th = left ? t1 : t2,
+      sg = left ? 1 : -1,
+      R = Math.min(L, Math.max(D * 2.5, L * 0.5));
+    const a0 = Math.atan2(0, sg),
+      a1 = Math.atan2(d, 0);
+    ctx.beginPath();
+    ctx.moveTo(th, f);
+    ctx.lineTo(th, f + d * R);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(th, f, R, a0, a1, sg * d < 0);
     ctx.stroke();
   }
   ctx.restore();

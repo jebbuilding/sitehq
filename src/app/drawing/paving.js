@@ -32,6 +32,7 @@ import { cbsDraw, cbsIs, cbsPlan } from "./cupboard-shapes.js";
 import { NP_LAYERS, NP_TYPES, npFont, npLayerOf } from "./drawing-layers.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
+import { npFindRooms } from "./find-rooms.js";
 import { npFingerTap } from "./finger-tap.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
 import { hrView } from "./house-render.js";
@@ -51,7 +52,7 @@ import {
   rsWallsAsShapes,
   rsWallsFromRoom,
 } from "./room-sketch.js";
-import { npSmartShape } from "./smart-pen.js";
+import { npSmartShape, npsRectilinear } from "./smart-pen.js";
 import { NP_REAL, NP_STD } from "./standard-sizes.js";
 import {
   NP_BEAM_TYPES,
@@ -383,6 +384,7 @@ async function openNotePage(opts) {
       <select class="np-shape" data-g="${opts.pro ? "none" : "draw insert"}" aria-label="More shapes"></select>${opts.pro ? `<button type="button" class="np-libbtn" data-g="draw insert easy" aria-label="Symbols library">📚 <span>Symbols…</span></button>` : ""}
       <button type="button" class="np-t np-snap" data-g="page edit" aria-pressed="true" title="Snap to grid and line ends" aria-label="Snap to grid">🧲<small>Snap</small></button>
       <button type="button" class="np-t np-setup" data-g="page" title="Paper size, scale and background" aria-label="Paper size and scale">📐<small>Paper</small></button>
+      <button type="button" class="np-t np-findrooms" data-g="measure easy" title="Find the rooms the walls close off, with their areas" aria-label="Find rooms">⬠<small>Find rooms</small></button>
       <button type="button" class="np-t" data-t="roomsk" data-g="draw measure" title="Room sketch: draw the room in one line, it straightens the walls, then tap each wall to type its length" aria-label="Room sketch">✍️<small>Room sketch</small></button>
       ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button>` : ""}
       <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" accept="image/*" multiple hidden></label>
@@ -482,6 +484,8 @@ async function openNotePage(opts) {
           <div class="nfrow nflyrow"><span class="nfl">Layer</span><select class="nfly">${NP_LAYERS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></div>
           <div class="nfrow nflvrow" style="flex-wrap:wrap"><span class="nfl">Leaves (mm)</span><label class="nflv" data-f="a">Outer leaf<select data-f="a">${[75, 90, 100, 102.5, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="cav">Cavity<select data-f="cav">${[0, 25, 50, 75, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="ins">Insulation<select data-f="ins">${[0, 50, 75, 90, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="b">Inner leaf<select data-f="b">${[75, 90, 100, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label></div>
           <div class="nfrow nfunrow" style="flex-wrap:wrap"><span class="nfl">Bricks / blocks</span><label class="nflv">Type<select class="nfun-p"><option value="block">Block 440×215</option><option value="block140">Block 440×140</option><option value="bigblock">Large block 620×215</option><option value="brick">Brick 215×65</option><option value="brickimp">Brick 9″ × 2⅞″ (imperial, 228×73)</option><option value="thinjoint">Block 440×215, thin joint (3 mm)</option></select></label><label class="nflv">Length<input class="nfun-L" inputmode="numeric" style="width:70px"></label><label class="nflv">Height<input class="nfun-H" inputmode="numeric" style="width:70px"></label><label class="nflv">Joint<input class="nfun-J" inputmode="numeric" style="width:56px"></label></div>
+          <div class="nfrow nfworow" style="flex-wrap:wrap"><span class="nfl">Opens</span><div class="seg nfseg nfwo"><button type="button" data-v="">Fixed</button><button type="button" data-v="sl">◁ Side hung, hinge left</button><button type="button" data-v="sr">▷ Side hung, hinge right</button><button type="button" data-v="th">△ Top hung</button><button type="button" data-v="tt">⟲ Tilt &amp; turn</button></div></div>
+          <div class="nfrow nfstrow"><span class="nfl">Wall is</span><div class="seg nfseg nfst"><button type="button" data-v="">Existing</button><button type="button" data-v="demo">✕ To knock down</button><button type="button" data-v="new">✚ New</button></div></div>
           <div class="nfrow nffdrow" style="flex-wrap:wrap"><span class="nfl">Footing (mm)</span><label class="nflv">Width<input class="nffd-w" inputmode="numeric" style="width:70px"></label><label class="nflv">Thickness<input class="nffd-d" inputmode="numeric" style="width:70px"></label><label class="nflv">Ground to underside<input class="nffd-dep" inputmode="numeric" style="width:80px"></label></div>
           <div class="nfrow nfpvrow"><span class="nfl">Material</span><select class="nfpv">${Object.entries(
             NP_PAVE,
@@ -2916,6 +2920,12 @@ async function openNotePage(opts) {
       );
     if (cur.t === "shape" && shapeKind === "beam" && lastSteel.sec)
       Object.assign(cur, { bt: lastSteel.bt, bz: lastSteel.bz, sec: lastSteel.sec });
+    if (
+      cur.t === "shape" &&
+      npIsWall(Object.assign({ a: [0, 0], b: [1, 0] }, cur)) &&
+      doc.pages[pg].wallSt
+    )
+      cur.st = doc.pages[pg].wallSt;
     if (cur.t === "shape" && shapeKind === "tstud") {
       cur.sd = lastStud.sd || 100;
       cur.cc = lastStud.cc || 400;
@@ -4740,6 +4750,64 @@ async function openNotePage(opts) {
           : ""),
     );
   }
+  /* rooms that name themselves (James, Nov 2026): the spaces the walls close off become rooms with their area; the
+     first new one asks its name. quiet: after a wall run, say nothing if there's nothing new */
+  function findRooms(quiet) {
+    if (!doc.scale) {
+      if (!quiet) toast("Set a scale in 📐 Paper first, so the rooms get their real areas");
+      return 0;
+    }
+    const walls = doc.objs
+      .filter((o) => npIsWall(o) && o.st !== "demo" && !(doc.layers && lyHid(o)))
+      .map((o) => ({ a: o.a, b: o.b, T: npWallT(o, o.w || 6) }));
+    const found = npFindRooms(walls, toUnits(1000) ** 2);
+    const have = doc.objs.filter((o) => o.t === "room" && !o.pave && o.p && o.p.length > 2);
+    const add = found
+      .map((Q) => {
+        /* squared up where it is nearly square, unless that changes its size */
+        const R = npsRectilinear(Q, 8);
+        return R && Math.abs(npPolyArea(R) - npPolyArea(Q)) < npPolyArea(Q) * 0.1 ? R : Q;
+      })
+      .filter((Q) => npPolyArea(Q) >= toUnits(1000) ** 2 * 0.5)
+      /* already marked: a room over the same space, about the same size (a room split by a new wall isn't) */
+      .filter(
+        (Q) =>
+          !have.some((r) => {
+            const A = npPolyArea(Q),
+              B = npPolyArea(r.p);
+            return npInPoly(npPolyCentroid(Q), r.p) && B > A * 0.75 && B < A * 1.33;
+          }),
+      );
+    if (!add.length) {
+      if (!quiet)
+        toast(
+          found.length
+            ? "Those rooms are already marked"
+            : "No closed rooms found – the walls need to meet all the way round",
+        );
+      return 0;
+    }
+    snap();
+    const n0 = have.length;
+    const made = add.map((Q, i) => ({
+      t: "room",
+      p: Q.map((q) => [Math.round(q[0] * 100) / 100, Math.round(q[1] * 100) / 100]),
+      c: "#1e3a8a",
+      w: 2,
+      size: sized() ? Math.max(16, Math.round(Math.min(44, 24 / s))) : Math.round(28 / s),
+      name: "Room " + (n0 + i + 1),
+    }));
+    made.forEach((o) => doc.objs.unshift(o));
+    dirty = true;
+    draw();
+    toast(
+      made.length === 1
+        ? "Found a room – give it a name"
+        : `Found ${made.length} rooms – name this one, then tap the others with Select to name them`,
+    );
+    roomDlg(made[0], false);
+    return made.length;
+  }
   function finishRoom() {
     if (chain.length < 3) return;
     snap();
@@ -4776,6 +4844,10 @@ async function openNotePage(opts) {
       open = { door: 0, win: 0 },
       sym = {};
     let openArea = {};
+    /* existing and proposed: once any wall is marked new, the materials are for the new walls only */
+    const anyNewWall = doc.pages.some((pgx, pi) =>
+      (pi === pg ? doc.objs : pgx.objs || []).some((o) => npIsWall(o) && o.st === "new"),
+    );
     doc.pages.forEach((pgx, pi) => {
       const objs = pi === pg ? doc.objs : pgx.objs;
       objs.forEach((o) => {
@@ -4809,6 +4881,12 @@ async function openNotePage(opts) {
             wall: P * h,
             vol: A * h,
           });
+        } else if (o.t === "shape" && QTY_WALL[o.k] && o.st === "demo") {
+          const L = mm(lenOf(o.a, o.b)) / 1000;
+          sym["Walls to knock down (m)"] =
+            Math.round(((sym["Walls to knock down (m)"] || 0) + L) * 100) / 100;
+        } else if (o.t === "shape" && QTY_WALL[o.k] && anyNewWall && o.st !== "new") {
+          /* existing: already there, nothing to build */
         } else if (o.t === "shape" && QTY_WALL[o.k]) {
           const L = mm(lenOf(o.a, o.b)) / 1000;
           if (o.lin)
@@ -6060,7 +6138,7 @@ async function openNotePage(opts) {
   }
   /* every storey (the plan here at the bottom), the box round the building and the roof */
   function elevBuild() {
-    const g = elevModel(doc.objs);
+    const g = elevModel(doc.objs.filter((o) => o.st !== "demo"));
     if (!g) return null;
     const st = elevSet();
     const FL = 300; /* the floor zone between storeys */
@@ -7826,6 +7904,7 @@ async function openNotePage(opts) {
         o.cc = lastStud.cc || 400;
       }
     }
+    if (npIsWall(o) && doc.pages[pg].wallSt) o.st = doc.pages[pg].wallSt;
     doc.objs.push(o);
     if (npIsWall(o)) {
       weldWall(o);
@@ -7840,6 +7919,7 @@ async function openNotePage(opts) {
     chainUI();
     draw();
     toast("Closed up");
+    setTimeout(() => findRooms(true), 60);
   };
   const isSegObj = (o) =>
     o &&
@@ -8428,6 +8508,7 @@ async function openNotePage(opts) {
     } else cb.hidden = true;
   }
   q(".np-ck").onchange = () => chainUI();
+  q(".np-findrooms").onclick = () => findRooms(false);
   q(".np-chainx").onclick = () => {
     if (dimPull) {
       dimDone(dimPull);
@@ -8508,6 +8589,7 @@ async function openNotePage(opts) {
       chain = [];
       chainUI();
       draw();
+      setTimeout(() => findRooms(true), 60);
       return;
     }
     if (tool === "room") {
@@ -9009,6 +9091,16 @@ async function openNotePage(opts) {
             if (document.activeElement !== el) el.value = v;
           });
         }
+        fb.querySelector(".nfstrow").hidden = !npIsWall(o);
+        fb.querySelector(".nfworow").hidden = !(o.t === "shape" && o.k === "window");
+        if (o.t === "shape" && o.k === "window")
+          fb.querySelectorAll(".nfwo button").forEach((b) =>
+            b.setAttribute("aria-pressed", String((o.wo || "") === b.dataset.v)),
+          );
+        if (npIsWall(o))
+          fb.querySelectorAll(".nfst button").forEach((b) =>
+            b.setAttribute("aria-pressed", String((o.st || "") === b.dataset.v)),
+          );
         const fk = o.t === "shape" && o.k === "fdnsec";
         fb.querySelector(".nffdrow").hidden = !fk;
         if (fk) {
@@ -9459,6 +9551,27 @@ async function openNotePage(opts) {
       };
       fb.querySelector(".nfst-p").onchange = (e) => upd((o) => (o.pad = e.target.value));
     }
+    fb.querySelectorAll(".nfwo button").forEach(
+      (b) =>
+        (b.onclick = () =>
+          upd((o) => {
+            if (!(o.t === "shape" && o.k === "window")) return;
+            if (b.dataset.v) o.wo = b.dataset.v;
+            else delete o.wo;
+            if (b.dataset.v && !o.os) seatOnWall(o);
+          })),
+    );
+    /* existing, to knock down or new; the next walls drawn on this page take it too */
+    fb.querySelectorAll(".nfst button").forEach(
+      (b) =>
+        (b.onclick = () =>
+          upd((o) => {
+            if (!npIsWall(o)) return;
+            if (b.dataset.v) o.st = b.dataset.v;
+            else delete o.st;
+            doc.pages[pg].wallSt = b.dataset.v || "";
+          })),
+    );
     fb.querySelector(".nftxrow").onsubmit = (e) => {
       e.preventDefault();
       upd((o) => {

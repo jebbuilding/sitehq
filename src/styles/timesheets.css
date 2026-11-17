@@ -51,3 +51,8 @@
 .shcard .shguess{color:var(--muted)}
 .shcard .shacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .shcard .sh-to{min-height:44px;max-width:100%}
+
+/* timesheets › the planner against the timesheets */
+.pccard .pcrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.pccard .pcrow:first-of-type{border-top:0}
+.pccard .pcacts{display:flex;gap:8px;flex-wrap:wrap}

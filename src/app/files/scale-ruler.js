@@ -547,7 +547,7 @@ function fvmLoupe(host, f, cx, cy, snapK) {
   if (!lp) {
     lp = document.createElement("canvas");
     lp.id = "fvm-loupe";
-    lp.width = lp.height = Math.round(140 * Math.max(1, window.devicePixelRatio || 1));
+    lp.width = lp.height = Math.round(160 * Math.max(1, window.devicePixelRatio || 1));
     document.body.appendChild(lp);
   }
   if (f == null) {
@@ -555,12 +555,22 @@ function fvmLoupe(host, f, cx, cy, snapK) {
     return;
   }
   lp.hidden = false;
-  const D = 140,
+  const D = 160,
     Z = 3;
-  let top = cy - D - 40;
-  if (top < 4) top = cy + 40;
-  lp.style.left = Math.max(4, Math.min(window.innerWidth - D - 4, cx - D / 2)) + "px";
-  lp.style.top = top + "px";
+  /* in the corner of the plan furthest from the finger, so it never covers where the end is going (James, Nov 2026:
+     "the zoom bit should come up not under where you are trying to go but on a different part of the screen") */
+  {
+    const r = host.getBoundingClientRect(),
+      L = Math.max(4, r.left),
+      T = Math.max(4, r.top),
+      R = Math.min(window.innerWidth - 4, r.right),
+      B = Math.min(window.innerHeight - 4, r.bottom),
+      m = 12;
+    const left = cx > (L + R) / 2 ? L + m : R - D - m,
+      top = cy > (T + B) / 2 ? T + m : B - D - m;
+    lp.style.left = Math.max(4, Math.min(window.innerWidth - D - 4, left)) + "px";
+    lp.style.top = Math.max(4, Math.min(window.innerHeight - D - 4, top)) + "px";
+  }
   const g = lp.getContext("2d"),
     k = lp.width / D;
   g.setTransform(1, 0, 0, 1, 0, 0);

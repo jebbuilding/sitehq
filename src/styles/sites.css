@@ -122,3 +122,6 @@
 .jh-all .jh-row:hover{background:var(--soft)}
 .jh-all .jh-tbl .jh-bar{min-width:90px}
 .jh-card .jh-neg{color:var(--danger)}
+
+/* sites › labour against what's allowed, on the job's page */
+.jh-card .jh-lab{margin:8px 0}

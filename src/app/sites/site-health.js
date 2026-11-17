@@ -5,6 +5,7 @@ import { render } from "../core/tabs-week.js";
 import { nlGo } from "../owner/today.js";
 import { siteRec } from "../photos/photos.js";
 import { pgCalc, pgRec } from "../planner/programme.js";
+import { jbBudget } from "../sales/job-budget.js";
 import { jcData } from "../sales/job-costs.js";
 import { sdCalc, sdR2, sdStatus } from "../sales/sales-calc.js";
 import { siteLabel } from "./job-details.js";
@@ -94,6 +95,21 @@ function jhData(site) {
 const jhBar = (pct, cls, label) =>
   `<div class="jh-bar${cls ? " " + cls : ""}" role="img" aria-label="${esc(label)}"><span style="width:${Math.max(0, Math.min(100, pct))}%"></span></div>`;
 /* 📊 How this job is going – on the site's Overview */
+/* labour so far against its share of the budget, with roughly how many hours that is (at the team's own cost rates) */
+function jhLabourHtml(h) {
+  const b = jbBudget(h.d);
+  if (!b) return "";
+  const lp = b.parts.find((p) => p.k === "lab");
+  if (!lp || !(lp.budget > 0)) return "";
+  const pc = Math.round((lp.spent / lp.budget) * 100);
+  const rated = h.d.items.filter((i) => i.kind === "lab" && i.costRate > 0);
+  const rH = rated.reduce((a, i) => a + i.hours, 0),
+    rC = rated.reduce((a, i) => a + i.cost, 0);
+  const rate = rH ? rC / rH : 0;
+  const hrsAllowed = rate ? Math.round(lp.budget / rate) : 0;
+  const ahead = b.done >= 5 && pc > b.done + 15;
+  return `<div class="jh-lab"><div class="jh-line"><span>👷 Labour <b>${gbp(lp.spent)}</b> of ${gbp(lp.budget)} allowed${hrsAllowed ? ` · about <b>${hrs(h.d.hours)}</b> of ~${hrsAllowed} hours` : ""}</span><span>${pc}%</span></div>${jhBar(Math.min(100, pc), pc > 100 ? "bad" : ahead ? "warn" : "", pc + "% of the labour allowed used")}${ahead ? `<div class="who jh-neg">⚠ Labour is running ahead: ${pc}% used and the job is ${b.done}% done (${esc(b.doneFrom)}).</div>` : `<div class="who">The job is ${b.done}% done (${esc(b.doneFrom)}).</div>`}</div>`;
+}
 function jhCardHtml(site) {
   const owner = ownerMode();
   const h = jhData(site);
@@ -128,6 +144,7 @@ function jhCardHtml(site) {
           ? `<div class="jh-line"><span><b>${gbp(h.spent)}</b> spent of ${gbp(h.price)}${h.d.cp ? " (cost plus: charged so far)" : ""}</span><span class="${h.left < 0 ? "jh-neg" : ""}"><b>${gbp(h.left)}</b> ${h.left < 0 ? "over" : "left"}</span></div>${jhBar(h.pctSpent, h.spent > h.price ? "bad" : ahead ? "warn" : "", h.pctSpent + "% of the price spent")}`
           : `<div class="who">${gbp(h.spent)} spent so far – no accepted estimate yet, so there's no price to measure it against.</div>`
       }
+      ${jhLabourHtml(h)}
       <div class="jh-boxes"><div><b>${gbp(h.invoiced)}</b><span>invoiced</span></div><div><b>${gbp(h.paid)}</b><span>paid by the client</span></div><div class="${h.owed ? "jh-owe" : ""}"><b>${gbp(h.owed)}</b><span>client still owes${h.overdue ? ` (${h.overdue} overdue)` : ""}</span></div><div><b>${gbp(h.toInvoice)}</b><span>still to invoice</span></div></div>
       <div class="jh-split who">Materials and hire ${gbp(h.d.items.filter((i) => i.kind === "mat").reduce((a, i) => a + i.cost, 0))} · Labour ${gbp(h.d.items.filter((i) => i.kind === "lab").reduce((a, i) => a + i.cost, 0))} (${hrs(h.d.hours)} h) · Subcontractors ${gbp(h.d.items.filter((i) => i.kind === "sub").reduce((a, i) => a + i.cost, 0))}</div>
       <div class="actions"><button type="button" class="btn" id="jh-costs">💷 Job costs in full</button></div></div>`

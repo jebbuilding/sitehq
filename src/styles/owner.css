@@ -265,3 +265,9 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .jb-hide input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--accent)}
 .jb-hide b{color:var(--ink)}
 .jb-item.jb-held{opacity:.65}
+
+/* owner › week wrap-up */
+.wu .wu-sec{margin:10px 0}
+.wu .wu-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.wu .drow{gap:12px}
+.wu .drow>span:last-child{text-align:right}
