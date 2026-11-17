@@ -7,6 +7,7 @@ import { NP_DES_BOX, npDesignLine, npDesignSym } from "./symbols-design.js";
 import { npElevLine, npElevSym } from "./symbols-elevation.js";
 import { NP_TIMB_BOX, npTimberSym } from "./timber.js";
 import { NP_WALLK, npDrawWalls, npHexMix, npPattern, npWallInfo } from "./walls.js";
+import { npWindowPlan } from "./window-plan.js";
 export {
   NP_COLS,
   NP_DET_BOX,
@@ -1399,17 +1400,7 @@ function drawShape(ctx, o) {
       break;
     }
     case "window": {
-      ctx.strokeRect(x0, y0, w, h);
-      const v = w >= h;
-      ctx.beginPath();
-      if (v) {
-        ctx.moveTo(x0, cy);
-        ctx.lineTo(x1, cy);
-      } else {
-        ctx.moveTo(cx, y0);
-        ctx.lineTo(cx, y1);
-      }
-      ctx.stroke();
+      npWindowPlan(ctx, o, x0, y0, w, h);
       break;
     }
     case "arc": {

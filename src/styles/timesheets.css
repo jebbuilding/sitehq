@@ -43,3 +43,11 @@
 .sheet form:has(.qw-tbl){max-width:880px}
 .qw-tbl .qw-day{position:sticky;left:0;background:var(--surface);z-index:1}
 .qw-tbl .qw-we .qw-day{background:var(--soft)}
+
+/* timesheets › hours booked to a name that isn't a job */
+.shcard .shrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.shcard .shrow:first-of-type{border-top:0}
+.shcard .shwhat{flex:1 1 260px;min-width:0}
+.shcard .shguess{color:var(--muted)}
+.shcard .shacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.shcard .sh-to{min-height:44px;max-width:100%}

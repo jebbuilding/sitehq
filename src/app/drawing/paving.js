@@ -1034,6 +1034,18 @@ async function openNotePage(opts) {
       o.a = [c[0] - len / 2, c[1] - T / 2];
       o.b = [c[0] + len / 2, c[1] + T / 2];
       o.r = Math.abs(an) < 1e-6 ? 0 : an;
+      if (isWin) {
+        /* which side of the wall is outside (for the sill): the side away from the middle of all the walls */
+        const W = doc.objs.filter(npIsWall);
+        const g = W.reduce(
+          (s2, y) => [s2[0] + (y.a[0] + y.b[0]) / 2, s2[1] + (y.a[1] + y.b[1]) / 2],
+          [0, 0],
+        ).map((q) => q / (W.length || 1));
+        const dn = [-Math.sin(an), Math.cos(an)],
+          k = (c[0] - g[0]) * dn[0] + (c[1] - g[1]) * dn[1];
+        if (W.length > 1 && Math.abs(k) > T) o.os = k > 0 ? 1 : -1;
+        else delete o.os;
+      }
     }
   }
   function orthoB(a, b, raw) {

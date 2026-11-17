@@ -80,7 +80,30 @@ function inRange(date) {
     e = iso(addDays(monday(now), 6));
   return date >= m && date <= e;
 }
-const same = (a, b) => (a || "").trim().toLowerCase() === (b || "").trim().toLowerCase();
+/* the same job: names match (ignoring case and spaces), or one is an address the job had before (sites/<id>.aka, kept
+   when its address is changed) – so hours, costs, photos and the rest booked under the old address stay with the job
+   (James, Nov 2026). An old address that is now another job's own name belongs to that job. */
+let sameAkaOf = null,
+  sameAkaMap = null;
+function sameCanon(x) {
+  const k = (x || "").trim().toLowerCase();
+  const sites = S.sites || [];
+  if (sameAkaOf !== sites) {
+    sameAkaOf = sites;
+    sameAkaMap = new Map();
+    const now = new Set(sites.map((t) => (t.name || "").trim().toLowerCase()));
+    sites.forEach((t) =>
+      (t.aka || []).forEach((a) => {
+        const ak = String(a || "")
+          .trim()
+          .toLowerCase();
+        if (ak && !now.has(ak)) sameAkaMap.set(ak, (t.name || "").trim().toLowerCase());
+      }),
+    );
+  }
+  return sameAkaMap.size ? sameAkaMap.get(k) || k : k;
+}
+const same = (a, b) => sameCanon(a) === sameCanon(b);
 function ownerProjects() {
   const sites = projectSites();
   if (!sites.length) {

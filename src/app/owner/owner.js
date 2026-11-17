@@ -50,6 +50,7 @@ import { openPersonMonth } from "../timesheets/monthly-sheet.js";
 import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
 import { qwOpen } from "../timesheets/quick-week.js";
+import { shCardHtml, shWire } from "../timesheets/stray-hours.js";
 import { openEntry, sumH, typeTag } from "../timesheets/time.js";
 import { WE, WS, dayFor } from "../timesheets/working-day.js";
 export {
@@ -425,10 +426,11 @@ function ownerTime() {
             : `<div class="nothing">Nothing logged this week.</div>`
         }</div></details>`;
   });
-  html = goneWorkCard() + html;
+  html = goneWorkCard() + shCardHtml() + html;
   $("main").innerHTML = html;
   wireFlt();
   wireGoneWork();
+  shWire();
   $("csv").onclick = downloadCsv;
   $("paysum").onclick = openPaySummary;
   if ($("rollcall")) $("rollcall").onclick = openRollCall;
@@ -1118,10 +1120,15 @@ function ownerSetup() {
                 return;
               }
               try {
+                /* the old address is kept, so everything booked under it stays with the job */
+                const aka = [...new Set((x.aka || []).concat(x.name ? [x.name] : []))].filter(
+                  (a) => a && a.trim().toLowerCase() !== name.toLowerCase(),
+                );
                 await S.db.doc("sites/" + x.id).update({
                   lat: lm ? +lm[1] : null,
                   lon: lm ? +lm[2] : null,
                   name,
+                  aka,
                   jobName: $("sd-jname").value.trim().replace(/\s+/g, " "),
                   project: $("sd-proj").value.trim(),
                   plots: $("sd-plots")

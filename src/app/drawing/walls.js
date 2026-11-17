@@ -480,7 +480,8 @@ function npDrawWalls(ctx, W) {
     w.cuts.forEach((x) => {
       ctx.fillStyle = "#fff";
       ctx.fillRect(x.t1 + w.lw * 0.5, -w.T / 2 - w.lw, x.t2 - x.t1 - w.lw, w.T + w.lw * 2);
-      ctx.lineWidth = w.lw;
+      /* the reveals; a window's jambs bolder, so it stands out (James, Nov 2026: "you can't see them") */
+      ctx.lineWidth = x.win ? w.lw * 1.4 : w.lw;
       [x.t1, x.t2].forEach((t) => {
         ctx.beginPath();
         ctx.moveTo(t, w.bs[0]);
@@ -488,20 +489,45 @@ function npDrawWalls(ctx, W) {
         ctx.stroke();
       });
       if (x.win) {
+        const lo = Math.min(w.bs[0], w.bs[nb - 1]),
+          hi = Math.max(w.bs[0], w.bs[nb - 1]),
+          D = hi - lo;
+        /* the frame's faces */
         ctx.lineWidth = Math.max(w.lw * 0.6, 0.6);
-        [w.bs[0], w.bs[nb - 1]].forEach((s) => {
+        [lo, hi].forEach((s) => {
           ctx.beginPath();
           ctx.moveTo(x.t1, s);
           ctx.lineTo(x.t2, s);
           ctx.stroke();
         });
-        const gl = Math.max(w.T * 0.06, w.lw);
-        [-gl, gl].forEach((s) => {
+        /* the glass: two lines through the middle with a pale blue tint between */
+        const g1 = lo + D * 0.38,
+          g2 = lo + D * 0.62;
+        ctx.save();
+        ctx.fillStyle = "rgba(56,152,236,0.32)";
+        ctx.fillRect(x.t1, g1, x.t2 - x.t1, g2 - g1);
+        ctx.restore();
+        [g1, g2].forEach((s) => {
           ctx.beginPath();
           ctx.moveTo(x.t1, s);
           ctx.lineTo(x.t2, s);
           ctx.stroke();
         });
+        /* the sill, standing out from the outside face (the window knows which side that is: o.os) */
+        const os = x.o && x.o.os;
+        if (os) {
+          const so = Math.max(D * 0.18, w.lw * 2),
+            ex = Math.min((x.t2 - x.t1) * 0.04, D * 0.3),
+            f = os > 0 ? hi : lo,
+            t = os > 0 ? hi + so : lo - so;
+          ctx.lineWidth = Math.max(w.lw * 0.7, 0.6);
+          ctx.beginPath();
+          ctx.moveTo(x.t1 - ex, f);
+          ctx.lineTo(x.t1 - ex, t);
+          ctx.lineTo(x.t2 + ex, t);
+          ctx.lineTo(x.t2 + ex, f);
+          ctx.stroke();
+        }
       }
     });
     if (o.k === "tstud") npDrawStuds(ctx, w);
