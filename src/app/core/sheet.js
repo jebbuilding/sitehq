@@ -72,7 +72,7 @@ function enhanceCamera(root) {
     const lab = inp.closest("label") || inp;
     const wrap = document.createElement("div");
     wrap.className = "camrow";
-    wrap.innerHTML = `<label class="btn primary camb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="1.5" y="4" width="13" height="9.5" rx="2"/><circle cx="8" cy="8.7" r="2.5"/><path d="M5.5 4l1-2h3l1 2"/></svg><span>Take photo</span><input type="file" accept="image/*" capture="environment" hidden></label><span class="who camcount"></span>`;
+    wrap.innerHTML = `<label class="btn primary camb"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="1.5" y="4" width="13" height="9.5" rx="2"/><circle cx="8" cy="8.7" r="2.5"/><path d="M5.5 4l1-2h3l1 2"/></svg><span>Take photo</span><input type="file" class="fpick" accept="image/*" capture="environment"></label><span class="who camcount"></span>`;
     lab.insertAdjacentElement("beforebegin", wrap);
     const first = lab.firstChild;
     if (first && first.nodeType === 3 && lab !== inp) {

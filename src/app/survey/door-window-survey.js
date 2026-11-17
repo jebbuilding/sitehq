@@ -5307,7 +5307,7 @@ function openJobEditor(kind, j) {
     <label for="je-due">Due date (optional)<input id="je-due" type="date" value="${esc(j ? j.due || "" : "")}"></label>
     <label for="je-notes">Notes for the team (optional)<textarea id="je-notes" maxlength="1000">${esc(j ? j.notes || "" : "")}</textarea></label>
     <div><div class="flabel">Documents (drawings, specs, RAMS, photos)</div><div id="je-files"></div>
-      <label for="je-up" class="pillbtn" style="display:inline-flex;margin-top:6px;cursor:pointer">+ Upload files<input id="je-up" type="file" accept="application/pdf,image/*,.txt,.csv,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden></label>
+      <label for="je-up" class="pillbtn" style="display:inline-flex;margin-top:6px;cursor:pointer">+ Upload files<input id="je-up" type="file" accept="application/pdf,image/*,.txt,.csv,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple class="fpick"></label>
       <button type="button" class="btn" id="je-sitepick" style="align-self:flex-start;margin-top:8px">📁 Add photos or files from the site…</button><select id="je-fromsite" hidden><option value="">Choose a file…</option></select>
       <div class="who">Workers open these inside the app. Nothing is downloaded to their phone.</div></div>
     <div><div class="checkhead"><span class="flabel" style="margin:0">Tasks</span><span class="who">Press Enter for a new line</span></div><div id="je-tasks"></div>
@@ -5349,7 +5349,7 @@ function openJobEditor(kind, j) {
       .map(
         (t, i) => `<div class="jrow" data-i="${i}"><span class="jnum">${i + 1}</span>
       <span class="jetx"><input class="je-t" id="je-t${i}" maxlength="300" value="${esc(t.text)}" placeholder="${kind === "snag" ? "e.g. Touch up paint on landing ceiling" : "e.g. Fit 4 double sockets in kitchen"}" aria-label="Task ${i + 1}"><input class="je-d" maxlength="400" value="${esc(t.det || "")}" placeholder="Details (optional): where, sizes, materials, quantity" aria-label="Task ${i + 1} details"></span>
-      <label class="pillbtn je-ph" title="Reference photo">${t.refPhoto || t.refBlob ? "Photo ✓" : "Photo"}<input type="file" accept="image/*" hidden></label>
+      <label class="pillbtn je-ph" title="Reference photo">${t.refPhoto || t.refBlob ? "Photo ✓" : "Photo"}<input type="file" class="fpick" accept="image/*"></label>
       <button type="button" class="linkdanger je-x" aria-label="Remove task ${i + 1}">✕</button></div>`,
       )
       .join("");

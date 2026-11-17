@@ -61,7 +61,7 @@ function blankSketch(paper) {
 function clMediaHtml(c) {
   const ms = (c.media || []).slice().sort((a, b) => b.at - a.at);
   return `<div class="flabel" style="margin-top:12px">Photos &amp; sketches (${ms.length})</div>
-    <div class="actions"><label class="btn primary camb" style="cursor:pointer">📷 Take photos<input type="file" id="cm-cam" accept="image/*" capture="environment" hidden></label><label class="btn" style="cursor:pointer">🖼 Add photos<input type="file" id="cm-pick" accept="image/*" multiple hidden></label><label class="btn" style="cursor:pointer">🎥 Video<input type="file" id="cm-vid" accept="video/*" capture="environment" hidden></label><button class="btn vrec" id="cm-voice1" type="button">🎤 Voice note</button><button class="btn hv" id="cm-sketch" type="button">📝 New page</button></div><button type="button" class="linkbtn" onclick="window.__photoTest&&window.__photoTest()">📷 Camera not opening? Test it here</button>
+    <div class="actions"><label class="btn primary camb" style="cursor:pointer">📷 Take photos<input type="file" id="cl-cam" class="fpick" accept="image/*" capture="environment"></label><label class="btn" style="cursor:pointer">🖼 Add photos<input type="file" id="cm-pick" class="fpick" accept="image/*" multiple></label><label class="btn" style="cursor:pointer">🎥 Video<input type="file" id="cm-vid" class="fpick" accept="video/*" capture="environment"></label><button class="btn vrec" id="cm-voice1" type="button">🎤 Voice note</button><button class="btn hv" id="cm-sketch" type="button">📝 New page</button></div><button type="button" class="linkbtn" onclick="window.__photoTest&&window.__photoTest()">📷 Camera not opening? Test it here</button>
     <div class="who" id="cm-prog"></div>
     ${ms.length ? `<div class="cmselbar"><button type="button" class="pillbtn" id="cm-selon">☑ Select to delete</button></div><div class="phgrid cmgrid">${ms.map((m) => `<button type="button" class="ph cm-item${m.kind === "video" ? " phvid" : ""}${m.kind === "audio" ? " phaud" : ""}" data-m="${esc(m.id)}">${m.kind === "audio" ? '<span class="audico" aria-hidden="true">🎤</span>' : m.kind === "video" ? vidTag(m.id) + '<span class="vidplay" aria-hidden="true">▶</span>' : `<img src="${blobUrl(m.id)}" alt="${esc(m.kind === "sketch" ? "Sketch" : "Photo")}" loading="lazy">`}<span class="phcap"><b>${m.kind === "audio" ? "🎤 Voice note" + (m.secs ? " · " + m.secs + "s" : "") : m.kind === "video" ? "🎥 Video" : m.kind === "page" ? "📝 Page" : m.kind === "sketch" ? "✏️ Sketch" : m.marked ? "✎ Marked-up photo" : "📷 Photo"}</b>${m.note ? " · " + esc(m.note) : ""}<br>${esc(stamp(m.at))}</span></button>`).join("")}</div>` : '<div class="nothing">Take photos on the visit, or draw a quick sketch with measurements.</div>'}`;
 }
@@ -125,7 +125,7 @@ function wireClMedia(c) {
       }
     }
   };
-  $("cm-cam").onchange = (e) => {
+  $("cl-cam").onchange = (e) => {
     const f = [...e.target.files];
     e.target.value = "";
     addFiles(f);

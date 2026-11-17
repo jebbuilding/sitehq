@@ -387,7 +387,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-findrooms" data-g="measure easy" title="Find the rooms the walls close off, with their areas" aria-label="Find rooms">⬠<small>Find rooms</small></button>
       <button type="button" class="np-t" data-t="roomsk" data-g="draw measure" title="Room sketch: draw the room in one line, it straightens the walls, then tap each wall to type its length" aria-label="Room sketch">✍️<small>Room sketch</small></button>
       ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button>` : ""}
-      <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" accept="image/*" multiple hidden></label>
+      <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" class="fpick" accept="image/*" multiple></label>
       <button type="button" class="np-t np-apppic" data-g="insert" title="Photos already in the app" aria-label="Photos already in the app">🖼<small>App photos</small></button><button type="button" class="np-t np-mysym" data-g="insert" title="Symbols you have saved from your own drawings" aria-label="My symbols"${opts.pro ? "" : " hidden"}>⭐<small>My symbols</small></button><button type="button" class="np-t np-import" data-g="insert" title="Bring in a drawing or plan at its own scale" aria-label="Import a drawing">📥<small>Import drawing</small></button>${opts.pro ? `<button type="button" class="np-t np-qty" data-g="measure" title="Areas, lengths and materials from this drawing" aria-label="Quantities">🧮<small>Quantities</small></button><button type="button" class="np-t np-layers" data-g="page" title="Show, hide or lock groups of things, and show another floor underneath" aria-label="Layers and floors">🗂<small>Layers</small></button>` : ""}${
         opts.pro
           ? `<span class="np-build" style="display:contents">${[
@@ -484,6 +484,7 @@ async function openNotePage(opts) {
           <div class="nfrow nflyrow"><span class="nfl">Layer</span><select class="nfly">${NP_LAYERS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></div>
           <div class="nfrow nflvrow" style="flex-wrap:wrap"><span class="nfl">Leaves (mm)</span><label class="nflv" data-f="a">Outer leaf<select data-f="a">${[75, 90, 100, 102.5, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="cav">Cavity<select data-f="cav">${[0, 25, 50, 75, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="ins">Insulation<select data-f="ins">${[0, 50, 75, 90, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="b">Inner leaf<select data-f="b">${[75, 90, 100, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label></div>
           <div class="nfrow nfunrow" style="flex-wrap:wrap"><span class="nfl">Bricks / blocks</span><label class="nflv">Type<select class="nfun-p"><option value="block">Block 440×215</option><option value="block140">Block 440×140</option><option value="bigblock">Large block 620×215</option><option value="brick">Brick 215×65</option><option value="brickimp">Brick 9″ × 2⅞″ (imperial, 228×73)</option><option value="thinjoint">Block 440×215, thin joint (3 mm)</option></select></label><label class="nflv">Length<input class="nfun-L" inputmode="numeric" style="width:70px"></label><label class="nflv">Height<input class="nfun-H" inputmode="numeric" style="width:70px"></label><label class="nflv">Joint<input class="nfun-J" inputmode="numeric" style="width:56px"></label></div>
+          <div class="nfrow nfsvrow"><span class="nfl">From the survey</span><select class="nfsv" style="flex:1;min-height:44px" aria-label="Which opening in the survey this is"></select></div>
           <div class="nfrow nfworow" style="flex-wrap:wrap"><span class="nfl">Opens</span><div class="seg nfseg nfwo"><button type="button" data-v="">Fixed</button><button type="button" data-v="sl">◁ Side hung, hinge left</button><button type="button" data-v="sr">▷ Side hung, hinge right</button><button type="button" data-v="th">△ Top hung</button><button type="button" data-v="tt">⟲ Tilt &amp; turn</button></div></div>
           <div class="nfrow nfstrow"><span class="nfl">Wall is</span><div class="seg nfseg nfst"><button type="button" data-v="">Existing</button><button type="button" data-v="demo">✕ To knock down</button><button type="button" data-v="new">✚ New</button></div></div>
           <div class="nfrow nffdrow" style="flex-wrap:wrap"><span class="nfl">Footing (mm)</span><label class="nflv">Width<input class="nffd-w" inputmode="numeric" style="width:70px"></label><label class="nflv">Thickness<input class="nffd-d" inputmode="numeric" style="width:70px"></label><label class="nflv">Ground to underside<input class="nffd-dep" inputmode="numeric" style="width:80px"></label></div>
@@ -9093,6 +9094,24 @@ async function openNotePage(opts) {
         }
         fb.querySelector(".nfstrow").hidden = !npIsWall(o);
         fb.querySelector(".nfworow").hidden = !(o.t === "shape" && o.k === "window");
+        {
+          /* windows and doors: pick which opening in the client's survey this is */
+          const sv = isOpening(o) ? surveyItems() : [];
+          fb.querySelector(".nfsvrow").hidden = !sv.length;
+          if (sv.length)
+            fb.querySelector(".nfsv").innerHTML =
+              `<option value="">Choose W1, D1… from the survey</option>` +
+              sv
+                .map((x) => {
+                  let z = "";
+                  try {
+                    const q = DWS.sizeOf(x);
+                    z = q.W + " × " + q.H;
+                  } catch (e) {}
+                  return `<option value="${esc(x.ref)}"${x.ref === o.mark ? " selected" : ""}>${esc([x.ref, x.name, z, x.loc].filter(Boolean).join(" · "))}</option>`;
+                })
+                .join("");
+        }
         if (o.t === "shape" && o.k === "window")
           fb.querySelectorAll(".nfwo button").forEach((b) =>
             b.setAttribute("aria-pressed", String((o.wo || "") === b.dataset.v)),
@@ -9551,6 +9570,56 @@ async function openNotePage(opts) {
       };
       fb.querySelector(".nfst-p").onchange = (e) => upd((o) => (o.pad = e.target.value));
     }
+    /* a survey opening: its mark, its frame width (at the drawing's scale) and, for a window, how it opens */
+    fb.querySelector(".nfsv").onchange = (e) => {
+      const ref = e.target.value;
+      const x = surveyItems().find((y) => y.ref === ref);
+      if (!x) return;
+      upd((o) => {
+        if (!isOpening(o)) return;
+        o.mark = ref;
+        let W = 0;
+        try {
+          W = DWS.sizeOf(x).W;
+        } catch (err) {}
+        if (W > 0 && doc.scale) {
+          const len = toUnits(W);
+          if (o.k === "window") {
+            const cx = (o.a[0] + o.b[0]) / 2,
+              cy = (o.a[1] + o.b[1]) / 2,
+              h = Math.abs(o.b[1] - o.a[1]),
+              wide = Math.abs(o.b[0] - o.a[0]) >= h;
+            if (wide) {
+              o.a = [cx - len / 2, cy - h / 2];
+              o.b = [cx + len / 2, cy + h / 2];
+            } else {
+              const w0 = Math.abs(o.b[0] - o.a[0]);
+              o.a = [cx - w0 / 2, cy - len / 2];
+              o.b = [cx + w0 / 2, cy + len / 2];
+            }
+          } else {
+            const L = lenOf(o.a, o.b) || 1;
+            o.b = [o.a[0] + ((o.b[0] - o.a[0]) * len) / L, o.a[1] + ((o.b[1] - o.a[1]) * len) / L];
+          }
+        }
+        if (o.k === "window") {
+          const n = String(x.name || "").toLowerCase();
+          const wo = /tilt/.test(n)
+            ? "tt"
+            : /top hung|top light/.test(n) && !/side hung/.test(n)
+              ? "th"
+              : /hinge right/.test(n)
+                ? "sr"
+                : /side hung|casement|hinge left/.test(n)
+                  ? "sl"
+                  : "";
+          if (wo) o.wo = wo;
+          else delete o.wo;
+        }
+        seatOnWall(o);
+      });
+      toast(ref + " from the survey: its width and how it opens are set");
+    };
     fb.querySelectorAll(".nfwo button").forEach(
       (b) =>
         (b.onclick = () =>
@@ -10790,7 +10859,7 @@ async function openNotePage(opts) {
     const d = document.createElement("div");
     d.className = "dimask";
     d.innerHTML = `<div class="dimbox"><b>📥 Import a drawing</b><div class="who">Bring in a plan or drawing (PDF or picture). Tell it the scale, or measure a length you know, and it goes in at the right size for this drawing. Then crop away what you don't need. <b>CAD files:</b> ask for a DXF (in AutoCAD: Save As › DXF) and it comes in as real lines at real size, ready to draw over.</div>
-      <label class="btn primary" style="text-align:center">📁 From my files<input type="file" accept="application/pdf,.pdf,image/*,.dxf" hidden></label>
+      <label class="btn primary" style="text-align:center">📁 From my files<input type="file" class="fpick" accept="application/pdf,.pdf,image/*,.dxf"></label>
       <button type="button" class="btn npiapp">🏗️ From the app (site plans & drawings)</button>
       <div class="dimbtns"><button type="button" class="btn npx3">Cancel</button></div></div>`;
     ov.appendChild(d);

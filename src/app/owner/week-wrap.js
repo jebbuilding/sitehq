@@ -2,6 +2,7 @@
 import { addDays, esc, gbp, hrs, iso, monday, parse, shortDay, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
+import { coData } from "./company-details.js";
 import { nameOf, teamIds } from "./owner.js";
 import { nlOpenTab } from "./today.js";
 import { dueSoonItems } from "../safety/expiry-dates.js";
@@ -100,22 +101,40 @@ function wuOpen() {
     ${sec("📈 Jobs going over budget", x.jobs.length, x.jobs.map((j) => `<div class="drow"><span>${esc(j.site)}</span><span>${esc(j.b.msg)}</span></div>`).join(""), "Every priced job is on track.")}
     ${sec("🌴 Off in the next two weeks", x.off.length, x.off.map((p) => `<div class="drow"><span>${esc(p.title || "")}</span><span>${esc(shortDay(p.from))}${p.to && p.to !== p.from ? " – " + esc(shortDay(p.to)) : ""}</span></div>`).join(""), "Nobody booked off.")}
     ${sec("📅 Due in the next 30 days", x.due.length, x.due.map((d) => `<div class="drow"><span>${esc(d.what)}</span><span>${esc(shortDay(d.date))}</span></div>`).join(""), "Nothing due.")}
-    <div class="actions"><button type="button" class="btn" id="wu-copy">📋 Copy as text</button></div></div>`;
+    <div class="actions"><button type="button" class="btn" id="wu-copy">📋 Copy as text</button><a class="btn primary" id="wu-mail" href="#" target="_blank" rel="noopener">✉️ Email it to me</a></div></div>`;
   openViewer(html);
+  /* the wrap-up as plain text, for copying or an email */
+  const wuText = () =>
+    [...document.querySelectorAll(".wu .wu-sec")]
+      .map((s) =>
+        [s.querySelector(".wu-h b").textContent]
+          .concat(
+            [...s.querySelectorAll(".drow")].map(
+              (r) => "  " + [...r.children].map((k) => k.textContent).join(" – "),
+            ),
+          )
+          .join("\n"),
+      )
+      .join("\n\n");
+  {
+    /* ✉️ an email to the address in the company details (else the mail app asks who to), the wrap-up written in */
+    const m = document.getElementById("wu-mail");
+    if (m)
+      m.href =
+        "mailto:" +
+        encodeURIComponent(coData().email || "") +
+        "?subject=" +
+        encodeURIComponent(
+          "Week wrap-up – week of " +
+            x.mon.toLocaleDateString("en-GB", { day: "numeric", month: "long" }),
+        ) +
+        "&body=" +
+        encodeURIComponent(wuText().slice(0, 1800));
+  }
   const c = document.getElementById("wu-copy");
   if (c)
     c.onclick = async () => {
-      const t = [...document.querySelectorAll(".wu .wu-sec")]
-        .map((s) =>
-          [s.querySelector(".wu-h b").textContent]
-            .concat(
-              [...s.querySelectorAll(".drow")].map(
-                (r) => "  " + [...r.children].map((k) => k.textContent).join(" – "),
-              ),
-            )
-            .join("\n"),
-        )
-        .join("\n\n");
+      const t = wuText();
       try {
         await navigator.clipboard.writeText("Week wrap-up\n\n" + t);
         toast("Copied");

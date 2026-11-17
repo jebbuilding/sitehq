@@ -29,3 +29,6 @@
 .clipt input{position:absolute;top:6px;left:6px;width:20px;height:20px;min-height:0;z-index:1;accent-color:var(--accent)}.clipt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.clipt:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
 .clipdel{position:absolute;top:4px;right:4px;border:0;background:rgba(0,0,0,.55);color:#fff;border-radius:10px;font-size:11px;padding:1px 6px;min-height:0}
 .clipdl{position:absolute;top:4px;left:4px;border:0;background:rgba(0,0,0,.55);color:#fff;border-radius:10px;font-size:11px;padding:1px 6px;min-height:0}
+
+/* files › measuring plans on an iPad: the buttons big enough for a finger */
+@media (pointer:coarse){.fvm-strip .pillbtn{min-height:44px;padding:8px 12px;font-size:14px}.fvm-strip select{min-height:44px}}

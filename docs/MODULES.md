@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 242 files, 4527 KB, 114980 lines.
+- 242 files, 4532 KB, 115106 lines.
 - 2374 names declared at the top level (the shared scope); 1215 of them are used by a file other than the one that declares them.
-- 2562 file-to-file dependencies (file A uses at least one name from file B).
+- 2563 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 206 files, 6 files depend on each other in a loop (directly or through other files); the other 30 files are outside any loop.
 
@@ -32,8 +32,8 @@ The de facto shared API: names used by the most files.
 | `newId` | `files/outbox.js` | 85 files |
 | `shortDay` | `core/helpers.js` | 76 files |
 | `ownerMode` | `core/state.js` | 72 files |
+| `coData` | `owner/company-details.js` | 54 files |
 | `gbp` | `core/helpers.js` | 54 files |
-| `coData` | `owner/company-details.js` | 53 files |
 | `uploadFile` | `files/files.js` | 53 files |
 | `bossFirst` | `core/company-names.js` | 52 files |
 | `stamp` | `core/helpers.js` | 52 files |
@@ -538,7 +538,7 @@ building components: roof parts, claddings, render, walls, floors, foundations, 
 
 construction details: stud wall connections, framing, headers, ground floor and floor details
 
-- 2296 lines, 77 KB. Declares 24 names, 18 used elsewhere.
+- 2334 lines, 78 KB. Declares 24 names, 18 used elsewhere.
 - **Used elsewhere:** `npLbl` (5), `NP_U` (4), `npSymLabel` (2), `drawShape` (1), `initConstructionDetails` (1), `NP_COLS` (1), `NP_DET_BOX` (1), `NP_ELEV_BOX` (1), `NP_LINE` (1), `NP_MORECOLS` (1), `NP_SCALES` (1), `NP_SHAPES` (1), `NP_SIZES` (1), `NP_SYM` (1), `npKeyEntries` (1), `npStairN` (1), `npStairs` (1), `npUnit` (1)
 - **Uses names from 9 files:** `drawing/symbols-annotation.js` (5), `drawing/walls.js` (5), `drawing/components.js` (4), `drawing/nice-symbols.js` (4), `drawing/symbols-design.js` (3), `drawing/symbols-elevation.js` (2), `drawing/timber.js` (2), `drawing/standard-sizes.js` (1), `drawing/window-plan.js` (1)
 - **Used by 10 files**
@@ -709,7 +709,7 @@ PAVING DRAW: patio and drive materials drawn at real size, paths round a buildin
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 11700 lines, 438 KB. Declares 9 names, 5 used elsewhere.
+- 11769 lines, 441 KB. Declares 9 names, 5 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_SCX` (1), `setNpScx` (1)
 - **Uses names from 49 files:** `drawing/construction-details.js` (16), `drawing/room-sketch.js` (9), `drawing/walls.js` (7), `drawing/steel-parts.js` (6), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/plan-geometry.js` (5), `drawing/cupboard-maker.js` (4), `drawing/drawing-layers.js` (4), `drawing/retaining-wall.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `drawing/paving-draw.js` (3), `files/files.js` (3), `survey/door-window-survey.js` (3), `drawing/bend-lines.js` (2), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/smart-pen.js` (2), `drawing/standard-sizes.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `photos/photos.js` (2), `sales/sales-calc.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `drawing/find-rooms.js` (1), `drawing/finger-tap.js` (1), `drawing/house-render.js` (1), `drawing/join-rooms.js` (1), `drawing/undo-list.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `purchasing/price-order.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sales/letterhead-setup.js` (1), `sites/summary.js` (1)
 - **Used by 17 files**
@@ -1016,9 +1016,9 @@ CLIENTS' LOOK: the client's portal in the new look – Home, Photos, Documents, 
 COMPANY DETAILS card (Policies & insurance, seen by everyone)
 
 - 287 lines, 15 KB. Declares 4 names, 3 used elsewhere.
-- **Used elsewhere:** `coData` (53), `companyCard` (3), `wireCompany` (2)
+- **Used elsewhere:** `coData` (54), `companyCard` (3), `wireCompany` (2)
 - **Uses names from 16 files:** `photos/photos.js` (7), `core/helpers.js` (4), `core/sheet.js` (4), `files/files.js` (3), `core/company-names.js` (2), `core/state.js` (2), `core/tabs-week.js` (1), `owner/deleted-items.js` (1), `owner/deletion-record.js` (1), `owner/pin.js` (1), `purchasing/brochures.js` (1), `purchasing/samples.js` (1), `safety/expiry-dates.js` (1), `safety/training.js` (1), `safety/waste-transfer-note.js` (1), `sites/qr-sign-in.js` (1)
-- **Used by 55 files**
+- **Used by 56 files**
 
 ### `owner/delete-client-site.js`
 
@@ -1168,9 +1168,9 @@ TRADES' SIGN IN BY LOCATION: on Today and Sites, the phone finds the site you're
 
 WEEK WRAP: Friday's one screen – hours, missing timesheets, money owed, jobs going over, who's off, what's due
 
-- 147 lines, 7.8 KB. Declares 6 names, 5 used elsewhere.
+- 166 lines, 8.5 KB. Declares 6 names, 5 used elsewhere.
 - **Used elsewhere:** `pcTodayCard` (1), `pcTodayWire` (1), `wuOpen` (1), `wuTodayCard` (1), `wuTodayWire` (1)
-- **Uses names from 9 files:** `core/helpers.js` (9), `sales/sales-calc.js` (3), `timesheets/plan-check.js` (3), `owner/owner.js` (2), `core/state.js` (1), `core/viewer.js` (1), `owner/today.js` (1), `safety/expiry-dates.js` (1), `sales/job-budget.js` (1)
+- **Uses names from 10 files:** `core/helpers.js` (9), `sales/sales-calc.js` (3), `timesheets/plan-check.js` (3), `owner/owner.js` (2), `core/state.js` (1), `core/viewer.js` (1), `owner/company-details.js` (1), `owner/today.js` (1), `safety/expiry-dates.js` (1), `sales/job-budget.js` (1)
 - **Used by 2 files**
 
 ### `owner/whats-new.js`
