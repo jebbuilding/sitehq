@@ -453,7 +453,7 @@ async function openNotePage(opts) {
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
       <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="smaller" hidden>➖<small>Smaller</small></button><button type="button" class="np-sb" data-a="bigger" hidden>➕<small>Bigger</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
       <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="moveby">✥<small>Move by…</small></button><button type="button" class="np-mb" data-m="clip">📋<small>Copy</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
-      <div class="np-finebox" hidden><div class="nfrow"><b>⚙ <span class="nfwhatis">Properties</span></b><button type="button" class="nfx" aria-label="Close">✕</button></div>
+      <div class="np-finebox" hidden><div class="nfrow nfhead" title="Drag here to move it"><b>⚙ <span class="nfwhatis">Properties</span></b><span class="nfhbtns"><button type="button" class="nfmin" aria-label="Make it small" title="Make it small">–</button><button type="button" class="nfx" aria-label="Close">✕</button></span></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
           <div class="nfrow nfwrow"><span class="nfl">Thickness</span><div class="seg nfseg nfw">${[
             [2, "Hairline"],
@@ -4514,6 +4514,52 @@ async function openNotePage(opts) {
 
   /* ===== fine-tune panel for the selected item: nudge, turn by degrees, exact length/size ===== */
   const fb = q(".np-finebox");
+  /* the Properties box (James, Nov 2026: "it should open to the left side but also be able to be moved about and
+     minimised"): on the left to start with; drag its top bar to put it anywhere on the drawing (it stays there while
+     the drawing is open); – folds it to its title bar, ▢ opens it again */
+  let fbPos = null,
+    fbSmall = false;
+  function fbPlace() {
+    fb.style.left = (fbPos ? fbPos[0] : 8) + "px";
+    fb.style.top = (fbPos ? fbPos[1] : 8) + "px";
+    fb.classList.toggle("nf-small", fbSmall);
+    const m = fb.querySelector(".nfmin");
+    m.textContent = fbSmall ? "▢" : "–";
+    m.setAttribute("aria-label", fbSmall ? "Open it out" : "Make it small");
+  }
+  fb.querySelector(".nfmin").onclick = () => {
+    fbSmall = !fbSmall;
+    fbPlace();
+  };
+  {
+    const h = fb.querySelector(".nfhead");
+    h.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button")) return;
+      e.preventDefault();
+      try {
+        h.setPointerCapture(e.pointerId);
+      } catch (err) {}
+      const st = stage.getBoundingClientRect(),
+        r = fb.getBoundingClientRect();
+      const dx = e.clientX - r.left,
+        dy = e.clientY - r.top;
+      const mv = (ev) => {
+        fbPos = [
+          Math.max(0, Math.min(st.width - Math.min(r.width, st.width), ev.clientX - st.left - dx)),
+          Math.max(0, Math.min(st.height - 48, ev.clientY - st.top - dy)),
+        ];
+        fbPlace();
+      };
+      const up = () => {
+        h.removeEventListener("pointermove", mv);
+        h.removeEventListener("pointerup", up);
+        h.removeEventListener("pointercancel", up);
+      };
+      h.addEventListener("pointermove", mv);
+      h.addEventListener("pointerup", up);
+      h.addEventListener("pointercancel", up);
+    });
+  }
   /* copy and paste: what's copied stays until something else is copied, so it can go onto another page */
   function npCopy(list) {
     if (!list.length) return;
@@ -9501,6 +9547,7 @@ async function openNotePage(opts) {
   };
   function fineOpen() {
     fb.hidden = false;
+    fbPlace();
     fineFill();
     /* the bars underneath step out of the way while it is open */
     draw();

@@ -172,3 +172,11 @@ body>.dimask.cb3-sg{z-index:320}
 .np-lenbar.nlb-small .nlb-sum{display:inline-flex!important;align-items:center}
 .np-lenbar .nlb-extra[hidden]{display:none}
 .np-lenbar{width:max-content}
+
+/* drawing › the Properties box: on the left, moved by its top bar, folds to its title */
+.np-finebox{left:8px;top:8px;bottom:auto;transform:none;overflow-y:auto;max-height:calc(100% - 16px)!important}
+.np-finebox .nfhead{cursor:move;touch-action:none;user-select:none;-webkit-user-select:none;justify-content:space-between;position:sticky;top:-8px;background:rgba(31,26,26,.98);z-index:1;margin:-8px -10px 0;padding:8px 10px}
+.np-finebox .nfhbtns{display:flex;gap:4px}
+.np-finebox .nfmin,.np-finebox .nfhbtns .nfx{min-width:40px;min-height:40px;background:#362e2e;border:1px solid #4a3f40;border-radius:8px;color:#fff;font-size:18px;cursor:pointer}
+.np-finebox.nf-small>*:not(.nfhead){display:none!important}
+.np-finebox.nf-small{width:auto;min-width:220px}
