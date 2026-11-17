@@ -644,7 +644,7 @@ async function openNotePage(opts) {
     snapMark = null;
     if (!snapOn || fineNow) return p;
     opt = opt || {};
-    const tol = 16 / s;
+    const tol = (opt.tolPx || 16) / s;
     const cands = [];
     const add = (pt, k, w, r) => {
       const d = Math.hypot(pt[0] - p[0], pt[1] - p[1]);
@@ -2935,6 +2935,64 @@ async function openNotePage(opts) {
     }
     draw();
   });
+  /* after a press: held still for a moment on something being moved → fine moving (🐢); with a drawing tool, held
+     still on something already drawn → it is picked up to move, no need to go to Select first (James, Nov 2026:
+     "hard to pick up") */
+  let holdT = 0,
+    drawRaf = 0;
+  /* one redraw per screen frame, however many finger movements come in (a Pencil sends 120 a second) */
+  const drawSoon = () => {
+    if (drawRaf) return;
+    drawRaf = requestAnimationFrame(() => {
+      drawRaf = 0;
+      draw();
+    });
+  };
+  cv.addEventListener("pointerdown", (e) => {
+    clearTimeout(holdT);
+    if (ptrs.size !== 1) return;
+    const p0 = toPage(e.clientX, e.clientY);
+    if (drag && NP_MOVEK.has(drag.kind)) {
+      const d0 = drag;
+      holdT = setTimeout(() => {
+        if (drag !== d0 || d0.go || slowDrag) return;
+        d0.fine = true;
+        toast("🐢 Fine moving: it moves a quarter as far as your finger");
+        draw();
+      }, 450);
+      return;
+    }
+    if (cur && !["pen", "hl", "smart", "erase", "roomsk"].includes(tool)) {
+      const i = hit(p0);
+      if (i == null || doc.objs[i].lk) return;
+      const c0 = cur;
+      holdT = setTimeout(() => {
+        if (cur !== c0 || ptrs.size !== 1) return;
+        const lp = ptrs.values().next().value;
+        if (!lp || Math.hypot(lp[0] - downXY[0], lp[1] - downXY[1]) > 10) return;
+        cur = null;
+        live = null;
+        sel = i;
+        msel.clear();
+        snap();
+        drag = {
+          kind: "move",
+          i,
+          start: p0,
+          o: JSON.parse(JSON.stringify(doc.objs[i])),
+          pd: p0,
+          hp: p0,
+          att: attOf(doc.objs[i]),
+          jn: joinedEnds(i),
+          go: true,
+        };
+        toast("Picked up – move it where you want it");
+        draw();
+      }, 600);
+    }
+  });
+  cv.addEventListener("pointerup", () => clearTimeout(holdT));
+  cv.addEventListener("pointercancel", () => clearTimeout(holdT));
   /* where the pointer is on the canvas (for the magnifier), and whether it's a finger or pen */
   const npLoupeOn = () => {
     try {
@@ -2964,42 +3022,36 @@ async function openNotePage(opts) {
       s = ns;
       ox = mx - r.left - px * ns;
       oy = my - r.top - py * ns;
-      draw();
+      drawSoon();
       return;
     }
     if (drag && NP_MOVEK.has(drag.kind) && !drag.go) {
       if (
         Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]) <
-        (e.pointerType === "touch" ? 12 : 6)
+        (drag.fine ? 2 : e.pointerType === "touch" ? 12 : 6)
       )
         return;
       drag.go = true;
     }
     let p = toPage(e.clientX, e.clientY);
-    /* fine or full speed from how the finger moves (James, Nov 2026: "I need to be able to do both without changing
-       settings – can you do it from how I move it"): a quick move goes with the finger, a slow one moves the thing a
-       fraction as far (down to a quarter) for exact placing, with snapping off while it's fine. 🐢 Slow drag still
-       makes every move fine. Movement is added up as it goes, so speeding up or slowing down never makes it jump */
+    /* the thing stays under the finger (James, Nov 2026: it drifted away when speed decided it); held still for a
+       moment before moving (drag.fine) – or 🐢 Slow drag – it moves a quarter as far, for exact placing, snapping off */
     fineNow = false;
     if (drag && drag.pd && drag.hp && !["pan", "erase", "band", "dimpull"].includes(drag.kind)) {
-      const now = performance.now();
-      if (!drag.ad) drag.ad = { raw: drag.pd, v: drag.hp, t: now - 16, x: downXY[0], y: downXY[1] };
+      const k = slowDrag || drag.fine ? 0.25 : 1;
+      if (!drag.ad) drag.ad = { raw: drag.pd, v: drag.hp };
       const A = drag.ad;
-      const sp = Math.hypot(e.clientX - A.x, e.clientY - A.y) / Math.max(8, now - A.t);
-      const gain = slowDrag ? 0.2 : Math.max(0.25, Math.min(1, (sp - 0.05) / 0.45));
-      A.v = [A.v[0] + (p[0] - A.raw[0]) * gain, A.v[1] + (p[1] - A.raw[1]) * gain];
+      A.v = [A.v[0] + (p[0] - A.raw[0]) * k, A.v[1] + (p[1] - A.raw[1]) * k];
       A.raw = p;
-      A.t = now;
-      A.x = e.clientX;
-      A.y = e.clientY;
-      fineNow = gain < 0.7;
-      p = A.v;
+      fineNow = k < 1;
+      p = k < 1 ? A.v : [drag.hp[0] + p[0] - drag.pd[0], drag.hp[1] + p[1] - drag.pd[1]];
+      if (k === 1) A.v = p;
     }
     if (drag) {
       if (drag.kind === "pan") {
         ox = drag.ox + (e.clientX - drag.sx);
         oy = drag.oy + (e.clientY - drag.sy);
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "erase") {
@@ -3008,12 +3060,12 @@ async function openNotePage(opts) {
       }
       if (drag.kind === "dimpull") {
         dimPullTo(drag.o, p);
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "band") {
         drag.b = p;
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "bend") {
@@ -3028,13 +3080,13 @@ async function openNotePage(opts) {
           o.bend = Math.max(-1.5, Math.min(1.5, (d * 2) / L));
           if (Math.abs(o.bend) < 0.01) o.bend = 0.0001;
         }
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "tip") {
         const o = doc.objs[drag.i];
         if (o && o.lead) o.lead.p = snapPt(p);
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "mmove") {
@@ -3047,6 +3099,7 @@ async function openNotePage(opts) {
             skip: drag.orig[0][0],
             skipSet: new Set(drag.orig.map((x) => x[0])),
             noGrid: true,
+            tolPx: 7,
           });
           dx = sp[0] - anc[0];
           dy = sp[1] - anc[1];
@@ -3057,7 +3110,7 @@ async function openNotePage(opts) {
           doc.objs[j] = o;
         });
         doc.pages[pg].objs = doc.objs;
-        draw();
+        drawSoon();
         return;
       }
       const o = doc.objs[drag.i];
@@ -3092,7 +3145,7 @@ async function openNotePage(opts) {
         );
         if (deg < 0) deg += 360;
         live = { p, t: (o.a && o.b ? deg : Math.round((a * 180) / Math.PI)) + "°" };
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "off") {
@@ -3106,7 +3159,7 @@ async function openNotePage(opts) {
         }
         o.off = f || undefined;
         if (!o.off) delete o.off;
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "rot") {
@@ -3116,7 +3169,7 @@ async function openNotePage(opts) {
         o.r = ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
         if (Math.abs(o.r) < 1e-6 || Math.abs(o.r - 2 * Math.PI) < 1e-6) o.r = 0;
         live = { p, t: Math.round((o.r * 180) / Math.PI) + "°" };
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "end") {
@@ -3151,7 +3204,7 @@ async function openNotePage(opts) {
           });
         }
         live = liveFor(o) && { p, t: liveFor(o).t };
-        draw();
+        drawSoon();
         return;
       }
       const dx0 = p[0] - drag.start[0],
@@ -3167,6 +3220,7 @@ async function openNotePage(opts) {
               (drag.att || []).map((x) => x[0]).concat((drag.jn || []).map((x) => x[0])),
             ),
             noGrid: true,
+            tolPx: 7,
           });
           dx = sp[0] - anc[0];
           dy = sp[1] - anc[1];
@@ -3243,7 +3297,7 @@ async function openNotePage(opts) {
           o.y += tl[1] - tl2[1];
         }
       }
-      draw();
+      drawSoon();
       return;
     }
     if (!cur) return;
@@ -3269,7 +3323,7 @@ async function openNotePage(opts) {
       cur.b = b;
       live = liveFor(cur);
     }
-    draw();
+    drawSoon();
   });
   const end = (e) => {
     ptrs.delete(e.pointerId);
