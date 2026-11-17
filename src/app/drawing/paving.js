@@ -443,7 +443,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
-    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span class="nlb-ll">Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span class="nlb-al">Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span class="nlb-au">°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-morebtn" aria-expanded="false" title="Which way, and a number pad">⋯</button><button type="button" class="btn nlb-min" title="Make it small" aria-label="Make it small">–</button><button type="button" class="btn nlb-x" aria-label="Close">✕</button><span class="nlb-extra" hidden><span class="nlb-dirs" role="group" aria-label="Which way"><button type="button" class="btn nlb-dir" data-a="0" aria-label="Right">→</button><button type="button" class="btn nlb-dir" data-a="90" aria-label="Up">↑</button><button type="button" class="btn nlb-dir" data-a="180" aria-label="Left">←</button><button type="button" class="btn nlb-dir" data-a="270" aria-label="Down">↓</button></span><button type="button" class="btn nlb-padb" aria-pressed="false" title="Number pad">🔢 Number pad</button></span><button type="button" class="nlb-sum" hidden title="Show the length and angle"></button><div class="nlb-pad" hidden>${["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => `<button type="button" class="btn nlb-k" data-k="${k}">${k}</button>`).join("")}</div></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><span class="np-ckbox" hidden><select class="np-ck" aria-label="Kind of corner"><option value="">⌐ Sharp corner</option><option value="r">◜ Rounded corner</option><option value="c">◸ Cut corner (splay)</option></select><input class="np-cks" type="number" inputmode="decimal" step="any" value="300" aria-label="Size of the rounded or cut corner"><span class="np-cku">mm</span></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
+    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-min" aria-label="Make it small" title="Make it small">–</button><button type="button" class="btn nob-x" aria-label="Close">✕</button><button type="button" class="nob-sum" hidden title="Show the size"></button></form><form class="np-lenbar" hidden><span class="nlb-ll">Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span class="nlb-al">Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span class="nlb-au">°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-morebtn" aria-expanded="false" title="Which way, and a number pad">⋯</button><button type="button" class="btn nlb-min" title="Make it small" aria-label="Make it small">–</button><button type="button" class="btn nlb-x" aria-label="Close">✕</button><span class="nlb-extra" hidden><span class="nlb-dirs" role="group" aria-label="Which way"><button type="button" class="btn nlb-dir" data-a="0" aria-label="Right">→</button><button type="button" class="btn nlb-dir" data-a="90" aria-label="Up">↑</button><button type="button" class="btn nlb-dir" data-a="180" aria-label="Left">←</button><button type="button" class="btn nlb-dir" data-a="270" aria-label="Down">↓</button></span><button type="button" class="btn nlb-padb" aria-pressed="false" title="Number pad">🔢 Number pad</button></span><button type="button" class="nlb-sum" hidden title="Show the length and angle"></button><div class="nlb-pad" hidden>${["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => `<button type="button" class="btn nlb-k" data-k="${k}">${k}</button>`).join("")}</div></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><span class="np-ckbox" hidden><select class="np-ck" aria-label="Kind of corner"><option value="">⌐ Sharp corner</option><option value="r">◜ Rounded corner</option><option value="c">◸ Cut corner (splay)</option></select><input class="np-cks" type="number" inputmode="decimal" step="any" value="300" aria-label="Size of the rounded or cut corner"><span class="np-cku">mm</span></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
       NP_PAVE,
     )
       .map(([k, v]) => `<option value="${k}">${v[0]}</option>`)
@@ -462,7 +462,7 @@ async function openNotePage(opts) {
       .join(
         "",
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
-      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="smaller" hidden>➖<small>Smaller</small></button><button type="button" class="np-sb" data-a="bigger" hidden>➕<small>Bigger</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
+      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="smaller" hidden>➖<small>Smaller</small></button><button type="button" class="np-sb" data-a="bigger" hidden>➕<small>Bigger</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb" data-a="size" hidden>📏<small>Size</small></button><button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
       <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="moveby">✥<small>Move by…</small></button><button type="button" class="np-mb" data-m="clip">📋<small>Copy</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
       <div class="np-finebox" hidden><div class="nfrow nfhead" title="Drag here to move it"><b>⚙ <span class="nfwhatis">Properties</span></b><span class="nfhbtns"><button type="button" class="nfmin" aria-label="Make it small" title="Make it small">–</button><button type="button" class="nfx" aria-label="Close">✕</button></span></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
@@ -2116,6 +2116,20 @@ async function openNotePage(opts) {
     }
     q(".np-selbar:not(.np-mbar)").hidden = !so || msel.size > 0 || !q(".np-finebox").hidden;
     opBar(so && msel.size === 0 ? so : null);
+    {
+      const sz = q('.np-selbar:not(.np-mbar) [data-a="size"]');
+      if (sz)
+        sz.hidden = !(
+          so &&
+          !msel.size &&
+          doc.scale &&
+          (opKind(so) ||
+            so.t === "line" ||
+            so.t === "arrow" ||
+            (so.t === "rect" && !so.r && !vpOf(so)) ||
+            (npLineShape(so) && !NP_OPENK.has(so.k)))
+        );
+    }
     {
       const lbe = q(".np-lenbar");
       const lineLike =
@@ -4499,6 +4513,11 @@ async function openNotePage(opts) {
         } else if (a === "fine") {
           undo.pop();
           fineOpen();
+          return;
+        } else if (a === "size") {
+          undo.pop();
+          if (opKind(o)) opBar(o, true, true);
+          else showLenBar(o, true);
           return;
         } else if (a === "fill") {
           undo.pop();
@@ -7865,7 +7884,8 @@ async function openNotePage(opts) {
       return false;
     }
   };
-  let lbSmall = lbPref("np.lbmin"),
+  let lbSmall = true,
+    lbBigFor = null,
     lbMore = lbPref("np.lbmore");
   function lbApply() {
     lb.classList.toggle("nlb-small", lbSmall);
@@ -7884,11 +7904,13 @@ async function openNotePage(opts) {
     } catch (e) {}
   };
   const lb = q(".np-lenbar");
-  function showLenBar(o) {
+  function showLenBar(o, open) {
     if (!doc.scale || !o || !o.a || !o.b) {
       lb.hidden = true;
       return;
     }
+    if (open) lbBigFor = o;
+    lbSmall = lbBigFor !== o;
     lenObj = o;
     const box = o.t === "rect";
     lb.classList.toggle("nlb-box", box);
@@ -7991,7 +8013,7 @@ async function openNotePage(opts) {
       tb = (e.b[0] - w.x.a[0]) * w.u[0] + (e.b[1] - w.x.a[1]) * w.u[1];
     return { ta, tb, t0: Math.min(ta, tb), t1: Math.max(ta, tb) };
   };
-  function opBar(o, force) {
+  function opBar(o, force, open) {
     if (drag) return;
     const bar = opbEl(),
       st = opSt(),
@@ -8036,6 +8058,12 @@ async function openNotePage(opts) {
         : "Not to scale – measure something you know to set it";
       bar.querySelector(".nob-fix").hidden = !(o.mmpp && Math.abs(off) >= 0.01);
       lb.hidden = true;
+      nobApply(
+        o,
+        open,
+        "🖼 Imported drawing" +
+          (o.mmpp ? (Math.abs(off) < 0.01 ? " · to scale" : " · ⚠ not to scale") : ""),
+      );
       bar.hidden = false;
       return;
     }
@@ -8081,8 +8109,36 @@ async function openNotePage(opts) {
         "· " + npFmtLen(Math.round(realMm(w2.L - A.t1))) + " to the other end";
     }
     lb.hidden = true;
+    nobApply(
+      o,
+      open,
+      (kind === "open" ? "🚪 " : kind === "win" ? "🪟 " : "📐 ") +
+        Math.round(W) +
+        (kind === "box" ? " × " + Math.round(D) : "") +
+        " mm",
+    );
     bar.hidden = false;
   }
+  /* the size bar small (just its size, tap to open) unless it has been opened for this thing */
+  function nobApply(o, open, txt) {
+    const st = opSt(),
+      bar = opbEl();
+    if (open) st.bigFor = o;
+    const small = st.bigFor !== o;
+    bar.classList.toggle("nob-small", small);
+    const sb = bar.querySelector(".nob-sum");
+    sb.hidden = !small;
+    sb.textContent = txt;
+  }
+  opbEl().querySelector(".nob-sum").onclick = () => {
+    const st = opSt();
+    if (st.o) opBar(st.o, true, true);
+  };
+  opbEl().querySelector(".nob-min").onclick = () => {
+    const st = opSt();
+    st.bigFor = null;
+    if (st.o) nobApply(st.o, false, opbEl().querySelector(".nob-sum").textContent);
+  };
   opbEl().querySelector(".nob-x").onclick = () => {
     opbEl().hidden = true;
     opSt().o = null;
@@ -8291,12 +8347,12 @@ async function openNotePage(opts) {
   );
   lb.querySelector(".nlb-min").onclick = () => {
     lbSmall = true;
-    lbKeep("np.lbmin", true);
+    lbBigFor = null;
     lbApply();
   };
   lb.querySelector(".nlb-sum").onclick = () => {
     lbSmall = false;
-    lbKeep("np.lbmin", false);
+    lbBigFor = lenObj;
     lbApply();
   };
   lb.querySelector(".nlb-morebtn").onclick = () => {
@@ -8345,6 +8401,11 @@ async function openNotePage(opts) {
       if (/^[0-9.]$/.test(e.key)) {
         e.preventDefault();
         e.stopPropagation();
+        if (lbSmall) {
+          lbSmall = false;
+          lbBigFor = lenObj;
+          lbApply();
+        }
         const f = lb.querySelector(".nlb-l");
         f.value = e.key;
         lbFresh = false;

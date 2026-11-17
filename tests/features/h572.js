@@ -43,7 +43,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  for(let k=1;k<=8;k++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:tp([A[0]+(B2[0]-A[0])*k/8,A[1]])});
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.waitForTimeout(400);
  ok(!(await p.isVisible('.nlb-pad')),way+': the number pad stays shut until asked for');
- await p.click('.nlb-morebtn');await p.click('.nlb-padb');await p.waitForTimeout(200);
+ await p.click('.nlb-sum');await p.click('.nlb-morebtn');await p.click('.nlb-padb');await p.waitForTimeout(200);
  ok(await p.isVisible('.nlb-pad'),way+': ⋯ then 🔢 opens it');
  const lb=await p.locator('.np-lenbar').boundingBox();
  ok(lb&&lb.x>=0&&lb.x+lb.width<=W+0.5&&lb.y+lb.height<=H,way+': the length bar and its number pad fit on the screen');

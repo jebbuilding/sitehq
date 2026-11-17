@@ -1,5 +1,5 @@
-// The length bar, small and simple (made-up drawing): drawing a line shows just its length and angle (no number pad);
-// – shrinks it to a small "📏 … mm · …°" tag that keeps up as the length is typed; tapping the tag brings it back.
+// The length bar, small and simple (made-up drawing): drawing a line shows it as a small tag first; tapped, just its
+// length and angle (no number pad); – shrinks it to a small "📏 … mm · …°" tag that keeps up as the length is typed; tapping the tag brings it back.
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
@@ -16,6 +16,8 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const scr=async(x,y)=>{const bb=await p.locator('.np-cv').boundingBox();const [s,ox,oy]=await p.evaluate(()=>window.__np.view());return [bb.x+ox+x*s,bb.y+oy+y*s];};
  await p.click('.np-gt[data-gt=draw]');await p.click('.np-t[data-t=line]');
  const A=await scr(200,500),B=await scr(420,500);await p.mouse.move(A[0],A[1]);await p.mouse.down();await p.mouse.move(B[0],B[1],{steps:6});await p.mouse.up();await p.waitForTimeout(300);
+ ok(await p.isVisible('.nlb-sum')&&!(await p.isVisible('.nlb-l')),'it starts as a small tag');
+ await p.click('.nlb-sum');await p.waitForTimeout(100);
  ok(await p.isVisible('.nlb-l')&&await p.isVisible('.nlb-a')&&!(await p.isVisible('.nlb-pad'))&&!(await p.isVisible('.nlb-dir')),'just the length and angle show');
  const bh=(await p.locator('.np-lenbar').boundingBox()).height;
  ok(bh<70,'the bar is one small row ('+Math.round(bh)+' px high)');

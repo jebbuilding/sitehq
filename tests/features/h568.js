@@ -64,6 +64,7 @@ const R=(x)=>Math.round(x);
  /* a box just drawn: Width × Depth */
  await clear();await p.click('.np-gt[data-gt=easy]');await p.click('.np-t[data-t=rect]');
  S2=await scr([[200,200],[400,320]]);await p.mouse.move(S2[0][0],S2[0][1]);await p.mouse.down();await p.mouse.move(S2[1][0],S2[1][1],{steps:5});await p.mouse.up();await p.waitForTimeout(300);
+ await p.click('.nlb-sum');await p.waitForTimeout(100);
  ok(await p.isVisible('.np-lenbar')&&await p.innerText('.nlb-ll')==='Width','a box just drawn offers Width × Depth');
  await p.fill('.nlb-l','4000');await p.fill('.nlb-a','3000');await p.click('.np-lenbar [type=submit]');await p.waitForTimeout(200);
  o=await p.evaluate(()=>window.__np.get());
@@ -72,6 +73,7 @@ const R=(x)=>Math.round(x);
  /* a line: number pad and direction */
  await p.click('.np-t[data-t=line]');
  S2=await scr([[200,500],[350,500]]);await p.mouse.move(S2[0][0],S2[0][1]);await p.mouse.down();await p.mouse.move(S2[1][0],S2[1][1],{steps:5});await p.mouse.up();await p.waitForTimeout(300);
+ await p.click('.nlb-sum');await p.waitForTimeout(100);
  ok(await p.innerText('.nlb-ll')==='Length'&&!(await p.isVisible('.nlb-pad'))&&!(await p.isVisible('.nlb-dir')),'a line offers just its Length and Angle (no number pad unless asked)');
  await p.click('.nlb-morebtn');
  ok(await p.isVisible('.nlb-dir[data-a="90"]'),'⋯ shows → ↑ ← ↓ and the number pad button');

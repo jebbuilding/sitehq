@@ -197,3 +197,10 @@ body>.dimask.cb3-sg{z-index:320}
 .bmsheet .dimbox .bm-ticks label{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;text-align:left;font-weight:500}
 .bmsheet .dimbox .bm-ticks label small{margin-left:auto}
 .bmsheet .dimbox label.inl{flex-direction:row;align-items:center;gap:8px}
+
+/* drawing › the size bar small as a tag until opened (tap it, or 📏 Size at the bottom) */
+.np-opbar.nob-small{padding:3px}
+.np-opbar.nob-small>*:not(.nob-sum){display:none!important}
+.np-opbar .nob-sum{background:transparent;color:#fff;border:0;font:inherit;font-weight:700;font-size:15px;min-height:40px;padding:0 12px;cursor:pointer}
+.np-opbar.nob-small .nob-sum{display:inline-flex!important;align-items:center}
+.np-opbar .nob-min{background:#4a3f40;color:#fff;border-color:#6b5f60;min-width:40px}
