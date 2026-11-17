@@ -4,6 +4,17 @@ import { clAddr } from "../clients/stages-planner.js";
 import { pickField, pickVal, wirePicks } from "../core/fields.js";
 import { $, esc, iso, parse, toast } from "../core/helpers.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
+import {
+  NPB_ENDS,
+  NPB_FINISH,
+  NPB_TICKS,
+  npbDims,
+  npbFire,
+  npbLift,
+  npbOrderText,
+  npbProps,
+  npbStage,
+} from "./beam-sheet.js";
 import { npBendApex, npBendCp } from "./bend-lines.js";
 import { NP_BLD_BOX, NP_LIB } from "./components.js";
 import {
@@ -503,7 +514,7 @@ async function openNotePage(opts) {
           <div class="nfrow nftt" hidden><span class="nfl">Truss</span><div class="seg nfseg"><button type="button" data-v="fink">Fink (W)</button><button type="button" data-v="fan">Fan</button><button type="button" data-v="mono">Mono</button><button type="button" data-v="attic">Attic (room in roof)</button></div></div>
           <div class="nfrow nfdirn" hidden><span class="nfl">Direction</span><button type="button" class="nfb nfturnb">⇄ Turn the timbers</button></div>
           <div class="nfrow"><span class="nfl">Extra</span><button type="button" class="nfb nfaddt">➕ Add timber</button><button type="button" class="nfb nfclrt">Clear extras</button></div><div class="who nftinfo"></div></div>
-        <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div></div>
+        <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div><div class="nfrow nfst-sheetrow"><button type="button" class="nfb nfst-sheet">📋 Open the beam sheet: lifting, props, padstones, fire, order, sign-off</button></div></div>
         <div class="nfstairs" hidden><div class="nfrow"><span class="nfl">Steps</span><button type="button" class="nfb nfst" data-d="-1" aria-label="One step fewer">−</button><b class="nfstn" style="min-width:34px;text-align:center"></b><button type="button" class="nfb nfst" data-d="1" aria-label="One step more">+</button><button type="button" class="nfb nfsdir">⇅ Up / down</button></div>
           <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div></div>
         <div class="nfrow nfwhat"><span class="nfl">Adjust</span><div class="seg nfseg"><button type="button" data-w="all" aria-pressed="true">Whole item</button><button type="button" data-w="a" aria-pressed="false">● Start</button><button type="button" data-w="b" aria-pressed="false">● End</button></div></div>
@@ -4970,7 +4981,7 @@ async function openNotePage(opts) {
         if (vpOf(o)) return;
         if (o.t === "shape" && o.k === "beam" && o.a && o.b) {
           const span = Math.round(mm(lenOf(o.a, o.b)) / 5) * 5,
-            bear = +o.bear || 150;
+            bear = ((+o.bearA || +o.bear || 150) + (+o.bearB || +o.bear || 150)) / 2;
           beams.push({
             mark: o.mark || "",
             sec: o.sec || "section to be confirmed",
@@ -5704,7 +5715,9 @@ async function openNotePage(opts) {
     doc.objs.filter(isBeam).map((o) => {
       const span = Math.round(realMm(lenOf(o.a, o.b)) / 5) * 5,
         bear = +o.bear || 150,
-        len = span + 2 * bear,
+        bearA = +o.bearA || bear,
+        bearB = +o.bearB || bear,
+        len = span + bearA + bearB,
         kg = (secKg(o.sec || "") * len) / 1000;
       return {
         o,
@@ -5712,11 +5725,319 @@ async function openNotePage(opts) {
         sec: o.sec || "",
         span,
         bear,
+        bearA,
+        bearB,
         len,
         kg,
         pad: o.pad || "Concrete 440×215×100",
       };
     });
+  /* ===== a steel beam's sheet (beam-sheet.js does the working out): size and length, lifting, props, padstones,
+     fire protection, the order for the supplier, building control ticks, and the beam's detail drawn on a new page ===== */
+  function beamSheet(o) {
+    const r = beamRows().find((x) => x.o === o);
+    if (!r) return;
+    const [bt] = o.bt ? [o.bt] : npBeamOf(o.sec || "");
+    const dm = npbDims(o.sec, bt) || { d: 0, b: 0 };
+    const ord = Object.assign(
+      { grade: "S275", ends: "plain", finish: "primer", qty: 1, need: "", hiab: false },
+      o.ord || {},
+    );
+    const bc = Object.assign({}, o.bc || {});
+    const opt = (list, v) =>
+      list
+        .map(
+          ([k, l]) => `<option value="${esc(k)}"${k === v ? " selected" : ""}>${esc(l)}</option>`,
+        )
+        .join("");
+    const d = document.createElement("div");
+    d.className = "dimask bmsheet";
+    d.innerHTML = `<form class="dimbox" role="dialog" aria-label="Steel beam sheet"><b>🔩 Steel beam ${esc(r.mark || "")}${r.sec ? " · " + esc(r.sec) : ""}</b>
+      <div class="who">A guide to get the beam ordered, in and signed off. <b>The engineer's calcs and building control always win</b> – check every figure against them.</div>
+      <section class="bm-sec"><b>📏 Size and length</b>
+        <div class="bm-row"><label>Mark<input class="bm-mark" maxlength="8" value="${esc(o.mark || "")}" placeholder="e.g. B1"></label><label>Section (from the calcs)<select class="bm-sec-s"><option value="">Choose…</option>${BEAM_SECS.map(([x]) => `<option${x === o.sec ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label><label>Grade<select class="bm-grade">${opt(
+          [
+            ["S275", "S275"],
+            ["S355", "S355"],
+          ],
+          ord.grade,
+        )}</select></label><label>How many<input class="bm-qty" type="number" inputmode="numeric" min="1" value="${esc(ord.qty)}" style="width:80px"></label></div>
+        <div class="bm-row"><label>Clear span (from the drawing)<input value="${r.span} mm" readonly></label><label>Bearing, start end (mm)<input class="bm-ba" type="number" inputmode="numeric" value="${r.bearA}"></label><label>Bearing, far end (mm)<input class="bm-bb" type="number" inputmode="numeric" value="${r.bearB}"></label></div>
+        <div class="bm-fig bm-len"></div>
+      </section>
+      <section class="bm-sec"><b>🏋️ Lifting it</b><div class="bm-lift"></div></section>
+      <section class="bm-sec"><b>🪜 Temporary works</b>
+        <div class="bm-row"><label>Floor to ceiling (mm)<input class="bm-ht" type="number" inputmode="numeric" value="${esc(o.ht || 2400)}"></label><label>Holding the wall up with<select class="bm-tw">${opt(
+          [
+            ["strongboys", "Strongboys on props"],
+            ["needles", "Needles through the wall, a prop each side"],
+          ],
+          o.tw || "strongboys",
+        )}</select></label></div>
+        <div class="bm-props"></div>
+      </section>
+      <section class="bm-sec"><b>🧱 Padstones</b>
+        <div class="bm-row"><label>Padstones<select class="bm-pad">${BEAM_PADS.map((p) => `<option${p === r.pad ? " selected" : ""}>${esc(p)}</option>`).join("")}</select></label></div>
+        <div class="bm-padinfo"></div>
+      </section>
+      <section class="bm-sec"><b>🔥 Fire protection</b>
+        <div class="bm-row"><label>As specified<select class="bm-fire">${opt(
+          [
+            ["", "Not chosen yet"],
+            ["board", "2 layers of 12.5 mm fire board"],
+            ["paint", "Intumescent paint"],
+            ["none", "None needed"],
+          ],
+          o.fire || "",
+        )}</select></label></div>
+        <div class="bm-fireinfo who"></div>
+      </section>
+      <section class="bm-sec"><b>📦 Order from the steel supplier</b>
+        <div class="bm-row"><label>Ends<select class="bm-ends">${opt(NPB_ENDS, ord.ends)}</select></label><label>Finish<select class="bm-fin">${opt(NPB_FINISH, ord.finish)}</select></label><label>Needed by<input class="bm-need" type="date" value="${esc(ord.need || "")}"></label><label class="inl"><input type="checkbox" class="bm-hiab"${ord.hiab ? " checked" : ""}> Hiab / crane offload</label></div>
+        <div class="bm-order"></div>
+        <div class="bm-row"><button type="button" class="btn bm-copy">📋 Copy the order</button><a class="btn bm-mail" href="#" target="_blank" rel="noopener">✉️ Email the order</a></div>
+      </section>
+      <section class="bm-sec"><b>✅ Building control and site</b><div class="bm-stage who"></div><div class="bm-ticks">${NPB_TICKS.map(([k, l]) => `<label><input type="checkbox" class="bm-tick" data-k="${k}"${bc[k] ? " checked" : ""}> ${esc(l)}<small>${bc[k] ? esc(new Date(bc[k]).toLocaleDateString("en-GB")) : ""}</small></label>`).join("")}</div></section>
+      <div class="dimbtns"><button type="button" class="btn bm-detail">📐 Draw the beam detail</button><button type="button" class="btn bm-x">Cancel</button><button type="submit" class="btn primary">Save</button></div></form>`;
+    ov.appendChild(d);
+    const q2 = (c) => d.querySelector(c);
+    /* everything on the sheet worked out again from what's typed */
+    const read = () => {
+      const sec = q2(".bm-sec-s").value || o.sec || "";
+      const [bt2] = npBeamOf(sec);
+      const bA = Math.max(0, +q2(".bm-ba").value || 0),
+        bB = Math.max(0, +q2(".bm-bb").value || 0);
+      const len = r.span + bA + bB,
+        kgm = secKg(sec),
+        qty = Math.max(1, +q2(".bm-qty").value || 1);
+      return {
+        sec,
+        bt: bt2 || bt,
+        bA,
+        bB,
+        len,
+        kgm,
+        kg: (kgm * len) / 1000,
+        qty,
+        dm: npbDims(sec, bt2 || bt) || dm,
+      };
+    };
+    const show = () => {
+      const x = read();
+      q2(".bm-len").innerHTML =
+        `<span>Cut length <b>${x.len} mm</b></span><span>${x.kgm ? x.kgm + " kg a metre" : "weight: pick a steel size"}</span><span>${x.kg ? "<b>about " + Math.round(x.kg) + " kg</b> each" : ""}</span>${x.dm.d ? `<span>${x.dm.d} deep · ${x.dm.b} flange</span>` : ""}`;
+      const L = npbLift(x.kg);
+      q2(".bm-lift").innerHTML =
+        `<div class="${L.kit ? "bm-warn" : ""}">${L.kit ? "🏗️ " : L.people ? "👷 " : ""}${esc(L.note)}</div><div class="who">Rule of thumb from the manual handling guidance – plan the lift for the real route and the people you have.</div>`;
+      const P = npbProps(
+        r.span,
+        (x.bA + x.bB) / 2,
+        +q2(".bm-ht").value || 2400,
+        q2(".bm-tw").value,
+      );
+      q2(".bm-props").innerHTML =
+        `<div>${P.n} ${P.kind === "needles" ? "needles" : "strongboys"} at about 900 mm apart, <b>${P.props} props (${esc(P.size)})</b>, spreaders / timber lintels at the top, on a solid base.</div><div class="who">Check the engineer's temporary works notes. Props in before any brickwork comes out.</div>`;
+      const pm = String(q2(".bm-pad").value).match(/(\d+)\s*×\s*(\d+)/);
+      const warns = [];
+      if (pm && x.dm.b && x.dm.b > +pm[1])
+        warns.push(`the beam's flange (${x.dm.b}) is wider than the padstone (${pm[1]})`);
+      if (pm && Math.max(x.bA, x.bB) > +pm[2])
+        warns.push(
+          `the bearing (${Math.max(x.bA, x.bB)}) is longer than the padstone is deep (${pm[2]})`,
+        );
+      if (Math.min(x.bA, x.bB) < 100)
+        warns.push("a bearing under 100 mm is short – check the calcs");
+      q2(".bm-padinfo").innerHTML =
+        (warns.length
+          ? `<div class="bm-warn">⚠ ${esc(warns.join("; "))}.</div>`
+          : `<div>✓ Padstone wide enough for the flange, bearing within it.</div>`) +
+        `<div class="who">One each end, bedded in mortar and left to cure before the beam goes on. Size and type as the calcs.</div>`;
+      q2(".bm-fireinfo").textContent = npbFire(
+        x.dm.d || 200,
+        x.dm.b || 100,
+        x.len,
+        q2(".bm-fire").value,
+      ).text;
+      const ordNow = {
+        grade: q2(".bm-grade").value,
+        ends: q2(".bm-ends").value,
+        finish: q2(".bm-fin").value,
+        qty: x.qty,
+        need: q2(".bm-need").value,
+        hiab: q2(".bm-hiab").checked,
+      };
+      const txt = npbOrderText(
+        [
+          {
+            o: { ord: ordNow },
+            mark: q2(".bm-mark").value.trim(),
+            sec: x.sec,
+            len: x.len,
+            span: r.span,
+            bearA: x.bA,
+            bearB: x.bB,
+            kg: x.kg * x.qty,
+          },
+        ],
+        { site: doc.site || opts.site || "", who: coData().name || "" },
+      );
+      q2(".bm-order").textContent = txt;
+      q2(".bm-mail").href =
+        "mailto:?subject=" +
+        encodeURIComponent("Steel order" + (doc.site ? " – " + doc.site : "")) +
+        "&body=" +
+        encodeURIComponent(txt);
+      const bcNow = {};
+      d.querySelectorAll(".bm-tick").forEach((c) => {
+        if (c.checked) bcNow[c.dataset.k] = bc[c.dataset.k] || Date.now();
+      });
+      q2(".bm-stage").textContent = "Where it's got to: " + npbStage(bcNow);
+      return { x, ordNow, bcNow };
+    };
+    d.querySelectorAll("input,select").forEach((el) => el.addEventListener("input", show));
+    d.querySelectorAll("select,input[type=checkbox],input[type=date]").forEach((el) =>
+      el.addEventListener("change", show),
+    );
+    d.querySelectorAll(".bm-tick").forEach((c) =>
+      c.addEventListener("change", () => {
+        if (c.checked && !bc[c.dataset.k]) bc[c.dataset.k] = Date.now();
+        if (!c.checked) delete bc[c.dataset.k];
+        c.parentElement.querySelector("small").textContent = bc[c.dataset.k]
+          ? new Date(bc[c.dataset.k]).toLocaleDateString("en-GB")
+          : "";
+        show();
+      }),
+    );
+    show();
+    q2(".bm-copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(q2(".bm-order").textContent);
+        toast("Order copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    const save = () => {
+      const { x, ordNow, bcNow } = show();
+      snap();
+      o.mark = q2(".bm-mark").value.trim() || o.mark;
+      if (!o.mark) delete o.mark;
+      if (x.sec && x.sec !== o.sec) {
+        o.sec = x.sec;
+        [o.bt, o.bz] = npBeamOf(x.sec);
+        if (!o.bt) delete o.bt;
+      }
+      o.bearA = x.bA;
+      o.bearB = x.bB;
+      o.ht = +q2(".bm-ht").value || 2400;
+      o.tw = q2(".bm-tw").value;
+      o.pad = q2(".bm-pad").value;
+      o.fire = q2(".bm-fire").value;
+      if (!o.fire) delete o.fire;
+      o.ord = ordNow;
+      o.bc = bcNow;
+      dirty = true;
+      draw();
+    };
+    q2(".bm-x").onclick = () => d.remove();
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      save();
+      d.remove();
+      toast("Beam saved");
+    };
+    q2(".bm-detail").onclick = () => {
+      save();
+      d.remove();
+      beamDetail(o);
+    };
+  }
+  /* 📦 one order for all the beams on the page */
+  function beamOrder(rows) {
+    const txt = npbOrderText(
+      rows.map((r) => Object.assign({}, r, { kg: r.kg * ((r.o.ord && r.o.ord.qty) || 1) })),
+      { site: doc.site || opts.site || "", who: coData().name || "" },
+    );
+    const d = document.createElement("div");
+    d.className = "dimask bmsheet";
+    d.innerHTML = `<div class="dimbox"><b>📦 Steel order – ${rows.length} beam${rows.length === 1 ? "" : "s"}</b><div class="who">Grade, ends, finish and delivery come from each beam's sheet. Check it against the calcs before it goes.</div><div class="bm-order"></div><div class="dimbtns"><button type="button" class="btn bm-copy">📋 Copy</button><a class="btn bm-mail" href="#" target="_blank" rel="noopener">✉️ Email</a><button type="button" class="btn primary bm-x">Close</button></div></div>`;
+    ov.appendChild(d);
+    d.querySelector(".bm-order").textContent = txt;
+    d.querySelector(".bm-mail").href =
+      "mailto:?subject=" +
+      encodeURIComponent("Steel order" + (doc.site ? " – " + doc.site : "")) +
+      "&body=" +
+      encodeURIComponent(txt);
+    d.querySelector(".bm-copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(txt);
+        toast("Order copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    d.querySelector(".bm-x").onclick = () => d.remove();
+  }
+  /* 📐 the beam's detail on a new page: the wall either side, the opening, the beam with its bearings, the padstones,
+     and the sizes – drawn to fit the page, not to scale (the figures are written on) */
+  function beamDetail(o) {
+    const r = beamRows().find((x) => x.o === o);
+    if (!r) return;
+    const [bt] = o.bt ? [o.bt] : npBeamOf(o.sec || "");
+    const dm = npbDims(o.sec, bt) || { d: 200, b: 100 };
+    doc.pages[pg].objs = doc.objs;
+    const W = doc.w,
+      H = doc.h;
+    const k = (W * 0.62) / Math.max(1000, r.len + 1200);
+    const x0 = W * 0.16,
+      yb = H * 0.42;
+    const pier = 600 * k;
+    const dpt = Math.max(dm.d * k, H * 0.035),
+      padH = Math.max(100 * k, H * 0.02);
+    const xa = x0 + pier,
+      xb = xa + r.span * k;
+    const col = "#111111",
+      lw = pwFor(4),
+      fs = Math.max(14, Math.round(H * 0.018));
+    const objs = [];
+    const box = (ax, ay, bx, by, extra) =>
+      objs.push(Object.assign({ t: "rect", a: [ax, ay], b: [bx, by], c: col, w: lw }, extra || {}));
+    const txt = (x, y, s2, size) =>
+      objs.push({ t: "text", x, y, s: s2, c: "#222222", size: size || fs, ly: "notes" });
+    /* the wall either side, the opening */
+    box(x0, yb - H * 0.05, xa, yb + H * 0.3, { fill: "#d9c3a5", fa: 0.6 });
+    box(xb, yb - H * 0.05, xb + pier, yb + H * 0.3, { fill: "#d9c3a5", fa: 0.6 });
+    /* the padstones and the beam on them */
+    box(xa - r.bearA * k - 40 * k, yb, xa, yb + padH, { fill: "#9ca3af", fa: 0.7 });
+    box(xb, yb, xb + r.bearB * k + 40 * k, yb + padH, { fill: "#9ca3af", fa: 0.7 });
+    box(xa - r.bearA * k, yb - dpt, xb + r.bearB * k, yb, { fill: "#6b7280", fa: 0.55 });
+    /* the sizes */
+    const dim = (ax, bx, y, s2) =>
+      objs.push({ t: "dim", a: [ax, y], b: [bx, y], s: s2, c: "#e11d2a", w: pwFor(2), size: fs });
+    dim(xa, xb, yb + H * 0.12, "Clear span " + r.span + " mm");
+    dim(xa - r.bearA * k, xa, yb - dpt - H * 0.05, r.bearA + " bearing");
+    dim(xb, xb + r.bearB * k, yb - dpt - H * 0.05, r.bearB + " bearing");
+    dim(xa - r.bearA * k, xb + r.bearB * k, yb - dpt - H * 0.11, "Cut length " + r.len + " mm");
+    txt(
+      x0,
+      H * 0.08,
+      `${o.mark || "Beam"} – ${o.sec || "section to confirm"}${o.ord && o.ord.grade ? ", " + o.ord.grade : ""}`,
+      Math.round(fs * 1.5),
+    );
+    txt(x0, H * 0.08 + fs * 2.2, `Padstones: ${r.pad}, one each end, bedded in mortar.`);
+    txt(x0, H * 0.08 + fs * 3.6, npbFire(dm.d, dm.b, r.len, o.fire || "").text + ".");
+    txt(
+      x0,
+      yb + H * 0.33,
+      "Not to scale. Check all sizes against the engineer's calculations before ordering or building.",
+      Math.round(fs * 0.85),
+    );
+    objs.forEach((ob) => (ob.ly = ob.ly || "elev"));
+    doc.pages.push({ name: (o.mark || "Beam") + " detail", type: "Detail drawing", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Beam detail drawn on a new page");
+  }
   /* door & window survey items for this job, to check sizes against */
   const jobClient = () => {
     const s = doc.site || opts.site;
@@ -5764,8 +6085,8 @@ async function openNotePage(opts) {
         <div class="dimbtns" style="flex-wrap:wrap"><button type="button" class="btn sc-num">🔢 Number them</button><button type="button" class="btn sc-put">📝 Put on drawing</button>${ownerMode() ? `<button type="button" class="btn primary sc-dws">🪟 Start a door &amp; window survey from these</button>` : ""}</div>`
              : `<div class="nothing">No doors or windows on this page yet.</div>`
            : bms.length
-             ? `<div class="who">Pick the section from the engineer's calcs. Overall length = clear span + bearing at each end.</div><div class="tablewrap"><table><thead><tr><th>No.</th><th>Section</th><th class="num">Span</th><th class="num">Bearing</th><th class="num">Length</th><th>Padstones</th><th class="num">kg</th></tr></thead><tbody>${bms.map((r, i) => `<tr><td><b>${esc(r.mark || "–")}</b></td><td><select class="sc-sec" data-i="${i}" style="min-width:150px"><option value="">Choose…</option>${BEAM_SECS.map(([s]) => `<option${s === r.sec ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></td><td class="num">${r.span}</td><td class="num"><input class="sc-bear" data-i="${i}" inputmode="numeric" value="${r.bear}" style="width:64px"></td><td class="num"><b>${r.len}</b></td><td><select class="sc-pad" data-i="${i}">${BEAM_PADS.map((p) => `<option${p === r.pad ? " selected" : ""}>${esc(p)}</option>`).join("")}</select></td><td class="num">${r.kg ? Math.round(r.kg) : "–"}</td></tr>`).join("")}<tr><td colspan="6"><b>Total steel</b></td><td class="num"><b>${Math.round(bms.reduce((a, r) => a + r.kg, 0))}</b></td></tr></tbody></table></div>
-        <div class="dimbtns" style="flex-wrap:wrap"><button type="button" class="btn sc-num">🔢 Number them</button><button type="button" class="btn sc-put">📝 Put on drawing</button><button type="button" class="btn sc-copy">📋 Copy</button></div>`
+             ? `<div class="who">Pick the section from the engineer's calcs. Overall length = clear span + bearing at each end.</div><div class="tablewrap"><table><thead><tr><th>No.</th><th>Section</th><th class="num">Span</th><th class="num">Bearing</th><th class="num">Length</th><th>Padstones</th><th class="num">kg</th><th>Where it's got to</th><th></th></tr></thead><tbody>${bms.map((r, i) => `<tr><td><b>${esc(r.mark || "–")}</b></td><td><select class="sc-sec" data-i="${i}" style="min-width:150px"><option value="">Choose…</option>${BEAM_SECS.map(([s]) => `<option${s === r.sec ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></td><td class="num">${r.span}</td><td class="num"><input class="sc-bear" data-i="${i}" inputmode="numeric" value="${r.bear}" style="width:64px"></td><td class="num"><b>${r.len}</b></td><td><select class="sc-pad" data-i="${i}">${BEAM_PADS.map((p) => `<option${p === r.pad ? " selected" : ""}>${esc(p)}</option>`).join("")}</select></td><td class="num">${r.kg ? Math.round(r.kg) : "–"}</td><td>${esc(npbStage(r.o.bc))}</td><td><button type="button" class="btn sc-sheet" data-i="${i}">📋 Sheet</button></td></tr>`).join("")}<tr><td colspan="6"><b>Total steel</b></td><td class="num"><b>${Math.round(bms.reduce((a, r) => a + r.kg, 0))}</b></td><td colspan="2"></td></tr></tbody></table></div>
+        <div class="dimbtns" style="flex-wrap:wrap"><button type="button" class="btn sc-num">🔢 Number them</button><button type="button" class="btn sc-put">📝 Put on drawing</button><button type="button" class="btn sc-copy">📋 Copy</button><button type="button" class="btn primary sc-order">📦 Order all the steel</button></div>`
              : `<div class="nothing">No steel beams yet. Use 🔩 Steel beam in 🏗 Build, then draw it from bearing to bearing.</div>`
        }
        <div class="dimbtns"><button type="button" class="btn primary sc-x">Close</button></div></div>`;
@@ -5798,12 +6119,25 @@ async function openNotePage(opts) {
             render();
           }),
       );
+      d.querySelectorAll(".sc-sheet").forEach(
+        (b) =>
+          (b.onclick = () => {
+            d.remove();
+            beamSheet(bms[+b.dataset.i].o);
+          }),
+      );
+      {
+        const ob = d.querySelector(".sc-order");
+        if (ob) ob.onclick = () => beamOrder(bms);
+      }
       d.querySelectorAll(".sc-bear").forEach(
         (s) =>
           (s.onchange = () => {
             const o = bms[+s.dataset.i].o;
             snap();
             o.bear = Math.max(0, +s.value || 0);
+            delete o.bearA;
+            delete o.bearB;
             dirty = true;
             render();
           }),
@@ -9489,6 +9823,7 @@ async function openNotePage(opts) {
     const ts = fb.querySelector(".nfst-t"),
       ss = fb.querySelector(".nfst-s");
     fb.querySelector(".nfst-padrow").hidden = !beam;
+    fb.querySelector(".nfst-sheetrow").hidden = !beam;
     fb.querySelector(".nfst-xrow").hidden = true;
     const info = fb.querySelector(".nfst-info");
     if (beam) {
@@ -9727,6 +10062,10 @@ async function openNotePage(opts) {
         if (v) upd((o) => setSize(o, v));
       };
       fb.querySelector(".nfst-p").onchange = (e) => upd((o) => (o.pad = e.target.value));
+      fb.querySelector(".nfst-sheet").onclick = () => {
+        const o = cur();
+        if (o && isBeam(o)) beamSheet(o);
+      };
     }
     /* a survey opening: its mark, its frame width (at the drawing's scale) and, for a window, how it opens */
     fb.querySelector(".nfsv").onchange = (e) => {
