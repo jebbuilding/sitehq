@@ -64,6 +64,16 @@ import {
   rsWallsFromRoom,
 } from "./room-sketch.js";
 import { npSmartShape, npsRectilinear } from "./smart-pen.js";
+import {
+  NPSB_BAL,
+  NPSB_GLASSFIX,
+  NPSB_RAIL,
+  NPSB_TREADS,
+  NPSB_TYPES,
+  NPSB_USE,
+  npsbCalc,
+  npsbOrderText,
+} from "./stair-builder.js";
 import { NP_REAL, NP_STD } from "./standard-sizes.js";
 import {
   NP_BEAM_TYPES,
@@ -403,6 +413,7 @@ async function openNotePage(opts) {
         opts.pro
           ? `<span class="np-build" style="display:contents">${[
               ["beam", "🔩", "Steel beam"],
+              ["stairb", "🪜", "Stair builder"],
               ["dimall", "📏", "Dimension walls"],
               ["num", "🔢", "Number"],
               ["sched", "📋", "Schedules"],
@@ -516,7 +527,7 @@ async function openNotePage(opts) {
           <div class="nfrow"><span class="nfl">Extra</span><button type="button" class="nfb nfaddt">➕ Add timber</button><button type="button" class="nfb nfclrt">Clear extras</button></div><div class="who nftinfo"></div></div>
         <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div><div class="nfrow nfst-sheetrow"><button type="button" class="nfb nfst-sheet">📋 Open the beam sheet: lifting, props, padstones, fire, order, sign-off</button></div></div>
         <div class="nfstairs" hidden><div class="nfrow"><span class="nfl">Steps</span><button type="button" class="nfb nfst" data-d="-1" aria-label="One step fewer">−</button><b class="nfstn" style="min-width:34px;text-align:center"></b><button type="button" class="nfb nfst" data-d="1" aria-label="One step more">+</button><button type="button" class="nfb nfsdir">⇅ Up / down</button></div>
-          <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div></div>
+          <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div><div class="nfrow"><button type="button" class="nfb nfs-build">🪜 Open in the stair builder: type, materials, glass rail, checks, side view</button></div></div>
         <div class="nfrow nfwhat"><span class="nfl">Adjust</span><div class="seg nfseg"><button type="button" data-w="all" aria-pressed="true">Whole item</button><button type="button" data-w="a" aria-pressed="false">● Start</button><button type="button" data-w="b" aria-pressed="false">● End</button></div></div>
         <div class="nfrow"><span class="nfl">Move</span><button type="button" class="nfb" data-m="-1,0" aria-label="Left">◀</button><button type="button" class="nfb" data-m="0,-1" aria-label="Up">▲</button><button type="button" class="nfb" data-m="0,1" aria-label="Down">▼</button><button type="button" class="nfb" data-m="1,0" aria-label="Right">▶</button><select class="nfstep" aria-label="Step"></select></div>
         <div class="nfrow nfturn"><span class="nfl">Turn</span><button type="button" class="nfb" data-r="-15">↺15°</button><button type="button" class="nfb" data-r="-1">↺1°</button><button type="button" class="nfb" data-r="-0.1">↺0.1°</button><button type="button" class="nfb" data-r="0.1">↻0.1°</button><button type="button" class="nfb" data-r="1">↻1°</button><button type="button" class="nfb" data-r="15">↻15°</button></div>
@@ -6057,6 +6068,384 @@ async function openNotePage(opts) {
     goPage(doc.pages.length - 1);
     toast("Beam detail drawn on a new page");
   }
+  /* ===== 🪜 the stair builder (stair-builder.js does the working out): pick the type and use, the floor-to-floor
+     height and width, the steps, materials and balustrade; Part K checks as you go; Save puts it on the plan (the
+     plan symbol sized to its footprint); 📐 draws the side view on a new page; the order to copy or email ===== */
+  function stairBuilder(o0) {
+    const c = Object.assign(
+      {
+        type: "straight",
+        use: "private",
+        ftf: (o0 && o0.rise) || 2600,
+        width: 860,
+        open: 1,
+        tread: "pine",
+        risers: "closed",
+        bal: "spindles",
+        rail: "pine",
+        glassFix: "channel",
+        head: "",
+        dia: 1600,
+        turn: 360,
+        n: "",
+        going: "",
+      },
+      (o0 && o0.sb) || {},
+    );
+    if (o0 && !o0.sb)
+      c.type =
+        o0.k === "stairsl"
+          ? "quarter"
+          : o0.k === "stairsu"
+            ? "half"
+            : o0.k === "spiral"
+              ? "spiral"
+              : "straight";
+    const opt = (list, v) =>
+      list
+        .map(
+          ([k, l]) =>
+            `<option value="${esc(k)}"${String(k) === String(v) ? " selected" : ""}>${esc(l)}</option>`,
+        )
+        .join("");
+    const d = document.createElement("div");
+    d.className = "dimask sbuild";
+    d.innerHTML = `<form class="dimbox" role="dialog" aria-label="Stair builder"><b>🪜 Stair builder</b>
+      <div class="who">Design it step by step – it checks it against Approved Document K as you go. A guide: the stair maker (and the engineer for steel) confirm the design.</div>
+      <section class="sb-sec"><b>1 · What kind of stair</b><div class="sb-types">${NPSB_TYPES.map(([k, l, i]) => `<button type="button" class="sb-type" data-k="${k}" aria-pressed="${k === c.type}"><span aria-hidden="true">${i}</span>${esc(l)}</button>`).join("")}</div>
+        <div class="sb-row"><label>Used as<select class="sb-use">${opt(
+          Object.entries(NPSB_USE).map(([k, v]) => [k, v.name]),
+          c.use,
+        )}</select></label></div></section>
+      <section class="sb-sec"><b>2 · Sizes</b><div class="sb-row"><label>Floor to floor (mm)<input class="sb-ftf" type="number" inputmode="numeric" value="${esc(c.ftf)}"></label><label>Width (mm)<input class="sb-w" type="number" inputmode="numeric" value="${esc(c.width)}"></label><label>Sides open (no wall)<select class="sb-open">${opt(
+        [
+          [0, "None – walls both sides"],
+          [1, "One side"],
+          [2, "Both sides"],
+        ],
+        c.open,
+      )}</select></label><label>Headroom you have (mm)<input class="sb-head" type="number" inputmode="numeric" value="${esc(c.head)}" placeholder="measure it"></label></div>
+        <div class="sb-row sb-spiral"><label>Diameter (mm)<select class="sb-dia">${opt(
+          [1200, 1400, 1600, 1800, 2000, 2200].map((v) => [v, v + " mm"]),
+          c.dia,
+        )}</select></label><label>Turns round<select class="sb-turn">${opt(
+          [
+            [180, "Half turn (180°)"],
+            [270, "Three-quarters (270°)"],
+            [360, "Full turn (360°)"],
+            [450, "1¼ turns (450°)"],
+          ],
+          c.turn,
+        )}</select></label></div></section>
+      <section class="sb-sec"><b>3 · Steps</b><div class="sb-row"><label>Risers<span class="sb-nrow"><button type="button" class="btn sb-n" data-d="-1" aria-label="One fewer">−</button><b class="sb-nv"></b><button type="button" class="btn sb-n" data-d="1" aria-label="One more">+</button><button type="button" class="btn sb-best">Best</button></span></label><label class="sb-goingl">Going (mm, blank = best)<input class="sb-going" type="number" inputmode="numeric" value="${esc(c.going)}"></label></div><div class="sb-fig"></div></section>
+      <section class="sb-sec"><b>4 · Materials</b><div class="sb-row"><label>Treads<select class="sb-tread">${opt(NPSB_TREADS, c.tread)}</select></label><label class="sb-risl">Risers<select class="sb-ris">${opt(
+        [
+          ["closed", "Closed"],
+          ["open", "Open"],
+        ],
+        c.risers,
+      )}</select></label></div></section>
+      <section class="sb-sec"><b>5 · Balustrade and handrail</b><div class="sb-row"><label>Balustrade<select class="sb-bal">${opt(NPSB_BAL, c.bal)}</select></label><label class="sb-gfl">Glass fixed by<select class="sb-gfix">${opt(NPSB_GLASSFIX, c.glassFix)}</select></label><label>Handrail<select class="sb-rail">${opt(NPSB_RAIL, c.rail)}</select></label></div><div class="sb-gnote who"></div></section>
+      <section class="sb-sec"><b>✅ Checks (Approved Document K)</b><div class="sb-checks"></div></section>
+      <section class="sb-sec"><b>🧾 What it needs</b><div class="sb-q"></div></section>
+      <section class="sb-sec"><b>📦 Order for the joiner / fabricator</b><div class="sb-order"></div><div class="sb-row"><button type="button" class="btn sb-copy">📋 Copy</button><a class="btn sb-mail" href="#" target="_blank" rel="noopener">✉️ Email</a></div></section>
+      <div class="dimbtns"><button type="button" class="btn sb-side">📐 Draw the side view</button><button type="button" class="btn sb-x">Cancel</button><button type="submit" class="btn primary">${o0 ? "Save" : "Put it on the plan"}</button></div></form>`;
+    ov.appendChild(d);
+    const q2 = (x) => d.querySelector(x);
+    let k;
+    const read = () => {
+      c.use = q2(".sb-use").value;
+      c.ftf = Math.max(300, +q2(".sb-ftf").value || 2600);
+      c.width = Math.max(400, +q2(".sb-w").value || 860);
+      c.open = +q2(".sb-open").value;
+      c.head = q2(".sb-head").value;
+      c.dia = +q2(".sb-dia").value;
+      c.turn = +q2(".sb-turn").value;
+      c.going = q2(".sb-going").value;
+      c.tread = q2(".sb-tread").value;
+      c.risers = q2(".sb-ris").value;
+      c.bal = q2(".sb-bal").value;
+      c.glassFix = q2(".sb-gfix").value;
+      c.rail = q2(".sb-rail").value;
+    };
+    const show = () => {
+      read();
+      k = npsbCalc(c);
+      const steel = k.steel,
+        sp = k.spiral;
+      q2(".sb-spiral").hidden = !sp;
+      q2(".sb-goingl").hidden = sp;
+      q2(".sb-risl").hidden = steel || sp;
+      q2(".sb-gfl").hidden = c.bal !== "glass";
+      q2(".sb-nv").textContent = k.n + (c.n ? "" : " (best)");
+      q2(".sb-fig").innerHTML =
+        `<span><b>${k.n}</b> risers of <b>${Math.round(k.rise)} mm</b></span>${sp ? "" : `<span>going <b>${Math.round(k.going)} mm</b></span><span><b>${Math.round(k.pitch)}°</b></span><span>2R+G ${Math.round(k.two)}</span>`}<span>takes up about <b>${Math.round(k.foot[0])} × ${Math.round(k.foot[1])} mm</b></span>`;
+      q2(".sb-checks").innerHTML = k.ck
+        .map(
+          (x) =>
+            `<div class="sb-ck ${x.ok === false ? "sb-bad" : x.ok ? "sb-ok" : ""}">${x.ok === false ? "⚠" : x.ok ? "✓" : "•"} ${esc(x.t)}</div>`,
+        )
+        .join("");
+      q2(".sb-q").innerHTML = k.q
+        .map(([a, b]) => `<div class="drow"><span>${esc(a)}</span><b>${esc(String(b))}</b></div>`)
+        .join("");
+      q2(".sb-gnote").textContent = k.glassNote;
+      const txt = npsbOrderText(k, { site: doc.site || opts.site || "", who: coData().name || "" });
+      q2(".sb-order").textContent = txt;
+      q2(".sb-mail").href =
+        "mailto:?subject=" +
+        encodeURIComponent("Stair" + (doc.site ? " – " + doc.site : "")) +
+        "&body=" +
+        encodeURIComponent(txt);
+    };
+    d.querySelectorAll(".sb-type").forEach(
+      (b) =>
+        (b.onclick = () => {
+          c.type = b.dataset.k;
+          d.querySelectorAll(".sb-type").forEach((x) =>
+            x.setAttribute("aria-pressed", String(x === b)),
+          );
+          if (c.type === "ext" || c.type === "extDog") {
+            q2(".sb-tread").value = "grating";
+            q2(".sb-rail").value = "steel";
+            q2(".sb-bal").value = "metal";
+            if (q2(".sb-use").value === "private") q2(".sb-use").value = "utility";
+          }
+          show();
+        }),
+    );
+    d.querySelectorAll(".sb-n").forEach(
+      (b) =>
+        (b.onclick = () => {
+          c.n = Math.max(2, (k ? k.n : 13) + +b.dataset.d);
+          show();
+        }),
+    );
+    q2(".sb-best").onclick = () => {
+      c.n = "";
+      q2(".sb-going").value = "";
+      show();
+    };
+    d.querySelectorAll("input,select").forEach((el) => el.addEventListener("input", show));
+    d.querySelectorAll("select").forEach((el) => el.addEventListener("change", show));
+    show();
+    q2(".sb-copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(q2(".sb-order").textContent);
+        toast("Copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    q2(".sb-x").onclick = () => d.remove();
+    /* onto the plan: the stair symbol for the type, sized to its footprint */
+    const save = () => {
+      show();
+      const kind = k.spiral
+        ? "spiral"
+        : ["quarter", "quarterW"].includes(c.type)
+          ? "stairsl"
+          : ["half", "halfW", "extDog"].includes(c.type)
+            ? "stairsu"
+            : "stairs";
+      snap();
+      let o = o0;
+      if (!o) {
+        const r = stage.getBoundingClientRect();
+        const m = toPage(r.left + r.width / 2, r.top + r.height / 2);
+        o = {
+          t: "shape",
+          k: kind,
+          a: m.slice(),
+          b: [m[0] + 40, m[1] + 40],
+          c: "#111111",
+          w: pwFor(3),
+        };
+        doc.objs.push(o);
+      }
+      o.k = kind;
+      o.n = k.n;
+      o.rise = c.ftf;
+      o.sb = JSON.parse(JSON.stringify(c));
+      if (doc.scale) {
+        const cx = (o.a[0] + o.b[0]) / 2,
+          cy = (o.a[1] + o.b[1]) / 2,
+          W = toUnits(c.width);
+        let w, h;
+        if (kind === "stairs") {
+          w = toUnits(k.foot[0]);
+          h = toUnits(k.foot[1]);
+        } else if (kind === "stairsl") {
+          const mn = W / 0.38;
+          h = mn;
+          w = Math.max(mn, toUnits(k.run) + 2 * W - mn);
+        } else if (kind === "stairsu") {
+          w = W / 0.48;
+          h = toUnits(k.run) / 2 + W;
+          if (W > 0.3 * h) h = W / 0.3;
+        } else w = h = toUnits(c.dia);
+        o.a = [cx - w / 2, cy - h / 2];
+        o.b = [cx + w / 2, cy + h / 2];
+        delete o.r;
+      }
+      sel = doc.objs.indexOf(o);
+      dirty = true;
+      draw();
+      return o;
+    };
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      save();
+      d.remove();
+      toast(
+        doc.scale
+          ? "Stair on the plan, sized to its footprint"
+          : "Stair on the plan – set a scale in 📐 Paper to size it",
+      );
+    };
+    q2(".sb-side").onclick = () => {
+      const o = save();
+      d.remove();
+      stairSide(o);
+    };
+  }
+  /* 📐 the stair's side view on a new page, unfolded into one run: the steps, both floors, the pitch line, handrail
+     and headroom lines, the balustrade, and the sizes – drawn to fit, not to scale (the figures are written on) */
+  function stairSide(o) {
+    const k = npsbCalc(o.sb || {});
+    const c = k.c;
+    doc.pages[pg].objs = doc.objs;
+    const Wp = doc.w,
+      Hp = doc.h;
+    const going = k.spiral
+      ? (Math.PI * c.dia * 0.6 * (c.turn / 360)) / Math.max(1, k.treads)
+      : k.going;
+    const runAll = k.treads * going + (k.landing ? c.width : 0);
+    const sc = Math.min((Wp * 0.62) / (runAll + 600), (Hp * 0.5) / (c.ftf + 2200));
+    const x0 = Wp * 0.16,
+      y0 = Hp * 0.8;
+    const col = "#111111",
+      lw = pwFor(4),
+      thin = pwFor(1.5),
+      fs = Math.max(14, Math.round(Hp * 0.018));
+    const objs = [];
+    const L = (a, b, extra) =>
+      objs.push(Object.assign({ t: "line", a, b, c: col, w: lw }, extra || {}));
+    const T = (x, y, s2, size) =>
+      objs.push({ t: "text", x, y, s: s2, c: "#222222", size: size || fs, ly: "notes" });
+    const P = (xm, ym) => [x0 + xm * sc, y0 - ym * sc];
+    /* the floors */
+    L(P(-500, 0), P(0, 0));
+    L(P(runAll, c.ftf), P(runAll + 500, c.ftf));
+    /* the steps (a landing halfway for L / U types) */
+    let x = 0,
+      y = 0;
+    const half = k.landing ? Math.ceil(k.n / 2) : -1;
+    const nosings = [];
+    for (let i = 1; i <= k.n; i++) {
+      L(P(x, y), P(x, y + k.rise));
+      y += k.rise;
+      nosings.push([x, y]);
+      if (i < k.n) {
+        const g = i === half ? c.width : going;
+        L(P(x, y), P(x + g, y));
+        x += g;
+      }
+    }
+    /* the pitch line, the handrail above it and the headroom line */
+    const a0 = [0, k.rise],
+      a1 = nosings[nosings.length - 1];
+    L(P(...a0), P(...a1), { c: "#2563eb", w: thin, ls: "dash" });
+    L(P(a0[0], a0[1] + 900), P(a1[0], a1[1] + 900), { c: "#7c2d12", w: lw });
+    L(P(a0[0], a0[1] + 2000), P(a1[0], a1[1] + 2000), { c: "#16a34a", w: thin, ls: "dash" });
+    T(...P(a1[0] * 0.55, a1[1] * 0.55 + 2050), "2000 headroom", Math.round(fs * 0.8));
+    T(...P(a1[0] * 0.55, a1[1] * 0.55 + 950), "Handrail 900–1000", Math.round(fs * 0.8));
+    /* the balustrade between the treads and the handrail */
+    if (c.bal === "glass") {
+      const panels = Math.max(1, Math.ceil(Math.hypot(a1[0] - a0[0], a1[1] - a0[1]) / 1000));
+      for (let p2 = 0; p2 < panels; p2++) {
+        const f0 = p2 / panels + 0.01,
+          f1 = (p2 + 1) / panels - 0.01;
+        const s0 = [a0[0] + (a1[0] - a0[0]) * f0, a0[1] + (a1[1] - a0[1]) * f0 + 50],
+          s1 = [a0[0] + (a1[0] - a0[0]) * f1, a0[1] + (a1[1] - a0[1]) * f1 + 50];
+        const t0 = [s0[0], s0[1] + 800],
+          t1 = [s1[0], s1[1] + 800];
+        [
+          [s0, s1],
+          [s1, t1],
+          [t1, t0],
+          [t0, s0],
+        ].forEach(([u, v]) => L(P(...u), P(...v), { c: "#0ea5e9", w: thin }));
+      }
+    } else if (c.bal === "spindles" || c.bal === "metal") {
+      nosings.forEach(([nx, ny], i) => {
+        if (i === nosings.length - 1) return;
+        [0.25, 0.75].forEach((f) => {
+          const sx = nx + going * f,
+            top = a0[1] + ((sx - a0[0]) / Math.max(1, a1[0] - a0[0])) * (a1[1] - a0[1]) + 900;
+          L(P(sx, ny), P(sx, top), { w: thin });
+        });
+      });
+    } else if (c.bal === "cable") {
+      for (let h = 150; h < 900; h += 100)
+        L(P(a0[0], a0[1] + h), P(a1[0], a1[1] + h), { w: thin, c: "#64748b" });
+    }
+    if (k.steel) L(P(-100, 0), P(a1[0] + 100, c.ftf), { w: lw * 2.2, c: "#374151" });
+    /* the sizes */
+    objs.push({
+      t: "dim",
+      a: P(-350, 0),
+      b: P(-350, c.ftf),
+      s: "Floor to floor " + c.ftf,
+      c: "#e11d2a",
+      w: pwFor(2),
+      size: fs,
+    });
+    objs.push({
+      t: "dim",
+      a: P(0, -250),
+      b: P(runAll, -250),
+      s: (k.spiral ? "Unfolded " : "Going ") + Math.round(runAll) + " mm",
+      c: "#e11d2a",
+      w: pwFor(2),
+      size: fs,
+    });
+    const T2 = (NPSB_TYPES.find((t) => t[0] === c.type) || [])[1] || "Stair";
+    T(
+      x0,
+      Hp * 0.08,
+      `${T2} – ${k.n} risers of ${Math.round(k.rise)}${k.spiral ? "" : `, going ${Math.round(k.going)}, ${Math.round(k.pitch)}°`}`,
+      Math.round(fs * 1.4),
+    );
+    T(
+      x0,
+      Hp * 0.08 + fs * 2,
+      `Treads: ${(NPSB_TREADS.find((t) => t[0] === c.tread) || [])[1]}. Balustrade: ${(NPSB_BAL.find((t) => t[0] === c.bal) || [])[1]}. Handrail: ${(NPSB_RAIL.find((t) => t[0] === c.rail) || [])[1]}.`,
+    );
+    T(
+      x0,
+      Hp * 0.08 + fs * 3.4,
+      k.ck.filter((x2) => x2.ok === false).length
+        ? "⚠ " +
+            k.ck
+              .filter((x2) => x2.ok === false)
+              .map((x2) => x2.t)
+              .join("; ")
+        : "✓ Within Approved Document K for the use picked (check with building control).",
+    );
+    T(
+      x0,
+      Hp * 0.93,
+      (k.landing || k.spiral ? "Shown unfolded into one run. " : "") +
+        "Not to scale – sizes written on. The stair maker confirms the design.",
+      Math.round(fs * 0.8),
+    );
+    objs.forEach((ob) => (ob.ly = ob.ly || "elev"));
+    doc.pages.push({ name: "Stair side view", type: "Section", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Stair side view drawn on a new page");
+  }
   /* door & window survey items for this job, to check sizes against */
   const jobClient = () => {
     const s = doc.site || opts.site;
@@ -7823,6 +8212,7 @@ async function openNotePage(opts) {
             d.querySelector(".nm-x").onclick = () => d.remove();
           }
         } else if (a === "sched") schedDlg();
+        else if (a === "stairb") stairBuilder(null);
         else if (a === "grid") gridDlg();
         else if (a === "elev") elevFromWall();
         else if (a === "elev3d") elevMenu();
@@ -10123,6 +10513,10 @@ async function openNotePage(opts) {
         if (v) upd((o) => setSize(o, v));
       };
       fb.querySelector(".nfst-p").onchange = (e) => upd((o) => (o.pad = e.target.value));
+      fb.querySelector(".nfs-build").onclick = () => {
+        const o = cur();
+        if (o) stairBuilder(o);
+      };
       fb.querySelector(".nfst-sheet").onclick = () => {
         const o = cur();
         if (o && isBeam(o)) beamSheet(o);
