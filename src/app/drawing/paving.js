@@ -432,7 +432,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
-    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span class="nlb-ll">Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span class="nlb-al">Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span class="nlb-au">°</span><span class="nlb-dirs" role="group" aria-label="Which way"><button type="button" class="btn nlb-dir" data-a="0" aria-label="Right">→</button><button type="button" class="btn nlb-dir" data-a="90" aria-label="Up">↑</button><button type="button" class="btn nlb-dir" data-a="180" aria-label="Left">←</button><button type="button" class="btn nlb-dir" data-a="270" aria-label="Down">↓</button></span><button type="button" class="btn nlb-padb" aria-pressed="false" title="Number pad">🔢</button><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button><div class="nlb-pad" hidden>${["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => `<button type="button" class="btn nlb-k" data-k="${k}">${k}</button>`).join("")}</div></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><span class="np-ckbox" hidden><select class="np-ck" aria-label="Kind of corner"><option value="">⌐ Sharp corner</option><option value="r">◜ Rounded corner</option><option value="c">◸ Cut corner (splay)</option></select><input class="np-cks" type="number" inputmode="decimal" step="any" value="300" aria-label="Size of the rounded or cut corner"><span class="np-cku">mm</span></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
+    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span class="nlb-ll">Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span class="nlb-al">Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span class="nlb-au">°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-morebtn" aria-expanded="false" title="Which way, and a number pad">⋯</button><button type="button" class="btn nlb-min" title="Make it small" aria-label="Make it small">–</button><button type="button" class="btn nlb-x" aria-label="Close">✕</button><span class="nlb-extra" hidden><span class="nlb-dirs" role="group" aria-label="Which way"><button type="button" class="btn nlb-dir" data-a="0" aria-label="Right">→</button><button type="button" class="btn nlb-dir" data-a="90" aria-label="Up">↑</button><button type="button" class="btn nlb-dir" data-a="180" aria-label="Left">←</button><button type="button" class="btn nlb-dir" data-a="270" aria-label="Down">↓</button></span><button type="button" class="btn nlb-padb" aria-pressed="false" title="Number pad">🔢 Number pad</button></span><button type="button" class="nlb-sum" hidden title="Show the length and angle"></button><div class="nlb-pad" hidden>${["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => `<button type="button" class="btn nlb-k" data-k="${k}">${k}</button>`).join("")}</div></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><span class="np-ckbox" hidden><select class="np-ck" aria-label="Kind of corner"><option value="">⌐ Sharp corner</option><option value="r">◜ Rounded corner</option><option value="c">◸ Cut corner (splay)</option></select><input class="np-cks" type="number" inputmode="decimal" step="any" value="300" aria-label="Size of the rounded or cut corner"><span class="np-cku">mm</span></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
       NP_PAVE,
     )
       .map(([k, v]) => `<option value="${k}">${v[0]}</option>`)
@@ -7409,6 +7409,32 @@ async function openNotePage(opts) {
   let lenObj = null,
     lbField = null,
     lbFresh = false;
+  /* the length bar small (just a tag) and its extras (which way, number pad) shown – remembered when the browser can */
+  const lbPref = (k) => {
+    try {
+      return localStorage.getItem(k) === "1";
+    } catch (e) {
+      return false;
+    }
+  };
+  let lbSmall = lbPref("np.lbmin"),
+    lbMore = lbPref("np.lbmore");
+  function lbApply() {
+    lb.classList.toggle("nlb-small", lbSmall);
+    lb.querySelector(".nlb-extra").hidden = !lbMore;
+    lb.querySelector(".nlb-morebtn").setAttribute("aria-expanded", String(lbMore));
+    const box = lb.classList.contains("nlb-box"),
+      L = lb.querySelector(".nlb-l").value,
+      A = lb.querySelector(".nlb-a").value;
+    const sum = lb.querySelector(".nlb-sum");
+    sum.hidden = !lbSmall;
+    sum.textContent = box ? `📏 ${L} × ${A} mm` : `📏 ${L} mm · ${A}°`;
+  }
+  const lbKeep = (k, v) => {
+    try {
+      localStorage.setItem(k, v ? "1" : "0");
+    } catch (e) {}
+  };
   const lb = q(".np-lenbar");
   function showLenBar(o) {
     if (!doc.scale || !o || !o.a || !o.b) {
@@ -7428,6 +7454,7 @@ async function openNotePage(opts) {
     if (box) {
       lb.querySelector(".nlb-l").value = Math.round(realMm(Math.abs(o.b[0] - o.a[0])));
       lb.querySelector(".nlb-a").value = Math.round(realMm(Math.abs(o.b[1] - o.a[1])));
+      lbApply();
       lb.hidden = false;
       return;
     }
@@ -7436,6 +7463,7 @@ async function openNotePage(opts) {
     if (an < 0) an += 360;
     lb.querySelector(".nlb-l").value = Math.round(L);
     lb.querySelector(".nlb-a").value = Math.round(an * 10) / 10;
+    lbApply();
     lb.hidden = false;
   }
   lb.querySelector(".nlb-x").onclick = () => {
@@ -7813,6 +7841,22 @@ async function openNotePage(opts) {
       lbFresh = false;
     }),
   );
+  lb.querySelector(".nlb-min").onclick = () => {
+    lbSmall = true;
+    lbKeep("np.lbmin", true);
+    lbApply();
+  };
+  lb.querySelector(".nlb-sum").onclick = () => {
+    lbSmall = false;
+    lbKeep("np.lbmin", false);
+    lbApply();
+  };
+  lb.querySelector(".nlb-morebtn").onclick = () => {
+    lbMore = !lbMore;
+    lbKeep("np.lbmore", lbMore);
+    lbApply();
+  };
+  lb.querySelectorAll(".nlb-l,.nlb-a").forEach((x) => x.addEventListener("input", lbApply));
   lb.querySelector(".nlb-padb").onclick = () => {
     const pad = lb.querySelector(".nlb-pad");
     pad.hidden = !pad.hidden;
@@ -7822,11 +7866,10 @@ async function openNotePage(opts) {
     } catch (e) {}
   };
   {
-    /* open to start with on a touch screen, unless it was shut last time (when the browser can remember that) */
-    let on = !!(window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+    /* shut to start with (James, Nov 2026: "I don't always need that"), unless it was left open last time */
+    let on = false;
     try {
-      const v = localStorage.getItem("np.pad");
-      if (v === "1" || v === "0") on = v === "1";
+      on = localStorage.getItem("np.pad") === "1";
     } catch (e) {}
     if (on) {
       lb.querySelector(".nlb-pad").hidden = false;

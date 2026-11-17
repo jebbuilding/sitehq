@@ -72,7 +72,11 @@ const R=(x)=>Math.round(x);
  /* a line: number pad and direction */
  await p.click('.np-t[data-t=line]');
  S2=await scr([[200,500],[350,500]]);await p.mouse.move(S2[0][0],S2[0][1]);await p.mouse.down();await p.mouse.move(S2[1][0],S2[1][1],{steps:5});await p.mouse.up();await p.waitForTimeout(300);
- ok(await p.innerText('.nlb-ll')==='Length'&&await p.isVisible('.nlb-dir[data-a="90"]'),'a line offers Length with → ↑ ← ↓');
+ ok(await p.innerText('.nlb-ll')==='Length'&&!(await p.isVisible('.nlb-pad'))&&!(await p.isVisible('.nlb-dir')),'a line offers just its Length and Angle (no number pad unless asked)');
+ await p.click('.nlb-morebtn');
+ ok(await p.isVisible('.nlb-dir[data-a="90"]'),'⋯ shows → ↑ ← ↓ and the number pad button');
+ await p.click('.nlb-padb');
+ ok(await p.evaluate(()=>{const k=document.querySelector('.nlb-k[data-k="7"]');const s=getComputedStyle(k);return s.color!==s.backgroundColor&&k.offsetParent!==null;}),'the number pad keys can be read');
  if(!(await p.isVisible('.nlb-pad')))await p.click('.nlb-padb');
  for(const k of ['2','4','0','0'])await p.click('.nlb-k[data-k="'+k+'"]');
  ok(await p.inputValue('.nlb-l')==='2400','the number pad types 2400');
@@ -80,6 +84,7 @@ const R=(x)=>Math.round(x);
  o=await p.evaluate(()=>window.__np.get());
  let ln=o[o.length-1];const per1000=(bx.b[0]-bx.a[0])/4000;
  ok(Math.abs(ln.a[0]-ln.b[0])<0.01&&Math.abs((ln.a[1]-ln.b[1])/per1000-2400)<1,'↑ makes it 2400 going straight up');
+ await p.click('.nlb-padb');await p.click('.nlb-morebtn');await p.waitForTimeout(150);
  /* on a keyboard: just type the number */
  await p.click('.np-t[data-t=line]');
  S2=await scr([[600,500],[700,500]]);await p.mouse.move(S2[0][0],S2[0][1]);await p.mouse.down();await p.mouse.move(S2[1][0],S2[1][1],{steps:5});await p.mouse.up();await p.waitForTimeout(300);

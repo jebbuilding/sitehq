@@ -160,3 +160,15 @@ body>.dimask.cb3-sg{z-index:320}
 .np-chainbar .np-pwd{min-width:44px;min-height:40px}
 .np-chainbar select{width:auto;max-width:220px;flex:0 1 auto;min-height:40px}
 .np-chainbar{width:max-content}
+
+/* drawing › the length bar: readable keys (they were white on white), compact, and small as a tag when minimised */
+.np-lenbar .btn:not(.primary){background:#4a3f40;color:#fff;border:1px solid #6b5f60}
+.np-lenbar .nlb-l{width:88px}
+.np-lenbar .btn{min-height:40px}
+.np-lenbar .nlb-extra{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.np-lenbar.nlb-small{padding:3px}
+.np-lenbar.nlb-small>*:not(.nlb-sum){display:none!important}
+.np-lenbar .nlb-sum{background:transparent;color:#fff;border:0;font:inherit;font-weight:700;font-size:15px;min-height:40px;padding:0 12px;cursor:pointer}
+.np-lenbar.nlb-small .nlb-sum{display:inline-flex!important;align-items:center}
+.np-lenbar .nlb-extra[hidden]{display:none}
+.np-lenbar{width:max-content}
