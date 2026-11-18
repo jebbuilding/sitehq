@@ -1,5 +1,6 @@
 /* ===== building components: roof parts, claddings, render, walls, floors, foundations, drainage, electrics ===== */
 import { npLbl } from "./construction-details.js";
+import { npsuDraw } from "./section-buildups.js";
 import { npHexMix, npPattern } from "./walls.js";
 export { NP_BLD_BOX, NP_BLD_LINE, NP_LIB, npBldLine, npBldSym };
 const NP_BLD_BOX = new Set([
@@ -115,6 +116,8 @@ const NP_BLD_LINE = new Set([
   "quilt",
   "venttray",
   "eavestray",
+  /* a wall, roof or floor build-up drawn layer by layer */
+  "secbu",
 ]);
 function npBldSym(ctx, o, x0, y0, w, h, cx, cy) {
   const lw = ctx.lineWidth,
@@ -779,6 +782,8 @@ function npBldLine(ctx, o, P, ln, L, lw) {
     if (x) x();
   };
   switch (o.k) {
+    case "secbu":
+      return npsuDraw(ctx, o, P, L, lw);
     case "rafter":
     case "joistl": {
       const d = R(o.k === "rafter" ? 150 : 200, Math.max(lw * 6, 14));
@@ -1649,6 +1654,7 @@ const NP_LIB = [
     "elev",
     "Section: walls & floors",
     [
+      "secbu",
       "eframe",
       "renderl",
       "cladsec",

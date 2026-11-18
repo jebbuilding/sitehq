@@ -1,4 +1,5 @@
 /* ===== walls that join themselves: mitred corners, T-junctions, layered cavity walls, doors and windows cut into walls ===== */
+import { npsuTie } from "./section-buildups.js";
 import { npWindowSwing } from "./window-plan.js";
 export {
   NP_LIN,
@@ -685,6 +686,8 @@ function npDrawStuds(ctx, w) {
 function npDrawAll(ctx, objs, drawObj, extra) {
   const all = extra ? objs.concat([extra]) : objs;
   ctx.__objs = all;
+  /* build-ups that meet are mitred or stopped at each other's faces */
+  npsuTie(all, ctx.__mm);
   const W = npWallInfo(all);
   const att = W.length ? npWallCuts(W, all) : new Set();
   let done = false;

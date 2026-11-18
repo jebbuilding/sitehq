@@ -234,3 +234,13 @@ body>.dimask.cb3-sg{z-index:320}
 .zd .zd-sc{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 .zd .zd-sc .btn{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 12px}
 .zd .zd-sc .btn small{font-size:11px;opacity:.8;font-weight:500}
+
+/* drawing › build-ups */
+.bud .bud-row2{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:6px 0}
+.bud .bud-row2 label{flex:1 1 160px}
+.bud .bud-list{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+.bud .bud-l{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px;border:1px solid var(--line);border-radius:10px}
+.bud .bud-l select{flex:1 1 150px;min-height:44px}
+.bud .bud-l .bud-t{width:64px;min-height:44px}
+.bud .bud-l .bud-n{flex:2 1 180px;min-height:44px}
+.bud .bud-l .btn{min-width:44px;min-height:44px;padding:0 8px}

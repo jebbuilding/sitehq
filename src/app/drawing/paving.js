@@ -63,6 +63,15 @@ import {
   rsWallsAsShapes,
   rsWallsFromRoom,
 } from "./room-sketch.js";
+import {
+  NPSU_LIB,
+  NPSU_MATS,
+  npsuCode,
+  npsuIsMem,
+  npsuLayers,
+  npsuSpec,
+  npsuTotal,
+} from "./section-buildups.js";
 import { npSmartShape, npsRectilinear } from "./smart-pen.js";
 import { nps3Draw, nps3Model, npsbCutList } from "./stair-3d.js";
 import {
@@ -418,6 +427,7 @@ async function openNotePage(opts) {
           ? `<span class="np-build" style="display:contents">${[
               ["beam", "🔩", "Steel beam"],
               ["stairb", "🪜", "Stair builder"],
+              ["secbu", "🧱", "Build-ups"],
               ["dimall", "📏", "Dimension walls"],
               ["num", "🔢", "Number"],
               ["sched", "📋", "Schedules"],
@@ -530,6 +540,7 @@ async function openNotePage(opts) {
           <div class="nfrow nfdirn" hidden><span class="nfl">Direction</span><button type="button" class="nfb nfturnb">⇄ Turn the timbers</button></div>
           <div class="nfrow"><span class="nfl">Extra</span><button type="button" class="nfb nfaddt">➕ Add timber</button><button type="button" class="nfb nfclrt">Clear extras</button></div><div class="who nftinfo"></div></div>
         <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div><div class="nfrow nfst-sheetrow"><button type="button" class="nfb nfst-sheet">📋 Open the beam sheet: lifting, props, padstones, fire, order, sign-off</button></div></div>
+        <div class="nfsecbu" hidden><div class="nfrow"><button type="button" class="nfb nfbu-edit">🧱 Change the layers, thicknesses and tag</button><button type="button" class="nfb nfbu-flip">⇄ Layers to the other side</button><button type="button" class="nfb nfbu-lab">🏷 Label every layer</button></div><div class="who nfbu-info"></div></div>
         <div class="nfstairs" hidden><div class="nfrow"><span class="nfl">Steps</span><button type="button" class="nfb nfst" data-d="-1" aria-label="One step fewer">−</button><b class="nfstn" style="min-width:34px;text-align:center"></b><button type="button" class="nfb nfst" data-d="1" aria-label="One step more">+</button><button type="button" class="nfb nfsdir">⇅ Up / down</button></div>
           <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div><div class="nfrow"><button type="button" class="nfb nfs-build">🪜 Open in the stair builder: type, materials, glass rail, checks, side view</button></div></div>
         <div class="nfrow nfwhat"><span class="nfl">Adjust</span><div class="seg nfseg"><button type="button" data-w="all" aria-pressed="true">Whole item</button><button type="button" data-w="a" aria-pressed="false">● Start</button><button type="button" data-w="b" aria-pressed="false">● End</button></div></div>
@@ -568,6 +579,8 @@ async function openNotePage(opts) {
       }
     })();
   const lastSteel = {};
+  /* the build-up the 🧱 tool draws next */
+  let lastBu = null;
   let lastStud = { sd: 100, cc: 400 },
     addTimber = false;
   let fineNow = false,
@@ -2990,6 +3003,13 @@ async function openNotePage(opts) {
         6,
         toUnits(shapeKind === "cavity" ? 350 : shapeKind === "tstud" ? lastStud.sd || 100 : 100),
       );
+    if (cur.t === "shape" && shapeKind === "secbu") {
+      if (!lastBu) {
+        const bu = npsuLayers("cavbrick");
+        lastBu = { bu, bn: NPSU_LIB[0][1], bc: npsuCode(doc.objs, "EW", bu, NPSU_LIB[0][1]) };
+      }
+      Object.assign(cur, JSON.parse(JSON.stringify(lastBu)));
+    }
     if (cur.t === "shape" && shapeKind === "beam" && lastSteel.sec)
       Object.assign(cur, { bt: lastSteel.bt, bz: lastSteel.bz, sec: lastSteel.sec });
     if (
@@ -3901,6 +3921,214 @@ async function openNotePage(opts) {
         : "Plan symbols: walls, doors, windows, kitchen, bathroom… (looking down from above)",
     );
   };
+  /* 🧱 build-ups: pick a wall, roof or floor build-up, change its layers, then draw it along a face */
+  function buDlg(o) {
+    let bu = JSON.parse(
+      JSON.stringify(o ? o.bu || [] : lastBu ? lastBu.bu : npsuLayers("cavbrick")),
+    );
+    let bn = o ? o.bn || "" : lastBu ? lastBu.bn : NPSU_LIB[0][1];
+    let pre = (NPSU_LIB.find((x) => x[1] === bn) || NPSU_LIB[0])[2];
+    let code = o ? o.bc || "" : npsuCode(doc.objs, pre, bu, bn);
+    const d = document.createElement("div");
+    d.className = "dimask bud";
+    const groups = [...new Set(NPSU_LIB.map((x) => x[3]))];
+    const matOpts = (m) =>
+      Object.entries(NPSU_MATS)
+        .map(
+          ([k2, v]) => `<option value="${k2}"${k2 === m ? " selected" : ""}>${esc(v[0])}</option>`,
+        )
+        .join("");
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Build-up"><b>🧱 ${o ? "Change the build-up" : "Draw a build-up"}</b><div class="who">A wall, roof or floor drawn layer by layer at its real thickness, with membranes in their colours, a tag and a written specification. Generic build-ups: check U-values and Building Regulations for the job.</div>
+      <label>Start from<select class="bud-pre"><option value="">Keep these layers</option>${groups
+        .map(
+          (g) =>
+            `<optgroup label="${esc(g)}">${NPSU_LIB.filter((x) => x[3] === g)
+              .map((x) => `<option value="${x[0]}">${esc(x[1])}</option>`)
+              .join("")}</optgroup>`,
+        )
+        .join("")}</select></label>
+      <div class="bud-row2"><label>Name<input class="bud-name" maxlength="60"></label><label>Tag<input class="bud-code" maxlength="8" style="width:90px"></label></div>
+      <div class="who">Layers from the line you draw outwards (a wall from the inside face, a floor from the ceiling up).</div>
+      <div class="bud-list"></div>
+      <div class="bud-row2"><button type="button" class="btn bud-add">➕ Add a layer</button><b class="bud-tot"></b></div>
+      <label class="tick"><input type="checkbox" class="bud-lab"${o && o.lab ? " checked" : ""}> <span>Label every layer on the drawing</span></label>
+      <div class="dimbtns"><button type="button" class="btn bud-x">Cancel</button><button type="button" class="btn bud-spec">📋 Specification page</button><button type="button" class="btn primary bud-go">${o ? "Save" : "✏️ Draw it"}</button></div></div>`;
+    ov.appendChild(d);
+    const q2 = (x) => d.querySelector(x);
+    q2(".bud-name").value = bn;
+    q2(".bud-code").value = code;
+    const list = () => {
+      q2(".bud-list").innerHTML = bu
+        .map(
+          (l, i) =>
+            `<div class="bud-l" data-i="${i}"><select class="bud-m" aria-label="Material">${matOpts(l.m)}</select><input class="bud-t" inputmode="decimal" aria-label="Thickness in mm" value="${npsuIsMem(l.m) ? "" : esc(String(l.t))}"${npsuIsMem(l.m) ? " disabled placeholder='–'" : ""}><span class="who">mm</span><input class="bud-n" aria-label="Words for the specification" placeholder="${esc((NPSU_MATS[l.m] || [""])[0])}" value="${esc(l.n || "")}"><button type="button" class="btn bud-up" aria-label="Move out">↑</button><button type="button" class="btn bud-dn" aria-label="Move in">↓</button><button type="button" class="btn bud-del" aria-label="Take this layer out">✕</button></div>`,
+        )
+        .reverse()
+        .join("");
+      q2(".bud-tot").textContent = Math.round(npsuTotal(bu)) + " mm overall";
+      d.querySelectorAll(".bud-l").forEach((row) => {
+        const i = +row.dataset.i;
+        row.querySelector(".bud-m").onchange = (e) => {
+          bu[i].m = e.target.value;
+          if (npsuIsMem(bu[i].m)) bu[i].t = 0;
+          else if (!+bu[i].t) bu[i].t = 25;
+          bu[i].n = "";
+          list();
+        };
+        row.querySelector(".bud-t").oninput = (e) => {
+          const old = +row.dataset.was || +bu[i].t || 0;
+          bu[i].t = Math.max(0, +e.target.value || 0);
+          /* keep the words in step: "140 mm … 47 × 140 studs" becomes "150 mm … 47 × 150 studs" */
+          if (bu[i].n && old && bu[i].t && old !== bu[i].t) {
+            bu[i].n = bu[i].n.replace(
+              new RegExp("(^|× )" + old + "(?=\\b| mm)", "g"),
+              "$1" + bu[i].t,
+            );
+            row.querySelector(".bud-n").value = bu[i].n;
+          }
+          if (bu[i].t) row.dataset.was = bu[i].t;
+          q2(".bud-tot").textContent = Math.round(npsuTotal(bu)) + " mm overall";
+        };
+        row.querySelector(".bud-n").oninput = (e) => (bu[i].n = e.target.value);
+        row.querySelector(".bud-up").onclick = () => {
+          if (i < bu.length - 1) [bu[i], bu[i + 1]] = [bu[i + 1], bu[i]];
+          list();
+        };
+        row.querySelector(".bud-dn").onclick = () => {
+          if (i > 0) [bu[i], bu[i - 1]] = [bu[i - 1], bu[i]];
+          list();
+        };
+        row.querySelector(".bud-del").onclick = () => {
+          bu.splice(i, 1);
+          list();
+        };
+      });
+    };
+    list();
+    q2(".bud-pre").onchange = (e) => {
+      const b = NPSU_LIB.find((x) => x[0] === e.target.value);
+      if (!b) return;
+      bu = npsuLayers(b[0]);
+      q2(".bud-name").value = b[1];
+      q2(".bud-code").value = npsuCode(
+        doc.objs.filter((x) => x !== o),
+        b[2],
+        bu,
+        b[1],
+      );
+      list();
+    };
+    q2(".bud-add").onclick = () => {
+      bu.push({ m: "timber", t: 25, n: "" });
+      list();
+    };
+    q2(".bud-x").onclick = () => d.remove();
+    q2(".bud-spec").onclick = () => {
+      d.remove();
+      buSpecPage();
+    };
+    q2(".bud-go").onclick = () => {
+      const v = {
+        bu: bu.map((l) => (l.n ? l : { m: l.m, t: +l.t || 0 })),
+        bn: q2(".bud-name").value.trim() || "Build-up",
+        bc: q2(".bud-code").value.trim().toUpperCase(),
+      };
+      if (q2(".bud-lab").checked) v.lab = 1;
+      d.remove();
+      if (o) {
+        snap();
+        Object.assign(o, v);
+        if (!v.lab) delete o.lab;
+        dirty = true;
+        draw();
+        fineFill();
+        toast("Build-up saved");
+        return;
+      }
+      lastBu = v;
+      pickShape("secbu");
+      toast(
+        "Draw along the face: a wall's inside face, a roof's underside, a floor's ceiling. ⇄ in Properties puts the layers on the other side",
+      );
+    };
+  }
+  /* 📋 every build-up on the drawing written out, outside to inside, on a new page */
+  function buSpecPage() {
+    doc.pages[pg].objs = doc.objs;
+    const all = npsuSpec(doc.pages.flatMap((p2) => p2.objs || []));
+    if (!all.length) {
+      toast("There are no build-ups on this drawing yet");
+      return;
+    }
+    const fs2 = Math.max(12, Math.round(doc.h * 0.014));
+    const objs = [
+      {
+        t: "text",
+        x: doc.w * 0.06,
+        y: doc.h * 0.07,
+        s: "Build-up specification",
+        c: "#111111",
+        size: Math.round(fs2 * 1.6),
+        wt: 800,
+        ly: "notes",
+      },
+    ];
+    let x = doc.w * 0.06,
+      y = doc.h * 0.07 + fs2 * 3.2;
+    all.forEach(([code, name, lines, tot]) => {
+      const need = (lines.length + 2.4) * fs2 * 1.5;
+      if (y + need > doc.h * 0.8 && y > doc.h * 0.2) {
+        x += doc.w * 0.31;
+        y = doc.h * 0.07 + fs2 * 3.2;
+      }
+      objs.push({
+        t: "text",
+        x,
+        y,
+        s: `${code}  ${name}`,
+        c: "#1f4e8c",
+        size: Math.round(fs2 * 1.1),
+        wt: 800,
+        ly: "notes",
+      });
+      y += fs2 * 1.6;
+      lines.forEach((l) => {
+        objs.push({
+          t: "text",
+          x: x + fs2,
+          y,
+          s: "• " + String(l).slice(0, 70),
+          c: "#111111",
+          size: fs2,
+          ly: "notes",
+        });
+        y += fs2 * 1.45;
+      });
+      objs.push({
+        t: "text",
+        x: x + fs2,
+        y,
+        s: `Overall ${Math.round(tot)} mm`,
+        c: "#555555",
+        size: Math.round(fs2 * 0.9),
+        ly: "notes",
+      });
+      y += fs2 * 2.4;
+    });
+    objs.push({
+      t: "text",
+      x: doc.w * 0.06,
+      y: doc.h * 0.86,
+      s: "Outside to inside / top to bottom. Generic build-ups: check U-values, fire and Building Regulations for the job.",
+      c: "#555555",
+      size: Math.round(fs2 * 0.9),
+      ly: "notes",
+    });
+    doc.pages.push({ name: "Build-up specification", type: "Construction details", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Specification put on a new page");
+  }
   /* 🔎 zoom-in detail: a box round part of the drawing is copied bigger into a frame at a larger scale,
      where James taps (or on a page of its own), with a lettered circle round the original */
   let zoomPlace = null;
@@ -8591,6 +8819,7 @@ async function openNotePage(opts) {
           }
         } else if (a === "sched") schedDlg();
         else if (a === "stairb") stairBuilder(null);
+        else if (a === "secbu") buDlg(null);
         else if (a === "grid") gridDlg();
         else if (a === "elev") elevFromWall();
         else if (a === "elev3d") elevMenu();
@@ -10557,6 +10786,16 @@ async function openNotePage(opts) {
       }
     }
     {
+      const bx = fb.querySelector(".nfsecbu");
+      const isBu = o.t === "shape" && o.k === "secbu";
+      bx.hidden = !isBu;
+      if (isBu) {
+        fb.querySelector(".nfbu-info").textContent =
+          `${o.bc ? o.bc + " – " : ""}${o.bn || "Build-up"}: ${(o.bu || []).length} layers, ${Math.round(npsuTotal(o.bu))} mm overall`;
+        fb.querySelector(".nfbu-lab").setAttribute("aria-pressed", o.lab ? "true" : "false");
+      }
+    }
+    {
       const st = fb.querySelector(".nfstairs");
       st.hidden = !isStair(o);
       if (isStair(o)) {
@@ -10891,6 +11130,20 @@ async function openNotePage(opts) {
         if (v) upd((o) => setSize(o, v));
       };
       fb.querySelector(".nfst-p").onchange = (e) => upd((o) => (o.pad = e.target.value));
+      fb.querySelector(".nfbu-edit").onclick = () => {
+        const o = cur();
+        if (o && o.k === "secbu") buDlg(o);
+      };
+      fb.querySelector(".nfbu-flip").onclick = () =>
+        upd((o) => {
+          if (o.fl) delete o.fl;
+          else o.fl = 1;
+        });
+      fb.querySelector(".nfbu-lab").onclick = () =>
+        upd((o) => {
+          if (o.lab) delete o.lab;
+          else o.lab = 1;
+        });
       fb.querySelector(".nfs-build").onclick = () => {
         const o = cur();
         if (o) stairBuilder(o);

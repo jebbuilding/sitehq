@@ -270,6 +270,7 @@ const NP_REAL = {
   purlin: [75, 225],
   eaves: [450, 300],
   eavestray: [600],
+  secbu: [2400],
   ofvent: [200, 25],
   birdcomb: [150, 60],
   tiltfillet: [75, 50],

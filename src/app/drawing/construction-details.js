@@ -1109,6 +1109,7 @@ const NP_SHAPES = [
   ["pirins", "≋ PIR insulation board (between / over rafters)", "Section: roof parts"],
   ["quilt", "≈ Loft quilt insulation", "Section: roof parts"],
   ["flatroof", "☰ Flat roof build-up (warm deck)", "Section: roof parts"],
+  ["secbu", "🧱 Build-up: wall, roof or floor in layers", "Section: walls, floors & foundations"],
   ["fdn", "▨ Strip foundation with blockwork", "Section: walls, floors & foundations"],
   ["trenchfill", "▨ Trench fill foundation", "Section: walls, floors & foundations"],
   ["bblock", "⊥ Beam & block floor", "Section: walls, floors & foundations"],
