@@ -40,7 +40,7 @@ import { cbaDraw, cbaPlan } from "./cupboard-alcove.js";
 import { cbDetails, cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
 import { cbpOpen } from "./cupboard-pack.js";
 import { cbsDraw, cbsIs, cbsPlan } from "./cupboard-shapes.js";
-import { NP_LAYERS, NP_TYPES, npFont, npLayerOf } from "./drawing-layers.js";
+import { NP_LAYERS, NP_TYPES, NP_TYPE_GROUPS, npFont, npLayerOf } from "./drawing-layers.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
 import { npFindRooms } from "./find-rooms.js";
@@ -64,6 +64,7 @@ import {
   rsWallsFromRoom,
 } from "./room-sketch.js";
 import { npSmartShape, npsRectilinear } from "./smart-pen.js";
+import { nps3Draw, nps3Model, npsbCutList } from "./stair-3d.js";
 import {
   NPSB_BAL,
   NPSB_GLASSFIX,
@@ -6063,7 +6064,7 @@ async function openNotePage(opts) {
       Math.round(fs * 0.85),
     );
     objs.forEach((ob) => (ob.ly = ob.ly || "elev"));
-    doc.pages.push({ name: (o.mark || "Beam") + " detail", type: "Detail drawing", objs });
+    doc.pages.push({ name: (o.mark || "Beam") + " detail", type: "Steel beam detail", objs });
     dirty = true;
     goPage(doc.pages.length - 1);
     toast("Beam detail drawn on a new page");
@@ -6148,6 +6149,7 @@ async function openNotePage(opts) {
       <section class="sb-sec"><b>5 · Balustrade and handrail</b><div class="sb-row"><label>Balustrade<select class="sb-bal">${opt(NPSB_BAL, c.bal)}</select></label><label class="sb-gfl">Glass fixed by<select class="sb-gfix">${opt(NPSB_GLASSFIX, c.glassFix)}</select></label><label>Handrail<select class="sb-rail">${opt(NPSB_RAIL, c.rail)}</select></label></div><div class="sb-gnote who"></div></section>
       <section class="sb-sec"><b>✅ Checks (Approved Document K)</b><div class="sb-checks"></div></section>
       <section class="sb-sec"><b>🧾 What it needs</b><div class="sb-q"></div></section>
+      <section class="sb-sec"><b>🪚 Cutting list</b><div class="sb-cut"></div><div class="sb-row"><button type="button" class="btn primary sb-3d">🧊 See it in 3D</button><button type="button" class="btn sb-cutpage">🪚 Put the cutting list on the drawing</button><button type="button" class="btn sb-cutcopy">📋 Copy the cutting list</button></div></section>
       <section class="sb-sec"><b>📦 Order for the joiner / fabricator</b><div class="sb-order"></div><div class="sb-row"><button type="button" class="btn sb-copy">📋 Copy</button><a class="btn sb-mail" href="#" target="_blank" rel="noopener">✉️ Email</a></div></section>
       <div class="dimbtns"><button type="button" class="btn sb-side">📐 Draw the side view</button><button type="button" class="btn sb-x">Cancel</button><button type="submit" class="btn primary">${o0 ? "Save" : "Put it on the plan"}</button></div></form>`;
     ov.appendChild(d);
@@ -6190,6 +6192,15 @@ async function openNotePage(opts) {
         .map(([a, b]) => `<div class="drow"><span>${esc(a)}</span><b>${esc(String(b))}</b></div>`)
         .join("");
       q2(".sb-gnote").textContent = k.glassNote;
+      q2(".sb-cut").innerHTML =
+        `<div class="tablewrap"><table class="sb-tbl"><thead><tr><th>Part</th><th class="num">No.</th><th>Size (mm)</th><th>Note</th></tr></thead><tbody>${npsbCutList(
+          k,
+        )
+          .map(
+            ([a, n, z, nt]) =>
+              `<tr><td>${esc(a)}</td><td class="num">${esc(String(n))}</td><td>${esc(z)}</td><td class="who">${esc(nt || "")}</td></tr>`,
+          )
+          .join("")}</tbody></table></div>`;
       const txt = npsbOrderText(k, { site: doc.site || opts.site || "", who: coData().name || "" });
       q2(".sb-order").textContent = txt;
       q2(".sb-mail").href =
@@ -6238,6 +6249,27 @@ async function openNotePage(opts) {
       }
     };
     q2(".sb-x").onclick = () => d.remove();
+    q2(".sb-3d").onclick = () => {
+      show();
+      stair3d(k);
+    };
+    q2(".sb-cutcopy").onclick = async () => {
+      show();
+      const t = npsbCutList(k)
+        .map(([a, n, z, nt]) => `${a}: ${n}${z ? " × " + z : ""}${nt ? " (" + nt + ")" : ""}`)
+        .join("\n");
+      try {
+        await navigator.clipboard.writeText("Stair cutting list\n\n" + t);
+        toast("Cutting list copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    q2(".sb-cutpage").onclick = () => {
+      const o = save();
+      d.remove();
+      stairCutPage(o);
+    };
     /* onto the plan: the stair symbol for the type, sized to its footprint */
     const save = () => {
       show();
@@ -6308,6 +6340,87 @@ async function openNotePage(opts) {
       d.remove();
       stairSide(o);
     };
+  }
+  /* 🧊 the stair in 3D: turn it with the slider or the arrows */
+  function stair3d(k) {
+    const M = nps3Model(k);
+    const d = document.createElement("div");
+    d.className = "dimask sbuild s3d";
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Stair in 3D"><b>🧊 The stair in 3D</b><div class="who">Turn it round. An illustration: the stair maker sets out the real one.</div><canvas class="s3d-cv" width="1000" height="680"></canvas><div class="sb-row"><button type="button" class="btn s3d-l" aria-label="Turn left">⟲</button><input type="range" class="s3d-yaw" min="0" max="360" value="35" aria-label="Turn it round" style="flex:1"><button type="button" class="btn s3d-r" aria-label="Turn right">⟳</button></div><div class="dimbtns"><button type="button" class="btn s3d-save">⬇ Save the picture</button><button type="button" class="btn primary s3d-x">Close</button></div></div>`;
+    ov.appendChild(d);
+    const cv = d.querySelector(".s3d-cv"),
+      yw = d.querySelector(".s3d-yaw");
+    const paint = () => nps3Draw(cv, M, (+yw.value * Math.PI) / 180);
+    yw.oninput = paint;
+    d.querySelector(".s3d-l").onclick = () => {
+      yw.value = (+yw.value + 345) % 360;
+      paint();
+    };
+    d.querySelector(".s3d-r").onclick = () => {
+      yw.value = (+yw.value + 15) % 360;
+      paint();
+    };
+    d.querySelector(".s3d-x").onclick = () => d.remove();
+    d.querySelector(".s3d-save").onclick = () =>
+      cv.toBlob(async (b) => {
+        try {
+          if (S.dl) await S.dl.save({ filename: "Stair 3D.png", data: b });
+          else toast("Downloads only work when the page is opened in claude.ai");
+        } catch (e) {
+          toast("Couldn't save the picture");
+        }
+      }, "image/png");
+    paint();
+  }
+  /* 🪚 the cutting list on a new page, as a table */
+  function stairCutPage(o) {
+    const k = npsbCalc(o.sb || {});
+    const rows = [["Part", "No.", "Size (mm)", "Note"]].concat(
+      npsbCutList(k).map(([a, n, z, nt]) => [a, String(n), z, nt || ""]),
+    );
+    doc.pages[pg].objs = doc.objs;
+    const fs2 = Math.max(13, Math.round(doc.h * 0.016));
+    const objs = [
+      {
+        t: "text",
+        x: doc.w * 0.08,
+        y: doc.h * 0.08,
+        s: "Stair cutting list",
+        c: "#111111",
+        size: Math.round(fs2 * 1.5),
+        ly: "notes",
+      },
+    ];
+    const T2 = (NPSB_TYPES.find((t) => t[0] === k.c.type) || [])[1] || "Stair";
+    objs.push({
+      t: "text",
+      x: doc.w * 0.08,
+      y: doc.h * 0.08 + fs2 * 2.2,
+      s: `${T2} – ${k.n} risers of ${Math.round(k.rise)}${k.spiral ? "" : ", going " + Math.round(k.going)}, width ${k.c.width}. Check against the stair maker's setting out.`,
+      c: "#333333",
+      size: fs2,
+      ly: "notes",
+    });
+    const cols = [0.08, 0.36, 0.43, 0.66];
+    rows.forEach((r, i) =>
+      r.forEach((v, j) =>
+        objs.push({
+          t: "text",
+          x: doc.w * cols[j],
+          y: doc.h * 0.16 + i * fs2 * 1.6,
+          s: String(v).slice(0, j === 3 ? 60 : 40),
+          c: i ? "#111111" : "#7c2d12",
+          size: i ? fs2 : Math.round(fs2 * 1.05),
+          wt: i ? undefined : 800,
+          ly: "notes",
+        }),
+      ),
+    );
+    objs.forEach((ob) => Object.keys(ob).forEach((x) => ob[x] === undefined && delete ob[x]));
+    doc.pages.push({ name: "Stair cutting list", type: "Staircase design", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Cutting list put on a new page");
   }
   /* 📐 the stair's side view on a new page, unfolded into one run: the steps, both floors, the pitch line, handrail
      and headroom lines, the balustrade, and the sizes – drawn to fit, not to scale (the figures are written on) */
@@ -6391,6 +6504,33 @@ async function openNotePage(opts) {
         L(P(a0[0], a0[1] + h), P(a1[0], a1[1] + h), { w: thin, c: "#64748b" });
     }
     if (k.steel) L(P(-100, 0), P(a1[0] + 100, c.ftf), { w: lw * 2.2, c: "#374151" });
+    else if (!k.spiral) {
+      /* the outer string: 275 deep, its top 50 above the nosings */
+      const sl = (a1[1] - a0[1]) / Math.max(1, a1[0] - a0[0]),
+        dropS = 275 / Math.cos(Math.atan(sl));
+      const at = (xx, up) => [xx, a0[1] + (xx - a0[0]) * sl + up];
+      L(P(...at(-150, 50)), P(...at(a1[0] + 150, 50)), { c: "#92400e", w: thin });
+      L(P(...at(-150, 50 - dropS)), P(...at(a1[0] + 150, 50 - dropS)), { c: "#92400e", w: thin });
+      T(...P(...at(a1[0] * 0.3, 50 - dropS - 120)), "String 275 × 32", Math.round(fs * 0.8));
+      /* the newels: at the bottom, at the top, and at a landing */
+      const newel = (xx, yBot, yTop) =>
+        objs.push({
+          t: "rect",
+          a: P(xx, yTop),
+          b: P(xx + 90, yBot),
+          c: col,
+          w: lw,
+          fill: "#c19a6b",
+          fa: 0.9,
+        });
+      newel(-120, 0, a0[1] + 900 + 150);
+      newel(a1[0] - 30, c.ftf - 300, a1[1] + 900 + 150);
+      if (k.landing) {
+        const lx = nosings[Math.ceil(k.n / 2) - 1];
+        if (lx) newel(lx[0] + c.width - 90, 0, lx[1] + 900 + 150);
+      }
+      T(...P(-120, a0[1] + 900 + 250), "Newel", Math.round(fs * 0.8));
+    }
     /* the sizes */
     objs.push({
       t: "dim",
@@ -6441,7 +6581,7 @@ async function openNotePage(opts) {
       Math.round(fs * 0.8),
     );
     objs.forEach((ob) => (ob.ly = ob.ly || "elev"));
-    doc.pages.push({ name: "Stair side view", type: "Section", objs });
+    doc.pages.push({ name: "Stair side view", type: "Stair side view / section", objs });
     dirty = true;
     goPage(doc.pages.length - 1);
     toast("Stair side view drawn on a new page");
@@ -12116,7 +12256,7 @@ async function openNotePage(opts) {
       pgx = doc.pages[pg];
     const known = NP_TYPES.includes(pgx.type || "");
     d.innerHTML = `<form class="dimbox npsetup"><b>🏷 Drawing details</b><div class="who">Shown in the title box on the drawing and on the PDF.</div>
-      <label>What drawing is this?${doc.pages.length > 1 ? ` <span class="who">(this page: ${esc(pgx.name || "Page " + (pg + 1))})</span>` : ""}<select class="ni-type"><option value="">Choose…</option>${NP_TYPES.map((t) => `<option ${pgx.type === t ? "selected" : ""}>${esc(t)}</option>`).join("")}<option value="__other" ${pgx.type && !known ? "selected" : ""}>Other (type it in)</option></select></label>
+      <label>What drawing is this?${doc.pages.length > 1 ? ` <span class="who">(this page: ${esc(pgx.name || "Page " + (pg + 1))})</span>` : ""}<select class="ni-type"><option value="">Choose…</option>${NP_TYPE_GROUPS.map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map((t) => `<option ${pgx.type === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</optgroup>`).join("")}<option value="__other" ${pgx.type && !known ? "selected" : ""}>Other (type it in)</option></select></label>
       <input class="ni-other" maxlength="60" placeholder="e.g. Garage conversion layout" value="${esc(pgx.type && !known ? pgx.type : "")}" ${pgx.type && !known ? "" : "hidden"}>
       ${pickField("ni-job", "Job", siteNames(), doc.site || opts.site || "", "e.g. 12 High Street", false)}
       <div class="grid2"><label>Date<input type="date" class="ni-date" value="${esc(inf.date || iso(new Date()))}"></label><label>Scale<select class="ni-scale">${NP_SCALES.map((v) => `<option value="${v}" ${(+doc.scale || 0) === v ? "selected" : ""}>${v ? "1:" + v : "Not to scale"}</option>`).join("")}</select></label></div>

@@ -1,27 +1,76 @@
 /* ================= DRAWING LAYERS: kinds of drawing, the layers things go on, how text looks ================= */
 import { NP_LIB } from "./components.js";
-export { NP_LAYERS, NP_TYPES, npFont, npLayerOf };
-const NP_TYPES = [
-  "Sketch",
-  "Site visit notes",
-  "Existing floor plan",
-  "Proposed floor plan",
-  "Existing and proposed plan",
-  "Site / location plan",
-  "Elevations",
-  "Section",
-  "Roof plan",
-  "Foundation plan",
-  "Electrical layout",
-  "Plumbing and heating layout",
-  "Drainage layout",
-  "Kitchen layout",
-  "Bathroom layout",
-  "Structural / steel details",
-  "Detail drawing",
-  "Setting out",
-  "As built",
+export { NP_LAYERS, NP_TYPES, NP_TYPE_GROUPS, npFont, npLayerOf };
+/* what a drawing is, in groups for the Drawing details list (James, Nov 2026: "make sure all the items like stairs
+   and steel or details are in drawing details under what drawing is this") */
+const NP_TYPE_GROUPS = [
+  [
+    "Plans",
+    [
+      "Sketch",
+      "Site visit notes",
+      "Room measurements",
+      "Existing floor plan",
+      "Proposed floor plan",
+      "Existing and proposed plan",
+      "Demolition / knock-through plan",
+      "Site / location plan",
+      "Roof plan",
+      "Foundation plan",
+      "Setting out",
+      "As built",
+    ],
+  ],
+  ["Elevations and sections", ["Elevations", "Elevation", "Section", "3D view"]],
+  [
+    "Structure and steel",
+    [
+      "Structural / steel details",
+      "Steel beam detail",
+      "Steel beam schedule",
+      "Temporary works / propping",
+      "Padstone and bearing detail",
+      "Retaining wall",
+    ],
+  ],
+  [
+    "Stairs",
+    [
+      "Staircase design",
+      "Stair plan",
+      "Stair side view / section",
+      "External steel stair",
+      "Spiral stair",
+      "Balustrade and handrail",
+    ],
+  ],
+  [
+    "Doors, windows and joinery",
+    [
+      "Door and window schedule",
+      "Door and window survey",
+      "Joinery",
+      "Fitted cupboards / wardrobes",
+      "Kitchen layout",
+      "Bathroom layout",
+    ],
+  ],
+  [
+    "Services",
+    ["Electrical layout", "Plumbing and heating layout", "Drainage layout", "Ventilation layout"],
+  ],
+  ["Outside", ["External works", "Patio / driveway layout", "Landscaping"]],
+  [
+    "Details",
+    [
+      "Detail drawing",
+      "Construction details",
+      "Fire protection details",
+      "Building control drawing",
+    ],
+  ],
 ];
+const NP_TYPES = NP_TYPE_GROUPS.flatMap((g) => g[1]);
 const NP_LAYERS = [
   ["walls", "🧱 Walls & structure"],
   ["openings", "🚪 Doors & windows"],

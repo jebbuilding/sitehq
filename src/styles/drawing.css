@@ -223,3 +223,9 @@ body>.dimask.cb3-sg{z-index:320}
 .sbuild .sb-ok{color:#15803d}
 .sbuild .sb-bad{color:#b45309;font-weight:700}
 .sbuild .sb-order{white-space:pre-wrap;font-size:13px;background:var(--soft,#f6f3f3);border-radius:8px;padding:8px;max-height:220px;overflow:auto}
+
+/* drawing › stair cutting list and 3D */
+.sbuild .sb-tbl{width:100%;font-size:13px}
+.sbuild .sb-tbl td,.sbuild .sb-tbl th{padding:4px 6px;text-align:left}
+.sbuild .sb-tbl .num{text-align:right}
+.s3d .s3d-cv{width:100%;height:auto;border-radius:10px;background:#f4f1ee;touch-action:none}

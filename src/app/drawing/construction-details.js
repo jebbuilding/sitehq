@@ -1804,6 +1804,21 @@ function npStairs(ctx, o, x0, y0, w, h) {
           [x0 + w / 2, y0 + h * 0.04],
         ];
     arrowTo(rev(p));
+    /* newel posts on the open side(s), from the stair builder (90 mm square) */
+    if (o.sb && +o.sb.open > 0) {
+      const nw = mm ? 90 * mm : wid * 0.1;
+      const sides = +o.sb.open >= 2 ? [0, 1] : [1];
+      ctx.save();
+      ctx.fillStyle = ctx.strokeStyle;
+      sides.forEach((sd) =>
+        [0, 1].forEach((e) => {
+          const px = v ? (e ? x1 - nw : x0) : sd ? x1 - nw : x0,
+            py = v ? (sd ? y1 - nw : y0) : e ? y0 : y1 - nw;
+          ctx.fillRect(px, py, nw, nw);
+        }),
+      );
+      ctx.restore();
+    }
     const fs = Math.min(wid * 0.28, 30);
     const lp = rev(p)[0];
     label(

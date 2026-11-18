@@ -44,6 +44,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const n0=await p.evaluate(()=>window.__np.pages().length);
  await p.click('.sb-side');await p.waitForTimeout(500);
  ok(await p.evaluate(()=>window.__np.pages().length)===n0+1,'📐 Draw the side view makes a new page');
+ ok(await p.evaluate(()=>{const pg=window.__np.pages();const o=pg[pg.length-1].objs;return o.some(q=>/String 275/.test(q.s||''))&&o.filter(q=>q.t==='rect'&&q.fill).length>=2;}),'the side view shows the string and the newels');
  await p.screenshot({path:SP+'stair-side.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h590: ${bad} failed`:'h590: all passed');await b.close();process.exit(bad?1:0);
