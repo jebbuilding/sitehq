@@ -14,7 +14,7 @@ import { avatarHtml, personPhoto } from "../people/profile-photos.js";
 import { loadImage } from "../photos/photos.js";
 import { hpOpen } from "../planner/holiday-person.js";
 import { LEAVE_TYPES, leaveOf } from "../planner/time-off.js";
-import { empTypeOf } from "../sites/job-details.js";
+import { empTypeOf, siteLabel } from "../sites/job-details.js";
 import { signOnly } from "../sites/sign-in-book.js";
 import { myName } from "../survey/door-window-survey.js";
 import { entrySub, openEntry, sumH, typeTag } from "./time.js";
@@ -95,7 +95,7 @@ function tsPaper(ym, ents, who) {
           off && !list.length
             ? `<span class="tsco">🌴<small>${esc(off.pending ? "Asked" : off.half ? "½ " + (off.kind || "Off") : off.kind || "Off")}</small></span>`
             : list.length
-              ? `<span class="tsch">${hrs(h || j)}<small>h</small></span><span class="tscs">${esc(site)}</span>${extra ? '<span class="tscx">+extra</span>' : ""}`
+              ? `<span class="tsch">${hrs(h || j)}<small>h</small></span><span class="tscs">${esc(siteLabel(site))}</span>${extra ? '<span class="tscx">+extra</span>' : ""}`
               : ""
         }</button>`;
     }
@@ -314,7 +314,7 @@ function tsDayOwner(di, who, again) {
         .map(
           (
             e,
-          ) => `<div class="entry"><div class="main"><div class="job">${typeTag(e)}${e.approved ? '<span class="tag ok">Approved</span>' : ""}${esc(e.job || "No site given")}</div><div class="sub">${entrySub(e)}${e.notes ? " · " + esc(e.notes) : ""}</div>
+          ) => `<div class="entry"><div class="main"><div class="job">${typeTag(e)}${e.approved ? '<span class="tag ok">Approved</span>' : ""}${esc(siteLabel(e.job) || "No site given")}</div><div class="sub">${entrySub(e)}${e.notes ? " · " + esc(e.notes) : ""}</div>
       <div class="actions" style="margin-top:6px"><label class="inl" style="font-size:15px;color:var(--ink);font-weight:600"><input type="checkbox" class="tdo-appr" data-e="${esc(e.id)}" data-src="${esc(e._src || "")}" ${e.approved ? "checked" : ""} style="width:22px;height:22px"> Approved</label><button type="button" class="pillbtn tdo-edit" data-e="${esc(e.id)}">Edit</button></div></div><div class="amt">${hrs(e.hours)} h</div></div>`,
         )
         .join("") || '<div class="nothing">Nothing logged this day.</div>'
@@ -378,7 +378,7 @@ function tsDay(di) {
   openSheet(
     `<h3 id="sheettitle">${esc(parse(di).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}</h3>
     ${off ? `<div class="notice" style="margin:0;background:#e9f6ec">🌴 <b>${esc(off.kind || "Time off")}${off.half ? " (half day)" : ""}</b>${off.pending ? ` · requested, waiting for ${bossFirst()}` : ""}${off.why ? " · " + esc(off.why) : ""}</div>` : ""}
-    ${list.map((e) => `<button type="button" class="entry tsdayrow" data-id="${esc(e.id)}"><div class="main"><div class="job">${typeTag(e)}${e.approved ? '<span class="tag ok">Approved</span>' : ""}${esc(e.job || "No site given")}</div><div class="sub">${entrySub(e)}</div></div><div class="amt">${hrs(e.hours)} h</div></button>`).join("") || '<div class="nothing">Nothing logged this day.</div>'}
+    ${list.map((e) => `<button type="button" class="entry tsdayrow" data-id="${esc(e.id)}"><div class="main"><div class="job">${typeTag(e)}${e.approved ? '<span class="tag ok">Approved</span>' : ""}${esc(siteLabel(e.job) || "No site given")}</div><div class="sub">${entrySub(e)}</div></div><div class="amt">${hrs(e.hours)} h</div></button>`).join("") || '<div class="nothing">Nothing logged this day.</div>'}
     <div class="actions"><button type="button" class="btn primary" id="tsd-h">+ Timesheet</button><button type="button" class="btn" id="tsd-j">🧱 + Day work / job time</button></div>
     <div class="formactions"><span></span><button type="button" class="btn" id="f-cancel">Close</button></div>`,
     () => {},

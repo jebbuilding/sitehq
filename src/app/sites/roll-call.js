@@ -3,6 +3,7 @@ import { $, esc, iso, stamp } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { nameOf, teamIds } from "../owner/owner.js";
+import { siteLabel } from "./job-details.js";
 import { SIGNIN } from "./sign-in-book.js";
 import { nstIs } from "../timesheets/non-site-time.js";
 export { onSiteNow, openRollCall };
@@ -39,7 +40,7 @@ function openRollCall() {
           .sort()
           .map(
             (site) =>
-              `<div class="flabel" style="margin-top:12px;font-size:15px">${esc(site)} · ${by[site].length}</div>${by[
+              `<div class="flabel" style="margin-top:12px;font-size:15px">${esc(siteLabel(site))} · ${by[site].length}</div>${by[
                 site
               ]
                 .map((r) => {

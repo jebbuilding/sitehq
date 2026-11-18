@@ -24,6 +24,7 @@ import { auditLog } from "../owner/deletion-record.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { mySign, openSign } from "../sites/plans-specs.js";
 import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
@@ -425,7 +426,7 @@ const SIGNSHEET = (() => {
     const solo = !p.assetId;
     openSheet(
       `<h3 id="sheettitle">✍️ ${solo ? "New sign-off sheet" : "Client go-ahead"}</h3><div class="who">A one-page sheet with ${solo ? "your pictures" : "this drawing"}, what they're agreeing to and a signature box. The client can sign it on this device now${solo ? "" : ", in their portal"}, or on a printed copy.</div>
-    <label for="ss-cl">Client<select id="ss-cl"><option value="">No client</option><option value="__manual" ${o.manual || (solo && !sc) ? "selected" : ""}>✏️ Type their details in (not in Clients)</option>${cls.map((c) => `<option value="${esc(c.id)}" ${!o.manual && sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}${ptOf(c) ? "" : " (not on the portal yet)"}</option>`).join("")}</select></label>
+    <label for="ss-cl">Client<select id="ss-cl"><option value="">No client</option><option value="__manual" ${o.manual || (solo && !sc) ? "selected" : ""}>✏️ Type their details in (not in Clients)</option>${cls.map((c) => `<option value="${esc(c.id)}" ${!o.manual && sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(siteFull(c.site)) : ""}${ptOf(c) ? "" : " (not on the portal yet)"}</option>`).join("")}</select></label>
     <div id="ss-man" class="ssman"><label for="ss-mname">Client name<input id="ss-mname" maxlength="80" autocomplete="off" placeholder="e.g. Mr & Mrs Smith"></label>
     <label for="ss-maddr">Property address<input id="ss-maddr" maxlength="160" autocomplete="off" placeholder="e.g. 4 High Street"></label>
     <div class="grid2"><label for="ss-mtel">Phone (optional)<input id="ss-mtel" type="tel" maxlength="30" autocomplete="off"></label><label for="ss-mmail">Email (optional)<input id="ss-mmail" type="email" maxlength="120" autocomplete="off"></label></div>
@@ -793,7 +794,7 @@ const SIGNSHEET = (() => {
     if (!s) return "";
     const st = status(p);
     const ok = st.filter((x) => x.st === "ok").length;
-    return `<div class="card" style="margin:10px 0;padding:10px 12px"><b>✍️ ${esc(s.title)}</b> <span class="who">${esc(s.ref)} · made ${esc(stamp(s.at))} · ${ok} of ${st.length} signed${s.site ? " · on " + esc(s.site) : ""}</span>
+    return `<div class="card" style="margin:10px 0;padding:10px 12px"><b>✍️ ${esc(s.title)}</b> <span class="who">${esc(s.ref)} · made ${esc(stamp(s.at))} · ${ok} of ${st.length} signed${s.site ? " · on " + esc(siteLabel(s.site)) : ""}</span>
     ${st.map((x) => `<div class="dwsrow"><span>${esc(x.name)} <span class="who">${esc(x.role)} · ${esc(x.how)}</span></span><span class="tag ${x.st === "ok" ? "ok" : x.st === "change" ? "bad" : "day"}">${x.st === "ok" ? "✓ Signed" : x.st === "change" ? "Needs changes" : "Waiting"}</span>${x.note ? `<div class="who">“${esc(x.note)}”</div>` : ""}</div>`).join("") || '<div class="who">Nobody has signed in the app yet.</div>'}
     <div class="actions" style="margin-top:8px">${
       s.manual
@@ -875,7 +876,7 @@ const SIGNSHEET = (() => {
   function bannerHtml() {
     const u = unsigned();
     if (!u.length) return "";
-    return `<div class="notice warn" style="display:flex;flex-direction:column;gap:6px"><b>✍️ ${u.length} sign-off sheet${u.length === 1 ? "" : "s"} to sign</b>${u.map((d) => `<button type="button" class="incrow ss-sign" data-id="${esc(d.id)}"><span><b>${esc(d.title)}</b><br><span class="who">${esc(d.site || "")}</span></span><span>Sign ›</span></button>`).join("")}</div>`;
+    return `<div class="notice warn" style="display:flex;flex-direction:column;gap:6px"><b>✍️ ${u.length} sign-off sheet${u.length === 1 ? "" : "s"} to sign</b>${u.map((d) => `<button type="button" class="incrow ss-sign" data-id="${esc(d.id)}"><span><b>${esc(d.title)}</b><br><span class="who">${esc(siteLabel(d.site) || "")}</span></span><span>Sign ›</span></button>`).join("")}</div>`;
   }
   function wireBanner(root) {
     (root || document).querySelectorAll(".ss-sign").forEach(

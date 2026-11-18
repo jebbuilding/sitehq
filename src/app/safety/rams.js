@@ -15,6 +15,7 @@ import { BRGB, pdfLogo } from "../photos/photos.js";
 import { CDMRA } from "./cdm-rams.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { siteLabel } from "../sites/job-details.js";
 export { RA_PERMITS, RA_PPE, RA_WHO, openRaForm, raAll, raBlock, raPdf, viewRa, wireRa };
 const RA_HAZARDS = [
   [
@@ -83,7 +84,7 @@ function raBlock(owner) {
         .map((r) => {
           const hi = (r.rows || []).some((x) => raScore(x) >= 6 && x.res === "High");
           return `<button type="button" class="incrow rarow" data-r="${esc(r.id)}" data-w="${esc(r.who)}" style="border-left-color:${hi ? "#c2410c" : "var(--brand)"}"><span><b>${esc(r.activity)}</b>${r.reviewedAt ? ' <span class="tag ok">Reviewed</span>' : owner ? ' <span class="tag day">To review</span>' : ""}${hi ? ' <span class="tag bad">High risk</span>' : ""}
-      <br><span class="who">${esc(r.site || "")} · ${esc(r.preparedBy || nameOf(r.who))} · ${esc(shortDay(r.date))} · ${(r.rows || []).length} hazard${(r.rows || []).length === 1 ? "" : "s"} · ${(r.briefed || []).length} signed</span></span><span aria-hidden="true">›</span></button>`;
+      <br><span class="who">${esc(siteLabel(r.site) || "")} · ${esc(r.preparedBy || nameOf(r.who))} · ${esc(shortDay(r.date))} · ${(r.rows || []).length} hazard${(r.rows || []).length === 1 ? "" : "s"} · ${(r.briefed || []).length} signed</span></span><span aria-hidden="true">›</span></button>`;
         })
         .join("") || '<div class="nothing">None yet.</div>'
     }</div>`;
@@ -334,8 +335,8 @@ function viewRa(r, owner) {
     !owner || !r.site
       ? ""
       : filedDoc
-        ? `<div class="notice" style="margin:4px 0 8px">📂 Filed in <b>${esc(r.site)} › RAMS</b> for the trades to read and sign. <button type="button" class="linkbtn" id="rv-site">Open the site's RAMS</button></div>`
-        : `<div class="notice warn" style="margin:4px 0 8px">Not in ${esc(r.site)} › RAMS yet, so the trades on the site can't read and sign it. <button type="button" class="btn primary" id="rv-file">📂 File it in ${esc(r.site)} › RAMS</button></div>`;
+        ? `<div class="notice" style="margin:4px 0 8px">📂 Filed in <b>${esc(siteLabel(r.site))} › RAMS</b> for the trades to read and sign. <button type="button" class="linkbtn" id="rv-site">Open the site's RAMS</button></div>`
+        : `<div class="notice warn" style="margin:4px 0 8px">Not in ${esc(siteLabel(r.site))} › RAMS yet, so the trades on the site can't read and sign it. <button type="button" class="btn primary" id="rv-file">📂 File it in ${esc(siteLabel(r.site))} › RAMS</button></div>`;
   openViewer(`<span class="tag">Risk assessment &amp; method statement</span><h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 6px;color:var(--accent);text-transform:uppercase">${esc(r.activity)}</h3>${filedLine}
     <div class="details">${rows.map(([l, v]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join("")}</div>
     <div class="flabel" style="margin-top:12px">Risk assessment</div>

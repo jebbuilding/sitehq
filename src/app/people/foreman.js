@@ -5,6 +5,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, inWeek, ownerMode } from "../core/state.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { openInduction } from "../safety/site-inductions.js";
+import { siteLabel } from "../sites/job-details.js";
 import { openEntry } from "../timesheets/time.js";
 export { allVisitInds, amForeman, foremanView, initForeman, proxyFor, setProxyFor };
 const isForeman = (id) => !!((id === S.me && !S.owner ? S.myProfile : S.team[id]) || {}).foreman;
@@ -67,15 +68,15 @@ function foremanView() {
     `<div class="notice">You're a <b>foreman</b>. You can fill in timesheets for your team and induct people on site using your phone.</div>
     <div class="day"><div class="dayh"><span>Timesheets for others</span><span class="sum">${wk.length} this week</span></div>
       <div class="actions"><button class="btn primary" id="fm-hours" type="button">+ Timesheet for someone</button><button class="btn hv" id="fm-job" type="button">🧱 + Day work / job time for someone</button></div>
-      ${wk.map((e) => `<div class="entry"><div class="main"><div class="job"><b>${esc(e.forName)}</b> · ${esc(e.type === "hours" ? "Timesheet" : "Job time")}</div><div class="sub">${esc(shortDay(e.date))} · ${esc(e.job)}${e.type === "hours" ? ` · ${esc(e.start)}–${esc(e.finish)}` : ` · ${esc(e.task || "")}`} · ${hrs(e.hours)} h</div></div></div>`).join("") || '<div class="nothing">None this week.</div>'}</div>
+      ${wk.map((e) => `<div class="entry"><div class="main"><div class="job"><b>${esc(e.forName)}</b> · ${esc(e.type === "hours" ? "Timesheet" : "Job time")}</div><div class="sub">${esc(shortDay(e.date))} · ${esc(siteLabel(e.job))}${e.type === "hours" ? ` · ${esc(e.start)}–${esc(e.finish)}` : ` · ${esc(e.task || "")}`} · ${hrs(e.hours)} h</div></div></div>`).join("") || '<div class="nothing">None this week.</div>'}</div>
     <div class="day"><div class="dayh"><span>Site inductions on your phone</span><span class="sum">${vis.length} done</span></div>
       <div class="who">For visitors, delivery drivers or workers who don't have the app. Hand them your phone to read, tick and sign.</div>
-      ${inds.length ? inds.map((i) => `<div class="citem"><span><b>${esc(i.site)}</b><br><span class="who">${vis.filter((v) => v.inductionId === i.id).length} done by you</span></span><button type="button" class="btn primary fm-ind" data-i="${esc(i.id)}">Induct someone</button></div>`).join("") : `<div class="nothing">${esc(bossFirst())} hasn't set up any site inductions yet.</div>`}
+      ${inds.length ? inds.map((i) => `<div class="citem"><span><b>${esc(siteLabel(i.site))}</b><br><span class="who">${vis.filter((v) => v.inductionId === i.id).length} done by you</span></span><button type="button" class="btn primary fm-ind" data-i="${esc(i.id)}">Induct someone</button></div>`).join("") : `<div class="nothing">${esc(bossFirst())} hasn't set up any site inductions yet.</div>`}
       ${vis
         .slice(0, 15)
         .map(
           (v) =>
-            `<div class="sub">${esc(v.name)} · ${esc(v.site)} · ${esc(stamp(v.signedAt))}</div>`,
+            `<div class="sub">${esc(v.name)} · ${esc(siteLabel(v.site))} · ${esc(stamp(v.signedAt))}</div>`,
         )
         .join("")}</div>
     <div class="who">Accident reports, checks and risk assessments can be filled in from <b>Reports</b> as usual, for anyone.</div>`;

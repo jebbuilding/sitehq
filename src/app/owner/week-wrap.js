@@ -8,6 +8,7 @@ import { nlOpenTab } from "./today.js";
 import { dueSoonItems } from "../safety/expiry-dates.js";
 import { jbProblems } from "../sales/job-budget.js";
 import { sdCalc, sdSales, sdStatus } from "../sales/sales-calc.js";
+import { siteLabel } from "../sites/job-details.js";
 import { pcList, pcOff, pcYesterday } from "../timesheets/plan-check.js";
 export { pcTodayCard, pcTodayWire, wuOpen, wuTodayCard, wuTodayWire };
 /* James (Nov 2026): "a Friday wrap-up – one screen with everything you'd otherwise check in six places". This week so
@@ -96,9 +97,9 @@ function wuOpen() {
   const html = `<div class="wu"><h2>📋 Week wrap-up</h2><div class="who">Week of ${esc(x.mon.toLocaleDateString("en-GB", { day: "numeric", month: "long" }))}, up to today.</div>
     <section class="card wu-sec"><div class="cardbody"><div class="wu-h"><b>⏱ Hours this week</b><span class="tag">${hrs(totH)} h</span></div>${x.hoursBy.length ? x.hoursBy.map((p) => `<div class="drow"><span>${esc(nameOf(p.id))}</span><b>${hrs(p.h)} h</b></div>`).join("") : '<div class="who">No timesheets yet.</div>'}</div></section>
     ${sec("📝 Timesheets missing", x.missing.length, x.missing.map((m) => `<div class="drow"><span>${esc(nameOf(m.id))}</span><span>${m.days.map((d) => esc(shortDay(d))).join(", ")}</span></div>`).join(""), "Everyone's in for every weekday so far.")}
-    ${sec("🗓 Planner and timesheets don't match", x.mism.length, x.mism.map((m) => `<div class="drow"><span>${esc(nameOf(m.id))} · ${esc(shortDay(m.d))}</span><span>booked on ${esc(m.site)} · ${m.kind === "none" ? "no timesheet" : "timesheet says " + esc(m.said.join(", "))}</span></div>`).join(""), "Everyone was where the planner said.")}
+    ${sec("🗓 Planner and timesheets don't match", x.mism.length, x.mism.map((m) => `<div class="drow"><span>${esc(nameOf(m.id))} · ${esc(shortDay(m.d))}</span><span>booked on ${esc(siteLabel(m.site))} · ${m.kind === "none" ? "no timesheet" : "timesheet says " + esc(m.said.join(", "))}</span></div>`).join(""), "Everyone was where the planner said.")}
     ${sec("💷 Invoices overdue", x.overdue.length, x.overdue.map((o) => `<div class="drow"><span>${esc(o.v.client || "")} · invoice ${esc(o.v.number || "")}</span><b>${gbp(o.owed)}</b></div>`).join("") + `<div class="drow"><span>Total</span><b>${gbp(x.overdue.reduce((a, o) => a + o.owed, 0))}</b></div>`, "Nothing overdue.")}
-    ${sec("📈 Jobs going over budget", x.jobs.length, x.jobs.map((j) => `<div class="drow"><span>${esc(j.site)}</span><span>${esc(j.b.msg)}</span></div>`).join(""), "Every priced job is on track.")}
+    ${sec("📈 Jobs going over budget", x.jobs.length, x.jobs.map((j) => `<div class="drow"><span>${esc(siteLabel(j.site))}</span><span>${esc(j.b.msg)}</span></div>`).join(""), "Every priced job is on track.")}
     ${sec("🌴 Off in the next two weeks", x.off.length, x.off.map((p) => `<div class="drow"><span>${esc(p.title || "")}</span><span>${esc(shortDay(p.from))}${p.to && p.to !== p.from ? " – " + esc(shortDay(p.to)) : ""}</span></div>`).join(""), "Nobody booked off.")}
     ${sec("📅 Due in the next 30 days", x.due.length, x.due.map((d) => `<div class="drow"><span>${esc(d.what)}</span><span>${esc(shortDay(d.date))}</span></div>`).join(""), "Nothing due.")}
     <div class="actions"><button type="button" class="btn" id="wu-copy">📋 Copy as text</button><a class="btn primary" id="wu-mail" href="#" target="_blank" rel="noopener">✉️ Email it to me</a></div></div>`;

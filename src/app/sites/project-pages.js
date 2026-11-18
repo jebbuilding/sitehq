@@ -29,6 +29,7 @@ import {
   editSiteJob,
   editSiteVis,
   siteJobCard,
+  siteLabel,
   siteNameBar,
   siteSumHtml,
   syncSiteJobs,
@@ -471,20 +472,20 @@ function ownerProjects() {
     if (isArchivedSite(site)) {
       $("main").insertAdjacentHTML(
         "afterbegin",
-        `<div class="notice warn arcbar"><span>🗄 <b>${esc(site)}</b> is in storage (the job is ${esc(arcWhy(site))}). Trades can't see it and it's left out of site lists.</span><button type="button" class="btn" id="arc-restore">↩ Take out of storage</button></div>`,
+        `<div class="notice warn arcbar"><span>🗄 <b>${esc(siteLabel(site))}</b> is in storage (the job is ${esc(arcWhy(site))}). Trades can't see it and it's left out of site lists.</span><button type="button" class="btn" id="arc-restore">↩ Take out of storage</button></div>`,
       );
       $("arc-restore").onclick = () => siteRestore(site);
     } else if (siteRec(site)) {
       $("main").insertAdjacentHTML(
         "beforeend",
-        `<div class="actions" style="margin-top:14px"><button type="button" class="btn" id="arc-put">🗄 Move ${esc(site)} to storage</button></div>`,
+        `<div class="actions" style="margin-top:14px"><button type="button" class="btn" id="arc-put">🗄 Move ${esc(siteLabel(site))} to storage</button></div>`,
       );
       {
         $("arc-put").onclick = () => {
           const d = document.createElement("div");
           d.className = "dimask";
           d.style.zIndex = "125";
-          d.innerHTML = `<div class="dimbox" role="alertdialog" aria-label="Move to storage"><b>🗄 Move ${esc(site)} to storage?</b><div class="who">It will disappear from your Sites list. Nothing is deleted: documents, drawings and photos are kept, and you can bring it back from Sites › Storage.</div><div class="dimbtns"><button type="button" class="btn primary arc-no">Keep it in Sites</button><button type="button" class="btn delbtn arc-yes">Move to storage</button></div></div>`;
+          d.innerHTML = `<div class="dimbox" role="alertdialog" aria-label="Move to storage"><b>🗄 Move ${esc(siteLabel(site))} to storage?</b><div class="who">It will disappear from your Sites list. Nothing is deleted: documents, drawings and photos are kept, and you can bring it back from Sites › Storage.</div><div class="dimbtns"><button type="button" class="btn primary arc-no">Keep it in Sites</button><button type="button" class="btn delbtn arc-yes">Move to storage</button></div></div>`;
           document.body.appendChild(d);
           d.querySelector(".arc-no").onclick = () => d.remove();
           d.onclick = (e) => {
@@ -500,7 +501,7 @@ function ownerProjects() {
     {
       $("main").insertAdjacentHTML(
         "beforeend",
-        `<div class="actions" style="margin-top:8px;justify-content:flex-end"><button type="button" class="btn delbtn" id="site-del">🗑 Delete ${esc(site)}</button></div>`,
+        `<div class="actions" style="margin-top:8px;justify-content:flex-end"><button type="button" class="btn delbtn" id="site-del">🗑 Delete ${esc(siteLabel(site))}</button></div>`,
       );
       $("site-del").onclick = () => deleteSiteFlow(site);
     }

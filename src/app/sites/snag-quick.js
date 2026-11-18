@@ -11,7 +11,7 @@ import { newId, obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { shrinkImage } from "../safety/training.js";
-import { empTypeOf } from "./job-details.js";
+import { empTypeOf, siteFull, siteLabel } from "./job-details.js";
 import { taskDone } from "./job-sheets.js";
 import { same } from "./project-pages.js";
 import { openJob } from "../survey/door-window-survey.js";
@@ -117,7 +117,7 @@ function sqOpen(site) {
   SQ.dwg = "";
   let picked = false;
   openSheet(
-    `<h3 id="sheettitle">📸 Snag at ${esc(site)}</h3>
+    `<h3 id="sheettitle">📸 Snag at ${esc(siteFull(site))}</h3>
     <div class="sq-photo"><span class="btn" id="sq-phbtn">📷 Take or choose a photo<input type="file" id="sq-file" accept="image/*" capture="environment" class="sq-fileinp" aria-label="Snag photo"></span><img id="sq-prev" alt="Snag photo" hidden></div>
     <label for="sq-text">What's wrong? Say it or type it</label><textarea id="sq-text" rows="3" placeholder="e.g. Socket by the back door not working"></textarea>
     <div class="flabel">Who's it for</div><div class="sq-who" id="sq-who">${ids.map((id) => `<button type="button" class="pillbtn sq-p" data-v="${esc(id)}" aria-pressed="false">${esc(nameOf(id))}</button>`).join("")}<button type="button" class="pillbtn sq-p" data-v="" aria-pressed="true">Nobody yet</button></div>
@@ -291,7 +291,7 @@ async function sqMap(site) {
   const by = sqPinned(site);
   const list = dws.filter((d) => by[d.k]);
   openViewer(
-    `<div class="vhead"><b>🗺 Snags on drawings – ${esc(site)}</b></div>${
+    `<div class="vhead"><b>🗺 Snags on drawings – ${esc(siteLabel(site))}</b></div>${
       list.length
         ? list
             .map(

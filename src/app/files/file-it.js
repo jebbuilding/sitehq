@@ -6,6 +6,7 @@ import { render } from "../core/tabs-week.js";
 import { uploadFile } from "./files.js";
 import { newId } from "./outbox.js";
 import { JF_FOLDERS, jfFolderName, jfSave } from "../sales/job-file.js";
+import { siteFull } from "../sites/job-details.js";
 import { DOC_CATS } from "../sites/plans-specs.js";
 export { fileItSheet };
 /* Offered on the "PDF saved" bar (owner only): a form, report, drawing or survey can go into a client's job file
@@ -24,7 +25,7 @@ function fileItSheet(blob, name) {
       <label for="fi-f">Folder<select id="fi-f">${JF_FOLDERS.map(([k, l]) => `<option value="${k}"${k === "photos" ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
     </fieldset>
     <fieldset class="od-who"><legend><label class="inl"><input type="checkbox" id="fi-st"> A site's documents (only you see it)</label></legend>
-      <div class="grid2"><label for="fi-s">Site<select id="fi-s">${sites.map((s) => `<option>${esc(s)}</option>`).join("") || '<option value="">No sites yet</option>'}</select></label>
+      <div class="grid2"><label for="fi-s">Site<select id="fi-s">${sites.map((s) => `<option value="${esc(s)}">${esc(siteFull(s))}</option>`).join("") || '<option value="">No sites yet</option>'}</select></label>
       <label for="fi-sc">Folder<select id="fi-sc">${DOC_CATS.map(([k, l]) => `<option value="${k}"${k === "other" ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label></div>
     </fieldset>
     ${formFoot(false, "Save")}`,

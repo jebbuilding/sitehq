@@ -19,7 +19,7 @@ import { avatarHtml } from "../people/profile-photos.js";
 import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
-import { empTypeOf } from "../sites/job-details.js";
+import { empTypeOf, siteFull, siteLabel } from "../sites/job-details.js";
 import { siteClient } from "../sites/summary.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dwXlsPick } from "./day-work-xlsx.js";
@@ -50,13 +50,13 @@ function dwTradeSheet(ym, ents) {
     <div class="who" style="margin-bottom:6px">Chargeable hours only: extra work ${esc(bossFirst())} bills to the client. Add with <b>🧱 + Add day work</b> (or + Day work / job time on Timesheets) and choose 🧱 Yes.</div>
     ${
       list.length
-        ? `<div class="tswrap"><table class="tstable"><thead><tr><th>Date</th><th>Site · what you did</th><th class="num">Hrs</th></tr></thead><tbody>${list.map((e) => `<tr class="dwt-row tsrow" data-id="${esc(e.id)}"><td class="tsd"><b>${parse(e.date).getDate()}</b><span>${parse(e.date).toLocaleDateString("en-GB", { weekday: "short" })}</span></td><td class="tssite"><b>${esc(e.job || "No site")}</b><br>${esc(e.task || "")}${e.mats ? `<br><span class="who">Materials: ${esc(e.mats)}</span>` : ""}${(e.photos || []).length ? `<br><span class="who">📷 ${e.photos.length} photo${e.photos.length === 1 ? "" : "s"}</span>` : ""}${e.billed ? ' <span class="tag ok">Billed</span>' : e.approved ? ' <span class="tsok">✓</span>' : ""}</td><td class="num"><b>${hrs(e.hours)}</b></td></tr>`).join("")}</tbody></table></div>`
+        ? `<div class="tswrap"><table class="tstable"><thead><tr><th>Date</th><th>Site · what you did</th><th class="num">Hrs</th></tr></thead><tbody>${list.map((e) => `<tr class="dwt-row tsrow" data-id="${esc(e.id)}"><td class="tsd"><b>${parse(e.date).getDate()}</b><span>${parse(e.date).toLocaleDateString("en-GB", { weekday: "short" })}</span></td><td class="tssite"><b>${esc(siteLabel(e.job) || "No site")}</b><br>${esc(e.task || "")}${e.mats ? `<br><span class="who">Materials: ${esc(e.mats)}</span>` : ""}${(e.photos || []).length ? `<br><span class="who">📷 ${e.photos.length} photo${e.photos.length === 1 ? "" : "s"}</span>` : ""}${e.billed ? ' <span class="tag ok">Billed</span>' : e.approved ? ' <span class="tsok">✓</span>' : ""}</td><td class="num"><b>${hrs(e.hours)}</b></td></tr>`).join("")}</tbody></table></div>`
         : `<div class="nothing">No day work this month.</div>`
     }
     <div class="tstots"><div><span>Day work hours</span><b>${hrs(tot)}</b></div>${Object.entries(
       bySite,
     )
-      .map(([k, v]) => `<div><span>${esc(k)}</span><b>${hrs(v)}</b></div>`)
+      .map(([k, v]) => `<div><span>${esc(siteLabel(k))}</span><b>${hrs(v)}</b></div>`)
       .join("")}</div></div>`;
 }
 function dwAll() {
@@ -491,7 +491,7 @@ function dwEditRates() {
 }
 function dwAddLine(site) {
   openSheet(
-    `<h3 id="sheettitle">Add to ${esc(site)}</h3><div class="who">Materials, plant hire, skip or any other charge for this day work.</div>
+    `<h3 id="sheettitle">Add to ${esc(siteFull(site))}</h3><div class="who">Materials, plant hire, skip or any other charge for this day work.</div>
     <label for="dl-desc">What is it?<input id="dl-desc" maxlength="140" required placeholder="e.g. 22mm copper pipe and fittings"></label>
     <div class="grid2"><label for="dl-qty">Quantity<input id="dl-qty" inputmode="decimal" value="1"></label><label for="dl-unit">Unit (optional)<input id="dl-unit" maxlength="20" placeholder="e.g. lengths, days"></label></div>
     <div class="grid2"><label for="dl-rate">Price each £<input id="dl-rate" inputmode="decimal" placeholder="e.g. 45"></label><label for="dl-date">Date<input id="dl-date" type="date" value="${iso(new Date())}"></label></div>
@@ -600,7 +600,7 @@ async function dwPdf(site, items, money, showSite) {
   doc.text("Day work sheet", M, y);
   y += 7;
   doc.setFontSize(11);
-  doc.text(clean(site), M, y);
+  doc.text(clean(siteFull(site)), M, y);
   y += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);

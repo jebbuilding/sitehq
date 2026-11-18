@@ -3,6 +3,7 @@ import { $, addDays, esc, iso, parse, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { pbEntryDays } from "./board.js";
+import { siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 export { wpCard, wpDays, wpPlannerTop, wpProblems, wpWire };
 /* The forecast comes in its own record, settings/forecast (written three times a day by the "JEB weather forecast"
@@ -149,7 +150,7 @@ function wpCard() {
     .slice(0, 6)
     .map(
       (x, i) =>
-        `<div class="wp-row"><div><b>${esc(x.p.title || x.kind.name)}</b>${x.p.site ? ` · ${esc(x.p.site)}` : ""}<div class="who">${esc(wpDayName(x.d))}: ${esc(x.why)} (${esc(x.place)} forecast)</div></div><div class="wp-btns">${x.swap ? `<button type="button" class="btn wp-swap" data-i="${i}">⇄ Swap with ${esc(x.swap.title || "the indoor job")} (${esc(wpDayName(x.better))})</button>` : ""}${x.better ? `<button type="button" class="btn primary wp-move" data-i="${i}">Move to ${esc(wpDayName(x.better))}</button>` : `<span class="who">No better day in the next 10 days</span>`}</div></div>`,
+        `<div class="wp-row"><div><b>${esc(x.p.title || x.kind.name)}</b>${x.p.site ? ` · ${esc(siteLabel(x.p.site))}` : ""}<div class="who">${esc(wpDayName(x.d))}: ${esc(x.why)} (${esc(x.place)} forecast)</div></div><div class="wp-btns">${x.swap ? `<button type="button" class="btn wp-swap" data-i="${i}">⇄ Swap with ${esc(x.swap.title || "the indoor job")} (${esc(wpDayName(x.better))})</button>` : ""}${x.better ? `<button type="button" class="btn primary wp-move" data-i="${i}">Move to ${esc(wpDayName(x.better))}</button>` : `<span class="who">No better day in the next 10 days</span>`}</div></div>`,
     )
     .join("")}</div></div>`;
 }

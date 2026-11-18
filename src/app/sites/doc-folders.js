@@ -4,6 +4,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
+import { siteLabel } from "./job-details.js";
 import { same } from "./project-pages.js";
 export { pjdKept, pjdWire };
 /* James (Nov 2026): "in drawings and rams spec & docs in site do they have sub folder when needed. if not can you make
@@ -28,7 +29,7 @@ function pjdWire(site) {
         const k = b.dataset.k,
           at = b.dataset.p || "";
         openSheet(
-          `<h3 id="sheettitle">📁 New folder</h3><div class="who">${at ? "Inside " + esc(at.split("/").join(" › ")) : "In " + esc(site)}</div>
+          `<h3 id="sheettitle">📁 New folder</h3><div class="who">${at ? "Inside " + esc(at.split("/").join(" › ")) : "In " + esc(siteLabel(site))}</div>
           <label for="pjd-name">Folder name<input id="pjd-name" maxlength="60" placeholder="e.g. Structural"></label>${formFoot(false, "Make the folder")}`,
           async () => {
             const name = $("pjd-name")

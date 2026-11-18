@@ -5,7 +5,7 @@ import { EMP_TABS, render } from "../core/tabs-week.js";
 import { auditLog } from "../owner/deletion-record.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "./employment-types.js";
-import { empTypeOf } from "../sites/job-details.js";
+import { empTypeOf, siteFull } from "../sites/job-details.js";
 export { acMySites, acTabAllowed, acView };
 /* Kept in settings/app (which everyone's app reads, so each trade's app can follow it) as access:
      { roles: { emp|sub|agency: { tabs: [trade tab keys] } },
@@ -113,7 +113,7 @@ function acView(seg) {
                 const only = Array.isArray(p.sites);
                 return `<div class="pa-person" data-w="${esc(id)}"><div class="pa-ph"><b>${esc(nameOf(id))}</b><span class="who">${esc(EMP_TYPES[empTypeOf(id)] || "")}</span><select class="pa-role" aria-label="Role for ${esc(nameOf(id))}">${AC_ROLES.map(([r, l]) => `<option value="${r}"${acRoleOf(id) === r ? " selected" : ""}>${esc(l.replace(/s( &.*)?$/, "$1"))}</option>`).join("")}</select></div>
                 <div class="seg pa-mode"><button type="button" data-v="all" aria-pressed="${!only}">Every job</button><button type="button" data-v="only" aria-pressed="${only}">Only these jobs</button></div>
-                <div class="pa-sites"${only ? "" : " hidden"}>${sites.map((s) => `<label class="inl pa-sitel"><input type="checkbox" class="pa-site" value="${esc(s)}"${only && p.sites.includes(s) ? " checked" : ""}> ${esc(s)}</label>`).join("") || `<span class="who">No jobs yet.</span>`}</div></div>`;
+                <div class="pa-sites"${only ? "" : " hidden"}>${sites.map((s) => `<label class="inl pa-sitel"><input type="checkbox" class="pa-site" value="${esc(s)}"${only && p.sites.includes(s) ? " checked" : ""}> ${esc(siteFull(s))}</label>`).join("") || `<span class="who">No jobs yet.</span>`}</div></div>`;
               })
               .join("")
           : `<div class="who">No one on the team yet.</div>`

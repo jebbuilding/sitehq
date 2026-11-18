@@ -12,6 +12,7 @@ import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
+import { siteFull } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
 export { SAMPLES };
 const SAMPLES = (() => {
@@ -134,7 +135,7 @@ const SAMPLES = (() => {
       .filter(Boolean);
     openSheet(
       `<h3 id="sheettitle">📤 Book out ${names.length === 1 ? esc(names[0]) : names.length + " samples"}</h3>${names.length > 1 ? `<div class="who">${esc(names.join(", "))}</div>` : ""}
-    <label for="sb-cl">Who's got them<select id="sb-cl">${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cid0 ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select></label>
+    <label for="sb-cl">Who's got them<select id="sb-cl">${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cid0 ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(siteFull(c.site)) : ""}</option>`).join("")}</select></label>
     <label for="sb-due">Back by (optional)<input id="sb-due" type="date" value="${esc(iso(addDays(new Date(), 7)))}"></label>
     <label for="sb-note">Note (optional)<input id="sb-note" maxlength="200" placeholder="e.g. left with Mrs Smith, collect at next visit"></label>
     ${formFoot(false, "Book out")}`,

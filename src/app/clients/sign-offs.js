@@ -11,6 +11,7 @@ import { drawOpen } from "../drawing/drawings-tab.js";
 import { SIGNSHEET } from "../drawing/sign-off-sheet.js";
 import { uploadFile } from "../files/files.js";
 import { newId } from "../files/outbox.js";
+import { siteFull } from "../sites/job-details.js";
 export { SO, signoffsTab, soAll, soWatch };
 const SO = { subs: {}, signs: {}, docs: {} };
 /* a CDM document the client has signed in their portal is filed automatically in the site's CDM folder */
@@ -165,7 +166,7 @@ function signoffsTab() {
   $("so-new").onclick = () => {
     const cls = (S.clients || []).filter(clActive);
     openSheet(
-      `<h3 id="sheettitle">✍ New sign-off sheet</h3><label for="so-cl">Which client?<select id="so-cl"><option value="__manual">✏️ Type their details in (not in Clients)</option>${cls.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}${ptOf(c) ? "" : " (not joined the portal yet)"}</option>`).join("")}</select></label><div class="who">Typing their details in makes a sheet they sign on this device or on paper – nothing is added to Clients.</div>${formFoot(false, "Next")}`,
+      `<h3 id="sheettitle">✍ New sign-off sheet</h3><label for="so-cl">Which client?<select id="so-cl"><option value="__manual">✏️ Type their details in (not in Clients)</option>${cls.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}${c.site ? " · " + esc(siteFull(c.site)) : ""}${ptOf(c) ? "" : " (not joined the portal yet)"}</option>`).join("")}</select></label><div class="who">Typing their details in makes a sheet they sign on this device or on paper – nothing is added to Clients.</div>${formFoot(false, "Next")}`,
       () => {
         const v = $("so-cl").value;
         const c = cls.find((x) => x.id === v);

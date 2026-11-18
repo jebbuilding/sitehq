@@ -13,6 +13,7 @@ import { fcOpen, fcPut, openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { audExt, audTag, loadImage, vidExt } from "../photos/photos.js";
 import { shrinkImage } from "../safety/training.js";
+import { siteLabel } from "../sites/job-details.js";
 export { cuDraw, cuListHtml, cuOpen, cuQuickPhoto, cuQuickVideo, cuQuickVoice, cuSend };
 const CU_CHUNK = 450000,
   CU_MAX = 15 * 1048576;
@@ -356,7 +357,7 @@ async function cuOpen(uid, u, owner, c) {
   const img = /^image\//.test(u.type);
   openViewer(`${owner ? `<button type="button" class="btn backbtn" id="cu-back">‹ Back to portal</button>` : ""}<h3 style="margin:8px 0 4px">${esc(u.name)}</h3><div class="who">${owner ? "Sent by the client " : "Sent "}${esc(stamp(u.at))}${u.note ? ` · “${esc(u.note)}”` : ""}</div>
     ${/^audio\//.test(u.type || "") ? `<div class="audview" style="margin-top:10px">🎤 ${audTag(url, 'style="width:100%"')}</div>` : /^video\//.test(u.type || "") ? `<video src="${url}" controls playsinline style="width:100%;border-radius:8px;margin-top:10px;background:#000"></video>` : img ? `<img src="${url}" alt="${esc(u.name)}" style="max-width:100%;border-radius:8px;margin-top:10px">` : `<div class="notice" style="margin-top:10px">📄 ${esc(u.name)} · ${fsize(u.size || blob.size)}</div>`}
-    <div class="actions" style="margin-top:10px">${!img && !/^audio\//.test(u.type || "") ? `<button type="button" class="btn primary" id="cu-view">Open</button>` : ""}${owner ? `<button type="button" class="btn ${img ? "primary" : ""}" id="cu-dl">⬇ Download</button>${c && c.site ? `<button type="button" class="btn" id="cu-site">${u.saved ? "✓ Saved to site" : "Add to " + esc(c.site)}</button>` : ""}<button type="button" class="linkdanger" id="cu-del">Delete</button>` : ""}</div>`);
+    <div class="actions" style="margin-top:10px">${!img && !/^audio\//.test(u.type || "") ? `<button type="button" class="btn primary" id="cu-view">Open</button>` : ""}${owner ? `<button type="button" class="btn ${img ? "primary" : ""}" id="cu-dl">⬇ Download</button>${c && c.site ? `<button type="button" class="btn" id="cu-site">${u.saved ? "✓ Saved to site" : "Add to " + esc(siteLabel(c.site))}</button>` : ""}<button type="button" class="linkdanger" id="cu-del">Delete</button>` : ""}</div>`);
   if ($("cu-back"))
     $("cu-back").onclick = () => {
       URL.revokeObjectURL(url);

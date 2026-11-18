@@ -12,6 +12,7 @@ import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { sdCalc, sdCounts, sdDueDate, sdNo, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdImgData } from "./sales-pdf.js";
+import { siteLabel } from "../sites/job-details.js";
 export { gpToChase, gpView };
 /* Accounts › 📨 Getting paid. Chase plan: each overdue invoice gets a friendly reminder, then a firmer one, then a
    final one (by default 1, 14 and 30 days overdue) – the ones due today are listed with the email ready, and each
@@ -122,7 +123,7 @@ function gpView(tabs) {
             const over = !r.paid && r.due <= iso(new Date());
             const em = gpEmail(r.d);
             const body = `Dear ${r.d.client || ""},\n\nThe retention of ${gbp(r.amt)} held on invoice ${sdNo(r.d)} was due to be released on ${shortDay(r.due)}. Could you arrange payment, or let me know if there's anything still to put right?\n\nMany thanks,\n${coData().owner || ""}\n${coData().name || ""}`;
-            return `<div class="ad-row"><span class="ad-main"><b>${esc(r.d.client || "Client")}</b> <span class="who">${esc(sdNo(r.d))}${r.d.site ? " · " + esc(r.d.site) : ""}</span><br>${r.paid ? `<span class="tag ok">Received ${esc(shortDay(r.paid.date))}</span>` : over ? `<span class="tag bad">Due ${esc(shortDay(r.due))} – ask for it</span>` : `<span class="who">Due to be released ${esc(shortDay(r.due))}</span>`}</span><b class="ad-amt">${gbp(r.amt)}</b><span class="ad-acts">${!r.paid && over && em ? `<a class="btn primary" href="mailto:${esc(em)}?subject=${encodeURIComponent("Retention on invoice " + sdNo(r.d))}&body=${encodeURIComponent(body)}">✉ Ask for it</a>` : ""}${!r.paid ? `<button type="button" class="btn gp-retok" data-r="${esc(r.d.id)}">✓ Received</button><button type="button" class="btn gp-retdate" data-r="${esc(r.d.id)}">Change date</button>` : ""}</span></div>`;
+            return `<div class="ad-row"><span class="ad-main"><b>${esc(r.d.client || "Client")}</b> <span class="who">${esc(sdNo(r.d))}${r.d.site ? " · " + esc(siteLabel(r.d.site)) : ""}</span><br>${r.paid ? `<span class="tag ok">Received ${esc(shortDay(r.paid.date))}</span>` : over ? `<span class="tag bad">Due ${esc(shortDay(r.due))} – ask for it</span>` : `<span class="who">Due to be released ${esc(shortDay(r.due))}</span>`}</span><b class="ad-amt">${gbp(r.amt)}</b><span class="ad-acts">${!r.paid && over && em ? `<a class="btn primary" href="mailto:${esc(em)}?subject=${encodeURIComponent("Retention on invoice " + sdNo(r.d))}&body=${encodeURIComponent(body)}">✉ Ask for it</a>` : ""}${!r.paid ? `<button type="button" class="btn gp-retok" data-r="${esc(r.d.id)}">✓ Received</button><button type="button" class="btn gp-retdate" data-r="${esc(r.d.id)}">Change date</button>` : ""}</span></div>`;
           })
           .join("") ||
         `<div class="nothing">No retention held. Add a retention % on an invoice when the client holds some back.</div>`

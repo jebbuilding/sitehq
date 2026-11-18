@@ -12,7 +12,7 @@ import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "../sales/letterhead-setup.js";
 import { sdShareMail } from "../sales/sales-email.js";
 import { sdImgData } from "../sales/sales-pdf.js";
-import { sjEffective, sjMaster } from "./job-details.js";
+import { siteFull, sjEffective, sjMaster } from "./job-details.js";
 import { taskDone } from "./job-sheets.js";
 import { catName } from "./plans-specs.js";
 import { same } from "./project-pages.js";
@@ -289,7 +289,7 @@ async function jkPdf(D, pick, note) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(140, 140, 140);
-    doc.text(`${co.name} · ${D.site} · page ${i} of ${n}`, M, Math.min(bottom + 6, 290));
+    doc.text(`${co.name} · ${siteFull(D.site)} · page ${i} of ${n}`, M, Math.min(bottom + 6, 290));
   }
   return doc.output("blob");
 }

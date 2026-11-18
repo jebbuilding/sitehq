@@ -24,6 +24,7 @@ export {
   jobNameOf,
   siteFromClient,
   siteFront,
+  siteFull,
   siteHead,
   siteHeadHtml,
   siteJobCard,
@@ -842,6 +843,11 @@ function siteFrontPick(site) {
    as one person can have several jobs): sites/{id}.jobName; shown as the job's title with the address under it */
 const jobNameOf = (site) => String((siteRec(site) || {}).jobName || "").trim();
 const siteLabel = (site) => jobNameOf(site) || site;
+/* the job name and the address together, for drop-down lists and titles ("Jones kitchen · 4 Rolle Road, Exmouth") */
+const siteFull = (site) => {
+  const jn = jobNameOf(site);
+  return jn ? jn + " · " + site : String(site || "");
+};
 /* how a site is headed on cards and lists: the job name big and the address small; with no name yet, the first line of
    the address big and the rest small (James, Nov 2026) */
 function siteHead(site) {

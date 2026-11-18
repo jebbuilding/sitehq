@@ -57,6 +57,7 @@ import {
 import { openDayPlan, openPlanDetail, openPlanImport, planListHtml, planMatch } from "./views.js";
 import { wpPlannerTop } from "./weather-plan.js";
 import { shrinkImage } from "../safety/training.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { myJobs } from "../sites/job-sheets.js";
 import { same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
@@ -275,7 +276,7 @@ function pbFind() {
   openSheet(
     `<h3 id="sheettitle">🔍 Search &amp; filter the planner</h3>
     <label for="pf-q">Search<input id="pf-q" type="search" value="${esc(S.f.pq || "")}" placeholder="e.g. skip, scaffold, Kahn"></label>
-    <label for="pf-site">Site or job<select id="pf-site"><option value="">All sites and jobs</option>${siteOpts.map((x) => `<option value="${esc(x)}" ${x === (S.f.psite || "") ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+    <label for="pf-site">Site or job<select id="pf-site"><option value="">All sites and jobs</option>${siteOpts.map((x) => `<option value="${esc(x)}" ${x === (S.f.psite || "") ? "selected" : ""}>${esc(siteFull(x))}</option>`).join("")}</select></label>
     <label for="pf-who">Person<select id="pf-who"><option value="">Everyone</option>${crewIds()
       .map(
         (id) =>
@@ -1229,7 +1230,7 @@ function openKeyDates(site, jobId) {
   openSheet(
     `<h3 id="sheettitle">Key dates for a job</h3>
     ${pickField("kd-site", "Site", siteNames(), jj ? jj.site : site, "e.g. 12 High Street")}
-    <label for="kd-job">Job sheet (optional)<select id="kd-job"><option value="">Whole site, not one job sheet</option>${jobs.map((j) => `<option value="${esc(j.id)}" ${j.id === jobId ? "selected" : ""}>${esc(j.title)} · ${esc(j.site)}</option>`).join("")}</select></label>
+    <label for="kd-job">Job sheet (optional)<select id="kd-job"><option value="">Whole site, not one job sheet</option>${jobs.map((j) => `<option value="${esc(j.id)}" ${j.id === jobId ? "selected" : ""}>${esc(j.title)} · ${esc(siteFull(j.site))}</option>`).join("")}</select></label>
     <div><div class="checkhead"><span class="flabel" style="margin:0">Dates</span><span class="who">Name, date, and an end date if it runs over several days</span></div><div id="kd-rows"></div>
       <button type="button" class="pillbtn" id="kd-add" style="margin-top:6px">+ Add another date</button></div>
     <datalist id="kd-names">${KEY_DATES.map((k) => `<option value="${esc(k)}">`).join("")}</datalist>
@@ -1353,7 +1354,7 @@ function openKeyDates(site, jobId) {
 }
 function openPlanView(p) {
   openViewer(`<span class="tag">${esc(PTYPES[p.type] || "")}</span><h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 0;color:var(--accent);text-transform:uppercase">${esc(p.title)}</h3>
-    <div class="who">${shortDay(p.from)}${p.to && p.to !== p.from ? " – " + shortDay(p.to) : ""}${p.time ? " · " + esc(p.time) : ""}${p.site ? " · " + esc(p.site) : ""}</div>
+    <div class="who">${shortDay(p.from)}${p.to && p.to !== p.from ? " – " + shortDay(p.to) : ""}${p.time ? " · " + esc(p.time) : ""}${p.site ? " · " + esc(siteLabel(p.site)) : ""}</div>
     ${p.notes ? `<div class="talkbody">${esc(p.notes)}</div>` : ""}`);
 }
 function leaveCard(l, owner) {
@@ -1587,7 +1588,7 @@ function openPlanEditor(p, date, copy) {
       .filter((j) => j.status !== "closed" || (src && src.jobId === j.id))
       .map(
         (j) =>
-          `<option value="${esc(j.id)}" ${src && src.jobId === j.id ? "selected" : ""}>${esc(j.title)} · ${esc(j.site)}</option>`,
+          `<option value="${esc(j.id)}" ${src && src.jobId === j.id ? "selected" : ""}>${esc(j.title)} · ${esc(siteFull(j.site))}</option>`,
       )
       .join("")}</select></label>
     <div><div class="flabel">People</div><div class="seg" id="pe-who">${ids.map((id) => `<button type="button" data-v="${esc(id)}" aria-pressed="${src ? (src.people || []).includes(id) : false}">${esc(nameOf(id))}</button>`).join("") || '<span class="nothing">No employees yet.</span>'}</div></div>

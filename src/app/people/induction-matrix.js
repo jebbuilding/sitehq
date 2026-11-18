@@ -5,6 +5,7 @@ import { render } from "../core/tabs-week.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { isendBarHtml, isendOpen, isendWaiting, isendWire } from "./induction-send.js";
 import { viewRecord } from "../safety/site-inductions.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 export { inductionsView };
 /* A grid: a row per person (the team, and people inducted in person on James's or the foreman's phone), a column
@@ -98,12 +99,12 @@ function inductionsView() {
       <div class="im-box${n("need") ? " bad" : ""}"><small>Worked there, not inducted</small><b>${n("need")}</b><span>to sort</span></div>
       <div class="im-box${n("old") ? " warn" : ""}"><small>Induction changed since</small><b>${n("old")}</b><span>to sign again</span></div>
     </div>
-    <div class="im-filt"><label for="im-site" class="im-l">Site<select id="im-site"><option value="">All sites (${inds.length})</option>${inds.map((i) => `<option${i.site === site ? " selected" : ""}>${esc(i.site)}</option>`).join("")}</select></label><label class="inl"><input type="checkbox" id="im-gaps"${gaps ? " checked" : ""}> Only people with gaps</label></div>
+    <div class="im-filt"><label for="im-site" class="im-l">Site<select id="im-site"><option value="">All sites (${inds.length})</option>${inds.map((i) => `<option value="${esc(i.site)}"${i.site === site ? " selected" : ""}>${esc(siteFull(i.site))}</option>`).join("")}</select></label><label class="inl"><input type="checkbox" id="im-gaps"${gaps ? " checked" : ""}> Only people with gaps</label></div>
     ${
       !inds.length
         ? `<div class="empty"><strong>No site inductions yet</strong>Set one up from a site (Jobs › Sites › the site › Site induction).</div>`
         : shown.length
-          ? `<div class="tablewrap im-wrap"><table class="im-t"><thead><tr><th>Person</th>${cols.map(([ind]) => `<th>${esc(ind.site)}</th>`).join("")}</tr></thead><tbody>${shown
+          ? `<div class="tablewrap im-wrap"><table class="im-t"><thead><tr><th>Person</th>${cols.map(([ind]) => `<th>${esc(siteLabel(ind.site))}</th>`).join("")}</tr></thead><tbody>${shown
               .map(
                 (p) =>
                   `<tr data-p="${esc(p.id)}"><th>${esc(p.name)}${p.app ? "" : ` <small class="who">in person</small>`}</th>${cols.map(([ind, i]) => `<td data-i="${i}">${sq(p.cells[i], p, ind)}</td>`).join("")}</tr>`,

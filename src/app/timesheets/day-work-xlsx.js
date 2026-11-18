@@ -8,7 +8,7 @@ import { coData } from "../owner/company-details.js";
 import { nameOf } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { avatarHtml } from "../people/profile-photos.js";
-import { empTypeOf } from "../sites/job-details.js";
+import { empTypeOf, siteFull } from "../sites/job-details.js";
 import { siteClient } from "../sites/summary.js";
 import { dwRate } from "./day-work.js";
 import { sumH } from "./time.js";
@@ -39,7 +39,7 @@ function dwXlsPick(site, items, money, pre) {
     return `${hrs(sumH(g, () => true))} h · ${gbp(g.reduce((a, e) => a + money(e), 0))}`;
   };
   openSheet(
-    `<h3 id="sheettitle">📊 Spreadsheet · ${esc(site)}</h3><div class="who">Downloads the ticked lines as an Excel spreadsheet. Pick who to include.</div>
+    `<h3 id="sheettitle">📊 Spreadsheet · ${esc(siteFull(site))}</h3><div class="who">Downloads the ticked lines as an Excel spreadsheet. Pick who to include.</div>
     <div class="xlsopts">
       <label class="xlsopt"><input type="radio" name="xls-who" value="" ${pre && ppl.includes(pre) ? "" : "checked"}><span><b>👥 Everyone on this job</b><span class="who">${ppl.length} ${ppl.length === 1 ? "person" : "people"} · ${hrs(
         sumH(

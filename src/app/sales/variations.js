@@ -18,6 +18,7 @@ import { SD_VATC, sdNo, sdR2, sdSales, sdSaveRec, sdSet } from "./sales-calc.js"
 import { sdEdit } from "./sales-edit.js";
 import { sdShareMail } from "./sales-email.js";
 import { sdImgData } from "./sales-pdf.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { siteClient } from "../sites/summary.js";
 export { vrNew, vrPrefill, vrTot, vrView };
 /* Owner-private, todos/var-<id> (kind "variation"): { site, clientId, client, title, details, photos: [assetId],
@@ -66,7 +67,7 @@ function vrView(tabs) {
     ${Object.entries(toInv)
       .map(
         ([site, vs]) =>
-          `<div class="notice vr-due"><b>${esc(site)}</b>: ${vs.length} signed variation${vs.length === 1 ? "" : "s"} not invoiced yet, ${gbp(vs.reduce((a, v) => a + vrNet(v), 0))} + VAT <button type="button" class="btn primary vr-inv" data-s="${esc(site)}">🧾 Put on an invoice</button></div>`,
+          `<div class="notice vr-due"><b>${esc(siteLabel(site))}</b>: ${vs.length} signed variation${vs.length === 1 ? "" : "s"} not invoiced yet, ${gbp(vs.reduce((a, v) => a + vrNet(v), 0))} + VAT <button type="button" class="btn primary vr-inv" data-s="${esc(site)}">🧾 Put on an invoice</button></div>`,
       )
       .join("")}
     ${
@@ -75,7 +76,7 @@ function vrView(tabs) {
             .map((v) => {
               const st = VR_STATUS[v.status] || VR_STATUS.open;
               const inv = v.invId ? sdSales().find((d) => d.id === v.invId) : null;
-              return `<button type="button" class="vr-row" data-id="${esc(v.id)}"><span class="vr-main"><b>${esc(v.number || "")} · ${esc(v.title || "Variation")}</b><span class="who">${esc(v.site || "")}${v.client ? " · " + esc(v.client) : ""} · ${esc(shortDay(iso(new Date(v.created || Date.now()))))}</span></span><span class="vr-side"><b>${gbp(vrNet(v))}</b><span class="who">+ VAT</span><span class="tag ${st[1]}">${esc(st[0])}</span>${inv ? `<span class="tag ok">On ${esc(sdNo(inv))}</span>` : ""}</span></button>`;
+              return `<button type="button" class="vr-row" data-id="${esc(v.id)}"><span class="vr-main"><b>${esc(v.number || "")} · ${esc(v.title || "Variation")}</b><span class="who">${esc(siteLabel(v.site) || "")}${v.client ? " · " + esc(v.client) : ""} · ${esc(shortDay(iso(new Date(v.created || Date.now()))))}</span></span><span class="vr-side"><b>${gbp(vrNet(v))}</b><span class="who">+ VAT</span><span class="tag ${st[1]}">${esc(st[0])}</span>${inv ? `<span class="tag ok">On ${esc(sdNo(inv))}</span>` : ""}</span></button>`;
             })
             .join("")}</div>`
         : `<div class="empty"><strong>No variations yet</strong>When a client asks for something extra on site, tap 📝 New variation: photo, price, and they sign there and then.</div>`
@@ -115,7 +116,7 @@ function vrNew(site0, v0) {
   openSheet(
     `<h3 id="sheettitle">${v0 ? "✎ Change " + esc(v0.number) : "📝 New variation"}</h3>
     <div class="who">Fill this in with the client, then hand them the iPad to sign before the extra work starts.</div>
-    <label for="vr-site">Job<select id="vr-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}"${s === site0 ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
+    <label for="vr-site">Job<select id="vr-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}"${s === site0 ? " selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label>
     <label for="vr-client">Client's name<input id="vr-client" maxlength="80" placeholder="e.g. Mr Smith" value="${esc((v0 && v0.client) || "")}"></label>
     <label for="vr-title">What's the extra work?<input id="vr-title" maxlength="120" placeholder="e.g. Move the radiator to the other wall" value="${esc((v0 && v0.title) || "")}"></label>
     <label for="vr-det">Details (what's included)<textarea id="vr-det" maxlength="2000" rows="3" placeholder="e.g. Drain down, new pipework in 15 mm copper, refit and refill">${esc((v0 && v0.details) || "")}</textarea></label>
@@ -201,7 +202,7 @@ const VR_STMT = "I agree to this extra work at this price, on top of the price a
 function vrSign(v) {
   openSheet(
     `<h3 id="sheettitle">✍️ ${esc(v.number)} · ${esc(v.title)}</h3>
-    <div class="vr-sum"><div>${esc(v.site)}</div>${v.details ? `<div class="vr-det">${esc(v.details)}</div>` : ""}${(v.photos || []).length ? `<div class="vr-photos">${v.photos.map((id) => `<img src="${esc(blobUrl(id))}" alt="Photo" class="vr-thumb">`).join("")}</div>` : ""}
+    <div class="vr-sum"><div>${esc(siteLabel(v.site))}</div>${v.details ? `<div class="vr-det">${esc(v.details)}</div>` : ""}${(v.photos || []).length ? `<div class="vr-photos">${v.photos.map((id) => `<img src="${esc(blobUrl(id))}" alt="Photo" class="vr-thumb">`).join("")}</div>` : ""}
       <div class="drow"><span>Price</span><b>${gbp(vrNet(v))} + VAT ${gbp(vrVat(v))} = ${gbp(vrTot(v))}</b></div></div>
     <div class="vr-stmt">${esc(VR_STMT)}</div>
     <label for="vr-name">Your name<input id="vr-name" maxlength="80" value="${esc(v.client || "")}" autocomplete="name"></label>
@@ -262,7 +263,7 @@ function vrOpen(v) {
   const st = VR_STATUS[v.status] || VR_STATUS.open;
   const inv = v.invId ? sdSales().find((d) => d.id === v.invId) : null;
   openViewer(`<span class="tag ${st[1]}">${esc(st[0])}</span><h3 class="vr-h">${esc(v.number)} · ${esc(v.title)}</h3>
-    <div class="who">${esc(v.site)}${v.client ? " · " + esc(v.client) : ""}</div>
+    <div class="who">${esc(siteLabel(v.site))}${v.client ? " · " + esc(v.client) : ""}</div>
     ${v.details ? `<div class="vr-det">${esc(v.details)}</div>` : ""}
     ${(v.photos || []).length ? `<div class="vr-photos">${v.photos.map((id) => `<img src="${esc(blobUrl(id))}" alt="Photo" class="vr-thumb">`).join("")}</div>` : ""}
     <div class="drow"><span>Price</span><b>${gbp(vrNet(v))} + VAT ${gbp(vrVat(v))} = ${gbp(vrTot(v))}</b></div>

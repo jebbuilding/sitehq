@@ -26,6 +26,7 @@ import {
   vidExt,
   wireVoice,
 } from "../photos/photos.js";
+import { siteLabel } from "../sites/job-details.js";
 import { myJobs } from "../sites/job-sheets.js";
 import { myName } from "../survey/door-window-survey.js";
 export {
@@ -245,7 +246,7 @@ function chatView() {
           const u = unread(c);
           return `<button type="button" class="chatrow" data-c="${esc(c.id)}" data-s="${esc((t + " " + (c.site || "") + " " + (c.lastText || "") + " " + (c.lastName || "")).toLowerCase())}"><span class="avatar ${c.kind}">${c.kind === "team" ? esc(coShort().slice(0, 4)) : esc(initials(t))}</span>
       <span class="cmain"><span class="ctop"><b>${esc(t)}</b><span class="ctime">${chatTime(c.lastAt)}</span></span>
-      <span class="clast">${c.site ? `<span class="mtag">${esc(c.site)}</span> ` : ""}${c.archived ? '<span class="tag">Closed</span>' : ""}${c.ownerOnly ? '<span class="tag">Announcements</span>' : ""}${c.lastText ? `${c.kind !== "dm" && c.lastName ? esc(c.lastBy === S.me ? "You" : c.lastName) + ": " : ""}${esc(c.lastText)}` : "No messages yet"}</span></span>
+      <span class="clast">${c.site ? `<span class="mtag">${esc(siteLabel(c.site))}</span> ` : ""}${c.archived ? '<span class="tag">Closed</span>' : ""}${c.ownerOnly ? '<span class="tag">Announcements</span>' : ""}${c.lastText ? `${c.kind !== "dm" && c.lastName ? esc(c.lastBy === S.me ? "You" : c.lastName) + ": " : ""}${esc(c.lastText)}` : "No messages yet"}</span></span>
       ${u ? '<span class="udot" aria-label="Unread"></span>' : ""}</button>`;
         })
         .join("")}</div>`
@@ -794,7 +795,7 @@ function renderMsgs() {
           const hiddenText = m.deleted && !owner;
           return `${sep}<div class="msg ${mine ? "me" : ""} ${m.deleted ? "del" : ""}" data-m="${esc(m.id)}">
       ${!mine && c.kind !== "dm" ? `<div class="mname">${esc(m.byName || personName(m.by))}</div>` : ""}${m.fromChat ? `<div class="fromchat">Copied from ${esc(m.fromChat)}</div>` : ""}
-      ${m.site && !hiddenText ? `<div class="mtag">${esc(m.jobTitle ? m.jobTitle + " · " + m.site : m.site)}</div>` : ""}
+      ${m.site && !hiddenText ? `<div class="mtag">${esc(m.jobTitle ? m.jobTitle + " · " + siteLabel(m.site) : siteLabel(m.site))}</div>` : ""}
       ${(m.photo || m.photoLocal) && !hiddenText ? `<img class="mimg" src="${m.photoLocal || blobUrl(m.photo)}" alt="Photo" data-id="${esc(m.photo || "")}">` : ""}${(m.video || m.videoLocal) && !hiddenText && m.voice ? `<div class="maud">🎤 ${audTag(m.videoLocal || blobUrl(m.video))}</div>` : (m.video || m.videoLocal) && !hiddenText ? `<video class="mimg mvid" src="${m.videoLocal || blobUrl(m.video)}" controls playsinline preload="metadata"></video>` : ""}
       ${hiddenText ? '<div class="mtext"><i>This message was deleted</i></div>' : m.loc ? `<button type="button" class="maplink msgloc" data-addr="${esc(m.loc.addr || "")}" ${m.loc.lat != null ? `data-lat="${m.loc.lat}" data-lon="${m.loc.lon}"` : ""} data-label="${esc(m.loc.label || "")}">📍 <b>${esc(m.loc.label || "Location")}</b><span>${esc(m.loc.addr && m.loc.addr !== m.loc.label ? m.loc.addr : m.loc.lat != null ? (+m.loc.lat).toFixed(5) + ", " + (+m.loc.lon).toFixed(5) : "")}</span><span class="who">Tap to open in maps</span></button>` : m.text ? `<div class="mtext">${esc(m.text)}</div>` : ""}
       ${m.deleted && owner ? '<div class="mdel">Deleted by the sender. Only you can see this.</div>' : ""}
@@ -864,7 +865,7 @@ function renderComposerExtras() {
     p = CH.photo;
   $("cm-extras").hidden = !t && !p;
   $("cm-extras").innerHTML =
-    `${t ? `<span class="mtag big">${esc(t.jobTitle ? t.jobTitle + " · " + t.site : t.site)} <button type="button" id="cm-untag" aria-label="Remove tag">✕</button></span>` : ""}
+    `${t ? `<span class="mtag big">${esc(t.jobTitle ? t.jobTitle + " · " + siteLabel(t.site) : siteLabel(t.site))} <button type="button" id="cm-untag" aria-label="Remove tag">✕</button></span>` : ""}
     ${p ? `<span class="mtag big">${isAud(p) ? "🎤 Voice note" + (p.secs ? " (" + p.secs + "s)" : "") : /^video\//.test(p.type || "") ? "Video" : "Photo"}: ${esc(isAud(p) ? "ready to send" : p.name)} <button type="button" id="cm-unphoto" aria-label="Remove photo">✕</button></span>` : ""}`;
   if ($("cm-untag"))
     $("cm-untag").onclick = () => {
@@ -1067,8 +1068,8 @@ function initChat() {
     const { jobs, sites } = tagOptions();
     openSheet(
       `<h3 id="sheettitle">Tag a job</h3>
-    ${jobs.length ? `<div class="flabel">Job sheets and snag lists</div><div class="chatlist">${jobs.map((j) => `<button type="button" class="chatrow tagpick" data-j="${esc(j.id)}"><span class="cmain"><b>${esc(j.title)}</b><span class="clast">${esc(j.site)}</span></span></button>`).join("")}</div>` : ""}
-    <div class="flabel">Sites</div><div class="chatlist">${sites.map((s) => `<button type="button" class="chatrow tagpick" data-s="${esc(s)}"><span class="cmain"><b>${esc(s)}</b></span></button>`).join("") || '<div class="nothing">No sites set up yet.</div>'}</div>
+    ${jobs.length ? `<div class="flabel">Job sheets and snag lists</div><div class="chatlist">${jobs.map((j) => `<button type="button" class="chatrow tagpick" data-j="${esc(j.id)}"><span class="cmain"><b>${esc(j.title)}</b><span class="clast">${esc(siteLabel(j.site))}</span></span></button>`).join("")}</div>` : ""}
+    <div class="flabel">Sites</div><div class="chatlist">${sites.map((s) => `<button type="button" class="chatrow tagpick" data-s="${esc(s)}"><span class="cmain"><b>${esc(siteLabel(s))}</b></span></button>`).join("") || '<div class="nothing">No sites set up yet.</div>'}</div>
     <div class="formactions"><span>${CH.tag ? '<button type="button" class="linkdanger" id="tg-clear">Remove tag</button>' : ""}</span><button type="button" class="btn" id="f-cancel">Cancel</button></div>`,
       () => {},
       null,

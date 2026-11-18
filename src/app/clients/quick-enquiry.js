@@ -41,7 +41,7 @@ import { toHM } from "../planner/diary.js";
 import { SAMPLES } from "../purchasing/samples.js";
 import { shrinkImage } from "../safety/training.js";
 import { jfOpenClient } from "../sales/job-file.js";
-import { editSiteJob, syncSiteJobs } from "../sites/job-details.js";
+import { editSiteJob, siteLabel, syncSiteJobs } from "../sites/job-details.js";
 import { dropPin, miniMap } from "../sites/maps-pins.js";
 import { same } from "../sites/project-pages.js";
 import { DWS } from "../survey/door-window-survey.js";
@@ -421,7 +421,7 @@ function viewClient(c) {
         ? `<div class="actions" style="margin-top:8px">${clientSites(c)
             .map(
               (n) =>
-                `<button type="button" class="btn sjbig cv-sj" data-s="${esc(n)}">👁 ${esc(n)}: job details &amp; who sees what ›</button>`,
+                `<button type="button" class="btn sjbig cv-sj" data-s="${esc(n)}">👁 ${esc(siteLabel(n))}: job details &amp; who sees what ›</button>`,
             )
             .join("")}</div>`
         : `<div class="who" style="margin-top:8px">When this job is accepted it becomes a site, and you choose who sees each part of the details.</div>`

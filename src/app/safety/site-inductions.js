@@ -17,6 +17,7 @@ import { BRGB, pdfLogo } from "../photos/photos.js";
 import { planEntries } from "../planner/time-off.js";
 import { shrinkImage } from "./training.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { siteLabel } from "../sites/job-details.js";
 import { RAMS_SIGN } from "../sites/plans-specs.js";
 import { same } from "../sites/project-pages.js";
 import { QRSITE } from "../sites/qr-sign-in.js";
@@ -360,7 +361,7 @@ function openIndEditor(site) {
   setEditing(ind || null);
   openSheet(
     `<h3 id="sheettitle">${ind ? "Edit" : "Set up"} site induction</h3>
-    <div class="who">${esc(site)}</div>
+    <div class="who">${esc(siteLabel(site))}</div>
     ${IND_DETAILS.map(([k, l, def]) => {
       const v = ind
         ? det[k] || ""
@@ -545,7 +546,7 @@ function openInduction(ind, onDevice, count) {
       <div><div class="flabel">They are a</div><div class="seg" id="in-role">${VIS_ROLES.map((r, i) => `<button type="button" data-v="${esc(r)}" aria-pressed="${i === 0}">${esc(r)}</button>`).join("")}</div></div>`
         : ""
     }
-    <div><b>${esc(ind.site)}</b><div class="who">${esc(coName())}</div></div>
+    <div><b>${esc(siteLabel(ind.site))}</b><div class="who">${esc(coName())}</div></div>
     <div class="details">${detailsHtml(ind.details)}</div>
     ${
       (ind.rulesDocs || []).length
@@ -828,7 +829,7 @@ function sigPad(cv) {
 function viewRecord(rec, owner) {
   const w = rec.worker || {};
   openViewer(`<h3 style="font-family:var(--f-display);margin:0">Site induction record</h3>
-    <div class="who">${esc(rec.site)} · ${esc(coName())}</div>
+    <div class="who">${esc(siteLabel(rec.site))} · ${esc(coName())}</div>
     <div class="details" style="margin-top:10px">${detailsHtml(rec.details)}</div>
     ${rec.rulesAgreed ? `<div class="flabel" style="margin-top:12px">Site rules</div><div class="tick done"><span class="tickmark">✓</span><span>Read the site rules (${esc((rec.rulesAgreed.docs || []).join(", "))}) and agreed to follow them.</span></div>` : ""}
     <div class="flabel" style="margin-top:12px">Points confirmed</div>

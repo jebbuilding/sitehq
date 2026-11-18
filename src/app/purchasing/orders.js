@@ -14,6 +14,7 @@ import { shrinkImage } from "../safety/training.js";
 import { acReceipts, acSaveRcpt } from "../sales/acct-receipts.js";
 import { rcsNorm } from "../sales/receipt-smarts.js";
 import { sdR2 } from "../sales/sales-calc.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 export { pordView };
 /* Merchants › 📦 Orders: every purchase order (the ones made from a drawing's quantities, and new ones made here for a
    job – lines picked from the merchant's price list or typed), newest first, with where it's got to: draft, sent,
@@ -53,7 +54,7 @@ function pordView(seg) {
       L.map((o) => {
         const st = pordStatus(o);
         return `<div class="card pord-row"><div class="pord-h"><b>${esc(o.number || "")} · ${esc(o.supName || "")}</b><span class="tag ${st === "inv" || st === "got" ? "ok" : st === "part" ? "bad" : "day"}">${esc(PORD_ST[st])}</span></div>
-        <div class="who">${esc(o.site || "No job")} · ${(o.lines || []).length} line${(o.lines || []).length === 1 ? "" : "s"} · ${gbp(o.net || 0)} + VAT${o.sentAt ? " · sent " + esc(shortDay(iso(new Date(o.sentAt)))) : ""}</div>
+        <div class="who">${esc(siteLabel(o.site) || "No job")} · ${(o.lines || []).length} line${(o.lines || []).length === 1 ? "" : "s"} · ${gbp(o.net || 0)} + VAT${o.sentAt ? " · sent " + esc(shortDay(iso(new Date(o.sentAt)))) : ""}</div>
         <div class="actions"><button type="button" class="btn pord-open" data-id="${esc(o.id)}">Open</button>${st !== "inv" ? `<button type="button" class="btn${st === "sent" || st === "part" ? " primary" : ""} pord-del" data-id="${esc(o.id)}">📥 Delivery</button>` : ""}${st === "got" || st === "part" || st === "inv" ? `<button type="button" class="btn${st === "got" ? " primary" : ""} pord-inv" data-id="${esc(o.id)}">🧾 ${st === "inv" ? "The invoice" : "Match the invoice"}</button>` : ""}</div></div>`;
       }).join("") ||
       `<div class="empty"><strong>No orders yet</strong>Make one here for a job, or price a drawing's quantities and order from that.</div>`
@@ -68,7 +69,7 @@ function pordView(seg) {
 function pordOpen(o) {
   if (!o) return;
   const got = pordGot(o);
-  openViewer(`<div class="pord-v"><div class="vhead"><b>${esc(o.number)} · ${esc(o.supName)}</b></div><div class="who">${esc(o.site || "")} · ${esc(PORD_ST[pordStatus(o)])}</div>
+  openViewer(`<div class="pord-v"><div class="vhead"><b>${esc(o.number)} · ${esc(o.supName)}</b></div><div class="who">${esc(siteLabel(o.site) || "")} · ${esc(PORD_ST[pordStatus(o)])}</div>
     <table class="pord-tbl"><thead><tr><th>Item</th><th>Ordered</th><th>Came</th><th>Price</th></tr></thead><tbody>${(
       o.lines || []
     )
@@ -96,7 +97,7 @@ function pordNew() {
   let lines = [{ d: "", q: 1, u: "", p: 0 }];
   openSheet(
     `<h3 id="sheettitle">📦 New order</h3>
-    <div class="grid2"><label for="pord-site">For the job<select id="pord-site"><option value="">Pick the job…</option>${sites.map((s) => `<option>${esc(s)}</option>`).join("")}</select></label><label for="pord-sup">Merchant<select id="pord-sup"><option value="">Pick the merchant…</option>${sups.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("")}</select></label></div>
+    <div class="grid2"><label for="pord-site">For the job<select id="pord-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}">${esc(siteFull(s))}</option>`).join("")}</select></label><label for="pord-sup">Merchant<select id="pord-sup"><option value="">Pick the merchant…</option>${sups.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("")}</select></label></div>
     <div class="flabel">What to order</div><div id="pord-lines"></div><datalist id="pord-pl"></datalist>
     <div class="actions"><button type="button" class="btn" id="pord-add">+ Another line</button></div>
     ${formFoot(false, "Make the order")}`,

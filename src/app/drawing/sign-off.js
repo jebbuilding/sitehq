@@ -7,6 +7,7 @@ import { render } from "../core/tabs-week.js";
 import { SK_CAT } from "./trade-drawings.js";
 import { newId } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { siteClient } from "../sites/summary.js";
 export { dwSendForSign, dwSignStatus };
 function dwSignStatus(p) {
@@ -25,8 +26,8 @@ function dwSendForSign(p, upd) {
   const cls = (S.clients || []).filter(clActive);
   const sc = p.site ? siteClient(p.site) : null;
   openSheet(
-    `<h3 id="sheettitle">📤 Send "${esc(p.title || "Drawing")}"</h3>${p.site ? `<div class="who">Job: <b>${esc(p.site)}</b></div>` : ""}
-    <label for="sg-cl">Client<select id="sg-cl"><option value="">No client</option>${cls.map((c) => `<option value="${esc(c.id)}" ${sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}${ptOf(c) ? "" : " (not joined yet)"}</option>`).join("")}</select></label>
+    `<h3 id="sheettitle">📤 Send "${esc(p.title || "Drawing")}"</h3>${p.site ? `<div class="who">Job: <b>${esc(siteLabel(p.site))}</b></div>` : ""}
+    <label for="sg-cl">Client<select id="sg-cl"><option value="">No client</option>${cls.map((c) => `<option value="${esc(c.id)}" ${sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(siteFull(c.site)) : ""}${ptOf(c) ? "" : " (not joined yet)"}</option>`).join("")}</select></label>
     <fieldset class="od-who"><legend>Trades</legend>${ids.map((id) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(id)}"> ${esc(nameOf(id))}</label>`).join("") || "No trades on the app yet."}</fieldset>
     <label for="sg-note">Message (optional)<textarea id="sg-note" maxlength="400" placeholder="e.g. Please check the kitchen layout before we order units"></textarea></label>
     <label class="inl" style="color:var(--ink);font-weight:500"><input type="checkbox" id="sg-ask" checked> Ask them to approve it (they tap Approve or Needs changes and you see who has)</label>${formFoot(false, "📤 Send")}`,

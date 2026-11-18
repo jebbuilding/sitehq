@@ -27,6 +27,7 @@ import { ukDate } from "../safety/rams-maker.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "../sales/letterhead-setup.js";
 import { sdImgData } from "../sales/sales-pdf.js";
+import { siteFull, siteLabel } from "./job-details.js";
 import { jkImg } from "./job-pack.js";
 import { taskDone } from "./job-sheets.js";
 import { same } from "./project-pages.js";
@@ -205,7 +206,7 @@ function sdiHtml(site) {
     ${todo.length ? `<div class="notice warn sdi-todo"><b>Still to sort</b>${li(todo)}</div>` : ""}
     ${sec("👷 On site", li(D.people.map((r) => `${esc(sdiWho(r))} <span class="who">${esc(r.in || "")}${r.out ? "–" + esc(r.out) : r.open ? " (still on site)" : ""}</span>`)))}
     ${sec("🔨 Work logged", li(D.work.map((w) => `${esc(nameOf(w.who))}: ${esc(w.what || "Hours")}${w.hours ? ` <span class="who">${hrs(w.hours)} h</span>` : ""}${w.extra ? ' <span class="tag">Extra</span>' : ""}`)))}
-    ${sec("✅ Ticked off", li(D.ticks.map((t) => `${esc(t.task)} <span class="who">${esc(t.job)}${t.by ? " · " + esc(t.by) : ""}</span>`)))}
+    ${sec("✅ Ticked off", li(D.ticks.map((t) => `${esc(t.task)} <span class="who">${esc(siteLabel(t.job))}${t.by ? " · " + esc(t.by) : ""}</span>`)))}
     ${sec("📅 Key dates", li(D.kd.map((p) => esc(p.title))))}
     ${sec("🚚 Booked or due", li(D.due.map((p) => `${esc(p.title)}${planTimeTxt(p) ? ` <span class="who">${esc(planTimeTxt(p))}</span>` : ""}`)))}
     ${sec("❓ RFIs", li(D.rfis.map((x) => `${esc(rfiCode(x.r))} ${esc(x.r.subject || "")} <span class="who">${x.what}${/raised/.test(x.what) && x.r.to ? " – to " + esc(x.r.to) : x.r.answerBy ? " by " + esc(x.r.answerBy) : ""}</span>`)))}
@@ -465,7 +466,11 @@ async function sdiPdf(site, days, withPhotos) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(140, 140, 140);
-    doc.text(`${co.name} · site diary · ${site} · page ${i} of ${n}`, M, Math.min(bottom + 6, 290));
+    doc.text(
+      `${co.name} · site diary · ${siteFull(site)} · page ${i} of ${n}`,
+      M,
+      Math.min(bottom + 6, 290),
+    );
   }
   return doc.output("blob");
 }

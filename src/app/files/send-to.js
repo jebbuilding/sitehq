@@ -11,6 +11,7 @@ import { coData } from "../owner/company-details.js";
 import { auditLog } from "../owner/deletion-record.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { photoViewer } from "../photos/photos.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { myName, openJob } from "../survey/door-window-survey.js";
 export { SENDTO };
 const SENDTO = (() => {
@@ -119,10 +120,10 @@ const SENDTO = (() => {
     openSheet(
       `<h3 id="sheettitle">📤 Send “${esc(f.title || f.name || "file")}”</h3>
     <fieldset class="od-who"><legend>Trades</legend>${team.map((id) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" class="st-t" value="${esc(id)}"> ${esc(nameOf(id))}</label>`).join("") || '<span class="who">No trades on the app yet.</span>'}</fieldset>
-    <fieldset class="od-who"><legend>Clients (with the portal)</legend>${cls.map((c) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" class="st-c" value="${esc(c.id)}" ${cl0 && cl0.id === c.id ? "checked" : ""}> ${esc(c.name)}${c.site ? ` <span class="who">· ${esc(c.site)}</span>` : ""}</label>`).join("") || '<span class="who">No clients have joined the portal yet.</span>'}</fieldset>
+    <fieldset class="od-who"><legend>Clients (with the portal)</legend>${cls.map((c) => `<label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" class="st-c" value="${esc(c.id)}" ${cl0 && cl0.id === c.id ? "checked" : ""}> ${esc(c.name)}${c.site ? ` <span class="who">· ${esc(siteLabel(c.site))}</span>` : ""}</label>`).join("") || '<span class="who">No clients have joined the portal yet.</span>'}</fieldset>
     <label for="st-folder" id="st-folderl">Where the client sees it<select id="st-folder">${PT_FOLDERS.map(([k, l]) => `<option value="${k}" ${k === (f.folder || "other") ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
     <label class="tick"><input type="checkbox" id="st-job" checked> <span>Also keep it on the job – in <b>Sites › documents</b>, so it's on the record and everyone on that site can open it</span></label>
-    <label for="st-site">Which site<select id="st-site"><option value="">General (no site)</option>${sites.map((s) => `<option ${s === site0 ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
+    <label for="st-site">Which site<select id="st-site"><option value="">General (no site)</option>${sites.map((s) => `<option value="${esc(s)}" ${s === site0 ? "selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label>
     <label for="st-note">Message (optional)<textarea id="st-note" rows="2" maxlength="300" placeholder="e.g. Please read before Monday"></textarea></label>
     <fieldset class="od-who"><legend>✉️ Email it too</legend><input id="st-email" list="st-emails" type="text" inputmode="email" autocomplete="off" placeholder="Email address – or pick a trade, client or supplier" style="width:100%"><datalist id="st-emails">${[
       ...team.map((id) => {

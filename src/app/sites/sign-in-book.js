@@ -13,7 +13,7 @@ import { tlOn } from "../owner/trade-look.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
-import { empTypeOf, siteLabel } from "./job-details.js";
+import { empTypeOf, siteFull, siteLabel } from "./job-details.js";
 import { QRSITE } from "./qr-sign-in.js";
 import { openRollCall } from "./roll-call.js";
 import { myName } from "../survey/door-window-survey.js";
@@ -311,7 +311,7 @@ const SIGNIN = (() => {
       )
       .sort((a, b) => (b.d + b.in).localeCompare(a.d + a.in))
       .slice(0, 20);
-    h += `<div class="day" style="margin-top:12px"><div class="dayh"><span>Your recent sign-ins</span><span class="who">tap ✎ to change a time</span></div>${hist.map((x) => `<div class="citem"><span><b>${esc(shortDay(x.d))}</b> · ${esc(x.site || "")}<br><span class="who">${x.src === "t" ? "from your timesheet" : "signed in"}</span></span><span class="otime" style="display:flex;gap:6px;align-items:center">in <b>${esc(x.in || "")}</b>${x.open ? ' <span class="tag ok">On site</span>' : x.out ? ` · out <b>${esc(x.out)}</b>` : ""}<button type="button" class="iconbtn si-ed" data-src="${x.src}" data-id="${esc(x.id)}" aria-label="Change">✎</button></span></div>`).join("") || '<div class="nothing">Nothing yet.</div>'}</div>`;
+    h += `<div class="day" style="margin-top:12px"><div class="dayh"><span>Your recent sign-ins</span><span class="who">tap ✎ to change a time</span></div>${hist.map((x) => `<div class="citem"><span><b>${esc(shortDay(x.d))}</b> · ${esc(siteLabel(x.site) || "")}<br><span class="who">${x.src === "t" ? "from your timesheet" : "signed in"}</span></span><span class="otime" style="display:flex;gap:6px;align-items:center">in <b>${esc(x.in || "")}</b>${x.open ? ' <span class="tag ok">On site</span>' : x.out ? ` · out <b>${esc(x.out)}</b>` : ""}<button type="button" class="iconbtn si-ed" data-src="${x.src}" data-id="${esc(x.id)}" aria-label="Change">✎</button></span></div>`).join("") || '<div class="nothing">Nothing yet.</div>'}</div>`;
     $("main").innerHTML = h;
     wirePicks($("main"));
     if ($("si-in"))
@@ -354,7 +354,7 @@ const SIGNIN = (() => {
     });
     const seen = new Set(all.map((r) => r.who));
     const missing = date === iso(new Date()) ? teamIds().filter((id) => !seen.has(id)) : [];
-    let h = `<div class="actions" style="align-items:flex-end;flex-wrap:wrap"><label style="max-width:180px">Date<input type="date" id="sb-date" value="${date}"></label><label style="max-width:320px;flex:1">Site<select id="sb-site"><option value="">All sites</option>${sites.map((s) => `<option ${s === site ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></label></div>
+    let h = `<div class="actions" style="align-items:flex-end;flex-wrap:wrap"><label style="max-width:180px">Date<input type="date" id="sb-date" value="${date}"></label><label style="max-width:320px;flex:1">Site<select id="sb-site"><option value="">All sites</option>${sites.map((s) => `<option value="${esc(s)}" ${s === site ? "selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label></div>
    <div class="actions" style="margin-top:8px"><button type="button" class="btn primary" id="sb-add">+ Sign someone in</button><button type="button" class="btn" id="sb-pdf">📄 Sign-in register PDF</button><button type="button" class="btn" id="sb-qr">⬇ Import QR sign-ins</button><button type="button" class="btn danger" id="sb-roll">Roll call</button></div>
    <div class="who" style="margin:8px 0">Timesheet check-ins appear here automatically. Use <b>+ Sign someone in</b> for anyone not on the app too – visitors, deliveries, inspectors, another firm's workers. People set to <b>sign in only</b> (other company / agency – change it on their page in Employees) sign in and out on their Sign in tab instead of doing timesheets.</div>`;
     h +=
@@ -362,7 +362,7 @@ const SIGNIN = (() => {
         .sort()
         .map(
           (s) =>
-            `<div class="day"><div class="dayh"><span>📍 ${esc(s)}</span><span class="sum">${by[s].length} · ${by[s].filter((r) => r.open).length} on site</span></div>${by[
+            `<div class="day"><div class="dayh"><span>📍 ${esc(siteLabel(s))}</span><span class="sum">${by[s].length} · ${by[s].filter((r) => r.open).length} on site</span></div>${by[
               s
             ]
               .map((r) => {
@@ -374,7 +374,7 @@ const SIGNIN = (() => {
               .join("")}</div>`,
         )
         .join("") ||
-      `<div class="empty"><strong>Nobody signed in${date === iso(new Date()) ? " yet today" : " on " + esc(shortDay(date))}</strong>${site ? "on " + esc(site) : ""}</div>`;
+      `<div class="empty"><strong>Nobody signed in${date === iso(new Date()) ? " yet today" : " on " + esc(shortDay(date))}</strong>${site ? "on " + esc(siteLabel(site)) : ""}</div>`;
     if (missing.length)
       h += `<div class="who" style="margin-top:8px">Not signed in today: ${missing.map((id) => esc(nameOf(id)) + (signOnly(id) ? " (sign-in only)" : "")).join(", ")}</div>`;
     $("main").innerHTML = h;

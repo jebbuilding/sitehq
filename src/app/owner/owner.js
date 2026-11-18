@@ -43,7 +43,7 @@ import { isInv } from "../purchasing/materials-receipts.js";
 import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
-import { siteHeadHtml } from "../sites/job-details.js";
+import { siteFull, siteHeadHtml, siteLabel } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
@@ -210,9 +210,9 @@ function goneWorkCard() {
   const L = goneWorkList();
   if (!L.length) return "";
   return `<div class="notice warn gonecard"><b>⚠ ${L.length} timesheet / day work entr${L.length === 1 ? "y is" : "ies are"} logged against a site you deleted.</b> Move ${L.length === 1 ? "it" : "them"} to the right site, or delete ${L.length === 1 ? "it" : "them"}.
-    <div class="gonelist">${L.map((e) => `<label class="tick"><input type="checkbox" class="gw-c" data-w="${esc(e.who)}" data-e="${esc(e.id)}" checked> <span><b>${esc(nameOf(e.who))}</b> · ${esc(shortDay(e.date))} · ${e.type === "hours" ? "timesheet" : "day work"} ${e.hours != null ? esc(hrs(e.hours)) + " h" : ""} · <span class="tag bad">${esc(e.job)}</span>${e.task ? " · " + esc(e.task) : ""}</span></label>`).join("")}</div>
+    <div class="gonelist">${L.map((e) => `<label class="tick"><input type="checkbox" class="gw-c" data-w="${esc(e.who)}" data-e="${esc(e.id)}" checked> <span><b>${esc(nameOf(e.who))}</b> · ${esc(shortDay(e.date))} · ${e.type === "hours" ? "timesheet" : "day work"} ${e.hours != null ? esc(hrs(e.hours)) + " h" : ""} · <span class="tag bad">${esc(siteLabel(e.job))}</span>${e.task ? " · " + esc(e.task) : ""}</span></label>`).join("")}</div>
     <div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Move ticked to<select id="gw-site"><option value="">Choose a site…</option>${siteNames()
-      .map((n) => `<option>${esc(n)}</option>`)
+      .map((n) => `<option value="${esc(n)}">${esc(siteFull(n))}</option>`)
       .join(
         "",
       )}</select></label><button type="button" class="btn primary" id="gw-move">Move</button><button type="button" class="btn delbtn" id="gw-del">🗑 Delete ticked</button><button type="button" class="btn" id="gw-keep">Leave them as they are</button></div><div class="who">They're here because the hours were logged on a site you've since deleted. Moving them keeps the hours on a live site; leaving them keeps the old name in the records.</div></div>`;
@@ -339,7 +339,7 @@ function onSiteToday() {
         .sort()
         .map((site) => {
           const sr = siteRec(site) || {};
-          return `<div class="osite"><div><b>${esc(site)}</b>${sr.project ? ` <span class="who">· ${esc(sr.project)}</span>` : ""}</div>
+          return `<div class="osite"><div><b>${esc(siteLabel(site))}</b>${sr.project ? ` <span class="who">· ${esc(sr.project)}</span>` : ""}</div>
       ${bySite[site]
         .sort((a, b) => (a.start || "").localeCompare(b.start || ""))
         .map(
@@ -400,7 +400,7 @@ function ownerTime() {
         .map(
           (
             j,
-          ) => `<tr><td class="job"><b>${esc(j.name)}</b></td><td>${j.tasks.map((t) => `<div>${esc(t.task)} <span class="who">· ${esc(nameOf(t.who))}, ${hrs(t.hours)} h</span></div>`).join("")}</td>
+          ) => `<tr><td class="job"><b>${esc(siteLabel(j.name))}</b></td><td>${j.tasks.map((t) => `<div>${esc(t.task)} <span class="who">· ${esc(nameOf(t.who))}, ${hrs(t.hours)} h</span></div>`).join("")}</td>
         <td class="num">${j.x ? hrs(j.x) + " h" : "–"}</td><td class="num"><b>${hrs(j.h)} h</b></td></tr>`,
         )
         .join("")}</tbody></table></div></div></details>`;
@@ -421,7 +421,7 @@ function ownerTime() {
               (
                 e,
               ) => `<tr><td style="white-space:nowrap">${parse(e.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}</td><td style="white-space:nowrap">${typeTag(e)}</td>
-            <td class="job">${esc(e.job)}${e.task ? `<div>${esc(e.task)}</div>` : ""}${e.notes ? `<div class="who">${esc(e.notes)}</div>` : ""}${e.forName ? `<div class="who">${e.forId ? "" : "<b>For " + esc(e.forName) + "</b> · "}Filled in by ${esc(e.byForeman || nameOf(e._src || id))} (foreman)</div>` : ""}${e.editedBy || e.startedBy || e.stoppedBy ? `<div class="who">${[e.startedBy ? "Started by " + e.startedBy : "", e.stoppedBy ? "Stopped by " + e.stoppedBy : "", e.editedBy ? "Changed by " + e.editedBy : ""].filter(Boolean).map(esc).join(" · ")}</div>` : ""}</td>
+            <td class="job">${esc(siteLabel(e.job))}${e.task ? `<div>${esc(e.task)}</div>` : ""}${e.notes ? `<div class="who">${esc(e.notes)}</div>` : ""}${e.forName ? `<div class="who">${e.forId ? "" : "<b>For " + esc(e.forName) + "</b> · "}Filled in by ${esc(e.byForeman || nameOf(e._src || id))} (foreman)</div>` : ""}${e.editedBy || e.startedBy || e.stoppedBy ? `<div class="who">${[e.startedBy ? "Started by " + e.startedBy : "", e.stoppedBy ? "Stopped by " + e.stoppedBy : "", e.editedBy ? "Changed by " + e.editedBy : ""].filter(Boolean).map(esc).join(" · ")}</div>` : ""}</td>
             <td style="white-space:nowrap">${e.type === "hours" ? `${esc(e.start)}–${esc(e.finish)}${+e.breakMin ? `<div class="who">${e.breakMin}m break</div>` : ""}` : "–"}${otmLine(e)}${otmButtons(e)}</td>
             <td class="num">${hrs(e.hours)} h</td><td><input type="checkbox" class="appr" data-e="${esc(e.id)}" ${e.approved ? "checked" : ""} data-src="${esc(e._src || "")}" aria-label="Approve" style="width:22px;height:22px"></td><td><button type="button" class="pillbtn te-edit" data-e="${esc(e.id)}">Edit</button></td></tr>`,
             )
@@ -511,7 +511,7 @@ function timeControls(id) {
     .sort((a, b) => b.date.localeCompare(a.date))[0];
   return `<div class="tctl">${
     open
-      ? `<span class="tag ok">On site</span> <span class="who">${esc(open.job)} · in ${esc(open.start)}${open.date !== iso(new Date()) ? " on " + esc(shortDay(open.date)) : ""}</span>
+      ? `<span class="tag ok">On site</span> <span class="who">${esc(siteLabel(open.job))} · in ${esc(open.start)}${open.date !== iso(new Date()) ? " on " + esc(shortDay(open.date)) : ""}</span>
       <button type="button" class="btn danger tc-stop" data-e="${esc(open.id)}">Stop (check out)</button><button type="button" class="pillbtn tc-edit" data-e="${esc(open.id)}">Change times</button>`
       : `<span class="who">Not checked in</span><button type="button" class="btn primary tc-start">Start (check in)</button>`
   }<button type="button" class="pillbtn tc-add">+ Add a day</button><button type="button" class="pillbtn tc-job">🧱 + Day work / job time</button></div>`;
@@ -601,7 +601,7 @@ function openStopFor(id, e) {
   const now = nowHM();
   const fin = e.date === iso(new Date()) ? (toMin(now) > toMin(D.e) ? D.e : now) : D.e;
   openSheet(
-    `<h3 id="sheettitle">Stop ${esc(nameOf(id))}'s timesheet</h3><div class="who">${esc(e.job)} · ${esc(shortDay(e.date))} · started ${esc(e.start)}</div>
+    `<h3 id="sheettitle">Stop ${esc(nameOf(id))}'s timesheet</h3><div class="who">${esc(siteLabel(e.job))} · ${esc(shortDay(e.date))} · started ${esc(e.start)}</div>
     <label for="sp-fin">Finish time<input id="sp-fin" type="time" value="${fin}"></label><div class="calc" id="sp-calc"></div>
     ${formFoot(false, "Stop and save")}`,
     async () => {
@@ -805,7 +805,7 @@ function ownerPhotos() {
       .map(([v, l]) => `<option value="${v}" ${pw === v ? "selected" : ""}>${l}</option>`)
       .join(
         "",
-      )}</select></label><label for="pf-site">Site<select id="pf-site"><option value="">All sites (${all.length})</option>${sites.map((s) => `<option value="${esc(s)}" ${s === S.f.site ? "selected" : ""}>${esc(s)} (${siteN(s)})</option>`).join("")}</select></label>
+      )}</select></label><label for="pf-site">Site<select id="pf-site"><option value="">All sites (${all.length})</option>${sites.map((s) => `<option value="${esc(s)}" ${s === S.f.site ? "selected" : ""}>${esc(siteFull(s))} (${siteN(s)})</option>`).join("")}</select></label>
     <label for="pf-stage">Stage<select id="pf-stage"><option value="">All stages</option>${stages.map((x) => `<option ${x === S.f.stage ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
     <label for="pf-who">Employee<select id="pf-who"><option value="">Everyone</option>${ids.map((id) => `<option value="${esc(id)}" ${id === S.f.who ? "selected" : ""}>${esc(nameOf(id))}</option>`).join("")}</select></label></div>
     ${list.length ? `<div class="phgrid">${list.map((p) => photoTile(p, true, p.who)).join("")}</div>` : '<div class="empty"><strong>No photos ${pw==="week"?"this week":S.f.site?"for this site":"yet"}</strong>Photos your employees send appear here, stamped with site, time and location.</div>'}`;

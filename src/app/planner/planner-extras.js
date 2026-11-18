@@ -17,6 +17,7 @@ import {
 } from "./board.js";
 import { onDay, planEntries } from "./time-off.js";
 import { openPlanDetail } from "./views.js";
+import { siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { myName } from "../survey/door-window-survey.js";
 export { plClashHtml, plClashes, plCopyLastWeek, plSendWeek, plWhereHtml, plWireWhere };
@@ -98,7 +99,7 @@ function plWhereHtml(shown) {
               );
               const unassigned = list.filter((p) => !plPeople(p).length);
               return `<section class="card pl-site" style="--pc:hsl(${siteHue(s)} 55% 42%)"><div class="cardbody">
-                <div class="pl-sh"><i></i><b>${esc(s)}</b><span class="who">${ppl.length ? `${ppl.length} ${ppl.length === 1 ? "person" : "people"}` : "Nobody booked yet"}</span></div>
+                <div class="pl-sh"><i></i><b>${esc(siteLabel(s))}</b><span class="who">${ppl.length ? `${ppl.length} ${ppl.length === 1 ? "person" : "people"}` : "Nobody booked yet"}</span></div>
                 <div class="pl-ppl">${ppl.map(([w, p]) => person(w, p)).join("")}</div>
                 ${unassigned.length ? `<div class="pl-needs">Needs someone:</div>` : ""}${unassigned.map((p) => `<button type="button" class="pl-job" data-p="${esc(p.id)}" title="${esc(p.title)}">${p.time ? esc(p.time) + " · " : ""}${esc(s === "Not at a site" ? p.title : pbStageName(p.title, s))}</button>`).join("")}
                 ${s === "🎓 On a course" ? "" : `<button type="button" class="linkbtn pl-book" data-site="${esc(s === "Not at a site" ? "" : s)}">+ Book someone here</button>`}

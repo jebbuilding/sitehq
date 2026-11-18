@@ -23,6 +23,7 @@ import { closeViewer } from "../core/viewer.js";
 import { blobUrl, csvSave } from "../files/files.js";
 import { newId } from "../files/outbox.js";
 import { allTeam } from "../owner/owner.js";
+import { siteLabel } from "../sites/job-details.js";
 import { JOB_KINDS, jobProgress } from "../sites/job-sheets.js";
 import { same } from "../sites/project-pages.js";
 import { openJob } from "../survey/door-window-survey.js";
@@ -153,10 +154,10 @@ function histHtml(c) {
       ? `<div class="chist">${h
           .map((x, i) =>
             x.type === "site"
-              ? `<button type="button" class="chrow site" data-i="${i}"><span class="chic">🏗️</span><span><b>${esc(x.site)}</b><br><span class="who">${x.first ? esc(dY(x.first)) + (x.last && x.last !== x.first ? " – " + esc(dY(x.last)) : "") : "No time logged yet"}${x.hours ? " · " + hrs(x.hours) + " h logged" : ""}${x.people ? " · " + x.people + " " + (x.people === 1 ? "person" : "people") : ""}${x.photos ? " · " + x.photos + " photo" + (x.photos === 1 ? "" : "s") : ""}${x.jobs ? " · " + x.jobs + " job sheet" + (x.jobs === 1 ? "" : "s") : ""}</span></span><span aria-hidden="true">›</span></button>`
+              ? `<button type="button" class="chrow site" data-i="${i}"><span class="chic">🏗️</span><span><b>${esc(siteLabel(x.site))}</b><br><span class="who">${x.first ? esc(dY(x.first)) + (x.last && x.last !== x.first ? " – " + esc(dY(x.last)) : "") : "No time logged yet"}${x.hours ? " · " + hrs(x.hours) + " h logged" : ""}${x.people ? " · " + x.people + " " + (x.people === 1 ? "person" : "people") : ""}${x.photos ? " · " + x.photos + " photo" + (x.photos === 1 ? "" : "s") : ""}${x.jobs ? " · " + x.jobs + " job sheet" + (x.jobs === 1 ? "" : "s") : ""}</span></span><span aria-hidden="true">›</span></button>`
               : x.type === "job"
-                ? `<button type="button" class="chrow job" data-i="${i}"><span class="chic">${x.kind === "snag" ? "🔧" : "✅"}</span><span><b>${esc(x.title)}</b> ${x.status === "closed" ? '<span class="tag ok">Signed off</span>' : x.of && x.done === x.of ? '<span class="tag ok">All ticked</span>' : '<span class="tag day">Open</span>'}<br><span class="who">${esc(JOB_KINDS[x.kind] || "Job sheet")} · ${esc(x.site)}${x.of ? ` · ${x.done}/${x.of} tasks` : ""}${x.due ? " · due " + esc(shortDay(x.due)) : ""}</span></span><span aria-hidden="true">›</span></button>`
-                : `<button type="button" class="chrow past" data-i="${i}"><span class="chic">📁</span><span><b>${esc(x.title)}</b> <span class="tag">Past job</span><br><span class="who">${esc([x.from && dY(x.from), x.to && x.to !== x.from && dY(x.to)].filter(Boolean).join(" – "))}${x.value ? " · " + gbp(+x.value) : ""}${x.site ? " · " + esc(x.site) : ""}</span></span><span aria-hidden="true">›</span></button>`,
+                ? `<button type="button" class="chrow job" data-i="${i}"><span class="chic">${x.kind === "snag" ? "🔧" : "✅"}</span><span><b>${esc(x.title)}</b> ${x.status === "closed" ? '<span class="tag ok">Signed off</span>' : x.of && x.done === x.of ? '<span class="tag ok">All ticked</span>' : '<span class="tag day">Open</span>'}<br><span class="who">${esc(JOB_KINDS[x.kind] || "Job sheet")} · ${esc(siteLabel(x.site))}${x.of ? ` · ${x.done}/${x.of} tasks` : ""}${x.due ? " · due " + esc(shortDay(x.due)) : ""}</span></span><span aria-hidden="true">›</span></button>`
+                : `<button type="button" class="chrow past" data-i="${i}"><span class="chic">📁</span><span><b>${esc(x.title)}</b> <span class="tag">Past job</span><br><span class="who">${esc([x.from && dY(x.from), x.to && x.to !== x.from && dY(x.to)].filter(Boolean).join(" – "))}${x.value ? " · " + gbp(+x.value) : ""}${x.site ? " · " + esc(siteLabel(x.site)) : ""}</span></span><span aria-hidden="true">›</span></button>`,
           )
           .join("")}</div>`
       : `<div class="nothing">No jobs yet. When you <b>Make it a site</b>, its job sheets, hours and photos show here. Add earlier work with <b>+ Add a past job</b>.</div>`

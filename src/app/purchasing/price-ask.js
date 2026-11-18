@@ -13,6 +13,7 @@ import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhPics, lhPutBot, lhPutTop } from "../sales/letterhead-setup.js";
 import { sdR2 } from "../sales/sales-calc.js";
 import { sdShareMail } from "../sales/sales-email.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 export { rfqListHtml, rfqWireList };
 /* Merchants › 📦 Orders › 💬 Ask for prices: James lists the materials for a job once (or copies them from an order),
    ticks the merchants, and each gets the list as an email with a PDF to price. As prices come back he types them in
@@ -65,14 +66,14 @@ function rfqEdit(r0) {
   let lines = r0 ? r0.lines.map((l) => Object.assign({}, l)) : [{ d: "", q: 1, u: "" }];
   openSheet(
     `<h3 id="sheettitle">💬 Ask merchants for prices</h3>
-    <div class="grid2"><label for="rfq-site">For the job<select id="rfq-site"><option value="">Pick the job…</option>${sites.map((s) => `<option${r0 && r0.site === s ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label><label for="rfq-title">Name (optional)<input id="rfq-title" maxlength="60" placeholder="e.g. Extension blockwork" value="${esc((r0 && r0.title) || "")}"></label></div>
+    <div class="grid2"><label for="rfq-site">For the job<select id="rfq-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}"${r0 && r0.site === s ? " selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label><label for="rfq-title">Name (optional)<input id="rfq-title" maxlength="60" placeholder="e.g. Extension blockwork" value="${esc((r0 && r0.title) || "")}"></label></div>
     <div class="flabel">The materials</div><div id="rfq-lines"></div>
     <div class="actions"><button type="button" class="btn" id="rfq-add">+ Another line</button>${
       poAll().length
         ? `<select id="rfq-from" aria-label="Copy the lines from an order"><option value="">Copy from an order…</option>${poAll()
             .map(
               (o) =>
-                `<option value="${esc(o.id)}">${esc(o.number)} · ${esc(o.supName)} · ${esc(o.site || "")}</option>`,
+                `<option value="${esc(o.id)}">${esc(o.number)} · ${esc(o.supName)} · ${esc(siteLabel(o.site) || "")}</option>`,
             )
             .join("")}</select>`
         : ""
@@ -169,7 +170,7 @@ async function rfqPdf(r, supName) {
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(`To: ${supName} · Job: ${r.site || ""} · ${ukDate(iso(new Date()))}`, M, y);
+  doc.text(`To: ${supName} · Job: ${siteFull(r.site)} · ${ukDate(iso(new Date()))}`, M, y);
   y += 9;
   doc.setFont("helvetica", "bold");
   doc.text("Item", M, y);
@@ -244,7 +245,7 @@ function rfqTable(r) {
     return { t: sdR2(t), miss };
   };
   const bestTot = sdR2(best.reduce((a, b, i) => a + (b ? b.p * r.lines[i].q : 0), 0));
-  openViewer(`<div class="rfq-v"><div class="vhead"><b>💬 ${esc(r.title || r.site || "Price request")}</b></div><div class="who">${esc(r.site || "")} · type each merchant's price when it comes back (prices in their price list fill in by themselves)</div>
+  openViewer(`<div class="rfq-v"><div class="vhead"><b>💬 ${esc(r.title || r.site || "Price request")}</b></div><div class="who">${esc(siteLabel(r.site) || "")} · type each merchant's price when it comes back (prices in their price list fill in by themselves)</div>
     <div class="tablewrap"><table class="rfq-tbl"><thead><tr><th>Item</th><th>Qty</th>${sups.map((s) => `<th>${esc(s.name)}${(r.sentAt || {})[s.id] ? '<br><span class="who">asked</span>' : `<br><button type="button" class="linkbtn rfq-ask" data-s="${esc(s.id)}">✉ Ask</button>`}</th>`).join("")}</tr></thead><tbody>${r.lines
       .map(
         (l, i) =>

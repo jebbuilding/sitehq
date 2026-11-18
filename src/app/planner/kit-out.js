@@ -9,6 +9,7 @@ import { crewIds, nameOf } from "../owner/owner.js";
 import { qrsOwnerOpen, qrsPrint } from "./qr-stickers.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo } from "../safety/expiry-dates.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 export { kitLoadQr, kitScan, kitView };
 /* 🧰 Tools & plant: every machine, piece of small plant, ladder, digger and trailer with where it is now – in the yard,
    on a site, or with a person (and since when). Book it out (to someone, a site or both) and back in; each move is
@@ -72,7 +73,7 @@ function kitView(q) {
       keys
         .map(
           (k) =>
-            `<div class="flabel">${k === "In the yard" ? "🏠" : "📍"} ${esc(k)} (${groups[k].length})</div>${groups[
+            `<div class="flabel">${k === "In the yard" ? "🏠" : "📍"} ${esc(siteLabel(k))} (${groups[k].length})</div>${groups[
               k
             ]
               .map((e) => {
@@ -112,7 +113,7 @@ function kitBook(e) {
           `<option value="${esc(id)}"${(e.out || {}).who === id ? " selected" : ""}>${esc(nameOf(id))}</option>`,
       )
       .join("")}</select></label>
-    <label for="kit-site">On site<select id="kit-site"><option value="">Not on a site</option>${sites.map((s) => `<option${(e.out || {}).site === s ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
+    <label for="kit-site">On site<select id="kit-site"><option value="">Not on a site</option>${sites.map((s) => `<option value="${esc(s)}"${(e.out || {}).site === s ? " selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label>
     <label for="kit-note">Note (optional)<input id="kit-note" maxlength="120" placeholder="e.g. with 2 spare blades"></label>
     ${formFoot(false, "Book out")}`,
     async () => {

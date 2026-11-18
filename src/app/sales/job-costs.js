@@ -14,7 +14,7 @@ import { acRcptSheet } from "./acct-review.js";
 import { jbBudget, jbCard, jbTag, jbWire } from "./job-budget.js";
 import { SD_VATC, sdCalc, sdCounts, sdNo, sdR2, sdSales, sdSaveRec } from "./sales-calc.js";
 import { sdEdit } from "./sales-edit.js";
-import { empTypeOf } from "../sites/job-details.js";
+import { empTypeOf, siteFull, siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
@@ -266,7 +266,7 @@ function jcView(tabs) {
         ? `<div class="tablewrap"><table class="jc-tbl"><thead><tr><th>Job</th><th>Type</th><th class="num">Costs</th><th class="num">Invoiced</th><th class="num">Profit</th><th class="num">%</th><th>Budget</th></tr></thead><tbody>${rows
             .map(
               (d) =>
-                `<tr class="jc-row" data-s="${esc(d.site)}"><td><b>${esc(d.site)}</b>${d.cp && d.notInv.length ? `<div class="jc-warn">${gbp(d.notInvCharge)} not invoiced yet</div>` : ""}</td><td>${d.cp ? "Cost plus" : "Fixed price"}</td><td class="num">${gbp(d.cost)}</td><td class="num">${gbp(d.invoiced)}</td><td class="num${d.profit < 0 ? " jc-neg" : ""}">${gbp(d.profit)}</td><td class="num">${d.price ? d.pctProfit + "%" : "–"}</td><td>${jbTag(jbBudget(d)) || (d.cp ? "Cost plus" : "–")}</td></tr>`,
+                `<tr class="jc-row" data-s="${esc(d.site)}"><td><b>${esc(siteLabel(d.site))}</b>${d.cp && d.notInv.length ? `<div class="jc-warn">${gbp(d.notInvCharge)} not invoiced yet</div>` : ""}</td><td>${d.cp ? "Cost plus" : "Fixed price"}</td><td class="num">${gbp(d.cost)}</td><td class="num">${gbp(d.invoiced)}</td><td class="num${d.profit < 0 ? " jc-neg" : ""}">${gbp(d.profit)}</td><td class="num">${d.price ? d.pctProfit + "%" : "–"}</td><td>${jbTag(jbBudget(d)) || (d.cp ? "Cost plus" : "–")}</td></tr>`,
             )
             .join("")}</tbody></table></div>`
         : `<div class="empty"><strong>No job costs yet</strong>Book receipts to a site, and hours on the timesheets count by themselves.</div>`
@@ -278,7 +278,7 @@ function jcView(tabs) {
             .map(
               (x) =>
                 `<div class="jc-loose"><span>${esc(x.date ? shortDay(x.date) : "")} · ${esc(x.desc)} · ${gbp(x.amt)}</span><select class="jc-book" data-t="${x.t}" data-id="${esc(x.id)}" data-who="${esc(x.who || "")}" aria-label="Job for ${esc(x.desc)}"><option value="">Book to…</option>${jcSites()
-                  .map((s) => `<option value="${esc(s)}">${esc(s)}</option>`)
+                  .map((s) => `<option value="${esc(s)}">${esc(siteFull(s))}</option>`)
                   .join("")}</select></div>`,
             )
             .join("")}</div></section>`
@@ -345,7 +345,7 @@ function jcJobView(tabs, site) {
   const tot = (k, f) => sdR2(sec(k).reduce((a, i) => a + i[f], 0));
   $("main").innerHTML = `<div class="ac-page">${tabs}
     <div class="actions"><button type="button" class="btn" id="jc-back">‹ All jobs</button></div>
-    <h2 class="jc-h">💷 ${esc(site)}</h2>${d.cl ? `<div class="who">Client: ${esc(d.cl.name)}</div>` : ""}
+    <h2 class="jc-h">💷 ${esc(siteFull(site))}</h2>${d.cl ? `<div class="who">Client: ${esc(d.cl.name)}</div>` : ""}
     <div class="seg" id="jc-mode"><button type="button" data-v="fixed" aria-pressed="${!d.cp}">Fixed price</button><button type="button" data-v="costplus" aria-pressed="${d.cp}">Cost plus</button></div>
     ${
       d.cp

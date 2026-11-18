@@ -11,6 +11,7 @@ import { newId, submitJob } from "../files/outbox.js";
 import { nameOf } from "../owner/owner.js";
 import { isInv } from "./materials-receipts.js";
 import { shrinkImage } from "../safety/training.js";
+import { siteLabel } from "../sites/job-details.js";
 export { empInvoices, invCard, invDetail, openInvoice, wireInvoices };
 const INV_ST = {
   sent: ["Sent", "day"],
@@ -29,7 +30,7 @@ function invCard(v, owner, who) {
   const st = INV_ST[v.status || "sent"] || INV_ST.sent;
   return `<div class="entry inv" data-i="${esc(v.id)}" data-w="${esc(who || "")}"><div class="main">
     <div class="job"><span class="tag ${st[1]}">${st[0]}</span>Invoice ${esc(v.number || "")}${owner ? ` <span class="who">· ${esc(nameOf(who))}</span>` : ""}</div>
-    <div class="sub">Sent ${stamp(v.sentAt)}${v.deliveredAt && v.deliveredAt - v.sentAt > 600000 ? ` (arrived ${stamp(v.deliveredAt)}, no signal when sent)` : ""}${v.invDate ? ` · dated ${shortDay(v.invDate)}` : ""}${v.from && v.to ? ` · work ${shortDay(v.from)} – ${shortDay(v.to)}` : ""}${v.site ? ` · ${esc(v.site)}` : ""}</div>
+    <div class="sub">Sent ${stamp(v.sentAt)}${v.deliveredAt && v.deliveredAt - v.sentAt > 600000 ? ` (arrived ${stamp(v.deliveredAt)}, no signal when sent)` : ""}${v.invDate ? ` · dated ${shortDay(v.invDate)}` : ""}${v.from && v.to ? ` · work ${shortDay(v.from)} – ${shortDay(v.to)}` : ""}${v.site ? ` · ${esc(siteLabel(v.site))}` : ""}</div>
     ${v.status === "paid" && v.paidAt ? `<div class="sub">Paid ${stamp(v.paidAt)}</div>` : ""}
     ${v.notes ? `<div class="sub">${esc(v.notes)}</div>` : ""}
     ${v.status === "query" && v.query ? `<div class="sub" style="color:var(--danger)">Query: ${esc(v.query)}</div>` : ""}
@@ -67,7 +68,7 @@ function invDetail(v, owner, who) {
   const img = isImg(v.contentType) && v.assetId;
   openSheet(
     `<h3 id="sheettitle">Invoice ${esc(v.number || "")}</h3>
-    <div class="invhead"><div><b>${esc(owner ? nameOf(who) : "Your invoice")}</b><div class="who">${v.site ? esc(v.site) : "No site given"}</div></div>${v.amount ? `<div class="invamt">${gbp(v.amount)}</div>` : ""}</div>
+    <div class="invhead"><div><b>${esc(owner ? nameOf(who) : "Your invoice")}</b><div class="who">${v.site ? esc(siteLabel(v.site)) : "No site given"}</div></div>${v.amount ? `<div class="invamt">${gbp(v.amount)}</div>` : ""}</div>
     <div class="flabel">Stage</div>
     <ol class="invsteps">${INV_FLOW.map(([k, l, h], i) => `<li class="${i < idx || (st === "paid" && k === "paid") ? "done" : i === idx ? "cur" : ""}">${owner && k !== "sent" ? `<button type="button" class="invstep" data-s="${k}" aria-pressed="${k === st}">` : `<div class="invstep">`}<span class="dot">${i < idx || st === "paid" ? "✓" : i + 1}</span><b>${l}</b><small>${at[k] ? esc(stamp(at[k])) : esc(h)}</small>${owner && k !== "sent" ? "</button>" : "</div>"}</li>`).join("")}</ol>
     ${st === "query" ? `<div class="notice warn"><b>On query.</b> ${esc(v.query || "")}${v.queryAt ? ` <span class="who">(${esc(stamp(v.queryAt))})</span>` : ""}</div>` : ""}
@@ -79,7 +80,7 @@ function invDetail(v, owner, who) {
         : ""
     }
     <div class="flabel">Details</div>
-    <div class="details">${row("Invoice number", esc(v.number || ""))}${row("Amount", v.amount ? gbp(v.amount) : "")}${row("Invoice date", v.invDate ? esc(shortDay(v.invDate)) : "")}${row("Work period", v.from && v.to ? esc(shortDay(v.from) + " – " + shortDay(v.to)) : "")}${row("Site", esc(v.site || ""))}
+    <div class="details">${row("Invoice number", esc(v.number || ""))}${row("Amount", v.amount ? gbp(v.amount) : "")}${row("Invoice date", v.invDate ? esc(shortDay(v.invDate)) : "")}${row("Work period", v.from && v.to ? esc(shortDay(v.from) + " – " + shortDay(v.to)) : "")}${row("Site", esc(siteLabel(v.site) || ""))}
       ${row("Sent", esc(stamp(v.sentAt)))}${v.deliveredAt && v.deliveredAt - v.sentAt > 600000 ? row("Arrived", esc(stamp(v.deliveredAt)) + " (no signal when sent)") : ""}${row("Received", v.receivedAt ? esc(stamp(v.receivedAt)) : "")}${row("Approved", v.approvedAt ? esc(stamp(v.approvedAt)) : "")}
       ${row("Paid", v.paidAt ? esc(v.paidOn ? shortDay(v.paidOn) : stamp(v.paidAt)) : "")}${row("Payment ref", esc(v.paidRef || ""))}${row("Their notes", esc(v.notes || ""))}</div>
     <div class="flabel">The invoice</div>

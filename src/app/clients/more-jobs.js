@@ -6,6 +6,7 @@ import { $, esc, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, siteNames } from "../core/state.js";
 import { newId } from "../files/outbox.js";
+import { siteFull } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 export { mjEdit, mjHas };
 /* James (Nov 2026): one client can have several jobs at once (a kitchen and a garden wall), or another job later. The
@@ -33,7 +34,7 @@ function mjEdit(c, j0, full) {
     <div class="grid2"><label for="mj-stage">Stage<select id="mj-stage">${mjStages()
       .map(([k, l]) => `<option value="${k}"${k === j.stage ? " selected" : ""}>${esc(l)}</option>`)
       .join("")}</select></label>
-    <label for="mj-site">Where<select id="mj-site"><option value="">Not a site yet</option>${sites.map((s) => `<option${same(s, curSite) ? " selected" : ""}>${esc(s)}</option>`).join("")}<option value="__new">➕ A new site at another address…</option></select></label></div>
+    <label for="mj-site">Where<select id="mj-site"><option value="">Not a site yet</option>${sites.map((s) => `<option value="${esc(s)}"${same(s, curSite) ? " selected" : ""}>${esc(siteFull(s))}</option>`).join("")}<option value="__new">➕ A new site at another address…</option></select></label></div>
     <label for="mj-addr" id="mj-addrw" class="mj-addrw" hidden>Address of the new site<input id="mj-addr" maxlength="120" placeholder="e.g. 7 High Street"></label>
     ${full ? "" : `<button type="button" class="btn" id="mj-full">📝 Add the full details</button>`}
     <div id="mj-more"${full ? "" : " hidden"}>

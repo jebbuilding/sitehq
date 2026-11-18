@@ -5,6 +5,7 @@ import { render } from "../core/tabs-week.js";
 import { nlOpenTab } from "../owner/today.js";
 import { jcData, jcJob, jcSave } from "./job-costs.js";
 import { sdCalc, sdR2 } from "./sales-calc.js";
+import { siteLabel } from "../sites/job-details.js";
 import { jobProgress } from "../sites/job-sheets.js";
 import { same } from "../sites/project-pages.js";
 export { jbBudget, jbCard, jbProblems, jbTag, jbTodayCard, jbTodayWire, jbWire };
@@ -167,7 +168,7 @@ function jbTodayCard() {
     .slice(0, 5)
     .map(
       (x) =>
-        `<button type="button" class="citem jbg-go" data-s="${esc(x.site)}"><span>${esc(x.site)}<br><span class="who">${esc(x.b.msg)}</span></span>${jbTag(x.b)}</button>`,
+        `<button type="button" class="citem jbg-go" data-s="${esc(x.site)}"><span>${esc(siteLabel(x.site))}<br><span class="who">${esc(x.b.msg)}</span></span>${jbTag(x.b)}</button>`,
     )
     .join("")}</div></div>`;
 }

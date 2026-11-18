@@ -13,6 +13,7 @@ import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { viewRa } from "../safety/rams.js";
 import { sigPad } from "../safety/site-inductions.js";
 import { cdmShare, docMove } from "./doc-visibility.js";
+import { siteLabel } from "./job-details.js";
 import { empSitesView, plansView0 } from "./trade-sites.js";
 export {
   DOC_CATS,
@@ -61,7 +62,7 @@ function docRow(d, owner) {
   const s = !owner && d.cat === "rams" ? mySign(d.id) : null;
   return `<div class="entry doc" data-d="${esc(d.id)}">${owner ? `<label class="dpick" title="Select"><input type="checkbox" class="d-pick" aria-label="Select ${esc(d.title || d.fileName || "document")}"></label>` : ""}<div class="main">
     <div class="job"><span class="tag ${d.cat === "plans" ? "day" : d.cat === "rams" ? "bad" : ""}">${esc(catName(d.cat))}</span>${s ? '<span class="tag ok">Signed</span>' : ""}${d._priv ? '<span class="tag" title="Only you can see this">🔒 Only me</span>' : ""}${(d.who || []).length && !d._priv ? `<span class="tag" title="${esc(d.who.map(nameOf).join(", "))}">👤 ${d.who.length} trade${d.who.length === 1 ? "" : "s"}</span>` : ""}${d.clientShared ? '<span class="tag" title="Sent to the client portal">🏡 Client</span>' : ""}${esc(d.title || d.fileName)}</div>
-    <div class="sub">${esc(d.site || "General")}${docPath(d) ? " › " + esc(docPath(d).split("/").join(" › ")) : ""} · ${esc(d.fileName || "")}${d.size ? ` · ${fsize(d.size)}` : ""} · added ${stamp(d.uploaded)}</div>
+    <div class="sub">${esc(siteLabel(d.site) || "General")}${docPath(d) ? " › " + esc(docPath(d).split("/").join(" › ")) : ""} · ${esc(d.fileName || "")}${d.size ? ` · ${fsize(d.size)}` : ""} · added ${stamp(d.uploaded)}</div>
     ${owner && d.cat === "rams" && RAMS_SIGN ? signStatus(d) : ""}
     ${s ? `<div class="sub">You signed this on ${stamp(s.signedAt)}</div>` : ""}
     <div class="filerow"><button type="button" class="pillbtn d-open">Open</button>${(d.versions || []).length ? `<button type="button" class="pillbtn d-vers">🕘 Previous versions (${d.versions.length})</button><span class="tag ok">Rev ${(d.versions || []).length + 1} · latest</span>` : ""}${FC.ids.has(d.assetId) ? '<span class="who">Kept in the app</span>' : ""}${owner ? `<button type="button" class="pillbtn d-save">Download</button><button type="button" class="pillbtn d-share">👁 Who can see</button><button type="button" class="pillbtn d-move">📁 Move</button>` : ""}
@@ -172,7 +173,7 @@ function wireDocs(owner) {
 function docVersions(d, owner) {
   const vs = (d.versions || []).slice().sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
   const n = vs.length + 1;
-  openViewer(`<h3 style="font-family:var(--f-display);margin:0">🕘 ${esc(d.title || d.fileName)}</h3><div class="who">${esc(d.site || "General")}</div>
+  openViewer(`<h3 style="font-family:var(--f-display);margin:0">🕘 ${esc(d.title || d.fileName)}</h3><div class="who">${esc(siteLabel(d.site) || "General")}</div>
     <div class="vrow cur"><span><b>Rev ${n} · current</b><br><span class="who">${esc(d.fileName || "")} · uploaded ${esc(stamp(d.uploaded))}</span></span><button type="button" class="btn v-open" data-i="-1">Open</button></div>
     <div class="notice warn" style="margin:8px 0">Older versions below are kept for reference only. Don't build from them.</div>
     ${vs.map((v, i) => `<div class="vrow"><span><b>Rev ${n - 1 - i}</b> <span class="tag">Superseded</span><br><span class="who">${esc(v.fileName || "")} · uploaded ${esc(stamp(v.uploaded))}${v.replacedAt ? " · replaced " + esc(stamp(v.replacedAt)) : ""}</span></span><button type="button" class="btn v-open" data-i="${i}">Open</button>${owner ? `<button type="button" class="pillbtn v-cur" data-i="${i}">Make current</button><button type="button" class="linkdanger v-del" data-i="${i}">Delete</button>` : ""}</div>`).join("")}`);
@@ -247,7 +248,7 @@ function openSign(d) {
   setEditing(null);
   openSheet(
     `<h3 id="sheettitle">Read and sign</h3>
-    <div><b>${esc(d.title)}</b><div class="who">${esc(d.site || "General")} · ${esc(catName(d.cat))}</div></div>
+    <div><b>${esc(d.title)}</b><div class="who">${esc(siteLabel(d.site) || "General")} · ${esc(catName(d.cat))}</div></div>
     <div class="notice">Open and read the whole document before you sign.</div>
     <button type="button" class="btn" id="s-dl">Open ${esc(d.fileName || "document")}</button>
     <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="s-ok"> ${d.needSign && d.signStmt ? esc(d.signStmt) : "I have read and understood this document and will follow it."}</label>
