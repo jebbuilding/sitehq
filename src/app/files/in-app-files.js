@@ -273,7 +273,10 @@ async function openFile(id, name, type) {
     $("fv-body").innerHTML = `<pre class="fvtext">${esc(tx)}</pre>`;
     return;
   }
-  fvMsg("This file type can't be shown in the app", "");
+  fvMsg(
+    "This file type can't be shown in the app",
+    ownerMode() ? "Save a copy to open it in the program it came from (Excel, Outlook, CAD…)." : "",
+  );
 }
 const FVZ = { maxPdf: 64, maxImg: 12 };
 const fvMaxZoom = () => (FV.pages.length ? FVZ.maxPdf : FVZ.maxImg);

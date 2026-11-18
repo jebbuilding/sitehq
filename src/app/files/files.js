@@ -13,6 +13,7 @@ export {
   isWordId,
   loadMammoth,
   saveAsset,
+  uploadAnyFile,
   uploadErr,
   uploadFile,
   wordType,
@@ -67,11 +68,11 @@ const wordType = (name, t) =>
 const isWordId = (id) => typeof id === "string" && id.startsWith("w~");
 const W_CHUNK = 450000,
   W_MAX = 15 * 1048576;
-async function wordStore(blob, name) {
+async function wordStore(blob, name, anyType) {
   if (blob.size > W_MAX) throw { code: "too_large" };
   const uid = S.me,
     fid = newId();
-  const type = wordType(name || blob.name, blob.type);
+  const type = anyType || wordType(name || blob.name, blob.type);
   const fr = await new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = () => res(String(r.result).split(",")[1] || "");
@@ -91,6 +92,35 @@ async function wordStore(blob, name) {
     at: Date.now(),
   });
   return { id: "w~" + uid + "~" + fid, url: "", sizeBytes: blob.size, contentType: type };
+}
+/* any file at all: photos, videos and PDFs go in the file store; everything it won't take (spreadsheets, CSV and
+   text files, drawings, saved emails, zips…) is kept in the database in pieces, like Word documents */
+const ANY_TYPES = {
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  ods: "application/vnd.oasis.opendocument.spreadsheet",
+  csv: "text/csv",
+  txt: "text/plain",
+  dxf: "application/dxf",
+  dwg: "application/acad",
+  eml: "message/rfc822",
+  msg: "application/vnd.ms-outlook",
+  zip: "application/zip",
+};
+async function uploadAnyFile(blob, name) {
+  const nm = name || blob.name || "";
+  const t = blob.type || "";
+  if (
+    isWord(blob, nm) ||
+    /^image\/(jpeg|png|webp|gif|heic|heif|avif|bmp|svg\+xml)$|^video\/|^application\/pdf$/.test(
+      t,
+    ) ||
+    (!t && /\.(pdf|jpe?g|png|webp|gif|mp4|mov|webm)$/i.test(nm))
+  )
+    return uploadFile(blob, nm);
+  if (!S.assets) throw { code: "not_granted" };
+  const ext = nm.split(".").pop().toLowerCase();
+  return wordStore(blob, nm, ANY_TYPES[ext] || t || "application/octet-stream");
 }
 async function wordBlob(id) {
   const [, uid, fid] = id.split("~");

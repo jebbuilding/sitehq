@@ -4,6 +4,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
+import { efMount } from "./est-files.js";
 import { jfFor, jfOpen } from "./job-file.js";
 import {
   SD_IK,
@@ -207,6 +208,7 @@ function sdEdit(d0) {
     }
     <div id="sd-lines">${d.lines.map((l, i) => sdLineRow(l, i, set)).join("")}</div>
     <div class="sd-acts"><button type="button" class="btn" id="sd-addl">+ Add a line</button><button type="button" class="btn" id="sd-addh">+ Add a section (job)</button></div>
+    ${est ? `<section class="card esf-box" id="esf-box"></section>` : ""}
     ${
       est
         ? `<label for="sd-valid">Valid for (days)<input id="sd-valid" type="number" inputmode="numeric" value="${esc(d.validDays || set.validDays)}"></label>
@@ -497,6 +499,7 @@ function sdEdit(d0) {
         .join("\n");
       if (!$("sd-site").value) $("sd-site").value = c.site || "";
       if ($("sd-dear") && !$("sd-dear").value) $("sd-dear").value = c.name || "";
+      efRedraw();
     };
   totals();
   let cur = d0.id ? d : null;
@@ -594,6 +597,31 @@ function sdEdit(d0) {
   document
     .querySelectorAll(".sd-jobrow")
     .forEach((b) => (b.onclick = () => sdEdit(sdSales().find((x) => x.id === b.dataset.id))));
+  /* quotes, drawings and other files for the estimate, on the estimate itself */
+  const efRedraw = est
+    ? efMount({
+        rec: () => Object.assign(read(), { id: cur ? cur.id : d0.id }),
+        save: () => save(null, true),
+        net: () => sdCalc(read()).net,
+        addLine: (l) => {
+          const n = document.querySelectorAll("#sd-lines .sd-line").length;
+          const lines0 = document.querySelectorAll("#sd-lines .sd-line:not(.sd-hrow)");
+          const last = lines0[lines0.length - 1];
+          /* fill an empty last line rather than leaving it blank */
+          const empty =
+            last &&
+            !last.querySelector(".sd-ld").value.trim() &&
+            !last.querySelector(".sd-la").value;
+          const vc = last ? last.querySelector(".sd-lv").value : set.vc || "S20";
+          const row = sdLineRow({ d: l.d, a: l.a, vc, k: l.k }, empty ? +last.dataset.i : n, set);
+          if (empty) last.outerHTML = row;
+          else $("sd-lines").insertAdjacentHTML("beforeend", row);
+          wireLines();
+          renumber();
+          totals();
+        },
+      })
+    : () => {};
   $("sd-close").onclick = done;
   $("sd-pdf").onclick = async () => {
     const r = await save(null, true);

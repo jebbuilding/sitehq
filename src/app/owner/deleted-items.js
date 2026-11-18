@@ -257,6 +257,12 @@ async function binRefsFor(assetIds) {
     const hit = ph.filter((id) => A.has(id));
     if (hit.length) refs.push({ t: "jobdone", key, assets: hit });
   });
+  (S.jobFiles || []).forEach((j) =>
+    (j.items || []).forEach((it) => {
+      if (A.has(it.assetId))
+        refs.push({ t: "jfitem", jid: j.id, item: JSON.parse(JSON.stringify(it)) });
+    }),
+  );
   return refs;
 }
 const binWhere = (r) =>
@@ -271,6 +277,7 @@ const binWhere = (r) =>
     cfront: "Client front photo",
     sfront: "Site front photo",
     jobdone: "Job sheet task photo",
+    jfitem: "Job file",
     rec: r.path ? binTitleFor(r.path, r.data || {}).sub : "Record",
   })[r.t] || r.t;
 async function binRemoveRefs(refs) {
@@ -335,6 +342,13 @@ async function binRemoveRefs(refs) {
           const ph = (x.photos || []).filter((id) => !r.assets.includes(id));
           await S.db.doc("jobdone/" + r.key).update({ photos: ph });
           x.photos = ph;
+        }
+      } else if (r.t === "jfitem") {
+        const j = (S.jobFiles || []).find((x) => x.id === r.jid);
+        if (j) {
+          const items = (j.items || []).filter((x) => x.id !== r.item.id);
+          await S.db.doc("todos/" + r.jid).update({ items, updated: Date.now() });
+          j.items = items;
         }
       }
     } catch (e) {
@@ -422,6 +436,13 @@ async function binRestoreRefs(refs) {
         const ph = ((x && x.photos) || []).filter((id) => !r.assets.includes(id)).concat(r.assets);
         await S.db.doc("jobdone/" + r.key).update({ photos: ph });
         if (x) x.photos = ph;
+      } else if (r.t === "jfitem") {
+        const j = (S.jobFiles || []).find((x) => x.id === r.jid);
+        if (j) {
+          const items = (j.items || []).filter((x) => x.id !== r.item.id).concat([r.item]);
+          await S.db.doc("todos/" + r.jid).update({ items, updated: Date.now() });
+          j.items = items;
+        }
       }
     } catch (e) {
       console.warn("bin restore", r.t, e);
