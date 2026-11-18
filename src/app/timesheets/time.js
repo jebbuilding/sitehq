@@ -75,11 +75,22 @@ function sumH(list, f) {
 }
 function clockCard() {
   const today = iso(new Date());
-  const open = S.mine.entries.filter((e) => e.open).sort((a, b) => b.date.localeCompare(a.date))[0];
-  if (open && open.date < today)
-    return `<div class="checkin late"><b>You're still checked in from ${esc(shortDay(open.date))}</b><div class="sub">${esc(open.job)} · in at ${esc(open.start)}</div><button class="btn primary ci-fix" type="button" data-id="${esc(open.id)}">Set my finish time</button></div>`;
+  /* a day left checked in (from before today) no longer stops them checking in today: it's asked about on top
+     (James, Nov 2026 – three trades were stuck like this for two weeks and no timesheets came in) */
+  const opens = S.mine.entries.filter((e) => e.open).sort((a, b) => b.date.localeCompare(a.date));
+  const old = opens.find((e) => e.date < today);
+  const open = opens.find((e) => e.date >= today);
+  const late = old
+    ? `<div class="checkin late"><b>You didn't check out on ${esc(shortDay(old.date))}</b><div class="sub">${esc(siteLabel(old.job))} · in at ${esc(old.start)} · it counts as 0 hours until you put your finish time in</div><button class="btn primary ci-fix" type="button" data-id="${esc(old.id)}">Set my finish time</button></div>`
+    : "";
   const D = dayFor(S.me);
   if (open) {
+    return late + clockOn(open, D);
+  }
+  return late + clockOff(today, D);
+}
+function clockOn(open, D) {
+  {
     const s = siteRec(open.job) || {};
     return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>${nstIs(open.job) ? "Clocked in" : "On site"}</div><b class="cisite">${esc(siteLabel(open.job))}</b>${jobNameOf(open.job) ? `<div class="sub">📍 ${esc(open.job)}</div>` : ""}${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
@@ -87,6 +98,8 @@ function clockCard() {
     <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button><button class="pillbtn ci-diff" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">⏱ Started early or working through lunch?</button>
     <div class="who">Your paid day: ${esc(dayLine(D))}. Arrive early or leave late and you're paid from ${esc(D.s)} to ${esc(D.e)} – or ask for overtime when you check out. The lunch is taken off automatically. <button type="button" class="linkbtn ci-day">Change my usual day</button></div></div>`;
   }
+}
+function clockOff(today, D) {
   const done = S.mine.entries.filter((e) => e.date === today && e.type === "hours" && !e.open);
   return `<div class="checkin"><b>Check in to site</b>${pickField(
     "ci-site",

@@ -48,6 +48,7 @@ import { openRollCall } from "../sites/roll-call.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
+import { ncoCardHtml, ncoNothingHtml, ncoWire } from "../timesheets/not-checked-out.js";
 import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
 import { pcCardHtml, pcWire } from "../timesheets/plan-check.js";
@@ -62,6 +63,7 @@ export {
   companyOf,
   crewIds,
   nameOf,
+  openStopFor,
   ownerInvoices,
   ownerPhotos,
   ownerSetup,
@@ -425,13 +427,14 @@ function ownerTime() {
             )
             .join("")}
           </tbody></table></div>`
-            : `<div class="nothing">Nothing logged this week.</div>`
+            : ncoNothingHtml(id)
         }</div></details>`;
   });
-  html = goneWorkCard() + shCardHtml() + pcCardHtml() + html;
+  html = ncoCardHtml() + goneWorkCard() + shCardHtml() + pcCardHtml() + html;
   $("main").innerHTML = html;
   wireFlt();
   wireGoneWork();
+  ncoWire();
   shWire();
   pcWire();
   if ($("wu-open")) $("wu-open").onclick = () => wuOpen();
@@ -559,7 +562,7 @@ function openStartFor(id) {
         showErr("Choose the site, date and start time.");
         return;
       }
-      if ((S.data.entries[id] || []).some((e) => e.open)) {
+      if ((S.data.entries[id] || []).some((e) => e.open && e.date === date)) {
         showErr(nameOf(id) + " is already checked in. Stop that first.");
         return;
       }

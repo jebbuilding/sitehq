@@ -56,3 +56,12 @@
 .pccard .pcrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
 .pccard .pcrow:first-of-type{border-top:0}
 .pccard .pcacts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* never checked out (timesheets/not-checked-out.js) */
+.nco-card{border-left:4px solid var(--danger)}
+.nco-h{font-family:var(--f-display);font-size:17px;margin-bottom:4px}
+.nco-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.nco-row .nco-t{flex:1 1 220px;display:flex;flex-direction:column}
+.nco-row .btn,.nco-row .pillbtn,.nco-last .pillbtn{min-height:44px}
+.nco-last{display:block;margin-top:6px}
+.qw-tbl .qw-nco{font-size:12px;color:var(--danger);font-weight:600}

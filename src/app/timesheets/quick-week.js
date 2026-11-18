@@ -20,7 +20,7 @@ function qwOpen(id) {
   const rows = [];
   days.forEach((di) => {
     const list = weekEntries(id)
-      .filter((e) => e.type === "hours" && e.date === di && !e.open)
+      .filter((e) => e.type === "hours" && e.date === di && (!e.open || di < iso(new Date())))
       .sort((a, b) => (a.start || "").localeCompare(b.start || ""));
     list.forEach((e) => rows.push({ di, e }));
     if (!list.length) rows.push({ di, e: null });
@@ -38,7 +38,7 @@ function qwOpen(id) {
       <td class="qw-day">${esc(d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" }))}</td>
       <td>${siteSel(e.job || "")}</td>
       <td><input type="time" class="qw-s" value="${esc(e.start || "")}" aria-label="Start"></td>
-      <td><input type="time" class="qw-f" value="${esc(e.finish || "")}" aria-label="Finish"></td>
+      <td><input type="time" class="qw-f" value="${esc(e.finish || "")}" aria-label="Finish">${e.open ? '<div class="qw-nco">Never checked out</div>' : ""}</td>
       <td><select class="qw-b" aria-label="Unpaid break">${QW_BREAKS.map((m) => `<option value="${m}"${+(e.breakMin || 0) === m ? " selected" : ""}>${m ? m + "m" : "None"}</option>`).join("")}</select></td>
       <td class="num qw-h">${r.e ? hrs(e.hours) : ""}</td>
       <td><input type="checkbox" class="qw-ok" aria-label="Approved"${e.approved ? " checked" : ""}></td>
@@ -78,9 +78,11 @@ function qwOpen(id) {
             e.start === v.start &&
             e.finish === v.finish &&
             +(e.breakMin || 0) === v.breakMin &&
-            !!e.approved === v.approved
+            !!e.approved === v.approved &&
+            !e.open
           )
             return;
+          if (e.open) Object.assign(v, { open: false, outAt: now, stoppedBy: by });
           jobs.push(() =>
             S.db
               .doc(qwPath(id, e))
