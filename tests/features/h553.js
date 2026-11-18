@@ -24,6 +24,8 @@ const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-414
  await mode('day');
  const ad=await p.evaluate(()=>[...document.querySelectorAll('.dy-adchip')].map(e=>e.textContent));
  ok(ad.some(t=>/^First fix/.test(t))&&ad.some(t=>/^Dig and pour/.test(t)),'Day: the all-day stages show ('+ad.join(' | ')+')');
+ /* (on 18 Nov itself that day is today, which opens at the time now instead) */
+ if(await p.evaluate(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})!=='2026-11-18')
  ok(await p.evaluate(()=>document.querySelector('.dy-wrap').scrollLeft)===84,'Day: another day opens at 07:00');
  const vis=await p.evaluate(()=>{const c=document.querySelector('.dy-adchip').getBoundingClientRect(),w=document.querySelector('.dy-wrap').getBoundingClientRect();return c.left>=w.left&&c.left<w.right});
  ok(vis,'Day: the all-day stage is in view, not scrolled off to the left');

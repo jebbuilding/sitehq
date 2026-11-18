@@ -11,7 +11,7 @@ const extra='store["todos/sup-a"]={kind:"supplier",name:"Test Merchants",loc:"Ex
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed+extra);
 src=src.replace('upload:async(b)=>(window.__last=b,','upload:async(b)=>{const id="up"+Math.random().toString(36).slice(2);window.__blobs[id]=b;return {id,url:"",sizeBytes:b.size,contentType:b.type}},_x:async(b)=>(window.__last=b,');
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
-const HOOK='  let lenObj = null;';
+const HOOK='  const tf = q(".np-text");';
 let page_src=fs.readFileSync('timesheets.html','utf8');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 ok(page_src.split(HOOK).length===2,'test hook found once');
