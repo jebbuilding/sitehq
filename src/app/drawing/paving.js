@@ -73,6 +73,7 @@ import {
   npsuSpec,
   npsuTotal,
 } from "./section-buildups.js";
+import { NPSS_FIRE, NPSS_SETS, npssExt, npssName } from "./section-steel.js";
 import { npSmartShape, npsRectilinear } from "./smart-pen.js";
 import { nps3Draw, nps3Model, npsbCutList } from "./stair-3d.js";
 import {
@@ -541,6 +542,7 @@ async function openNotePage(opts) {
           <div class="nfrow nfdirn" hidden><span class="nfl">Direction</span><button type="button" class="nfb nfturnb">⇄ Turn the timbers</button></div>
           <div class="nfrow"><span class="nfl">Extra</span><button type="button" class="nfb nfaddt">➕ Add timber</button><button type="button" class="nfb nfclrt">Clear extras</button></div><div class="who nftinfo"></div></div>
         <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div><div class="nfrow nfst-sheetrow"><button type="button" class="nfb nfst-sheet">📋 Open the beam sheet: lifting, props, padstones, fire, order, sign-off</button></div></div>
+        <div class="nfsecst" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfss-t" style="flex:1;min-height:44px" aria-label="Steel type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfss-s" style="flex:1;min-height:44px" aria-label="Steel size"></select></div><div class="nfrow nfss-svrow"><span class="nfl">Where</span><select class="nfss-sv" style="flex:1;min-height:44px" aria-label="Where the beam is"></select></div><div class="nfrow"><span class="nfl">Fire</span><select class="nfss-fp" style="flex:1;min-height:44px" aria-label="Fire protection"></select></div><div class="nfrow nfss-padrow"><span class="nfl">Padstone</span><select class="nfss-p" style="flex:1;min-height:44px" aria-label="Padstone"></select></div><form class="nfrow nfss-brf"><span class="nfl">Bearing</span><input class="nfss-br" inputmode="numeric" style="width:80px" aria-label="Bearing length in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><div class="nfrow"><button type="button" class="nfb nfss-lab">🏷 Label it</button><button type="button" class="nfb nfss-lr">⇄ Notes to the other side</button></div><div class="who nfss-info"></div></div>
         <div class="nfsecbu" hidden><div class="nfrow"><button type="button" class="nfb nfbu-edit">🧱 Change the layers, thicknesses and tag</button><button type="button" class="nfb nfbu-flip">⇄ Layers to the other side</button><button type="button" class="nfb nfbu-lab">🏷 Label every layer</button><button type="button" class="nfb nfbu-ta">🪵 Timbers cut across</button></div><form class="nfrow nfbu-eof"><span class="nfl">Eaves overhang</span><input class="nfbu-eo" inputmode="numeric" style="width:80px" aria-label="Eaves overhang in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><form class="nfrow nfbu-fdf"><span class="nfl">Foundation</span><select class="nfbu-fd" aria-label="Foundation under the wall"><option value="trench">Trench fill</option><option value="strip">Strip</option><option value="none">None – stand on the floor</option></select><span class="nfl">Depth</span><input class="nfbu-fdd" inputmode="numeric" style="width:70px" aria-label="Foundation depth below ground in mm"><span class="nfl">Width</span><input class="nfbu-fdw" inputmode="numeric" style="width:70px" aria-label="Foundation width in mm"><span class="nfl">DPC above ground</span><input class="nfbu-gl" inputmode="numeric" style="width:60px" aria-label="DPC height above ground in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><div class="who nfbu-info"></div></div>
         <div class="nfstairs" hidden><div class="nfrow"><span class="nfl">Steps</span><button type="button" class="nfb nfst" data-d="-1" aria-label="One step fewer">−</button><b class="nfstn" style="min-width:34px;text-align:center"></b><button type="button" class="nfb nfst" data-d="1" aria-label="One step more">+</button><button type="button" class="nfb nfsdir">⇅ Up / down</button></div>
           <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div><div class="nfrow"><button type="button" class="nfb nfs-build">🪜 Open in the stair builder: type, materials, glass rail, checks, side view</button></div></div>
@@ -3573,6 +3575,16 @@ async function openNotePage(opts) {
         }
         lastPlace = { k: cur.k, at: now, x: cur.a[0], y: cur.a[1] };
       }
+      if (cur.t === "shape" && (cur.k === "secsteel" || cur.k === "secbear")) {
+        if (
+          lastSteel.bt &&
+          ["UB", "UC", "RSJ", "PFC", "2PFC"].includes(lastSteel.bt) &&
+          lastSteel.bz
+        )
+          Object.assign(cur, { bt: lastSteel.bt, bz: lastSteel.bz });
+        cur.lab = 1;
+        ssToSize(cur);
+      }
       if (cur.t === "shape" && cur.k === "column" && lastSteel.ct) {
         Object.assign(cur, { ct: lastSteel.ct, cs: lastSteel.cs });
         colToSize(cur);
@@ -6508,7 +6520,7 @@ async function openNotePage(opts) {
       H = doc.h;
     const k = (W * 0.62) / Math.max(1000, r.len + 1200);
     const x0 = W * 0.16,
-      yb = H * 0.42;
+      yb = H * 0.37;
     const pier = 600 * k;
     const dpt = Math.max(dm.d * k, H * 0.035),
       padH = Math.max(100 * k, H * 0.02);
@@ -6523,8 +6535,8 @@ async function openNotePage(opts) {
     const txt = (x, y, s2, size) =>
       objs.push({ t: "text", x, y, s: s2, c: "#222222", size: size || fs, ly: "notes" });
     /* the wall either side, the opening */
-    box(x0, yb - H * 0.05, xa, yb + H * 0.3, { fill: "#d9c3a5", fa: 0.6 });
-    box(xb, yb - H * 0.05, xb + pier, yb + H * 0.3, { fill: "#d9c3a5", fa: 0.6 });
+    box(x0, yb - H * 0.05, xa, yb + H * 0.1, { fill: "#d9c3a5", fa: 0.6 });
+    box(xb, yb - H * 0.05, xb + pier, yb + H * 0.1, { fill: "#d9c3a5", fa: 0.6 });
     /* the padstones and the beam on them */
     box(xa - r.bearA * k - 40 * k, yb, xa, yb + padH, { fill: "#9ca3af", fa: 0.7 });
     box(xb, yb, xb + r.bearB * k + 40 * k, yb + padH, { fill: "#9ca3af", fa: 0.7 });
@@ -6532,7 +6544,7 @@ async function openNotePage(opts) {
     /* the sizes */
     const dim = (ax, bx, y, s2) =>
       objs.push({ t: "dim", a: [ax, y], b: [bx, y], s: s2, c: "#e11d2a", w: pwFor(2), size: fs });
-    dim(xa, xb, yb + H * 0.12, "Clear span " + r.span + " mm");
+    dim(xa, xb, yb + H * 0.07, "Clear span " + r.span + " mm");
     dim(xa - r.bearA * k, xa, yb - dpt - H * 0.05, r.bearA + " bearing");
     dim(xb, xb + r.bearB * k, yb - dpt - H * 0.05, r.bearB + " bearing");
     dim(xa - r.bearA * k, xb + r.bearB * k, yb - dpt - H * 0.11, "Cut length " + r.len + " mm");
@@ -6544,9 +6556,31 @@ async function openNotePage(opts) {
     );
     txt(x0, H * 0.08 + fs * 2.2, `Padstones: ${r.pad}, one each end, bedded in mortar.`);
     txt(x0, H * 0.08 + fs * 3.6, npbFire(dm.d, dm.b, r.len, o.fire || "").text + ".");
+    /* the bearing on its padstone and a cut through the beam, drawn in full (section-steel.js) */
+    const [bt2, bz2] = o.bt ? [o.bt, o.bz] : npBeamOf(o.sec || "");
+    if (["UB", "UC", "RSJ", "PFC", "2PFC"].includes(bt2) && bz2) {
+      const st = { t: "shape", c: col, w: lw, bt: bt2, bz: bz2, lab: 1, ly: "elev" };
+      const bh = H * 0.23,
+        y2 = H * 0.54;
+      objs.push(
+        Object.assign({}, st, {
+          k: "secbear",
+          a: [W * 0.05, y2],
+          b: [W * 0.05 + bh * 1.47, y2 + bh],
+          pad: o.pad || "Concrete 440×215×100",
+          br: r.bearA,
+        }),
+        Object.assign({}, st, {
+          k: "secsteel",
+          a: [W * 0.62, y2],
+          b: [W * 0.62 + bh * 0.58, y2 + bh],
+          sv: "plate",
+        }),
+      );
+    }
     txt(
       x0,
-      yb + H * 0.33,
+      H * 0.5,
       "Not to scale. Check all sizes against the engineer's calculations before ordering or building.",
       Math.round(fs * 0.85),
     );
@@ -10737,6 +10771,7 @@ async function openNotePage(opts) {
       }
     }
     steelFill(o);
+    ssFill(o);
     {
       const sw = fb.querySelector(".nfstudw");
       sw.hidden = !isStudW(o);
@@ -10920,6 +10955,58 @@ async function openNotePage(opts) {
         ? "The arrows move only the " + (fineWhat === "a" ? "start" : "end") + " point. "
         : "") + "Hold an arrow to keep moving. Pinch to zoom in for finer work.";
   }
+  /* 🔩 a steel beam detail's Properties: type and size, where it is, fire protection, padstone and bearing */
+  const NPSS_TYPES = ["UB", "UC", "RSJ", "PFC", "2PFC"];
+  function ssFill(o) {
+    const w = fb.querySelector(".nfsecst");
+    const on = o.t === "shape" && (o.k === "secsteel" || o.k === "secbear");
+    w.hidden = !on;
+    if (!on) return;
+    const opt = (list, v) =>
+      list
+        .map(
+          ([k2, l]) =>
+            `<option value="${esc(k2)}"${k2 === v ? " selected" : ""}>${esc(l)}</option>`,
+        )
+        .join("");
+    const bt = o.bt || "UB",
+      T = NP_BEAM_TYPES.find((x) => x[0] === bt) || NP_BEAM_TYPES[0];
+    fb.querySelector(".nfss-t").innerHTML = opt(
+      NP_BEAM_TYPES.filter((x) => NPSS_TYPES.includes(x[0])).map((x) => [x[0], x[1]]),
+      bt,
+    );
+    fb.querySelector(".nfss-s").innerHTML = opt(
+      T[2].map((x) => [x[0], x[0]]),
+      o.bz || "203×133×25",
+    );
+    const bear = o.k === "secbear";
+    fb.querySelector(".nfss-svrow").hidden = bear;
+    fb.querySelector(".nfss-padrow").hidden = !bear;
+    fb.querySelector(".nfss-brf").hidden = !bear;
+    fb.querySelector(".nfss-sv").innerHTML = opt(NPSS_SETS, o.sv || "plate");
+    fb.querySelector(".nfss-fp").innerHTML = opt(NPSS_FIRE, o.fp || "board");
+    fb.querySelector(".nfss-p").innerHTML = opt(
+      BEAM_PADS.map((x) => [x, x]),
+      o.pad || "Concrete 440×215×100",
+    );
+    const br = fb.querySelector(".nfss-br");
+    if (document.activeElement !== br) br.value = o.br == null ? 150 : o.br;
+    fb.querySelector(".nfss-lab").setAttribute("aria-pressed", o.lab ? "true" : "false");
+    fb.querySelector(".nfss-info").textContent =
+      npssName(o) +
+      (doc.scale ? " · drawn at real size" : " · set a scale in 📐 Paper to draw it at real size") +
+      ". Sizes from the engineer's calcs.";
+  }
+  /* a steel detail's box made its real size (when the page has a scale), about its centre */
+  const ssToSize = (o) => {
+    if (!doc.scale || !o.a || !o.b) return;
+    const E = npssExt(o),
+      c = [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2],
+      hw = toUnits(E[2] - E[0]) / 2,
+      hh = toUnits(E[3] - E[1]) / 2;
+    o.a = [c[0] - hw, c[1] - hh];
+    o.b = [c[0] + hw, c[1] + hh];
+  };
   /* a beam's type and size, a post's type and size (steel-parts.js) */
   function steelFill(o) {
     const w = fb.querySelector(".nfsteel");
@@ -11169,6 +11256,45 @@ async function openNotePage(opts) {
         if (v) upd((o) => setSize(o, v));
       };
       fb.querySelector(".nfst-p").onchange = (e) => upd((o) => (o.pad = e.target.value));
+      const ssUpd = (fn) =>
+        upd((o) => {
+          fn(o);
+          ssToSize(o);
+        });
+      fb.querySelector(".nfss-t").onchange = (e) =>
+        ssUpd((o) => {
+          o.bt = e.target.value;
+          const T = NP_BEAM_TYPES.find((x) => x[0] === o.bt);
+          if (T && !T[2].some((x) => x[0] === o.bz)) o.bz = T[2][Math.min(2, T[2].length - 1)][0];
+          delete o.sec;
+        });
+      fb.querySelector(".nfss-s").onchange = (e) =>
+        ssUpd((o) => {
+          o.bz = e.target.value;
+          delete o.sec;
+        });
+      fb.querySelector(".nfss-sv").onchange = (e) => ssUpd((o) => (o.sv = e.target.value));
+      fb.querySelector(".nfss-fp").onchange = (e) => ssUpd((o) => (o.fp = e.target.value));
+      fb.querySelector(".nfss-p").onchange = (e) => ssUpd((o) => (o.pad = e.target.value));
+      fb.querySelector(".nfss-brf").onsubmit = (e) => {
+        e.preventDefault();
+        const v = Math.max(
+          50,
+          Math.min(600, Math.round(+fb.querySelector(".nfss-br").value || 150)),
+        );
+        ssUpd((o) => (o.br = v));
+        toast("Bearing " + v + " mm" + (v < 100 ? " – check it with the engineer" : ""));
+      };
+      fb.querySelector(".nfss-lab").onclick = () =>
+        upd((o) => {
+          if (o.lab) delete o.lab;
+          else o.lab = 1;
+        });
+      fb.querySelector(".nfss-lr").onclick = () =>
+        upd((o) => {
+          if (o.lr) delete o.lr;
+          else o.lr = 1;
+        });
       fb.querySelector(".nfbu-edit").onclick = () => {
         const o = cur();
         if (o && o.k === "secbu") buDlg(o);

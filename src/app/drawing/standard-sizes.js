@@ -271,6 +271,8 @@ const NP_REAL = {
   eaves: [450, 300],
   eavestray: [600],
   secbu: [2400],
+  secsteel: [440, 755],
+  secbear: [1320, 895],
   ofvent: [200, 25],
   birdcomb: [150, 60],
   tiltfillet: [75, 50],

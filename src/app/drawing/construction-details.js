@@ -1110,6 +1110,16 @@ const NP_SHAPES = [
   ["quilt", "≈ Loft quilt insulation", "Section: roof parts"],
   ["flatroof", "☰ Flat roof build-up (warm deck)", "Section: roof parts"],
   ["secbu", "🧱 Build-up: wall, roof or floor in layers", "Section: walls, floors & foundations"],
+  [
+    "secsteel",
+    "🔩 Steel beam cut through the wall or floor (real size)",
+    "Section: walls, floors & foundations",
+  ],
+  [
+    "secbear",
+    "🔩 Steel beam end on its padstone (real size)",
+    "Section: walls, floors & foundations",
+  ],
   ["fdn", "▨ Strip foundation with blockwork", "Section: walls, floors & foundations"],
   ["trenchfill", "▨ Trench fill foundation", "Section: walls, floors & foundations"],
   ["bblock", "⊥ Beam & block floor", "Section: walls, floors & foundations"],

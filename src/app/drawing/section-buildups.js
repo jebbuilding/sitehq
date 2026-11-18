@@ -8,6 +8,7 @@ export {
   npsuDraw,
   npsuIsMem,
   npsuLayers,
+  npsuPat,
   npsuSpec,
   npsuTie,
   npsuTotal,

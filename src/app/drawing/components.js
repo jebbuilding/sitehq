@@ -1,9 +1,13 @@
 /* ===== building components: roof parts, claddings, render, walls, floors, foundations, drainage, electrics ===== */
 import { npLbl } from "./construction-details.js";
 import { npsuDraw } from "./section-buildups.js";
+import { npssDraw } from "./section-steel.js";
 import { npHexMix, npPattern } from "./walls.js";
 export { NP_BLD_BOX, NP_BLD_LINE, NP_LIB, npBldLine, npBldSym };
 const NP_BLD_BOX = new Set([
+  /* steel beam details at real size (section-steel.js) */
+  "secsteel",
+  "secbear",
   "roofhip",
   "roofgable",
   "wplate",
@@ -248,6 +252,10 @@ function npBldSym(ctx, o, x0, y0, w, h, cx, cy) {
       break;
     }
     /* over-fascia vent: a low profile strip with slots, on top of the fascia */
+    case "secsteel":
+    case "secbear":
+      npssDraw(ctx, o, x0, y0, w, h, lw);
+      break;
     case "ofvent": {
       fillR(x0, y0, w, h, "#e5e7eb");
       ctx.strokeRect(x0, y0, w, h);
@@ -1655,6 +1663,8 @@ const NP_LIB = [
     "Section: walls & floors",
     [
       "secbu",
+      "secsteel",
+      "secbear",
       "eframe",
       "renderl",
       "cladsec",
