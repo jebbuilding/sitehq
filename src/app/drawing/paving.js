@@ -488,7 +488,7 @@ async function openNotePage(opts) {
       .join(
         "",
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
-      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="smaller" hidden>➖<small>Smaller</small></button><button type="button" class="np-sb" data-a="bigger" hidden>➕<small>Bigger</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb" data-a="size" hidden>📏<small>Size</small></button><button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
+      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="smaller" hidden>➖<small>Smaller</small></button><button type="button" class="np-sb" data-a="bigger" hidden>➕<small>Bigger</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb" data-a="size" hidden>📏<small>Size</small></button><button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="dnum" hidden>✏️<small>Change number</small></button><button type="button" class="np-sb" data-a="dside" hidden>⇅<small>Number other side</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
       <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="moveby">✥<small>Move by…</small></button><button type="button" class="np-mb" data-m="clip">📋<small>Copy</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
       <div class="np-finebox" hidden><div class="nfrow nfhead" title="Drag here to move it"><b>⚙ <span class="nfwhatis">Properties</span></b><span class="nfhbtns"><button type="button" class="nfmin" aria-label="Make it small" title="Make it small">–</button><button type="button" class="nfx" aria-label="Close">✕</button></span></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
@@ -595,6 +595,8 @@ async function openNotePage(opts) {
     fineWhat = "all",
     shapeKind = "tri",
     dimAsk = null,
+    /* the last tap on a selected measurement, to spot a double tap */
+    dimTap = null,
     tool = "pen",
     col = NP_COLS[0],
     wid = 2,
@@ -1491,8 +1493,8 @@ async function openNotePage(opts) {
           ctx.stroke();
         });
         ctx.restore();
-        drawDim(ctx, A, B, o.c || "#111", o.w || 3, lab, o.size, o.tk);
-      } else drawDim(ctx, o.a, o.b, o.c || "#111", o.w || 3, lab, o.size, o.tk);
+        drawDim(ctx, A, B, o.c || "#111", o.w || 3, lab, o.size, o.tk, o.lb);
+      } else drawDim(ctx, o.a, o.b, o.c || "#111", o.w || 3, lab, o.size, o.tk, o.lb);
     } else if (o.t === "room" && o.pave) {
       npPaveDraw(ctx, o, doc.scale ? NP_U / doc.scale : 0);
     } else if (o.t === "room") {
@@ -2235,6 +2237,8 @@ async function openNotePage(opts) {
       const ds = q('.np-sb[data-a="dstyle"]');
       ds.hidden = so.t !== "dim";
       if (so.t === "dim") ds.innerHTML = so.tk ? "➤<small>Arrows</small>" : "⟋<small>Ticks</small>";
+      q('.np-sb[data-a="dnum"]').hidden = so.t !== "dim";
+      q('.np-sb[data-a="dside"]').hidden = so.t !== "dim";
       q('.np-sb[data-a="crop"]').hidden = so.t !== "img";
     }
     status();
@@ -2416,6 +2420,20 @@ async function openNotePage(opts) {
         best.dimg || "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
       d.of = best.dimg;
     }
+  }
+  /* the box to type a measurement's number */
+  function dimNumAsk(o) {
+    const cur0 = o.auto && doc.scale ? dimAutoLab(o) : o.s || "";
+    askMeasure(ov, cur0, (v) => {
+      if (v !== null) {
+        snap();
+        o.s = v;
+        if (doc.scale && v === dimAutoLab(o)) o.auto = true;
+        else delete o.auto;
+        dirty = true;
+      }
+      draw();
+    });
   }
   function dimN(o) {
     const dx = o.b[0] - o.a[0],
@@ -2898,19 +2916,13 @@ async function openNotePage(opts) {
         return;
       }
       if (i != null && i === sel && doc.objs[i].t === "dim") {
-        const o = doc.objs[i];
-        const cur0 = o.auto && doc.scale ? dimAutoLab(o) : o.s || "";
-        askMeasure(ov, cur0, (v) => {
-          if (v !== null) {
-            snap();
-            o.s = v;
-            if (doc.scale && v === dimAutoLab(o)) o.auto = true;
-            else delete o.auto;
-            dirty = true;
-          }
-          draw();
-        });
-        return;
+        const now = Date.now();
+        if (dimTap && dimTap.i === i && now - dimTap.t < 400) {
+          dimTap = null;
+          dimNumAsk(doc.objs[i]);
+          return;
+        }
+        dimTap = { i, t: now };
       }
       if (i != null && doc.objs[i].lk) {
         msel.clear();
@@ -4940,6 +4952,13 @@ async function openNotePage(opts) {
             toast("Turned " + d + "°");
           });
           return;
+        } else if (a === "dnum") {
+          undo.pop();
+          dimNumAsk(o);
+          return;
+        } else if (a === "dside") {
+          if (o.lb) delete o.lb;
+          else o.lb = 1;
         } else if (a === "dstyle") {
           o.tk = o.tk ? undefined : 1;
           if (!o.tk) delete o.tk;

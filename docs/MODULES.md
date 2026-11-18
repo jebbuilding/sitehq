@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 246 files, 4686 KB, 119228 lines.
+- 246 files, 4687 KB, 119248 lines.
 - 2427 names declared at the top level (the shared scope); 1246 of them are used by a file other than the one that declares them.
 - 2571 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -700,7 +700,7 @@ NICE SYMBOLS: sanitaryware and landscaping drawn more like the real thing
 
 NOTEBOOK PAGE (OneNote-style): big zoomable page, pen tools, photos you can move and resize
 
-- 126 lines, 4.7 KB. Declares 3 names, 3 used elsewhere.
+- 127 lines, 4.7 KB. Declares 3 names, 3 used elsewhere.
 - **Used elsewhere:** `askMeasure` (2), `drawDim` (2), `askLabel` (1)
 - **Uses names from 1 files:** `core/helpers.js` (1)
 - **Used by 2 files**
@@ -718,7 +718,7 @@ PAVING DRAW: patio and drive materials drawn at real size, paths round a buildin
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 13413 lines, 509 KB. Declares 9 names, 5 used elsewhere.
+- 13432 lines, 510 KB. Declares 9 names, 5 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_SCX` (1), `setNpScx` (1)
 - **Uses names from 53 files:** `drawing/construction-details.js` (16), `drawing/beam-sheet.js` (9), `drawing/room-sketch.js` (9), `drawing/section-buildups.js` (8), `drawing/stair-builder.js` (8), `drawing/walls.js` (7), `drawing/steel-parts.js` (6), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/drawing-layers.js` (5), `drawing/plan-geometry.js` (5), `drawing/cupboard-maker.js` (4), `drawing/retaining-wall.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `drawing/paving-draw.js` (3), `drawing/stair-3d.js` (3), `files/files.js` (3), `survey/door-window-survey.js` (3), `drawing/bend-lines.js` (2), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/smart-pen.js` (2), `drawing/standard-sizes.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `photos/photos.js` (2), `sales/sales-calc.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `drawing/find-rooms.js` (1), `drawing/finger-tap.js` (1), `drawing/house-render.js` (1), `drawing/join-rooms.js` (1), `drawing/undo-list.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `purchasing/price-order.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sales/letterhead-setup.js` (1), `sites/summary.js` (1)
 - **Used by 17 files**

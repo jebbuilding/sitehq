@@ -58,7 +58,7 @@ function askMeasure(host, cur, done) {
   };
 }
 /* dimension line: ticks + arrows at each end, measurement written along the line */
-function drawDim(ctx, a, b, col, w, label, big, tk) {
+function drawDim(ctx, a, b, col, w, label, big, tk, below) {
   const dx = b[0] - a[0],
     dy = b[1] - a[1],
     L = Math.hypot(dx, dy);
@@ -114,7 +114,8 @@ function drawDim(ctx, a, b, col, w, label, big, tk) {
       pd = fs * 0.3;
     ctx.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
     ctx.rotate(ang);
-    const up = -(fs * 0.6 + pd + w);
+    /* below: the number on the other side of the line */
+    const up = (below ? 1 : -1) * (fs * 0.6 + pd + w);
     /* text sits just above the line, never on it */ ctx.fillStyle = "rgba(255,255,255,.85)";
     ctx.fillRect(-tw / 2 - pd * 0.6, up - fs * 0.5 - pd * 0.3, tw + pd * 1.2, fs + pd * 0.4);
     ctx.fillStyle = col;
