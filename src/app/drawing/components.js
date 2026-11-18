@@ -1,8 +1,13 @@
 /* ===== building components: roof parts, claddings, render, walls, floors, foundations, drainage, electrics ===== */
 import { npLbl } from "./construction-details.js";
+import { npsuDraw } from "./section-buildups.js";
+import { npssDraw } from "./section-steel.js";
 import { npHexMix, npPattern } from "./walls.js";
 export { NP_BLD_BOX, NP_BLD_LINE, NP_LIB, npBldLine, npBldSym };
 const NP_BLD_BOX = new Set([
+  /* steel beam details at real size (section-steel.js) */
+  "secsteel",
+  "secbear",
   "roofhip",
   "roofgable",
   "wplate",
@@ -10,6 +15,10 @@ const NP_BLD_BOX = new Set([
   "purlin",
   "eaves",
   "flatroof",
+  /* eaves details */
+  "ofvent",
+  "birdcomb",
+  "tiltfillet",
   "lintel",
   "weep",
   "wtie",
@@ -106,6 +115,13 @@ const NP_BLD_LINE = new Set([
   "collar",
   "strut",
   "cjoist",
+  /* eaves details: insulation and trays that follow the rafter */
+  "pirins",
+  "quilt",
+  "venttray",
+  "eavestray",
+  /* a wall, roof or floor build-up drawn layer by layer */
+  "secbu",
 ]);
 function npBldSym(ctx, o, x0, y0, w, h, cx, cy) {
   const lw = ctx.lineWidth,
@@ -233,6 +249,47 @@ function npBldSym(ctx, o, x0, y0, w, h, cx, cy) {
       ctx.arc(x1 - fb * 0.75, y0 + h * 0.25, fb * 0.75, 0, Math.PI);
       ctx.stroke();
       ln(x1 - fb * 1.5, y0 + h * 0.25, x1, y0 + h * 0.25);
+      break;
+    }
+    /* over-fascia vent: a low profile strip with slots, on top of the fascia */
+    case "secsteel":
+    case "secbear":
+      npssDraw(ctx, o, x0, y0, w, h, lw);
+      break;
+    case "ofvent": {
+      fillR(x0, y0, w, h, "#e5e7eb");
+      ctx.strokeRect(x0, y0, w, h);
+      thin(0.5);
+      const st = Math.max(w / 8, 2);
+      for (let x = x0 + st / 2; x < x1; x += st) ln(x, y0 + h * 0.25, x, y1 - h * 0.25);
+      full();
+      break;
+    }
+    /* bird comb: a strip with teeth that fills the gap under the tiles */
+    case "birdcomb": {
+      fillR(x0, y1 - h * 0.25, w, h * 0.25, "#374151");
+      ctx.strokeRect(x0, y1 - h * 0.25, w, h * 0.25);
+      thin(0.6);
+      const st = Math.max(w / 10, 2);
+      for (let x = x0 + st / 2; x < x1; x += st) ln(x, y1 - h * 0.25, x, y0);
+      full();
+      break;
+    }
+    /* tilting fillet: a triangle of timber that lifts the bottom tiles */
+    case "tiltfillet": {
+      ctx.beginPath();
+      ctx.moveTo(x0, y1);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x1, y0);
+      ctx.closePath();
+      ctx.save();
+      ctx.fillStyle = "#f3e2c4";
+      ctx.fill();
+      ctx.restore();
+      ctx.stroke();
+      thin(0.5);
+      ln(x0 + w * 0.5, y1, x1, y0 + h * 0.5);
+      full();
       break;
     }
     case "flatroof": {
@@ -733,6 +790,8 @@ function npBldLine(ctx, o, P, ln, L, lw) {
     if (x) x();
   };
   switch (o.k) {
+    case "secbu":
+      return npsuDraw(ctx, o, P, L, lw);
     case "rafter":
     case "joistl": {
       const d = R(o.k === "rafter" ? 150 : 200, Math.max(lw * 6, 14));
@@ -803,6 +862,65 @@ function npBldLine(ctx, o, P, ln, L, lw) {
         ctx.restore();
         ctx.stroke();
       }
+      return true;
+    }
+    /* PIR board: a yellow band with the foil faces drawn heavier */
+    case "pirins": {
+      const d = R(o.d || 100, Math.max(lw * 5, 12));
+      band(d, "#fde68a", () => {
+        ctx.save();
+        ctx.lineWidth = Math.max(lw * 0.5, 0.5);
+        const st = Math.max(d * 0.9, 6);
+        for (let x = 0; x + st <= L; x += st) {
+          ln(P(x, 0), P(x + st / 2, -d));
+          ln(P(x + st / 2, -d), P(x + st, 0));
+        }
+        ctx.restore();
+      });
+      return true;
+    }
+    /* loft quilt: soft loops along a band */
+    case "quilt": {
+      const d = R(o.d || 270, Math.max(lw * 8, 18));
+      band(d, "#fff7d6", () => {
+        ctx.save();
+        ctx.lineWidth = Math.max(lw * 0.5, 0.5);
+        const st = Math.max(d * 0.55, 6);
+        ctx.beginPath();
+        for (let x = 0; x < L; x += st) {
+          const a = P(x, -d * 0.15),
+            b = P(Math.min(L, x + st / 2), -d * 0.85),
+            e = P(Math.min(L, x + st), -d * 0.15);
+          ctx.moveTo(a[0], a[1]);
+          ctx.quadraticCurveTo(b[0], b[1], e[0], e[1]);
+        }
+        ctx.stroke();
+        ctx.restore();
+      });
+      return true;
+    }
+    /* rafter vent tray: a thin corrugated tray keeping a 50 mm air gap */
+    case "venttray": {
+      const d = R(50, Math.max(lw * 3, 6));
+      ctx.save();
+      ctx.lineWidth = Math.max(lw * 0.8, 0.6);
+      const st = Math.max(d * 2, 6);
+      ctx.beginPath();
+      for (let x = 0; x <= L; x += st) {
+        const a = P(x, 0),
+          b = P(Math.min(L, x + st / 2), -d);
+        if (x === 0) ctx.moveTo(a[0], a[1]);
+        else ctx.lineTo(a[0], a[1]);
+        if (x + st / 2 <= L) ctx.lineTo(b[0], b[1]);
+      }
+      ctx.stroke();
+      ctx.restore();
+      return true;
+    }
+    /* eaves felt support tray: a rigid tray under the felt over the fascia */
+    case "eavestray": {
+      const d = R(6, Math.max(lw * 1.2, 2.5));
+      band(d, "#1f2937");
       return true;
     }
     case "lead": {
@@ -1526,6 +1644,13 @@ const NP_LIB = [
       "ridgeb",
       "purlin",
       "eaves",
+      "eavestray",
+      "ofvent",
+      "birdcomb",
+      "tiltfillet",
+      "venttray",
+      "pirins",
+      "quilt",
       "flatroof",
       "einsul",
       "pboard",
@@ -1537,6 +1662,9 @@ const NP_LIB = [
     "elev",
     "Section: walls & floors",
     [
+      "secbu",
+      "secsteel",
+      "secbear",
       "eframe",
       "renderl",
       "cladsec",

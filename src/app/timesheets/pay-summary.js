@@ -1,4 +1,5 @@
 /* ================= WEEKLY PAY SUMMARY ================= */
+import { coName } from "../core/company-names.js";
 import { $, addDays, esc, gbp, hrs, iso, stamp, toast } from "../core/helpers.js";
 import { S, weekDays } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
@@ -123,7 +124,7 @@ async function paySummaryPdf(rows, wk) {
   await pdfLogo(doc, W - M, 9, 46, 21);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("JEB BUILDING SERVICES", M, y);
+  doc.text(coName().toUpperCase(), M, y);
   y += 8;
   doc.setFontSize(17);
   doc.text("Weekly pay summary", M, y);

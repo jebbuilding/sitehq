@@ -8,8 +8,10 @@ import { blobUrl } from "../files/files.js";
 import { deleteSitesPicker } from "../owner/delete-client-site.js";
 import { allTeam } from "../owner/owner.js";
 import { siteRec } from "../photos/photos.js";
-import { siteFront } from "./job-details.js";
+import { siteFront, siteHead, siteHeadHtml } from "./job-details.js";
 import { same } from "./project-pages.js";
+import { sodSites } from "./signoff-due.js";
+import { jhAllHtml, jhAllWire } from "./site-health.js";
 import { smOpen } from "./sites-map.js";
 import { storageHtml, wireStorage } from "./storage.js";
 import { siteClient } from "./summary.js";
@@ -20,6 +22,7 @@ function siteTiles(sites) {
   const ents = allTeam("entries"),
     phs = allTeam("photos");
   const today = iso(new Date());
+  const soSites = sodSites();
   const tile = (n) => {
     const sr = siteRec(n) || {};
     const c = siteClient(n);
@@ -34,12 +37,12 @@ function siteTiles(sites) {
       .filter((p) => same(p.site, n))
       .sort((a, b) => (b.takenAt || 0) - (a.takenAt || 0))[0];
     const img = siteFront(n);
-    return `<button type="button" class="sttile" data-s="${esc(n)}" data-q="${esc([n, c && c.name, sr.project, c && c.work, c && c.postcode, c && c.phone].filter(Boolean).join(" ").toLowerCase())}">${img ? `<img src="${blobUrl(img)}" alt="" loading="lazy">` : `<span class="stini">${esc(initials(n))}</span>`}<span class="sttx"><b>${esc(n)}</b>${c ? `<span class="who">👤 ${esc(c.name)}${sr.project || c.work ? " · " + esc(sr.project || c.work) : ""}</span>` : sr.project ? `<span class="who">${esc(sr.project)}</span>` : ""}
-      <span class="stmeta">${on.length ? `<span class="tag ok">${on.length} on site now</span>` : ""}<span>${hrs(hm)} h this month</span>${last > 1e12 ? `<span class="who">· last ${esc(shortDay(iso(new Date(last))))}</span>` : ""}</span></span><span class="ppchev" aria-hidden="true">›</span></button>`;
+    return `<button type="button" class="sttile" data-s="${esc(n)}" data-q="${esc([n, sr.jobName, c && c.name, sr.project, c && c.work, c && c.postcode, c && c.phone].filter(Boolean).join(" ").toLowerCase())}">${img ? `<img src="${blobUrl(img)}" alt="" loading="lazy">` : `<span class="stini">${esc(initials(siteHead(n).big))}</span>`}<span class="sttx">${siteHeadHtml(n)}${c ? `<span class="who">👤 ${esc(c.name)}${sr.project || c.work ? " · " + esc(sr.project || c.work) : ""}</span>` : sr.project ? `<span class="who">${esc(sr.project)}</span>` : ""}
+      <span class="stmeta">${sr.hold ? '<span class="tag">🙈 Hidden for now</span>' : ""}${soSites.some((x) => same(x, n)) ? '<span class="tag bad">✍️ Sign-off to sort</span>' : ""}${on.length ? `<span class="tag ok">${on.length} on site now</span>` : ""}<span>${hrs(hm)} h this month</span>${last > 1e12 ? `<span class="who">· last ${esc(shortDay(iso(new Date(last))))}</span>` : ""}</span></span><span class="ppchev" aria-hidden="true">›</span></button>`;
   };
   $("main").innerHTML =
     `<input type="search" id="st-q" class="stsearch" placeholder="🔍 Search sites and storage: address, client, job…" aria-label="Search sites" value="${esc(S.f.stq || "")}">
-    <div class="flabel" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Your sites (<span id="st-n">${sites.length}</span>)<button type="button" class="pillbtn" id="st-map" style="margin-left:auto">🗺️ Map of all sites</button><button type="button" class="pillbtn" id="st-del">🗑 Delete sites…</button></div><div class="stgrid">${sites.map(tile).join("")}</div><div class="nothing" id="st-none" hidden>No current sites match. Check Storage below.</div>` +
+    <div class="flabel" style="display:flex;justify-content:space-between;align-items:center;gap:8px">Your sites (<span id="st-n">${sites.length}</span>)<button type="button" class="pillbtn" id="st-map" style="margin-left:auto">🗺️ Map of all sites</button><button type="button" class="pillbtn" id="st-del">🗑 Delete sites…</button></div>${jhAllHtml(sites)}<div class="stgrid">${sites.map(tile).join("")}</div><div class="nothing" id="st-none" hidden>No current sites match. Check Storage below.</div>` +
     storageHtml();
   $("main")
     .querySelectorAll(".sttile")
@@ -53,6 +56,7 @@ function siteTiles(sites) {
         }),
     );
   wireStorage();
+  jhAllWire();
   $("st-del").onclick = deleteSitesPicker;
   $("st-map").onclick = smOpen;
   const qi = $("st-q");

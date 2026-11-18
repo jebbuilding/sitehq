@@ -1,5 +1,6 @@
 /* ================= CLIENTS ADDRESS BOOK + JOB HISTORY ================= */
 import { CJOBS } from "./address-book-jobs.js";
+import { aiWire } from "./address-import.js";
 import {
   clInitials,
   clList,
@@ -10,6 +11,7 @@ import {
   openClientForm,
   saveClient,
 } from "./clients.js";
+import { mjHas } from "./more-jobs.js";
 import { quickEnquiry, viewClient } from "./quick-enquiry.js";
 import { clNextPlan } from "./stages-planner.js";
 import { webBtnHtml, webView } from "./web-enquiries.js";
@@ -29,6 +31,7 @@ export {
   clContactsHtml,
   clInvHtml,
   clMainHtml,
+  clShowBook,
   clShowToSee,
   clientSites,
   clientsView,
@@ -274,11 +277,12 @@ function clientsView() {
   const isOpen = (c) => ["enquiry", "visit", "quote"].includes(c.stage),
     isCur = (c) => ["won", "onsite"].includes(c.stage);
   const F = {
-    see: ["Job to see", (c) => c.stage === "enquiry"],
-    cost: ["Job to cost", (c) => c.stage === "visit"],
-    sent: ["Estimate sent", (c) => c.stage === "quote"],
-    acc: ["Accepted", (c) => c.stage === "won"],
-    onsite: ["On site", (c) => c.stage === "onsite"],
+    /* a client shows under the stage of any of their jobs (clients/more-jobs.js) */
+    see: ["Job to see", (c) => mjHas(c, "enquiry")],
+    cost: ["Job to cost", (c) => mjHas(c, "visit")],
+    sent: ["Estimate sent", (c) => mjHas(c, "quote")],
+    acc: ["Accepted", (c) => mjHas(c, "won")],
+    onsite: ["Active site", (c) => mjHas(c, "onsite")],
     done: ["Completed", (c) => c.stage === "done"],
     rej: ["Rejected", (c) => c.stage === "lost"],
     follow: [
@@ -353,7 +357,7 @@ function clientsView() {
     const lj = last.get(c.id);
     return (
       head +
-      `<div class="abcard s-${esc(c.stage)}"><button type="button" class="abmain cl-open" data-c="${esc(c.id)}">${c.frontPhoto ? `<img class="abav abph" src="${blobUrl(c.frontPhoto)}" alt="" loading="lazy">` : `<span class="abav">${esc(clInitials(c))}</span>`}<span class="abtxt"><span class="abname"><b>${esc(c.name)}</b> <span class="tag">${esc(clStage(c.stage))}</span>${F.follow[1](c) ? ' <span class="tag bad">Follow up</span>' : ""}</span>
+      `<div class="abcard s-${esc(c.stage)}"><button type="button" class="abmain cl-open" data-c="${esc(c.id)}">${c.frontPhoto ? `<img class="abav abph" src="${blobUrl(c.frontPhoto)}" alt="" loading="lazy">` : `<span class="abav">${esc(clInitials(c))}</span>`}<span class="abtxt"><span class="abname"><b>${esc(c.name)}</b> <span class="tag">${esc(clStage(c.stage))}</span>${(c.moreJobs || []).length ? ` <span class="tag day">+${c.moreJobs.length} more job${c.moreJobs.length === 1 ? "" : "s"}</span>` : ""}${F.follow[1](c) ? ' <span class="tag bad">Follow up</span>' : ""}</span>
       ${addr ? `<span class="abline">📍 ${esc(addr)}</span>` : ""}<span class="abline">${[c.phone ? "📞 " + esc(c.phone) : "", c.email ? "✉ " + esc(c.email) : ""].filter(Boolean).join(" · ") || '<span class="who">No contact details</span>'}</span>${(c.contacts || []).length ? `<span class="abline who">👥 Also: ${(c.contacts || []).map((x) => esc(x.name || x.phone || x.email) + (x.role ? " (" + esc(x.role) + ")" : "")).join(", ")}</span>` : ""}
       ${(() => {
         const np = clNextPlan(c);
@@ -387,10 +391,10 @@ function clientsView() {
             )
             .join("")}</div>`
     }
-    <div class="who absum" ${book ? "hidden" : ""}>${pipe ? gbp(pipe) + " in estimates sent · " : ""}${all.filter(isCur).length} accepted or on site${due.length ? ` · <button type="button" class="linkbtn" id="cl-due">${due.length} to follow up today</button>` : ""}</div>
+    <div class="who absum" ${book ? "hidden" : ""}>${pipe ? gbp(pipe) + " in estimates sent · " : ""}${all.filter(isCur).length} accepted or active site${due.length ? ` · <button type="button" class="linkbtn" id="cl-due">${due.length} to follow up today</button>` : ""}</div>
     ${letters.length > (book ? 1 : 6) ? `<div class="abidx">${letters.map((L) => `<button type="button" class="abjump" data-l="${esc(L)}">${esc(L)}</button>`).join("")}</div>` : ""}
     <div class="ablist${book ? " bklist" : ""}">${shown.map(book ? bookRow : card).join("") || `<div class="empty"><strong>${all.length ? "Nobody matches" : "No clients yet"}</strong>${all.length ? "Try a different search or filter." : "Tap “New client” when someone gets in touch."}</div>`}</div>
-    <div class="actions" style="margin-top:12px"><button class="btn" id="cl-csv" type="button">Download address book (CSV)</button></div>
+    <div class="actions" style="margin-top:12px"><button class="btn" id="cl-csv" type="button">Download address book (CSV)</button><label class="btn fhpickbtn">📥 Upload an address book (CSV)<input type="file" id="cl-imp" accept=".csv,text/csv,text/plain" aria-label="Upload an address book CSV"></label></div>
     <div class="who">Only you can see clients.</div>`;
   $("cl-new").onclick = () => openClientForm(null, "contact");
   $("cl-enq").onclick = () => newEnquiryFor();
@@ -479,6 +483,7 @@ function clientsView() {
           render();
         }),
     );
+  aiWire();
   $("cl-csv").onclick = () => {
     const r = [
       [
@@ -527,4 +532,9 @@ function clientsView() {
 /* open Clients on the enquiries still to see (from Jobs & clients › Enquiries) */
 function clShowToSee() {
   S.f.clf = "see";
+}
+/* the 📒 Address book list on Clients (its own tab in Jobs & clients), or back off it */
+function clShowBook(on) {
+  if (on) S.f.clf = "book";
+  else if (S.f.clf === "book") S.f.clf = "";
 }

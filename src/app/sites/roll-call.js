@@ -4,6 +4,7 @@ import { S } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { SIGNIN } from "./sign-in-book.js";
+import { nstIs } from "../timesheets/non-site-time.js";
 export { onSiteNow, openRollCall };
 function onSiteNow() {
   const today = iso(new Date());
@@ -12,7 +13,7 @@ function onSiteNow() {
     .concat(S.owner && S.mine.entries.length ? [S.me] : [])
     .forEach((id) =>
       ((id === S.me ? S.mine.entries : S.data.entries[id]) || [])
-        .filter((e) => e.open && e.date === today)
+        .filter((e) => e.open && e.date === today && !nstIs(e.job))
         .forEach((e) => rows.push(Object.assign({ who: id }, e))),
     );
   try {

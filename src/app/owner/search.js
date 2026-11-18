@@ -58,8 +58,10 @@ function srFind(q) {
   };
   const out = [];
   /* the app's own pages, by name ("vat", "cash flow", "vans") */
+  /* Materials is off James's menus (11 Nov 2026), so search leaves it out too */
   OWN_TABS.forEach(([t, l]) => {
-    if (hit(l, t)) out.push({ k: "page", label: l, sub: "Page", go: () => srGoTab(t) });
+    if (t !== "materials" && hit(l, t))
+      out.push({ k: "page", label: l, sub: "Page", go: () => srGoTab(t) });
   });
   NL_SUBS.forEach((s) => {
     if (hit(s[1], s[4]))

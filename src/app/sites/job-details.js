@@ -21,9 +21,14 @@ export {
   editSiteJob,
   editSiteVis,
   empTypeOf,
+  jobNameOf,
   siteFromClient,
   siteFront,
+  siteHead,
+  siteHeadHtml,
   siteJobCard,
+  siteLabel,
+  siteNameBar,
   siteSumHtml,
   sjClientOK,
   sjCopy,
@@ -31,6 +36,7 @@ export {
   sjMaster,
   sjPayload,
   syncSiteJobs,
+  wireSiteNameBar,
   wireSiteSum,
   wireSjPhotos,
 };
@@ -832,13 +838,69 @@ function siteFrontPick(site) {
   };
   inp.click();
 }
+/* a job's own name (James, Nov 2026: "a job name that I can add that then comes up as the job for everyone to see",
+   as one person can have several jobs): sites/{id}.jobName; shown as the job's title with the address under it */
+const jobNameOf = (site) => String((siteRec(site) || {}).jobName || "").trim();
+const siteLabel = (site) => jobNameOf(site) || site;
+/* how a site is headed on cards and lists: the job name big and the address small; with no name yet, the first line of
+   the address big and the rest small (James, Nov 2026) */
+function siteHead(site) {
+  const s = String(site || "");
+  const jn = jobNameOf(s);
+  if (jn) return { big: jn, small: s };
+  const i = s.indexOf(",");
+  return i > 0
+    ? { big: s.slice(0, i).trim(), small: s.slice(i + 1).trim() }
+    : { big: s, small: "" };
+}
+const siteHeadHtml = (site) => {
+  const h = siteHead(site);
+  return `<b>${esc(h.big)}</b>${h.small ? `<span class="who">📍 ${esc(h.small)}</span>` : ""}`;
+};
+/* the top of each site's page: the job name big (or "Name this job" if it hasn't one), the address small, and one tap
+   to name it or change the name (James, Nov 2026: "needs to be in each site information at the top to choose the name") */
+function siteNameBar(site) {
+  const sr = siteRec(site) || {};
+  const jn = jobNameOf(site);
+  const can = S.owner && sr.id;
+  return `<div class="ss-namebar">${
+    jn
+      ? `<div class="ss-nmain"><b class="ss-nbig">🔨 ${esc(jn)}</b><span class="who">📍 ${esc(site)}</span></div>${can ? `<button type="button" class="pillbtn" id="ss-name">✎ Change name</button>` : ""}`
+      : `<div class="ss-nmain"><b class="ss-nbig">📍 ${esc(site)}</b>${can ? `<span class="who">No job name yet</span>` : ""}</div>${can ? `<button type="button" class="btn primary" id="ss-name">✎ Name this job</button>` : ""}`
+  }</div>`;
+}
+function wireSiteNameBar(site) {
+  if (!$("ss-name")) return;
+  $("ss-name").onclick = () => {
+    const sr = siteRec(site) || {};
+    openSheet(
+      `<h3 id="sheettitle">✎ Job name</h3><div class="who">📍 ${esc(site)}</div>
+      <label for="ss-nm">What do you call this job? (shows big everywhere, with the address small under it)<input id="ss-nm" maxlength="60" value="${esc(sr.jobName || "")}" placeholder="e.g. Jones kitchen extension"></label>
+      ${formFoot(false, "Save")}`,
+      async () => {
+        try {
+          await S.db
+            .doc("sites/" + sr.id)
+            .update({ jobName: $("ss-nm").value.trim().replace(/\s+/g, " ") });
+          closeForm();
+          toast("Name saved");
+          render();
+        } catch (e) {
+          showErr("Couldn't save. Check your connection.");
+        }
+      },
+      "ss-nm",
+    );
+  };
+}
 function siteSumHtml(site, compact, inner) {
   const sr = siteRec(site) || {};
+  const jn = jobNameOf(site);
   const c = siteClient(site);
   const work = (c && c.work) || sr.project || "";
   const tel = c ? String(c.phone || "").replace(/\s+/g, "") : "";
   if (compact)
-    return `<div class="sscompact"><b>📍 ${esc(site)}</b>${work ? ` · ${esc(work)}` : ""}${c ? ` · 👤 ${esc(c.name)}${tel ? ` <a href="tel:${esc(tel)}" class="sstel">📞 ${esc(c.phone)}</a>` : ""}` : ""}</div>`;
+    return `<div class="sscompact">${jn ? `<b class="ssjname">🔨 ${esc(jn)}</b> · ` : ""}<b>📍 ${esc(site)}</b>${work ? ` · ${esc(work)}` : ""}${c ? ` · 👤 ${esc(c.name)}${tel ? ` <a href="tel:${esc(tel)}" class="sstel">📞 ${esc(c.phone)}</a>` : ""}${c.email ? ` <a href="mailto:${esc(c.email)}" class="sstel">✉ ${esc(c.email)}</a>` : ""}` : ""}</div>`;
   const row = (l, v) =>
     v ? `<div class="drow"><span>${esc(l)}</span><span>${v}</span></div>` : "";
   return `<div class="sitesum">
@@ -849,7 +911,7 @@ function siteSumHtml(site, compact, inner) {
     <div class="sscl">${
       c
         ? `${clMainHtml(c)}${clContactsHtml(c)}<div class="details" style="margin-top:8px">${[row("Type of work", esc(c.work || "")), row("Estimate", c.quote ? gbp(+c.quote) : ""), row("What they want", c.desc ? esc(c.desc.length > 160 ? c.desc.slice(0, 160) + "…" : c.desc) : "")].join("")}</div>
-      <div class="actions" style="margin-top:6px">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a><a class="btn" href="sms:${esc(tel)}">💬 Text</a>` : ""}<button type="button" class="btn" id="ss-client">👤 Open client page ›</button></div>`
+      <div class="actions" style="margin-top:6px">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a><a class="btn" href="sms:${esc(tel)}">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}">✉ Email</a>` : ""}<button type="button" class="btn" id="ss-client">👤 Open client page ›</button></div>`
         : `<div class="who"><b>No client linked to this job yet.</b></div><div class="actions"><button type="button" class="btn primary" id="ss-link">Link a client</button></div>`
     }</div>${inner || ""}</div>`;
 }
@@ -862,6 +924,7 @@ function wireSiteSum(site) {
     const cl = siteClient(site);
     openSheet(
       `<h3 id="sheettitle">Job details</h3><div class="who">${esc(site)}</div>
+      <label for="ss-jname">Job name (everyone sees this as the job)<input id="ss-jname" maxlength="60" value="${esc(sr.jobName || "")}" placeholder="e.g. Jones kitchen extension"></label>
       <label for="ss-work">Type of work<input id="ss-work" maxlength="80" list="ss-wl" value="${esc((cl && cl.work) || sr.project || "")}" placeholder="e.g. Single-storey extension"><datalist id="ss-wl">${CL_WORK.map((w) => `<option value="${esc(w)}">`).join("")}</datalist></label>
       <label for="ss-cl">Client<select id="ss-cl"><option value="">No client</option>${clList()
         .sort((a, b) => String(a.name).localeCompare(String(b.name)))
@@ -876,7 +939,10 @@ function wireSiteSum(site) {
         const w = $("ss-work").value.trim(),
           cid = $("ss-cl").value;
         try {
-          if (sr.id) await S.db.doc("sites/" + sr.id).update({ project: w });
+          if (sr.id)
+            await S.db
+              .doc("sites/" + sr.id)
+              .update({ project: w, jobName: $("ss-jname").value.trim().replace(/\s+/g, " ") });
           if (cl && cl.id !== cid) {
             const r = Object.assign({}, cl);
             if (same(r.site, site)) r.site = "";

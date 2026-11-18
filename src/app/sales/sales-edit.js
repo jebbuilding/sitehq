@@ -4,6 +4,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
+import { efMount } from "./est-files.js";
 import { jfFor, jfOpen } from "./job-file.js";
 import {
   SD_IK,
@@ -158,7 +159,7 @@ function sdEdit(d0) {
         .join("")}</select></label></div>
       <label class="inl" id="sd-afl"${sdIk(d) === "extra" ? "" : " hidden"}><input type="checkbox" id="sd-af"${d.af ? " checked" : ""}> Add this extra work to the final invoice (don't send it on its own)</label>
       <div id="sd-finrow"${sdIk(d) === "final" ? "" : " hidden"}><button type="button" class="btn" id="sd-fin">↻ Work out the final invoice from the estimate</button><span class="who"> The estimate, plus extra work saved for the final invoice, less the deposit and instalments already invoiced.</span></div>
-      ${sdIsPf(d) ? `<div class="notice">A pro forma asks for payment before the work. It isn't a VAT invoice and isn't counted as money invoiced. When it's paid, tap ✅ Paid – make the invoice.</div>` : ""}`
+      ${sdIsPf(d) ? `<div class="notice">A pro forma asks for payment before the work. It isn't a VAT invoice and isn't counted as money invoiced. Send it to the client first. When they're happy with it (or have paid), tap <b>✅ Client's happy – make the proper invoice</b>: it gets the next invoice number and opens ready to send.</div>` : ""}`
         : ""
     }
     ${(() => {
@@ -207,6 +208,7 @@ function sdEdit(d0) {
     }
     <div id="sd-lines">${d.lines.map((l, i) => sdLineRow(l, i, set)).join("")}</div>
     <div class="sd-acts"><button type="button" class="btn" id="sd-addl">+ Add a line</button><button type="button" class="btn" id="sd-addh">+ Add a section (job)</button></div>
+    ${est ? `<section class="card esf-box" id="esf-box"></section>` : ""}
     ${
       est
         ? `<label for="sd-valid">Valid for (days)<input id="sd-valid" type="number" inputmode="numeric" value="${esc(d.validDays || set.validDays)}"></label>
@@ -235,7 +237,7 @@ function sdEdit(d0) {
       ${
         est
           ? `<button type="button" class="btn" id="sd-sign">✍️ Ask the client to sign</button><button type="button" class="btn" id="sd-signhere">✍️ Client signs now on this device</button><button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-acc">✅ Accepted</button><button type="button" class="btn" id="sd-dec">✖ Declined</button><button type="button" class="btn" id="sd-toinv">🧾 Make an invoice</button>`
-          : `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-pay">💷 Record a payment</button>${sdIsPf(d) && d0.id && d.status !== "converted" ? `<button type="button" class="btn primary" id="sd-pfconv">✅ Paid – make the invoice</button>` : ""}`
+          : `<button type="button" class="btn" id="sd-sent">📨 Mark as sent</button><button type="button" class="btn" id="sd-pay">💷 Record a payment</button>${sdIsPf(d) && d0.id && d.status !== "converted" ? `<button type="button" class="btn primary" id="sd-pfconv">✅ Client's happy – make the proper invoice</button>` : ""}`
       }
       ${d0.id ? `<button type="button" class="linkdanger" id="sd-del">Delete</button>` : ""}
       <button type="button" class="btn" id="sd-close">Close</button>
@@ -497,6 +499,7 @@ function sdEdit(d0) {
         .join("\n");
       if (!$("sd-site").value) $("sd-site").value = c.site || "";
       if ($("sd-dear") && !$("sd-dear").value) $("sd-dear").value = c.name || "";
+      efRedraw();
     };
   totals();
   let cur = d0.id ? d : null;
@@ -594,6 +597,31 @@ function sdEdit(d0) {
   document
     .querySelectorAll(".sd-jobrow")
     .forEach((b) => (b.onclick = () => sdEdit(sdSales().find((x) => x.id === b.dataset.id))));
+  /* quotes, drawings and other files for the estimate, on the estimate itself */
+  const efRedraw = est
+    ? efMount({
+        rec: () => Object.assign(read(), { id: cur ? cur.id : d0.id }),
+        save: () => save(null, true),
+        net: () => sdCalc(read()).net,
+        addLine: (l) => {
+          const n = document.querySelectorAll("#sd-lines .sd-line").length;
+          const lines0 = document.querySelectorAll("#sd-lines .sd-line:not(.sd-hrow)");
+          const last = lines0[lines0.length - 1];
+          /* fill an empty last line rather than leaving it blank */
+          const empty =
+            last &&
+            !last.querySelector(".sd-ld").value.trim() &&
+            !last.querySelector(".sd-la").value;
+          const vc = last ? last.querySelector(".sd-lv").value : set.vc || "S20";
+          const row = sdLineRow({ d: l.d, a: l.a, vc, k: l.k }, empty ? +last.dataset.i : n, set);
+          if (empty) last.outerHTML = row;
+          else $("sd-lines").insertAdjacentHTML("beforeend", row);
+          wireLines();
+          renumber();
+          totals();
+        },
+      })
+    : () => {};
   $("sd-close").onclick = done;
   $("sd-pdf").onclick = async () => {
     const r = await save(null, true);

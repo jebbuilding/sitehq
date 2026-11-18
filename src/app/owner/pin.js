@@ -1,4 +1,5 @@
 /* ===== Owner PIN (stored only as a hash) ===== */
+import { bossFirst } from "../core/company-names.js";
 import { toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -105,7 +106,7 @@ async function pinOk(v) {
 }
 function changePinFlow() {
   if (!ownerMode()) {
-    toast("Only James can change the PIN");
+    toast(`Only ${bossFirst()} can change the PIN`);
     return;
   }
   const d = document.createElement("div");

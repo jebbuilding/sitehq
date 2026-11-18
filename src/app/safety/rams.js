@@ -1,17 +1,21 @@
 /* ================= RISK ASSESSMENTS / RAMS (from James's CDM 2015 pack, 4.1) ================= */
+import { bossName, coName, coShort } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
+import { uploadErr } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { meBtn, meInfo } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
+import { CDMRA } from "./cdm-rams.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
-export { openRaForm, raAll, raBlock, viewRa, wireRa };
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+export { RA_PERMITS, RA_PPE, RA_WHO, openRaForm, raAll, raBlock, raPdf, viewRa, wireRa };
 const RA_HAZARDS = [
   [
     "Work at height (scaffold, roof, loft)",
@@ -72,7 +76,7 @@ function raAll(owner) {
 function raBlock(owner) {
   const list = raAll(owner);
   return `<div class="day"><div class="dayh"><span>Risk assessments &amp; method statements</span><span class="sum">${list.length}</span></div>
-    <div class="who">One per activity, e.g. "Blockwork to first floor" or "Steel beam installation". Based on JEB's CDM 2015 RAMS template.</div>
+    <div class="who">One per activity, e.g. "Blockwork to first floor" or "Steel beam installation". Based on ${esc(coShort())}'s CDM 2015 RAMS template.</div>
     <div class="actions"><button class="btn primary" id="ra-new" type="button">+ New risk assessment</button></div>
     ${
       list
@@ -98,7 +102,8 @@ function wireRa(owner) {
         }),
     );
 }
-function openRaForm(base) {
+/* after(saved): called with the saved risk assessment instead of opening it (the CDM page files it and comes back) */
+function openRaForm(base, after) {
   const r = base
     ? JSON.parse(JSON.stringify(base))
     : {
@@ -115,7 +120,7 @@ function openRaForm(base) {
   openSheet(
     `<h3 id="sheettitle">${base && base.id ? "Copy of risk assessment" : "New risk assessment"}</h3>
     <label for="ra-act">Activity<input id="ra-act" required maxlength="120" value="${esc(r.activity || "")}" placeholder="e.g. Blockwork to first floor"></label>
-    ${pickField("ra-site", "Project / address", siteNames(), r.site || lastOf(S.mine.entries, () => true, "job"), "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("ra-site", "Project / address", siteNames(), r.site || lastOf(S.mine.entries, () => true, "job"), "e.g. 12 High Street")}
     <div class="grid2"><label for="ra-by">Prepared by<input id="ra-by" maxlength="80" value="${esc(me)}"></label><label for="ra-date">Date<input id="ra-date" type="date" value="${iso(new Date())}"></label></div>
     <div><div class="flabel">Persons at risk</div>${tick("ra-who", RA_WHO, r.atRisk)}</div>
     <label for="ra-plant">Plant, tools and equipment<input id="ra-plant" maxlength="300" value="${esc(r.plant || "")}" placeholder="e.g. Mixer, block splitter, scaffold"></label>
@@ -131,7 +136,7 @@ function openRaForm(base) {
       <label for="ra-m2">Sequence of work<textarea id="ra-m2" maxlength="3000" style="min-height:110px">${esc(r.method.seq || "")}</textarea></label>
       <label for="ra-m3">Inspection / checks during work<textarea id="ra-m3" maxlength="2000">${esc(r.method.checks || "")}</textarea></label>
       <label for="ra-m4">Completion, clear-up and handover<textarea id="ra-m4" maxlength="2000">${esc(r.method.finish || "")}</textarea></label></div>
-    <label for="ra-em">Emergency / rescue arrangements<textarea id="ra-em" maxlength="1000" placeholder="e.g. Nearest A&E: Royal Devon and Exeter, Barrack Rd. First aider: …">${esc(r.emergency || "")}</textarea></label>
+    <label for="ra-em">Emergency / rescue arrangements<textarea id="ra-em" maxlength="1000" placeholder="e.g. Nearest A&E: County Hospital, Station Rd. First aider: …">${esc(r.emergency || "")}</textarea></label>
     <div class="who">After saving you can get the team to sign the briefing record on your phone.</div>
     ${formFoot(false, "Save risk assessment")}`,
     async () => {
@@ -198,6 +203,10 @@ function openRaForm(base) {
             ? "Saved on this phone. It sends when you have signal."
             : "Risk assessment saved",
         );
+        if (after) {
+          after(Object.assign({ id }, d));
+          return;
+        }
         render();
         if (rr !== "queued")
           setTimeout(() => {
@@ -310,7 +319,7 @@ function viewRa(r, owner) {
     ["Prepared by / date", [r.preparedBy, shortDay(r.date)].filter(Boolean).join(" · ")],
     [
       "Reviewed by PC / date",
-      r.reviewedAt ? `${r.reviewedBy || "James Bray"} · ${stamp(r.reviewedAt)}` : "Not yet",
+      r.reviewedAt ? `${esc(r.reviewedBy || bossName())} · ${stamp(r.reviewedAt)}` : "Not yet",
     ],
     ["Persons at risk", (r.atRisk || []).join(", ")],
     ["Plant, tools and equipment", r.plant],
@@ -320,7 +329,14 @@ function viewRa(r, owner) {
     ["Permits needed", r.permit],
   ].filter((x) => x[1]);
   const m = r.method || {};
-  openViewer(`<span class="tag">Risk assessment &amp; method statement</span><h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 6px;color:var(--accent);text-transform:uppercase">${esc(r.activity)}</h3>
+  const filedDoc = (S.docs || []).find((d) => d.cat === "rams" && d.raId && d.raId === r.id);
+  const filedLine =
+    !owner || !r.site
+      ? ""
+      : filedDoc
+        ? `<div class="notice" style="margin:4px 0 8px">📂 Filed in <b>${esc(r.site)} › RAMS</b> for the trades to read and sign. <button type="button" class="linkbtn" id="rv-site">Open the site's RAMS</button></div>`
+        : `<div class="notice warn" style="margin:4px 0 8px">Not in ${esc(r.site)} › RAMS yet, so the trades on the site can't read and sign it. <button type="button" class="btn primary" id="rv-file">📂 File it in ${esc(r.site)} › RAMS</button></div>`;
+  openViewer(`<span class="tag">Risk assessment &amp; method statement</span><h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 6px;color:var(--accent);text-transform:uppercase">${esc(r.activity)}</h3>${filedLine}
     <div class="details">${rows.map(([l, v]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join("")}</div>
     <div class="flabel" style="margin-top:12px">Risk assessment</div>
     ${(r.rows || [])
@@ -362,14 +378,44 @@ function viewRa(r, owner) {
     c.id = "copy";
     openRaForm(c);
   };
+  if ($("rv-site"))
+    $("rv-site").onclick = () => {
+      closeViewer();
+      S.otab = "projects";
+      S.f.projList = false;
+      S.f.proj = r.site;
+      render();
+      S.f.pjtab = "rams";
+      render();
+    };
+  if ($("rv-file"))
+    $("rv-file").onclick = async () => {
+      $("rv-file").disabled = true;
+      try {
+        await CDMRA.file(r.site, r);
+        closeViewer();
+        toast("Filed in " + r.site + " › RAMS");
+      } catch (e) {
+        $("rv-file").disabled = false;
+        toast("Couldn't file it: " + uploadErr(e));
+      }
+    };
   if ($("rv-review"))
     $("rv-review").onclick = async () => {
       try {
-        await S.db
-          .doc(raPath(r))
-          .update({ reviewedAt: Date.now(), reviewedBy: S.ownerName || "James Bray" });
+        await S.db.doc(raPath(r)).update({ reviewedAt: Date.now(), reviewedBy: bossName() });
+        /* reviewed: into the site's RAMS for everyone there to read and sign */
+        let filed = false;
+        if (r.site && !filedDoc)
+          try {
+            await CDMRA.file(
+              r.site,
+              Object.assign({}, r, { reviewedAt: Date.now(), reviewedBy: bossName() }),
+            );
+            filed = true;
+          } catch (e) {}
         closeViewer();
-        toast("Marked as reviewed");
+        toast(filed ? "Reviewed and filed in " + r.site + " › RAMS" : "Marked as reviewed");
       } catch (e) {
         toast("Couldn't save");
       }
@@ -446,12 +492,13 @@ function openRaBrief(r, owner) {
     $("rb-save").disabled = false;
   };
 }
-async function raPdf(r) {
-  if (!S.dl) {
+/* keep: give back the PDF ({ blob, fn }) instead of downloading it – for the RAMS the CDM page makes and files */
+async function raPdf(r, keep) {
+  if (!S.dl && !keep) {
     toast("Downloads only work when the page is opened in claude.ai");
     return;
   }
-  toast("Making the PDF…");
+  if (!keep) toast("Making the PDF…");
   try {
     await loadJsPdf();
   } catch (e) {
@@ -459,9 +506,10 @@ async function raPdf(r) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 14;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -470,9 +518,9 @@ async function raPdf(r) {
       .replace(/×/g, "x")
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
   const need = (h) => {
-    if (y + h > 284) {
+    if (y + h > (LH.bot || 284)) {
       doc.addPage();
-      y = 16;
+      y = LH.top || 16;
     }
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.5) => {
@@ -485,10 +533,12 @@ async function raPdf(r) {
     });
     y += gap;
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 10, 50, 23);
-  text("JEB BUILDING SERVICES", 9, "bold", 0, 6);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 10, 50, 23);
+    text(coName().toUpperCase(), 9, "bold", 0, 6);
+  }
   text("Risk assessment & method statement", 16, "bold", 0, 2);
   text(r.activity, 12, "bold", 0, 4);
   const kv = (l, v) => {
@@ -509,9 +559,7 @@ async function raPdf(r) {
   kv("Prepared by / date", [r.preparedBy, r.date].filter(Boolean).join(" / "));
   kv(
     "Reviewed by PC / date",
-    r.reviewedAt
-      ? (r.reviewedBy || "James Bray") + " / " + stamp(r.reviewedAt)
-      : "Not yet reviewed",
+    r.reviewedAt ? (r.reviewedBy || bossName()) + " / " + stamp(r.reviewedAt) : "Not yet reviewed",
   );
   kv("Persons at risk", (r.atRisk || []).join(", "));
   kv("Plant, tools and equipment", r.plant);
@@ -566,9 +614,9 @@ async function raPdf(r) {
     ];
     const lines = cells.map((c, i) => doc.splitTextToSize(clean(c), cols[i][1] - 2));
     const h = Math.max(...lines.map((l) => l.length)) * 3.7 + 2;
-    if (y + h > 284) {
+    if (y + h > (LH.bot || 284)) {
       doc.addPage();
-      y = 16;
+      y = LH.top || 16;
       hdr();
     }
     let x = M;
@@ -612,11 +660,14 @@ async function raPdf(r) {
     y += 15;
   });
   if (!(r.briefed || []).length) text("No signatures yet.", 9.5);
+  const fn = `RAMS - ${clean(r.activity)
+    .replace(/[^\w\s-]/g, "")
+    .trim()} - ${r.date || iso(new Date())}.pdf`;
+  lhFinish(doc, LH);
+  if (keep) return { blob: doc.output("blob"), fn };
   try {
     await S.dl.save({
-      filename: `RAMS - ${clean(r.activity)
-        .replace(/[^\w\s-]/g, "")
-        .trim()} - ${r.date || iso(new Date())}.pdf`,
+      filename: fn,
       data: doc.output("blob"),
     });
   } catch (e) {

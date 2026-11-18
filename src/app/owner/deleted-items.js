@@ -1,6 +1,7 @@
 /* ===== DELETED ITEMS: photos and files the owner deletes go here first, come off everywhere they were used, and are removed for good after 30 days (or straight away from Setup) ===== */
 import { saveClient } from "../clients/clients.js";
 import { ptCl, ptOf } from "../clients/portal.js";
+import { bossFirst } from "../core/company-names.js";
 import { mapDocs } from "../core/data.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { $, esc, stamp, toast } from "../core/helpers.js";
@@ -256,6 +257,12 @@ async function binRefsFor(assetIds) {
     const hit = ph.filter((id) => A.has(id));
     if (hit.length) refs.push({ t: "jobdone", key, assets: hit });
   });
+  (S.jobFiles || []).forEach((j) =>
+    (j.items || []).forEach((it) => {
+      if (A.has(it.assetId))
+        refs.push({ t: "jfitem", jid: j.id, item: JSON.parse(JSON.stringify(it)) });
+    }),
+  );
   return refs;
 }
 const binWhere = (r) =>
@@ -270,6 +277,7 @@ const binWhere = (r) =>
     cfront: "Client front photo",
     sfront: "Site front photo",
     jobdone: "Job sheet task photo",
+    jfitem: "Job file",
     rec: r.path ? binTitleFor(r.path, r.data || {}).sub : "Record",
   })[r.t] || r.t;
 async function binRemoveRefs(refs) {
@@ -334,6 +342,13 @@ async function binRemoveRefs(refs) {
           const ph = (x.photos || []).filter((id) => !r.assets.includes(id));
           await S.db.doc("jobdone/" + r.key).update({ photos: ph });
           x.photos = ph;
+        }
+      } else if (r.t === "jfitem") {
+        const j = (S.jobFiles || []).find((x) => x.id === r.jid);
+        if (j) {
+          const items = (j.items || []).filter((x) => x.id !== r.item.id);
+          await S.db.doc("todos/" + r.jid).update({ items, updated: Date.now() });
+          j.items = items;
         }
       }
     } catch (e) {
@@ -421,6 +436,13 @@ async function binRestoreRefs(refs) {
         const ph = ((x && x.photos) || []).filter((id) => !r.assets.includes(id)).concat(r.assets);
         await S.db.doc("jobdone/" + r.key).update({ photos: ph });
         if (x) x.photos = ph;
+      } else if (r.t === "jfitem") {
+        const j = (S.jobFiles || []).find((x) => x.id === r.jid);
+        if (j) {
+          const items = (j.items || []).filter((x) => x.id !== r.item.id).concat([r.item]);
+          await S.db.doc("todos/" + r.jid).update({ items, updated: Date.now() });
+          j.items = items;
+        }
       }
     } catch (e) {
       console.warn("bin restore", r.t, e);
@@ -430,7 +452,7 @@ async function binRestoreRefs(refs) {
 /* move something to Deleted items: o = {assets:[ids], title, sub, type, thumb} */
 async function binDelete(o) {
   if (!ownerMode()) {
-    toast("Only James can delete this");
+    toast(`Only ${bossFirst()} can delete this`);
     return false;
   }
   const assets = [...new Set((o.assets || []).filter(Boolean))];

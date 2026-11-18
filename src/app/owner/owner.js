@@ -1,4 +1,5 @@
 /* ================= OWNER ================= */
+import { bossName } from "../core/company-names.js";
 import { startEmployee } from "../core/data.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
@@ -29,8 +30,9 @@ import { backupCard, wireBackup } from "./backup.js";
 import { companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
 import { openMonthly } from "./reports.js";
+import { qaSetupCard, qaSetupWire } from "./today-desk.js";
+import { wuOpen } from "./week-wrap.js";
 import { acView } from "../people/access.js";
-import { detailsDone, myDetails, openDetails } from "../people/personal-details.js";
 import { pvView } from "../people/portal-access.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
 import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
@@ -41,13 +43,16 @@ import { isInv } from "../purchasing/materials-receipts.js";
 import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
-import { sdSigCard, sdWireSig } from "../sales/sig-setup.js";
+import { siteHeadHtml } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
 import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
+import { pcCardHtml, pcWire } from "../timesheets/plan-check.js";
+import { qwOpen } from "../timesheets/quick-week.js";
+import { shCardHtml, shWire } from "../timesheets/stray-hours.js";
 import { openEntry, sumH, typeTag } from "../timesheets/time.js";
 import { WE, WS, dayFor } from "../timesheets/working-day.js";
 export {
@@ -55,8 +60,8 @@ export {
   allTeam,
   checkDetail,
   companyOf,
+  crewIds,
   nameOf,
-  ownerDisplayName,
   ownerInvoices,
   ownerPhotos,
   ownerSetup,
@@ -64,6 +69,7 @@ export {
   roleOf,
   roleShort,
   roleTag,
+  sheetOf,
   startPreview,
   teamIds,
   teamPlusMe,
@@ -74,19 +80,16 @@ function teamIds() {
     .filter((id) => id !== S.me && !(S.team[id] || {}).left)
     .sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
 }
+/* everyone who works, the account holder included (James, Nov 2026: "treat me the same way as anyone else"): for the
+   planner, time off, holidays, kit and labour rates. The account holder's own records are in S.mine. */
+function crewIds() {
+  return S.owner && S.me ? [S.me].concat(teamIds()) : teamIds();
+}
+function sheetOf(coll, id) {
+  return (id === S.me ? S.mine[coll] : (S.data[coll] || {})[id]) || [];
+}
 function allIds() {
   return Object.keys(S.team).filter((id) => id !== S.me);
-}
-/* The owner's name as the app shows it: their own profile when they are the one signed in (the name they gave,
-   or the full name from their details), what the sign-in knows, or what the company settings say – never a name
-   written into the code. "Owner" is the last resort. */
-function ownerDisplayName() {
-  if (S.owner) {
-    const p = S.myProfile || {};
-    const own = p.name || (p.details && p.details.fullName) || S.ownerName;
-    if (own) return own;
-  }
-  return (S.settings && S.settings.ownerName) || "Owner";
 }
 function nameOf(id) {
   if (id && String(id).startsWith("px:")) return String(id).slice(3);
@@ -94,7 +97,7 @@ function nameOf(id) {
     const o = S.offapp.find((x) => "off:" + x.id === id);
     return (o && o.details && o.details.fullName) || "Trade";
   }
-  if (id && id === S.me && S.owner) return ownerDisplayName();
+  if (id && id === S.me && S.owner) return (S.myProfile && S.myProfile.name) || bossName();
   return (S.team[id] && S.team[id].name) || S.names[id] || "New employee";
 }
 function allTeam(coll) {
@@ -141,7 +144,7 @@ function roleTag(id) {
         : r === "company"
           ? '<span class="tag rco">🏢 ' + esc(companyOf(id) || "Another company") + "</span>"
           : r === "owner"
-            ? ""
+            ? '<span class="tag rown">Owner · account holder</span>'
             : '<span class="tag">Not set</span>')
   );
 }
@@ -368,7 +371,7 @@ function ownerTime() {
     <div class="tot"><div class="n">${hrs(sumH(all, (e) => e.type === "job"))}</div><div class="l">Job log hours</div></div></div>
     ${all.length ? `<div class="who">Timesheet hours: employees ${hrs(sumH(all, (e) => e.type === "hours" && roleOf(e.who) === "employee"))} h · subcontractors ${hrs(sumH(all, (e) => e.type === "hours" && roleOf(e.who) === "sub"))} h${all.some((e) => !["employee", "sub", "owner"].includes(roleOf(e.who))) ? " · not set " + hrs(sumH(all, (e) => e.type === "hours" && !["employee", "sub", "owner"].includes(roleOf(e.who)))) + " h" : ""}</div>` : ""}
     <div class="actions"><button class="btn primary" id="ot-addh" type="button">+ Add a timesheet day</button><button class="btn hv" id="ot-addj" type="button">+ Add day work</button></div>
-    <div class="actions"><button class="btn primary" id="paysum" type="button">Weekly pay summary</button><button class="btn" id="csv" type="button">Download this week (CSV)</button>
+    <div class="actions"><button class="btn primary" id="paysum" type="button">Weekly pay summary</button><button class="btn" id="wu-open" type="button">📋 Week wrap-up</button><button class="btn" id="csv" type="button">Download this week (CSV)</button>
     <button class="btn" id="monthly" type="button">Monthly report by site</button>
     <button class="btn" id="preview" type="button">Fill in forms as me</button></div>`;
   if (!S.sites.length)
@@ -407,7 +410,7 @@ function ownerTime() {
     html += `<details class="card" data-id="${esc(id)}" ${S.open.has(id) ? "open" : ""}><summary>
       <div class="nm">${esc(nameOf(id))} ${roleTag(id)}<small>${upd ? "Last updated " + upd.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" }) : "Nothing yet"}${pend ? ` · ${pend} to approve` : ""}</small></div>
       <div class="figs"><span><b>${hrs(sumH(we, (e) => e.type === "hours"))}</b> h worked</span><span><b>${hrs(sumH(we, (e) => e.type === "job" && e.kind === "extra"))}</b> h extra</span><span><b>${hrs(sumH(we, (e) => e.type === "job"))}</b> h on jobs</span></div></summary>
-      <div class="cardbody">${!String(id).startsWith("px:") && !String(id).startsWith("off:") ? `<button type="button" class="btn sjbig pm-open" data-w="${esc(id)}" style="margin:0 0 10px">📅 ${esc(nameOf(id))}: all details &amp; month timesheet ›</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? timeControls(id) : id === S.me ? `<div class="tctl"><button type="button" class="pillbtn me-addh">+ Timesheet day</button><button type="button" class="pillbtn me-addj">🧱 + Day work / job time</button></div>` : ""}<div class="actions">${pend ? `<button type="button" class="btn" data-approveall="1">Approve all this week</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? `<button type="button" class="pillbtn pr-send" data-w="${esc(id)}">Ask ${esc(nameOf(id))} to fix or fill in…</button>` : ""}</div>
+      <div class="cardbody">${!String(id).startsWith("px:") && !String(id).startsWith("off:") ? `<button type="button" class="btn sjbig pm-open" data-w="${esc(id)}" style="margin:0 0 10px">📅 ${esc(nameOf(id))}: all details &amp; month timesheet ›</button><button type="button" class="btn primary qw-open" data-w="${esc(id)}" style="margin:0 0 10px 8px">✎ Quick edit this week</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? timeControls(id) : id === S.me ? `<div class="tctl"><button type="button" class="pillbtn me-addh">+ Timesheet day</button><button type="button" class="pillbtn me-addj">🧱 + Day work / job time</button></div>` : ""}<div class="actions">${pend ? `<button type="button" class="btn" data-approveall="1">Approve all this week</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? `<button type="button" class="pillbtn pr-send" data-w="${esc(id)}">Ask ${esc(nameOf(id))} to fix or fill in…</button>` : ""}</div>
         ${
           we.length
             ? `<div class="tablewrap"><table><thead><tr><th>Day</th><th>Sheet</th><th>Site / task</th><th>Time</th><th class="num">Hours</th><th>OK</th><th></th></tr></thead><tbody>
@@ -425,10 +428,13 @@ function ownerTime() {
             : `<div class="nothing">Nothing logged this week.</div>`
         }</div></details>`;
   });
-  html = goneWorkCard() + html;
+  html = goneWorkCard() + shCardHtml() + pcCardHtml() + html;
   $("main").innerHTML = html;
   wireFlt();
   wireGoneWork();
+  shWire();
+  pcWire();
+  if ($("wu-open")) $("wu-open").onclick = () => wuOpen();
   $("csv").onclick = downloadCsv;
   $("paysum").onclick = openPaySummary;
   if ($("rollcall")) $("rollcall").onclick = openRollCall;
@@ -441,6 +447,9 @@ function ownerTime() {
   $("main")
     .querySelectorAll(".pm-open")
     .forEach((b) => (b.onclick = () => openPersonMonth(b.dataset.w)));
+  $("main")
+    .querySelectorAll(".qw-open")
+    .forEach((b) => (b.onclick = () => qwOpen(b.dataset.w)));
   $("preview").onclick = startPreview;
   $("main")
     .querySelectorAll("details.card")
@@ -538,7 +547,7 @@ function openStartFor(id) {
       "Site",
       siteNames(),
       lastOf(S.data.entries[id] || [], () => true, "job"),
-      "e.g. 12 Marine Way, Exmouth",
+      "e.g. 12 High Street",
     )}
     <div class="grid2"><label for="sf-date">Date<input id="sf-date" type="date" value="${iso(new Date())}"></label><label for="sf-start">Start time<input id="sf-start" type="time" value="${st}"></label></div>
     ${formFoot(false, "Start")}`,
@@ -570,7 +579,7 @@ function openStartFor(id) {
           checkIn: true,
           notes: "",
           approved: false,
-          startedBy: ownerDisplayName(),
+          startedBy: bossName(),
           created: now,
           updated: now,
         });
@@ -606,7 +615,7 @@ function openStopFor(id, e) {
         hours: h,
         outAt: Date.now(),
         updated: Date.now(),
-        stoppedBy: ownerDisplayName(),
+        stoppedBy: bossName(),
       });
       delete d.id;
       delete d.who;
@@ -636,7 +645,8 @@ function startPreview() {
     S.employeeStarted = true;
     startEmployee();
   }
-  if (!empTabs().some((t) => t[0] === S.tab)) S.tab = empTabs()[0][0];
+  /* My forms opens on My timesheet, not on whichever trades' page was used last (James, Nov 2026: it went to Chat) */
+  S.tab = empTabs().some((t) => t[0] === "time") ? "time" : empTabs()[0][0];
   render();
 }
 async function downloadCsv() {
@@ -898,7 +908,7 @@ function ownerSetup() {
     ph,
   ) => `<details class="card" data-id="__${key}" ${S.open.has("__" + key) || !names.length ? "open" : ""}><summary><div class="nm">${title}<small>${names.length ? names.length + " in the list" : help}</small></div></summary>
     <div class="cardbody"><form class="addform" data-k="${key}" style="display:flex;gap:8px;flex-wrap:wrap"><input id="add-${key}" maxlength="100" placeholder="${esc(ph)}" aria-label="Add to ${esc(title)}" style="flex:1;min-width:200px"><button class="btn primary" type="submit">Add</button></form>
-    ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">Details</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : "Driver & checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
+    ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${key === "sites" ? siteHeadHtml(x.name) : esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">${x.jobName ? "Details" : "✎ Name & details"}</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : "Driver & checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
   $("main").innerHTML =
     `${stSeg}<div class="card"><div class="cardbody" style="border:0"><b>Working day</b>
       <div class="grid2"><label for="wd-s">Paid start<input id="wd-s" type="time" value="${esc(WS())}"></label><label for="wd-e">Paid finish<input id="wd-e" type="time" value="${esc(WE())}"></label></div>
@@ -906,17 +916,14 @@ function ownerSetup() {
       <div><button class="btn primary" id="wd-save" type="button">Save working day</button></div></div></div>
     <div class="card"><div class="cardbody" style="border:0"><b>📷 Site photos for trades</b><div class="who">Trades see a <b>Site photos</b> tab on each of their sites.</div>
       <div class="seg" id="tp-seg"><button type="button" data-v="all" aria-pressed="${(S.settings || {}).tradePhotos !== "james"}">Everyone's photos for the site</button><button type="button" data-v="james" aria-pressed="${(S.settings || {}).tradePhotos === "james"}">Only my photos (and their own)</button></div></div></div>
-    <div class="card"><div class="cardbody" style="border:0"><b>Your mobile number</b><div class="who">Trades can call or video call you from Chat with this.</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="op-tel" type="tel" maxlength="20" value="${esc(S.f.opTel != null ? S.f.opTel : (S.settings || {}).ownerPhone || "")}" placeholder="e.g. 07700 900123" style="flex:1;min-width:180px" aria-label="Your mobile number"><button class="btn primary" id="op-save" type="button">Save</button></div></div></div>
-    <div class="card"><div class="cardbody" style="border:0"><b>🪪 My own details</b><div class="who">${detailsDone(myDetails()) ? "✓ Filled in. " : ""}Your name, trade, CSCS card, next of kin and medical info. Used to fill in inductions, toolbox talks, briefings and other forms for you automatically, the same as the trades.</div><div><button class="btn ${detailsDone(myDetails()) ? "" : "primary"}" id="op-det" type="button">${detailsDone(myDetails()) ? "Check my details" : "Fill in my details"}</button></div></div></div>
+    ${qaSetupCard()}
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
     ${companyCard()}
     ${lhCard()}
-    ${sdSigCard()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
     <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button></div>
-    ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 Marine Way, Exmouth")}
+    ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 High Street")}
     ${Object.entries(KINDS)
       .map(([k, K]) =>
         sec(
@@ -936,50 +943,7 @@ function ownerSetup() {
   wireBackup();
   wireCompany();
   lhWire();
-  sdWireSig();
-  $("op-det").onclick = () => openDetails();
-  $("op-tel").addEventListener("input", (e) => {
-    S.f.opTel = e.target.value;
-  });
-  $("op-tel").addEventListener("change", () => opSave());
-  const opSave = async () => {
-    const el = $("op-tel");
-    if (!el) return;
-    const v = (S.f.opTel != null ? S.f.opTel : el.value).trim();
-    if (v === ((S.settings || {}).ownerPhone || "")) {
-      S.f.opTel = null;
-      if (v) toast("Number saved");
-      return;
-    }
-    if (v && v.replace(/\D/g, "").length < 10) {
-      toast("That number looks too short");
-      return;
-    }
-    $("op-save").disabled = true;
-    try {
-      await S.db.doc("settings/app").update({ ownerPhone: v });
-      S.settings = Object.assign({}, S.settings, { ownerPhone: v });
-      S.f.opTel = null;
-      toast(v ? "Number saved" : "Number removed");
-      if ($("op-tel")) $("op-tel").blur();
-    } catch (e) {
-      try {
-        await S.db.doc("settings/app").set(Object.assign({}, S.settings, { ownerPhone: v }));
-        toast("Number saved");
-      } catch (x) {
-        toast("Couldn't save. Check your connection.");
-      }
-    }
-    if ($("op-save")) $("op-save").disabled = false;
-  };
-  $("op-save").addEventListener("pointerdown", (e) => e.preventDefault());
-  $("op-save").onclick = opSave;
-  $("op-tel").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      opSave();
-    }
-  });
+  qaSetupWire();
   $("main")
     .querySelectorAll("#tp-seg button")
     .forEach(
@@ -1139,8 +1103,9 @@ function ownerSetup() {
           if (!x) return;
           openSheet(
             `<h3 id="sheettitle">Site details</h3>
+      <label for="sd-jname">Job name (shows big everywhere, with the address small under it)<input id="sd-jname" maxlength="60" value="${esc(x.jobName || "")}" placeholder="e.g. Carpenter renovation"></label>
       <label for="sd-name">Site address<input id="sd-name" required maxlength="120" value="${esc(x.name)}"></label>
-      <div class="who">Use the full address with postcode, e.g. 9 Old Teignmouth Rd, Dawlish EX7 0NJ. It's printed on every photo. Changing it doesn't change older records.</div>
+      <div class="who">Use the full address with postcode, e.g. 9 Station Road, Anytown AB1 2CD. It's printed on every photo. Changing it doesn't change older records.</div>
       <label for="sd-proj">Project name (printed on photos)<input id="sd-proj" maxlength="80" value="${esc(x.project || "")}" placeholder="e.g. La Falaise"></label>
       <label for="sd-loc">Site location (latitude, longitude)<input id="sd-loc" maxlength="60" value="${x.lat != null ? esc(x.lat + ", " + x.lon) : ""}" placeholder="e.g. 50.5744373, -3.4704849"></label>
       <div class="who">Used on photos when the phone doesn't record a location. In Google Maps, press and hold on the site, then copy the numbers that appear.</div>
@@ -1160,10 +1125,16 @@ function ownerSetup() {
                 return;
               }
               try {
+                /* the old address is kept, so everything booked under it stays with the job */
+                const aka = [...new Set((x.aka || []).concat(x.name ? [x.name] : []))].filter(
+                  (a) => a && a.trim().toLowerCase() !== name.toLowerCase(),
+                );
                 await S.db.doc("sites/" + x.id).update({
                   lat: lm ? +lm[1] : null,
                   lon: lm ? +lm[2] : null,
                   name,
+                  aka,
+                  jobName: $("sd-jname").value.trim().replace(/\s+/g, " "),
                   project: $("sd-proj").value.trim(),
                   plots: $("sd-plots")
                     .value.split(",")

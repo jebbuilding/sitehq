@@ -4,6 +4,7 @@ import { clStage, saveClient } from "../clients/clients.js";
 import { ptCl } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst, bossName, coShort } from "../core/company-names.js";
 import { pickField, pickVal } from "../core/fields.js";
 import { $, esc, fsize, gbp, hrs, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import {
@@ -29,7 +30,7 @@ import { printBlob } from "../files/print.js";
 import { SENDTO } from "../files/send-to.js";
 import { coData } from "../owner/company-details.js";
 import { binFromViewer } from "../owner/deleted-items.js";
-import { allTeam, nameOf, ownerDisplayName, roleShort, teamIds } from "../owner/owner.js";
+import { allTeam, nameOf, roleShort, teamIds } from "../owner/owner.js";
 import { BRGB, exifDate, isVid, pdfLogo, readExif, siteRec, stampPhoto } from "../photos/photos.js";
 import { keyDatesFor, keyTimeline, openPlanEditor, openPlanView } from "../planner/board.js";
 import { planEntries } from "../planner/time-off.js";
@@ -38,6 +39,7 @@ import { MAT_ST, matCount } from "../purchasing/materials-receipts.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { WTN } from "../safety/waste-transfer-note.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import {
   JOB_DET,
   JOB_KINDS,
@@ -985,7 +987,7 @@ const DWS = (() => {
       "New supply needed – separate circuit / RCD",
       "Supplied by client's own electrician",
     ],
-    by: ["JEB to arrange", "Door supplier's fitter", "Client's electrician", "Not decided"],
+    by: ["Builder to arrange", "Door supplier's fitter", "Client's electrician", "Not decided"],
     fix: [
       "Behind the opening (on the inside face)",
       "Between the reveals",
@@ -1167,6 +1169,7 @@ const DWS = (() => {
     "Pilkington Oak",
     "Pilkington Pelerine",
     "Pilkington Reeded",
+    "Pilkington Satin",
     "Pilkington Stippolyte",
     "Pilkington Sycamore",
     "Pilkington Taffeta",
@@ -2908,15 +2911,28 @@ const DWS = (() => {
         .map((w) => `<br><span style="color:var(--wsdim)">⚠ ${esc(w)}</span>`)
         .join("")}`;
   }
+  /* openings ticked in the schedule, to delete together (James, Nov 2026: "I need to be able to tick and then be able
+     to delete them") */
+  const wsTicked = new Set();
+  function tickBar() {
+    [...wsTicked].forEach((o) => items.includes(o) || wsTicked.delete(o));
+    const n = wsTicked.size;
+    g("ticks").hidden = !n;
+    g("tickn").textContent = n + " ticked";
+    const d = g("tickdel");
+    d.dataset.armed = "";
+    d.textContent = "🗑 Delete ticked";
+  }
   function list() {
     g("count").textContent = items.length + " opening" + (items.length === 1 ? "" : "s");
     g("list").innerHTML = items
       .map((o, i) => {
         const s = sizes(o),
           vh = s.fws.length > 1 ? 110 : 92;
-        return `<button type="button" class="wsitem" data-i="${i}" aria-current="${i === cur}"><span class="r">${o.ref}</span><svg viewBox="0 0 120 ${vh}" aria-hidden="true">${usingSketch(o) ? skImg(o, 120, vh) : draw(o, 120, vh, 6, CV, { dims: false })}</svg><span><b>${esc(o.name)}</b><small>${esc(o.loc || "–")} · ${esc(o.mat)} · ${esc(o.out)}${(o.photos || []).length ? " · 📷 " + o.photos.length : ""}</small></span><span class="z">${o.qty > 1 ? o.qty + " × " : ""}${s.W} × ${s.H}</span></button>`;
+        return `<div class="wsirow"><label class="wstick"><input type="checkbox" class="ws-tick" data-i="${i}"${wsTicked.has(o) ? " checked" : ""} aria-label="Tick ${esc(o.ref)}"></label><button type="button" class="wsitem" data-i="${i}" aria-current="${i === cur}"><span class="r">${o.ref}</span><svg viewBox="0 0 120 ${vh}" aria-hidden="true">${usingSketch(o) ? skImg(o, 120, vh) : draw(o, 120, vh, 6, CV, { dims: false })}</svg><span><b>${esc(o.name)}</b><small>${esc(o.loc || "–")} · ${esc(o.mat)} · ${esc(o.out)}${(o.photos || []).length ? " · 📷 " + o.photos.length : ""}</small></span><span class="z">${o.qty > 1 ? o.qty + " × " : ""}${s.W} × ${s.H}</span></button></div>`;
       })
       .join("");
+    tickBar();
   }
   const refresh = () => {
     handRender();
@@ -3029,7 +3045,7 @@ const DWS = (() => {
   <div class="wsbody">
    <section class="wspanel"><h2>Job <span class="wslbl">goes on the PDF</span></h2>
     <div class="wsrow"><label class="wf">Choose a client<select id="wsx-j-pick"></select></label><label class="wf">Site<select id="wsx-j-site"></select></label></div>
-    <div class="wsrow"><label class="wf">Client<input id="wsx-j-client"></label><label class="wf">Address / deliver to<input id="wsx-j-addr"></label><label class="wf">Surveyed by<input id="wsx-j-by"></label><label class="wf">Date<input id="wsx-j-date" type="date"></label><label class="wf">Supplier<input id="wsx-j-sup" list="wsx-sups" placeholder="Window company"><datalist id="wsx-sups"><option value="Exeter Window Store, 10-11 Apple Lane, Sidmouth Road, Exeter EX2 5GL"></option></datalist></label><label class="wf">Our ref<input id="wsx-j-ref"></label></div>
+    <div class="wsrow"><label class="wf">Client<input id="wsx-j-client"></label><label class="wf">Address / deliver to<input id="wsx-j-addr"></label><label class="wf">Surveyed by<input id="wsx-j-by"></label><label class="wf">Date<input id="wsx-j-date" type="date"></label><label class="wf">Supplier<input id="wsx-j-sup" list="wsx-sups" placeholder="Window company"><datalist id="wsx-sups"></datalist></label><label class="wf">Our ref<input id="wsx-j-ref"></label></div>
     <div class="who" id="wsx-j-link"></div></section>
    <div class="wsgrid">
     <section class="wspanel" aria-label="Opening">
@@ -3062,7 +3078,7 @@ const DWS = (() => {
      <label class="wf">Notes for the manufacturer / fitter<textarea id="wsx-o-notes" rows="2" placeholder="e.g. Brick slips both sides, lintel looks low"></textarea></label>
      <div class="wsfoot"><button class="btn" type="button" data-new="window">+ Window</button><button class="btn" type="button" data-new="door">+ Door</button><button class="btn" type="button" data-new="bay">+ Bay</button><button class="btn" type="button" id="wsx-dup">⧉ Copy this one</button><button class="btn delbtn" type="button" id="wsx-del">🗑 Remove</button></div>
     </section>
-    <section class="wspanel" aria-label="Schedule"><h2>Schedule <span class="wslbl" id="wsx-count"></span></h2><div class="wslist" id="wsx-list"></div>
+    <section class="wspanel" aria-label="Schedule"><h2>Schedule <span class="wslbl" id="wsx-count"></span></h2><div class="wsticks" id="wsx-ticks" hidden><span id="wsx-tickn"></span><button type="button" class="pillbtn" id="wsx-tickall">☑ Tick all</button><button type="button" class="pillbtn" id="wsx-untick">Untick</button><button type="button" class="btn delbtn" id="wsx-tickdel">🗑 Delete ticked</button></div><div class="wslist" id="wsx-list"></div>
      <button type="button" class="btn primary" id="wsx-pdf2">📄 Make the PDF</button><div class="who">Make an order request for your window supplier, or a full survey PDF with everything in it.</div></section>
    </div></div>`;
     document.body.appendChild(d);
@@ -3559,7 +3575,56 @@ const DWS = (() => {
       azRender();
       refresh();
     });
+    g("list").addEventListener("change", (e) => {
+      const t = e.target.closest(".ws-tick");
+      if (!t) return;
+      const o = items[+t.dataset.i];
+      if (!o) return;
+      if (t.checked) wsTicked.add(o);
+      else wsTicked.delete(o);
+      tickBar();
+    });
+    g("tickall").onclick = () => {
+      items.forEach((o) => wsTicked.add(o));
+      list();
+    };
+    g("untick").onclick = () => {
+      wsTicked.clear();
+      list();
+    };
+    g("tickdel").onclick = (e) => {
+      const b = e.currentTarget;
+      const n = wsTicked.size;
+      if (!n) return;
+      if (n >= items.length) {
+        toast("A survey needs at least one opening – untick one to keep it");
+        return;
+      }
+      if (b.dataset.armed !== "1") {
+        b.dataset.armed = "1";
+        b.textContent = "Tap again to delete " + n;
+        setTimeout(() => {
+          if (b.dataset.armed === "1") tickBar();
+        }, 3000);
+        return;
+      }
+      read();
+      const keep = items[cur];
+      const refs = items.filter((o) => wsTicked.has(o)).map((o) => o.ref);
+      const left = items.filter((o) => !wsTicked.has(o));
+      items.splice(0, items.length, ...left);
+      wsTicked.clear();
+      const at = items.indexOf(keep);
+      load(at >= 0 ? at : 0);
+      toast(
+        refs.length === 1
+          ? refs[0] + " deleted"
+          : refs.length + " deleted (" + refs.join(", ") + ")",
+      );
+      dirty();
+    };
     g("list").addEventListener("click", (e) => {
+      if (e.target.closest(".wstick")) return;
       const b = e.target.closest(".wsitem");
       if (!b) return;
       read();
@@ -4900,7 +4965,7 @@ function jobsView() {
       .join("")}</div>`;
   html += list.length
     ? `<div class="day">${list.map((j) => jobCard(j, owner)).join("")}</div>`
-    : `<div class="empty"><strong>${f === "open" ? "No open jobs" : "Nothing here"}</strong>${owner ? "Create a job sheet or snag list, choose who it's for, and add the tasks." : "Job sheets and snag lists James gives you will appear here."}</div>`;
+    : `<div class="empty"><strong>${f === "open" ? "No open jobs" : "Nothing here"}</strong>${owner ? "Create a job sheet or snag list, choose who it's for, and add the tasks." : `Job sheets and snag lists ${bossFirst()} gives you will appear here.`}</div>`;
   if (owner) html += DWS.jobsHtml() + WTN.jobsHtml();
   $("main").innerHTML = html;
   if (owner) {
@@ -5137,8 +5202,7 @@ function openPhotoFull(id) {
     else closeViewer();
   };
 }
-const myName = () =>
-  ownerMode() ? ownerDisplayName() : (S.myProfile && S.myProfile.name) || "Someone";
+const myName = () => (ownerMode() ? bossName() : (S.myProfile && S.myProfile.name) || "Someone");
 async function setTask(j, t, patch, files) {
   const cur = taskDone(j, t) || {};
   const data = Object.assign(
@@ -5176,7 +5240,7 @@ function openTaskExtra(j, t) {
       const pics = [...($("te-photos").files || [])];
       if (pics.length && !S.assets) {
         showErr(
-          "You don't have permission to upload photos. Ask James to make you an Editor on this page.",
+          `You don't have permission to upload photos. Ask ${bossFirst()} to make you an Editor on this page.`,
         );
         return;
       }
@@ -5233,18 +5297,18 @@ function openJobEditor(kind, j) {
   openSheet(
     `<h3 id="sheettitle">${j ? "Edit" : "New"} ${JOB_KINDS[kind].toLowerCase()}</h3>
     <label for="je-title">Title<input id="je-title" required maxlength="100" placeholder="${kind === "snag" ? "e.g. Final snags before handover" : "e.g. First fix – kitchen and utility"}" value="${esc(j ? j.title : "")}"></label>
-    ${pickField("je-site", "Site (optional)", siteNames(), defSite, "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("je-site", "Site (optional)", siteNames(), defSite, "e.g. 12 High Street", false)}
     <details class="jedet" ${j && j.det && Object.values(j.det).some(Boolean) ? "open" : ""}><summary><b>📝 Job details for the PDF</b> <span class="who">(fill in anything you want on the sheet)</span></summary>
       <div class="grid2">${JOB_DET.map(([k, l, ph, t]) => `<label for="jd-${k}">${esc(l)}<input id="jd-${k}" ${t ? `type="${t}"` : ""} maxlength="160" placeholder="${esc(ph || "")}" value="${esc((j && j.det && j.det[k]) || "")}"></label>`).join("")}</div>
       <label for="jd-scope">Description of the works<textarea id="jd-scope" maxlength="3000" placeholder="e.g. Remove existing kitchen, re-wire to new layout, plaster walls and ceiling, fit new kitchen units and worktops">${esc((j && j.det && j.det.scope) || "")}</textarea></label>
-      <label for="jd-mats">Materials &amp; who supplies them<textarea id="jd-mats" maxlength="2000" placeholder="e.g. Units and worktops supplied by client. Plasterboard, skim and fixings by JEB">${esc((j && j.det && j.det.mats) || "")}</textarea></label>
+      <label for="jd-mats">Materials &amp; who supplies them<textarea id="jd-mats" maxlength="2000" placeholder="e.g. Units and worktops supplied by client. Plasterboard, skim and fixings by ${esc(coShort())}">${esc((j && j.det && j.det.mats) || "")}</textarea></label>
       <label for="jd-hs">Health &amp; safety / special notes<textarea id="jd-hs" maxlength="1500" placeholder="e.g. Asbestos survey clear. Isolate power before starting. Dust sheets in the hallway">${esc((j && j.det && j.det.hs) || "")}</textarea></label></details>
     <div><div class="flabel">Who is it for? (optional: leave blank to keep it in the office)</div>
       ${ids.length ? `<div class="seg" id="je-who">${ids.map((id) => `<button type="button" data-v="${esc(id)}" aria-pressed="${j ? (j.assignees || []).includes(id) : false}">${esc(nameOf(id) + roleShort(id))}</button>`).join("")}</div>` : '<div class="nothing">No employees yet. Share the app with them first.</div>'}</div>
     <label for="je-due">Due date (optional)<input id="je-due" type="date" value="${esc(j ? j.due || "" : "")}"></label>
     <label for="je-notes">Notes for the team (optional)<textarea id="je-notes" maxlength="1000">${esc(j ? j.notes || "" : "")}</textarea></label>
     <div><div class="flabel">Documents (drawings, specs, RAMS, photos)</div><div id="je-files"></div>
-      <label for="je-up" class="pillbtn" style="display:inline-flex;margin-top:6px;cursor:pointer">+ Upload files<input id="je-up" type="file" accept="application/pdf,image/*,.txt,.csv,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden></label>
+      <label for="je-up" class="pillbtn" style="display:inline-flex;margin-top:6px;cursor:pointer">+ Upload files<input id="je-up" type="file" accept="application/pdf,image/*,.txt,.csv,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple class="fpick"></label>
       <button type="button" class="btn" id="je-sitepick" style="align-self:flex-start;margin-top:8px">📁 Add photos or files from the site…</button><select id="je-fromsite" hidden><option value="">Choose a file…</option></select>
       <div class="who">Workers open these inside the app. Nothing is downloaded to their phone.</div></div>
     <div><div class="checkhead"><span class="flabel" style="margin:0">Tasks</span><span class="who">Press Enter for a new line</span></div><div id="je-tasks"></div>
@@ -5286,7 +5350,7 @@ function openJobEditor(kind, j) {
       .map(
         (t, i) => `<div class="jrow" data-i="${i}"><span class="jnum">${i + 1}</span>
       <span class="jetx"><input class="je-t" id="je-t${i}" maxlength="300" value="${esc(t.text)}" placeholder="${kind === "snag" ? "e.g. Touch up paint on landing ceiling" : "e.g. Fit 4 double sockets in kitchen"}" aria-label="Task ${i + 1}"><input class="je-d" maxlength="400" value="${esc(t.det || "")}" placeholder="Details (optional): where, sizes, materials, quantity" aria-label="Task ${i + 1} details"></span>
-      <label class="pillbtn je-ph" title="Reference photo">${t.refPhoto || t.refBlob ? "Photo ✓" : "Photo"}<input type="file" accept="image/*" hidden></label>
+      <label class="pillbtn je-ph" title="Reference photo">${t.refPhoto || t.refBlob ? "Photo ✓" : "Photo"}<input type="file" class="fpick" accept="image/*"></label>
       <button type="button" class="linkdanger je-x" aria-label="Remove task ${i + 1}">✕</button></div>`,
       )
       .join("");
@@ -5708,9 +5772,10 @@ async function jobPdf(j) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -5718,9 +5783,9 @@ async function jobPdf(j) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·°]/g, "");
   const need = (h) => {
-    if (y + h > 282) {
+    if (y + h > (LH.bot || 282)) {
       doc.addPage();
-      y = 18;
+      y = LH.top || 18;
     }
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -5742,9 +5807,11 @@ async function jobPdf(j) {
       fr.readAsDataURL(b);
     });
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 11, 52, 24);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 11, 52, 24);
+  }
   text(coData().name.toUpperCase(), 9, "bold", 0, 6);
   text(JOB_KINDS[j.kind] || "Job sheet", 18, "bold", 0, 2);
   text(j.title, 12, "bold", 0, 2);
@@ -5852,6 +5919,7 @@ async function jobPdf(j) {
     .replace(/[^\w\s-]/g, "")
     .trim()}.pdf`;
   try {
+    lhFinish(doc, LH);
     await S.dl.save({ filename: fn, data: doc.output("blob") });
   } catch (e) {
     if (!(e && e.code === "declined")) toast("Download didn't go through");

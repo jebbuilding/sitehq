@@ -260,6 +260,7 @@ function adMarkPaid(x) {
             paidAt: Date.now(),
             paidOn: on,
             paidRef: ref,
+            paidHow: how,
             receivedAt: x.v.receivedAt || Date.now(),
             approvedAt: x.v.approvedAt || Date.now(),
           });

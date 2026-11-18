@@ -3,13 +3,29 @@ import { $, addDays, esc, iso, parse, shortDay } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf, sheetOf } from "../owner/owner.js";
+import { nlGo } from "../owner/today.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { leaveCard, pbPending, wireLeave } from "./board.js";
+import { hpOpen } from "./holiday-person.js";
 import { leaveOf } from "./time-off.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { empTypeOf } from "../sites/job-details.js";
-export { holCardHtml, holOwnerHtml, holSettings, holTeamHtml, holTeamWire, holWire };
+export {
+  holAdj,
+  holCardHtml,
+  holCfg,
+  holDays,
+  holN,
+  holOwnerHtml,
+  holPlanOnly,
+  holSettings,
+  holSum,
+  holTeamHtml,
+  holTeamWire,
+  holWire,
+  holYear,
+};
 /* Employees see a 🌴 My holidays card on their planner: how many days they get this holiday year, how many they've
    taken, how many are booked (approved, still to come), how many are waiting for an answer, and how many are left –
    with the bank holidays, and their holidays listed. James sets the holiday year (when it starts), the usual
@@ -84,6 +100,33 @@ function holDays(l, from, to) {
   }
   return l.half && n ? n - 0.5 : n;
 }
+/* days the owner has put down as taken outside the app for a holiday year (planner/holiday-person.js) */
+const holAdj = (uid, yFrom) => ((holCfg().adj || {})[uid] || {})[yFrom] || { days: 0, note: "" };
+/* a holiday put straight on the planner (+ Add to planner, type Holiday / off) with no leave record behind it: it
+   counts in the figures too, as approved (sick days and appointments don't) */
+const holPlanOnly = (uid) =>
+  (S.plan || [])
+    .concat(S.owner ? S.planPrivate || [] : [])
+    .filter(
+      (p) =>
+        p.type === "holiday" &&
+        !p.leaveId &&
+        !/^leave-/.test(p.id || "") &&
+        Array.isArray(p.people) &&
+        p.people.includes(uid) &&
+        !/sick|appointment|unpaid|maternity|paternity|bereavement/i.test(p.title || ""),
+    )
+    .map((p) => ({
+      id: "plan:" + p.id,
+      type: "leave",
+      leaveType: "holiday",
+      from: p.from,
+      to: p.to || p.from,
+      half: "",
+      status: "approved",
+      note: p.notes || "",
+      _plan: p.id,
+    }));
 /* someone's figures for the holiday year round a date */
 function holSum(uid, list, at) {
   const c = holCfg();
@@ -91,14 +134,16 @@ function holSum(uid, list, at) {
   const today = iso(new Date());
   const allow = holAllow(uid);
   const bank = HOL_BANK.filter((d) => d >= Y.from && d <= Y.to && new Date(d).getDay() % 6 !== 0);
-  const hol = leaveOf(list).filter(
-    (l) =>
-      (l.leaveType || "holiday") === "holiday" &&
-      l.status !== "declined" &&
-      l.status !== "cancelled" &&
-      (l.to || l.from) >= Y.from &&
-      l.from <= Y.to,
-  );
+  const hol = leaveOf(list)
+    .concat(holPlanOnly(uid))
+    .filter(
+      (l) =>
+        (l.leaveType || "holiday") === "holiday" &&
+        l.status !== "declined" &&
+        l.status !== "cancelled" &&
+        (l.to || l.from) >= Y.from &&
+        l.from <= Y.to,
+    );
   let taken = 0,
     booked = 0,
     waiting = 0;
@@ -110,6 +155,7 @@ function holSum(uid, list, at) {
       booked += n - holDays(l, Y.from, today < Y.to ? today : Y.to);
     }
   });
+  taken += +holAdj(uid, Y.from).days || 0;
   const bankUse = c.bankIn ? bank.length : 0;
   const left = allow - bankUse - taken - booked;
   return { Y, allow, bank, bankUse, taken, booked, waiting, left, hol };
@@ -119,7 +165,7 @@ function holCardHtml() {
   if (!holAllow(S.me)) return "";
   const s = holSum(S.me, S.mine.signoffs);
   const today = iso(new Date());
-  return `<details class="card hol-card"${S.open.has("__hol") ? " open" : ""} data-id="__hol"><summary><div class="nm">🌴 My holidays<small>${holN(s.left)} day${s.left === 1 ? "" : "s"} left this holiday year</small></div></summary><div class="cardbody">
+  return `<details class="card hol-card"${S.open.has("__hol") ? " open" : ""} data-id="__hol"><summary><div class="nm">🌴 My holidays & leave<small>${holN(s.left)} day${s.left === 1 ? "" : "s"} left this holiday year</small></div></summary><div class="cardbody">
     <div class="hol-boxes"><div><b>${holN(s.allow)}</b><span>a year</span></div><div><b>${holN(s.taken)}</b><span>taken</span></div><div><b>${holN(s.booked)}</b><span>booked</span></div>${s.waiting ? `<div><b>${holN(s.waiting)}</b><span>waiting</span></div>` : ""}<div class="hol-left"><b>${holN(s.left)}</b><span>left</span></div></div>
     <div class="who">Holiday year ${esc(ukDate(s.Y.from))} to ${esc(ukDate(s.Y.to))}${s.bankUse ? ` · ${s.bankUse} bank holidays come out of the ${holN(s.allow)}` : ""}.</div>
     ${
@@ -139,18 +185,19 @@ function holCardHtml() {
 }
 /* James's view: everyone's figures, and the settings */
 function holOwnerHtml() {
-  const ids = teamIds().filter((id) => holAllow(id) > 0);
+  const ids = crewIds().filter((id) => holAllow(id) > 0);
   const c = holCfg();
-  return `<details class="card hol-card"${S.open.has("__holo") ? " open" : ""} data-id="__holo"><summary><div class="nm">🌴 Holidays<small>${ids.length} people with a holiday allowance</small></div></summary><div class="cardbody">
+  return `<details class="card hol-card"${S.open.has("__holo") ? " open" : ""} data-id="__holo"><summary><div class="nm">🌴 Holidays & leave<small>${ids.length} people with a holiday allowance</small></div></summary><div class="cardbody">
     ${
       ids
         .map((id) => {
-          const s = holSum(id, S.data.signoffs[id]);
-          return `<div class="drow hol-row"><span><b>${esc(nameOf(id))}</b> <span class="who">${holN(s.allow)} a year</span></span><span class="who">${holN(s.taken)} taken · ${holN(s.booked)} booked${s.waiting ? ` · ${holN(s.waiting)} waiting` : ""} · <b class="${s.left < 0 ? "hol-neg" : ""}">${holN(s.left)} left</b></span></div>`;
+          const s = holSum(id, sheetOf("signoffs", id));
+          return `<div class="drow hol-row" role="button" tabindex="0" data-w="${esc(id)}" title="See and change ${esc(nameOf(id))}'s holidays"><span><b>${esc(nameOf(id))}</b> <span class="who">${holN(s.allow)} a year</span></span><span class="who">${holN(s.taken)} taken · ${holN(s.booked)} booked${s.waiting ? ` · ${holN(s.waiting)} waiting` : ""} · <b class="${s.left < 0 ? "hol-neg" : ""}">${holN(s.left)} left</b> ›</span></div>`;
         })
         .join("") ||
       `<div class="nothing">No employees yet. Subcontractors don't get holiday pay, so they aren't listed unless you give them an allowance.</div>`
     }
+    <div class="who">Tap someone to change their holidays, add ones they've already had, or adjust their days.</div>
     <div class="actions"><button type="button" class="btn" id="hol-set">⚙ Holiday year and allowances</button></div>
     <div class="who">Holiday year starts ${esc(parse("2026-" + c.start).toLocaleDateString("en-GB", { day: "numeric", month: "long" }))} · ${holN(c.days)} days for a full-time employee${c.bankIn ? ", bank holidays included" : " plus bank holidays"}.</div>
   </div></details>`;
@@ -164,10 +211,19 @@ function holWire() {
       }),
   );
   if ($("hol-set")) $("hol-set").onclick = holSettings;
+  document.querySelectorAll(".hol-row[data-w]").forEach((r) => {
+    r.onclick = () => hpOpen(r.dataset.w);
+    r.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        hpOpen(r.dataset.w);
+      }
+    };
+  });
 }
 function holSettings() {
   const c = holCfg();
-  const ids = teamIds();
+  const ids = crewIds();
   openSheet(
     `<h3 id="sheettitle">🌴 Holiday year and allowances</h3>
     <div class="grid2"><label for="hol-start">Holiday year starts<select id="hol-start">${["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((m) => `<option value="${m}-01"${c.start === m + "-01" ? " selected" : ""}>1 ${parse("2026-" + m + "-01").toLocaleDateString("en-GB", { month: "long" })}</option>`).join("")}</select></label><label for="hol-days">Days a year (full time)<input id="hol-days" type="number" inputmode="decimal" min="0" max="60" step="0.5" value="${esc(c.days)}"></label></div>
@@ -199,7 +255,7 @@ function holSettings() {
   );
 }
 /* the team page: holiday requests waiting for an answer (with what each person has left), then everyone's figures */
-function holTeamHtml() {
+function holTeamHtml(link) {
   const pending = pbPending();
   return `<section class="card hol-team"><div class="cardbody"><b>🌴 Holiday requests${pending.length ? ` <span class="badge">${pending.length}</span>` : ""}</b>
     ${
@@ -211,9 +267,14 @@ function holTeamHtml() {
             })
             .join("")
         : `<div class="nothing">No holiday requests waiting.</div>`
-    }</div></section>${holOwnerHtml()}`;
+    }${link ? `<div class="actions"><button type="button" class="btn" id="hol-tab">🗓 Holidays & leave booked – on the planner</button></div>` : ""}</div></section>${holOwnerHtml()}`;
 }
 function holTeamWire() {
   wireLeave(true, $("main"));
+  if ($("hol-tab"))
+    $("hol-tab").onclick = () => {
+      S.f.pmode = "hol";
+      nlGo("planner");
+    };
   holWire();
 }

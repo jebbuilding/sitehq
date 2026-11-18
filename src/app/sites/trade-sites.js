@@ -1,5 +1,6 @@
 /* ================= TRADES: SITES (plans, RAMS, specs, induction, chat per site) ================= */
 import { openChat, siteChatId } from "../chat/chat.js";
+import { bossFirst } from "../core/company-names.js";
 import { mapDocs } from "../core/data.js";
 import { pickField, pickVal } from "../core/fields.js";
 import { $, esc, shortDay, toast } from "../core/helpers.js";
@@ -20,7 +21,7 @@ import {
   wireInduction,
 } from "../safety/site-inductions.js";
 import { docFolders } from "./doc-visibility.js";
-import { siteJobCard, sjCopy, wireSjPhotos } from "./job-details.js";
+import { jobNameOf, siteJobCard, siteLabel, sjCopy, wireSjPhotos } from "./job-details.js";
 import { jobCard, myJobs } from "./job-sheets.js";
 import { gmapDir, miniMap } from "./maps-pins.js";
 import {
@@ -109,10 +110,10 @@ function empSitesView() {
               .map((f) => {
                 const g = S.docs.filter((d) => docSite(d) === f),
                   un = toSign(f);
-                return `<button type="button" class="folder" data-f="${esc(f)}">${folderIcon()}<span class="fname">${esc(f)}</span><span class="fmeta">${g.length ? g.length + " file" + (g.length === 1 ? "" : "s") : "No files yet"}${indFor(f) ? " · induction" : ""}</span>${un ? `<span class="tag bad">${un} to sign</span>` : ""}</button>`;
+                return `<button type="button" class="folder" data-f="${esc(f)}">${folderIcon()}<span class="fname">${esc(siteLabel(f))}</span>${jobNameOf(f) ? `<span class="who">📍 ${esc(f)}</span>` : ""}<span class="fmeta">${g.length ? g.length + " file" + (g.length === 1 ? "" : "s") : "No files yet"}${indFor(f) ? " · induction" : ""}</span>${un ? `<span class="tag bad">${un} to sign</span>` : ""}</button>`;
               })
               .join("")}</div>`
-          : `<div class="empty"><strong>No sites yet</strong>James will add each job here with its plans, RAMS and documents.</div>`
+          : `<div class="empty"><strong>No sites yet</strong>${esc(bossFirst())} will add each job here with its plans, RAMS and documents.</div>`
       }`;
     $("main")
       .querySelectorAll(".folder")
@@ -252,7 +253,7 @@ function empSitesView() {
           ${j.start || j.finish ? `<div class="who">${j.start ? "Starts " + esc(shortDay(j.start)) : ""}${j.start && j.finish ? " · " : ""}${j.finish ? "Finishes " + esc(shortDay(j.finish)) : ""}</div>` : ""}</div></div>
           ${sr.lat != null ? `<div class="mmwrap">${miniMap(sr.lat, sr.lon, { addr: site, label: site })}</div>` : ""}
           <div class="actions"><a class="btn primary" href="${esc(gmapDir(q))}" target="_blank" rel="noopener">🚗 Directions</a><button type="button" class="btn maplink" data-addr="${esc(site)}" ${sr.lat != null ? `data-lat="${sr.lat}" data-lon="${sr.lon}"` : ""} data-label="${esc(site)}">📍 Maps &amp; share</button></div>
-        ${siteJobCard(site, false, true) || `<div class="sjinner"><b>📋 Job details</b><div class="who">No job details have been written for this site yet. James adds them on his Sites tab.</div></div>`}</div>`;
+        ${siteJobCard(site, false, true) || `<div class="sjinner"><b>📋 Job details</b><div class="who">No job details have been written for this site yet. ${esc(bossFirst())} adds them on their Sites tab.</div></div>`}</div>`;
               })()
             : ""
         }
@@ -305,7 +306,7 @@ function empSitesView() {
     $("es-chat").onclick = () => {
       const id = siteChatId(site);
       if (S.chats.find((c) => c.id === id)) openChat(id);
-      else toast("There's no chat for this site yet. Ask James to start one.");
+      else toast(`There's no chat for this site yet. Ask ${bossFirst()} to start one.`);
     };
   $("main")
     .querySelectorAll(".jobc")
@@ -338,7 +339,7 @@ function plansView0() {
   if (!open) {
     let html = `${owner ? `<div class="actions"><button class="btn primary" id="addDoc" type="button">+ Upload files or folders</button></div>` : ""}${banner}`;
     if (!folders.length)
-      html += `<div class="empty"><strong>No folders yet</strong>${owner ? "Add your sites in Setup and each one gets a folder here. Upload plans, specs and RAMS into it." : "James will add a folder of plans, specs and RAMS for each job here."}</div>`;
+      html += `<div class="empty"><strong>No folders yet</strong>${owner ? "Add your sites in Setup and each one gets a folder here. Upload plans, specs and RAMS into it." : `${bossFirst()} will add a folder of plans, specs and RAMS for each job here.`}</div>`;
     else
       html += `<div class="folders">${folders
         .map((f) => {
@@ -359,7 +360,7 @@ function plansView0() {
             );
           }
           return `<button type="button" class="folder" data-f="${esc(f)}">${folderIcon()}
-        <span class="fname">${esc(f)}</span>
+        <span class="fname">${esc(siteLabel(f))}</span>${jobNameOf(f) ? `<span class="who">📍 ${esc(f)}</span>` : ""}
         <span class="fmeta">${g.length ? `${g.length} file${g.length === 1 ? "" : "s"}${subs ? ` · ${subs} folder${subs === 1 ? "" : "s"}` : ""}` : "No files"}${ind ? " · induction" : ""}</span>
         ${un ? `<span class="tag bad">${un} to sign</span>` : ""}${missing ? `<span class="tag bad">${missing} RAMS signature${missing === 1 ? "" : "s"} missing</span>` : ""}</button>`;
         })
@@ -500,7 +501,7 @@ function openDoc(folder, path, cat0) {
   const canDir = "webkitdirectory" in document.createElement("input");
   openSheet(
     `<h3 id="sheettitle">Upload plans, specs or RAMS</h3>
-    ${pickField("d-site", "Site folder", ["General"].concat(siteNames()), folder || "", "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("d-site", "Site folder", ["General"].concat(siteNames()), folder || "", "e.g. 12 High Street")}
     <label for="d-path">Inside folder (optional: pick one or type a new name)<input id="d-path" list="d-pathlist" maxlength="200" placeholder="e.g. Drawings/Structural" value="${esc(path || "")}"></label><datalist id="d-pathlist">${docFolders(
       folder || "",
       null,

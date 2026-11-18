@@ -1,4 +1,5 @@
 /* ================= DATE, TIME & WEATHER BAR ================= */
+import { coTown } from "./company-names.js";
 import { $, esc, iso, store } from "./helpers.js";
 import { S, ownerMode } from "./state.js";
 import { feedNear, siteRec } from "../photos/photos.js";
@@ -29,7 +30,8 @@ function wxPlace() {
     const s = e && siteRec(e.job);
     if (s) return { lat: s.lat, lon: s.lon, site: s.name, name: s.name.split(",")[0] };
   }
-  return { lat: 50.6186, lon: -3.4126, name: "Exmouth" };
+  /* the company's home place: picked from the weather feed by the town in Company details (photos.js feedNear) */
+  return { lat: null, lon: null, name: coTown() };
 }
 function drawNowBar() {
   const el = $("nowbar");

@@ -1,4 +1,5 @@
 /* ================= SUPPLIERS (owner list, copies sent only to chosen trades) ================= */
+import { bossFirst, coName } from "../core/company-names.js";
 import { $, esc, gbp, toast } from "../core/helpers.js";
 import { TR } from "../core/live-feed.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -223,7 +224,7 @@ function suppliersView() {
   const owner = ownerMode();
   if (owner && S.f.merTab === "prices") {
     plView(
-      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="true">💷 Price lists</button><button type="button" class="mer-t" data-v="orders" aria-pressed="${S.f.merTab === "orders"}">📦 Orders</button></div>`,
+      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="true">💷 Price lists</button></div>`,
     );
     $("main")
       .querySelectorAll(".mer-t")
@@ -253,7 +254,7 @@ function suppliersView() {
   }
   if (owner && S.f.merTab === "makers") {
     $("main").innerHTML =
-      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="true">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button><button type="button" class="mer-t" data-v="orders" aria-pressed="${S.f.merTab === "orders"}">📦 Orders</button></div>` +
+      `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="false">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="true">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button></div>` +
       makersView();
     wireMakers();
     $("main")
@@ -316,7 +317,7 @@ function suppliersView() {
   );
   $("main").innerHTML = `${
     owner
-      ? `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="true">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button><button type="button" class="mer-t" data-v="orders" aria-pressed="${S.f.merTab === "orders"}">📦 Orders</button></div><div class="actions"><button class="btn primary" id="sup-add" type="button">+ Add a merchant</button><button class="btn hv" id="mer-who" type="button">👥 Choose who sees what</button></div>
+      ? `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="true">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button></div><div class="actions"><button class="btn primary" id="sup-add" type="button">+ Add a merchant</button><button class="btn hv" id="mer-who" type="button">👥 Choose who sees what</button></div>
       <div class="notice">For each merchant choose who can see it: everyone, only certain trades, or just you. Trades only ever receive the suppliers you've chosen for them.</div>`
       : ""
   }
@@ -330,7 +331,7 @@ function suppliersView() {
             .join("")}</div>`,
       )
       .join("")}
-    ${!list.length ? `<div class="empty"><strong>No merchants yet</strong>${owner ? "Add your merchants, hire companies and the like, with your account details." : "James hasn't shared any merchants with you yet."}</div>` : !shown.length ? '<div class="nothing">No merchants match that search.</div>' : ""}`;
+    ${!list.length ? `<div class="empty"><strong>No merchants yet</strong>${owner ? "Add your merchants, hire companies and the like, with your account details." : `${bossFirst()} hasn't shared any merchants with you yet.`}</div>` : !shown.length ? '<div class="nothing">No merchants match that search.</div>' : ""}`;
   if ($("sup-add")) $("sup-add").onclick = () => openSupplier(null);
   if ($("mer-who")) $("mer-who").onclick = () => whoSeesDlg();
   $("main")
@@ -394,12 +395,12 @@ function suppliersView() {
 }
 function openSupplier(sp) {
   const ed = !!sp;
-  sp = sp || { vis: "all", cat: "Builders merchant", accountName: "JEB Building Services" };
+  sp = sp || { vis: "all", cat: "Builders merchant", accountName: coName() };
   const team = teamIds();
   openSheet(
     `<h3 id="sheettitle">${ed ? "Edit merchant" : "Add a merchant"}</h3>
     <label for="su-name">Supplier name<input id="su-name" required maxlength="80" value="${esc(sp.name || "")}" placeholder="e.g. Travis Perkins"></label>
-    <label for="su-loc">Branch (location)<input id="su-loc" maxlength="60" value="${esc(sp.loc || "")}" placeholder="e.g. Exmouth"></label>
+    <label for="su-loc">Branch (location)<input id="su-loc" maxlength="60" value="${esc(sp.loc || "")}" placeholder="e.g. Exeter"></label>
     <label for="su-cat">Type<select id="su-cat">${SUP_CATS.map((c) => `<option ${c === sp.cat ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></label>
     ${SUP_FIELDS.map(([k, l]) =>
       k === "hours"

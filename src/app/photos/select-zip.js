@@ -1,4 +1,5 @@
 /* ================= PHOTO MULTI-SELECT + DOWNLOAD AS ZIP ================= */
+import { coShort } from "../core/company-names.js";
 import { iso, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -146,7 +147,7 @@ async function downloadPhotos(items, btn) {
     btn.textContent = "Zipping…";
     const blob = await zip.generateAsync({ type: "blob" });
     await S.dl.save({
-      filename: `JEB photos ${iso(new Date())} (${items.length}).zip`,
+      filename: `${coShort()} photos ${iso(new Date())} (${items.length}).zip`,
       data: blob,
     });
     toast(`${items.length} photos saved in one zip file`);

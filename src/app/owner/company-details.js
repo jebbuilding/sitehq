@@ -1,4 +1,5 @@
 /* ================= COMPANY DETAILS card (Policies & insurance, seen by everyone) ================= */
+import { bossName, coName } from "../core/company-names.js";
 import { $, esc, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -24,12 +25,20 @@ import { WTN } from "../safety/waste-transfer-note.js";
 import { QRSITE } from "../sites/qr-sign-in.js";
 export { coData, companyCard, wireCompany };
 const CO_FIELDS = [
-  ["name", "Company name", "JEB Building Services"],
-  ["owner", "Owner / contact", "James Bray"],
-  ["address", "Business address", "e.g. 1 High St, Exmouth EX8 1AA"],
-  ["mobile", "Mobile", ""],
+  ["name", "Company name", "e.g. Smith Building Ltd"],
+  ["shortName", "Short name for the app icon and labels", "e.g. SBL"],
+  ["owner", "Owner / contact", "e.g. Alex Smith"],
+  ["town", "Town you're based in", "e.g. Exeter"],
+  ["workArea", "Areas you work in", "e.g. the towns or council areas you cover"],
+  ["address", "Business address", "e.g. 1 High Street"],
+  ["mobile", "Mobile (trades call or video call you on this from Chat)", ""],
   ["phone", "Office phone", ""],
   ["email", "Email", ""],
+  ["oohName", "Emergency / out-of-hours contact", "e.g. Alex Smith"],
+  ["oohPhone", "Emergency / out-of-hours number", ""],
+  ["oohName2", "Second emergency contact (optional)", ""],
+  ["oohPhone2", "Second emergency number (optional)", ""],
+  ["firstAid", "First aider(s)", "e.g. Sam (first aid at work, until 2027)"],
   ["website", "Website", ""],
   ["reviewUrl", "Google review link", "e.g. https://g.page/r/…/review"],
   ["companyNo", "Company number", ""],
@@ -45,8 +54,8 @@ const CO_FIELDS = [
 ];
 function coData() {
   const c = Object.assign({}, (S.settings || {}).company || {});
-  if (!c.name) c.name = "JEB Building Services";
-  if (!c.owner) c.owner = (S.settings || {}).ownerName || S.ownerName || "James Bray";
+  if (!c.name) c.name = coName();
+  if (!c.owner) c.owner = bossName();
   if (!c.mobile) c.mobile = (S.settings || {}).ownerPhone || "";
   return c;
 }
@@ -70,6 +79,20 @@ function companyCard(viewer) {
     row("Mobile", c.mobile ? `<a href="tel:${esc(tel(c.mobile))}">📞 ${esc(c.mobile)}</a>` : ""),
     row("Office phone", c.phone ? `<a href="tel:${esc(tel(c.phone))}">📞 ${esc(c.phone)}</a>` : ""),
     row("Email", c.email ? `<a href="mailto:${esc(c.email)}">✉ ${esc(c.email)}</a>` : ""),
+    /* the company's emergency contacts (account set-up, Nov 2026) */
+    row(
+      "🚑 Emergency contact",
+      c.oohPhone
+        ? `${esc(c.oohName || "")} <a href="tel:${esc(tel(c.oohPhone))}">📞 ${esc(c.oohPhone)}</a>`
+        : "",
+    ),
+    row(
+      "If they can't be reached",
+      c.oohPhone2
+        ? `${esc(c.oohName2 || "")} <a href="tel:${esc(tel(c.oohPhone2))}">📞 ${esc(c.oohPhone2)}</a>`
+        : "",
+    ),
+    row("First aider(s)", esc(c.firstAid || "")),
     row(
       "Address",
       c.address

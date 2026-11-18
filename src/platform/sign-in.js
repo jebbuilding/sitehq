@@ -47,7 +47,7 @@
   const ROLES = ["owner", "trade", "client"]; // server/core/roles.mjs: a person is in exactly one of these groups
   const IDLE_LIMIT_MS = 8 * 60 * 60 * 1000; // a sign-in that is not "kept" ends after this long without use
   const RESEND_SECONDS = 30; // codes arrive out of order if they are asked for faster than email delivers
-  const ASK = "ask James"; // who adds people
+  const ASK = "ask whoever runs your company's account"; // who adds people
 
   const MSG = {
     email: "That doesn’t look like an email address. Check it and try again.",

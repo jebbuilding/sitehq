@@ -153,3 +153,55 @@
 .qrs-line{margin:8px 0}
 .qrs-line summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
 .pg-clw{display:flex;align-items:center;gap:6px;min-height:44px;white-space:nowrap}
+
+/* programme: ⇉ Same time as the stage above */
+.pg-tbl .pg-par{display:block;margin-top:4px;min-height:36px;font-size:13px;white-space:nowrap}
+.pg-tbl .pg-par[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* planner board: a heading row for each group of people (you, employed, subcontractors, other companies) */
+.pb-grid .pb-grp{grid-column:1 / -1;padding:8px 6px 3px;border-top:2px solid var(--line);font-size:13px;color:var(--ink);display:flex;gap:6px;align-items:baseline}
+
+/* planner › Jobs: a heading line per job and a line per stage (wider, uncrowded) */
+.pbs-row.pbs-site{height:40px;background:var(--soft)}
+.pbs-row.pbs-site .pbs-name{background:var(--soft)}
+.pbs-row.pbs-stage{height:34px}
+.pbs-fold{border:0;background:none;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;min-height:28px;display:flex;align-items:center;gap:4px}
+.pbs-row .pbs-name .pbs-sn{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbs-sum{position:absolute;top:13px;height:14px;border-radius:7px;background:color-mix(in srgb,var(--pc) 35%,var(--surface));border:1px solid var(--pc)}
+
+/* planner › Day: all-day stages stay in view when the hours are scrolled; a heading per group of people */
+.dy-lane>.dy-allday{position:sticky;left:150px;right:auto;top:auto;margin-top:2px;width:max-content;max-width:calc(100vw - 200px);flex-wrap:wrap;overflow:visible;padding:0 4px}
+@media (max-width:520px){.dy-lane>.dy-allday{left:92px;max-width:calc(100vw - 120px)}}
+.dy-grp{position:sticky;left:0;width:max-content;padding:10px 10px 4px;font-size:13.5px;background:transparent}
+.pl-needs{font-size:12px;color:var(--muted);margin:6px 0 2px}
+/* planner › Jobs: a stage with people on it shows its name and who, both in full view */
+.pbs-row.pbs-stage{height:auto;min-height:34px}
+.pbs-row.pbs-stage .pbs-name{padding:3px 10px;line-height:1.25}
+.pbs-row.pbs-stage .pbs-name small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* planner › Day on a phone: the hours line up with the narrower name column */
+@media (max-width:520px){.dy-board .dy-corner{width:92px}}
+
+/* planner › 🌴 Holidays tab */
+.ht-page{display:flex;flex-direction:column;gap:14px}
+.ht-acts{display:flex;flex-wrap:wrap;gap:8px}
+.ht-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:10px;padding:8px 12px;margin-top:6px;min-height:52px;cursor:pointer}
+.ht-row.ht-now{background:color-mix(in srgb,var(--ok) 8%,var(--surface))}
+.ht-row .ht-when{display:flex;flex-direction:column;min-width:150px}
+.ht-row .ht-who{display:flex;flex-direction:column;flex:1;min-width:0}
+.ht-row small{color:var(--muted);font-size:12px}
+@media (max-width:520px){.ht-row{flex-wrap:wrap;gap:4px 12px}.ht-row .ht-when{min-width:0}}
+
+/* planner › one person's holidays (owner) */
+.hol-row[data-w]{cursor:pointer;border-radius:8px;min-height:44px;align-items:center}
+.hol-row[data-w]:hover{background:var(--soft)}
+.hp-yr{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+.hp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}
+.hp-row .hp-main{flex:1 1 220px;min-width:0}
+.hp-row .btn{min-height:44px;padding:6px 12px}
+.hp-inl{flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap}
+.hp-inl input{width:100px;min-height:44px;margin-left:auto}
+
+/* planner › 🎓 book someone on a course */
+.crs-ppl{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:6px}
+.crs-ppl .crs-p{font-size:15px;color:var(--ink);font-weight:500;min-height:44px}
+.crs-ppl .crs-p input{width:22px;height:22px}

@@ -1,6 +1,7 @@
 /* ================= PHOTOS ================= */
 import { ptExitPreview } from "../clients/portal-calendar.js";
 import { PT } from "../clients/portal.js";
+import { bossFirst, coName, coShort, coTown } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, monday, pad, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
@@ -198,7 +199,7 @@ async function pdfLogo(doc, right, top, maxW, maxH) {
 }
 const BRAND_DEF = "#7F191D";
 const BRAND_COLS = [
-  ["#7F191D", "Red (JEB)"],
+  ["#7F191D", "Deep red"],
   ["#1F3A68", "Navy"],
   ["#1D5E3A", "Green"],
   ["#2F3438", "Charcoal"],
@@ -309,8 +310,13 @@ function applyBrand() {
   const id = logoId();
   const im = document.getElementById("hlogo");
   if (im && im.getAttribute("src") !== blobUrl(id)) im.setAttribute("src", blobUrl(id));
-  const nm = ((S.settings || {}).company || {}).name || "JEB Building Services";
+  const nm = coName();
   if (im) im.alt = nm;
+  /* no logo of their own yet (a new company): hide the picture rather than show a broken one */
+  if (im && !im.onerror) {
+    im.onerror = () => (im.style.visibility = "hidden");
+    im.onload = () => (im.style.visibility = "");
+  }
   document.title = APP_NAME;
 }
 const PHOTO_CATS = [
@@ -453,7 +459,17 @@ function feedNear(lat, lon, site) {
     lon = bySite.lon;
   }
   if (lat == null) {
-    const ex = f.places.find((p) => /exmouth/i.test(p.name)) || f.places[0];
+    /* the company's home place: the town in Company details, else the feed's first place that isn't a site */
+    const tw = coTown().toLowerCase();
+    const ex =
+      (tw &&
+        f.places.find((p) =>
+          String(p.name || "")
+            .toLowerCase()
+            .startsWith(tw),
+        )) ||
+      f.places.find((p) => !p.site) ||
+      f.places[0];
     lat = ex && ex.lat;
     lon = ex && ex.lon;
   }
@@ -504,7 +520,7 @@ function stampLines(info) {
     );
   if (info.alt != null) L.push({ t: `Altitude : ${(+info.alt).toFixed(2)} m` });
   L.push({ t: `Date & Time : ${stampTime(info.takenAt)}` });
-  L.push({ t: "Company Name : JEB Building Services" });
+  L.push({ t: `Company Name : ${coName()}` });
   if (info.project) L.push({ t: `Project Name : ${info.project}` });
   if (info.plot) L.push({ t: `Plot : ${info.plot}` });
   if (info.note) L.push({ t: `Note : ${info.note}` });
@@ -587,7 +603,7 @@ async function stampPhoto(file, info) {
     g.fillStyle = "#7F191D";
     g.font = `700 ${Math.round(lhgt * 0.42)}px system-ui, sans-serif`;
     g.textBaseline = "middle";
-    g.fillText("JEB", lx + lw * 0.08, ly + lhgt / 2);
+    g.fillText(coShort().slice(0, 4), lx + lw * 0.08, ly + lhgt / 2);
   }
   g.fillStyle = "#7F191D";
   g.fillRect(lx, ly + lhgt, lw, Math.max(3, Math.round(fs * 0.25)));
@@ -747,7 +763,7 @@ function photoTile(p, owner, who) {
       50,
     )} ${iso(new Date(p.takenAt || p.created || Date.now()))} ${new Date(p.takenAt || p.created || Date.now()).toTimeString().slice(0, 5).replace(":", "")}${owner && who ? " " + String(nameOf(who)).replace(/[^\w\s-]/g, "") : ""}.jpg`;
   return `<button type="button" class="ph${isVid(p) ? " phvid" : ""}" data-p="${esc(p.id)}" data-w="${esc(who || "")}" data-a="${esc(p.assetId)}" data-n="${esc(isVid(p) ? fnm.replace(/\.jpg$/, "." + vidExt(p.contentType)) : fnm)}">${isVid(p) ? vidTag(p.assetId) + '<span class="vidplay" aria-hidden="true">▶</span>' : `<img src="${blobUrl(p.assetId)}" alt="${esc(p.caption || p.site || "Site photo")}" loading="lazy">`}
-    ${isSketch(p) ? `<span class="mkbadge skb sk-${skState(p)[0]}">✏️ ${esc(skState(p)[0] === "open" ? (owner ? "Check this" : "Waiting for James") : skState(p)[0] === "ok" ? "Right ✓" : skState(p)[0] === "change" ? "Needs changing" : p.mine ? "Mine" : p.fromOwner ? (owner ? "Sent" : "From James") : "Drawing")}</span>` : (p.markups || []).length ? `<span class="mkbadge">✎ ${owner ? "Marked up" : "Notes from James"}</span>` : ""}<span class="phcap"><b>${isSketch(p) ? esc(p.title || "Drawing") + "</b> · " + esc(p.site || "No site") + "<b>" : esc(p.site || "No site")}</b>${p.plot ? " · " + esc(p.plot) : ""}${owner && !p.mine ? ` · ${esc(nameOf(who))}` : ""}<br>${new Date(p.takenAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}${p.lat != null ? "" : " · no location"}</span></button>`;
+    ${isSketch(p) ? `<span class="mkbadge skb sk-${skState(p)[0]}">✏️ ${esc(skState(p)[0] === "open" ? (owner ? "Check this" : `Waiting for ${bossFirst()}`) : skState(p)[0] === "ok" ? "Right ✓" : skState(p)[0] === "change" ? "Needs changing" : p.mine ? "Mine" : p.fromOwner ? (owner ? "Sent" : `From ${bossFirst()}`) : "Drawing")}</span>` : (p.markups || []).length ? `<span class="mkbadge">✎ ${owner ? "Marked up" : `Notes from ${bossFirst()}`}</span>` : ""}<span class="phcap"><b>${isSketch(p) ? esc(p.title || "Drawing") + "</b> · " + esc(p.site || "No site") + "<b>" : esc(p.site || "No site")}</b>${p.plot ? " · " + esc(p.plot) : ""}${owner && !p.mine ? ` · ${esc(nameOf(who))}` : ""}<br>${new Date(p.takenAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}${p.lat != null ? "" : " · no location"}</span></button>`;
 }
 function photoViewer(p, owner, who) {
   if (isSketch(p)) return sketchViewer(p, owner, who);
@@ -864,7 +880,7 @@ function empPhotos() {
     .sort((a, b) => (b.editedAt || b.created) - (a.editedAt || a.created));
   $("main").innerHTML =
     `<div class="actions"><button class="btn primary" id="addP" type="button">+ Add photos</button><button class="btn primary" id="addD" type="button">✏️ Draw it out</button></div>
-    <div class="notice">✏️ <b>Draw it out</b>: sketch a layout or detail, add photos and writing, and send it to James to check it's right.</div>
+    <div class="notice">✏️ <b>Draw it out</b>: sketch a layout or detail, add photos and writing, and send it to ${esc(bossFirst())} to check it's right.</div>
     ${sk.length ? `<div class="flabel">My drawings</div>${sketchStrip(sk, false)}<div class="flabel" style="margin-top:14px">Photos this week</div>` : ""}
     <details class="notice"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">📍 Each photo is stamped with where and when it was taken</summary>The address, GPS position, altitude, date and time, company, project, plot and your note. For the position to show, turn on <b>location</b> for your phone's camera. On iPhone, when you choose photos, tap <b>Options</b> at the top and turn on <b>Location</b>.</details>
     ${wp.length ? `<div class="phgrid">${wp.map((p) => photoTile(p, false)).join("")}</div>` : '<div class="empty"><strong>No photos this week</strong>Tap “Add photos” to take or choose photos of the work.</div>'}`;
@@ -883,7 +899,9 @@ function empPhotos() {
 const siteRec = (n) => S.sites.find((x) => same(x.name, n));
 function openPhoto() {
   if (!S.assets) {
-    toast("You don't have permission to upload. Ask James to make you an Editor on this page.");
+    toast(
+      `You don't have permission to upload. Ask ${bossFirst()} to make you an Editor on this page.`,
+    );
     return;
   }
   setFormType("photo");
@@ -893,7 +911,7 @@ function openPhoto() {
   openSheet(
     `<h3 id="sheettitle">Add photos</h3>
     <label for="p-file">Photos or videos<input id="p-file" type="file" accept="image/*,video/*" multiple required></label><div class="who">Videos: keep them short (about 20 seconds) so they upload quickly.</div>
-    ${pickField("p-site", "Site address", siteNames(), lastSite, "e.g. 9 Old Teignmouth Rd, Dawlish EX7 0NJ")}
+    ${pickField("p-site", "Site address", siteNames(), lastSite, "e.g. 9 Station Road, Anytown AB1 2CD")}
     <div class="grid2"><label for="p-proj">Project name<input id="p-proj" maxlength="80" placeholder="e.g. La Falaise"></label>
     <label for="p-plot">Plot<input id="p-plot" maxlength="40" list="p-plots" placeholder="e.g. Plot 1"><datalist id="p-plots"></datalist></label></div>
     <label for="p-cat">Stage (which folder it goes in)<select id="p-cat" required></select></label>

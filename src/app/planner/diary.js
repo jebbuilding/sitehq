@@ -4,24 +4,44 @@ import { viewClient } from "../clients/quick-enquiry.js";
 import { $, addDays, dayLabel, esc, iso, monday, parse, toMin, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { nameOf, ownerDisplayName, roleTag, teamIds } from "../owner/owner.js";
+import { nameOf, roleOf, roleTag, teamIds } from "../owner/owner.js";
 import { openPlanEditor } from "./board.js";
 import { onDay } from "./time-off.js";
 import { openPlanDetail } from "./views.js";
 import { dueSoonItems } from "../safety/expiry-dates.js";
 import { onSiteNow } from "../sites/roll-call.js";
 import { WE } from "../timesheets/working-day.js";
-export { diaryHtml, diaryRows, toHM, wireDiary };
+export { diaryHtml, diaryRows, dyGroupName, toHM, wireDiary };
 const DY = { h0: 6, h1: 19, px: 84 };
 const toHM = (m) =>
   String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(Math.round(m % 60)).padStart(2, "0");
+const DY_GROUPS = [
+  ["owner", "Owner"],
+  ["employee", "Employed"],
+  ["sub", "Subcontractors"],
+  ["company", "Other companies"],
+  ["", "Not set yet"],
+];
 function diaryRows(owner) {
   const ids = owner ? [S.me].concat(teamIds()) : [S.me];
-  return ids.map((id) => ({
-    id,
-    name: id === S.me ? (owner ? ownerDisplayName() + " (you)" : "You") : nameOf(id),
-  }));
+  const grpOf = (id) => {
+    if (id === S.me) return "owner";
+    const r = roleOf(id);
+    return DY_GROUPS.some((g) => g[0] === r) ? r : "";
+  };
+  return ids
+    .map((id) => ({
+      id,
+      name: id === S.me && !owner ? "You" : nameOf(id),
+      grp: owner ? grpOf(id) : "",
+    }))
+    .sort(
+      (a, b) =>
+        DY_GROUPS.findIndex((g) => g[0] === a.grp) - DY_GROUPS.findIndex((g) => g[0] === b.grp),
+    );
 }
+/* the heading for each group of people (owner): "Employed (3)" */
+const dyGroupName = (k) => (DY_GROUPS.find((g) => g[0] === k) || ["", ""])[1];
 function diaryHtml(shown, owner) {
   const dmode = S.f.pdmode || "day";
   const day = S.f.pdday || iso(new Date());
@@ -103,7 +123,11 @@ function diaryHtml(shown, owner) {
     `<div class="dy-wrap"><div class="dy-board" style="--w:${W}px;--px:${DY.px}px">
     <div class="dy-head"><div class="dy-corner">People</div><div class="dy-hours">${hours.map((h) => `<span style="left:${(h - DY.h0) * DY.px}px">${String(h).padStart(2, "0")}:00</span>`).join("")}</div></div>
     ${allRows
-      .map((r) => {
+      .map((r, ri) => {
+        const gh =
+          owner && r.id && (ri === 0 || allRows[ri - 1].grp !== r.grp)
+            ? `<div class="dy-grp"><b>${esc(dyGroupName(r.grp))}</b> <span class="who">${allRows.filter((x) => x.id && x.grp === r.grp).length}</span></div>`
+            : "";
         const items =
           r.id === ""
             ? unassigned
@@ -113,7 +137,7 @@ function diaryHtml(shown, owner) {
         const allday = items.filter((p) => !p.time);
         const off = items.find((p) => p.type === "holiday");
         const os = onsite.find((e) => e.who === r.id);
-        return `<div class="dy-row"><div class="dy-name">${esc(r.name)}${os ? `<span class="tag ok">On site</span>` : ""}${r.id && r.id !== S.me && owner ? `<span class="who">${esc((S.team[r.id] && S.team[r.id].details && S.team[r.id].details.trade) || "")}</span>` : ""}</div>
+        return `${gh}<div class="dy-row"><div class="dy-name">${esc(r.name)}${os ? `<span class="tag ok">On site</span>` : ""}${r.id && r.id !== S.me && owner ? `<span class="who">${esc((S.team[r.id] && S.team[r.id].details && S.team[r.id].details.trade) || "")}</span>` : ""}</div>
         <div class="dy-lane ${off ? "off" : ""}" data-w="${esc(r.id)}">${hours.map((h) => `<i class="dy-hl" style="left:${(h - DY.h0) * DY.px}px"></i>`).join("")}
           ${os ? `<div class="dy-onsite" style="left:${Math.max(0, ((toMin(os.actualIn || os.start) - DY.h0 * 60) / 60) * DY.px)}px;width:${Math.max(4, (((nowM || toMin(WE())) - toMin(os.actualIn || os.start)) / 60) * DY.px)}px" title="Checked in ${esc(os.actualIn || os.start)} at ${esc(os.job)}"></div>` : ""}
           ${allday.length ? `<div class="dy-allday">${allday.map((p) => `<button type="button" class="dy-adchip t-${esc(p.type)}" data-p="${esc(p.id)}">${esc(p.title)}</button>`).join("")}</div>` : ""}
@@ -361,7 +385,7 @@ function wireDiary(shown, owner) {
   if (wrap && dmode === "day") {
     if (S.dyDay === day && S.dyX != null) wrap.scrollLeft = S.dyX;
     else {
-      const nowH = new Date().getHours();
+      const nowH = day === iso(new Date()) ? new Date().getHours() : 8;
       wrap.scrollLeft = Math.max(0, (Math.min(Math.max(nowH, 8), DY.h1) - DY.h0 - 1) * DY.px);
       S.dyDay = day;
     }

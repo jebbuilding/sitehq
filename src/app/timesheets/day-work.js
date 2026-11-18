@@ -1,6 +1,7 @@
 /* ================= DAY WORK (chargeable hours you bill to clients) ================= */
 import { ptSrc } from "../clients/portal.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst, bossName } from "../core/company-names.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { $, esc, gbp, hrs, iso, parse, shortDay, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -11,12 +12,13 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { auditFirst } from "../owner/deletion-record.js";
-import { nameOf, ownerDisplayName, teamIds, teamPlusMe } from "../owner/owner.js";
+import { nameOf, teamIds, teamPlusMe } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { myDetails, openDetails } from "../people/personal-details.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { empTypeOf } from "../sites/job-details.js";
 import { siteClient } from "../sites/summary.js";
 import { myName } from "../survey/door-window-survey.js";
@@ -45,7 +47,7 @@ function dwTradeSheet(ym, ents) {
     bySite[k] = (bySite[k] || 0) + (+e.hours || 0);
   });
   return `<div class="tspaper"><div class="tshead"><button type="button" class="iconbtn ts-prev" aria-label="Previous month">‹</button><div><b>Day work sheet</b><span>${esc(name)} · ${esc(myName())}</span></div><button type="button" class="iconbtn ts-next" aria-label="Next month">›</button></div>
-    <div class="who" style="margin-bottom:6px">Chargeable hours only: extra work James bills to the client. Add with <b>🧱 + Add day work</b> (or + Day work / job time on Timesheets) and choose 🧱 Yes.</div>
+    <div class="who" style="margin-bottom:6px">Chargeable hours only: extra work ${esc(bossFirst())} bills to the client. Add with <b>🧱 + Add day work</b> (or + Day work / job time on Timesheets) and choose 🧱 Yes.</div>
     ${
       list.length
         ? `<div class="tswrap"><table class="tstable"><thead><tr><th>Date</th><th>Site · what you did</th><th class="num">Hrs</th></tr></thead><tbody>${list.map((e) => `<tr class="dwt-row tsrow" data-id="${esc(e.id)}"><td class="tsd"><b>${parse(e.date).getDate()}</b><span>${parse(e.date).toLocaleDateString("en-GB", { weekday: "short" })}</span></td><td class="tssite"><b>${esc(e.job || "No site")}</b><br>${esc(e.task || "")}${e.mats ? `<br><span class="who">Materials: ${esc(e.mats)}</span>` : ""}${(e.photos || []).length ? `<br><span class="who">📷 ${e.photos.length} photo${e.photos.length === 1 ? "" : "s"}</span>` : ""}${e.billed ? ' <span class="tag ok">Billed</span>' : e.approved ? ' <span class="tsok">✓</span>' : ""}</td><td class="num"><b>${hrs(e.hours)}</b></td></tr>`).join("")}</tbody></table></div>`
@@ -573,9 +575,10 @@ async function dwPdf(site, items, money, showSite) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 14;
-  let y = 18;
+  let y = LH.top || 18;
   const co = coData();
   const c = showSite ? null : siteClient(site);
   const clean = (t) =>
@@ -584,13 +587,15 @@ async function dwPdf(site, items, money, showSite) {
       .replace(/[‘’]/g, "'")
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 10, 50, 22);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text(clean(co.name.toUpperCase()), M, y);
-  y += 8;
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 10, 50, 22);
+    doc.setFontSize(9);
+    doc.text(clean(co.name.toUpperCase()), M, y);
+    y += 8;
+  }
   doc.setFontSize(18);
   doc.text("Day work sheet", M, y);
   y += 7;
@@ -637,9 +642,9 @@ async function dwPdf(site, items, money, showSite) {
               : " (@ " + gbp(e.rate) + ")")
           : nameOf(e.who) + ": " + (e.task || "") + (e.mats ? " - materials: " + e.mats : ""));
       const lines = doc.splitTextToSize(clean(desc), 94);
-      if (y + lines.length * 4.4 > 275) {
+      if (y + lines.length * 4.4 > (LH.bot ? LH.bot - 6 : 275)) {
         doc.addPage();
-        y = 18;
+        y = LH.top || 18;
       }
       const m = money(e);
       tot += m;
@@ -662,7 +667,12 @@ async function dwPdf(site, items, money, showSite) {
   y += 16;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
+  if (LH.pics && y > LH.bot) {
+    doc.addPage();
+    y = LH.top;
+  }
   doc.text("Client signature: ____________________________     Date: ______________", M, y);
+  lhFinish(doc, LH);
   const fn =
     clean(site)
       .replace(/[^\w\s-]/g, "")
@@ -729,7 +739,7 @@ function pickPersonFor(type) {
   const ids = teamIds();
   openSheet(
     `<h3 id="sheettitle">${type === "job" ? "🧱 Add day work" : "📅 Add a timesheet day"}: who is it for?</h3>
-    <div class="seg pplgrp" id="pp-who"><button type="button" data-v="${esc(S.me)}">🙋 Me (${esc(ownerDisplayName())})</button>${Object.entries(
+    <div class="seg pplgrp" id="pp-who"><button type="button" data-v="${esc(S.me)}">🙋 Me (${esc(bossName())})</button>${Object.entries(
       EMP_TYPES,
     )
       .concat([["", "Not set yet"]])
@@ -793,7 +803,7 @@ function myDayworkView() {
           const e = S.mine.entries.find((x) => x.id === r.dataset.id);
           if (!e) return;
           if (e.billed || (e.approved && !ownerMode() && !S.preview)) {
-            toast("This has been approved or billed. Ask James if it needs changing.");
+            toast(`This has been approved or billed. Ask ${bossFirst()} if it needs changing.`);
             return;
           }
           openEntry("job", e);

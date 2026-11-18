@@ -4,12 +4,13 @@ import { chatPeople, initials, openClientChat, openDM } from "./chat.js";
 import { clStage } from "../clients/clients.js";
 import { PT } from "../clients/portal.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst, bossName } from "../core/company-names.js";
 import { $, esc, shortDay, toast } from "../core/helpers.js";
 import { openSheet } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
 import { isSketch } from "../drawing/trade-drawings.js";
 import { blobUrl, isImg } from "../files/files.js";
-import { allTeam, nameOf, ownerDisplayName, teamIds } from "../owner/owner.js";
+import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { empTypeOf } from "../sites/job-details.js";
@@ -46,7 +47,7 @@ function contactList() {
     out.push({
       key: "o",
       id: (S.settings || {}).ownerId || "",
-      name: ownerDisplayName(),
+      name: bossName(),
       sub: "Boss",
       tel: (S.settings || {}).ownerPhone || "",
       kind: "owner",
@@ -198,7 +199,7 @@ function appPhotoChoices() {
   if (S.client) {
     (PT.docs || [])
       .filter((d) => isImg(d.contentType))
-      .forEach((d) => add(d.assetId, d.title || "From James", d.sharedAt));
+      .forEach((d) => add(d.assetId, d.title || `From ${bossFirst()}`, d.sharedAt));
     return out.sort((a, b) => b.at - a.at);
   }
   const own = ownerMode();

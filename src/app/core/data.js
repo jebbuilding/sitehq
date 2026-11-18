@@ -1,5 +1,6 @@
 /* ================= DATA ================= */
 import { syncSettings } from "../chat/chat.js";
+import { bossFirst } from "./company-names.js";
 import { $ } from "./helpers.js";
 import { refreshAllTrades, syncTradeFetches } from "./live-feed.js";
 import { myColl } from "./sheet.js";
@@ -24,7 +25,8 @@ function startEmployee() {
         S.mine[c] = mapDocs(snap);
         render();
         if (!ownerMode())
-          $("status").textContent = "Saved to your account · only you and James can see this";
+          $("status").textContent =
+            `Saved to your account · only you and ${bossFirst()} can see this`;
       },
       () => {
         $("status").textContent = "Couldn't load your entries. Reload to try again.";

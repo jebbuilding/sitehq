@@ -1,11 +1,14 @@
 /* ================= PLANNING LEADS (owner only): moved in from the Devon Planning Leads page ================= */
+import { bossFirst, coHome, coName, coTown } from "../core/company-names.js";
 import { $, esc, iso, store, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { curTab, render } from "../core/tabs-week.js";
 import { loadZip } from "./backup.js";
 import { coData } from "./company-details.js";
-import { ownerDisplayName } from "./owner.js";
 export { LEADS };
+/* the weekly leads check is a claude.ai routine; its page has Run now, so James can look whenever he wants (Nov 2026).
+   On our own hosting the server runs the check, and this becomes a button that asks it to (Jasper). */
+const LD_ROUTINE = "https://claude.ai/code/routines/trig_015ep1VZsPEcc638ht9hGUVN";
 const LEADS = (() => {
   const CATS = [
     [
@@ -41,7 +44,8 @@ const LEADS = (() => {
   ];
   const CAT = Object.fromEntries(CATS.map((c) => [c[0], c]));
   const SMALL = new Set(["small", "windows", "roof"]);
-  const COUNCILS = ["East Devon", "Exeter", "Teignbridge"];
+  /* the councils are the ones the leads come from (each firm's own area), not a built-in list */
+  const councils = () => [...new Set(L.rows.map((r) => r.council).filter(Boolean))].sort();
   const HOMEOWNER = new Set(["two", "single", "loft", "outbuilding", "small", "roof", "windows"]);
   const OUTCOMES = [
     ["", "Outcome…"],
@@ -63,7 +67,7 @@ const LEADS = (() => {
     newbuild: "a new home",
     commercial: "building works",
   };
-  const HOME = [50.62, -3.405];
+  /* distances are from the company's own place (Company details / the weather's home place) */
   const OUTCODE = {
     EX1: [50.727, -3.505],
     EX2: [50.708, -3.52],
@@ -113,9 +117,11 @@ const LEADS = (() => {
   };
   const LETTER_NAME = { homeowner: "Homeowner letter", original: "Original letter" };
   function miles(r) {
+    const HOME = coHome();
+    if (!HOME) return null;
     let oc = (r.postcode || "").split(" ")[0];
     if (!OUTCODE[oc]) oc = TOWN[r.town] || "";
-    const c = OUTCODE[oc];
+    const c = r.lat != null && r.lon != null ? [+r.lat, +r.lon] : OUTCODE[oc];
     if (!c) return null;
     const R = 3958.8,
       rad = (x) => (x * Math.PI) / 180,
@@ -131,7 +137,8 @@ const LEADS = (() => {
     loaded: false,
     sub: null,
     month: "",
-    council: new Set(COUNCILS),
+    /* councils switched off in the filter (none at first: every council shows) */
+    councilOff: new Set(),
     cat: null,
     picked: new Set(),
     pending: [],
@@ -184,7 +191,7 @@ const LEADS = (() => {
     return L.rows.filter(
       (r) =>
         (L.savedOnly ? r.saved : L.month === "all" || monthOf(r) === L.month) &&
-        L.council.has(r.council) &&
+        !L.councilOff.has(r.council) &&
         (!L.status || statusOf(r).k === L.status) &&
         (o.keepSent || !L.hideSent || !r.sent) &&
         (!L.within || (r._mi != null && r._mi <= L.within)) &&
@@ -252,7 +259,8 @@ const LEADS = (() => {
     if (!L.month || (L.month !== "all" && !ms.includes(L.month))) L.month = ms[0] || "all";
     const all = L.rows.filter((r) => r.sent);
     const ns = L.rows.filter((r) => r.saved).length;
-    let h = `<div class="who" style="margin-bottom:8px">New planning applications in East Devon, Exeter and Teignbridge, sorted by the kind of building work, so you can see who to write to each month. <span id="ld-meta">${esc(metaText())}</span></div>
+    let h = `<div class="who" style="margin-bottom:8px">New planning applications in ${esc(((S.settings || {}).company || {}).workArea || councils().join(", ") || "your area")}, sorted by the kind of building work, so you can see who to write to each month. <span id="ld-meta">${esc(metaText())}</span></div>
+  <div class="actions ld-now"><a class="btn" href="${LD_ROUTINE}" target="_blank" rel="noopener">🔎 Look for new leads now ↗</a><span class="who">Opens the weekly check (every Monday 6:47am). Tap <b>Run now</b> there – new leads show here in about 15 minutes.</span></div>
   <div class="seg ld-tabs" role="tablist"><button type="button" class="pillbtn" data-v="leads" aria-pressed="${L.view === "leads"}">Leads</button><button type="button" class="pillbtn" data-v="sent" aria-pressed="${L.view === "sent"}">Letters sent${all.length ? " (" + all.length + ")" : ""}</button></div>`;
     if (L.view === "sent") {
       h += sentHtml(all);
@@ -269,8 +277,13 @@ const LEADS = (() => {
         (m) => `<option value="${m}" ${m === L.month ? "selected" : ""}>${monthName(m)}</option>`,
       )
       .join("")}</select>
-    <div class="seg">${COUNCILS.map((c) => `<button type="button" class="pillbtn ld-c" data-c="${c}" aria-pressed="${L.council.has(c)}">${c}</button>`).join("")}</div>
-    <select id="ld-within" aria-label="Distance from Exmouth">${[0, 5, 10, 15, 20, 30].map((n) => `<option value="${n}" ${L.within === n ? "selected" : ""}>${n ? "Within " + n + " miles" : "Any distance"}</option>`).join("")}</select>
+    <div class="seg">${councils()
+      .map(
+        (c) =>
+          `<button type="button" class="pillbtn ld-c" data-c="${esc(c)}" aria-pressed="${!L.councilOff.has(c)}">${esc(c)}</button>`,
+      )
+      .join("")}</div>
+    <select id="ld-within" aria-label="Distance from ${esc(coTown() || "your base")}">${[0, 5, 10, 15, 20, 30].map((n) => `<option value="${n}" ${L.within === n ? "selected" : ""}>${n ? "Within " + n + " miles" : "Any distance"}</option>`).join("")}</select>
     <select id="ld-status" aria-label="Status"><option value="">Any status</option><option value="wait" ${L.status === "wait" ? "selected" : ""}>Awaiting decision</option><option value="ok" ${L.status === "ok" ? "selected" : ""}>Approved (by month approved)</option><option value="no" ${L.status === "no" ? "selected" : ""}>Refused or withdrawn</option></select>
     <label class="ld-tog"><input type="checkbox" id="ld-saved" ${L.savedOnly ? "checked" : ""}> Saved only${ns ? " (" + ns + ")" : ""}</label>
     <label class="ld-tog"><input type="checkbox" id="ld-small" ${L.skipSmall ? "checked" : ""}> Skip small jobs</label>
@@ -285,7 +298,7 @@ const LEADS = (() => {
     const n = base.filter((r) => r.category === k).length;
     return `<button type="button" class="ld-tile ${n ? "" : "zero"}" data-k="${k}" aria-pressed="${L.cat === k}"><span class="n">${n}</span><span class="l">${l}</span><span class="w">${esc(w.split(".")[0])}</span></button>`;
   }).join("")}</div>
-  <p class="who" style="margin:0 0 12px">Tap a type to show only those. <b>Hot</b> means approved or a lawful-development certificate, so the owner is likely to start soon. <b>☆ Save</b> keeps a lead for later; <b>Saved only</b> shows them from every month. Status is updated each week by the Monday check. Distances are straight-line from Exmouth, by postcode area.</p>`;
+  <p class="who" style="margin:0 0 12px">Tap a type to show only those. <b>Hot</b> means approved or a lawful-development certificate, so the owner is likely to start soon. <b>☆ Save</b> keeps a lead for later; <b>Saved only</b> shows them from every month. Status is updated each week by the Monday check. Distances are straight-line from ${esc(coTown() || "your base")}, by postcode area.</p>`;
     if (L.err)
       h += `<div class="empty">Couldn't load the leads. Reload the page to try again.</div>`;
     else if (!L.rows.length)
@@ -368,7 +381,11 @@ const LEADS = (() => {
       )
       .join(
         "",
-      )}</select><select id="ld-sc" aria-label="Council"><option value="">All councils</option>${COUNCILS.map((c) => `<option ${L.sentCouncil === c ? "selected" : ""}>${c}</option>`).join("")}</select><span style="flex:1"></span><button type="button" class="btn primary" id="ld-xlsx" ${rows.length ? "" : "disabled"}>Download spreadsheet (Excel)</button></div><p class="who" style="margin:6px 0 10px">Every letter you mark as sent is recorded here with the date, so you can look back at who you wrote to.</p>`;
+      )}</select><select id="ld-sc" aria-label="Council"><option value="">All councils</option>${councils()
+      .map((c) => `<option ${L.sentCouncil === c ? "selected" : ""}>${esc(c)}</option>`)
+      .join(
+        "",
+      )}</select><span style="flex:1"></span><button type="button" class="btn primary" id="ld-xlsx" ${rows.length ? "" : "disabled"}>Download spreadsheet (Excel)</button></div><p class="who" style="margin:6px 0 10px">Every letter you mark as sent is recorded here with the date, so you can look back at who you wrote to.</p>`;
     if (!all.length)
       return (
         h +
@@ -482,19 +499,25 @@ const LEADS = (() => {
   }
   function body() {
     const co = coData();
-    const web = (co.website || "www.jebbuilding.co.uk").replace(/^https?:\/\//, "");
-    const tel = co.mobile || co.phone || "07917 646970";
-    const mail = co.email || "info@jebbuilding.co.uk";
-    const nm = (co.owner || ownerDisplayName()).split(" ")[0];
-    const cn = co.name || "JEB Building Services";
+    const web = (co.website || "").replace(/^https?:\/\//, "");
+    const tel = co.mobile || co.phone || "";
+    const mail = co.email || "";
+    const nm = bossFirst();
+    const cn = coName();
+    const where = [
+      co.town ? "based in " + co.town : "",
+      co.workArea ? "working across " + co.workArea : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
     return {
-      12: `My name is ${nm} and I am the owner of ${cn}, a building company based in Exmouth working across East Devon, Exeter and Teignbridge. We specialise in extensions, loft conversions, luxury new builds and high-quality refurbishments.`,
+      12: `My name is ${nm} and I am the owner of ${cn}, a building company${where ? " " + where : ""}. We specialise in extensions, loft conversions, luxury new builds and high-quality refurbishments.`,
       13: "I noticed your planning application ({ref}) for {project} at {street}, and wanted to introduce myself before you choose a builder for the work.",
       14: "We would be very happy to visit, talk through your plans and provide a no-obligation quote, whether your application has just gone in or has already been approved.",
-      15: `You can see examples of our completed projects at ${web}. We would also be very happy to arrange for you to visit previous projects in the area and, where appropriate, speak with previous clients about their experience of working with us.`,
+      15: `${web ? "You can see examples of our completed projects at " + web + ". " : ""}We would also be very happy to arrange for you to visit previous projects in the area and, where appropriate, speak with previous clients about their experience of working with us.`,
       16: "We have very good working relationships with the local building authority and private building control companies. If a specialised warranty is required for your project, this is also something we can assist with, as we work closely with a warranty provider.",
       17: `I appreciate you may already be speaking to other builders, but I would be grateful if you would consider ${cn} for your project. I would be happy to provide any further information about our company or discuss your plans informally if that would be helpful.`,
-      18: `If you would like to discuss anything, please do not hesitate to contact me on ${tel} or at ${mail}.`,
+      18: `If you would like to discuss anything, please do not hesitate to contact me${tel ? " on " + tel : ""}${tel && mail ? " or" : ""}${mail ? " at " + mail : ""}.`,
     };
   }
   async function buildLetters(leads, style) {
@@ -702,8 +725,9 @@ const LEADS = (() => {
       (b) =>
         (b.onclick = () => {
           const v = b.dataset.c;
-          if (L.council.has(v) && L.council.size > 1) L.council.delete(v);
-          else L.council.add(v);
+          /* tap to hide a council's leads, tap again to show them; at least one stays on */
+          if (L.councilOff.has(v)) L.councilOff.delete(v);
+          else if (L.councilOff.size < councils().length - 1) L.councilOff.add(v);
           render();
         }),
     );

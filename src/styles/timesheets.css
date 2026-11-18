@@ -29,3 +29,30 @@
 /* overtime asked and approved */
 .otm-line{margin-top:4px;font-size:13px;white-space:normal}
 .otm-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+/* timesheets › ✎ Quick edit this week */
+.qw-wrap .qw-tbl{min-width:640px}
+.qw-tbl td{padding:4px 6px;vertical-align:middle}
+.qw-tbl .qw-day{font-weight:600;white-space:nowrap}
+.qw-tbl input[type=time],.qw-tbl select{min-height:44px;font-size:15px}
+.qw-tbl .qw-site{max-width:220px}
+.qw-tbl .qw-ok{width:22px;height:22px}
+.qw-tbl .qw-we td{background:var(--soft)}
+.qw-tbl .qw-gone td{opacity:.4;text-decoration:line-through}
+.qw-tbl .qw-acts{white-space:nowrap}
+/* the quick week form is wider than other forms so the whole week fits on an iPad; on a phone the day stays in view */
+.sheet form:has(.qw-tbl){max-width:880px}
+.qw-tbl .qw-day{position:sticky;left:0;background:var(--surface);z-index:1}
+.qw-tbl .qw-we .qw-day{background:var(--soft)}
+
+/* timesheets › hours booked to a name that isn't a job */
+.shcard .shrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.shcard .shrow:first-of-type{border-top:0}
+.shcard .shwhat{flex:1 1 260px;min-width:0}
+.shcard .shguess{color:var(--muted)}
+.shcard .shacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.shcard .sh-to{min-height:44px;max-width:100%}
+
+/* timesheets › the planner against the timesheets */
+.pccard .pcrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.pccard .pcrow:first-of-type{border-top:0}
+.pccard .pcacts{display:flex;gap:8px;flex-wrap:wrap}

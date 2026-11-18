@@ -2,6 +2,7 @@
 import { $, esc, store } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { coData } from "./company-details.js";
+import { NL_BY, coTileOf, nlBrandHtml } from "./today.js";
 export { clApply, clMoreHtml, clOn };
 /* The client gets the same look as James and the trades (body.nl-on, the styles in owner.css): no wall of buttons at
    the top, but a bar along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Home, 📷 Photos,
@@ -46,22 +47,18 @@ function clApply(tabs, cur, go) {
   const moreN = tabs.filter(([k]) => !inBar.has(k)).reduce((s, [, l]) => s + clNum(l), 0);
   const on = inBar.has(cur) ? cur : "more";
   const co = (coData().name || "SiteHQ").trim();
-  const tile = co
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
+  const tile = coTileOf(co);
   const hd = document.querySelector("header.top>div");
   if (hd) hd.dataset.tile = tile;
   bar.innerHTML =
-    `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(tile)}</span><b>${esc(co)}</b></div>` +
+    nlBrandHtml(co) +
     items
       .map(([k, l, i]) => {
         const n = k === "more" ? moreN : clNum((tabs.find((x) => x[0] === k) || [])[1]);
         return `<button type="button" class="nl-b cl-b" data-v="${k}"${k === on ? ' aria-current="page"' : ""}><span class="nl-ic"><span class="tl-i" aria-hidden="true">${i}</span>${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l">${esc(l)}</span></button>`;
       })
-      .join("");
+      .join("") +
+    NL_BY;
   bar.querySelectorAll(".cl-b").forEach((b) => (b.onclick = () => go(b.dataset.v)));
 }
 /* ☰ More: the client's other parts, as rows (they open with the portal's own .pt-go buttons) */

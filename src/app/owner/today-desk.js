@@ -1,21 +1,23 @@
 /* ================= TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet ================= */
-import { clStage } from "../clients/clients.js";
+import { clStage, newEnquiryFor } from "../clients/clients.js";
 import { quickEnquiry } from "../clients/quick-enquiry.js";
-import { $, addDays, esc, hrs, iso, parse } from "../core/helpers.js";
+import { $, addDays, esc, hrs, iso, parse, toast } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { allTeam, nameOf, teamIds } from "./owner.js";
 import { nlGo, nlOpenTab } from "./today.js";
 import { openPhoto } from "../photos/photos.js";
 import { openPlanEditor } from "../planner/board.js";
 import { onDay } from "../planner/time-off.js";
+import { openIncident } from "../safety/accidents.js";
 import { sdEdit } from "../sales/sales-edit.js";
 import { vrNew } from "../sales/variations.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
 import { siteClient } from "../sites/summary.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { sumH } from "../timesheets/time.js";
-export { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard };
+export { qaOpen, qaSetupCard, qaSetupWire, tdDeskWire, tdjCard, tdoCard, tdwCard };
 /* The Today page as in the layout pictures: This week (Mon–Fri, who's booked on each job from the planner, with
    gaps – a job nobody's booked on that day – and clashes – someone on two jobs), Today's jobs (live jobs with the
    client, stage, who and hours this week), On site now (each person, where, since when). + Add: one place to add a
@@ -154,7 +156,7 @@ function tdjCard() {
       ? `<div class="tdw-wrap"><table class="tdj-t"><thead><tr><th>Job</th><th>Stage</th><th>Who</th><th class="num">This week</th></tr></thead><tbody>${jobs
           .map(
             (j) =>
-              `<tr class="tdj-r" data-s="${esc(j.n)}" tabindex="0"><td><b>${esc(j.n)}</b>${j.c ? `<br><small class="who">${esc([j.c.name, j.c.work].filter(Boolean).join(" – "))}</small>` : ""}</td><td>${j.c ? `<span class="tdj-st">${esc(clStage(j.c.stage))}</span>` : ""}</td><td class="who">${j.who.length ? j.who.map((w) => esc(nameOf(w))).join(", ") : "–"}</td><td class="num">${hrs(j.h)} h</td></tr>`,
+              `<tr class="tdj-r" data-s="${esc(j.n)}" tabindex="0"><td><b>${esc(siteLabel(j.n))}</b>${j.c || jobNameOf(j.n) ? `<br><small class="who">${esc([jobNameOf(j.n) ? j.n : "", j.c && j.c.name, j.c && j.c.work].filter(Boolean).join(" – "))}</small>` : ""}</td><td>${j.c ? `<span class="tdj-st">${esc(clStage(j.c.stage))}</span>` : ""}</td><td class="who">${j.who.length ? j.who.map((w) => esc(nameOf(w))).join(", ") : "–"}</td><td class="num">${hrs(j.h)} h</td></tr>`,
           )
           .join("")}</tbody></table></div>`
       : '<div class="who">No live jobs.</div>'
@@ -173,13 +175,14 @@ function tdoCard() {
       .toUpperCase();
   return `<section class="nl-card tdo"><div class="nl-cardh"><h2>On site now</h2><span class="nl-big">${rows.length}</span></div>${
     rows.length
-      ? rows
-          .slice(0, 6)
+      ? `<div class="td-list">` +
+        rows
           .map(
             (r) =>
               `<div class="tdo-r"><span class="tdo-av" aria-hidden="true">${esc(ini(nameOf(r.who)))}</span><span><b>${esc(nameOf(r.who))}</b><br><small class="who">${esc(r.job || "No site")} · since ${esc(r.actualIn || r.start || "")}</small></span></div>`,
           )
-          .join("")
+          .join("") +
+        `</div>`
       : '<div class="who">Nobody has checked in yet today.</div>'
   }<button type="button" class="btn nl-wide" id="nl-roll">${rows.length ? `See all ${rows.length} and the sign-in book` : "Sign-in book"}</button></section>`;
 }
@@ -197,22 +200,89 @@ function tdDeskWire() {
         }),
   );
 }
-/* + Add: one place to add anything */
+/* + Add: one place to add anything. James chooses what's in it on Setup (settings/app.qaItems, the keys ticked;
+   none saved = QA_DEFAULT) – James, Nov 2026 */
 const QA_ITEMS = [
   ["photo", "📷", "Photo"],
-  ["enq", "⚡", "Enquiry"],
+  ["enq", "⚡", "Quick enquiry"],
+  /* the full enquiry: an existing client or a new one (James, Nov 2026: "in + Add include new enquiry") */
+  ["newenq", "📝", "New enquiry"],
   ["rcpt", "🧾", "Receipt"],
   ["hours", "⏱️", "Hours for someone"],
+  ["dw", "🧱", "Day work"],
   ["todo", "✅", "To-do"],
   ["plan", "🗓️", "Planner booking"],
   ["est", "💷", "Estimate"],
   ["var", "📝", "Variation"],
   ["draw", "✏️", "Drawing"],
+  ["inc", "🚑", "Accident or near miss"],
 ];
+const QA_DEFAULT = [
+  "photo",
+  "newenq",
+  "enq",
+  "rcpt",
+  "hours",
+  "todo",
+  "plan",
+  "est",
+  "var",
+  "draw",
+];
+const qaKeys = () => {
+  const k = (S.settings || {}).qaItems;
+  if (!Array.isArray(k)) return QA_DEFAULT;
+  /* a list saved before 📝 New enquiry was a choice gets it too, until + Add is saved again in Setup */
+  return k.includes("newenq") || (S.settings || {}).qaItemsV >= 2 ? k : ["newenq"].concat(k);
+};
+/* Setup: tick what goes in + Add */
+function qaSetupCard() {
+  const on = new Set(qaKeys());
+  return `<div class="card"><div class="cardbody" style="border:0"><b>➕ What's in + Add</b><div class="who">Tick what you want when you tap <b>+ Add</b>.</div>
+    <div class="qa-set">${QA_ITEMS.map(([k, i, l]) => `<label class="inl"><input type="checkbox" class="qa-tick" value="${k}"${on.has(k) ? " checked" : ""}> ${i} ${esc(l)}</label>`).join("")}</div>
+    <div><button class="btn primary" id="qa-save" type="button">Save + Add</button></div></div></div>`;
+}
+function qaSetupWire() {
+  if (!$("qa-save")) return;
+  $("qa-save").onclick = async () => {
+    const keys = [...document.querySelectorAll(".qa-tick:checked")].map((x) => x.value);
+    if (!keys.length) {
+      toast("Tick at least one");
+      return;
+    }
+    $("qa-save").disabled = true;
+    try {
+      await S.db.doc("settings/app").update({ qaItems: keys, qaItemsV: 2 });
+    } catch (e) {
+      try {
+        await S.db
+          .doc("settings/app")
+          .set(Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 2 }));
+      } catch (x) {
+        toast("Couldn't save. Check your connection.");
+        $("qa-save").disabled = false;
+        return;
+      }
+    }
+    S.settings = Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 2 });
+    toast("+ Add saved");
+    $("qa-save").disabled = false;
+  };
+}
 function qaOpen() {
   const d = document.createElement("div");
   d.className = "dimask qa-pop";
-  d.innerHTML = `<div class="dimbox" role="dialog" aria-labelledby="qa-h"><b id="qa-h">➕ Add</b><div class="qa-grid">${QA_ITEMS.map(([k, i, l]) => `<button type="button" class="qa-b" data-k="${k}"><span aria-hidden="true">${i}</span>${esc(l)}</button>`).join("")}</div><div class="dimbtns"><button type="button" class="btn" id="qa-x">Close</button></div></div>`;
+  const on = new Set(qaKeys());
+  d.innerHTML = `<div class="dimbox" role="dialog" aria-labelledby="qa-h"><b id="qa-h">➕ Add</b><div class="qa-grid">${QA_ITEMS.filter(
+    ([k]) => on.has(k),
+  )
+    .map(
+      ([k, i, l]) =>
+        `<button type="button" class="qa-b" data-k="${k}"><span aria-hidden="true">${i}</span>${esc(l)}</button>`,
+    )
+    .join(
+      "",
+    )}</div><div class="dimbtns"><button type="button" class="btn" id="qa-x">Close</button></div></div>`;
   document.body.appendChild(d);
   d.querySelector("#qa-x").onclick = () => d.remove();
   d.onclick = (e) => e.target === d && d.remove();
@@ -223,7 +293,10 @@ function qaOpen() {
         const k = b.dataset.k;
         if (k === "photo") openPhoto();
         else if (k === "enq") quickEnquiry();
+        else if (k === "newenq") newEnquiryFor();
         else if (k === "hours") pickPersonFor("hours");
+        else if (k === "dw") pickPersonFor("job");
+        else if (k === "inc") openIncident();
         else if (k === "plan") openPlanEditor(null, iso(new Date()));
         else if (k === "est") sdEdit({ type: "estimate" });
         else if (k === "var") vrNew();

@@ -16,6 +16,7 @@ import {
   wireAttDl,
 } from "./portal.js";
 import { clAddPlan, clAddr } from "./stages-planner.js";
+import { bossFirst, coName, coShort } from "../core/company-names.js";
 import { mapDocs } from "../core/data.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { $, addDays, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
@@ -92,7 +93,7 @@ function pdMonthHtml(list, ym, mine) {
   }
   return (
     h +
-    `</div><div class="pdkey"><span><i class="j"></i> From James</span><span><i class="c"></i> Added by ${mine ? "you" : "the client"}</span></div></div>`
+    `</div><div class="pdkey"><span><i class="j"></i> From ${esc(bossFirst())}</span><span><i class="c"></i> Added by ${mine ? "you" : "the client"}</span></div></div>`
   );
 }
 function pdListHtml(list, mine, owner) {
@@ -154,7 +155,7 @@ function pdClientTab() {
   const list = pdSorted(PT.dates);
   const ym = PT.pdym || iso(new Date()).slice(0, 7);
   const prev = S.client && S.client._preview;
-  return `${pgClientHtml(S.client)}<div class="ptsend"><div><b>📅 Your job calendar</b><br><span class="who">Important dates for your job. Add your own, like holidays or deliveries, and James will see them.</span></div><button type="button" class="btn primary" id="pd-add">+ Add a date</button></div>
+  return `${pgClientHtml(S.client)}<div class="ptsend"><div><b>📅 Your job calendar</b><br><span class="who">Important dates for your job. Add your own, like holidays or deliveries, and ${esc(bossFirst())} will see them.</span></div><button type="button" class="btn primary" id="pd-add">+ Add a date</button></div>
     ${pdMonthHtml(list, ym, true)}<div class="flabel" style="margin-top:10px">Coming up</div>${pdListHtml(list, true, false)}`;
 }
 function wirePdClient() {
@@ -170,7 +171,7 @@ function wirePdClient() {
       lastAct: Date.now(),
       lastWhat: "added a date: " + data.title + " (" + pdWhen(data) + ")",
     });
-    toast("Added. James can see it.");
+    toast(`Added. ${bossFirst()} can see it.`);
   };
   if ($("pd-add"))
     $("pd-add").onclick = () =>
@@ -234,7 +235,7 @@ function wirePdClient() {
             );
           else
             openViewer(
-              `<span class="tag">${esc(pdKind(d.kind))}</span><h3 style="margin:6px 0">${esc(d.title)}</h3><div class="who">${esc(pdWhen(d))}</div>${d.note ? `<div class="talkbody" style="margin-top:8px">${esc(d.note)}</div>` : ""}<div class="who" style="margin-top:8px">${d.by === "client" ? "Added by you" : "From James"}</div>`,
+              `<span class="tag">${esc(pdKind(d.kind))}</span><h3 style="margin:6px 0">${esc(d.title)}</h3><div class="who">${esc(pdWhen(d))}</div>${d.note ? `<div class="talkbody" style="margin-top:8px">${esc(d.note)}</div>` : ""}<div class="who" style="margin-top:8px">${d.by === "client" ? "Added by you" : `From ${bossFirst()}`}</div>`,
             );
         }),
     );
@@ -708,7 +709,7 @@ async function ptSignPdf(c, p, x, docs, btn, asBlob) {
   doc.setFillColor(...BRGB());
   doc.rect(0, 0, W, 6, "F");
   await pdfLogo(doc, W - M, 10, 48, 22);
-  text("JEB BUILDING SERVICES", 9, "bold", 4, BRGB());
+  text(coName().toUpperCase(), 9, "bold", 4, BRGB());
   text("Client sign-off record", 11, "normal", 3, [110, 100, 100]);
   y += 2;
   text(x.title, 17, "bold", 4);
@@ -915,7 +916,7 @@ function portalTab() {
     ${wait.length ? `<div class="flabel">Invite sent, waiting for them to join (${wait.length})</div>${wait.map(row).join("")}` : ""}
     ${off.length ? `<div class="flabel">Not set up yet (${off.length})</div>${off.map(row).join("")}` : ""}
     ${stored.length ? `<details class="card arcbox" ${S.f.ptArc ? "open" : ""} id="pt-arc"><summary><b>🗄 Storage (${stored.length})</b> <span class="who">completed and rejected jobs</span></summary><div class="arclist">${stored.map((c) => `<div class="arcrow"><span><b>${esc(c.name)}</b><br><span class="who">${esc(clStage(c.stage))}${c.site ? " · " + esc(c.site) : ""}${ptOf(c) ? " · portal still open for them" : ""}</span></span><span class="arcbtns"><button type="button" class="pillbtn pt-mg" data-c="${esc(c.id)}">Open portal</button></span></div>`).join("")}</div></details>` : ""}
-    <details class="pthow"><summary><b>How a client joins</b></summary><ol><li>Tap <b>Set up</b> on the client. They get a 6-letter code.</li><li>In Claude, open this app's <b>Share</b> menu and add their email with <b>can use</b> access. They need a free Claude account.</li><li>Send them the invite message (Text, WhatsApp or Email). They open the link, tap <b>I'm a JEB client</b> and type the code.</li><li>They're connected automatically and you get a pop-up.</li></ol></details>`;
+    <details class="pthow"><summary><b>How a client joins</b></summary><ol><li>Tap <b>Set up</b> on the client. They get a 6-letter code.</li><li>In Claude, open this app's <b>Share</b> menu and add their email with <b>can use</b> access. They need a free Claude account.</li><li>Send them the invite message (Text, WhatsApp or Email). They open the link, tap <b>I'm a ${esc(coShort())} client</b> and type the code.</li><li>They're connected automatically and you get a pop-up.</li></ol></details>`;
   const C = (id) => clsAll.find((x) => x.id === id);
   if ($("pt-arc"))
     $("pt-arc").addEventListener("toggle", (e) => {

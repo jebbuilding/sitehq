@@ -1,4 +1,5 @@
 /* ================= SITE DIARY: a daily diary for each site that writes itself, plus James's own note ================= */
+import { bossName } from "../core/company-names.js";
 import {
   $,
   addDays,
@@ -16,9 +17,11 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
-import { allTeam, nameOf, ownerDisplayName } from "../owner/owner.js";
+import { allTeam, nameOf } from "../owner/owner.js";
 import { BRGB, photoTile, photoViewer } from "../photos/photos.js";
 import { keyDatesFor } from "../planner/board.js";
+import { onDay, planEntries } from "../planner/time-off.js";
+import { planTimeTxt } from "../planner/views.js";
 import { wpDays } from "../planner/weather-plan.js";
 import { ukDate } from "../safety/rams-maker.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
@@ -27,7 +30,9 @@ import { sdImgData } from "../sales/sales-pdf.js";
 import { jkImg } from "./job-pack.js";
 import { taskDone } from "./job-sheets.js";
 import { same } from "./project-pages.js";
+import { rfiCode, rfiOver } from "./rfi.js";
 import { SIGNIN } from "./sign-in-book.js";
+import { sodFor, sodWhy } from "./signoff-due.js";
 export { sdiHtml, sdiSlug, sdiWire };
 /* Each day on a site is put together from what's already in the app: who signed in and out (timesheets, the
    sign-in book and visitors), the weather (the forecast for that day, saved with the day once James adds a note,
@@ -61,6 +66,25 @@ function sdiWx(site, date) {
     .filter(Boolean)
     .join(", ");
 }
+/* a weather picture for a day's forecast words */
+const sdiIcon = (ph) => {
+  const k = String(ph || "").toLowerCase();
+  return /snow|sleet/.test(k)
+    ? "❄️"
+    : /thunder|storm/.test(k)
+      ? "⛈️"
+      : /shower|drizzle/.test(k)
+        ? "🌦️"
+        : /rain/.test(k)
+          ? "🌧️"
+          : /fog|mist/.test(k)
+            ? "🌫️"
+            : /sun|clear|bright/.test(k)
+              ? "☀️"
+              : /wind/.test(k)
+                ? "💨"
+                : "☁️";
+};
 /* everything known about one day on one site */
 function sdiDay(site, date) {
   const rec = sdiRec(site, date);
@@ -93,6 +117,28 @@ function sdiDay(site, date) {
     }),
   );
   const kd = keyDatesFor(site, "").filter((p) => p.from <= date && (p.to || p.from) >= date);
+  /* booked or due on the planner that day (deliveries, inspections, meetings, job sheets due…) */
+  let due = [];
+  try {
+    due = planEntries().filter(
+      (p) =>
+        p.site &&
+        same(p.site, site) &&
+        onDay(p, date) &&
+        !["holiday", "leave", "sick"].includes(p.type),
+    );
+  } catch (e) {}
+  const rfis = (S.rfis || [])
+    .filter((r) => same(r.site, site) && (r.raised === date || r.answeredAt === date))
+    .map((r) => ({
+      r,
+      what:
+        r.answeredAt === date && r.raised === date
+          ? "raised and answered"
+          : r.answeredAt === date
+            ? "answered"
+            : "raised",
+    }));
   const wxPh = [...new Set(photos.map((p) => p.weather).filter(Boolean))][0] || "";
   const weather = (rec && rec.weather) || sdiWx(site, date) || wxPh;
   return {
@@ -104,8 +150,12 @@ function sdiDay(site, date) {
     work,
     ticks,
     kd,
+    due,
+    rfis,
     weather,
     any: !!(
+      due.length ||
+      rfis.length ||
       (rec && rec.note) ||
       people.length ||
       photos.length ||
@@ -124,12 +174,41 @@ function sdiHtml(site) {
   const sec = (h, body) => (body ? `<div class="sdi-sec"><b>${h}</b>${body}</div>` : "");
   const li = (a) =>
     a.length ? `<ul class="sdi-list">${a.map((x) => `<li>${x}</li>`).join("")}</ul>` : "";
-  return `<div class="day sdi"><div class="sdi-nav"><button type="button" class="iconbtn" id="sdi-prev" aria-label="Day before">‹</button><b>${esc(dayLabel(parse(date)))}${date === today ? " · today" : ""}</b><button type="button" class="iconbtn" id="sdi-next" aria-label="Day after"${date >= today ? " disabled" : ""}>›</button>${date !== today ? `<button type="button" class="pillbtn" id="sdi-today">Today</button>` : ""}</div>
+  /* the week the day is in: each day with its weather, tap to go to it (days to come show the forecast only) */
+  const wk = monday(parse(date));
+  const fc = wpDays(site);
+  const strip = [0, 1, 2, 3, 4, 5, 6]
+    .map((i) => {
+      const d = iso(addDays(wk, i));
+      const w = fc && fc.by[d];
+      return `<button type="button" class="sdi-wd${d === date ? " on" : ""}" data-d="${d}"${d > today ? " disabled" : ""} aria-label="${esc(dayLabel(parse(d)))}"><span>${esc(parse(d).toLocaleDateString("en-GB", { weekday: "short" }))} <b>${parse(d).getDate()}</b></span><span class="sdi-wi" aria-hidden="true">${w ? sdiIcon(w.phrase) : "·"}</span><span class="who">${w && w.max != null ? Math.round(w.max) + "°" : ""}${w && w.rain != null ? " · " + w.rain + "%" : ""}</span></button>`;
+    })
+    .join("");
+  const todo =
+    date === today
+      ? [
+          ...sodFor(site).map(
+            (r) => `✍️ ${esc(r.title)} <span class="who">${esc(sodWhy(r))}</span>`,
+          ),
+          ...(S.rfis || [])
+            .filter((r) => same(r.site, site) && r.status === "open")
+            .map(
+              (r) =>
+                `❓ ${esc(rfiCode(r))} ${esc(r.subject || "")} <span class="who">answer ${rfiOver(r) ? "overdue since" : "due"} ${esc(shortDay(r.due))}</span>`,
+            ),
+        ]
+      : [];
+  const hTot = D.work.reduce((a, w) => a + (w.hours || 0), 0);
+  return `<div class="day sdi"><div class="sdi-week">${strip}</div><div class="sdi-nav"><button type="button" class="iconbtn" id="sdi-prev" aria-label="Day before">‹</button><b>${esc(dayLabel(parse(date)))}${date === today ? " · today" : ""}</b><button type="button" class="iconbtn" id="sdi-next" aria-label="Day after"${date >= today ? " disabled" : ""}>›</button>${date !== today ? `<button type="button" class="pillbtn" id="sdi-today">Today</button>` : ""}</div>
     ${D.weather ? `<div class="sdi-wx">🌤 ${esc(D.weather)}</div>` : ""}
+    ${D.people.length || hTot ? `<div class="who sdi-sum">👷 ${D.people.length} on site${hTot ? ` · ${hrs(hTot)} h logged` : ""}</div>` : ""}
+    ${todo.length ? `<div class="notice warn sdi-todo"><b>Still to sort</b>${li(todo)}</div>` : ""}
     ${sec("👷 On site", li(D.people.map((r) => `${esc(sdiWho(r))} <span class="who">${esc(r.in || "")}${r.out ? "–" + esc(r.out) : r.open ? " (still on site)" : ""}</span>`)))}
     ${sec("🔨 Work logged", li(D.work.map((w) => `${esc(nameOf(w.who))}: ${esc(w.what || "Hours")}${w.hours ? ` <span class="who">${hrs(w.hours)} h</span>` : ""}${w.extra ? ' <span class="tag">Extra</span>' : ""}`)))}
     ${sec("✅ Ticked off", li(D.ticks.map((t) => `${esc(t.task)} <span class="who">${esc(t.job)}${t.by ? " · " + esc(t.by) : ""}</span>`)))}
     ${sec("📅 Key dates", li(D.kd.map((p) => esc(p.title))))}
+    ${sec("🚚 Booked or due", li(D.due.map((p) => `${esc(p.title)}${planTimeTxt(p) ? ` <span class="who">${esc(planTimeTxt(p))}</span>` : ""}`)))}
+    ${sec("❓ RFIs", li(D.rfis.map((x) => `${esc(rfiCode(x.r))} ${esc(x.r.subject || "")} <span class="who">${x.what}${/raised/.test(x.what) && x.r.to ? " – to " + esc(x.r.to) : x.r.answerBy ? " by " + esc(x.r.answerBy) : ""}</span>`)))}
     ${D.photos.length ? `<div class="sdi-sec"><b>📷 Photos (${D.photos.length})</b><div class="phgrid">${D.photos.map((p) => photoTile(p, true, p.who)).join("")}</div></div>` : ""}
     ${!D.any ? `<div class="nothing">Nothing recorded on this day yet.</div>` : ""}
     <label for="sdi-note">Your note for the day</label><textarea id="sdi-note" rows="4" placeholder="e.g. Steel delivered late, 2 hours lost. Building control passed the foundations.">${esc(D.note)}</textarea>
@@ -147,6 +226,7 @@ function sdiWire(site) {
     $("sdi-next").onclick = () =>
       go(iso(addDays(parse(cur), 1)) > today ? today : iso(addDays(parse(cur), 1)));
   if ($("sdi-today")) $("sdi-today").onclick = () => go(today);
+  document.querySelectorAll(".sdi-wd").forEach((b) => (b.onclick = () => go(b.dataset.d)));
   if ($("sdi-save"))
     $("sdi-save").onclick = async () => {
       const note = $("sdi-note").value.trim();
@@ -157,7 +237,7 @@ function sdiWire(site) {
         date: cur,
         note,
         weather: (old && old.weather) || sdiWx(site, cur) || "",
-        byName: ownerDisplayName(),
+        byName: bossName(),
         updated: Date.now(),
       };
       try {
@@ -343,6 +423,17 @@ async function sdiPdf(site, days, withPhotos) {
     block(
       "Key dates",
       D.kd.map((p) => p.title),
+    );
+    block(
+      "Booked or due",
+      D.due.map((p) => p.title),
+    );
+    block(
+      "RFIs",
+      D.rfis.map(
+        (x) =>
+          `${rfiCode(x.r)} ${x.r.subject || ""} – ${x.what}${/raised/.test(x.what) && x.r.to ? " (to " + x.r.to + ")" : x.r.answerBy ? " by " + x.r.answerBy : ""}`,
+      ),
     );
     if (D.note) {
       para("Note", true, 10);

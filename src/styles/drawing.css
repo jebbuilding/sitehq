@@ -116,3 +116,131 @@ body>.dimask.cb3-sg{z-index:320}
 .hr-stage{border-radius:10px;overflow:hidden;background:#dfe9f2;touch-action:none}
 .hr-stage canvas{display:block;width:100%;height:auto;border:0;border-radius:0}
 .hr-modes{margin:8px 0;flex-wrap:wrap}
+
+/* drawing › text boxes: several lines, bold, italic, line-up and size */
+.np-text .np-ttx{width:100%;min-height:72px;font:inherit;font-size:16px;padding:8px;border-radius:8px;resize:vertical}
+.np-text .np-tsty,.nftxrow .nftxsty{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.np-text .np-tst,.nftxrow .np-tst{min-height:44px;min-width:44px;padding:0 10px;border-radius:8px;border:1px solid #6b5f60;background:#4a3f40;color:#fff;font:inherit;cursor:pointer}
+.np-text .np-tst[aria-pressed="true"],.nftxrow .np-tst[aria-pressed="true"]{background:#fff;color:#1d1717;border-color:#fff}
+.np-text .np-tsz{min-height:44px}
+.nftxrow .nftx{font:inherit;font-size:15px;padding:6px;border-radius:8px}
+
+/* drawing › length bar: which way buttons and a big number pad */
+.np-lenbar .nlb-dirs{display:inline-flex;gap:4px}
+.np-lenbar .nlb-dir,.np-lenbar .nlb-padb{min-width:44px;min-height:44px;padding:0 8px;font-size:18px}
+.np-lenbar .nlb-pad{display:grid;grid-template-columns:repeat(3,64px);gap:6px;width:100%;justify-content:center;margin-top:6px}
+.np-lenbar .nlb-pad[hidden],.np-lenbar [hidden]{display:none}
+.np-lenbar .nlb-k{min-height:48px;font-size:20px;font-weight:700}
+
+/* drawing › the running total in the status bar */
+.np-status .np-livq{background:#2f2727;color:#fff;border:1px solid #5b4f50;border-radius:999px;padding:2px 10px;min-height:28px;font:inherit;font-weight:700;cursor:pointer}
+.np-status .np-livq[hidden]{display:none}
+
+/* drawing › ⭐ Easy: only the tools used most */
+.np-bar[data-g="easy"] [data-g~="easy"]{display:flex!important}
+
+/* drawing › Corner tool: sharp, rounded or cut */
+.np-chainbar .np-ckbox{display:inline-flex;gap:6px;align-items:center}
+.np-chainbar .np-ckbox[hidden],.np-chainbar .np-ckbox [hidden]{display:none}
+.np-chainbar .np-ck{min-height:40px}
+.np-chainbar .np-cks{width:80px;padding:6px 8px;font-size:15px}
+
+/* drawing › on a touch screen every tool button and tab is at least a finger's size */
+@media (pointer:coarse){.np-bar .np-t,.np-bar .np-libbtn,.np-bar .np-gt{min-height:44px}}
+
+/* drawing › existing / to knock down / new walls */
+.np-finebox .nfstrow .nfst button{min-height:40px}
+
+/* drawing › the wall-run / corner / patio bar: dark buttons you can read (the arrows and ✕ were white on white), in a
+   compact row that wraps across the top rather than standing tall over the drawing */
+.np-chainbar{flex-wrap:wrap;max-width:calc(100% - 16px);justify-content:center}
+.np-chainbar .np-chaintxt{flex:1 1 220px;min-width:0}
+.np-chainbar .btn:not(.primary){background:#4a3f40;color:#fff;border:1px solid #6b5f60}
+.np-chainbar .np-pwdirs{display:inline-flex;gap:4px}
+.np-chainbar .np-pwd{min-width:44px;min-height:40px}
+.np-chainbar select{width:auto;max-width:220px;flex:0 1 auto;min-height:40px}
+.np-chainbar{width:max-content}
+
+/* drawing › the length bar: readable keys (they were white on white), compact, and small as a tag when minimised */
+.np-lenbar .btn:not(.primary){background:#4a3f40;color:#fff;border:1px solid #6b5f60}
+.np-lenbar .nlb-l{width:88px}
+.np-lenbar .btn{min-height:40px}
+.np-lenbar .nlb-extra{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.np-lenbar.nlb-small{padding:3px}
+.np-lenbar.nlb-small>*:not(.nlb-sum){display:none!important}
+.np-lenbar .nlb-sum{background:transparent;color:#fff;border:0;font:inherit;font-weight:700;font-size:15px;min-height:40px;padding:0 12px;cursor:pointer}
+.np-lenbar.nlb-small .nlb-sum{display:inline-flex!important;align-items:center}
+.np-lenbar .nlb-extra[hidden]{display:none}
+.np-lenbar{width:max-content}
+
+/* drawing › the Properties box: on the left, moved by its top bar, folds to its title */
+.np-finebox{left:8px;top:8px;bottom:auto;transform:none;overflow-y:auto;max-height:calc(100% - 16px)!important}
+.np-finebox .nfhead{cursor:move;touch-action:none;user-select:none;-webkit-user-select:none;justify-content:space-between;position:sticky;top:-8px;background:rgba(31,26,26,.98);z-index:1;margin:-8px -10px 0;padding:8px 10px}
+.np-finebox .nfhbtns{display:flex;gap:4px}
+.np-finebox .nfmin,.np-finebox .nfhbtns .nfx{min-width:40px;min-height:40px;background:#362e2e;border:1px solid #4a3f40;border-radius:8px;color:#fff;font-size:18px;cursor:pointer}
+.np-finebox.nf-small>*:not(.nfhead){display:none!important}
+.np-finebox.nf-small{width:auto;min-width:220px}
+
+/* drawing › a steel beam's sheet */
+.bmsheet .dimbox{width:min(760px,100%);gap:10px}
+.bmsheet .bm-sec{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+.bmsheet .bm-sec>b{font-size:15px}
+.bmsheet .bm-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end}
+.bmsheet .bm-row label{flex:1 1 150px;min-width:0}
+.bmsheet .bm-fig{display:flex;flex-wrap:wrap;gap:6px 16px}
+.bmsheet .bm-fig span{white-space:nowrap}
+.bmsheet .bm-warn{color:#b45309;font-weight:600}
+.bmsheet .bm-ticks label{display:flex;gap:8px;align-items:center;min-height:40px}
+.bmsheet .bm-ticks input{width:22px;height:22px}
+.bmsheet .bm-ticks small{color:var(--muted,#666);margin-left:auto}
+.bmsheet .bm-order{white-space:pre-wrap;font-size:13px;background:var(--soft,#f6f3f3);border-radius:8px;padding:8px;max-height:200px;overflow:auto}
+.bmsheet .dimbox .bm-ticks label{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;text-align:left;font-weight:500}
+.bmsheet .dimbox .bm-ticks label small{margin-left:auto}
+.bmsheet .dimbox label.inl{flex-direction:row;align-items:center;gap:8px}
+
+/* drawing › the size bar small as a tag until opened (tap it, or 📏 Size at the bottom) */
+.np-opbar.nob-small{padding:3px}
+.np-opbar.nob-small>*:not(.nob-sum){display:none!important}
+.np-opbar .nob-sum{background:transparent;color:#fff;border:0;font:inherit;font-weight:700;font-size:15px;min-height:40px;padding:0 12px;cursor:pointer}
+.np-opbar.nob-small .nob-sum{display:inline-flex!important;align-items:center}
+.np-opbar .nob-min{background:#4a3f40;color:#fff;border-color:#6b5f60;min-width:40px}
+
+/* drawing › the stair builder */
+.sbuild .dimbox{width:min(820px,100%);gap:10px}
+.sbuild .sb-sec{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+.sbuild .sb-sec>b{font-size:15px}
+.sbuild .sb-types{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.sbuild .sb-type{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:64px;padding:8px;border:1px solid var(--line,#ddd);border-radius:10px;background:var(--surface,#fff);color:var(--ink,#111);font:inherit;font-size:13px;cursor:pointer;text-align:center}
+.sbuild .sb-type span{font-size:22px}
+.sbuild .sb-type[aria-pressed="true"]{border-color:var(--accent,#8b1c1c);box-shadow:inset 0 0 0 2px var(--accent,#8b1c1c);font-weight:700}
+.sbuild .sb-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end}
+.sbuild .sb-row[hidden],.sbuild label[hidden]{display:none}
+.sbuild .sb-row label{flex:1 1 160px;min-width:0}
+.sbuild .sb-nrow{display:flex;gap:6px;align-items:center}
+.sbuild .sb-nrow b{min-width:70px;text-align:center}
+.sbuild .sb-fig{display:flex;flex-wrap:wrap;gap:6px 16px}
+.sbuild .sb-ck{padding:2px 0}
+.sbuild .sb-ok{color:#15803d}
+.sbuild .sb-bad{color:#b45309;font-weight:700}
+.sbuild .sb-order{white-space:pre-wrap;font-size:13px;background:var(--soft,#f6f3f3);border-radius:8px;padding:8px;max-height:220px;overflow:auto}
+
+/* drawing › stair cutting list and 3D */
+.sbuild .sb-tbl{width:100%;font-size:13px}
+.sbuild .sb-tbl td,.sbuild .sb-tbl th{padding:4px 6px;text-align:left}
+.sbuild .sb-tbl .num{text-align:right}
+.s3d .s3d-cv{width:100%;height:auto;border-radius:10px;background:#f4f1ee;touch-action:none}
+
+/* drawing › zoom-in detail */
+.zd .zd-sc{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.zd .zd-sc .btn{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 12px}
+.zd .zd-sc .btn small{font-size:11px;opacity:.8;font-weight:500}
+
+/* drawing › build-ups */
+.bud .bud-row2{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:6px 0}
+.bud .bud-row2 label{flex:1 1 160px}
+.bud .bud-list{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+.bud .bud-l{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px;border:1px solid var(--line);border-radius:10px}
+.bud .bud-l select{flex:1 1 150px;min-height:44px}
+.bud .bud-l .bud-t{width:64px;min-height:44px}
+.bud .bud-l .bud-n{flex:2 1 180px;min-height:44px}
+.bud .bud-l .btn{min-width:44px;min-height:44px;padding:0 8px}

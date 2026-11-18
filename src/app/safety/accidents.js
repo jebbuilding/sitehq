@@ -1,4 +1,5 @@
 /* ================= ACCIDENT & NEAR-MISS REPORTS ================= */
+import { bossFirst, bossName, coName, coShort } from "../core/company-names.js";
 import { startEmployee } from "../core/data.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, nowHM, shortDay, stamp, toast } from "../core/helpers.js";
@@ -20,6 +21,7 @@ import {
   stampPhoto,
 } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 export { INC_KINDS, incidentsBlock, openIncident, viewIncident, wireIncidents };
 const INC_KINDS = {
   injury: "Accident (someone hurt)",
@@ -60,12 +62,12 @@ function openIncident() {
       "Site",
       siteNames(),
       lastOf(S.mine.entries, () => true, "job"),
-      "e.g. 12 Marine Way, Exmouth",
+      "e.g. 12 High Street",
     )}
     <label for="in-what">Describe what happened<textarea id="in-what" required maxlength="1500" placeholder="What were they doing, what went wrong, where exactly"></textarea></label>
     <div id="in-inj" hidden style="display:flex;flex-direction:column;gap:14px">
       <div class="grid2"><label for="in-who">Who was hurt? ${meBtn("in-whome", "Me")}<input id="in-who" maxlength="80" placeholder="Name"></label>
-      <label for="in-role">They are<select id="in-role"><option value="">Choose…</option><option>JEB employee</option><option>Subcontractor</option><option>Visitor</option><option>Member of the public</option></select></label></div>
+      <label for="in-role">They are<select id="in-role"><option value="">Choose…</option><option>${esc(coShort())} employee</option><option>Subcontractor</option><option>Visitor</option><option>Member of the public</option></select></label></div>
       <label for="in-injury">Injury, and which part of the body<input id="in-injury" maxlength="200" placeholder="e.g. Cut to left hand"></label>
       ${yn("in-fa", "First aid given?")}
       <label for="in-faby">First aid given by (optional)<input id="in-faby" maxlength="80"></label>
@@ -80,10 +82,10 @@ function openIncident() {
         ],
       )}
       <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="in-spec"> Serious injury: broken bone (not finger, thumb or toe), amputation, loss of sight, serious burn, crush or head injury, or knocked unconscious</label></div>
-    <label for="in-action">What was done straight away?<textarea id="in-action" maxlength="800" placeholder="e.g. Area fenced off, machine isolated, James phoned"></textarea></label>
+    <label for="in-action">What was done straight away?<textarea id="in-action" maxlength="800" placeholder="e.g. Area fenced off, machine isolated, ${esc(bossFirst())} phoned"></textarea></label>
     <label for="in-wit">Witnesses (optional)<input id="in-wit" maxlength="200" placeholder="Names and phone numbers"></label>
     <label for="in-photos">Photos (optional)<input id="in-photos" type="file" accept="image/*" multiple></label>
-    <div class="notice warn" id="in-riddor" hidden style="margin:0"><b>This may need reporting to the HSE (RIDDOR).</b> James will be told straight away.</div>
+    <div class="notice warn" id="in-riddor" hidden style="margin:0"><b>This may need reporting to the HSE (RIDDOR).</b> ${esc(bossFirst())} will be told straight away.</div>
     <div><div class="checkhead"><span class="flabel" style="margin:0">Your signature</span><button type="button" class="pillbtn" id="in-clear">Clear</button></div><canvas id="in-sig" class="sigpad" aria-label="Signature box"></canvas></div>
     ${formFoot(false, "Send report")}`,
     saveIncident,
@@ -180,7 +182,7 @@ async function saveIncident() {
   const pics = [...($("in-photos").files || [])];
   if (pics.length && !S.assets) {
     showErr(
-      "You don't have permission to upload photos. Remove them, or ask James to make you an Editor.",
+      `You don't have permission to upload photos. Remove them, or ask ${bossFirst()} to make you an Editor.`,
     );
     return;
   }
@@ -209,7 +211,7 @@ async function saveIncident() {
     toast(
       r === "queued"
         ? "Report kept on this phone. It sends as soon as you have signal."
-        : "Report sent to James",
+        : `Report sent to ${bossFirst()}`,
     );
     render();
   } catch (e) {
@@ -279,7 +281,7 @@ function wireIncidents(owner) {
           "Action taken",
           "Witnesses",
           "Reviewed",
-          "James's notes",
+          `${bossFirst()}'s notes`,
         ],
       ];
       list
@@ -337,7 +339,7 @@ function viewIncident(x, owner) {
       owner
         ? `<label for="iv-notes" style="margin-top:12px">Your notes and action taken<textarea id="iv-notes" maxlength="1000">${esc(x.ownerNotes || "")}</textarea></label>
       <div class="actions" style="margin-top:8px"><button class="btn primary" id="iv-rev" type="button">${x.status === "reviewed" ? "Save notes" : "Mark as reviewed"}</button><button class="btn" id="iv-pdf" type="button">Download PDF</button></div>`
-        : `<div class="who" style="margin-top:10px">${x.status === "reviewed" ? "James has reviewed this." : "Sent to James."}${x.ownerNotes ? " James's notes: " + esc(x.ownerNotes) : ""}</div>`
+        : `<div class="who" style="margin-top:10px">${x.status === "reviewed" ? `${bossFirst()} has reviewed this.` : `Sent to ${bossFirst()}.`}${x.ownerNotes ? ` ${bossFirst()}'s notes: ` + esc(x.ownerNotes) : ""}</div>`
     }`);
   if ($("iv-rev"))
     $("iv-rev").onclick = async () => {
@@ -368,9 +370,10 @@ async function incidentPdf(x, rows) {
     return;
   }
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18;
+  let y = LH.top || 18;
   const clean = (t) =>
     String(t || "")
       .replace(/[–—]/g, "-")
@@ -378,9 +381,9 @@ async function incidentPdf(x, rows) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·•°]/g, "");
   const need = (h) => {
-    if (y + h > 282) {
+    if (y + h > (LH.bot || 282)) {
       doc.addPage();
-      y = 18;
+      y = LH.top || 18;
     }
   };
   const text = (t, size = 10, style = "normal", gap = 1.6) => {
@@ -393,10 +396,12 @@ async function incidentPdf(x, rows) {
     });
     y += gap;
   };
-  doc.setFillColor(...BRGB());
-  doc.rect(0, 0, W, 6, "F");
-  await pdfLogo(doc, W - M, 11, 52, 24);
-  text("JEB BUILDING SERVICES", 9, "bold", 6);
+  if (!LH.pics) {
+    doc.setFillColor(...BRGB());
+    doc.rect(0, 0, W, 6, "F");
+    await pdfLogo(doc, W - M, 11, 52, 24);
+    text(coName().toUpperCase(), 9, "bold", 6);
+  }
   text("Accident / incident report", 18, "bold", 2);
   text(x.site, 12, "bold", 4);
   if (x.riddor) text("Possible RIDDOR report needed - check hse.gov.uk/riddor", 10, "bold", 3);
@@ -415,7 +420,7 @@ async function incidentPdf(x, rows) {
   });
   if (x.ownerNotes) {
     y += 2;
-    text("Notes and action taken (James Bray)", 11, "bold", 1.5);
+    text(`Notes and action taken (${bossName()})`, 11, "bold", 1.5);
     text(x.ownerNotes, 9.5);
   }
   if (x.signature) {
@@ -444,6 +449,7 @@ async function incidentPdf(x, rows) {
     } catch (e) {}
   }
   try {
+    lhFinish(doc, LH);
     await S.dl.save({
       filename: `Incident ${x.date} ${clean(x.site)
         .replace(/[^\w\s-]/g, "")

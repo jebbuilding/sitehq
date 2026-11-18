@@ -5,9 +5,16 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf, teamIds } from "../owner/owner.js";
 import { avatarHtml } from "../people/profile-photos.js";
-import { openPlanEditor, pbPlanWeek, pbSiteOf, pbSiteShort, siteHue } from "./board.js";
+import {
+  openPlanEditor,
+  pbPlanWeek,
+  pbSiteOf,
+  pbSiteShort,
+  pbStageName,
+  siteHue,
+} from "./board.js";
 import { onDay, planEntries } from "./time-off.js";
 import { openPlanDetail } from "./views.js";
 import { same } from "../sites/project-pages.js";
@@ -33,7 +40,7 @@ function plClashes(entries, days) {
       const off = mine.find((p) => p.type === "holiday");
       const work = mine.filter(plBookable);
       const sites = [...new Set(work.map((p) => pbSiteOf(p) || p.title))];
-      const nm = w === S.me ? "You" : nameOf(w);
+      const nm = nameOf(w);
       const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" });
       if (off && work.length)
         out.push({ who: w, day: di, msg: `${nm} is booked on ${day} but is off that day` });
@@ -68,14 +75,14 @@ function plWhereHtml(shown) {
   const work = on.filter((p) => p.type !== "holiday");
   const bySite = {};
   work.forEach((p) => {
-    const s = pbSiteOf(p) || "Not at a site";
+    const s = p.type === "course" ? "🎓 On a course" : pbSiteOf(p) || "Not at a site";
     (bySite[s] = bySite[s] || []).push(p);
   });
   const busy = new Set(work.flatMap(plPeople).concat(off.flatMap(plPeople)));
-  const free = teamIds().filter((w) => !busy.has(w));
+  const free = crewIds().filter((w) => !busy.has(w));
   const wkend = d.getDay() === 0 || d.getDay() === 6;
   const person = (w, p) =>
-    `<button type="button" class="pl-person" data-p="${esc(p ? p.id : "")}" data-w="${esc(w)}">${w === S.me ? `<span class="pav pavi" style="width:34px;height:34px;font-size:12px">${esc(initials(myName()))}</span>` : avatarHtml(w, 34)}<span><b>${esc(w === S.me ? "You" : nameOf(w))}</b>${p && p.time ? `<small>${esc(p.time)}</small>` : ""}</span></button>`;
+    `<button type="button" class="pl-person" data-p="${esc(p ? p.id : "")}" data-w="${esc(w)}">${w === S.me ? `<span class="pav pavi" style="width:34px;height:34px;font-size:12px">${esc(initials(myName()))}</span>` : avatarHtml(w, 34)}<span><b>${esc(nameOf(w))}</b>${p && p.type !== "holiday" ? `<small>${p.time ? esc(p.time) + " · " : ""}${esc(pbStageName(p.title, pbSiteOf(p)))}</small>` : p && p.time ? `<small>${esc(p.time)}</small>` : ""}</span></button>`;
   const clash = plClashes(shown, [d]);
   return `<div class="pl-where">
     <div class="pl-wnav"><button type="button" class="iconbtn" id="pl-wprev" aria-label="Day before">‹</button><b>${esc(d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }))}${di === today ? " · Today" : ""}</b><button type="button" class="iconbtn" id="pl-wnext" aria-label="Day after">›</button>${di !== today ? `<button type="button" class="pillbtn" id="pl-wtoday">Today</button>` : ""}</div>
@@ -91,10 +98,10 @@ function plWhereHtml(shown) {
               );
               const unassigned = list.filter((p) => !plPeople(p).length);
               return `<section class="card pl-site" style="--pc:hsl(${siteHue(s)} 55% 42%)"><div class="cardbody">
-                <div class="pl-sh"><i></i><b>${esc(s)}</b><span class="who">${ppl.length} ${ppl.length === 1 ? "person" : "people"}</span></div>
+                <div class="pl-sh"><i></i><b>${esc(s)}</b><span class="who">${ppl.length ? `${ppl.length} ${ppl.length === 1 ? "person" : "people"}` : "Nobody booked yet"}</span></div>
                 <div class="pl-ppl">${ppl.map(([w, p]) => person(w, p)).join("")}</div>
-                ${unassigned.map((p) => `<button type="button" class="pl-job" data-p="${esc(p.id)}">${p.time ? esc(p.time) + " · " : ""}${esc(p.title)}</button>`).join("")}
-                <button type="button" class="linkbtn pl-book" data-site="${esc(s === "Not at a site" ? "" : s)}">+ Book someone here</button>
+                ${unassigned.length ? `<div class="pl-needs">Needs someone:</div>` : ""}${unassigned.map((p) => `<button type="button" class="pl-job" data-p="${esc(p.id)}" title="${esc(p.title)}">${p.time ? esc(p.time) + " · " : ""}${esc(s === "Not at a site" ? p.title : pbStageName(p.title, s))}</button>`).join("")}
+                ${s === "🎓 On a course" ? "" : `<button type="button" class="linkbtn pl-book" data-site="${esc(s === "Not at a site" ? "" : s)}">+ Book someone here</button>`}
               </div></section>`;
             })
             .join("")

@@ -1,4 +1,5 @@
 /* ================= EMPLOYEE: TIME ================= */
+import { bossFirst, bossName } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import {
   $,
@@ -34,18 +35,20 @@ import { S, inWeek, siteNames, weekDays } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
 import { newId, sentToast, submitJob } from "../files/outbox.js";
-import { nameOf, ownerDisplayName } from "../owner/owner.js";
+import { nameOf } from "../owner/owner.js";
 import { proxyFor, setProxyFor } from "../people/foreman.js";
 import { myTrade, siteRec } from "../photos/photos.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { empIndTodo, openInduction } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
 import { dwTradeSheet } from "./day-work.js";
 import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
-import { otmLine, otmOffer } from "./overtime.js";
+import { nstClientId, nstGroups, nstIs } from "./non-site-time.js";
+import { otmAsk, otmLine, otmOffer } from "./overtime.js";
 import { dayFor, openMyDay } from "./working-day.js";
-export { checkIn, checkOut, empTime, entrySub, openEntry, sumH, typeTag };
+export { checkIn, checkInAt, checkOut, empTime, entrySub, openEntry, sumH, typeTag };
 function typeTag(e) {
   return e.open
     ? '<span class="tag ok">On site now</span>'
@@ -78,10 +81,10 @@ function clockCard() {
   const D = dayFor(S.me);
   if (open) {
     const s = siteRec(open.job) || {};
-    return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>On site</div><b class="cisite">${esc(open.job)}</b>${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
+    return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>${nstIs(open.job) ? "Clocked in" : "On site"}</div><b class="cisite">${esc(siteLabel(open.job))}</b>${jobNameOf(open.job) ? `<div class="sub">📍 ${esc(open.job)}</div>` : ""}${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
     <button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button>
-    <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button>
+    <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button><button class="pillbtn ci-diff" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">⏱ Started early or working through lunch?</button>
     <div class="who">Your paid day: ${esc(dayLine(D))}. Arrive early or leave late and you're paid from ${esc(D.s)} to ${esc(D.e)} – or ask for overtime when you check out. The lunch is taken off automatically. <button type="button" class="linkbtn ci-day">Change my usual day</button></div></div>`;
   }
   const done = S.mine.entries.filter((e) => e.date === today && e.type === "hours" && !e.open);
@@ -90,14 +93,19 @@ function clockCard() {
     "Site",
     siteNames(),
     lastOf(S.mine.entries, () => true, "job"),
-    "e.g. 12 Marine Way, Exmouth",
+    "e.g. 12 High Street",
+    true,
+    nstGroups(),
   )}
     <button class="btn primary big ci-in" type="button">Check in now</button>
     <div class="who">⏰ Your usual day: ${esc(dayLine(D))}${D.own ? "" : " (standard)"} · <button type="button" class="linkbtn ci-day">Change</button></div>
     ${done.length ? `<div class="who">Today so far: ${done.map((e) => `${esc(e.job)} ${esc(e.start)}–${esc(e.finish)}`).join(", ")}</div>` : `<div class="who">Forgot to check in? Use <b>+ Timesheet</b> to add the day by hand.</div>`}</div>`;
 }
 async function checkIn() {
-  const site = pickVal("ci-site");
+  return checkInAt(pickVal("ci-site"));
+}
+/* check in at a site: records when they arrived, and the timesheet day is paid from their usual start (James, Nov 2026) */
+async function checkInAt(site) {
   if (!site) {
     toast("Choose the site first");
     return;
@@ -124,6 +132,7 @@ async function checkIn() {
     created: now,
     updated: now,
   };
+  if (nstClientId(site)) data.clientId = nstClientId(site);
   S.mine.entries = S.mine.entries.concat([Object.assign({ id }, data)]);
   render();
   try {
@@ -134,7 +143,7 @@ async function checkIn() {
         : "Checked in at " + actual) + (st !== actual ? " · paid from " + st : ""),
     );
   } catch (e) {
-    toast("Couldn't check in. Ask James to check you're an Editor.");
+    toast(`Couldn't check in. Ask ${bossFirst()} to check you're an Editor.`);
   }
 }
 async function checkOut(e) {
@@ -240,13 +249,22 @@ function empTime() {
           const e = S.mine.entries.find((x) => x.id === r.dataset.id);
           if (!e) return;
           if (e.approved || e.billed) {
-            toast("This has been approved or billed. Ask James if it needs changing.");
+            toast(`This has been approved or billed. Ask ${bossFirst()} if it needs changing.`);
             return;
           }
           openEntry("job", e);
         }),
     );
   if ($("main").querySelector(".ci-in")) $("main").querySelector(".ci-in").onclick = checkIn;
+  $("main")
+    .querySelectorAll(".ci-diff")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          const e = S.mine.entries.find((x) => x.id === b.dataset.id);
+          if (e) otmAsk(e);
+        }),
+    );
   const co = $("main").querySelector(".ci-out");
   if (co)
     co.onclick = () => {
@@ -305,7 +323,7 @@ function empTime() {
           const e = S.mine.entries.find((x) => x.id === b.dataset.id);
           if (!e) return;
           if (e.approved) {
-            toast("This entry has been approved. Ask James if it needs changing.");
+            toast(`This entry has been approved. Ask ${bossFirst()} if it needs changing.`);
             return;
           }
           openEntry(e.type, e);
@@ -337,7 +355,7 @@ function openEntry(type, e, forWho) {
   openSheet(
     `<h3 id="sheettitle">${e ? "Edit" : "Add"} ${type === "hours" ? "timesheet day" : "day work / job time"}</h3>${px ? `<div class="notice" style="margin:0">For <b>${esc(px.name)}</b>, filled in by you.</div>` : ""}${forWho ? `<div class="who">For <b>${esc(nameOf(forWho))}</b>. They'll see the change straight away.</div>` : ""}
     <label for="f-date">Date<input id="f-date" type="date" required value="${esc(defDate)}"></label>
-    ${pickField("f-job", "Site", siteNames(), e ? e.job : lastOf(srcEntries, () => true, "job"), "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("f-job", "Site or job", siteNames(), e ? e.job : lastOf(srcEntries, () => true, "job"), "e.g. 12 High Street", true, nstGroups())}
     ${
       type === "hours"
         ? `<div class="grid3">
@@ -365,7 +383,7 @@ function openEntry(type, e, forWho) {
         <label class="btn fhpickbtn" style="margin-top:6px">📷 Add photos<input type="file" id="f-ph" accept="image/*" multiple data-cam="1"></label><span class="who" id="f-phn"></span>
         <div class="who">They're also saved to the site's photos.</div></div>`
     }
-    <label for="f-notes">Notes (optional)<textarea id="f-notes" maxlength="300" placeholder="${type === "hours" ? "Anything James should know" : "Anything that slowed it down or changed"}">${esc(e ? e.notes : "")}</textarea></label>
+    <label for="f-notes">Notes (optional)<textarea id="f-notes" maxlength="300" placeholder="${type === "hours" ? `Anything ${bossFirst()} should know` : "Anything that slowed it down or changed"}">${esc(e ? e.notes : "")}</textarea></label>
     ${formFoot(!!e)}`,
     saveEntry,
     "f-job",
@@ -438,9 +456,11 @@ async function saveEntry() {
     approved: false,
   };
   if (!data.date || !data.job) {
-    showErr("Choose the date and the site.");
+    showErr("Choose the date and the site or job.");
     return;
   }
+  const nstCl = nstClientId(data.job);
+  if (nstCl) data.clientId = nstCl;
   if (formType === "hours") {
     data.start = $("f-start").value;
     if ($("f-open") && $("f-open").checked) {
@@ -520,7 +540,7 @@ async function saveEntry() {
     delete base._src;
     const out = Object.assign(base, { created: (editing && editing.created) || Date.now() }, data, {
       approved: true,
-      editedBy: ownerDisplayName(),
+      editedBy: bossName(),
       editedAt: Date.now(),
     });
     if (!out.open) {
@@ -557,7 +577,7 @@ async function saveEntry() {
     sentToast(r, "Saved:");
     render();
   } catch (err) {
-    showErr("Couldn't save. Ask James to check you're an Editor on this page.");
+    showErr(`Couldn't save. Ask ${bossFirst()} to check you're an Editor on this page.`);
     $("f-save").disabled = false;
   }
 }

@@ -1,5 +1,6 @@
 /* ================= MATERIAL CALCULATOR (owner sets rates, anyone works out quantities) ================= */
 import { calcSave, calcState, fmtN, numv } from "./calculator.js";
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
@@ -48,7 +49,7 @@ function calcMat() {
   const L = lists.find((l) => l.id === C.mcList);
   if (!C.ms) C.ms = { l: "", w: "", d: "", n: "" };
   if (!lists.length) {
-    B.innerHTML = `<div class="empty"><strong>No materials set up yet</strong>${owner ? `Add each material and how much is used per m² or m³. Then anyone can type in the sizes and see how much they need.<br><button class="btn primary" id="mc-new" type="button" style="margin-top:10px">+ Add a material</button> <button class="btn" id="mc-ex" type="button" style="margin-top:10px">Start with 3 examples</button>` : "James hasn't set any up yet."}</div>`;
+    B.innerHTML = `<div class="empty"><strong>No materials set up yet</strong>${owner ? `Add each material and how much is used per m² or m³. Then anyone can type in the sizes and see how much they need.<br><button class="btn primary" id="mc-new" type="button" style="margin-top:10px">+ Add a material</button> <button class="btn" id="mc-ex" type="button" style="margin-top:10px">Start with 3 examples</button>` : `${bossFirst()} hasn't set any up yet.`}</div>`;
   } else
     B.innerHTML = `<div class="mcsimple">
       <div><div class="flabel">Sizes</div><div class="cdims">

@@ -1,22 +1,36 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
+import { clShowBook } from "../clients/address-book.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, empTabs, render } from "../core/tabs-week.js";
+import { ACS } from "./account-setup.js";
 import { brfCardHtml, brfWire } from "./briefing.js";
 import { coData } from "./company-details.js";
 import { jbView } from "./jobs-desk.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
-import { holSettings } from "../planner/holidays.js";
+import { pcTodayCard, pcTodayWire, wuTodayCard, wuTodayWire } from "./week-wrap.js";
 import { kitView } from "../planner/kit-out.js";
 import { eqmView } from "../planner/plant-care.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
-export { NL_SUBS, nlApply, nlGo, nlName, nlOn, nlOpenTab, nlSectionView, todayView };
+export {
+  NL_BY,
+  NL_SUBS,
+  coTileOf,
+  nlApply,
+  nlBrandHtml,
+  nlGo,
+  nlName,
+  nlOn,
+  nlOpenTab,
+  nlSectionView,
+  todayView,
+};
 /* Switched on per device with the "✨ New look" button in the header (kept in jeb.newlook); off = the app as before.
    The old tab row stays in the page, hidden, and the section pages open a tab by pressing its button, so every tab
    behaves exactly as it does from the tab row. Layout agreed in docs/mockups/new-layout. */
@@ -28,6 +42,8 @@ const NL_SECTIONS = [
     [
       "projects",
       "signin",
+      /* Health & safety (CDM and RAMS) under Jobs & clients too (James, Nov 2026) */
+      "hs",
       "clients",
       "leads",
       "planner",
@@ -36,7 +52,6 @@ const NL_SECTIONS = [
       "draw",
       "daywork",
       "samples",
-      "materials",
       "calc",
     ],
   ],
@@ -47,7 +62,7 @@ const NL_SECTIONS = [
     "People",
     ["people", "firms", "selfemp", "inductions", "wages", "time", "training", "chat"],
   ],
-  ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers", "materials"]],
+  ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers"]],
   /* Accounts: the money pages, their own area (James, Nov 2026) */
   ["money", "Accounts", ["accounts", "sales", "invoices", "cis", "costs", "wages"]],
   /* Estimating: its own area, apart from the money pages (James, Nov 2026) */
@@ -71,12 +86,14 @@ const NL_ICON = {
   setup:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
 };
+/* Orders and Materials are off James's menus (11 Nov 2026): trades' materials requests still reach him from
+   Today ("Materials asked for"); price requests come back under Estimating once the Job Pack Estimator is in */
 /* each section's page: groups of tabs, as in the layout pictures (a third item true = only James sees it) */
 const NL_GROUPS = {
   jobs: [
-    ["Jobs and sites", ["projects", "signin", "planner", "daywork", "photos", "draw"]],
+    ["Jobs and sites", ["projects", "signin", "hs", "planner", "daywork", "photos", "draw"]],
     ["Clients", ["clients", "leads", "portal", "samples"]],
-    ["Materials and tools", ["materials", "calc"]],
+    ["Vans, tools and plant", ["calc"]],
   ],
   people: [
     ["Your team", ["people", "firms", "selfemp", "inductions", "training", "chat"]],
@@ -88,7 +105,7 @@ const NL_GROUPS = {
   ],
   paper: [
     ["Health & safety", ["hs", "checks", "jobs", "me"]],
-    ["Company and suppliers", ["policies", "suppliers", "materials"]],
+    ["Company and suppliers", ["policies", "suppliers"]],
   ],
 };
 /* pages that live inside another page (an Accounts tab, a pop-up from Setup or the planner): listed on their
@@ -154,7 +171,7 @@ const NL_SUBS = [
     "veh",
     "🚐 Vehicles & plant",
     "jobs",
-    "Materials and tools",
+    "Vans, tools and plant",
     "van mot service servicing insurance road tax due",
     () => eqmView(),
   ],
@@ -162,17 +179,20 @@ const NL_SUBS = [
     "kit",
     "🧰 Tools & plant: who has what",
     "jobs",
-    "Materials and tools",
+    "Vans, tools and plant",
     "book out back in qr sticker equipment",
     () => kitView(),
   ],
   [
-    "orders",
-    "📦 Orders & deliveries",
+    "addrbook",
+    "📒 Address book",
     "jobs",
-    "Materials and tools",
-    "purchase order delivery price ask quote merchant",
-    () => nlSub("suppliers", { merTab: "orders" }),
+    "Clients",
+    "contacts people phone numbers emails",
+    () => {
+      clShowBook(true);
+      nlGo("clients");
+    },
   ],
   [
     "portalset",
@@ -184,11 +204,11 @@ const NL_SUBS = [
   ],
   [
     "hols",
-    "🌴 Holiday year and allowances",
+    "🌴 Holidays & leave: requests, booked and allowances",
     "people",
     "Time and pay",
-    "leave time off bank holidays",
-    () => holSettings(),
+    "leave time off bank holidays holiday year allowance",
+    () => nlSub("planner", { pmode: "hol" }),
   ],
 ];
 function nlSub(otab, f) {
@@ -219,6 +239,27 @@ function nlSet(v) {
 /* The new look is the layout, on every screen, for good (James, Nov 2026): there is no switch back. Only automated
    test browsers (navigator.webdriver) start in the old look, which the older tests are written for, and keep the
    switch; tests/features/h416.js switches it on itself. */
+/* the company's letters for its square: a leading word in capitals ("JEB"), else the first letters of its words */
+const coTileOf = (name) => {
+  const n = String(name || "").trim();
+  return (/^[A-Z]{2,4}\b/.exec(n) || [
+    n
+      .split(/\s+/)
+      .map((w) => w[0] || "")
+      .join("")
+      .slice(0, 3)
+      .toUpperCase(),
+  ])[0];
+};
+/* the top of the side menu (iPad, computer): the company first – its square, the first word bold and the rest under
+   it – as in James's "JEB first, SiteHQ small" design (Nov 2026); used by the owner's, trades' and clients' menus */
+function nlBrandHtml(name) {
+  const n = String(name || "").trim();
+  const [w1, ...rest] = n.split(/\s+/);
+  return `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(coTileOf(n))}</span><span class="nl-bn"><b>${esc(w1 || "SiteHQ")}</b>${rest.length ? `<span>${esc(rest.join(" "))}</span>` : ""}</span></div>`;
+}
+/* the small credit at the foot of the side menu: SiteHQ by Stranix */
+const NL_BY = `<div class="nl-by" aria-label="SiteHQ by Stranix"><span class="nl-sq">Site<span>HQ</span></span><span>by</span><svg viewBox="-124 -124 248 248" width="12" height="12" aria-hidden="true"><polyline points="86.6,-5 86.6,-50 0,-100 -86.6,-50 86.6,50 0,100 -86.6,50 -86.6,5" fill="none" stroke="#D0101C" stroke-width="36" stroke-linejoin="miter" stroke-miterlimit="4"/></svg><b>STRANIX</b></div>`;
 const nlOn = () => {
   /* My forms (S.preview: James filling in forms as himself) keeps the new look too */
   if (!navigator.webdriver) return !!S.owner;
@@ -310,21 +351,15 @@ function nlApply() {
   const cur = S.preview ? "paper" : nlSecOf(S.otab),
     badge = S.badgeNow || {};
   const coName = (coData().name || "SiteHQ").trim();
-  const tile = (/^[A-Z]{2,4}\b/.exec(coName) || [
-    coName
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 3)
-      .toUpperCase(),
-  ])[0];
+  const tile = coTileOf(coName);
   bar.innerHTML =
-    `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(tile)}</span><b>SiteHQ</b></div>` +
+    nlBrandHtml(coName) +
     NL_SECTIONS.map(([k, name, tabs]) => {
       const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
       return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "sales" ? "Invoices" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
     }).join("") +
-    `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>`;
+    `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>` +
+    NL_BY;
   $("nl-add").onclick = qaOpen;
   /* the page title: the date above it on Today */
   const hd = document.querySelector("header.top>div");
@@ -446,6 +481,7 @@ function todayView() {
   const needs = NL_NEEDS.filter(([k]) => badge[k] > 0);
   $("main").innerHTML = `<div class="nl-today">
     <button type="button" class="nl-search" id="nl-search"><span aria-hidden="true">🔍</span> Search a job, a name, or RAMS, MOT, snags…</button>
+    ${ACS.cardHtml("today")}
     ${brfCardHtml()}
     ${
       needs.length
@@ -459,6 +495,8 @@ function todayView() {
     }
     ${tdwCard()}
     ${jbTodayCard()}
+    ${pcTodayCard()}
+    ${wuTodayCard()}
     ${wpCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
@@ -467,10 +505,13 @@ function todayView() {
     ${webEnqNew().length ? `<button type="button" class="nl-card nl-web" id="nl-web"><b>🌐 ${webEnqNew().length} new enquir${webEnqNew().length === 1 ? "y" : "ies"} from your website</b><span class="who">Tap to see and make quick enquiries</span></button>` : ""}
   </div>`;
   $("nl-search").onclick = () => searchOpen("");
+  ACS.wire();
   brfWire();
   tdWire();
   tdDeskWire();
   jbTodayWire();
+  pcTodayWire();
+  wuTodayWire();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();

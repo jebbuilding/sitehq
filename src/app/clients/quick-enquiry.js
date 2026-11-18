@@ -12,10 +12,19 @@ import {
 import { CL_STAGES, clStage, openClientForm, saveClient } from "./clients.js";
 import { clDocsHtml, wireClDocs } from "./documents.js";
 import { clGdprHtml, wireClGdpr } from "./gdpr-consent.js";
+import { mjEdit } from "./more-jobs.js";
 import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
+import { PROP } from "./property-info.js";
 import { clientPdf } from "./record-pdf.js";
 import { clMediaHtml, wireClMedia } from "./sketches.js";
-import { clAddPlan, clAddr, clPlanListHtml, clStepsHtml, wireClSteps } from "./stages-planner.js";
+import {
+  clAddPlan,
+  clAddr,
+  clAddrLines,
+  clPlanListHtml,
+  clStepsHtml,
+  wireClSteps,
+} from "./stages-planner.js";
 import { webEnqFiled } from "./web-enquiries.js";
 import { $, addDays, esc, gbp, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -246,11 +255,21 @@ function visitWatch() {
     break;
   }
 }
+/* the client's own details at the top of their page, apart from the job: name, phone, email (written out, tap to
+   email) and the address on separate lines (James, Nov 2026) */
+function clDetailsBox(c) {
+  const tel = String(c.phone || "").replace(/\s+/g, "");
+  const lines = clAddrLines(c);
+  return `<div class="card cldet"><div class="flabel" style="margin:0 0 6px">👤 Client details</div>
+    <div class="cldet-row"><span class="who">Name</span><b>${esc(c.name || "")}</b></div>
+    <div class="cldet-row"><span class="who">Phone</span>${tel ? `<a href="tel:${esc(tel)}">📞 ${esc(c.phone)}</a>` : '<span class="who">Not added</span>'}</div>
+    <div class="cldet-row"><span class="who">Email</span>${c.email ? `<a href="mailto:${esc(c.email)}" class="cldet-mail">✉ ${esc(c.email)}</a>` : '<span class="who">Not added</span>'}</div>
+    <div class="cldet-row"><span class="who">Address</span>${lines.length ? `<span class="cldet-addr">${lines.map(esc).join("<br>")}</span>` : '<span class="who">Not added</span>'}</div></div>`;
+}
 function viewClient(c) {
   const tel = (c.phone || "").replace(/\s+/g, "");
   const addr = [c.address, c.postcode].filter(Boolean).join(", ");
   const rows = [
-    ["Property", addr],
     ["Work", c.work],
     ["Budget", c.budget],
     ["Timescale", c.timescale],
@@ -374,10 +393,12 @@ function viewClient(c) {
     ${!c.frontPhoto ? `<div class="fhaddrow"><span class="who">🏠 Photo of the front of the house</span><label class="btn primary fhpickbtn">📷 Take photo<input type="file" class="cv-fhin" accept="image/*" capture="environment"></label><label class="btn fhpickbtn">🖼 Choose<input type="file" class="cv-fhin" id="cv-fhadd" accept="image/*"></label></div>` : ""}
     ${c.frontPhoto ? `<button type="button" class="fhhero" id="cv-fh"><img src="${blobUrl(c.frontPhoto)}" alt="Front of the property">${addr ? `<span>📍 ${esc(addr)}</span>` : ""}</button>` : ""}
     <div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}" style="text-decoration:none">📞 Call</a><a class="btn" href="sms:${esc(tel)}" style="text-decoration:none;color:var(--ink)">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}" style="text-decoration:none;color:var(--ink)">✉ Email</a>` : ""}${addr || c.lat != null ? `<button class="btn maplink" type="button" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Map</button>` : ""}<button class="btn" id="cv-msg" type="button">💬 Message in app</button></div>
+    <div class="actions">${c.site ? `<button class="btn primary" id="cv-gosite" type="button">🏗️ Open the site</button>` : `<button class="btn primary" id="cv-site" type="button">🏗️ Make it a site</button><span class="who">Moves them to Active site</span>`}</div>
+    ${clDetailsBox(c)}
     ${c.visit && c.visit.date >= iso(new Date()) ? `<div class="notice" style="margin-top:10px">📅 Visit booked <b>${esc(shortDay(c.visit.date))} ${esc(c.visit.time || "")}</b> · reminder ${VISIT_REMIND_MIN / 60} hour before <button type="button" class="linkbtn" id="cv-ics">📲 Add to phone calendar</button></div>` : ""}
     ${c.quick ? `<div class="notice warn" style="margin-top:10px">⚡ Quick enquiry: only the basics so far. <button type="button" class="btn primary" id="cv-full" style="margin-left:6px">Fill in the full form</button></div>` : ""}
     ${clStepsHtml(c)}
-    <div class="flabel" style="margin-top:12px">Contact &amp; details</div>
+    <div class="flabel" style="margin-top:12px">🔨 This job</div>
     <label for="cv-stage" style="max-width:320px">Stage<select id="cv-stage">${CL_STAGES.map(([k, l]) => `<option value="${k}" ${k === c.stage ? "selected" : ""}>${l}</option>`).join("")}</select></label>
     <div class="details" style="margin-top:10px">${rows.map(([l, v]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join("")}</div>
     ${clMainHtml(c)}${clContactsHtml(c)}${
@@ -393,7 +414,7 @@ function viewClient(c) {
             )
             .join("")}</div></div>`
         : ""
-    }${clInvHtml(c)}
+    }${PROP.viewHtml(c)}${clInvHtml(c)}
     ${clGdprHtml(c)}
     ${
       clientSites(c).length
@@ -407,7 +428,7 @@ function viewClient(c) {
     }
     ${c.lat != null ? `<div class="mmwrap">${miniMap(c.lat, c.lon, { addr, label: c.name, cid: c.id })}</div>` : ""}
     <div class="clpin">${c.lat != null ? `📍 <b>Pin saved</b> <span class="who">${(+c.lat).toFixed(5)}, ${(+c.lon).toFixed(5)}${(c.pins || []).length > 1 ? " · " + c.pins.length + " pins" : ""}</span> <button type="button" class="linkbtn maplink" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">Open / send</button>` : `<span class="who">No pin on the property yet.</span>`} <button type="button" class="pillbtn" id="cv-pin">📍 ${c.lat != null ? "Add another pin" : "Drop a pin"}</button></div>
-    ${CJOBS.jobsOf(c).length ? `<div class="flabel" style="margin-top:12px">🔨 Jobs (${CJOBS.jobsOf(c).length})</div>${CJOBS.rowJobs(c).replace('<div class="abjobs">', '<div class="abjobs cvjobs">')}` : ""}
+    <div class="flabel" style="margin-top:12px">🔨 Jobs${CJOBS.jobsOf(c).length ? " (" + CJOBS.jobsOf(c).length + ")" : ""}</div>${CJOBS.rowJobs(c).replace('<div class="abjobs">', '<div class="abjobs cvjobs">')}<div class="actions"><button type="button" class="btn" id="cv-more">＋ Another job</button><button type="button" class="btn" id="cv-morefull">📝 Another job – full details</button></div>
     ${c.stage === "contact" ? `<div class="notice" style="margin-top:12px">📒 In your address book – no job on at the moment. Tap <b>📝 New enquiry</b> when they ask for something.</div>` : ""}
     ${c.desc ? `<div class="flabel" style="margin-top:12px">What they want</div><div class="talkbody pnotes">${esc(c.desc)}</div>` : ""}
     ${
@@ -442,7 +463,7 @@ ${clMediaHtml(c)}
     <div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
       const j = (S.jobFiles || []).find((x) => x.clientId === c.id);
       return j && (j.items || []).length ? " (" + j.items.length + ")" : "";
-    })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button>${c.site ? `<button class="btn" id="cv-gosite" type="button">Open the site</button>` : `<button class="btn hv" id="cv-site" type="button">Make it a site</button>`}</div>
+    })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button></div>
     ${clDocsHtml(c)}
     ${(c.recordPdfs || []).length ? `<div class="card" style="margin-top:12px;padding:10px 12px"><b>📄 Client PDFs saved to this job</b>${c.recordPdfs.map((r, i) => `<div class="attrow"><button type="button" class="incrow cv-rpo" data-i="${i}"><span class="attic" aria-hidden="true">📄</span><span><b>${esc(r.name)}</b><br><span class="who">${esc(stamp(r.at))}${r.pages ? " · " + r.pages + " page" + (r.pages === 1 ? "" : "s") : ""}</span></span></button><button type="button" class="iconbtn cv-rpd" data-i="${i}" aria-label="Download" title="Download">⬇</button><button type="button" class="iconbtn cv-rpx" data-i="${i}" aria-label="Delete" title="Delete" style="color:var(--danger)">🗑</button></div>`).join("")}</div>` : ""}
     <div class="actions" style="margin-top:18px;justify-content:flex-end"><button class="btn delbtn" id="cv-delete" type="button">🗑 Delete client</button></div>`);
@@ -489,6 +510,7 @@ ${clMediaHtml(c)}
     closeViewer();
     openClientForm(c, "enquiry");
   };
+  PROP.wireView();
   if ($("cv-full"))
     $("cv-full").onclick = () => {
       closeViewer();
@@ -517,6 +539,8 @@ ${clMediaHtml(c)}
   document
     .querySelectorAll(".cvjobs .abjob")
     .forEach((b) => (b.onclick = () => CJOBS.view(c, b.dataset.j)));
+  if ($("cv-more")) $("cv-more").onclick = () => mjEdit(c, null, false);
+  if ($("cv-morefull")) $("cv-morefull").onclick = () => mjEdit(c, null, true);
   DWS.wireClient(c);
   SAMPLES.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
   $("cv-visit").onclick = () => {
@@ -558,7 +582,10 @@ ${clMediaHtml(c)}
         const rec = await saveClient(
           Object.assign({}, c, {
             site: name,
-            stage: ["enquiry", "visit", "quote"].includes(c.stage) ? "won" : c.stage,
+            /* a site means work is on: they move to On site (James, Nov 2026) */
+            stage: ["enquiry", "visit", "quote", "won", "contact"].includes(c.stage)
+              ? "onsite"
+              : c.stage,
             notes: (c.notes || []).concat([
               { text: "Added as a site: " + name, at: Date.now(), auto: true },
             ]),

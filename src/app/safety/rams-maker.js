@@ -1,5 +1,6 @@
 /* ===== 📝 RAMS maker: copy your existing Word RAMS to a new site, filling in the blanks ===== */
 import { clAddr } from "../clients/stages-planner.js";
+import { bossName, coName } from "../core/company-names.js";
 import { $, esc, iso, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -178,8 +179,8 @@ function ramsMaker(site) {
     d.setMonth(d.getMonth() + 6);
     return iso(d);
   })();
-  const owner = S.ownerName || (S.settings || {}).ownerName || "James Bray";
-  const co = ((S.settings || {}).company || {}).name || "JEB Building Services";
+  const owner = bossName();
+  const co = coName();
   let src = srcs.find((x) => !same(x, site)) || srcs[0];
   let old = {};
   const nv0 = {

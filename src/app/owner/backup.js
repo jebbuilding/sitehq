@@ -1,4 +1,5 @@
 /* ================= BACKUP ================= */
+import { coShort } from "../core/company-names.js";
 import { mapDocs } from "../core/data.js";
 import { $, iso, stamp, toast } from "../core/helpers.js";
 import { TR_COLLS, fetchTrade } from "../core/live-feed.js";
@@ -227,7 +228,7 @@ async function makeBackup(withFiles, prog) {
     compressionOptions: { level: 5 },
   });
   try {
-    await S.dl.save({ filename: `JEB backup ${iso(new Date())}.zip`, data: blob });
+    await S.dl.save({ filename: `${coShort()} backup ${iso(new Date())}.zip`, data: blob });
   } catch (e) {
     if (e && e.code === "declined") return false;
     throw e;

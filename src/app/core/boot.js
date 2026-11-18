@@ -13,6 +13,7 @@ import { initDictation } from "./dictation.js";
 import { $ } from "./helpers.js";
 import { wrapDb } from "./live-feed.js";
 import { refreshNowWx, startNowBar } from "./now-bar.js";
+import { initOpening } from "./opening-screen.js";
 import { initReportIssue } from "./report-issue.js";
 import { initSheet } from "./sheet.js";
 import { initSpellCheck } from "./spell-check.js";
@@ -58,6 +59,7 @@ initSpellCheck();
 initDictation();
 initPhotoTest();
 initJobStory();
+initOpening();
 
 /* get the platform, work out who is signed in, start the app */
 (async () => {
@@ -77,7 +79,7 @@ initJobStory();
     $("weekbar").hidden = true;
     $("tabs").hidden = true;
     $("main").innerHTML =
-      `<div class="empty"><strong>Sign in to use the app</strong>Open this page while signed in to claude.ai, using the email address James invited.</div>`;
+      `<div class="empty"><strong>Sign in to use the app</strong>Open this page while signed in to claude.ai, using the email address you were invited with.</div>`;
     return;
   }
   const dl2 = dl
@@ -217,6 +219,10 @@ initJobStory();
         S.purchaseOrders = all.filter((t) => t.kind === "purchaseorder");
         S.siteDiary = all.filter((t) => t.kind === "sitediary");
         S.bcReports = all.filter((t) => t.kind === "bcreport");
+        S.rfis = all.filter((t) => t.kind === "rfi");
+        S.docFolds = all.filter((t) => t.kind === "docfolders");
+        S.wnSnooze = all.find((t) => t.kind === "wnsnooze") || null;
+        S.stageTpls = all.filter((t) => t.kind === "stagetpl");
         S.programmes = all.filter((t) => t.kind === "programme");
         S.vatReturns = all.filter((t) => t.kind === "vatreturn");
         S.rfqs = all.filter((t) => t.kind === "rfq");

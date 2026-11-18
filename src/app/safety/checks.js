@@ -1,4 +1,5 @@
 /* ================= CHECKS ================= */
+import { bossFirst } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import { $, esc, iso, monday, parse, shortDay, toast } from "../core/helpers.js";
 import {
@@ -131,13 +132,13 @@ async function saveCheck(kind) {
     return;
   }
   if (defectsOf(data).length && !data.notes) {
-    showErr("Describe the defect so James knows what to fix.");
+    showErr(`Describe the defect so ${bossFirst()} knows what to fix.`);
     return;
   }
   const pics = [...($("c-photos").files || [])];
   if (pics.length && !S.assets) {
     showErr(
-      "You don't have permission to upload photos. Ask James to make you an Editor on this page.",
+      `You don't have permission to upload photos. Ask ${bossFirst()} to make you an Editor on this page.`,
     );
     return;
   }
@@ -182,7 +183,7 @@ async function saveCheck(kind) {
       r === "queued"
         ? "Check kept on this phone. It will send when you have signal."
         : hasProblem(data)
-          ? "Check submitted. James can see the defect."
+          ? `Check submitted. ${bossFirst()} can see the defect.`
           : "Check submitted",
     );
     render();

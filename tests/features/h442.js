@@ -17,16 +17,18 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#nl-tog');await p.waitForTimeout(500);
  await p.click('.nl-b[data-s=jobs]');await p.waitForTimeout(500);
  ok(await p.isVisible('.jb-tabs')&&(await p.$$('.jb-item')).length>=2,'Jobs & clients: tabs and the jobs down the side');
+ const tl=await p.evaluate(()=>[...document.querySelectorAll('.jb-tabs button')].map(b=>b.textContent.trim()));
+ ok(tl.every(t=>/^[^A-Za-z]/.test(t)),'every tab starts with its emoji: '+tl.join(' | '));
  await p.click('.jb-item[data-s="4 Rolle Road, Exmouth"]');await p.waitForTimeout(400);
  let m=await p.innerText('.jb-job');
  ok(/4 Rolle Road, Exmouth/.test(m)&&/Sue Jones/.test(m),'the chosen job, with its client');
  ok(/£1,000\.00\s+spent of £20,000\.00 quoted/.test(m)&&/Materials and hire £1,000\.00/.test(m),'money on the job: £1,000 spent of the £20,000 estimate');
  ok(/Groundworks/.test(m)&&/Second fix/.test(m),'the stages');
- await p.click('.jb-st[data-i="2"]');await p.waitForTimeout(500);
+ await p.click('.jb-st[data-i="2"]');await p.waitForTimeout(500);if(await p.isVisible('#f-save')){await p.click('#f-save');await p.waitForTimeout(500);}
  const site=Object.entries(await st()).find(([k,v])=>/^sites\//.test(k)&&v&&v.name==='4 Rolle Road, Exmouth');
  ok(site&&site[1].stage===2,'tapping First fix moves the job on (stage saved on the site)');
  ok(await p.getAttribute('.jb-st[data-i="2"]','aria-pressed')==='true'&&/First fix/.test(await p.innerText('.jb-item[data-s="4 Rolle Road, Exmouth"]')),'First fix shown as the stage, in the list too');
- await p.click('#jb-sted');await p.waitForTimeout(200);await p.fill('#jb-stl','Strip out\nFirst fix\nBoarding\nDecorating');await p.click('#f-save');await p.waitForTimeout(500);
+ await p.click('#jb-sted');await p.waitForTimeout(200);await p.fill('#stg-lines','Strip out\nFirst fix\nBoarding\nDecorating');await p.click('#f-save');await p.waitForTimeout(500);
  ok((await p.$$('.jb-st')).length===4&&/Boarding/.test(await p.innerText('.jb-stages')),'stages changed for this job');
  await p.screenshot({path:'h442-jobs.png'});
  await p.click('.jb-tabs button[data-v=more]');await p.waitForTimeout(300);

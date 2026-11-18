@@ -1,20 +1,24 @@
 /* ================= TRADES' LOOK: the trades' app in the new look – a Today page, five buttons along the bottom and everything else under More ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, addDays, esc, iso, shortDay, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { curTab, empTabs, render } from "../core/tabs-week.js";
 import { openFile } from "../files/in-app-files.js";
 import { coData } from "./company-details.js";
+import { NL_BY, coTileOf, nlBrandHtml } from "./today.js";
+import { tsiCardHtml, tsiWire } from "./trade-signin.js";
 import { amForeman } from "../people/foreman.js";
 import { qrsTradeScan } from "../planner/qr-stickers.js";
 import { planEntries } from "../planner/time-off.js";
 import { tradeMakersHtml, wireTradeMakers } from "../purchasing/merchants.js";
 import { openIncident } from "../safety/accidents.js";
 import { KINDS } from "../safety/checklists.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { signOnly } from "../sites/sign-in-book.js";
 export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
 /* The trades get the same look as James (body.nl-on, the styles in owner.css): no wall of buttons at the top, but a bar
-   along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 📋 Forms, 📷 Photos and
-   ☰ More. The trades don't see anything to do with timesheets or day work (James, Nov 2026): no Time or Day work pages,
+   along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 🏗️ Sites, 📷 Photos and
+   ☰ More. The trades have no timesheets (James, Nov 2026): no Time page (Day work is in More),
    and Sign in is the plain site sign-in book (sites/sign-in-book.js, siPlain). Today lists their dates from the planner
    (today and what's coming up), whether they're signed in, and what's waiting for them (forms, things to sign, checks
    due, talks, policies, chat), each a tap away; big buttons for the things they do most. More lists every other page they're allowed (Setup › People & access), in
@@ -23,21 +27,22 @@ export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
 const TL_BAR = [
   ["home", "Today", "🏠"],
   ["planner", "Planner", "🗓️"],
-  ["jobs", "Forms", "📋"],
+  ["plans", "Sites", "🏗️"],
   ["photos", "Photos", "📷"],
   ["more", "More", "☰"],
 ];
 const TL_GROUPS = [
-  ["Work", ["foreman", "signin", "plans", "draw", "calc"]],
+  ["Work", ["foreman", "jobs", "mydw", "signin", "plans", "draw", "calc"]],
   ["Materials and merchants", ["materials", "suppliers", "brochures"]],
   ["Safety and training", ["training"]],
   ["Policies and insurance", ["policies"]],
   ["Money", ["receipts", "invoices"]],
   ["You and the team", ["chat", "details"]],
 ];
-/* left out of More (James, Nov 2026): day work (nothing to do with timesheets or day work) and Reports; an
+/* left out of More (James, Nov 2026): Reports (Day work came back, 11 Nov 2026); an
    accident or near miss is reported from the button on Today, and a van check by scanning its sticker */
-const TL_MORE_HIDE = ["mydw", "checks"];
+/* Sign in is on Today and at the top of Sites, found by the phone's location (owner/trade-signin.js) */
+const TL_MORE_HIDE = ["checks", "signin"];
 let tlLanded = false;
 const tlOn = () => {
   if (S.owner || ownerMode() || S.client) return false;
@@ -45,7 +50,7 @@ const tlOn = () => {
   return !!store.get("jeb.tradelook", false);
 };
 /* the tabs this person has, as [key, label] (role access and sign-in-only already applied) */
-const TL_HIDE = ["time", "mydw"];
+const TL_HIDE = ["time"];
 const tlTabs = () =>
   (amForeman() ? [["foreman", "🦺 Foreman"]] : [])
     .concat(empTabs())
@@ -99,22 +104,18 @@ function tlApply() {
     .reduce((s, [k]) => s + (badge[k] || 0), 0);
   const cur = inBar.has(t) ? t : "more";
   const co = (coData().name || "SiteHQ").trim();
-  const tile = co
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
+  const tile = coTileOf(co);
   /* the letters in the square beside the page title, as on James's */
   if (hd) hd.dataset.tile = tile;
   bar.innerHTML =
-    `<div class="nl-brand"><span class="nl-tile2" aria-hidden="true">${esc(tile)}</span><b>SiteHQ</b></div>` +
+    nlBrandHtml(co) +
     items
       .map(([k, l, i]) => {
         const n = k === "more" ? moreN : k === "home" ? 0 : badge[k] || 0;
         return `<button type="button" class="nl-b tl-b" data-t="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic"><span class="tl-i" aria-hidden="true">${i}</span>${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l">${esc(l)}</span></button>`;
       })
-      .join("");
+      .join("") +
+    NL_BY;
   bar.querySelectorAll(".tl-b").forEach((b) => (b.onclick = () => tlGo(b.dataset.t)));
 }
 /* 🏠 Today */
@@ -144,9 +145,6 @@ function tlHome() {
       : dayWord(p.from) + (p.to && p.to !== p.from ? " – " + shortDay(p.to) : "");
   /* stickers on the vans and machines: Do a check goes straight to the camera */
   const tagged = (S.equipment || []).some((e) => e.tag && KINDS[e.kind]);
-  /* signed in? */
-  const sins = (S.mine.signins || []).filter((x) => x.date === today);
-  const inNow = sins.find((x) => !x.out);
   /* what's waiting */
   const waits = [
     ["jobs", badge.jobs, "form, job or to-do to do", "forms, jobs or to-dos to do"],
@@ -163,15 +161,6 @@ function tlHome() {
   ].filter(([k, n]) => n && have.has(k));
   const tiles = [
     have.has("foreman") ? ["foreman", "🦺 Foreman", "Your team and sites today"] : null,
-    signOnly(S.me) || have.has("signin")
-      ? [
-          "signin",
-          inNow ? "📍 Signed in" : "📍 Sign in",
-          inNow
-            ? `At ${inNow.site || "site"} since ${inNow.in || ""}`
-            : "At a site, when you get there",
-        ]
-      : null,
     /* Reports is out of the trades' app; a van or machine check is still one scan of its sticker away */
     have.has("checks") && tagged
       ? ["__scan", "🚐 Do a check", "Opens the camera – point it at the van or machine's sticker"]
@@ -187,13 +176,14 @@ function tlHome() {
   ].filter(Boolean);
   $("main").innerHTML = `<div class="nl-today tl-home">
     <h2 class="nl-h">${esc(hello)}${first ? ", " + esc(first) : ""}</h2>
+    ${signOnly(S.me) || have.has("signin") || have.has("plans") ? tsiCardHtml() : ""}
     <section class="nl-card"><div class="nl-cardh"><h2>📅 Your dates</h2></div>
       ${
         dates.length
           ? dates
               .map(
                 (p) =>
-                  `<div class="nl-row tl-date"><b>${esc(when(p))}</b><span>${esc(p.site || p.title || "Booked")}</span>${p.site && p.title ? `<span class="who">${esc(String(p.title).replace(" – " + p.site, ""))}</span>` : ""}${p.type === "holiday" ? `<span class="who">Time off</span>` : ""}</div>`,
+                  `<div class="nl-row tl-date"><b>${esc(when(p))}</b><span>${esc((p.site && siteLabel(p.site)) || p.title || "Booked")}</span>${p.site && jobNameOf(p.site) ? `<span class="who">📍 ${esc(p.site)}</span>` : ""}${p.site && p.title ? `<span class="who">${esc(String(p.title).replace(" – " + p.site, ""))}</span>` : ""}${p.type === "holiday" ? `<span class="who">Time off</span>` : ""}</div>`,
               )
               .join("")
           : `<div class="who">Nothing booked for you on the planner yet.</div>`
@@ -217,6 +207,7 @@ function tlHome() {
       )
       .join("")}</div>
   </div>`;
+  if ($("tsi-card")) tsiWire();
   $("main")
     .querySelectorAll(".tl-go")
     .forEach(
@@ -246,7 +237,7 @@ function tlBrochures() {
                   `<button type="button" class="nl-row2 tl-bro" data-id="${esc(d.id)}"><span class="nl-rl">📄 ${esc(d.title || d.fileName || "Brochure")}<span class="who"> ${esc(d.uploaded ? shortDay(iso(new Date(d.uploaded))) : "")}${d.note ? " · " + esc(d.note) : ""}</span></span><span class="nl-chev" aria-hidden="true">›</span></button>`,
               )
               .join("")
-          : `<div class="who">Nothing sent to you yet. When James sends you a brochure or a supplier's details, it's here.</div>`
+          : `<div class="who">Nothing sent to you yet. When ${esc(bossFirst())} sends you a brochure or a supplier's details, it's here.</div>`
       }
     </section>
     <section class="nl-card"><div class="nl-cardh"><h2>🏭 Suppliers and their brochures</h2></div>${tradeMakersHtml()}</section>

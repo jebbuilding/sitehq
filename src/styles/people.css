@@ -44,3 +44,4 @@
 .pv-polrow{display:flex;align-items:center;gap:8px;min-height:44px}
 .inv-box{padding:12px;display:flex;flex-direction:column;gap:6px;border-color:var(--accent)}
 .inv-tick{font-size:16px;color:var(--ink);min-height:44px;white-space:normal}
+.pa-offp{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}.pa-offp select{width:auto}

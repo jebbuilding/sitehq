@@ -82,7 +82,7 @@ try {
     await askForCode(page, "Nobody@Example.test");
     check(await step(page, "code"), "no account: the code screen is shown all the same");
     const forNobody = await text(page, "#sitehq-signin");
-    check(/If nobody@example\.test is set up for SiteHQ/.test(forNobody) && /ask James to add you/.test(forNobody), "no account: it says a code was sent if the address is set up, and to ask James if nothing comes");
+    check(/If nobody@example\.test is set up for SiteHQ/.test(forNobody) && /ask whoever runs your company.s account to add you/.test(forNobody), "no account: it says a code was sent if the address is set up, and to ask James if nothing comes");
     check(await page.isDisabled("#signin-again"), "a new code cannot be asked for straight away");
     await enterCode(page, "12345678");
     check(/That code isn’t right/.test(await error(page)), "no account: any code is \"not right\"");

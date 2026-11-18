@@ -5,6 +5,7 @@ import { clientsView } from "../clients/address-book.js";
 import { portalTab } from "../clients/portal-calendar.js";
 import { renderClient, renderClientJoin, renderWelcomeChoice } from "../clients/portal.js";
 import { signoffsTab } from "../clients/sign-offs.js";
+import { bossFirst } from "./company-names.js";
 import { $, addDays, esc, iso, monday, store, toast } from "./helpers.js";
 import { drawNowBar } from "./now-bar.js";
 import { issueBadge } from "./report-issue.js";
@@ -35,7 +36,8 @@ import {
   wireSentTodos,
   wireTradeTodos,
 } from "../owner/todo-lists.js";
-import { tlApply, tlBrochures, tlHome, tlMore } from "../owner/trade-look.js";
+import { tlApply, tlBrochures, tlHome, tlMore, tlOn } from "../owner/trade-look.js";
+import { tsiSitesTop } from "../owner/trade-signin.js";
 import { whatsNewHTML, wireWhatsNew, wnCapture } from "../owner/whats-new.js";
 import { acTabAllowed } from "../people/access.js";
 import { cmpPage } from "../people/companies.js";
@@ -98,7 +100,7 @@ const EMP_TABS = [
   ["plans", "🏗️ Sites"],
   ["checks", "📋 Reports"],
   ["photos", "📷 Photos"],
-  ["materials", "🧰 Materials & tools"],
+  ["materials", "🧰 Materials & tools requests"],
   ["suppliers", "🏪 Merchants"],
   ["receipts", "🧾 Receipts"],
   ["invoices", "📑 Invoices"],
@@ -580,7 +582,7 @@ function render() {
         training: "Training",
         chat: "Chat",
         planner: "Planner",
-        materials: "Materials & tools",
+        materials: "Materials & tools requests",
         receipts: "My receipts",
         details: "My details",
         todo: "My forms",
@@ -630,6 +632,7 @@ function render() {
         wireTradeTodos();
       }
     }
+    if (t === "plans" && tlOn() && !S.f.folder) tsiSitesTop();
     if (t === "plans" || t === "signin") {
       const sb = SIGNSHEET.bannerHtml();
       if (sb) {
@@ -697,7 +700,7 @@ function renderWelcome() {
   $("h1").textContent = "Welcome";
   $("main").innerHTML =
     `<form class="card" id="nameform" style="padding:16px;display:flex;flex-direction:column;gap:12px">
-    <div class="who">Enter your name once so your hours, checks, photos and invoices go to the right person. Only you and James can see them.</div>
+    <div class="who">Enter your name once so your hours, checks, photos and invoices go to the right person. Only you and ${esc(bossFirst())} can see them.</div>
     <label for="nm">Your full name<input id="nm" required maxlength="60" placeholder="e.g. Sam Taylor"></label>
     <button class="btn primary" type="submit">Start</button></form>`;
   $("nameform").onsubmit = async (e) => {
@@ -708,7 +711,7 @@ function renderWelcome() {
     try {
       await S.db.doc("sheets/" + S.me).set({ name: n, joined: Date.now(), updated: Date.now() });
     } catch (err) {
-      toast("Couldn't save. Ask James to make you an Editor on this page.");
+      toast(`Couldn't save. Ask ${bossFirst()} to make you an Editor on this page.`);
     }
   };
 }

@@ -1,4 +1,6 @@
 /* ===== walls that join themselves: mitred corners, T-junctions, layered cavity walls, doors and windows cut into walls ===== */
+import { npsuTie } from "./section-buildups.js";
+import { npWindowSwing } from "./window-plan.js";
 export {
   NP_LIN,
   NP_LINOPTS,
@@ -363,6 +365,21 @@ function npPattern(ctx, style, x0, x1, y0, y1, lw, col) {
   }
   ctx.restore();
 }
+/* a new wall's hatching: lines at 45°, close together */
+function npNewHatch(ctx, x0, x1, y0, y1, lw, col) {
+  const H = Math.abs(y1 - y0),
+    st = Math.max(H * 0.45, lw * 2.5, 2);
+  ctx.save();
+  ctx.lineWidth = Math.max(lw * 0.45, 0.5);
+  ctx.strokeStyle = col;
+  ctx.beginPath();
+  for (let x = x0 - H; x < x1 + H; x += st) {
+    ctx.moveTo(x, y1);
+    ctx.lineTo(x + H, y0);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
 function npDrawWalls(ctx, W) {
   const fillOf = (st, c, o) =>
     o && o.fill && (st === "solid" || st === "white" || st === "block")
@@ -393,9 +410,25 @@ function npDrawWalls(ctx, W) {
       ctx.lineTo(tB[k + 1], s1);
       ctx.lineTo(tA[k + 1], s1);
       ctx.closePath();
-      ctx.fillStyle = fillOf(ly[1], c, o);
+      /* existing and proposed (James, Nov 2026): a wall to knock down is left white (and drawn dashed below) */
+      ctx.fillStyle = o.st === "demo" ? "#ffffff" : fillOf(ly[1], c, o);
       ctx.fill();
-      if (ly[1] === "insul" || ly[1] === "stud") {
+      if (o.st === "new" && (ly[1] === "solid" || ly[1] === "block" || ly[1] === "white")) {
+        /* a new wall: hatched across */
+        ctx.save();
+        ctx.clip();
+        npNewHatch(
+          ctx,
+          Math.min(tA[k], tA[k + 1]),
+          Math.max(tB[k], tB[k + 1]),
+          Math.min(s0, s1),
+          Math.max(s0, s1),
+          w.lw,
+          c,
+        );
+        ctx.restore();
+      }
+      if (o.st !== "demo" && (ly[1] === "insul" || ly[1] === "stud")) {
         ctx.save();
         ctx.clip();
         npPattern(
@@ -422,6 +455,7 @@ function npDrawWalls(ctx, W) {
     ctx.strokeStyle = o.c || "#111";
     ctx.lineCap = "square";
     ctx.lineJoin = "miter";
+    if (o.st === "demo") ctx.setLineDash([w.lw * 4, w.lw * 3]);
     const tA = w.end.a.t,
       tB = w.end.b.t,
       nb = w.bs.length;
@@ -480,7 +514,8 @@ function npDrawWalls(ctx, W) {
     w.cuts.forEach((x) => {
       ctx.fillStyle = "#fff";
       ctx.fillRect(x.t1 + w.lw * 0.5, -w.T / 2 - w.lw, x.t2 - x.t1 - w.lw, w.T + w.lw * 2);
-      ctx.lineWidth = w.lw;
+      /* the reveals; a window's jambs bolder, so it stands out (James, Nov 2026: "you can't see them") */
+      ctx.lineWidth = x.win ? w.lw * 1.4 : w.lw;
       [x.t1, x.t2].forEach((t) => {
         ctx.beginPath();
         ctx.moveTo(t, w.bs[0]);
@@ -488,20 +523,46 @@ function npDrawWalls(ctx, W) {
         ctx.stroke();
       });
       if (x.win) {
+        const lo = Math.min(w.bs[0], w.bs[nb - 1]),
+          hi = Math.max(w.bs[0], w.bs[nb - 1]),
+          D = hi - lo;
+        /* the frame's faces */
         ctx.lineWidth = Math.max(w.lw * 0.6, 0.6);
-        [w.bs[0], w.bs[nb - 1]].forEach((s) => {
+        [lo, hi].forEach((s) => {
           ctx.beginPath();
           ctx.moveTo(x.t1, s);
           ctx.lineTo(x.t2, s);
           ctx.stroke();
         });
-        const gl = Math.max(w.T * 0.06, w.lw);
-        [-gl, gl].forEach((s) => {
+        /* the glass: two lines through the middle with a pale blue tint between */
+        const g1 = lo + D * 0.38,
+          g2 = lo + D * 0.62;
+        ctx.save();
+        ctx.fillStyle = "rgba(56,152,236,0.32)";
+        ctx.fillRect(x.t1, g1, x.t2 - x.t1, g2 - g1);
+        ctx.restore();
+        [g1, g2].forEach((s) => {
           ctx.beginPath();
           ctx.moveTo(x.t1, s);
           ctx.lineTo(x.t2, s);
           ctx.stroke();
         });
+        /* the sill, standing out from the outside face (the window knows which side that is: o.os) */
+        const os = x.o && x.o.os;
+        if (os) {
+          const so = Math.max(D * 0.18, w.lw * 2),
+            ex = Math.min((x.t2 - x.t1) * 0.04, D * 0.3),
+            f = os > 0 ? hi : lo,
+            t = os > 0 ? hi + so : lo - so;
+          ctx.lineWidth = Math.max(w.lw * 0.7, 0.6);
+          ctx.beginPath();
+          ctx.moveTo(x.t1 - ex, f);
+          ctx.lineTo(x.t1 - ex, t);
+          ctx.lineTo(x.t2 + ex, t);
+          ctx.lineTo(x.t2 + ex, f);
+          ctx.stroke();
+        }
+        if (x.o && x.o.wo) npWindowSwing(ctx, x.o.wo, os, x.t1, x.t2, lo, hi, w.lw);
       }
     });
     if (o.k === "tstud") npDrawStuds(ctx, w);
@@ -625,6 +686,8 @@ function npDrawStuds(ctx, w) {
 function npDrawAll(ctx, objs, drawObj, extra) {
   const all = extra ? objs.concat([extra]) : objs;
   ctx.__objs = all;
+  /* build-ups that meet are mitred or stopped at each other's faces */
+  npsuTie(all, ctx.__mm);
   const W = npWallInfo(all);
   const att = W.length ? npWallCuts(W, all) : new Set();
   let done = false;

@@ -1,4 +1,5 @@
 /* ================= MATERIALS & RECEIPTS (stored in the invoices collection with a kind) ================= */
+import { bossFirst } from "../core/company-names.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
 import { $, addDays, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, myDoc, openSheet, showErr } from "../core/sheet.js";
@@ -96,7 +97,7 @@ function matCard(m, owner, who) {
     const n = (m.items || []).length,
       g = (m.items || []).filter((i) => i.ordered).length;
     return `<button type="button" class="entry matc" data-m="${esc(m.id)}" data-w="${esc(who || "")}"><div class="main">
-    <div class="job"><span class="tag ${st[1]}">${st[0]}</span><span class="tag">${owner ? "Sent to " + esc(nameOf(who)) : "From James"}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}${esc(m.site || "No site")}</div>
+    <div class="job"><span class="tag ${st[1]}">${st[0]}</span><span class="tag">${owner ? "Sent to " + esc(nameOf(who)) : `From ${bossFirst()}`}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}${esc(m.site || "No site")}</div>
     ${m.jobTitle ? `<div class="sub"><b style="color:var(--ink)">${esc(m.jobTitle)}</b></div>` : ""}
     <div class="sub">${matCount(m)}${m.needBy ? " · by " + shortDay(m.needBy) : ""} · ${g} of ${n} ticked off</div></div></button>`;
   }
@@ -107,7 +108,7 @@ function matCard(m, owner, who) {
     <div class="job"><span class="tag ${st[1]}">${st[0]}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}${esc(m.site || "No site")}${owner ? ` <span class="who">· ${esc(nameOf(who))}</span>` : ""}</div>
     ${m.jobTitle ? `<div class="sub"><b style="color:var(--ink)">${esc(m.jobTitle)}</b></div>` : ""}
     <div class="sub">${matCount(m)}${m.needBy ? " · needed by " + shortDay(m.needBy) : ""} · sent ${stamp(m.sentAt)}${o && m.status !== "delivered" ? ` · ${o} of ${n} ordered` : ""}</div>
-    ${m.reply ? `<div class="sub"><b>James:</b> ${esc(m.reply)}</div>` : ""}</div></button>`;
+    ${m.reply ? `<div class="sub"><b>${esc(bossFirst())}:</b> ${esc(m.reply)}</div>` : ""}</div></button>`;
 }
 function materialsView() {
   const owner = ownerMode();
@@ -115,7 +116,7 @@ function materialsView() {
   if (!owner) {
     const list = matsOf(S.mine.invoices).sort((a, b) => b.sentAt - a.sentAt);
     html += `<div class="actions"><button class="btn primary" id="newMat" type="button">+ Request materials or tools</button></div>
-      ${list.length ? `<div class="day">${list.map((m) => matCard(m, false)).join("")}</div>` : '<div class="empty"><strong>Nothing yet</strong>Ask James for the materials or tools you need for a job. Lists James sends you appear here too.</div>'}`;
+      ${list.length ? `<div class="day">${list.map((m) => matCard(m, false)).join("")}</div>` : `<div class="empty"><strong>Nothing yet</strong>Ask ${esc(bossFirst())} for the materials or tools you need for a job. Lists ${esc(bossFirst())} sends you appear here too.</div>`}`;
   } else {
     const f = S.f.mst || "open";
     const all = allTeam("invoices").filter((v) => v.kind === "materials");
@@ -307,8 +308,8 @@ function openReceipt() {
       .join("")}</div></div>
     <div class="grid2"><label for="rc-date">Date<input id="rc-date" type="date" required value="${iso(new Date())}"></label>
     <label for="rc-amt">Total £<input id="rc-amt" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="e.g. 62.40"></label></div>
-    <label for="rc-sup">Where from<input id="rc-sup" maxlength="80" list="rc-sups" placeholder="e.g. Shell Exmouth, Travis Perkins" value=""><datalist id="rc-sups">${["Travis Perkins", "Jewson", "Screwfix", "Toolstation", "Selco", "Wickes", "B&Q", "Shell", "BP", "Esso", "Tesco fuel"].map((x) => `<option value="${x}">`).join("")}</datalist></label>
-    <div id="rc-fuel" class="grid2">${pickField("rc-veh", "Vehicle", equipOf("vehicle"), last.vehicle || "", "e.g. WK21 JEB", false)}
+    <label for="rc-sup">Where from<input id="rc-sup" maxlength="80" list="rc-sups" placeholder="e.g. Shell, Travis Perkins" value=""><datalist id="rc-sups">${["Travis Perkins", "Jewson", "Screwfix", "Toolstation", "Selco", "Wickes", "B&Q", "Shell", "BP", "Esso", "Tesco fuel"].map((x) => `<option value="${x}">`).join("")}</datalist></label>
+    <div id="rc-fuel" class="grid2">${pickField("rc-veh", "Vehicle", equipOf("vehicle"), last.vehicle || "", "e.g. AB21 CDE", false)}
       <label for="rc-l">Litres (optional)<input id="rc-l" type="number" inputmode="decimal" min="0" step="0.01"></label></div>
     <label for="rc-miles" id="rc-milesl">Mileage (optional)<input id="rc-miles" type="number" inputmode="numeric" min="0"></label>
     ${pickField(
@@ -316,7 +317,7 @@ function openReceipt() {
       "Site (optional)",
       siteNames(),
       lastOf(S.mine.entries, () => true, "job"),
-      "e.g. 12 Marine Way, Exmouth",
+      "e.g. 12 High Street",
       false,
     )}
     <div><div class="flabel">How was it paid?</div><div class="seg" id="rc-paid">${Object.entries(
@@ -359,13 +360,13 @@ function openReceipt() {
       if (!f && !confirmNoPhoto) {
         confirmNoPhoto = true;
         showErr(
-          "No photo added. Tap Save again to save without one, but James may need the receipt.",
+          `No photo added. Tap Save again to save without one, but ${bossFirst()} may need the receipt.`,
         );
         return;
       }
       if (f && !S.assets) {
         showErr(
-          "You don't have permission to upload. Ask James to make you an Editor on this page.",
+          `You don't have permission to upload. Ask ${bossFirst()} to make you an Editor on this page.`,
         );
         return;
       }
@@ -440,7 +441,7 @@ function openMatEditor(m) {
           }</div></div>`
         : ""
     }
-    ${pickField("mt-site", "Site", siteNames(), m ? m.site : lastOf(S.mine.entries, () => true, "job"), "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("mt-site", "Site", siteNames(), m ? m.site : lastOf(S.mine.entries, () => true, "job"), "e.g. 12 High Street")}
     <label for="mt-job">Job (optional)<select id="mt-job"><option value="">Not for a particular job sheet</option>${(ownerMode()
       ? S.jobs
       : myJobs()
@@ -455,9 +456,9 @@ function openMatEditor(m) {
     <label class="inl" style="align-self:end;font-size:15px;color:var(--ink);font-weight:500;padding-bottom:10px"><input type="checkbox" id="mt-urg" ${m && m.urgent ? "checked" : ""}> Urgent</label></div>
     <div><div class="checkhead"><span class="flabel" style="margin:0">${send ? "Materials and tools" : "What you need"}</span><span class="who">Material or tool, item, quantity</span></div><div id="mt-items"></div>
       <div class="actions" style="margin-top:8px"><button type="button" class="pillbtn" id="mt-add">+ Add item</button><button type="button" class="pillbtn" id="mt-paste">Paste a list</button></div></div>
-    <label for="mt-notes">${send ? "Notes for them (optional)" : "Notes for James (optional)"}<textarea id="mt-notes" maxlength="500" placeholder="${send ? "e.g. Pick up from Travis Perkins Exmouth, account in JEB's name. Bring the breaker back by Friday." : "e.g. Deliver to the rear drive, gate code 1234"}">${esc(m ? m.notes || "" : "")}</textarea></label>
+    <label for="mt-notes">${send ? "Notes for them (optional)" : `Notes for ${bossFirst()} (optional)`}<textarea id="mt-notes" maxlength="500" placeholder="${send ? "e.g. Pick up from Travis Perkins, account in our name. Bring the breaker back by Friday." : "e.g. Deliver to the rear drive, gate code 1234"}">${esc(m ? m.notes || "" : "")}</textarea></label>
     ${send ? `<button type="button" class="pillbtn" id="mt-copydraft" style="align-self:flex-start">Copy list to send by WhatsApp or text</button><textarea id="mt-draftcopy" readonly hidden style="min-height:120px"></textarea>` : ""}
-    ${formFoot(!!m, send ? (m ? "Save changes" : "Send") : m ? "Save changes" : "Send to James")}`,
+    ${formFoot(!!m, send ? (m ? "Save changes" : "Send") : m ? "Save changes" : `Send to ${bossFirst()}`)}`,
     async () => {
       const items = matDraft.items
         .filter((i) => i.name.trim())
@@ -540,11 +541,11 @@ function openMatEditor(m) {
             ? "List kept on this phone. It will send when you have signal."
             : m
               ? "Saved"
-              : "Sent to James",
+              : `Sent to ${bossFirst()}`,
         );
         render();
       } catch (e) {
-        showErr("Couldn't save. Ask James to check you're an Editor on this page.");
+        showErr(`Couldn't save. Ask ${bossFirst()} to check you're an Editor on this page.`);
         $("f-save").disabled = false;
       }
     },
@@ -711,7 +712,7 @@ function openSentList(m) {
   const owner = ownerMode();
   const st = SENT_ST[m.status || "sent"] || SENT_ST.sent;
   const path = "sheets/" + (owner ? m.who : S.me) + "/invoices/" + m.id;
-  openViewer(`<div><span class="tag ${st[1]}">${st[0]}</span><span class="tag">${owner ? "Sent to " + esc(nameOf(m.who)) : "From James"}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}</div>
+  openViewer(`<div><span class="tag ${st[1]}">${st[0]}</span><span class="tag">${owner ? "Sent to " + esc(nameOf(m.who)) : `From ${bossFirst()}`}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}</div>
     <h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 0;color:var(--accent);text-transform:uppercase">Materials & tools · ${esc(m.site)}</h3>
     ${m.jobTitle ? `<div><b>${esc(m.jobTitle)}</b></div>` : ""}
     <div class="who">Sent ${stamp(m.sentAt)}${m.needBy ? " · needed by " + shortDay(m.needBy) : ""}</div>
@@ -828,11 +829,12 @@ function openMat(m) {
       owner
         ? `<label for="mt-reply" style="margin-top:12px">Message to ${esc(nameOf(m.who))} (optional)<textarea id="mt-reply" maxlength="300" placeholder="e.g. Blocks ordered from Travis Perkins, delivery Thursday AM. Breaker is in the yard.">${esc(m.reply || "")}</textarea></label>
       <div class="actions" style="margin-top:10px"><button class="btn primary" type="button" data-s="ordered">Ordered / sorted</button><button class="btn" type="button" data-s="delivered">Delivered</button><button class="btn" type="button" data-s="cancelled">Cancel</button></div>
-      <div class="actions"><button class="pillbtn" type="button" id="mt-copy">Copy list to send to supplier</button></div>`
-        : `${m.reply ? `<div class="notice" style="margin-top:12px"><b>James:</b> ${esc(m.reply)}</div>` : ""}
+      <div class="actions"><button class="pillbtn" type="button" id="mt-copy">Copy list to send to supplier</button><button class="pillbtn" type="button" id="mt-pass">📤 Pass it on</button></div>`
+        : `${m.reply ? `<div class="notice" style="margin-top:12px"><b>${esc(bossFirst())}:</b> ${esc(m.reply)}</div>` : ""}
       <div class="actions" style="margin-top:12px">${(m.status || "sent") === "sent" ? `<button class="btn" type="button" id="mt-edit">Edit list</button>` : ""}${m.status === "ordered" ? `<button class="btn primary" type="button" id="mt-got">Mark as delivered to site</button>` : ""}</div>`
     }
     <textarea id="mt-copytext" readonly hidden style="margin-top:8px;min-height:140px">${esc(matText(m))}</textarea>`);
+  if ($("mt-pass")) $("mt-pass").onclick = () => matPassOn(m);
   const vb = $("viewer-body");
   vb.querySelectorAll(".mi-ord").forEach(
     (cb) =>
@@ -940,4 +942,75 @@ function receiptsCsv(m) {
   );
   rows.push([], ["Total", "", "", "", list.reduce((a, r) => a + (+r.amount || 0), 0).toFixed(2)]);
   csvSave(`Receipts - ${monthLabel(m)}.csv`, rows);
+}
+
+/* James (Nov 2026): a trade's materials or tools request comes to him, and he can pass it on – to another trade on the
+   team (it lands in their Materials & tools, like a list he sends) or to someone else by text or email (a supplier,
+   a driver) – but never to a client. Noted on the request. */
+function matPassOn(m) {
+  const team = teamIds().filter((w) => w !== m.who);
+  openSheet(
+    `<h3 id="sheettitle">📤 Pass on ${esc(nameOf(m.who))}'s list</h3><div class="who">${esc(m.site || "")}${m.needBy ? " · needed by " + esc(shortDay(m.needBy)) : ""} · ${(m.items || []).length} item${(m.items || []).length === 1 ? "" : "s"}. Not to clients.</div>
+    <label for="mp-to">Pass it to<select id="mp-to"><option value="">Choose…</option>${team.length ? `<optgroup label="A trade on the team">${team.map((w) => `<option value="${esc(w)}">${esc(nameOf(w))}</option>`).join("")}</optgroup>` : ""}<option value="__other">Someone else – by text or email</option></select></label>
+    <div id="mp-other" hidden><label for="mp-tel">Their mobile (for a text)<input id="mp-tel" type="tel" maxlength="20"></label><label for="mp-mail">or their email<input id="mp-mail" type="email" maxlength="120"></label></div>
+    <label for="mp-note">Note (optional)<input id="mp-note" maxlength="200" placeholder="e.g. Can you pick these up on your way in?"></label>
+    ${formFoot(false, "📤 Pass it on")}`,
+    async () => {
+      const to = $("mp-to").value;
+      const note = $("mp-note").value.trim();
+      if (!to) return showErr("Choose who to pass it to.");
+      const text = (note ? note + "\n\n" : "") + matText(m);
+      const path = "sheets/" + m.who + "/invoices/" + m.id;
+      const passed = (m.passedTo || []).slice();
+      try {
+        if (to === "__other") {
+          const tel = $("mp-tel").value.replace(/\s+/g, "");
+          const mail = $("mp-mail").value.trim();
+          if (!tel && !mail) return showErr("Put their mobile or their email.");
+          window.open(
+            tel
+              ? "sms:" + tel + "?&body=" + encodeURIComponent(text)
+              : "mailto:" +
+                  mail +
+                  "?subject=" +
+                  encodeURIComponent("Materials for " + (m.site || "a job")) +
+                  "&body=" +
+                  encodeURIComponent(text),
+            "_blank",
+          );
+          passed.push({ to: tel || mail, at: Date.now() });
+        } else {
+          const now = Date.now();
+          await S.db.doc("sheets/" + to + "/invoices/ml-" + newId()).set({
+            kind: "materials",
+            site: m.site || "",
+            jobId: m.jobId || "",
+            jobTitle: m.jobTitle || "",
+            needBy: m.needBy || "",
+            urgent: !!m.urgent,
+            items: (m.items || []).map((i) => Object.assign({}, i, { ordered: false })),
+            notes: [note, "Passed on from " + nameOf(m.who) + "'s request"]
+              .filter(Boolean)
+              .join("\n"),
+            status: "sent",
+            reply: "",
+            sentAt: now,
+            created: now,
+            updated: now,
+            fromOwner: true,
+            toName: nameOf(to),
+          });
+          passed.push({ to: nameOf(to), at: now });
+        }
+        await S.db.doc(path).update({ passedTo: passed });
+        m.passedTo = passed;
+        closeForm();
+        toast("Passed on to " + passed[passed.length - 1].to);
+      } catch (e) {
+        showErr("Couldn't send it. Check your connection.");
+      }
+    },
+    "mp-to",
+  );
+  $("mp-to").onchange = () => ($("mp-other").hidden = $("mp-to").value !== "__other");
 }

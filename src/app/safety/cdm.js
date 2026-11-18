@@ -2,16 +2,22 @@
 import { ptSrc } from "../clients/portal.js";
 import { soAll } from "../clients/sign-offs.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossName, coShort } from "../core/company-names.js";
 import { $, esc, iso, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, liveSite, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { uploadFile } from "../files/files.js";
+import { uploadErr, uploadFile } from "../files/files.js";
+import { getFileBlob } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
+import { nameOf } from "../owner/owner.js";
 import { BRGB, pdfLogo, siteRec } from "../photos/photos.js";
+import { CDMRA } from "./cdm-rams.js";
 import { ukDate } from "./rams-maker.js";
 import { indFor, loadJsPdf } from "./site-inductions.js";
+import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { sdSet } from "../sales/sales-calc.js";
 import { sjMaster } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
@@ -47,7 +53,7 @@ const CDM_DOCS = [
   ["appoint", "CDM duty holder appointments (client letter & acknowledgement)"],
   [
     "brappoint",
-    "Building Regulations dutyholder appointments (Part 2A): principal designer and principal contractor, in writing",
+    "Building Regulations duty holder appointments (Part 2A): principal designer and principal contractor, in writing",
   ],
   [
     "bccommence",
@@ -86,11 +92,194 @@ const CDM_GROUPS = [
   ["Permits", ["hotpermit", "dig"]],
   ["At handover", ["hsf", "bccs"]],
 ];
+/* who fills in and signs the company's part of the CDM documents (James, Nov 2026: "you choose who is filling out
+   the forms and it adds their details and signature"): the account holder, or someone made a Manager in Setup ›
+   People & access › Office access. Their name goes on each company signature line, with their saved signature and
+   the date. */
+function cdmSigners() {
+  const office = (((S.settings || {}).access || {}).office || {}).people || {};
+  return [["", bossName()]].concat(
+    Object.keys(office)
+      .filter((u) => office[u] === "manager" && S.team && S.team[u] && !S.team[u].left)
+      .map((u) => [u, nameOf(u)]),
+  );
+}
+const cdmSignerName = (cd) =>
+  cd.filledBy && S.team && S.team[cd.filledBy] ? nameOf(cd.filledBy) : bossName();
+const cdmSignerSigId = (cd) =>
+  cd.filledBy && S.team && S.team[cd.filledBy]
+    ? S.team[cd.filledBy].sigId || ""
+    : sdSet().sigId || "";
+async function cdmSignerSig(cd) {
+  const id = cdmSignerSigId(cd);
+  if (!id) return null;
+  try {
+    const blob = await getFileBlob(id);
+    const u = await new Promise((res) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => res(null);
+      fr.readAsDataURL(blob);
+    });
+    return u ? { u, f: /image\/jpe?g/.test(u) ? "JPEG" : "PNG" } : null;
+  } catch (e) {
+    return null;
+  }
+}
 function cdmNotifiable(cd) {
   const wd = +cd.workDays || 0,
     mx = +cd.maxWorkers || 0,
     pd = +cd.personDays || wd * Math.max(1, +cd.avgWorkers || mx || 1);
   return { notifiable: (wd > 30 && mx > 20) || pd > 500, wd, mx, pd };
+}
+/* JEB's CDM project assessment (James's "CDM project assessment & notification guide", Nov 2026): from what's filled in
+   below it gives JEB's four-level working scale (an internal guide, not an HSE scoring system), the two F10 tests,
+   what every project needs (a CPP), what more than one contractor brings (principal designer and principal contractor
+   appointed in writing, a health & safety file), the documents that level points to, and the details still missing.
+   A single significant hazard can call for more planning whatever the level, so the hazards ticked count. */
+const CDM_LEVELS = [
+  null,
+  [
+    "Basic",
+    "lower complexity / risk",
+    "a short site-specific CPP; standard risk assessments; site rules, welfare and emergency arrangements; brief the people doing the work",
+  ],
+  [
+    "Enhanced",
+    "moderate complexity / risk",
+    "a more detailed CPP; task-specific RAMS where useful; trades, sequencing, access, welfare, services and emergency arrangements; coordinate contractors",
+  ],
+  [
+    "Comprehensive",
+    "high risk / complexity",
+    "a detailed CPP and work sequence; specific controls for structural work, excavations, work at height and temporary works; planned supervision, inspections and subcontractor coordination",
+  ],
+  [
+    "Complex project",
+    "very high / many interfaces",
+    "project-wide management; detailed logistics and programme; clear responsibilities and coordination; review and monitor controls throughout; consider specialist H&S support",
+  ],
+];
+/* the scale, to help choose (James, Nov 2026: "a page that opens up … to help choose the right level") */
+const CDM_SCALE = [
+  null,
+  {
+    jobs: "Small, simple jobs: a kitchen or bathroom refit, small internal changes, a garden wall, repairs.",
+    when: "One contractor, a short job (10 working days or less), no work at height or in an occupied home, and none of the bigger hazards.",
+  },
+  {
+    jobs: "Everyday building jobs: a re-roof from a scaffold, a garage conversion, refurbishing a lived-in home, a job with several trades.",
+    when: "More than one contractor, or work at height, or working in or next to an occupied home, or more than 10 working days.",
+  },
+  {
+    jobs: "Jobs with structural or high-risk work: an extension with foundations and steels, knocking walls through, underpinning, demolition, a basement.",
+    when: "Any of the bigger hazards ticked: structural alterations or propping, excavations, demolition, lifting, confined spaces, fragile roofs.",
+  },
+  {
+    jobs: "Big or busy projects: new builds, several homes, large commercial jobs.",
+    when: "Notifiable to HSE (over 30 working days with more than 20 on site at once, or over 500 person days), more than 20 people on site at once, or three or more bigger hazards with 10 or more people.",
+  },
+];
+function cdmScaleOpen(cd, onPick) {
+  const auto = cdmAssess(Object.assign({}, cd, { levelSet: "" })).level;
+  const dl = (k) => (CDM_DOCS.find((x) => x[0] === k) || [k, k])[1].split(" (")[0];
+  const box = document.createElement("div");
+  box.className = "dimask cdm-scmask";
+  box.innerHTML = `<div class="dimbox cdm-scale" role="dialog" aria-modal="true" aria-labelledby="cdm-sct"><h3 id="cdm-sct">📏 The CDM scale – which level is this job?</h3>
+    <div class="who">${esc(coShort())}'s own working scale, to plan the right amount of paperwork. Pick the level that fits; choosing it ticks that level's documents, and you can tick more after.</div>
+    ${[1, 2, 3, 4]
+      .map((n) => {
+        const L = CDM_LEVELS[n],
+          sc = CDM_SCALE[n];
+        const docs = cdmAssess(Object.assign({}, cd, { levelSet: n })).docs;
+        return `<section class="cdm-scl cdm-l${n}${n === auto ? " cdm-scauto" : ""}"><div class="cdm-sch"><b>Level ${n} – ${esc(L[0])}</b><span class="who">${esc(L[1])}</span>${n === auto ? '<span class="tag ok">Suggested for this job</span>' : ""}</div>
+          <div><b>Jobs like:</b> ${esc(sc.jobs)}</div><div><b>When:</b> ${esc(sc.when)}</div><div><b>Plan for:</b> ${esc(L[2])}.</div>
+          <div class="who"><b>Documents it ticks:</b> ${docs.map((k) => esc(dl(k))).join(" · ")}</div>
+          <button type="button" class="btn ${n === auto ? "primary" : ""} cdm-scpick" data-n="${n}">Choose Level ${n}</button></section>`;
+      })
+      .join("")}
+    <div class="who">A single big hazard can need more planning whatever the level – use your judgement.</div>
+    <div class="actions"><button type="button" class="btn" id="cdm-scx">Close</button></div></div>`;
+  document.body.appendChild(box);
+  const esc0 = (e) => {
+    if (e.key === "Escape") close();
+  };
+  const close = () => {
+    box.remove();
+    document.removeEventListener("keydown", esc0);
+  };
+  document.addEventListener("keydown", esc0);
+  box.querySelector("#cdm-scx").onclick = close;
+  box.onclick = (e) => {
+    if (e.target === box) close();
+  };
+  box.querySelectorAll(".cdm-scpick").forEach(
+    (b) =>
+      (b.onclick = () => {
+        close();
+        onPick(+b.dataset.n);
+      }),
+  );
+}
+function cdmAssess(cd) {
+  const N = cdmNotifiable(cd);
+  const r = cd.risks || {};
+  const many = cd.contractors !== "one";
+  const big = ["struct", "exc", "demo", "lift", "confined", "fragile"].filter((k) => r[k]);
+  let level = 1;
+  if (many || r.wah || r.occ || N.wd > 10) level = 2;
+  if (big.length) level = 3;
+  if (N.notifiable || N.mx > 20 || (big.length >= 3 && N.mx >= 10)) level = 4;
+  /* James can set the level himself (cd.levelSet 1–4), e.g. to plan a level 2 job in more detail */
+  const auto = level;
+  if (+cd.levelSet >= 1 && +cd.levelSet <= 4) level = +cd.levelSet;
+  const docs = ["cpp", "emerg", "welfare", "welfarepack", "notice", "check", "f10"];
+  if (cd.clientType === "domestic") docs.push("dominfo");
+  if (many) docs.push("appoint", "brappoint", "pci", "subcon", "hsf");
+  /* each level ticks more (James, Nov 2026: "when i have chosen the level it ticks the boxes for that level") */
+  if (level >= 2) docs.push("subcon", "log");
+  if (level >= 3) docs.push("drr", "tw");
+  if (level >= 4) docs.push("pci", "hsf");
+  if (r.exc || r.svc) docs.push("dig");
+  if (r.hot) docs.push("hotpermit");
+  const need = [
+    ["client", "Client"],
+    ["desc", "Description of the work"],
+    ["start", "Start date"],
+    ["workDays", "Working days on site"],
+    ["maxWorkers", "Most people on site at once"],
+    ["manager", "Site manager"],
+    ["firstAid", "First aider"],
+    ["hospital", "Nearest A&E"],
+    ["assembly", "Fire assembly point"],
+    ["welfare", "Welfare arrangements"],
+    ["asbestos", "Asbestos (survey or not needed)"],
+    ["services", "Existing services"],
+  ];
+  if (many) need.push(["pdName", "Principal designer"]);
+  if (level >= 3) need.push(["engineer", "Structural engineer"]);
+  const missing = need.filter(([k]) => !String(cd[k] || "").trim()).map((x) => x[1]);
+  return { level, auto, N, many, big, docs: [...new Set(docs)], missing };
+}
+function cdmAssessHtml(cd) {
+  const A = cdmAssess(cd);
+  const L = CDM_LEVELS[A.level];
+  const dl = (k) => (CDM_DOCS.find((x) => x[0] === k) || [k, k])[1];
+  return `<div class="card cdm-ass"><div class="flabel" style="margin:0">📋 Project assessment</div>
+    <div class="cdm-lvl cdm-l${A.level}"><b>Level ${A.level} – ${esc(L[0])}</b><span class="who">${esc(L[1])}${A.level !== A.auto ? " · you chose this (worked out: Level " + A.auto + ")" : ""}</span></div>
+    <label class="cdm-lset">Level<select id="cdm-lset"><option value="">Worked out for me (Level ${A.auto})</option>${[1, 2, 3, 4].map((n) => `<option value="${n}"${+cd.levelSet === n ? " selected" : ""}>Level ${n} – ${esc(CDM_LEVELS[n][0])}</option>`).join("")}</select></label>
+    <div class="who">Plan for: ${esc(L[2])}.</div>
+    <ul class="cdm-must">
+      <li>✅ <b>Every project:</b> a construction phase plan (CPP) before work starts, kept up to date.</li>
+      ${A.many ? `<li>👥 <b>More than one contractor:</b> the client appoints a principal designer and principal contractor in writing, and a health &amp; safety file is handed over at the end.</li>` : `<li>👤 One contractor: no principal designer or H&amp;S file needed – tick "More than one contractor" below if subbies or other trades come in.</li>`}
+      <li>${A.N.notifiable ? `⚠️ <b>Notifiable:</b> the client sends an F10 to HSE before the construction phase starts` : `F10: <b>not notifiable</b> on these numbers`} <span class="who">(${A.N.wd} working days, ${A.N.mx} at most at once, ${A.N.pd} person-days; notifiable if over 30 days with over 20 at once, or over 500 person-days)</span></li>
+      ${A.big.length ? `<li>🔺 Significant hazards ticked: ${A.big.map((k) => esc(((CDM_RISKS.find((x) => x[0] === k) || [k, k])[1] || "").split(" (")[0])).join(", ")} – plan these in detail whatever the level.</li>` : ""}
+    </ul>
+    <div class="who"><b>Documents for this level:</b> ${A.docs.map((k) => esc(dl(k).split(" (")[0])).join(" · ")}</div>
+    <div class="actions" style="margin:6px 0 0"><button type="button" class="btn primary" id="cdm-scale">📏 See the scale</button><button type="button" class="btn" id="cdm-need">Tick the documents this level needs</button><a class="btn" href="https://www.hse.gov.uk/forms/notification/f10.htm" target="_blank" rel="noopener">🌐 Fill in the F10 on the HSE website ↗</a></div>
+    <div class="who">You can tick any other document below for this job as well, whatever the level.</div>
+    ${A.missing.length ? `<div class="notice warn" style="margin-top:8px"><b>Still to fill in below:</b> ${A.missing.map(esc).join(", ")}</div>` : `<div class="notice" style="margin-top:8px">✓ The key details are all filled in.</div>`}
+    <div class="who" style="margin-top:6px">${esc(coShort())}'s own working scale, not an HSE score. Use your judgement, and review the plan as the work, risks or contractors change.</div></div>`;
 }
 function cdmSections(cd, pick) {
   const co = coData();
@@ -183,7 +372,7 @@ function cdmSections(cd, pick) {
         "sign",
         [
           ["Client", cd.client],
-          ["For " + co.name, co.owner],
+          ["For " + co.name, cdmSignerName(cd), "me"],
         ],
       ],
     ]);
@@ -426,7 +615,7 @@ function cdmSections(cd, pick) {
           ? "For a domestic client, the contractor (or principal contractor) submits the F10 as the client duties pass to them."
           : "The client is responsible for submitting the F10 (others may submit it on their behalf).",
       ],
-      ["sign", [["Checked by", co.owner]]],
+      ["sign", [["Checked by", cdmSignerName(cd), "me"]]],
     ]);
   if (pick.hsf)
     S2("Health & safety file - contents", [
@@ -460,13 +649,13 @@ function cdmSections(cd, pick) {
         "sign",
         [
           ["Handed to client", cd.client],
-          ["Handed over by", co.owner],
+          ["Handed over by", cdmSignerName(cd), "me"],
         ],
       ],
     ]);
   /* Building Control completion statement: since the October 2023 changes to the Building Regulations, the
      completion notice to building control goes with statements that, to the best of each one's knowledge, the work
-     complies and the building regulations dutyholders (principal contractor and principal designer) have met their
+     complies and the building regulations duty holders (principal contractor and principal designer) have met their
      duties */
   if (pick.bccs)
     S2("Building Control completion statement", [
@@ -526,8 +715,8 @@ function cdmSections(cd, pick) {
       [
         "sign",
         [
-          ["Principal contractor", (many ? cd.pcName : "") || co.name],
-          ["Signed for them by", co.owner],
+          ["Principal contractor", (many ? cd.pcName : "") || co.name, "nosign"],
+          ["Signed for them by", cdmSignerName(cd), "me"],
         ],
       ],
       ["h2", "3. Principal designer's statement"],
@@ -559,14 +748,14 @@ function cdmSections(cd, pick) {
         ],
       ],
     ]);
-  /* Building Regulations dutyholder appointments (Part 2A, from October 2023): separate from the CDM ones */
+  /* Building Regulations duty holder appointments (Part 2A, from October 2023): separate from the CDM ones */
   if (pick.brappoint)
-    S2("Building Regulations dutyholder appointments", [
+    S2("Building Regulations duty holder appointments", [
       ["h", "Principal designer and principal contractor (Part 2A)"],
       ["rows", head.filter(([k]) => !/^Principal/.test(k))],
       [
         "p",
-        "Since October 2023 the Building Regulations have their own dutyholders, separate from the CDM ones (they are often the same people). Where more than one contractor or designer works on the job, the client must appoint a principal designer to plan, manage and monitor the design work, and a principal contractor to plan, manage and monitor the building work, so that it complies with the Building Regulations. The appointments should be made in writing before the work starts." +
+        "Since October 2023 the Building Regulations have their own duty holders, separate from the CDM ones (they are often the same people). Where more than one contractor or designer works on the job, the client must appoint a principal designer to plan, manage and monitor the design work, and a principal contractor to plan, manage and monitor the building work, so that it complies with the Building Regulations. The appointments should be made in writing before the work starts." +
           (dom
             ? " For a domestic client: if these appointments are not made, the designer in control of the design work is the principal designer and the contractor in control of the building work is the principal contractor – this letter puts it in writing so everyone knows."
             : " For work done for a business, the appointments must be made in writing."),
@@ -593,8 +782,8 @@ function cdmSections(cd, pick) {
       [
         "sign",
         [
-          ["Principal contractor", (many ? cd.pcName : "") || co.name],
-          ["Signed for them by", co.owner],
+          ["Principal contractor", (many ? cd.pcName : "") || co.name, "nosign"],
+          ["Signed for them by", cdmSignerName(cd), "me"],
         ],
       ],
       ["h2", "3. The principal designer accepts"],
@@ -667,7 +856,7 @@ function cdmSections(cd, pick) {
           ["Structural engineer's calculations sent to building control", ""],
         ],
       ],
-      ["sign", [["Recorded by", cd.manager || co.owner]]],
+      ["sign", [["Recorded by", cdmSignerName(cd), "me"]]],
     ]);
   {
     const cons = String(cd.otherContractors || "")
@@ -736,7 +925,7 @@ function cdmSections(cd, pick) {
           "sign",
           [
             ["Received by (client)", cd.client],
-            ["For " + co.name, co.owner],
+            ["For " + co.name, cdmSignerName(cd), "me"],
           ],
         ],
       ]);
@@ -796,7 +985,7 @@ function cdmSections(cd, pick) {
               "",
             ],
             [
-              "I will tell the principal contractor about anything that may not comply, and co-operate with the other dutyholders",
+              "I will tell the principal contractor about anything that may not comply, and co-operate with the other duty holders",
               "",
             ],
             [
@@ -805,7 +994,7 @@ function cdmSections(cd, pick) {
             ],
           ],
         ],
-        ["sign", [["Checked by", co.owner]]],
+        ["sign", [["Checked by", cdmSignerName(cd), "me"]]],
       ]);
     if (pick.welfare)
       S2("Welfare facilities check", [
@@ -844,7 +1033,7 @@ function cdmSections(cd, pick) {
             ["Fire extinguishers at the fire point; escape routes kept clear", ""],
           ],
         ],
-        ["sign", [["Checked by", cd.manager || co.owner]]],
+        ["sign", [["Checked by", cdmSignerName(cd), "me"]]],
       ]);
     if (pick.emerg)
       S2("Emergency, fire & first aid plan", [
@@ -1025,7 +1214,7 @@ function cdmSections(cd, pick) {
           "rows",
           [
             ["Site", cd.address],
-            ["Issued by", cd.manager || co.owner],
+            ["Issued by", cdmSignerName(cd), "me"],
           ],
         ],
         [
@@ -1073,7 +1262,7 @@ function cdmSections(cd, pick) {
         [
           "sign",
           [
-            ["Issued by", cd.manager || co.owner],
+            ["Issued by", cdmSignerName(cd), "me"],
             ["Accepted by (operative)", ""],
             ["Fire watch / closed by", ""],
           ],
@@ -1122,7 +1311,7 @@ function cdmSections(cd, pick) {
         [
           "sign",
           [
-            ["Issued by", cd.manager || co.owner],
+            ["Issued by", cdmSignerName(cd), "me"],
             ["Accepted by", ""],
           ],
         ],
@@ -1358,10 +1547,11 @@ async function welfarePackPdf(cd) {
       os = npOSGB(ll[0], ll[1]);
     } catch (e) {}
     const f = (v, p, ng) => {
-      const a = Math.abs(v),
-        d = Math.floor(a),
-        mi = Math.floor((a - d) * 60),
-        se = Math.round(((a - d) * 60 - mi) * 60);
+      /* whole seconds first, so 59.6 seconds rolls over to the next minute (not 60) */
+      const t = Math.round(Math.abs(v) * 3600),
+        d = Math.floor(t / 3600),
+        mi = Math.floor((t % 3600) / 60),
+        se = t % 60;
       return `${String(d).padStart(p, "0")}°${String(mi).padStart(2, "0")}'${String(se).padStart(2, "0")}"${v < 0 ? ng[1] : ng[0]}`;
     };
     dms = f(ll[0], 2, "NS") + " , " + f(ll[1], 3, "EW");
@@ -1376,13 +1566,16 @@ async function welfarePackPdf(cd) {
   kv("Client(s)", cd.client, true);
   kv("Client contact details", cd.clientPhone);
   kv("Site address", addrLines.join("\n"), true);
-  kv("Grid reference", os ? os.grid : "");
-  kv("Lat, long (decimal)", ll.length >= 2 ? ll[0] + " , " + ll[1] : "");
+  /* the location and references are always there – a line to write on when not filled in (James, Nov 2026: "in
+     welfare unit notices can you add the 3 word position, lat and long, grid ref, planning app ref, building control ref") */
+  const BL = "________________________";
+  kv("what3words", w3 ? "/// " + w3 : BL);
+  kv("Lat, long (decimal)", ll.length >= 2 ? ll[0] + " , " + ll[1] : BL);
   kv("Lat, long (deg/min/sec)", dms);
+  kv("Grid reference", os ? os.grid : BL);
   kv("Easting / Northing", os ? `X ${os.e}  /  Y ${String(os.n).padStart(6, "0")}` : "");
-  kv("what3words", w3 ? "/// " + w3 : "");
-  kv("Planning ref", cd.planning);
-  kv("Building Control ref", cd.bcRef);
+  kv("Planning application ref", cd.planning || BL);
+  kv("Building Control ref", cd.bcRef || BL);
   kv("Site manager", agent);
   kv("Principal contractor", cd.pcName || co.name);
   kv("Nearest A&E", cd.hospital);
@@ -1441,6 +1634,8 @@ async function welfarePackPdf(cd) {
     y += 1;
     t("WHAT3WORDS:  /// " + w3, 13, "bold", 6);
   }
+  if (os) t("GRID REF:  " + os.grid, 12, "bold", 6);
+  if (ll.length >= 2) t("LAT, LONG:  " + ll[0] + " , " + ll[1], 12, "bold", 6);
   y += 4;
   t("THE FIRST AIDERS ON SITE ARE:", 13, "bold");
   y += 1;
@@ -1487,6 +1682,16 @@ async function welfarePackPdf(cd) {
   foot();
   /* 4. emergency phone numbers */
   await page("EMERGENCY TELEPHONE NUMBERS", "#b91c1c");
+  /* where you are, to read out to 999 */
+  t("THIS SITE: " + addrLines.join(", "), 12, "bold");
+  [
+    w3 ? "what3words /// " + w3 : "",
+    os ? "Grid ref " + os.grid : "",
+    ll.length >= 2 ? "Lat, long " + ll[0] + " , " + ll[1] : "",
+  ]
+    .filter(Boolean)
+    .forEach((l) => t(l, 11, "normal", 4));
+  y += 6;
   [
     ["Police", "999"],
     ["Fire & Rescue", "999"],
@@ -1520,7 +1725,7 @@ async function welfarePackPdf(cd) {
     "These rules apply to everyone on site. Please read and follow them at all times.",
   );
   t(
-    `Document ref: JEB-HS-11  |  Version 1.0  |  Issued: ${ukDate(iso(new Date()))}`,
+    `Document ref: ${coShort()}-HS-11  |  Version 1.0  |  Issued: ${ukDate(iso(new Date()))}`,
     8.5,
     "normal",
     0,
@@ -1630,11 +1835,17 @@ async function welfarePackPdf(cd) {
 }
 async function cdmPdf(sections, cd) {
   await loadJsPdf();
+  /* the signature of whoever is filling these in */
+  const SG = await cdmSignerSig(cd);
   const co = coData();
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const LH = await lhFrame();
   const W = 210,
     M = 16;
-  let y = 18,
+  const TOP = LH.top || 18,
+    BOT = LH.bot || 280,
+    FOOT = LH.pics ? LH.bot + 4 : 290;
+  let y = TOP,
     first = true;
   const clean = (t) =>
     String(t == null ? "" : t)
@@ -1643,16 +1854,17 @@ async function cdmPdf(sections, cd) {
       .replace(/[“”]/g, '"')
       .replace(/[^\x09\x0A\x0D\x20-\x7E£·°]/g, "");
   const need = (h) => {
-    if (y + h > 280) {
+    if (y + h > BOT) {
       foot();
       doc.addPage();
-      y = 18;
+      y = TOP;
       band();
     }
   };
   let page = 0;
   const band = () => {
     page++;
+    if (LH.pics) return;
     doc.setFillColor(...BRGB());
     doc.rect(0, 0, W, 5, "F");
   };
@@ -1665,9 +1877,9 @@ async function cdmPdf(sections, cd) {
         `${co.name} · ${cd.project || ""} · CDM 2015 documents · prepared ${ukDate(iso(new Date()))}`,
       ),
       M,
-      290,
+      FOOT,
     );
-    doc.text("Page " + page, W - M, 290, { align: "right" });
+    doc.text("Page " + page, W - M, FOOT, { align: "right" });
     doc.setTextColor(0);
   };
   const text = (t, size = 10, style = "normal", indent = 0, gap = 1.6) => {
@@ -1746,19 +1958,29 @@ async function cdmPdf(sections, cd) {
     y += ls.length * 4.2 + 1.6;
   };
   const sign = (list) => {
-    list.forEach(([role, name]) => {
+    list.forEach(([role, name, how]) => {
       need(18);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.text(doc.splitTextToSize(clean(role), 48)[0], M, y);
       doc.setFont("helvetica", "normal");
       doc.text(doc.splitTextToSize(clean(name || ""), 44)[0], M + 52, y);
-      doc.setDrawColor(120);
-      doc.line(M + 100, y, M + 150, y);
-      doc.line(M + 155, y, W - M, y);
-      doc.setFontSize(7);
-      doc.text("Signature", M + 100, y + 3.5);
-      doc.text("Date", M + 155, y + 3.5);
+      if (how !== "nosign") {
+        if (how === "me") {
+          if (SG)
+            try {
+              doc.addImage(SG.u, SG.f, M + 101, y - 11, 46, 10.5);
+            } catch (e) {}
+          doc.setFontSize(9);
+          doc.text(ukDate(iso(new Date())), M + 156, y - 1.5);
+        }
+        doc.setDrawColor(120);
+        doc.line(M + 100, y, M + 150, y);
+        doc.line(M + 155, y, W - M, y);
+        doc.setFontSize(7);
+        doc.text("Signature", M + 100, y + 3.5);
+        doc.text("Date", M + 155, y + 3.5);
+      }
       y += 12;
     });
   };
@@ -1766,12 +1988,14 @@ async function cdmPdf(sections, cd) {
     if (!first) {
       foot();
       doc.addPage();
-      y = 18;
+      y = TOP;
     }
     band();
     first = false;
-    if (page === 1) await pdfLogo(doc, W - M, 10, 48, 22);
-    text(co.name.toUpperCase(), 8.5, "bold", 0, 5);
+    if (!LH.pics) {
+      if (page === 1) await pdfLogo(doc, W - M, 10, 48, 22);
+      text(co.name.toUpperCase(), 8.5, "bold", 0, 5);
+    }
     text(sec.title, 17, "bold", 0, 3);
     for (const [k, a, b2] of sec.blocks) {
       if (k === "h") text(a, 11, "bold", 0, 2);
@@ -1801,6 +2025,7 @@ async function cdmPdf(sections, cd) {
     }
   }
   foot();
+  lhFinish(doc, LH);
   return doc.output("blob");
 }
 function cdmMaker(site0) {
@@ -1914,6 +2139,14 @@ function cdmMaker(site0) {
     } catch (e) {}
   };
   let cd = load();
+  /* the hazards this site's RAMS already cover are ticked for you */
+  const fromRams = () => {
+    cd.risks = cd.risks || {};
+    const h = CDMRA.hazardsFromRams(site);
+    cd._ramsTick = h.filter((k) => !cd.risks[k]);
+    h.forEach((k) => (cd.risks[k] = 1));
+  };
+  fromRams();
   const madeOf = (k) =>
     (S.docs || [])
       .filter((d) => same(d.site, site) && Array.isArray(d.cdm) && d.cdm.includes(k))
@@ -1942,12 +2175,20 @@ function cdmMaker(site0) {
           .join(""),
     ).join("");
     $("cdm-body").innerHTML =
-      `<div class="flabel">1. Which document(s)?</div><div class="actions" style="margin:0"><button type="button" class="btn" id="cdm-none">Clear</button><button type="button" class="btn" id="cdm-todo">Tick the ones not made yet</button><button type="button" class="btn" id="cdm-all">Tick all</button></div><div>${docsHtml}</div>
+      `<div id="cdm-assess">${cdmAssessHtml(cd)}</div><div class="flabel">1. Which document(s)?</div><div class="actions" style="margin:0"><button type="button" class="btn" id="cdm-none">Clear</button><button type="button" class="btn" id="cdm-todo">Tick the ones not made yet</button><button type="button" class="btn" id="cdm-all">Tick all</button></div><div>${docsHtml}</div>
       ${cd._from ? `<div class="notice" style="margin:6px 0">📌 Remembered from last time${cd._from > 1 ? " (" + esc(stamp(cd._from)) + ")" : ""}: everything you put in before is filled in below. Just check anything that's changed.</div>` : cd._carried ? `<div class="notice" style="margin:6px 0">📌 First CDM document for this site. Your usual details (hours, site rules, welfare, first aid) are copied from your last site: check them.</div>` : ""}
       <div class="flabel">2. Check the details</div><label>Site<select id="cdm-site">${sites.map((n) => `<option ${n === site ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
       <label>Client (fills in their details)<select id="cdm-cl"><option value="">Choose a client…</option>${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cd.clientId ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select></label>
       <div class="seg" id="cdm-ct"><button type="button" data-v="domestic" aria-pressed="${cd.clientType === "domestic"}">🏠 Domestic client</button><button type="button" data-v="commercial" aria-pressed="${cd.clientType !== "domestic"}">🏢 Commercial client</button></div>
       <div class="seg" id="cdm-nc"><button type="button" data-v="one" aria-pressed="${cd.contractors === "one"}">One contractor</button><button type="button" data-v="many" aria-pressed="${cd.contractors !== "one"}">More than one contractor (subbies, other trades)</button></div>
+      <label>Filled in and signed by<select class="cdf" data-k="filledBy">${cdmSigners()
+        .map(
+          ([u, n]) =>
+            `<option value="${esc(u)}"${(cd.filledBy || "") === u ? " selected" : ""}>${esc(n)}</option>`,
+        )
+        .join(
+          "",
+        )}</select></label><div class="who">${cdmSignerSigId(cd) ? "Their name, signature and today's date go on the company's signature lines." : `No signature saved for ${esc(cdmSignerName(cd))} yet – add it in People (your own card) or a manager's My details, and it goes on automatically.`}</div>
       <div class="flabel">Project</div>${F("client", "Client name")}${F("project", "Project name")}${F("address", "Site address")}${F("desc", "Description of the work", "e.g. single-storey rear extension with steel beam", "ta")}
       <div class="grid2">${F("start", "Start date", "", "date")}${F("finish", "Finish date", "", "date")}</div><div class="grid2">${F("weeks", "Length (weeks)", "e.g. 16", "number")}${F("workDays", "Working days on site", "e.g. 80", "number")}</div>
       <div class="grid2">${F("maxWorkers", "Most people on site at once", "e.g. 6", "number")}${F("personDays", "Total person days (optional)", "worked out if blank", "number")}</div>
@@ -1955,7 +2196,8 @@ function cdmMaker(site0) {
       <div class="flabel">Who's who</div>${F("pcName", "Principal contractor")}${F("pdName", "Principal designer", "e.g. the architect, if appointed")}${F("designer", "Architect / designer")}${F("engineer", "Structural engineer")}${F("otherContractors", "Other contractors / subcontractors", "e.g. electrician, roofer")}${F("bc", "Building control")}${F("planning", "Planning / Building Control ref")}
       <div class="flabel">Site & emergency</div>${F("clientPhone", "Client phone number(s)", "e.g. Kate: 07793 674654, Ben: 07813 621226")}${F("latlon", "Site location (latitude, longitude)", "e.g. 50.666541, -3.5365747. Grid reference and eastings work themselves out")}${F("bcRef", "Building Control ref")}${F("alarm", "How to raise the fire alarm", "e.g. Ring the bell or sound the klaxon at the fire point")}${F("agentPhone", "Site manager's phone")}${F("manager", "Site manager")}${F("firstAid", "First aider(s)")}${F("firstAidKit", "First aid kit kept")}${F("hospital", "Nearest A&E")}${F("assembly", "Fire assembly point")}${F("w3w", "what3words", "e.g. grin.sadly.shuttered")}${F("hours", "Working hours")}${F("welfare", "Welfare arrangements", "", "ta")}${F("inUse", "Parts of the home still in use / kept separate")}${F("access", "Access, parking & deliveries")}
       <div class="flabel">Existing information</div>${F("asbestos", "Asbestos", "e.g. survey 12/05/2026 - none found")}${F("services", "Existing services", "e.g. gas meter front left, drains run under extension")}${F("groundInfo", "Ground conditions", "e.g. clay, see soil report")}${F("designRisks", "Significant design / construction risks", "", "ta")}${F("otherInfo", "Anything else", "", "ta")}
-      <div class="flabel">Hazards on this site (tick)</div><div class="cdm-risks">${CDM_RISKS.map(([k, l]) => `<label class="tick"><input type="checkbox" class="cdr" data-k="${k}" ${cd.risks && cd.risks[k] ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}</div>
+      <div class="flabel">Hazards on this site</div><div class="who">Tick each kind of work or risk this job has. They go into the plan and the RAMS, and they set the level: structural work, excavations, demolition, lifting, confined spaces or a fragile roof make it Level 3 or more; excavations or services add a permit to dig, and hot works a hot works permit.</div><div class="cdm-risks">${CDM_RISKS.map(([k, l]) => `<label class="tick"><input type="checkbox" class="cdr" data-k="${k}" ${cd.risks && cd.risks[k] ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}</div>
+      ${cd._ramsTick && cd._ramsTick.length ? `<div class="who">✓ Ticked from this site's RAMS: ${cd._ramsTick.map((k) => esc(((CDM_RISKS.find((x) => x[0] === k) || [k, k])[1] || "").split(" (")[0])).join(", ")}</div>` : ""}<div id="cdm-rabox">${CDMRA.boxHtml(site, cd.risks)}</div>
       <div class="flabel">3. Make</div><button type="button" class="btn" id="cdm-keep">💾 Save these details for next time (don't make anything yet)</button>
       <div class="seg" id="cdm-out"><button type="button" data-v="pack" aria-pressed="true">📕 One full CDM pack (PDF)</button><button type="button" data-v="sep" aria-pressed="false">Separate PDFs</button></div>
       <div class="flabel">Who can see it?</div><div class="seg" id="cdm-vis"><button type="button" data-v="me" aria-pressed="${vis === "me"}">🔒 Only me</button><button type="button" data-v="trades" aria-pressed="${vis === "trades"}">👷 Me and the trades on this site</button></div>
@@ -1988,10 +2230,76 @@ function cdmMaker(site0) {
       pk = {};
       document.querySelectorAll(".cdd:checked").forEach((i) => (pk[i.dataset.k] = 1));
     };
+    /* the assessment follows what is typed and ticked; its button ticks the documents the level needs */
+    const reAssess = () => {
+      read();
+      $("cdm-assess").innerHTML = cdmAssessHtml(cd);
+      wireNeed();
+      raBox();
+    };
+    /* 📝 Make the RAMS: written from the ticked hazards and filed in the site's RAMS, without leaving this page */
+    const raBox = () => {
+      if (!$("cdm-rabox")) return;
+      $("cdm-rabox").innerHTML = CDMRA.boxHtml(site, cd.risks);
+      const b = $("cdm-mkra");
+      if (b)
+        b.onclick = async () => {
+          read();
+          b.disabled = true;
+          b.textContent = "Making the RAMS…";
+          try {
+            const n = await CDMRA.make(site, cd.risks, cd);
+            toast(`${n} RAMS made and filed in ${site} › RAMS`);
+          } catch (e) {
+            toast("Couldn't make them: " + uploadErr(e));
+          }
+          raBox();
+        };
+      CDMRA.wireOwn(
+        site,
+        cd,
+        async () => {
+          read();
+          await persist();
+        },
+        () => cdmMaker(site),
+      );
+    };
+    raBox();
+    /* choosing a level (in the box or on the scale) ticks the documents that level needs; more can be ticked after */
+    const pickLevel = (v) => {
+      read();
+      cd.levelSet = v ? String(v) : "";
+      pk = {};
+      cdmAssess(cd).docs.forEach((k) => (pk[k] = 1));
+      draw();
+      toast(`Level ${cdmAssess(cd).level} – its documents are ticked. Tick any others you need.`);
+    };
+    const wireNeed = () => {
+      if ($("cdm-lset")) $("cdm-lset").onchange = (e) => pickLevel(e.target.value);
+      if ($("cdm-scale"))
+        $("cdm-scale").onclick = () => {
+          read();
+          cdmScaleOpen(cd, (n) => pickLevel(n));
+        };
+      if ($("cdm-need"))
+        $("cdm-need").onclick = () => {
+          read();
+          pk = {};
+          cdmAssess(cd).docs.forEach((k) => (pk[k] = 1));
+          draw();
+          toast("Ticked the documents this level needs");
+        };
+    };
+    wireNeed();
+    document
+      .querySelectorAll("#cdm-body .cdf, #cdm-body .cdr")
+      .forEach((i) => i.addEventListener("change", reAssess));
     $("cdm-site").onchange = (e) => {
       read();
       site = e.target.value;
       cd = load();
+      fromRams();
       pk = {};
       const f = CDM_DOCS.find(([k]) => !madeOf(k));
       if (f) pk[f[0]] = 1;

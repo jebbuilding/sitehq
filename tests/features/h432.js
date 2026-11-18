@@ -11,7 +11,7 @@ src=src.replace('store["sheets/"+E]={name:"Sam Test",updated:Date.now()};','stor
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed+extra);
 src=src.replace('upload:async(b)=>(window.__last=b,','upload:async(b)=>{const id="up"+Math.random().toString(36).slice(2);window.__blobs[id]=b;return {id,url:"",sizeBytes:b.size,contentType:b.type}},_x:async(b)=>(window.__last=b,');
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
-const page_src=fs.readFileSync('timesheets.html','utf8').replace('const blobUrl = (id) => "/_blob/" + id;','const blobUrl=id=>window.__blobs[id]?URL.createObjectURL(window.__blobs[id]):"/_blob/"+id;');
+const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null').replace('function render() {','window.render=render;function render() {').replace('const blobUrl = (id) => "/_blob/" + id;','const blobUrl=id=>window.__blobs[id]?URL.createObjectURL(window.__blobs[id]):"/_blob/"+id;');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=window.__dl[window.__dl.length-1];const u=new Uint8Array(await r.data.arrayBuffer());let s='';u.forEach(x=>s+=String.fromCharCode(x));return btoa(s)});fs.writeFileSync(name,Buffer.from(b64,'base64'));};
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1100,height:1000}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
@@ -56,15 +56,15 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  ok(/Saved to Mrs Sign Test's job file \(Letters & emails\) and /.test(await lastToast()),'filed: '+await lastToast());
  const all=Object.values(await st());
  ok(all.some(v=>v&&v.kind==='jobfile'&&v.clientId==='c9'&&v.items.some(i=>i.folder==='mail'&&/^Receipt/.test(i.name)))&&all.some(v=>v&&v.kind==='sitedoc'&&/^Receipt/.test(v.title)&&v.cat==='other'),'in the client\'s job file (before any estimate is needed) and in the site\'s documents');
- /* ---- my signature, drawn in Setup ---- */
- await p.click('#tabs .tab[data-t=setup]');await p.waitForTimeout(400);
- ok(await p.isVisible('#sg-draw'),'Setup has ✍️ My signature');
+ /* ---- my signature, drawn in my own card in People (moved from Setup, Nov 2026) ---- */
+ await p.evaluate(()=>{const S=window.__S;S.open.add('__p'+S.me);S.otab='people';S.f.prole='';window.render()});await p.waitForTimeout(400);
+ ok(await p.isVisible('#sg-draw'),'People › my own card has ✍️ My signature');
  await p.click('#sg-draw');await p.waitForTimeout(300);
  const bx=await (await p.$('#sg-pad')).boundingBox();
  await p.mouse.move(bx.x+20,bx.y+bx.height/2);await p.mouse.down();for(let i=1;i<=12;i++)await p.mouse.move(bx.x+20+i*15,bx.y+bx.height/2+(i%2?18:-18));await p.mouse.up();
  await p.click('#f-save');await p.waitForTimeout(800);
  ok(/Signature saved/.test(await lastToast())&&!!((await st())['todos/salesset']||{}).sigId,'signature drawn and saved for documents');
- ok(await p.isVisible('.sg-img'),'shown in Setup');
+ ok(await p.isVisible('.sg-img'),'shown on my card');
  /* ---- CIS bill ---- */
  await p.click('#tabs .tab[data-t=cis]');await p.waitForTimeout(400);
  await p.click('#cis-add');await p.waitForTimeout(400);

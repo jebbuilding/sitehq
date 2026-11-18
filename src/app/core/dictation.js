@@ -1,4 +1,5 @@
 /* ===== DICTATION: a 🎤 Speak button under every notes box; talk and it types for you (uses the phone's own speech recognition) ===== */
+import { bossFirst } from "./company-names.js";
 import { esc, store, toast } from "./helpers.js";
 import { ownerMode } from "./state.js";
 import { pinFails, pinLockUntil, pinOk, setPinFails, setPinLockUntil } from "../owner/pin.js";
@@ -139,7 +140,7 @@ function dictEnhance(root) {
 }
 function askOwnerPin(msg, ok) {
   if (!ownerMode()) {
-    toast("Only James can unlock this");
+    toast(`Only ${bossFirst()} can unlock this`);
     return;
   }
   const d = document.createElement("div");

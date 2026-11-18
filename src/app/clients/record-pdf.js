@@ -4,6 +4,7 @@ import { clStage, saveClient } from "./clients.js";
 import { pdfToPages } from "./documents.js";
 import { ptCl } from "./portal.js";
 import { viewClient } from "./quick-enquiry.js";
+import { coName } from "../core/company-names.js";
 import { $, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { openNotePage, pdfShow } from "../drawing/paving.js";
@@ -123,7 +124,7 @@ async function clientPdf(c, btn, o) {
       lw = Math.min(55, (lh * L.w) / L.h);
     doc.addImage(L.u, L.png ? "PNG" : "JPEG", W - M - lw, 10, lw, lh);
   } catch (e) {}
-  text("JEB BUILDING SERVICES", 9, "bold", 5, BRGB());
+  text(coName().toUpperCase(), 9, "bold", 5, BRGB());
   text("Client record", 11, "normal", 1, [110, 100, 100]);
   y += 4;
   text(c.name, 20, "bold", 2);
@@ -526,7 +527,7 @@ async function clientPdf(c, btn, o) {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(130, 120, 120);
-    doc.text(clean(`JEB Building Services · ${c.name} · Page ${i} of ${n}`), M, 292);
+    doc.text(clean(`${coName()} · ${c.name} · Page ${i} of ${n}`), M, 292);
     doc.text("Confidential client information", W - M, 292, { align: "right" });
   }
   if (btn) btn.textContent = "Saving…";

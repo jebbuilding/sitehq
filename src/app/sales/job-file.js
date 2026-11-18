@@ -6,9 +6,10 @@ import { $, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
-import { blobUrl, uploadFile } from "../files/files.js";
+import { blobUrl, uploadAnyFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
+import { binFromViewer } from "../owner/deleted-items.js";
 import { shrinkImage } from "../safety/training.js";
 import { SD_IK, sdCalc, sdIk, sdNo, sdR2, sdSales, sdTag } from "./sales-calc.js";
 import { sdEdit, sdToInvoice } from "./sales-edit.js";
@@ -231,14 +232,14 @@ function jfView(j, ctx) {
     const added = [];
     for (const f of files) {
       try {
-        const img = /^image\//.test(f.type) && !/svg/.test(f.type);
+        const img = /^image\/(jpeg|png|webp|gif|heic|heif|avif|bmp)$/.test(f.type);
         const blob = img ? await shrinkImage(f, 2200) : f;
-        const a = await uploadFile(blob, f.name || "photo.jpg");
+        const a = await uploadAnyFile(blob, f.name || "photo.jpg");
         added.push({
           id: newId(),
           assetId: a.id,
           name: f.name || "Photo " + shortDay(iso(new Date())),
-          type: img ? "image/jpeg" : f.type || "",
+          type: img ? "image/jpeg" : a.contentType || f.type || "",
           folder,
           added: Date.now(),
         });
@@ -301,16 +302,17 @@ function jfEditItem(j, it, ctx) {
     },
     "ji-n",
   );
-  $("f-del").onclick = async () => {
-    try {
-      const saved = await jfSave(
-        Object.assign({}, j, { items: (j.items || []).filter((x) => x.id !== it.id) }),
-      );
-      closeForm();
-      toast("Taken out of the job file");
-      jfView(saved, ctx);
-    } catch (e) {
-      toast("Couldn't save. Check your connection.");
-    }
+  /* deleting goes to Deleted items, which takes it out of the job file (and puts it back if restored) */
+  $("f-del").onclick = () => {
+    closeForm();
+    binFromViewer(
+      {
+        assets: [it.assetId],
+        title: it.name,
+        type: it.type || "application/pdf",
+        sub: "Job file" + (j.client ? " · " + j.client : ""),
+      },
+      () => jfView((S.jobFiles || []).find((x) => x.id === j.id) || j, ctx),
+    );
   };
 }

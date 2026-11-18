@@ -1,9 +1,10 @@
 /* ================= TO-DO LISTS ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { newId, submitJob } from "../files/outbox.js";
+import { newId, saveOrKeep, submitJob } from "../files/outbox.js";
 import { coData } from "./company-details.js";
 import { allTeam, nameOf, roleShort, teamIds } from "./owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
@@ -50,7 +51,7 @@ function tradeTodosHTML() {
   const done = list.filter((t) => t.done);
   if (!list.length) return "";
   return `<div class="day" id="td-trade"><div class="dayh"><span>My to-do list</span><span class="sum">${open.length} to do</span></div>
-    <div class="who">Jobs James has asked you to do. Tick each one when it's done and James will see it.</div>
+    <div class="who">Jobs ${esc(bossFirst())} has asked you to do. Tick each one when it's done and ${esc(bossFirst())} will see it.</div>
     ${open.map((t) => todoRow(t, {})).join("") || '<div class="nothing">All done.</div>'}
     ${
       done.length
@@ -136,9 +137,12 @@ function wireTodoRows(root, find, pathOf) {
     if (!c.disabled)
       c.onchange = async (e) => {
         try {
-          await S.db
-            .doc(path)
-            .update({ done: e.target.checked, doneAt: e.target.checked ? Date.now() : null });
+          await saveOrKeep(
+            path,
+            "update",
+            { done: e.target.checked, doneAt: e.target.checked ? Date.now() : null },
+            "To-do ticked",
+          );
         } catch (err) {
           e.target.checked = !e.target.checked;
           toast("Couldn't save");
@@ -212,10 +216,17 @@ function todoView() {
     $("td-text").value = "";
     $("td-text").blur();
     try {
-      await S.db
-        .doc("todos/" + newId())
-        .set({ text, due, site, urgent, done: false, created: Date.now() });
-      toast("Added");
+      const how = await saveOrKeep(
+        "todos/" + newId(),
+        "set",
+        { text, due, site, urgent, done: false, created: Date.now() },
+        "To-do: " + text.slice(0, 40),
+      );
+      toast(
+        how === "queued"
+          ? "No signal – saved on this phone, it sends when you're back online"
+          : "Added",
+      );
     } catch (err) {
       toast("Couldn't add");
       $("td-text").value = text;

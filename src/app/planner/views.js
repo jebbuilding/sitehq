@@ -1,5 +1,6 @@
 /* ================= PLANNER: more detail, list view, day view, import ================= */
 import { chatPeople } from "../chat/chat.js";
+import { bossFirst } from "../core/company-names.js";
 import {
   $,
   addDays,
@@ -22,6 +23,8 @@ import { newId } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { myOpenPrompts } from "../people/reminders.js";
 import { openPlanEditor } from "./board.js";
+import { crsRows } from "./course-booking.js";
+import { hpOpen } from "./holiday-person.js";
 import { PTYPES, VIS, entryChip, onDay, planEntries } from "./time-off.js";
 import { same } from "../sites/project-pages.js";
 import { openJob } from "../survey/door-window-survey.js";
@@ -75,7 +78,12 @@ function openPlanDetail(p) {
     return;
   }
   if (p.pending) {
-    toast("Waiting for James to answer");
+    toast(`Waiting for ${bossFirst()} to answer`);
+    return;
+  }
+  /* a holiday for one person: their holiday page, where it can be changed and counts in their days */
+  if (owner && p.type === "holiday" && Array.isArray(p.people) && p.people.length === 1) {
+    hpOpen(p.people[0], p.from);
     return;
   }
   if (!owner)
@@ -101,6 +109,7 @@ function openPlanDetail(p) {
     ["Job sheet", p.jobTitle],
     ["People", names.join(", ")],
     ["Contact", [p.contact, p.phone].filter(Boolean).join(" · ")],
+    ...(p.type === "course" ? crsRows(p, owner) : []),
     owner
       ? [
           "Who can see it",

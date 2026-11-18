@@ -71,6 +71,7 @@ fs.writeFileSync('h459-later.csv',[H,
  ok(/Payment recorded on invoice 7/.test(await lastToast()),await lastToast());
  const inv=await p.evaluate(()=>window.__st['todos/sd-a']);
  ok(inv.payments.length===1&&inv.payments[0].amt===600,'£600 recorded on the invoice');
+ await p.waitForTimeout(500);ok(await p.isVisible('#sheet')&&/Receipt for £600/.test(await p.innerText('#sheet')),'a payment from the bank opens the receipt, ready to send');await p.click('#f-cancel');await p.waitForTimeout(300);
  /* a second account: the transfer is spotted from both sides */
  await p.click('#ac-newacc');await p.waitForTimeout(200);await p.fill('#aa-n','Savings');await p.click('#f-save');await p.waitForTimeout(400);
  await p.setInputFiles('#main .ac-file','h459-savings.csv');await p.waitForTimeout(800);

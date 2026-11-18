@@ -17,7 +17,7 @@ const page_src=fs.readFileSync('timesheets.html','utf8');
  await p.fill('#wt-notes','Rear garden access');await p.fill('#wt-D-time','08:30');await p.dispatchEvent('#wt-D-time','change');
  await sign('B');await sign('C');console.log('signed',await p.locator('.wt .done').count(),'settings carrier',await p.evaluate(()=>window.__st['settings/app']&&window.__st['settings/app'].company&&window.__st['settings/app'].company.wasteCarrier));
  await p.click('#wt-pdf');await p.waitForTimeout(4000);await savePdf('wtn2.pdf');
- await p.click('#wt-send');await p.waitForTimeout(400);console.log('send',(await p.innerText('.dimask .dimbox')).replace(/\n/g,' | ').slice(0,200));await p.click('.wt-x');
+ await p.click('#pdfbar-x').catch(()=>{});await p.click('#wt-send');await p.waitForTimeout(400);console.log('send',(await p.innerText('.dimask .dimbox')).replace(/\n/g,' | ').slice(0,200));await p.click('.wt-x');
  // second note: us -> EMS
  await p.click('#viewer-close');await p.waitForTimeout(300);await p.click('#wt-new');await p.waitForTimeout(400);await p.click('[data-party=B][data-role=us]');await p.waitForTimeout(300);await p.click('[data-party=C][data-role=supplier]');await p.waitForTimeout(300);await p.selectOption('#wt-C-sup','sup-ems');await p.waitForTimeout(300);
  console.log('note2 B',await p.inputValue('#wt-B-company'),await p.inputValue('#wt-B-carrierNo'),'C',await p.inputValue('#wt-C-company'),'|',await p.inputValue('#wt-C-postcode'));

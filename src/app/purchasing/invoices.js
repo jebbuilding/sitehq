@@ -1,4 +1,5 @@
 /* ================= INVOICES ================= */
+import { bossFirst } from "../core/company-names.js";
 import { pickField, pickVal } from "../core/fields.js";
 import { $, addDays, esc, gbp, iso, monday, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, setEditing, setFormType, showErr } from "../core/sheet.js";
@@ -73,7 +74,7 @@ function invDetail(v, owner, who) {
     ${
       owner
         ? `<div class="actions">${st !== "paid" ? `<button type="button" class="btn primary" id="iv-next">${st === "sent" ? "✓ Mark received" : st === "received" || st === "query" ? "✓ Approve it" : "£ Mark as paid"}</button>` : ""}${st !== "query" && st !== "paid" ? `<button type="button" class="btn" id="iv-query">❓ Query it</button>` : ""}</div>
-      <div id="iv-paybox" hidden class="cfinv"><div class="grid2"><label for="iv-paidon">Paid on<input id="iv-paidon" type="date" value="${iso(new Date())}"></label><label for="iv-ref">Payment reference (optional)<input id="iv-ref" maxlength="60" placeholder="e.g. BACS JEB-0042"></label></div><button type="button" class="btn primary" id="iv-paysave">Save as paid</button></div>
+      <div id="iv-paybox" hidden class="cfinv"><div class="grid2"><label for="iv-paidon">Paid on<input id="iv-paidon" type="date" value="${iso(new Date())}"></label><label for="iv-ref">Payment reference (optional)<input id="iv-ref" maxlength="60" placeholder="e.g. BACS INV-0042"></label></div><button type="button" class="btn primary" id="iv-paysave">Save as paid</button></div>
       <div id="iv-qbox" hidden class="cfinv"><label for="iv-q">What's the query? (the trade sees this)<textarea id="iv-q" maxlength="400" placeholder="e.g. Hours for Tuesday don't match the timesheet">${esc(v.query || "")}</textarea></label><button type="button" class="btn primary" id="iv-qsave">Send query</button></div>`
         : ""
     }
@@ -168,8 +169,8 @@ function invDetail(v, owner, who) {
 function empInvoices() {
   const list = S.mine.invoices.filter(isInv).sort((a, b) => b.sentAt - a.sentAt);
   $("main").innerHTML =
-    `<div class="notice">For self-employed workers. Send your invoice here and the date and time you sent it is recorded. You'll see when James has received and paid it.</div>
-    ${S.assets ? "" : `<div class="notice warn"><b>You can't attach files yet.</b> Ask James to change your access to this app to <b>Editor</b> in the app's Share menu, then close and reopen the app.</div>`}
+    `<div class="notice">For self-employed workers. Send your invoice here and the date and time you sent it is recorded. You'll see when ${esc(bossFirst())} has received and paid it.</div>
+    ${S.assets ? "" : `<div class="notice warn"><b>You can't attach files yet.</b> Ask ${esc(bossFirst())} to change your access to this app to <b>Editor</b> in the app's Share menu, then close and reopen the app.</div>`}
     <div class="actions"><button class="btn primary" id="addI" type="button">+ Send an invoice</button></div>
     ${list.length ? `<div class="day">${list.map((v) => invCard(v, false)).join("")}</div>` : '<div class="empty"><strong>No invoices sent yet</strong>Attach your invoice as a PDF or a photo.</div>'}`;
   $("addI").onclick = openInvoice;
@@ -177,7 +178,9 @@ function empInvoices() {
 }
 function openInvoice() {
   if (!S.assets) {
-    toast("You don't have permission to upload. Ask James to make you an Editor on this page.");
+    toast(
+      `You don't have permission to upload. Ask ${bossFirst()} to make you an Editor on this page.`,
+    );
     return;
   }
   setFormType("invoice");
@@ -189,7 +192,7 @@ function openInvoice() {
     <label for="i-date">Invoice date<input id="i-date" type="date" required value="${iso(new Date())}"></label></div>
     <div class="grid2"><label for="i-from">Work from (optional)<input id="i-from" type="date" value="${iso(addDays(mon, -7))}"></label>
     <label for="i-to">Work to (optional)<input id="i-to" type="date" value="${iso(addDays(mon, -1))}"></label></div>
-    ${pickField("i-site", "Site (optional)", siteNames(), "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("i-site", "Site (optional)", siteNames(), "", "e.g. 12 High Street", false)}
     <label for="i-amt">Invoice total £ (optional)<input id="i-amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 850.00"></label>
     <label for="i-file">Invoice file (PDF or photo)<input id="i-file" type="file" accept="application/pdf,image/*,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required></label>
     <label for="i-notes">Notes (optional)<textarea id="i-notes" maxlength="300"></textarea></label>

@@ -4,6 +4,7 @@ import { clientSites } from "../clients/address-book.js";
 import { clStage } from "../clients/clients.js";
 import { viewClient } from "../clients/quick-enquiry.js";
 import { clAddr } from "../clients/stages-planner.js";
+import { bossFirst } from "../core/company-names.js";
 import { pickField, pickVal } from "../core/fields.js";
 import {
   $,
@@ -25,11 +26,13 @@ import { isImg, uploadFile } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { noBin } from "../owner/deleted-items.js";
-import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { allTeam, crewIds, nameOf, sheetOf, teamIds } from "../owner/owner.js";
 import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
-import { diaryHtml, diaryRows, wireDiary } from "./diary.js";
+import { crsOpen } from "./course-booking.js";
+import { diaryHtml, diaryRows, dyGroupName, wireDiary } from "./diary.js";
+import { htHtml, htWire } from "./holiday-tab.js";
 import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
 import {
   plClashHtml,
@@ -46,6 +49,7 @@ import {
   VIS,
   entryChip,
   leaveOf,
+  lvTitle,
   onDay,
   planEntries,
   workDays,
@@ -63,6 +67,7 @@ export {
   keyTimeline,
   leaveCard,
   openKeyDates,
+  openLeave,
   openPlanEditor,
   openPlanView,
   pbEntryDays,
@@ -70,6 +75,7 @@ export {
   pbPlanWeek,
   pbSiteOf,
   pbSiteShort,
+  pbStageName,
   plannerView,
   siteHue,
   wireLeave,
@@ -171,7 +177,8 @@ function pbMenu(anchor, owner) {
         ["send", "📣 Send this week to the team"],
         ["key", "📌 Key dates for a job"],
         ["stages", "🧱 Job timeline"],
-        ["leave", "🌴 Book time off for someone"],
+        ["leave", "🌴 Book holiday or leave for someone"],
+        ["course", "🎓 Book someone on a course"],
         ["req", `✅ Time-off requests${pending ? " (" + pending + ")" : ""}`],
         ["imp", "📥 Add lots (from a spreadsheet)"],
         ["find", "🔍 Search & filter"],
@@ -212,6 +219,7 @@ function pbMenu(anchor, owner) {
           S.f.pmode = "stages";
           render();
         } else if (k === "leave") openLeave(owner);
+        else if (k === "course") crsOpen();
         else if (k === "req") pbRequests();
         else if (k === "imp") openPlanImport();
         else if (k === "find") pbFind();
@@ -240,9 +248,9 @@ function pbTaken() {
   const yr = String(new Date().getFullYear());
   openViewer(
     `<h3 style="font-family:var(--f-display);font-size:22px;margin:0 0 4px;color:var(--accent)">Time off taken in ${yr}</h3><div class="who">Approved working days off, not counting weekends.</div><div class="details" style="margin-top:8px">${
-      teamIds()
+      crewIds()
         .map((id) => {
-          const ls = leaveOf(S.data.signoffs[id]).filter(
+          const ls = leaveOf(sheetOf("signoffs", id)).filter(
             (l) => l.status === "approved" && l.from.startsWith(yr),
           );
           const tot = {};
@@ -268,7 +276,7 @@ function pbFind() {
     `<h3 id="sheettitle">🔍 Search &amp; filter the planner</h3>
     <label for="pf-q">Search<input id="pf-q" type="search" value="${esc(S.f.pq || "")}" placeholder="e.g. skip, scaffold, Kahn"></label>
     <label for="pf-site">Site or job<select id="pf-site"><option value="">All sites and jobs</option>${siteOpts.map((x) => `<option value="${esc(x)}" ${x === (S.f.psite || "") ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
-    <label for="pf-who">Person<select id="pf-who"><option value="">Everyone</option>${teamIds()
+    <label for="pf-who">Person<select id="pf-who"><option value="">Everyone</option>${crewIds()
       .map(
         (id) =>
           `<option value="${esc(id)}" ${id === (S.f.pwho || "") ? "selected" : ""}>${esc(nameOf(id))}</option>`,
@@ -367,7 +375,7 @@ function pbBoardHtml(shown, entries) {
   <div class="pb-wrap"><div class="pb-grid" style="grid-template-columns:78px repeat(${days.length},minmax(${days.length > 5 ? 48 : 60}px,1fr))">
     <div class="pb-corner"><button type="button" class="pb-we" id="pb-we" title="${showWe ? "Hide" : "Show"} weekend">${showWe ? "Mon–Sun" : "+ Sat/Sun"}</button></div>${days.map((d) => `<div class="pb-dh ${iso(d) === today ? "today" : ""} ${d.getDay() === 0 || d.getDay() === 6 ? "wkend" : ""}"><small>${esc(d.toLocaleDateString("en-GB", { weekday: "short" }))}</small><b>${d.getDate()}</b></div>`).join("")}
     <div class="pb-name pb-freen"><small>Free</small></div>${freeRow}
-    ${rows.map((r) => `<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.id === S.me ? "Me" : r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
+    ${rows.map((r, i) => `${r.grp !== undefined && (i === 0 || rows[i - 1].grp !== r.grp) && rows.some((x) => x.grp !== rows[0].grp) ? `<div class="pb-grp"><b>${esc(dyGroupName(r.grp))}</b> <span class="who">${rows.filter((x) => x.grp === r.grp).length}</span></div>` : ""}<div class="pb-name" data-w="${esc(r.id)}">${r.id !== S.me ? avatarHtml(r.id, 26) : `<span class="pav pavi" style="width:26px;height:26px;font-size:10px">${esc(initials(myName()))}</span>`}<span>${esc(r.name.split(" ")[0])}</span></div>${days.map((d) => cell(r, d)).join("")}`).join("")}
     ${unRow}
   </div></div>
   ${
@@ -565,11 +573,7 @@ function pbWireBoard(shown, entries) {
         toast(
           "Moved" +
             (shift ? " to " + shortDay(data.from) : "") +
-            (toW !== fromW
-              ? toW
-                ? " · " + (toW === S.me ? "you" : nameOf(toW))
-                : " · not assigned"
-              : ""),
+            (toW !== fromW ? (toW ? " · " + nameOf(toW) : " · not assigned") : ""),
         );
         render();
       } catch (err) {
@@ -582,6 +586,22 @@ function pbWireBoard(shown, entries) {
   });
 }
 /* ---------- job timeline: each site's stages across the coming weeks ---------- */
+/* a stage's name without the site on the end ("Plaster – 12 Marine Way" under the 12 Marine Way heading is "Plaster") */
+function pbStageName(t, site) {
+  const short = String(pbSiteShort(site) || "").toLowerCase();
+  const parts = String(t || "").split(/\s+[–-]\s+/);
+  if (parts.length > 1) {
+    const last = parts[parts.length - 1].toLowerCase();
+    const full = String(site || "").toLowerCase();
+    if (
+      (short && last.includes(short)) ||
+      full.startsWith(last) ||
+      last.startsWith(full.split(",")[0])
+    )
+      parts.pop();
+  }
+  return pbShort(parts.join(" – "));
+}
 function pbStagesHtml(shown) {
   const start = monday(parse(pbPlanWeek()));
   const weeks = 12;
@@ -604,33 +624,36 @@ function pbStagesHtml(shown) {
     const d = addDays(start, i * 7);
     return `<div class="pbs-wh" style="left:${i * 7 * colW}px;width:${7 * colW}px">${esc(d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }))}</div>`;
   }).join("");
-  return `<div class="who" style="margin-bottom:6px">One row per site, a bar for each booking or stage. Hold and drag a bar to move it; you'll be asked whether to move the later stages with it. <button type="button" class="linkbtn" id="pbs-add">📌 Add key dates / stages</button></div>
+  return `<div class="who" style="margin-bottom:6px">Each job with its stages under it – tap a job to fold it away. Hold and drag a bar to move it; you'll be asked whether to move the later stages with it. <button type="button" class="linkbtn" id="pbs-add">📌 Add key dates / stages</button></div>
   <div class="pb-wrap"><div class="pbs" style="width:${150 + days * colW}px"><div class="pbs-head"><div class="pbs-corner">Site</div><div class="pbs-weeks" style="width:${days * colW}px">${wkHead}</div></div>
   ${
+    /* one job = a heading line (tap to fold its stages away) and one line per stage or booking under it, the full name
+       on the left and its bar across the weeks (James, Nov 2026: the Jobs view "is too crowded") */
     sites
       .map((s) => {
         const rows = list
           .filter((p) => same(pbSiteOf(p), s))
-          .sort((a, b) => a.from.localeCompare(b.from));
-        const lanes = [];
-        rows.forEach((p) => {
-          const a = dx(p.from),
-            b = dx(p.to || p.from) + 1;
-          let k = lanes.findIndex((l) => l <= a);
-          if (k < 0) {
-            lanes.push(b);
-            k = lanes.length - 1;
-          } else lanes[k] = b;
-          p.__lane = k;
-        });
-        return `<div class="pbs-row" style="height:${Math.max(1, lanes.length) * 30 + 8}px"><div class="pbs-name"><b>${esc(pbSiteShort(s))}</b><small>${rows.length} booked</small></div><div class="pbs-lane" style="width:${days * colW}px" data-site="${esc(s)}">${Array.from({ length: weeks }, (_, i) => `<i class="pbs-wl" style="left:${i * 7 * colW}px"></i>`).join("")}${dx(today) >= 0 && dx(today) < days ? `<i class="pbs-today" style="left:${dx(today) * colW}px;width:${colW}px"></i>` : ""}
-      ${rows
-        .map((p) => {
-          const a = dx(p.from),
-            b = Math.min(days, dx(p.to || p.from) + 1);
-          return `<button type="button" class="pbs-bar t-${esc(p.type)} drag" data-p="${esc(p.id)}" style="left:${a * colW}px;width:${Math.max(colW, (b - a) * colW - 2)}px;top:${4 + p.__lane * 30}px;${pbChipStyle(p)}" title="${esc(p.title)}">${esc(pbShort(p.title))}${(p.people || []).length ? ` <small>${esc(p.people.map((id) => nameOf(id).split(" ")[0]).join(", "))}</small>` : ""}</button>`;
-        })
-        .join("")}</div></div>`;
+          .sort(
+            (a, b) =>
+              a.from.localeCompare(b.from) || (a.to || a.from).localeCompare(b.to || b.from),
+          );
+        const folded = (S.f.pbsFold || []).includes(s);
+        const deco = `${Array.from({ length: weeks }, (_, i) => `<i class="pbs-wl" style="left:${i * 7 * colW}px"></i>`).join("")}${dx(today) >= 0 && dx(today) < days ? `<i class="pbs-today" style="left:${dx(today) * colW}px;width:${colW}px"></i>` : ""}`;
+        const lo = Math.min(...rows.map((p) => dx(p.from))),
+          hi = Math.min(days, Math.max(...rows.map((p) => dx(p.to || p.from) + 1)));
+        const head = `<div class="pbs-row pbs-site"><div class="pbs-name"><button type="button" class="pbs-fold" data-s="${esc(s)}" aria-expanded="${!folded}"><span aria-hidden="true">${folded ? "▸" : "▾"}</span> <b>${esc(pbSiteShort(s))}</b></button><small>${rows.length} ${rows.length === 1 ? "stage or booking" : "stages and bookings"}</small></div><div class="pbs-lane" style="width:${days * colW}px" data-site="${esc(s)}">${deco}<i class="pbs-sum" style="left:${lo * colW}px;width:${Math.max(colW, (hi - lo) * colW - 2)}px;--pc:hsl(${siteHue(s)} 55% 42%)"></i></div></div>`;
+        if (folded) return head;
+        return (
+          head +
+          rows
+            .map((p) => {
+              const x0 = dx(p.from),
+                x1 = Math.min(days, dx(p.to || p.from) + 1);
+              const who = (p.people || []).map((id) => nameOf(id).split(" ")[0]).join(", ");
+              return `<div class="pbs-row pbs-stage"><div class="pbs-name" title="${esc(p.title)}"><span class="pbs-sn">${esc(pbStageName(p.title, s))}</span>${who ? `<small>${esc(who)}</small>` : ""}</div><div class="pbs-lane" style="width:${days * colW}px" data-site="${esc(s)}">${deco}<button type="button" class="pbs-bar t-${esc(p.type)} drag" data-p="${esc(p.id)}" style="left:${x0 * colW}px;width:${Math.max(colW, (x1 - x0) * colW - 2)}px;top:4px;${pbChipStyle(p)}" title="${esc(p.title)}">${x1 - x0 > 3 ? `${x1 - x0} days` : x1 - x0 > 1 ? `${x1 - x0}d` : ""}</button></div></div>`;
+            })
+            .join("")
+        );
       })
       .join("") ||
     '<div class="nothing" style="padding:14px">Nothing booked against a site in the next 12 weeks. Use 📌 Add key dates / stages.</div>'
@@ -638,6 +661,18 @@ function pbStagesHtml(shown) {
   </div></div>`;
 }
 function pbWireStages(shown) {
+  $("main")
+    .querySelectorAll(".pbs-fold")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          const f = new Set(S.f.pbsFold || []);
+          if (f.has(b.dataset.s)) f.delete(b.dataset.s);
+          else f.add(b.dataset.s);
+          S.f.pbsFold = [...f];
+          render();
+        }),
+    );
   const add = $("pbs-add");
   if (add) add.onclick = () => openKeyDates("", "");
   const colW = 22;
@@ -760,12 +795,12 @@ function pbDaySheet(shown) {
               const sr = p.site ? siteRec(p.site) : null;
               const addr = p.site || "";
               const others = (p.people || []).filter((x) => x !== S.me).map(nameOf);
-              return `<button type="button" class="pb-dsi t-${esc(p.type)}" data-p="${esc(p.id)}" style="${pbChipStyle(p)}"><span class="pb-dst">${p.time ? esc(p.time) + (p.endTime ? "–" + esc(p.endTime) : "") : "All day"}</span><span class="pb-dsm"><b>${esc(p.title)}</b>${addr ? `<span>📍 ${esc(addr)}</span>` : ""}${others.length ? `<span>👥 With ${esc(others.join(", "))}</span>` : ""}${p.notes ? `<span class="pb-dsn">${esc(p.notes.length > 160 ? p.notes.slice(0, 160) + "…" : p.notes)}</span>` : ""}</span></button>${addr ? `<div class="actions pb-dsa"><button type="button" class="pillbtn maplink" data-addr="${esc(addr)}" data-label="${esc(p.title)}">📍 Directions</button>${co.mobile || co.phone ? `<a class="pillbtn" href="tel:${esc(String(co.mobile || co.phone).replace(/\s+/g, ""))}" style="text-decoration:none">📞 Call ${esc((co.owner || "James").split(" ")[0])}</a>` : ""}</div>` : ""}`;
+              return `<button type="button" class="pb-dsi t-${esc(p.type)}" data-p="${esc(p.id)}" style="${pbChipStyle(p)}"><span class="pb-dst">${p.time ? esc(p.time) + (p.endTime ? "–" + esc(p.endTime) : "") : "All day"}</span><span class="pb-dsm"><b>${esc(p.title)}</b>${addr ? `<span>📍 ${esc(addr)}</span>` : ""}${others.length ? `<span>👥 With ${esc(others.join(", "))}</span>` : ""}${p.notes ? `<span class="pb-dsn">${esc(p.notes.length > 160 ? p.notes.slice(0, 160) + "…" : p.notes)}</span>` : ""}</span></button>${addr ? `<div class="actions pb-dsa"><button type="button" class="pillbtn maplink" data-addr="${esc(addr)}" data-label="${esc(p.title)}">📍 Directions</button>${co.mobile || co.phone ? `<a class="pillbtn" href="tel:${esc(String(co.mobile || co.phone).replace(/\s+/g, ""))}" style="text-decoration:none">📞 Call ${esc(bossFirst())}</a>` : ""}</div>` : ""}`;
             })
             .join("")
         : off
           ? ""
-          : '<div class="nothing">Nothing booked. Check with James.</div>'
+          : `<div class="nothing">Nothing booked. Check with ${esc(bossFirst())}.</div>`
     }</div>`;
   };
   return card(today, "Today") + card(tom, "Tomorrow");
@@ -786,12 +821,13 @@ function pbHeader(owner, mode) {
         ["day", "Day"],
         ["stages", "Jobs"],
         ["month", "Month"],
+        ["hol", "🌴 Holidays & leave"],
       ]
     : [
         ["week", "Week"],
         ["month", "Month"],
       ];
-  return `<div class="pb-top">${mode !== "day" && mode !== "where" ? `<button type="button" class="iconbtn" id="pb-prev" aria-label="Previous week">‹</button><b class="pb-lab">${esc(lab)}</b><button type="button" class="iconbtn" id="pb-next" aria-label="Next week">›</button>${pbPlanWeek() !== iso(monday(new Date())) ? `<button type="button" class="pillbtn" id="pb-today">Today</button>` : ""}` : `<b class="pb-lab"></b>`}
+  return `<div class="pb-top">${mode !== "day" && mode !== "where" && mode !== "hol" ? `<button type="button" class="iconbtn" id="pb-prev" aria-label="Previous week">‹</button><b class="pb-lab">${esc(lab)}</b><button type="button" class="iconbtn" id="pb-next" aria-label="Next week">›</button>${pbPlanWeek() !== iso(monday(new Date())) ? `<button type="button" class="pillbtn" id="pb-today">Today</button>` : ""}` : `<b class="pb-lab"></b>`}
     </div><div class="pb-top pb-top2"><div class="seg pb-seg" id="pb-mode">${views.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div><button type="button" class="iconbtn" id="pb-menu" aria-label="More" title="More">⋯</button></div>`;
 }
 function pbWireHeader(owner) {
@@ -830,7 +866,7 @@ function plannerView() {
     S.f.pmode || (owner ? (nlOn() && window.innerWidth < 700 ? "where" : "board") : "week");
   if (owner && mode === "diary") mode = "day";
   if (owner && mode === "week") mode = "board";
-  if (!owner && ["where", "board", "day", "stages", "diary", "year", "list"].includes(mode))
+  if (!owner && ["where", "board", "day", "stages", "diary", "year", "list", "hol"].includes(mode))
     mode = "week";
   const entries = planEntries();
   const who = owner ? S.f.pwho || "" : "";
@@ -854,7 +890,9 @@ function plannerView() {
   let html = pbHeader(owner, mode);
   const today = iso(new Date());
   if (!owner) html += pbDaySheet(shown);
-  if (mode === "where") {
+  if (mode === "hol") {
+    html += htHtml(entries);
+  } else if (mode === "where") {
     html += plWhereHtml(shown);
   } else if (mode === "board") {
     html += pbBoardHtml(shown, entries);
@@ -957,7 +995,7 @@ function plannerView() {
     ? []
     : leaveOf(S.mine.signoffs).sort((a, b) => b.from.localeCompare(a.from));
   /* holidays: an employee's own figures, or everyone's for James */
-  html += owner ? holOwnerHtml() : holCardHtml();
+  if (mode !== "hol") html += owner ? holOwnerHtml() : holCardHtml();
   if (!owner)
     html += `<div class="day"><div class="dayh"><span>My time-off requests</span><span class="sum">${myLeave.length}</span></div>${myLeave.length ? myLeave.map((l) => leaveCard(l, false)).join("") : '<div class="nothing">No requests yet.</div>'}</div>`;
   if (false) {
@@ -996,6 +1034,7 @@ function plannerView() {
   pbWireHeader(owner);
   holWire();
   if (mode === "where") plWireWhere(entries);
+  if (mode === "hol") htWire(entries);
   if (mode === "board") pbWireBoard(shown, entries);
   if ($("pb-reqline")) $("pb-reqline").onclick = pbRequests;
   if (mode === "stages") pbWireStages(shown);
@@ -1189,7 +1228,7 @@ function openKeyDates(site, jobId) {
   ];
   openSheet(
     `<h3 id="sheettitle">Key dates for a job</h3>
-    ${pickField("kd-site", "Site", siteNames(), jj ? jj.site : site, "e.g. 12 Marine Way, Exmouth")}
+    ${pickField("kd-site", "Site", siteNames(), jj ? jj.site : site, "e.g. 12 High Street")}
     <label for="kd-job">Job sheet (optional)<select id="kd-job"><option value="">Whole site, not one job sheet</option>${jobs.map((j) => `<option value="${esc(j.id)}" ${j.id === jobId ? "selected" : ""}>${esc(j.title)} · ${esc(j.site)}</option>`).join("")}</select></label>
     <div><div class="checkhead"><span class="flabel" style="margin:0">Dates</span><span class="who">Name, date, and an end date if it runs over several days</span></div><div id="kd-rows"></div>
       <button type="button" class="pillbtn" id="kd-add" style="margin-top:6px">+ Add another date</button></div>
@@ -1329,7 +1368,7 @@ function leaveCard(l, owner) {
     <div class="job"><span class="tag ${st[1]}">${st[0]}</span>${owner ? esc(nameOf(l.who)) + " · " : ""}${esc(LEAVE_TYPES[l.leaveType] || "Time off")}</div>
     <div class="sub">${shortDay(l.from)}${l.to !== l.from ? " – " + shortDay(l.to) : ""}${l.half ? " · half day (" + esc(l.half) + ")" : ""} · ${days} working day${days === 1 ? "" : "s"}</div>
     ${l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}
-    ${l.reply ? `<div class="sub"><b>James:</b> ${esc(l.reply)}</div>` : ""}
+    ${l.reply ? `<div class="sub"><b>${esc(bossFirst())}:</b> ${esc(l.reply)}</div>` : ""}
     <div class="sub">${l.requestedAt || l.created ? "Requested " + stamp(l.requestedAt || l.created) : "Waiting for an answer"}${l.answeredAt ? " · answered " + stamp(l.answeredAt) : ""}</div>
     <div class="filerow">${owner && l.status === "pending" ? `<button type="button" class="btn primary lv-yes" style="padding:7px 14px">Approve</button><button type="button" class="btn lv-no" style="padding:7px 14px">Decline</button>` : ""}
     ${!owner && l.status === "pending" ? `<button type="button" class="linkdanger lv-cancel">Cancel request</button>` : ""}</div></div></div>`;
@@ -1385,7 +1424,7 @@ function answerLeave(l, yes) {
             from: l.from,
             to: l.to,
             type: "holiday",
-            title: nameOf(l.who) + " – off",
+            title: lvTitle(nameOf(l.who), l.leaveType),
             people: [l.who],
             vis,
             notes: "",
@@ -1416,7 +1455,7 @@ function answerLeave(l, yes) {
     );
 }
 function openLeave(owner) {
-  const ids = teamIds();
+  const ids = crewIds();
   const today = iso(new Date());
   openSheet(
     `<h3 id="sheettitle">${owner ? "Book time off" : "Request time off"}</h3>
@@ -1466,12 +1505,12 @@ function openLeave(owner) {
           }
           await S.db
             .doc("sheets/" + w + "/signoffs/" + id)
-            .set(Object.assign(data, { answeredAt: now, reply: "Booked by James" }));
+            .set(Object.assign(data, { answeredAt: now, reply: `Booked by ${bossFirst()}` }));
           await S.db.doc("plan/leave-" + id).set({
             from,
             to,
             type: "holiday",
-            title: nameOf(w) + " – off",
+            title: lvTitle(nameOf(w), type),
             people: [w],
             vis: "all",
             notes: "",
@@ -1489,7 +1528,7 @@ function openLeave(owner) {
         toast(
           r === "queued"
             ? "Request kept on this phone. It will send when you have signal."
-            : "Request sent to James",
+            : `Request sent to ${bossFirst()}`,
         );
         render();
       } catch (e) {
@@ -1519,7 +1558,8 @@ function openLeave(owner) {
   upd();
 }
 function openPlanEditor(p, date, copy) {
-  const ids = teamIds();
+  if (p && !copy && p.type === "course") return crsOpen(p);
+  const ids = crewIds();
   const isNew = !p;
   if (copy) p = null;
   const src = p || copy || null;
@@ -1533,6 +1573,8 @@ function openPlanEditor(p, date, copy) {
     `<h3 id="sheettitle">${isNew ? "Add to planner" : "Edit planner entry"}</h3>${pcl ? `<button type="button" class="btn backbtn" id="pe-client" style="align-self:flex-start">👤 Open client: ${esc(pcl.name)} (${esc(clStage(pcl.stage))})</button>` : ""}
     <label for="pe-title">What<input id="pe-title" required maxlength="100" placeholder="e.g. Kitchen fit, Building control visit, Skip delivery" value="${esc(src ? src.title : "")}"></label>
     <div><div class="flabel">Type</div><div class="seg" id="pe-type">${Object.entries(PTYPES)
+      /* courses have their own form (🎓 Book someone on a course) */
+      .filter(([k]) => k !== "course" || (p && p.type === "course"))
       .map(
         ([k, l]) =>
           `<button type="button" data-v="${k}" aria-pressed="${(src ? src.type : "work") === k}">${l}</button>`,
@@ -1540,7 +1582,7 @@ function openPlanEditor(p, date, copy) {
       .join("")}</div></div>
     <div class="grid2"><label for="pe-from">From<input id="pe-from" type="date" required value="${esc(p ? p.from : date)}"></label><label for="pe-to">To<input id="pe-to" type="date" required value="${esc(p ? p.to || p.from : copy ? date : date)}"></label></div>
     <div class="grid2"><label for="pe-time">Start time (optional)<input id="pe-time" type="time" value="${esc(src ? src.time || "" : "")}"></label><label for="pe-etime">End time (optional)<input id="pe-etime" type="time" value="${esc(src ? src.endTime || "" : "")}"></label></div>
-    ${pickField("pe-site", "Site (optional)", siteNames(), src ? src.site || "" : "", "e.g. 12 Marine Way, Exmouth", false)}
+    ${pickField("pe-site", "Site (optional)", siteNames(), src ? src.site || "" : "", "e.g. 12 High Street", false)}
     <label for="pe-job">Job sheet (optional)<select id="pe-job"><option value="">Not linked to a job sheet</option>${S.jobs
       .filter((j) => j.status !== "closed" || (src && src.jobId === j.id))
       .map(

@@ -1,9 +1,20 @@
 <title>SiteHQ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Montserrat:wght@500;800&display=swap">
 <!-- styles: src/styles/index.css and the files it imports are inlined here by scripts/bundle.mjs -->
 
+<div class="ohq" id="ohq" role="status" aria-live="polite" aria-label="Opening">
+  <div class="ohq-mid">
+    <div class="ohq-tile" id="ohq-tile" aria-hidden="true">HQ</div>
+    <div class="ohq-name" id="ohq-name">SiteHQ</div>
+    <div class="ohq-sub" id="ohq-sub">Opening your work…</div>
+  </div>
+  <div class="ohq-foot">
+    <div class="ohq-how" id="ohq-how" hidden><b>Sign in to use the app</b>Open this page while signed in to claude.ai, using the email address you were invited with.</div>
+    <div class="ohq-by"><span class="ohq-sq">Site<span>HQ</span></span><span>by</span><svg viewBox="-124 -124 248 248" width="12" height="12" aria-hidden="true"><polyline points="86.6,-5 86.6,-50 0,-100 -86.6,-50 86.6,50 0,100 -86.6,50 -86.6,5" fill="none" stroke="#D0101C" stroke-width="36" stroke-linejoin="miter" stroke-miterlimit="4"/></svg><b>STRANIX</b></div>
+  </div>
+</div>
 <div class="band"></div>
 <div class="topfabs"><button type="button" class="issbtn" id="issbtn" hidden aria-label="Report a problem with the app" title="Report a problem with the app"><span aria-hidden="true">⚠</span><span class="isst">Report issue</span><span class="issn" hidden></span></button><button type="button" class="aibtn" id="aibtn" hidden aria-label="Ask Claude for help" title="Ask Claude"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z" fill="currentColor"/><path d="M18.5 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z" fill="currentColor" opacity=".75"/></svg><span>Ask Claude</span></button></div>
 <div class="aipanel" id="aipanel" hidden role="dialog" aria-modal="true" aria-labelledby="ai-title">
@@ -15,7 +26,7 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <div class="brandrow"><div class="logo"><img id="hlogo" src="/_blob/f4e7a0ecb7e0c19e43bdcc16b3a5cbc0" alt="JEB Building Services"></div><span class="appbrand" aria-label="SiteHQ">Site<b>HQ</b></span></div>
+      <div class="brandrow"><div class="logo"><img id="hlogo" src="/_blob/f4e7a0ecb7e0c19e43bdcc16b3a5cbc0" alt=""></div><span class="appbrand" aria-label="SiteHQ">Site<b>HQ</b></span></div>
       <h1 id="h1">SiteHQ</h1>
     </div>
     <div class="who" id="who"></div>
@@ -36,6 +47,7 @@
     <div class="empty"><strong>Opening…</strong>Your timesheets, checks, photos and invoices will show here.</div>
   </main>
   <div class="status" id="status"></div>
+  <div class="appfoot" aria-label="SiteHQ by Stranix"><span class="ohq-sq">Site<span>HQ</span></span><span>by</span><svg viewBox="-124 -124 248 248" width="12" height="12" aria-hidden="true"><polyline points="86.6,-5 86.6,-50 0,-100 -86.6,-50 86.6,50 0,100 -86.6,50 -86.6,5" fill="none" stroke="#D0101C" stroke-width="36" stroke-linejoin="miter" stroke-miterlimit="4"/></svg><b>STRANIX</b></div>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -52,9 +64,9 @@
   <form class="composer" id="composer" autocomplete="off">
     <div class="cmx" id="cm-extras" hidden></div>
     <div class="crow"><button type="button" class="iconbtn" id="cm-pin" aria-label="Send a location" title="Send a location">📍</button><button type="button" class="iconbtn" id="cm-tag" aria-label="Tag a job" title="Tag a job"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 2h6l6 6-6 6-6-6z"/><circle cx="5.5" cy="5.5" r="1.2" fill="currentColor"/></svg></button>
-      <label class="iconbtn" for="cm-cam" aria-label="Take a photo" title="Take a photo" style="cursor:pointer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="4" width="13" height="9.5" rx="2"/><circle cx="8" cy="8.7" r="2.5"/><path d="M5.5 4l1-2h3l1 2"/></svg><input type="file" id="cm-cam" accept="image/*" capture="environment" hidden></label>
-      <label class="iconbtn" for="cm-vid2" aria-label="Record a video" title="Record a video" style="cursor:pointer">🎥<input type="file" id="cm-vid2" accept="video/*" capture="environment" hidden></label><button type="button" class="iconbtn vrec" id="cm-voice" aria-label="Record a voice note" title="Record a voice note">🎤</button>
-      <label class="iconbtn" for="cm-file" aria-label="Choose a photo" title="Choose a photo from your phone" style="cursor:pointer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5.5" cy="6" r="1.3"/><path d="M2 12l4-4 3 3 2-2 3 3"/></svg><input type="file" id="cm-file" accept="image/*" hidden></label>
+      <label class="iconbtn" for="cm-cam" aria-label="Take a photo" title="Take a photo" style="cursor:pointer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="4" width="13" height="9.5" rx="2"/><circle cx="8" cy="8.7" r="2.5"/><path d="M5.5 4l1-2h3l1 2"/></svg><input type="file" id="cm-cam" class="fpick" accept="image/*" capture="environment"></label>
+      <label class="iconbtn" for="cm-vid2" aria-label="Record a video" title="Record a video" style="cursor:pointer">🎥<input type="file" id="cm-vid2" class="fpick" accept="video/*" capture="environment"></label><button type="button" class="iconbtn vrec" id="cm-voice" aria-label="Record a voice note" title="Record a voice note">🎤</button>
+      <label class="iconbtn" for="cm-file" aria-label="Choose a photo" title="Choose a photo from your phone" style="cursor:pointer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5.5" cy="6" r="1.3"/><path d="M2 12l4-4 3 3 2-2 3 3"/></svg><input type="file" id="cm-file" class="fpick" accept="image/*"></label>
       <textarea id="cm-text" rows="1" maxlength="2000" placeholder="Message" aria-label="Message"></textarea>
       <button type="submit" class="btn primary" id="cm-send">Send</button></div>
   </form>

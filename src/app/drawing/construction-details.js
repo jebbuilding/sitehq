@@ -1,11 +1,13 @@
 /* ===== construction details: stud wall connections, framing, headers, ground floor and floor details ===== */
 import { NP_BLD_BOX, NP_BLD_LINE, npBldLine, npBldSym } from "./components.js";
-import { NP_BATHNICE, NP_NICE, NP_REAL, npBath, npNice } from "./paving.js";
+import { NP_BATHNICE, NP_NICE, npBath, npNice } from "./nice-symbols.js";
+import { NP_REAL } from "./standard-sizes.js";
 import { NP_ANNO_BOX, NP_MEMBR, npAnnoLine, npAnnoSym, npFrame } from "./symbols-annotation.js";
 import { NP_DES_BOX, npDesignLine, npDesignSym } from "./symbols-design.js";
 import { npElevLine, npElevSym } from "./symbols-elevation.js";
 import { NP_TIMB_BOX, npTimberSym } from "./timber.js";
 import { NP_WALLK, npDrawWalls, npHexMix, npPattern, npWallInfo } from "./walls.js";
+import { npWindowPlan } from "./window-plan.js";
 export {
   NP_COLS,
   NP_DET_BOX,
@@ -1099,7 +1101,25 @@ const NP_SHAPES = [
   ["ridgeb", "⊠ Ridge board", "Section: roof parts"],
   ["purlin", "⊠ Purlin", "Section: roof parts"],
   ["eaves", "◡ Eaves: fascia, soffit & gutter", "Section: roof parts"],
+  ["eavestray", "━ Eaves felt support tray", "Section: roof parts"],
+  ["ofvent", "▤ Over-fascia vent (10 mm / 25 mm)", "Section: roof parts"],
+  ["birdcomb", "⫼ Bird comb / eaves filler", "Section: roof parts"],
+  ["tiltfillet", "◢ Tilting fillet", "Section: roof parts"],
+  ["venttray", "⌇ Rafter vent tray (50 mm air gap)", "Section: roof parts"],
+  ["pirins", "≋ PIR insulation board (between / over rafters)", "Section: roof parts"],
+  ["quilt", "≈ Loft quilt insulation", "Section: roof parts"],
   ["flatroof", "☰ Flat roof build-up (warm deck)", "Section: roof parts"],
+  ["secbu", "🧱 Build-up: wall, roof or floor in layers", "Section: walls, floors & foundations"],
+  [
+    "secsteel",
+    "🔩 Steel beam cut through the wall or floor (real size)",
+    "Section: walls, floors & foundations",
+  ],
+  [
+    "secbear",
+    "🔩 Steel beam end on its padstone (real size)",
+    "Section: walls, floors & foundations",
+  ],
   ["fdn", "▨ Strip foundation with blockwork", "Section: walls, floors & foundations"],
   ["trenchfill", "▨ Trench fill foundation", "Section: walls, floors & foundations"],
   ["bblock", "⊥ Beam & block floor", "Section: walls, floors & foundations"],
@@ -1398,17 +1418,7 @@ function drawShape(ctx, o) {
       break;
     }
     case "window": {
-      ctx.strokeRect(x0, y0, w, h);
-      const v = w >= h;
-      ctx.beginPath();
-      if (v) {
-        ctx.moveTo(x0, cy);
-        ctx.lineTo(x1, cy);
-      } else {
-        ctx.moveTo(cx, y0);
-        ctx.lineTo(cx, y1);
-      }
-      ctx.stroke();
+      npWindowPlan(ctx, o, x0, y0, w, h);
       break;
     }
     case "arc": {
@@ -1622,28 +1632,66 @@ function npLineSym(ctx, o) {
       break;
     }
     case "sdoor": {
-      const g = Math.max(5, lw * 2);
-      ln(o.a, o.b);
+      /* sliding doors, as plans show them (James, Nov 2026: make them as clear as a door): two glazed panels on their
+         two tracks, overlapping in the middle, and an arrow along the one that slides */
+      const g = Math.max(lw * 2.4, L * 0.03),
+        pt = Math.max(lw * 1.8, g * 0.9);
+      const panel = (t1, t2, off) => {
+        const q = [
+          P(t1, off - pt / 2),
+          P(t2, off - pt / 2),
+          P(t2, off + pt / 2),
+          P(t1, off + pt / 2),
+        ];
+        ctx.beginPath();
+        q.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+        ctx.closePath();
+        ctx.save();
+        ctx.fillStyle = "rgba(56,152,236,0.32)";
+        ctx.fill();
+        ctx.lineWidth = lw * 1.2;
+        ctx.stroke();
+        ctx.restore();
+      };
+      panel(0, L * 0.55, g);
+      panel(L * 0.45, L, -g);
       ctx.save();
-      ctx.lineWidth = lw * 1.6;
-      ln(P(0, g), P(L * 0.6, g));
-      ln(P(L * 0.4, -g), P(L, -g));
+      ctx.lineWidth = Math.max(lw * 0.8, 0.6);
+      const ay2 = -g - pt / 2 - Math.max(lw * 4, g * 1.6);
+      ln(P(L * 0.9, ay2), P(L * 0.58, ay2));
+      head(P(L * 0.58, ay2), an + Math.PI);
       ctx.restore();
-      head(P(L * 0.6 + Math.max(12, lw * 4), g * 3), an);
       break;
     }
     case "bifold": {
-      const n = 4,
-        amp = Math.min(L / (n * 1.2), 40);
+      /* bi-fold doors: about one leaf per 700 mm (an even number, 2 to 8), drawn bold and folded out, the closed line dashed */
+      const mm = ctx.__mm || 0;
+      /* an even number, so the last leaf folds back to the frame */
+      const n = mm ? Math.max(2, Math.min(8, 2 * Math.round(L / (1400 * mm)))) : 4,
+        leaf = L / n,
+        amp = leaf * 0.45;
+      ctx.save();
+      ctx.setLineDash([lw * 2, lw * 2]);
+      ctx.lineWidth = Math.max(lw * 0.6, 0.5);
+      ln(o.a, o.b);
+      ctx.restore();
+      ctx.save();
+      ctx.lineWidth = lw * 1.5;
+      ctx.lineJoin = "round";
       ctx.beginPath();
       for (let i = 0; i <= n; i++) {
-        const p = P((L * i) / n, i % 2 ? -amp : 0);
+        const p = P(leaf * i, i % 2 ? -amp : 0);
         i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
       }
       ctx.stroke();
-      ctx.save();
-      ctx.setLineDash([lw * 2, lw * 2]);
-      ln(o.a, o.b);
+      /* the hinges */
+      for (let i = 0; i <= n; i++) {
+        const p = P(leaf * i, i % 2 ? -amp : 0);
+        ctx.beginPath();
+        ctx.arc(p[0], p[1], Math.max(lw * 1.2, 1), 0, 7);
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.fill();
+      }
       ctx.restore();
       break;
     }
@@ -1774,6 +1822,21 @@ function npStairs(ctx, o, x0, y0, w, h) {
           [x0 + w / 2, y0 + h * 0.04],
         ];
     arrowTo(rev(p));
+    /* newel posts on the open side(s), from the stair builder (90 mm square) */
+    if (o.sb && +o.sb.open > 0) {
+      const nw = mm ? 90 * mm : wid * 0.1;
+      const sides = +o.sb.open >= 2 ? [0, 1] : [1];
+      ctx.save();
+      ctx.fillStyle = ctx.strokeStyle;
+      sides.forEach((sd) =>
+        [0, 1].forEach((e) => {
+          const px = v ? (e ? x1 - nw : x0) : sd ? x1 - nw : x0,
+            py = v ? (sd ? y1 - nw : y0) : e ? y0 : y1 - nw;
+          ctx.fillRect(px, py, nw, nw);
+        }),
+      );
+      ctx.restore();
+    }
     const fs = Math.min(wid * 0.28, 30);
     const lp = rev(p)[0];
     label(

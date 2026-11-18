@@ -1,5 +1,6 @@
 /* ================= CLIENT UPLOADS (photos & documents from the client to James), stored in chunks in their own portal area ================= */
 import { PT, ptManager } from "./portal.js";
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, fsize, iso, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -102,8 +103,8 @@ async function cuQuickPhoto(f) {
   const urls = items.map((i) => URL.createObjectURL(i.blob));
   const n1 = items.length === 1;
   openSheet(
-    `<h3 id="sheettitle">📷 Send ${n1 ? "this photo" : "these " + items.length + " photos"} to James?</h3>${pv ? `<div class="notice warn" style="margin:0">Preview: this is what the client sees. Nothing will actually be sent.</div>` : ""}<div class="cqgrid">${urls.map((u) => `<img src="${u}" alt="Your photo">`).join("")}</div>
-    <label for="cq-note">Message (optional)<textarea id="cq-note" maxlength="500" placeholder="e.g. Crack has appeared above the back door"></textarea></label><div class="who" id="cq-prog"></div>${formFoot(false, "Send to James")}`,
+    `<h3 id="sheettitle">📷 Send ${n1 ? "this photo" : "these " + items.length + " photos"} to ${esc(bossFirst())}?</h3>${pv ? `<div class="notice warn" style="margin:0">Preview: this is what the client sees. Nothing will actually be sent.</div>` : ""}<div class="cqgrid">${urls.map((u) => `<img src="${u}" alt="Your photo">`).join("")}</div>
+    <label for="cq-note">Message (optional)<textarea id="cq-note" maxlength="500" placeholder="e.g. Crack has appeared above the back door"></textarea></label><div class="who" id="cq-prog"></div>${formFoot(false, `Send to ${bossFirst()}`)}`,
     async () => {
       if (pv) {
         closeForm();
@@ -118,7 +119,11 @@ async function cuQuickPhoto(f) {
         closeForm();
         urls.forEach((u) => URL.revokeObjectURL(u));
         toast(
-          n ? (n === 1 ? "Photo sent to James" : n + " photos sent to James") : "Nothing was sent",
+          n
+            ? n === 1
+              ? `Photo sent to ${bossFirst()}`
+              : n + ` photos sent to ${bossFirst()}`
+            : "Nothing was sent",
         );
         render();
       } catch (e) {
@@ -140,8 +145,8 @@ function cuQuickVideo(f) {
   const url = URL.createObjectURL(f);
   const name = (f.name || "video").replace(/\.[^.]+$/, "") + "." + vidExt(f.type);
   openSheet(
-    `<h3 id="sheettitle">🎥 Send this video to James?</h3>${pv ? `<div class="notice warn" style="margin:0">Preview: this is what the client sees. Nothing will actually be sent.</div>` : ""}<video src="${url}" controls playsinline style="width:100%;max-height:42vh;border-radius:10px;background:#000"></video>
-    <label for="cv-note2">Message (optional)<textarea id="cv-note2" maxlength="500" placeholder="e.g. The noise the boiler makes"></textarea></label><div class="who" id="cv-prog"></div>${formFoot(false, "Send to James")}`,
+    `<h3 id="sheettitle">🎥 Send this video to ${esc(bossFirst())}?</h3>${pv ? `<div class="notice warn" style="margin:0">Preview: this is what the client sees. Nothing will actually be sent.</div>` : ""}<video src="${url}" controls playsinline style="width:100%;max-height:42vh;border-radius:10px;background:#000"></video>
+    <label for="cv-note2">Message (optional)<textarea id="cv-note2" maxlength="500" placeholder="e.g. The noise the boiler makes"></textarea></label><div class="who" id="cv-prog"></div>${formFoot(false, `Send to ${bossFirst()}`)}`,
     async () => {
       if (pv) {
         closeForm();
@@ -159,7 +164,7 @@ function cuQuickVideo(f) {
         );
         closeForm();
         URL.revokeObjectURL(url);
-        toast(n ? "Video sent to James" : "Nothing was sent");
+        toast(n ? `Video sent to ${bossFirst()}` : "Nothing was sent");
         render();
       } catch (e) {
         showErr("Couldn't send. Check your connection and try again.");
@@ -179,8 +184,8 @@ function cuQuickVoice(f) {
   const type = f.type || "audio/mp4";
   const name = `Voice note ${iso(new Date())}.${audExt(type)}`;
   openSheet(
-    `<h3 id="sheettitle">🎤 Send this voice note to James?</h3>${pv ? `<div class="notice warn" style="margin:0">Preview: this is what the client sees. Nothing will actually be sent.</div>` : ""}<div class="audview">${audTag(url, 'style="width:100%"')}</div>
-    <label for="cv-note3">Message (optional)<textarea id="cv-note3" maxlength="500" placeholder="e.g. Quick update about the driveway"></textarea></label><div class="who" id="cv-prog3"></div>${formFoot(false, "Send to James")}`,
+    `<h3 id="sheettitle">🎤 Send this voice note to ${esc(bossFirst())}?</h3>${pv ? `<div class="notice warn" style="margin:0">Preview: this is what the client sees. Nothing will actually be sent.</div>` : ""}<div class="audview">${audTag(url, 'style="width:100%"')}</div>
+    <label for="cv-note3">Message (optional)<textarea id="cv-note3" maxlength="500" placeholder="e.g. Quick update about the driveway"></textarea></label><div class="who" id="cv-prog3"></div>${formFoot(false, `Send to ${bossFirst()}`)}`,
     async () => {
       if (pv) {
         closeForm();
@@ -198,7 +203,7 @@ function cuQuickVoice(f) {
         );
         closeForm();
         URL.revokeObjectURL(url);
-        toast(n ? "Voice note sent to James" : "Nothing was sent");
+        toast(n ? `Voice note sent to ${bossFirst()}` : "Nothing was sent");
         render();
       } catch (e) {
         showErr("Couldn't send. Check your connection and try again.");
@@ -220,8 +225,8 @@ function cuDraw() {
       const url = URL.createObjectURL(r.blob);
       const nm = (r.title || "Drawing").replace(/[^\w\s-]/g, "").trim() || "Drawing";
       openSheet(
-        `<h3 id="sheettitle">✏️ Send your drawing to James?</h3><img src="${url}" alt="Your drawing" style="max-height:42vh;max-width:100%;border-radius:10px;align-self:center;border:1px solid var(--line);background:#fff">
-      <label for="cd-note">Message (optional)<textarea id="cd-note" maxlength="500" placeholder="e.g. This is where we'd like the kitchen island"></textarea></label><div class="who" id="cd-prog"></div>${formFoot(false, "Send to James")}`,
+        `<h3 id="sheettitle">✏️ Send your drawing to ${esc(bossFirst())}?</h3><img src="${url}" alt="Your drawing" style="max-height:42vh;max-width:100%;border-radius:10px;align-self:center;border:1px solid var(--line);background:#fff">
+      <label for="cd-note">Message (optional)<textarea id="cd-note" maxlength="500" placeholder="e.g. This is where we'd like the kitchen island"></textarea></label><div class="who" id="cd-prog"></div>${formFoot(false, `Send to ${bossFirst()}`)}`,
         async () => {
           $("f-save").disabled = true;
           try {
@@ -233,7 +238,7 @@ function cuDraw() {
               },
             );
             closeForm();
-            toast(n ? "Drawing sent to James" : "Nothing was sent");
+            toast(n ? `Drawing sent to ${bossFirst()}` : "Nothing was sent");
             PT.tab = "draw";
             render();
           } catch (e) {
@@ -248,10 +253,10 @@ function cuDraw() {
 }
 function cuSend() {
   openSheet(
-    `<h3 id="sheettitle">📤 Send to James</h3><div class="who">Photos, drawings or documents you'd like James to see. Only James can see them.</div>
+    `<h3 id="sheettitle">📤 Send to ${esc(bossFirst())}</h3><div class="who">Photos, drawings or documents you'd like ${esc(bossFirst())} to see. Only ${esc(bossFirst())} can see them.</div>
     <div class="flabel">Photos or files (you can add several)</div><div id="cu-pick"></div>
     <label for="cu-note">Message (optional)<textarea id="cu-note" maxlength="500" placeholder="e.g. Here's the tile we'd like in the bathroom"></textarea></label>
-    <div class="who" id="cu-prog"></div>${formFoot(false, "Send to James")}`,
+    <div class="who" id="cu-prog"></div>${formFoot(false, `Send to ${bossFirst()}`)}`,
     async () => {
       if (S.client && S.client._preview) {
         showErr("This is a preview. Only the client can send files.");
@@ -312,7 +317,7 @@ function cuSend() {
               (note ? `: "${note.slice(0, 60)}"` : ""),
           });
         closeForm();
-        toast(sent ? `Sent to James (${sent})` : "Nothing was sent");
+        toast(sent ? `Sent to ${bossFirst()} (${sent})` : "Nothing was sent");
       } catch (e) {
         showErr("Couldn't send. Check your connection and try again.");
         $("f-save").disabled = false;

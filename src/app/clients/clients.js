@@ -2,6 +2,7 @@
 import { initials } from "../chat/chat.js";
 import { docPicker } from "./documents.js";
 import { ptCl } from "./portal.js";
+import { PROP } from "./property-info.js";
 import { viewClient } from "./quick-enquiry.js";
 import { clientPdf } from "./record-pdf.js";
 import { $, esc, toast } from "../core/helpers.js";
@@ -10,7 +11,7 @@ import { S, applyGone, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { openNotePage } from "../drawing/paving.js";
 import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
-import { newId } from "../files/outbox.js";
+import { newId, saveOrKeep } from "../files/outbox.js";
 import { VID_MAX, audExt, audTag, vidExt, wireVoice } from "../photos/photos.js";
 import { shrinkImage } from "../safety/training.js";
 import { syncSiteJobs } from "../sites/job-details.js";
@@ -18,6 +19,7 @@ import { hereNow, miniMap, parseLatLon } from "../sites/maps-pins.js";
 import { siteArchiveForClient } from "../sites/storage.js";
 import { DWS } from "../survey/door-window-survey.js";
 export {
+  CL_SOURCE,
   CL_STAGES,
   CL_WORK,
   clAddNote,
@@ -35,7 +37,7 @@ const CL_STAGES = [
   ["visit", "Job to cost"],
   ["quote", "Estimate sent"],
   ["won", "Accepted"],
-  ["onsite", "On site"],
+  ["onsite", "Active site"],
   ["done", "Completed"],
   ["lost", "Rejected"],
   ["contact", "📒 Address book (no job yet)"],
@@ -74,7 +76,12 @@ async function clAddNote(c, text) {
     if (d.exists) cur = Object.assign({}, d.data(), { id: c.id });
   } catch (e) {}
   const notes = (cur.notes || []).concat([{ text, at: Date.now(), auto: true }]);
-  await S.db.doc("todos/" + c.id).update({ notes, updated: Date.now() });
+  await saveOrKeep(
+    "todos/" + c.id,
+    "update",
+    { notes, updated: Date.now() },
+    "Client note: " + (cur.name || ""),
+  );
   const i = (S.clients || []).findIndex((x) => x.id === c.id);
   if (i >= 0) S.clients[i] = Object.assign({}, S.clients[i], cur, { notes });
 }
@@ -114,7 +121,10 @@ async function saveClient(c) {
     )
       d.gdpr = old.gdpr;
   }
-  await S.db.doc("todos/" + c.id).set(d);
+  /* no signal on site: kept on this phone and sent when there is (James, Nov 2026: "working with no signal, for important
+     information taking") */
+  const how = await saveOrKeep("todos/" + c.id, "set", d, "Client: " + (d.name || ""));
+  if (how === "queued") toast("No signal – saved on this phone, it sends when you're back online");
   const i = (S.clients || []).findIndex((x) => x.id === c.id);
   const rec = Object.assign({}, d, { id: c.id });
   if (i >= 0) S.clients[i] = rec;
@@ -283,8 +293,8 @@ function openClientForm(c, mode) {
       <div class="fhbtns"><b>Photo of the front</b><span class="who">Take one now, or choose one you've already taken.</span>
         <span style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn primary fhpickbtn">📷 Take photo<input type="file" id="cf-fhcam" accept="image/*" capture="environment" data-cam="1"></label><label class="btn fhpickbtn">🖼 Choose<input type="file" id="cf-fhpick" accept="image/*" data-cam="1"></label>
         <button type="button" class="linkdanger" id="cf-fhx" ${c.frontPhoto ? "" : "hidden"}>Remove</button></span></div></div>
-    <div class="addrrow"><label for="cf-addr">Address<input id="cf-addr" maxlength="300" autocomplete="street-address" value="${esc(String(c.address || "").replace(/\s*\n\s*/g, ", "))}" placeholder="e.g. 12 Marine Way, Exmouth"></label>
-      <label for="cf-pc">Postcode<input id="cf-pc" maxlength="10" autocomplete="postal-code" value="${esc(c.postcode || "")}" placeholder="EX8 1AA" style="text-transform:uppercase"></label></div>
+    <div class="addrrow"><label for="cf-addr">Address<input id="cf-addr" maxlength="300" autocomplete="street-address" value="${esc(String(c.address || "").replace(/\s*\n\s*/g, ", "))}" placeholder="e.g. 12 High Street"></label>
+      <label for="cf-pc">Postcode<input id="cf-pc" maxlength="10" autocomplete="postal-code" value="${esc(c.postcode || "")}" placeholder="AB1 2CD" style="text-transform:uppercase"></label></div>
     <details class="pindet" ${c.lat != null ? "open" : ""}><summary>📍 Add a map pin (optional)</summary>
       <span style="display:flex;gap:6px;margin-top:6px"><input id="cf-pin" style="flex:1" value="${c.lat != null ? esc((+c.lat).toFixed(6) + ", " + (+c.lon).toFixed(6)) : ""}" placeholder="Paste from Maps, e.g. 50.6197, -3.4135" aria-label="Map pin"><button type="button" class="pillbtn" id="cf-here">📡 Here</button></span>
       <div class="mmwrap" id="cf-mm">${c.lat != null ? miniMap(c.lat, c.lon, { label: "Property", still: true }) : ""}</div>
@@ -292,11 +302,12 @@ function openClientForm(c, mode) {
     <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" id="cf-invdiff" ${c.invAddress ? "checked" : ""}> Invoice address is different</label>
     <div id="cf-invbox" ${c.invAddress ? "" : "hidden"} class="cfinv"><label for="cf-invname">Invoice to (name or company)<input id="cf-invname" maxlength="100" value="${esc(c.invName || "")}" placeholder="e.g. Smith Lettings Ltd"></label>
       <div class="addrrow"><label for="cf-invaddr">Invoice address<input id="cf-invaddr" maxlength="300" value="${esc(String(c.invAddress || "").replace(/\s*\n\s*/g, ", "))}" placeholder="e.g. 4 High St, Exeter"></label>
-      <label for="cf-invpc">Postcode<input id="cf-invpc" maxlength="10" value="${esc(c.invPostcode || "")}" placeholder="EX1 1AA" style="text-transform:uppercase"></label></div>
+      <label for="cf-invpc">Postcode<input id="cf-invpc" maxlength="10" value="${esc(c.invPostcode || "")}" placeholder="AB1 2CD" style="text-transform:uppercase"></label></div>
       <div class="grid2"><label for="cf-invemail">Email invoices to<input id="cf-invemail" type="email" maxlength="120" value="${esc(c.invEmail || "")}" placeholder="if different"></label></div></div>
     <div class="flabel" style="margin-top:4px">🔑 Keys &amp; alarm <span class="who">(only you see these)</span></div>
     <div class="grid2"><label for="cf-keyloc">Where the house key is<input id="cf-keyloc" maxlength="200" value="${esc(c.keyLoc || "")}" placeholder="e.g. Key safe by the back door"></label><label for="cf-keycode">Key safe code<input id="cf-keycode" maxlength="40" value="${esc(c.keyCode || "")}" autocomplete="off" placeholder="e.g. 4821"></label></div>
     <div class="grid2"><label for="cf-alarmloc">Where the alarm panel is<input id="cf-alarmloc" maxlength="200" value="${esc(c.alarmLoc || "")}" placeholder="e.g. Hallway cupboard, left of front door"></label><label for="cf-alarmcode">Alarm code<input id="cf-alarmcode" maxlength="40" value="${esc(c.alarmCode || "")}" autocomplete="off" placeholder="e.g. 1357"></label></div>
+    ${PROP.formHtml(c)}
     </div>
     <div id="cf-enqsec" class="cfsec" ${conOnly ? "hidden" : ""}>
     ${conOnly ? "" : `<div class="flabel" style="margin-top:6px">📝 The enquiry</div>`}
@@ -377,6 +388,7 @@ function openClientForm(c, mode) {
         keyCode: $("cf-keycode").value.trim(),
         alarmLoc: $("cf-alarmloc").value.trim(),
         alarmCode: $("cf-alarmcode").value.trim(),
+        prop: PROP.read() || (c && c.prop) || {},
         quick: false,
       });
       const pinV = $("cf-pin").value.trim();
@@ -742,6 +754,7 @@ function openClientForm(c, mode) {
   };
   (c.contacts || []).forEach(addCon);
   $("cf-addc").onclick = () => addCon().querySelector(".cc-n").focus();
+  PROP.wire();
   $("cf-invdiff").onchange = (e) => {
     $("cf-invbox").hidden = !e.target.checked;
   };

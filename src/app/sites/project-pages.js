@@ -1,7 +1,7 @@
 /* ================= OWNER: SITE PROJECT PAGES ================= */
 import { chatTitle, ensureSiteChat, openChat, siteMessages } from "../chat/chat.js";
 import { $, addDays, esc, gbp, hrs, iso, monday, shortDay, stamp, toast } from "../core/helpers.js";
-import { S, isArchivedSite, siteNames } from "../core/state.js";
+import { S, isArchivedSite, ownerMode, siteNames, siteOnHold } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl, csvSave } from "../files/files.js";
 import { deleteSiteFlow } from "../owner/delete-client-site.js";
@@ -19,25 +19,33 @@ import { pgHtml, pgRec, pgWire } from "../planner/programme.js";
 import { planEntries } from "../planner/time-off.js";
 import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv, matCard, openMat, rcRow, wireReceipts } from "../purchasing/materials-receipts.js";
+import { CDMRA } from "../safety/cdm-rams.js";
 import { ramsMaker } from "../safety/rams-maker.js";
 import { indFor, indSectionWithId, wireInduction } from "../safety/site-inductions.js";
 import { bcHtml, bcWire } from "./building-control.js";
+import { pjdKept, pjdWire } from "./doc-folders.js";
 import { dcmOpen } from "./drawing-compare.js";
 import {
   editSiteJob,
   editSiteVis,
   siteJobCard,
+  siteNameBar,
   siteSumHtml,
   syncSiteJobs,
+  wireSiteNameBar,
   wireSiteSum,
 } from "./job-details.js";
 import { jkOpen } from "./job-pack.js";
 import { jobCard } from "./job-sheets.js";
 import { dropPin } from "./maps-pins.js";
-import { RAMS_SIGN, docPath, docRow, wireDocs } from "./plans-specs.js";
+import { RAMS_SIGN, docPath, docPickBar, docRow, wireDocs } from "./plans-specs.js";
 import { QRSITE } from "./qr-sign-in.js";
+import { rfiHtml, rfiNoticeHtml, rfiWire } from "./rfi.js";
+import { sodHtml, sodWire } from "./signoff-due.js";
 import { sdiHtml, sdiWire } from "./site-diary.js";
+import { jhCardHtml, jhWire } from "./site-health.js";
 import { sqMap, sqOpen } from "./snag-quick.js";
+import { stgHtml, stgWire } from "./stage-signoff.js";
 import { arcWhy, siteArchive, siteRestore, storageHtml, wireStorage } from "./storage.js";
 import { siteTiles } from "./tiles.js";
 import { folderIcon, openDoc } from "./trade-sites.js";
@@ -57,6 +65,7 @@ function projectSites() {
   });
   [...set].forEach((n) => {
     if (isArchivedSite(n) && !same(n, S.f.proj)) set.delete(n);
+    if (siteOnHold(n) && !ownerMode()) set.delete(n);
   });
   if (S.f.proj && isArchivedSite(S.f.proj)) set.add(S.f.proj);
   const gone = (S.settings || {}).deletedSites || [];
@@ -74,7 +83,30 @@ function inRange(date) {
     e = iso(addDays(monday(now), 6));
   return date >= m && date <= e;
 }
-const same = (a, b) => (a || "").trim().toLowerCase() === (b || "").trim().toLowerCase();
+/* the same job: names match (ignoring case and spaces), or one is an address the job had before (sites/<id>.aka, kept
+   when its address is changed) – so hours, costs, photos and the rest booked under the old address stay with the job
+   (James, Nov 2026). An old address that is now another job's own name belongs to that job. */
+let sameAkaOf = null,
+  sameAkaMap = null;
+function sameCanon(x) {
+  const k = (x || "").trim().toLowerCase();
+  const sites = S.sites || [];
+  if (sameAkaOf !== sites) {
+    sameAkaOf = sites;
+    sameAkaMap = new Map();
+    const now = new Set(sites.map((t) => (t.name || "").trim().toLowerCase()));
+    sites.forEach((t) =>
+      (t.aka || []).forEach((a) => {
+        const ak = String(a || "")
+          .trim()
+          .toLowerCase();
+        if (ak && !now.has(ak)) sameAkaMap.set(ak, (t.name || "").trim().toLowerCase());
+      }),
+    );
+  }
+  return sameAkaMap.size ? sameAkaMap.get(k) || k : k;
+}
+const same = (a, b) => sameCanon(a) === sameCanon(b);
 function ownerProjects() {
   const sites = projectSites();
   if (!sites.length) {
@@ -122,7 +154,7 @@ function ownerProjects() {
       )
       .join("")}
     </tbody><tfoot><tr><td colspan="3"><b>Total</b></td><td class="num"><b>${hrs(sumH(list, () => true))} h</b></td></tr></tfoot></table></div>`;
-  let html = `<div class="filters">
+  let html = `${siteNameBar(site)}<div class="filters">
     <div><div class="flabel">Period</div><div class="seg" id="pj-range">${[
       ["all", "All time"],
       ["month", "This month"],
@@ -188,30 +220,36 @@ function ownerProjects() {
   const sj = S.jobs.filter((j) => same(j.site, site));
   P.jobs = `<div class="actions"><button type="button" class="btn primary" id="sq-new2">📸 Snag</button><button type="button" class="btn" id="sq-map">🗺 Snags on drawings</button></div><div class="day"><div class="dayh"><span>Job sheets and snag lists</span><span class="sum">${sj.length}</span></div>${sj.length ? sj.map((j) => jobCard(j, true)).join("") : '<div class="nothing">None for this site yet. Create one in the Jobs tab.</div>'}</div>`;
   P.induction = `<div class="day"><div class="dayh"><span>Site induction</span></div>${indSectionWithId(site, true)}</div>`;
+  /* plans, RAMS and specs in folders: tiles for the sub-folders where you are, the files in this folder, a trail
+     back up, + New folder (kept even while empty) and upload straight into the folder you're in */
   const dSec = (k, title, up, empty, list) => {
-    const groups = {};
+    const key = site + "|" + k;
+    const cur = String((S.f.dpath || {})[key] || "").replace(/^\/+|\/+$/g, "");
+    const pre = cur ? cur + "/" : "";
+    const subs = {};
+    const sub = (p) => {
+      if (cur ? !(p + "/").startsWith(pre) || p === cur : !p) return null;
+      return (cur ? p.slice(pre.length) : p).split("/")[0] || null;
+    };
     list.forEach((d) => {
-      const p = docPath(d) || "";
-      (groups[p] = groups[p] || []).push(d);
+      const t = sub(docPath(d));
+      if (t) (subs[t] = subs[t] || []).push(d);
     });
-    return `<div class="actions"><button type="button" class="btn primary pj-up" data-c="${k}">${up}</button></div>${
-      list.length
-        ? Object.keys(groups)
-            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-            .map(
-              (p) =>
-                `<div class="day"><div class="dayh"><span>${esc(p || title)}</span><span class="sum">${groups[p].length}</span></div>${groups[
-                  p
-                ]
-                  .sort((a, b) =>
-                    (a.title || "").localeCompare(b.title || "", undefined, { numeric: true }),
-                  )
-                  .map((d) => docRow(d, true))
-                  .join("")}</div>`,
-            )
-            .join("")
-        : `<div class="nothing">${empty}</div>`
-    }`;
+    pjdKept(site, k).forEach((p) => {
+      const t = sub(p);
+      if (t && !subs[t]) subs[t] = [];
+    });
+    const here = list
+      .filter((d) => docPath(d) === cur)
+      .sort((x, y) => (x.title || "").localeCompare(y.title || "", undefined, { numeric: true }));
+    const segs = cur ? cur.split("/") : [];
+    const names = Object.keys(subs).sort((x, y) =>
+      x.localeCompare(y, undefined, { numeric: true }),
+    );
+    return `<div class="actions"><button type="button" class="btn primary pj-up" data-c="${k}" data-p="${esc(cur)}">${up}${cur ? " here" : ""}</button><button type="button" class="btn pjd-new" data-k="${k}" data-p="${esc(cur)}">📁 + New folder</button></div>
+    ${cur ? `<div class="crumbs pjd-crumbs"><button type="button" class="pillbtn pjd-go" data-k="${k}" data-p="">📁 ${esc(title)}</button>${segs.map((x, i) => `<span aria-hidden="true">›</span>${i === segs.length - 1 ? `<b>${esc(x)}</b>` : `<button type="button" class="pillbtn pjd-go" data-k="${k}" data-p="${esc(segs.slice(0, i + 1).join("/"))}">${esc(x)}</button>`}`).join("")}</div>` : ""}
+    ${names.length ? `<div class="folders">${names.map((n) => `<button type="button" class="folder pjd-fold" data-k="${k}" data-p="${esc(pre + n)}">${folderIcon()}<span class="fname">${esc(n)}</span><span class="who">${subs[n].length ? subs[n].length + " file" + (subs[n].length === 1 ? "" : "s") : "Empty"}</span></button>`).join("")}</div>` : ""}
+    ${here.length ? docPickBar() + `<div class="day"><div class="dayh"><span>${esc(cur ? segs[segs.length - 1] : title)}</span><span class="sum">${here.length}</span></div>${here.map((d) => docRow(d, true)).join("")}</div>` : !names.length ? `<div class="nothing">${cur ? "Nothing in this folder yet. Upload files into it, or make a folder inside it." : empty}</div>` : ""}`;
   };
   const dPlans = docs.filter((d) => (d.cat || "other") === "plans"),
     dRams = docs.filter((d) => d.cat === "rams"),
@@ -237,7 +275,8 @@ function ownerProjects() {
       dPlans,
     );
   P.rams =
-    `<div class="notice ramsmk"><b>📝 Make RAMS for this site</b><span class="who">Start from your existing RAMS, tick the ones this job needs and fill in the blanks (address, client, dates, first aiders…). They're saved here as Word files.</span><button type="button" class="btn primary" id="mkrams">📝 Make RAMS from my set</button></div>` +
+    CDMRA.siteBoxHtml(site) +
+    `<div class="notice ramsmk"><b>📝 Make RAMS for this site</b><span class="who">Start from your existing RAMS, tick the ones this job needs and fill in the blanks (address, client, dates, first aiders…). They're saved here as Word files.</span><button type="button" class="btn primary" id="mkrams">📝 Make from saved RAMS</button></div>` +
     dSec(
       "rams",
       "RAMS",
@@ -276,6 +315,15 @@ function ownerProjects() {
   const openJobs = sj.filter((j) => j.status !== "closed").length;
   const T = [
     ["overview", "Overview"],
+    [
+      "rfi",
+      "RFIs",
+      (() => {
+        const L = (S.rfis || []).filter((r) => same(r.site, site));
+        const o = L.filter((r) => r.status === "open").length;
+        return o ? o + " waiting" : L.length;
+      })(),
+    ],
     ["hours", "Hours", hrs(sumH(ts, () => true)) + " h"],
     ["photos", "Photos", photos.length],
     ["plans", "Plans & drawings", dPlans.length],
@@ -296,6 +344,17 @@ function ownerProjects() {
       "Site diary",
       (S.siteDiary || []).filter((r) => same(r.site, site)).length + " notes",
     ],
+    [
+      "stages",
+      "Stages",
+      (() => {
+        const sr = siteRec(site) || {};
+        const st = sr.stages && sr.stages.length ? sr.stages : null;
+        return st
+          ? st.filter((x) => (sr.stageDone || {})[x]).length + " of " + st.length + " signed off"
+          : "Set them up";
+      })(),
+    ],
     ["bc", "Building control", (S.bcReports || []).filter((r) => same(r.site, site)).length],
     ["chat", "Chat", ""],
   ];
@@ -313,15 +372,19 @@ function ownerProjects() {
     diary: "📔",
     programme: "📊",
     bc: "🏛️",
+    rfi: "❓",
+    stages: "✅",
     money: "🧾",
   };
   P.diary = sdiHtml(site);
   P.programme = pgHtml(site);
   P.bc = bcHtml(site);
+  P.rfi = rfiHtml(site);
+  P.stages = stgHtml(site);
   let tab = S.f.pjtab || "overview";
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
-  P.overview = `${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}
+  P.overview = `${sodHtml(site)}${rfiNoticeHtml(site)}${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}${jhCardHtml(site)}
     <div class="actions"><button type="button" class="btn" id="sq-new">📸 Snag</button><button type="button" class="btn" id="jk-open">📦 Send job details to someone not on the app</button></div>
     <div class="totals"><div class="tot"><div class="n">${hrs(sumH(ts, () => true))}</div><div class="l">Timesheet hours</div></div><div class="tot hi"><div class="n">${hrs(sumH(extra, () => true))}</div><div class="l">Extra work hours</div></div><div class="tot"><div class="n">${people.length}</div><div class="l">People worked here</div></div></div>
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
@@ -339,6 +402,16 @@ function ownerProjects() {
             .join("")}</div>`
         : ""
     }`;
+  /* the tabs along the top of the site: the overview, RFIs and the most used folders */
+  const tabsTop = ["overview", "rfi", "diary", "photos", "plans", "programme"]
+    .map((k) => T.find((t) => t[0] === k))
+    .filter(Boolean);
+  html += `<div class="pjtst" role="tablist" aria-label="This site">${tabsTop
+    .map(
+      ([k, l, c]) =>
+        `<button type="button" class="pjtst-b" role="tab" data-t="${k}" aria-selected="${tab === k}">${k === "overview" ? "🏠" : ICON[k]} ${esc(l)}${k === "rfi" && /waiting/.test(String(c)) ? ` <span class="pjtst-n">${esc(String(c).split(" ")[0])}</span>` : ""}</button>`,
+    )
+    .join("")}</div>`;
   html +=
     (tab === "overview"
       ? ""
@@ -346,8 +419,9 @@ function ownerProjects() {
         `<div class="actions pjback"><button type="button" class="btn" data-t="overview" id="pj-back">‹ Back to overview</button><b class="pjsec">${ICON[tab] || ""} ${esc((T.find((t) => t[0] === tab) || [])[1] || "")}</b></div>`) +
     (P[tab] || "");
   $("main").innerHTML = html;
+  if (tab === "overview") jhWire(site);
   $("main")
-    .querySelectorAll("#pj-back,.pjtile")
+    .querySelectorAll("#pj-back,.pjtile,.pjtst-b")
     .forEach(
       (b) =>
         (b.onclick = () => {
@@ -364,7 +438,9 @@ function ownerProjects() {
     syncSiteJobs();
   }
   wireSiteSum(site);
+  wireSiteNameBar(site);
   if ($("mkrams")) $("mkrams").onclick = () => ramsMaker(site);
+  CDMRA.wireSite(site);
   if ($("jk-open")) $("jk-open").onclick = () => jkOpen(site);
   if ($("sq-new")) $("sq-new").onclick = () => sqOpen(site);
   if ($("sq-new2")) $("sq-new2").onclick = () => sqOpen(site);
@@ -473,6 +549,17 @@ function ownerProjects() {
   wireInvoices(invs, true);
   if (tab === "diary") sdiWire(site);
   if (tab === "bc") bcWire(site);
+  if (tab === "rfi") rfiWire(site);
+  if (["plans", "rams", "specs"].includes(tab)) pjdWire(site);
+  if (tab === "overview") {
+    sodWire(site);
+    if ($("rfi-go"))
+      $("rfi-go").onclick = () => {
+        S.f.pjtab = "rfi";
+        render();
+      };
+  }
+  if (tab === "stages") stgWire(site);
   if (tab === "programme") pgWire(site);
   if ($("dcm-open")) $("dcm-open").onclick = () => dcmOpen(site);
   wireInduction();
@@ -480,7 +567,9 @@ function ownerProjects() {
   $("main")
     .querySelectorAll(".pj-up")
     .forEach(
-      (b) => (b.onclick = () => openDoc(site, "", b.dataset.c === "specs" ? "specs" : b.dataset.c)),
+      (b) =>
+        (b.onclick = () =>
+          openDoc(site, b.dataset.p || "", b.dataset.c === "specs" ? "specs" : b.dataset.c)),
     );
   $("main")
     .querySelectorAll(".matc")

@@ -4,6 +4,18 @@ import { clAddr } from "../clients/stages-planner.js";
 import { pickField, pickVal, wirePicks } from "../core/fields.js";
 import { $, esc, iso, parse, toast } from "../core/helpers.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
+import {
+  NPB_ENDS,
+  NPB_FINISH,
+  NPB_TICKS,
+  npbDims,
+  npbFire,
+  npbLift,
+  npbOrderText,
+  npbProps,
+  npbStage,
+} from "./beam-sheet.js";
+import { npBendApex, npBendCp } from "./bend-lines.js";
 import { NP_BLD_BOX, NP_LIB } from "./components.js";
 import {
   NP_COLS,
@@ -28,11 +40,17 @@ import { cbaDraw, cbaPlan } from "./cupboard-alcove.js";
 import { cbDetails, cbDraw, cbMakeDialog, cbPlan } from "./cupboard-maker.js";
 import { cbpOpen } from "./cupboard-pack.js";
 import { cbsDraw, cbsIs, cbsPlan } from "./cupboard-shapes.js";
+import { NP_LAYERS, NP_TYPES, NP_TYPE_GROUPS, npFont, npLayerOf } from "./drawing-layers.js";
 import { npDxf } from "./dxf-export.js";
 import { npDxfImport } from "./dxf-import.js";
+import { npFindRooms } from "./find-rooms.js";
+import { npFingerTap } from "./finger-tap.js";
 import { NP_HATCH, npHatch, npHatchable } from "./hatch.js";
 import { hrView } from "./house-render.js";
+import { npJoinAt } from "./join-rooms.js";
 import { askLabel, askMeasure, drawDim } from "./notebook.js";
+import { NP_PAVE, npPaveDraw, npStripPoly } from "./paving-draw.js";
+import { npFmtLen, npInPoly, npPolyArea, npPolyCentroid, npPolyPerim } from "./plan-geometry.js";
 import { rwDialog, rwElev, rwNotes, rwSection } from "./retaining-wall.js";
 import {
   rsBestScale,
@@ -45,22 +63,45 @@ import {
   rsWallsAsShapes,
   rsWallsFromRoom,
 } from "./room-sketch.js";
+import {
+  NPSU_LIB,
+  NPSU_MATS,
+  npsuAcross,
+  npsuCode,
+  npsuIsMem,
+  npsuLayers,
+  npsuSpec,
+  npsuTotal,
+} from "./section-buildups.js";
+import { NPSS_FIRE, NPSS_SETS, npssExt, npssName } from "./section-steel.js";
+import { npSmartShape, npsRectilinear } from "./smart-pen.js";
+import { nps3Draw, nps3Model, npsbCutList } from "./stair-3d.js";
+import {
+  NPSB_BAL,
+  NPSB_GLASSFIX,
+  NPSB_RAIL,
+  NPSB_TREADS,
+  NPSB_TYPES,
+  NPSB_USE,
+  npsbCalc,
+  npsbOrderText,
+} from "./stair-builder.js";
+import { NP_REAL, NP_STD } from "./standard-sizes.js";
+import {
+  NP_BEAM_TYPES,
+  NP_COL_TYPES,
+  npBeamLabel,
+  npBeamOf,
+  npBeamSecs,
+  npColMm,
+} from "./steel-parts.js";
 import { NP_ANNO_BOX, NP_TEXTSYM } from "./symbols-annotation.js";
 import { NP_DES_BOX, npScallop } from "./symbols-design.js";
 import { NP_BASIC, NP_XLAB, NP_XREAL, NP_XSHAPES } from "./symbols-more.js";
 import { NP_TIMB_BOX, NP_TIMB_DEF, NP_TIMB_SIZES, npRunAxis } from "./timber.js";
 import { npStepsDlg } from "./undo-list.js";
 import { WB, WB_BRICKS, wbHasBrick, wbMaterials, wbName, wbThick } from "./wall-buildups.js";
-import {
-  NP_LIN,
-  NP_LINOPTS,
-  NP_OPENK,
-  NP_WALLK,
-  npDrawAll,
-  npHexMix,
-  npIsWall,
-  npWallT,
-} from "./walls.js";
+import { NP_LIN, NP_LINOPTS, NP_OPENK, NP_WALLK, npDrawAll, npIsWall, npWallT } from "./walls.js";
 import { blobUrl, uploadErr, uploadFile } from "../files/files.js";
 import { loadPdfJs } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
@@ -71,605 +112,10 @@ import { poPriceSheet } from "../purchasing/price-order.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { lhLogoId } from "../sales/letterhead-setup.js";
+import { sdSaveRec, sdSet } from "../sales/sales-calc.js";
 import { siteClient } from "../sites/summary.js";
 import { DWS, myName, siteFilePicker } from "../survey/door-window-survey.js";
-export {
-  NP_BATHNICE,
-  NP_NICE,
-  NP_REAL,
-  NP_SCX,
-  initPaving,
-  npBath,
-  npCanopy,
-  npNice,
-  openNotePage,
-  pdfShow,
-  setNpScx,
-};
-const NP_PAVE = {
-  slabs: ["Paving slabs 600×600", "#e7e5e4", "grid", 600, 600, 0],
-  sandstone: ["Sandstone 600×900 (random)", "#ead9bd", "grid", 900, 600, 0.33],
-  porcelain: ["Porcelain 900×600", "#dedede", "grid", 900, 600, 0.5],
-  block: ["Block paving 200×100", "#c98a7c", "grid", 200, 100, 0.5],
-  herring: ["Block paving, herringbone", "#c98a7c", "herring", 200, 100, 0],
-  setts: ["Granite setts 100×100", "#bdbdbd", "grid", 100, 100, 0.5],
-  tarmac: ["Tarmac", "#7a7a7a", "stip", 0, 0, 0],
-  gravel: ["Gravel", "#ece0c4", "stip", 0, 0, 0],
-  resin: ["Resin bound", "#dcbc93", "stip", 0, 0, 0],
-  concrete: ["Concrete", "#dad7d3", "stip", 0, 0, 0],
-  decking: ["Decking (145 boards)", "#c9a072", "boards", 145, 0, 0],
-  turf: ["Lawn / turf", "#d3e6c4", "turf", 0, 0, 0],
-  bark: ["Bark / mulch", "#9b7653", "stip", 0, 0, 0],
-  planting: ["Planting bed", "#c7ddb5", "plant", 0, 0, 0],
-};
-function npPaveDraw(ctx, o, mmU) {
-  const p = o.p;
-  if (!p || p.length < 3) return;
-  const M = NP_PAVE[o.pave] || NP_PAVE.slabs;
-  const lw = Math.max(o.w || 1.5, 0.6 / (ctx.__s || 1));
-  let x0 = 1e9,
-    y0 = 1e9,
-    x1 = -1e9,
-    y1 = -1e9;
-  p.forEach((q) => {
-    x0 = Math.min(x0, q[0]);
-    y0 = Math.min(y0, q[1]);
-    x1 = Math.max(x1, q[0]);
-    y1 = Math.max(y1, q[1]);
-  });
-  const cx = (x0 + x1) / 2,
-    cy = (y0 + y1) / 2,
-    Rr = Math.hypot(x1 - x0, y1 - y0) / 2 + 2;
-  const u = mmU || Math.min(x1 - x0, y1 - y0) / 4000;
-  const an = Math.atan2(p[1][1] - p[0][1], p[1][0] - p[0][0]);
-  ctx.save();
-  ctx.beginPath();
-  p.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])));
-  ctx.closePath();
-  ctx.fillStyle = M[1];
-  ctx.fill();
-  ctx.clip();
-  ctx.strokeStyle = npHexMix("#000000", 0.45);
-  ctx.lineWidth = Math.max(lw * 0.35, 0.35 / (ctx.__s || 1));
-  const L = (a, b, c, d) => {
-    ctx.beginPath();
-    ctx.moveTo(a, b);
-    ctx.lineTo(c, d);
-    ctx.stroke();
-  };
-  let sd = (Math.floor(Math.abs(x0 * 7 + y0 * 13)) % 9973) + 1;
-  const rnd = () => {
-    sd = (sd * 16807) % 2147483647;
-    return sd / 2147483647;
-  };
-  ctx.translate(cx, cy);
-  ctx.rotate(an);
-  if (M[2] === "grid") {
-    const W = Math.max(M[3] * u, 2),
-      H = Math.max(M[4] * u, 1.5);
-    let r = 0;
-    for (let y = -Rr; y < Rr; y += H, r++) {
-      L(-Rr, y, Rr, y);
-      const off = ((r * M[5]) % 1) * W;
-      for (let x = -Rr + off; x < Rr; x += W) L(x, y, x, y + H);
-    }
-  } else if (M[2] === "herring") {
-    const A = Math.max(M[3] * u, 2),
-      B2 = Math.max(M[4] * u, 1);
-    ctx.rotate(Math.PI / 4);
-    for (let y = -Rr * 1.5; y < Rr * 1.5; y += B2 * 2)
-      for (let x = -Rr * 1.5; x < Rr * 1.5; x += A + B2) {
-        const xx = x + ((y / (B2 * 2)) % 2 ? B2 : 0);
-        ctx.strokeRect(xx, y, A, B2);
-        ctx.strokeRect(xx + A, y - A + B2, B2, A);
-      }
-  } else if (M[2] === "boards") {
-    const W = Math.max(M[3] * u, 1.5);
-    for (let y = -Rr; y < Rr; y += W) L(-Rr, y, Rr, y);
-    let k = 0;
-    for (let y = -Rr; y < Rr; y += W, k++)
-      for (let x = -Rr + ((k * 0.37) % 1) * W * 20; x < Rr; x += W * 25) L(x, y, x, y + W);
-  } else if (M[2] === "stip" || M[2] === "turf" || M[2] === "plant") {
-    ctx.fillStyle =
-      o.pave === "tarmac"
-        ? "#5a5a5a"
-        : o.pave === "gravel"
-          ? "#8a7a5a"
-          : o.pave === "concrete"
-            ? "#9a9590"
-            : o.pave === "bark"
-              ? "#5b4330"
-              : o.pave === "resin"
-                ? "#a6835a"
-                : "#6f9a5a";
-    const area = (x1 - x0) * (y1 - y0);
-    const n = Math.min(
-      2500,
-      Math.round(
-        area / Math.max((M[2] === "turf" ? 1200 : o.pave === "gravel" ? 140 : 260) * u * u, 4),
-      ),
-    );
-    const dr = Math.max(u * (o.pave === "gravel" ? 28 : 15), 0.5);
-    for (let i = 0; i < n; i++) {
-      const x = (rnd() - 0.5) * Rr * 2,
-        y = (rnd() - 0.5) * Rr * 2;
-      if (M[2] === "turf") {
-        L(x, y, x - dr * 2, y - dr * 5);
-        L(x, y, x + dr * 1.5, y - dr * 5);
-      } else if (M[2] === "plant") {
-        if (i % 6 === 0) {
-          ctx.beginPath();
-          ctx.arc(x, y, dr * 14, 0, 7);
-          ctx.stroke();
-        }
-      } else {
-        ctx.beginPath();
-        ctx.arc(x, y, dr * (o.pave === "gravel" ? 0.6 + rnd() * 0.8 : 1), 0, 7);
-        if (o.pave === "concrete" && i % 5 === 0) {
-          ctx.moveTo(x, y);
-          ctx.lineTo(x + dr * 3, y + dr * 2);
-          ctx.lineTo(x - dr, y + dr * 3);
-          ctx.closePath();
-          ctx.stroke();
-        } else ctx.fill();
-      }
-    }
-  }
-  ctx.restore();
-  ctx.save();
-  ctx.strokeStyle = o.c || "#444";
-  ctx.lineWidth = lw;
-  ctx.beginPath();
-  p.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])));
-  ctx.closePath();
-  ctx.stroke();
-  if (o.showLab !== false) {
-    const area0 = npPolyArea(p),
-      per0 = npPolyPerim(p),
-      thick = per0 ? (2 * area0) / per0 : 20;
-    const fs = Math.max(6, Math.min(o.size || 20, thick * 0.9));
-    const c0 = npPolyCentroid(p);
-    const A = mmU ? npPolyArea(p) / (mmU * mmU) / 1e6 : 0;
-    const t1 = o.name || M[0],
-      t2 = A ? (Math.round(A * 10) / 10).toFixed(1) + " m²" : "";
-    ctx.font = `600 ${fs * 0.75}px system-ui,sans-serif`;
-    const tw = Math.max(ctx.measureText(t1).width, ctx.measureText(t2).width);
-    ctx.fillStyle = "rgba(255,255,255,.85)";
-    ctx.fillRect(
-      c0[0] - tw / 2 - fs * 0.3,
-      c0[1] - fs * (t2 ? 0.9 : 0.55),
-      tw + fs * 0.6,
-      fs * (t2 ? 1.8 : 1.1),
-    );
-    ctx.fillStyle = "#222";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(t1, c0[0], c0[1] - (t2 ? fs * 0.4 : 0));
-    if (t2) {
-      ctx.font = `500 ${fs * 0.65}px system-ui,sans-serif`;
-      ctx.fillText(t2, c0[0], c0[1] + fs * 0.45);
-    }
-  }
-  ctx.restore();
-}
-/* path / band along a run of points, to one side: makes the outline of a path round a building */
-function npStripPoly(pts, W, side) {
-  const n = pts.length;
-  if (n < 2) return null;
-  const off = [];
-  for (let i = 0; i < n; i++) {
-    const a = pts[Math.max(0, i - 1)],
-      b = pts[i],
-      c = pts[Math.min(n - 1, i + 1)];
-    const d1 = i > 0 ? [b[0] - a[0], b[1] - a[1]] : [c[0] - b[0], c[1] - b[1]],
-      d2 = i < n - 1 ? [c[0] - b[0], c[1] - b[1]] : d1;
-    const l1 = Math.hypot(...d1) || 1,
-      l2 = Math.hypot(...d2) || 1;
-    const n1 = [(-d1[1] / l1) * side, (d1[0] / l1) * side],
-      n2 = [(-d2[1] / l2) * side, (d2[0] / l2) * side];
-    let m = [n1[0] + n2[0], n1[1] + n2[1]];
-    const ml = Math.hypot(...m) || 1;
-    m = [m[0] / ml, m[1] / ml];
-    const k = Math.min(4, 1 / Math.max(0.25, m[0] * n1[0] + m[1] * n1[1]));
-    off.push([b[0] + m[0] * W * k, b[1] + m[1] * W * k]);
-  }
-  return pts.map((q) => q.slice()).concat(off.reverse());
-}
-/* nicer landscaping: soft tree canopies, shrubs, lawn */
-function npCanopy(ctx, cx, cy, rx, ry, seed, lw, c, fill) {
-  let sd = (Math.floor(Math.abs(seed)) % 9973) + 1;
-  const rnd = () => {
-    sd = (sd * 16807) % 2147483647;
-    return sd / 2147483647;
-  };
-  const N = Math.max(18, Math.round((rx + ry) / Math.max(lw * 2.2, 1.5)));
-  const pts = [];
-  const ph = rnd() * 6,
-    ph2 = rnd() * 6;
-  for (let i = 0; i < N; i++) {
-    const a = (i / N) * Math.PI * 2;
-    const k =
-      0.9 + 0.06 * Math.sin(a * 3 + ph) + 0.04 * Math.sin(a * 7 + ph2) + 0.03 * (rnd() - 0.5);
-    pts.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]);
-  }
-  ctx.save();
-  ctx.beginPath();
-  pts.forEach((p, i) => {
-    const q = pts[(i + 1) % N];
-    const mx = (p[0] + q[0]) / 2,
-      my = (p[1] + q[1]) / 2;
-    const ox = mx - cx,
-      oy = my - cy,
-      ol = Math.hypot(ox, oy) || 1;
-    const bump = Math.hypot(q[0] - p[0], q[1] - p[1]) * (0.35 + rnd() * 0.35);
-    if (i === 0) ctx.moveTo(p[0], p[1]);
-    ctx.quadraticCurveTo(mx + (ox / ol) * bump, my + (oy / ol) * bump, q[0], q[1]);
-  });
-  ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.globalAlpha = 0.9;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = c;
-  ctx.lineWidth = Math.max(lw * 0.55, 0.5);
-  ctx.stroke();
-  ctx.lineWidth = Math.max(lw * 0.35, 0.4);
-  for (let j = 0; j < 5; j++) {
-    const a = rnd() * Math.PI * 2,
-      r = 0.35 + rnd() * 0.4;
-    const x = cx + Math.cos(a) * rx * r,
-      y = cy + Math.sin(a) * ry * r,
-      s2 = Math.min(rx, ry) * 0.08;
-    ctx.beginPath();
-    ctx.arc(x, y, s2, a, a + Math.PI * 1.3);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-const NP_NICE = new Set(["tree", "shrub", "conifer"]);
-/* nicer sanitaryware: white bodies, light-grey inner bowls, taps and wastes */
-const NP_BATHNICE = new Set([
-  "wc",
-  "basin",
-  "bath",
-  "shower",
-  "sink",
-  "bidet",
-  "vanity",
-  "quadrant",
-  "walkin",
-  "cornerbath",
-  "towel",
-]);
-function npBath(ctx, o, x0, y0, w, h, cx, cy) {
-  const lw = ctx.lineWidth,
-    c = ctx.strokeStyle,
-    x1 = x0 + w,
-    y1 = y0 + h,
-    m = Math.min(w, h);
-  const IN = "#e8eef4",
-    BODY = "#ffffff";
-  const thin = (f) => {
-    ctx.lineWidth = Math.max(lw * (f || 0.5), 0.5);
-  };
-  const full = () => {
-    ctx.lineWidth = lw;
-  };
-  const rr = (x, y, ww, hh, r, fill) => {
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, Math.max(0, Math.min(r, ww / 2, hh / 2)));
-    else ctx.rect(x, y, ww, hh);
-    if (fill) {
-      ctx.save();
-      ctx.fillStyle = fill;
-      ctx.fill();
-      ctx.restore();
-    }
-    ctx.stroke();
-  };
-  const el = (x, y, rx, ry, fill) => {
-    ctx.beginPath();
-    ctx.ellipse(x, y, Math.max(rx, 0.5), Math.max(ry, 0.5), 0, 0, 7);
-    if (fill) {
-      ctx.save();
-      ctx.fillStyle = fill;
-      ctx.fill();
-      ctx.restore();
-    }
-    ctx.stroke();
-  };
-  const dot = (x, y, r, fill) => {
-    ctx.beginPath();
-    ctx.arc(x, y, Math.max(r, 0.4), 0, 7);
-    ctx.save();
-    ctx.fillStyle = fill || BODY;
-    ctx.fill();
-    ctx.restore();
-    ctx.stroke();
-  };
-  const waste = (x, y, r) => {
-    thin(0.5);
-    dot(x, y, r, "#cbd5e1");
-    ctx.beginPath();
-    ctx.moveTo(x - r * 0.6, y);
-    ctx.lineTo(x + r * 0.6, y);
-    ctx.moveTo(x, y - r * 0.6);
-    ctx.lineTo(x, y + r * 0.6);
-    ctx.stroke();
-    full();
-  };
-  const tap = (x, y, r) => {
-    thin(0.55);
-    dot(x, y, r, "#e2e8f0");
-    full();
-  };
-  switch (o.k) {
-    case "wc": {
-      const ch = h * 0.24;
-      rr(x0 + w * 0.04, y0, w * 0.92, ch, m * 0.06, BODY);
-      thin(0.5);
-      dot(cx, y0 + ch * 0.5, m * 0.05, "#e2e8f0");
-      full();
-      ctx.beginPath();
-      ctx.moveTo(x0 + w * 0.12, y0 + ch);
-      ctx.bezierCurveTo(x0 + w * 0.02, y0 + h * 0.62, x0 + w * 0.2, y1, cx, y1);
-      ctx.bezierCurveTo(x1 - w * 0.2, y1, x1 - w * 0.02, y0 + h * 0.62, x1 - w * 0.12, y0 + ch);
-      ctx.closePath();
-      ctx.save();
-      ctx.fillStyle = BODY;
-      ctx.fill();
-      ctx.restore();
-      ctx.stroke();
-      thin(0.55);
-      el(cx, y0 + h * 0.6, w * 0.27, h * 0.27, IN);
-      full();
-      break;
-    }
-    case "bidet":
-      rr(x0, y0, w, h * 0.12, m * 0.04, BODY);
-      ctx.beginPath();
-      ctx.ellipse(cx, y0 + h * 0.56, w * 0.47, h * 0.44, 0, 0, 7);
-      ctx.save();
-      ctx.fillStyle = BODY;
-      ctx.fill();
-      ctx.restore();
-      ctx.stroke();
-      thin(0.55);
-      el(cx, y0 + h * 0.58, w * 0.3, h * 0.3, IN);
-      full();
-      tap(cx, y0 + h * 0.2, m * 0.05);
-      waste(cx, y0 + h * 0.6, m * 0.04);
-      break;
-    case "basin":
-      rr(x0, y0, w, h, m * 0.18, BODY);
-      thin(0.55);
-      el(cx, cy + h * 0.06, w * 0.36, h * 0.32, IN);
-      full();
-      tap(cx, y0 + h * 0.13, m * 0.07);
-      waste(cx, cy + h * 0.1, m * 0.05);
-      break;
-    case "vanity":
-      rr(x0, y0, w, h, m * 0.06, BODY);
-      thin(0.55);
-      [0.27, 0.73].forEach((f) => {
-        el(x0 + w * f, cy + h * 0.06, w * 0.17, h * 0.3, IN);
-        tap(x0 + w * f, y0 + h * 0.12, m * 0.06);
-        waste(x0 + w * f, cy + h * 0.1, m * 0.045);
-      });
-      full();
-      break;
-    case "bath": {
-      rr(x0, y0, w, h, m * 0.12, BODY);
-      const p = m * 0.1;
-      thin(0.55);
-      ctx.beginPath();
-      const ix = x0 + p,
-        iy = y0 + p,
-        iw = w - 2 * p,
-        ih = h - 2 * p;
-      ctx.moveTo(ix + iw * 0.12, iy);
-      ctx.lineTo(ix + iw - ih * 0.5, iy);
-      ctx.arc(ix + iw - ih * 0.5, iy + ih / 2, ih / 2, -Math.PI / 2, Math.PI / 2);
-      ctx.lineTo(ix + iw * 0.12, iy + ih);
-      ctx.quadraticCurveTo(ix, iy + ih, ix, iy + ih * 0.75);
-      ctx.lineTo(ix, iy + ih * 0.25);
-      ctx.quadraticCurveTo(ix, iy, ix + iw * 0.12, iy);
-      ctx.closePath();
-      ctx.save();
-      ctx.fillStyle = IN;
-      ctx.fill();
-      ctx.restore();
-      ctx.stroke();
-      full();
-      tap(x0 + p * 0.55, cy - h * 0.12, m * 0.05);
-      tap(x0 + p * 0.55, cy + h * 0.12, m * 0.05);
-      waste(x0 + p + iw * 0.1, cy, m * 0.05);
-      break;
-    }
-    case "cornerbath":
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y0);
-      ctx.lineTo(x1, y0 + h * 0.35);
-      ctx.quadraticCurveTo(x1 - w * 0.05, y1 - h * 0.05, x0 + w * 0.35, y1);
-      ctx.lineTo(x0, y1);
-      ctx.closePath();
-      ctx.save();
-      ctx.fillStyle = BODY;
-      ctx.fill();
-      ctx.restore();
-      ctx.stroke();
-      thin(0.55);
-      ctx.beginPath();
-      ctx.moveTo(x0 + w * 0.1, y0 + h * 0.1);
-      ctx.lineTo(x1 - w * 0.1, y0 + h * 0.1);
-      ctx.quadraticCurveTo(x1 - w * 0.2, y1 - h * 0.2, x0 + w * 0.1, y1 - h * 0.1);
-      ctx.closePath();
-      ctx.save();
-      ctx.fillStyle = IN;
-      ctx.fill();
-      ctx.restore();
-      ctx.stroke();
-      full();
-      waste(x0 + w * 0.25, y0 + h * 0.25, m * 0.035);
-      tap(x0 + w * 0.06, y0 + h * 0.06, m * 0.03);
-      break;
-    case "shower": {
-      rr(x0, y0, w, h, m * 0.04, BODY);
-      const p = m * 0.07;
-      thin(0.5);
-      rr(x0 + p, y0 + p, w - 2 * p, h - 2 * p, m * 0.03, IN);
-      ctx.save();
-      ctx.strokeStyle = "#94a3b8";
-      [
-        [x0 + p, y0 + p],
-        [x1 - p, y0 + p],
-        [x1 - p, y1 - p],
-        [x0 + p, y1 - p],
-      ].forEach(([x, y]) => {
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(cx, cy);
-        ctx.stroke();
-      });
-      ctx.restore();
-      full();
-      waste(cx, cy, m * 0.06);
-      thin(0.6);
-      dot(x0 + p * 2.2, y0 + p * 2.2, m * 0.07, "#e2e8f0");
-      for (let i = 0; i < 6; i++) {
-        const a = (i * Math.PI) / 3;
-        ctx.beginPath();
-        ctx.arc(
-          x0 + p * 2.2 + Math.cos(a) * m * 0.035,
-          y0 + p * 2.2 + Math.sin(a) * m * 0.035,
-          Math.max(m * 0.008, 0.3),
-          0,
-          7,
-        );
-        ctx.stroke();
-      }
-      full();
-      break;
-    }
-    case "quadrant": {
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y0);
-      ctx.ellipse(x0, y0, w, h, 0, 0, Math.PI / 2);
-      ctx.closePath();
-      ctx.save();
-      ctx.fillStyle = IN;
-      ctx.fill();
-      ctx.restore();
-      ctx.stroke();
-      ctx.save();
-      ctx.strokeStyle = "#64748b";
-      ctx.lineWidth = lw * 1.8;
-      ctx.beginPath();
-      ctx.ellipse(x0, y0, w * 0.97, h * 0.97, 0, 0.05, Math.PI / 2 - 0.05);
-      ctx.stroke();
-      ctx.restore();
-      waste(x0 + w * 0.32, y0 + h * 0.32, m * 0.05);
-      break;
-    }
-    case "walkin": {
-      rr(x0, y0, w, h, m * 0.03, IN);
-      ctx.save();
-      ctx.strokeStyle = "#64748b";
-      ctx.lineWidth = lw * 2.2;
-      ctx.beginPath();
-      ctx.moveTo(x0 + w * 0.6, y1);
-      ctx.lineTo(x0 + w * 0.6, y0 + h * 0.25);
-      ctx.stroke();
-      ctx.restore();
-      thin(0.5);
-      ctx.beginPath();
-      ctx.moveTo(x0 + w * 0.05, cy);
-      ctx.lineTo(x0 + w * 0.5, cy);
-      ctx.stroke();
-      full();
-      waste(x0 + w * 0.28, cy, m * 0.05);
-      break;
-    }
-    case "sink": {
-      rr(x0, y0, w, h, m * 0.06, BODY);
-      const bw = w * 0.46;
-      thin(0.55);
-      rr(x0 + w * 0.05, y0 + h * 0.14, bw, h * 0.72, m * 0.12, IN);
-      ctx.save();
-      ctx.strokeStyle = "#94a3b8";
-      for (let i = 1; i < 6; i++) {
-        const x = x0 + w * 0.55 + (w * 0.4 * i) / 6;
-        ctx.beginPath();
-        ctx.moveTo(x, y0 + h * 0.2);
-        ctx.lineTo(x, y1 - h * 0.2);
-        ctx.stroke();
-      }
-      ctx.restore();
-      full();
-      waste(x0 + w * 0.05 + bw / 2, y0 + h * 0.5, m * 0.06);
-      tap(x0 + w * 0.05 + bw / 2, y0 + h * 0.07, m * 0.05);
-      break;
-    }
-    case "towel": {
-      rr(x0, y0, w, h, m * 0.3, BODY);
-      thin(0.5);
-      for (let x = x0 + w * 0.08; x < x1 - w * 0.05; x += w / 12) {
-        ctx.beginPath();
-        ctx.moveTo(x, y0 + h * 0.2);
-        ctx.lineTo(x, y1 - h * 0.2);
-        ctx.stroke();
-      }
-      full();
-      break;
-    }
-  }
-}
-function npNice(ctx, o, x0, y0, w, h, cx, cy) {
-  const lw = ctx.lineWidth,
-    c = ctx.strokeStyle === "#111" || ctx.strokeStyle === "#111111" ? "#3f3f3f" : ctx.strokeStyle;
-  const seed = o.a[0] * 31 + o.a[1] * 17;
-  if (o.k === "tree") {
-    npCanopy(ctx, cx, cy, w / 2, h / 2, seed, lw, c, "#dfe9d6");
-    ctx.save();
-    ctx.strokeStyle = c;
-    ctx.lineWidth = Math.max(lw * 0.45, 0.5);
-    [0.09, 0.05].forEach((f) => {
-      ctx.beginPath();
-      ctx.arc(cx, cy, Math.min(w, h) * f, 0, 7);
-      ctx.stroke();
-    });
-    ctx.restore();
-  } else if (o.k === "shrub") {
-    npCanopy(ctx, cx, cy, w / 2, h / 2, seed, lw, c, "#cfe1c2");
-    ctx.save();
-    ctx.fillStyle = c;
-    ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(Math.min(w, h) * 0.03, 0.8), 0, 7);
-    ctx.fill();
-    ctx.restore();
-  } else {
-    ctx.save();
-    const n = 16;
-    ctx.beginPath();
-    for (let i = 0; i <= n * 2; i++) {
-      const a = (i * Math.PI) / n,
-        r = i % 2 ? 0.32 : 0.5;
-      ctx.lineTo(cx + Math.cos(a) * w * r, cy + Math.sin(a) * h * r);
-    }
-    ctx.closePath();
-    ctx.fillStyle = "#cbdcc0";
-    ctx.fill();
-    ctx.strokeStyle = c;
-    ctx.lineWidth = Math.max(lw * 0.5, 0.5);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(cx, cy, Math.min(w, h) * 0.05, 0, 7);
-    ctx.stroke();
-    ctx.restore();
-  }
-}
+export { NP_SCX, initPaving, openNotePage, pdfShow, setNpScx };
 /* when a download can't be saved, show the PDF in the app so it can still be viewed, printed or shared */
 function pdfShow(blob, fn) {
   const u = URL.createObjectURL(blob);
@@ -693,21 +139,6 @@ function pdfShow(blob, fn) {
     }
   };
 }
-/* curved lines: bend = how far the middle bows out, as a share of the length */
-function npBendCp(o) {
-  const mx = (o.a[0] + o.b[0]) / 2,
-    my = (o.a[1] + o.b[1]) / 2,
-    dx = o.b[0] - o.a[0],
-    dy = o.b[1] - o.a[1],
-    L = Math.hypot(dx, dy) || 1;
-  return [mx - (dy / L) * o.bend * L, my + (dx / L) * o.bend * L];
-}
-function npBendApex(o) {
-  const cp = npBendCp(o),
-    mx = (o.a[0] + o.b[0]) / 2,
-    my = (o.a[1] + o.b[1]) / 2;
-  return [(mx + cp[0]) / 2, (my + cp[1]) / 2];
-}
 /* scaled areas: a frame on the page with its own scale (e.g. a 1:10 detail next to a 1:50 plan). NP_SCX is the scale in use right now */
 let NP_SCX = 0;
 function setNpScx(v) {
@@ -723,582 +154,6 @@ const npBoxy = (o) =>
 /* real sizes in mm for tap-to-place when a scale is set: [width, height] (line types: [length]) */
 /* what was last copied in the drawing tool (📋 Copy), kept between pages and drawings until something else is copied */
 const npClipboard = { items: null, page: -1 };
-/* the sizes things usually come in (mm): [label, width, depth or height]. Generic trade sizes, not any one maker's */
-const NP_STD = {
-  door: [
-    ["610 (2'0\") internal", 610],
-    ["686 (2'3\") internal", 686],
-    ["762 (2'6\") internal", 762],
-    ["838 (2'9\") internal", 838],
-    ["926 internal – wider access", 926],
-    ["813 external", 813],
-    ["838 external", 838],
-    ["914 external", 914],
-    ["1000 accessible", 1000],
-  ],
-  door2: [
-    ["1106 (2 × 553) pair", 1106],
-    ["1220 (2 × 610) pair", 1220],
-    ["1372 (2 × 686) pair", 1372],
-    ["1524 (2 × 762) pair", 1524],
-    ["1676 (2 × 838) pair", 1676],
-    ["1200 French doors", 1200],
-    ["1500 French doors", 1500],
-    ["1800 French doors", 1800],
-  ],
-  sdoor: [
-    ["1500 sliding", 1500],
-    ["1800 sliding", 1800],
-    ["2100 sliding", 2100],
-    ["2400 sliding", 2400],
-    ["3000 sliding", 3000],
-    ["3600 sliding", 3600],
-  ],
-  bifold: [
-    ["1800 bi-fold (2 leaf)", 1800],
-    ["2100 bi-fold (3 leaf)", 2100],
-    ["2400 bi-fold (3 leaf)", 2400],
-    ["3000 bi-fold (4 leaf)", 3000],
-    ["3600 bi-fold (4 leaf)", 3600],
-    ["4200 bi-fold (5 leaf)", 4200],
-    ["4800 bi-fold (6 leaf)", 4800],
-  ],
-  opening: [
-    ["600", 600],
-    ["762", 762],
-    ["900", 900],
-    ["1000", 1000],
-    ["1200", 1200],
-    ["1500", 1500],
-    ["1800", 1800],
-  ],
-  window: [
-    ["488", 488],
-    ["630", 630],
-    ["915", 915],
-    ["1200", 1200],
-    ["1500", 1500],
-    ["1770", 1770],
-    ["1800", 1800],
-    ["2340", 2340],
-  ],
-  ewin: [
-    ["630 × 1050", 630, 1050],
-    ["915 × 1050", 915, 1050],
-    ["1200 × 1050", 1200, 1050],
-    ["1200 × 1200", 1200, 1200],
-    ["1770 × 1050", 1770, 1050],
-    ["1770 × 1200", 1770, 1200],
-    ["2340 × 1050", 2340, 1050],
-    ["915 × 450 (bathroom)", 915, 450],
-  ],
-  edoor: [
-    ["762 × 1981 (2'6\" × 6'6\")", 762, 1981],
-    ["838 × 1981 (2'9\" × 6'6\")", 838, 1981],
-    ["926 × 2040", 926, 2040],
-    ["Frame 920 × 2085 external", 920, 2085],
-    ["Frame 1000 × 2100 external", 1000, 2100],
-  ],
-  efrench: [
-    ["1200 × 2100", 1200, 2100],
-    ["1500 × 2100", 1500, 2100],
-    ["1800 × 2100", 1800, 2100],
-  ],
-  ebifold: [
-    ["2400 × 2100", 2400, 2100],
-    ["3000 × 2100", 3000, 2100],
-    ["3600 × 2100", 3600, 2100],
-    ["4800 × 2100", 4800, 2100],
-  ],
-  egarage: [
-    ["2134 × 1981 (7' × 6'6\")", 2134, 1981],
-    ["2286 × 2134 (7'6\" × 7')", 2286, 2134],
-    ["2438 × 2134 (8' × 7')", 2438, 2134],
-    ["4267 × 2134 (14' × 7') double", 4267, 2134],
-    ["4877 × 2134 (16' × 7') double", 4877, 2134],
-  ],
-  rooflight: [
-    ["550 × 780", 550, 780],
-    ["550 × 980", 550, 980],
-    ["660 × 1180", 660, 1180],
-    ["780 × 980", 780, 980],
-    ["780 × 1180", 780, 1180],
-    ["780 × 1400", 780, 1400],
-    ["940 × 1600", 940, 1600],
-    ["1140 × 1180", 1140, 1180],
-  ],
-  eroofl: [
-    ["550 × 780", 550, 780],
-    ["660 × 1180", 660, 1180],
-    ["780 × 980", 780, 980],
-    ["780 × 1180", 780, 1180],
-    ["780 × 1400", 780, 1400],
-  ],
-  lintel: [600, 750, 900, 1050, 1200, 1350, 1500, 1650, 1800, 2100, 2400, 2700, 3000].map((L) => [
-    L + " long",
-    L,
-    215,
-  ]),
-  bath: [
-    ["1500 × 700", 1500, 700],
-    ["1600 × 700", 1600, 700],
-    ["1700 × 700", 1700, 700],
-    ["1700 × 750", 1700, 750],
-    ["1800 × 800", 1800, 800],
-  ],
-  shower: [
-    ["760 × 760", 760, 760],
-    ["800 × 800", 800, 800],
-    ["900 × 900", 900, 900],
-    ["1000 × 800", 1000, 800],
-    ["1200 × 800", 1200, 800],
-    ["1200 × 900", 1200, 900],
-    ["1400 × 900", 1400, 900],
-    ["1600 × 800", 1600, 800],
-    ["1700 × 800", 1700, 800],
-  ],
-  wc: [
-    ["360 × 500 short projection", 360, 500],
-    ["360 × 600", 360, 600],
-    ["400 × 700", 400, 700],
-  ],
-  basin: [
-    ["400 × 300 cloakroom", 400, 300],
-    ["500 × 400", 500, 400],
-    ["550 × 450", 550, 450],
-    ["600 × 470", 600, 470],
-  ],
-  sink: [
-    ["1000 × 500 single bowl", 1000, 500],
-    ["1160 × 500 bowl and a half", 1160, 500],
-    ["1500 × 500 double bowl", 1500, 500],
-  ],
-  units: [300, 400, 450, 500, 600, 800, 1000]
-    .map((w) => [w + " base unit", w, 600])
-    .concat([300, 400, 500, 600, 800, 1000].map((w) => [w + " wall unit", w, 320])),
-  hob: [
-    ["600 × 520", 600, 520],
-    ["700 × 520", 700, 520],
-    ["800 × 520", 800, 520],
-    ["900 × 520", 900, 520],
-  ],
-  fridge: [
-    ["550 × 600 under counter", 550, 600],
-    ["600 × 600", 600, 600],
-    ["700 × 650 fridge freezer", 700, 650],
-    ["900 × 700 American style", 900, 700],
-  ],
-  wm: [["600 × 600", 600, 600]],
-  rad: [400, 500, 600, 700, 800, 900, 1000, 1200, 1400, 1600, 1800].map((w) => [
-    w + " long",
-    w,
-    100,
-  ]),
-  dbed: [
-    ["1350 × 1900 double", 1350, 1900],
-    ["1500 × 2000 king", 1500, 2000],
-    ["1800 × 2000 super king", 1800, 2000],
-  ],
-  sbed: [
-    ["900 × 1900 single", 900, 1900],
-    ["1200 × 1900 small double", 1200, 1900],
-  ],
-  wardrobe: [1000, 1200, 1500, 1800, 2400].map((w) => [w + " × 600", w, 600]),
-  shed: [
-    ["1800 × 1200 (6' × 4')", 1800, 1200],
-    ["2400 × 1800 (8' × 6')", 2400, 1800],
-    ["3000 × 2400 (10' × 8')", 3000, 2400],
-  ],
-  container: [
-    ["10 ft – 3048 × 2438", 3048, 2438],
-    ["20 ft – 6058 × 2438", 6058, 2438],
-  ],
-  parking: [
-    ["2400 × 4800", 2400, 4800],
-    ["2500 × 5000", 2500, 5000],
-    ["3300 × 5000 accessible", 3300, 5000],
-  ],
-};
-const NP_REAL = {
-  ewCav: [1200, 2700],
-  ewBrick: [1200, 2700],
-  ewSolid: [1000, 2700],
-  ewStud: [700, 2500],
-  ewBlock: [3000, 2700],
-  ewBrk: [3000, 2700],
-  fdnsec: [1500, 2000],
-  rwsBlock: [2000, 1700],
-  rwsSleeper: [1700, 1850],
-  rwsGabion: [2600, 1950],
-  bblay: [4800, 4000],
-  sdT3: [800, 700],
-  sdTlad: [800, 700],
-  sdTbk: [800, 700],
-  sdL3: [500, 500],
-  sdLcal: [500, 500],
-  sdLblk: [500, 500],
-  sfPlain: [2400, 2400],
-  sfDoor: [2400, 2400],
-  sfWin: [2400, 2400],
-  sfBrace: [2400, 2400],
-  sfBlock: [2400, 2400],
-  sfPlat: [2400, 5200],
-  shFull: [100, 600],
-  shIns: [150, 600],
-  shVert: [100, 600],
-  shSingle: [100, 600],
-  gfSlab: [1800, 1600],
-  gfBB: [1800, 1600],
-  gfTimber: [1800, 1600],
-  jhanger: [600, 400],
-  jtrim: [3600, 3600],
-  jstrap: [1500, 900],
-  jlay: [4000, 3600],
-  rlay: [6000, 4000],
-  tlay: [8000, 4000],
-  truss: [8000, 2600],
-  cutroof: [6000, 2600],
-  tstud: [3000],
-  eframe: [3600, 2400],
-  legend: [4000, 3000],
-  stairsu: [2000, 2700],
-  roofhip: [8000, 6000],
-  roofgable: [8000, 6000],
-  fall: [2000],
-  re: [300, 300],
-  ic: [600, 450],
-  soakaway: [1500, 1500],
-  rwp: [150, 150],
-  aav: [150, 150],
-  foul: [4000],
-  storm: [4000],
-  fan: [250, 250],
-  fspur: [150, 90],
-  ckr: [150, 90],
-  olight: [250, 250],
-  dlight: [150, 150],
-  heat: [150, 150],
-  coal: [150, 150],
-  tvp: [150, 90],
-  stat: [120, 120],
-  towel: [500, 100],
-  rafter: [3000],
-  joistl: [3000],
-  rooftile: [3000],
-  batfelt: [3000],
-  lead: [600],
-  pboard: [2400],
-  wplate: [100, 50],
-  ridgeb: [32, 175],
-  purlin: [75, 225],
-  eaves: [450, 300],
-  flatroof: [2000, 400],
-  fdn: [600, 1000],
-  trenchfill: [600, 1000],
-  bblock: [2400, 225],
-  gslab: [2400, 550],
-  tfloor: [2400, 250],
-  screed: [2400, 75],
-  lintel: [1500, 215],
-  ctray: [1200],
-  weep: [65, 75],
-  wtie: [250, 40],
-  closer: [50, 215],
-  renderl: [2400],
-  cladsec: [2400],
-  evclad: [3000, 2400],
-  epanel: [3600, 2400],
-  etilehang: [3000, 1500],
-  estone: [3000, 1500],
-  esoldier: [3000, 215],
-  airbrick: [215, 140],
-  solarpv: [3402, 1722],
-  battery: [750, 1150],
-  inverter: [450, 550],
-  evcharger: [250, 400],
-  beebrick: [215, 65],
-  batbox: [250, 350],
-  birdbox: [150, 250],
-  swiftbox: [340, 150],
-  ridgel: [4000],
-  hipl: [3000],
-  valleyl: [3000],
-  collar: [2400],
-  strut: [1500],
-  cjoist: [3600],
-  secmark: [700, 1100],
-  tagbox: [700, 320],
-  tagcirc: [420, 420],
-  viewtitle: [4500, 700],
-  scalebar: [5200, 700],
-  joists: [4000, 3000],
-  ibeam: [150, 300],
-  timber: [50, 150],
-  padstone: [440, 215],
-  egroundfill: [8000, 1500],
-  hidden: [3000],
-  centre: [6000],
-  breather: [3000],
-  dpcl: [3000],
-  dpm: [3000],
-  vcl: [3000],
-  rooflight: [780, 980],
-  lantern: [1500, 3000],
-  stairsl: [2600, 2600],
-  spiral: [1600, 1600],
-  column: [300, 300],
-  chimney: [600, 450],
-  dbed: [1500, 2000],
-  sbed: [900, 1900],
-  sofa: [2000, 900],
-  table: [1800, 1500],
-  wardrobe: [1200, 600],
-  island: [2400, 1300],
-  desk: [1400, 1100],
-  patio: [3600, 3000],
-  blockpave: [5000, 3000],
-  decking: [3000, 3000],
-  lawn: [6000, 4000],
-  gravel: [3000, 2000],
-  planting: [3000, 1200],
-  shrub: [1000, 1000],
-  hedge: [4000],
-  path: [4000],
-  gsteps: [1200, 900],
-  retwall: [4000],
-  gate: [1000],
-  pond: [2500, 1800],
-  shed: [2400, 1800],
-  elecpoint: [500, 500],
-  stopcock: [400, 400],
-  gaspoint: [500, 500],
-  canteen: [4880, 2440],
-  dryroom: [3600, 2440],
-  fireassembly: [1200, 1200],
-  fireext: [500, 500],
-  firepoint: [1000, 1000],
-  uelec: [5000],
-  heras: [10500],
-  herasgate: [3500],
-  ch8: [4000],
-  uwater: [5000],
-  ugas: [5000],
-  portaloo: [1100, 1100],
-  container: [6058, 2438],
-  siteoffice: [4880, 2440],
-  sauna: [2000, 2000],
-  studio: [5000, 3500],
-  gardenroom: [4000, 3000],
-  gardenoffice: [3000, 2400],
-  car: [4500, 1900],
-  parking: [2400, 4800],
-  bins: [1600, 800],
-  elant: [1500, 700],
-  echim: [700, 1400],
-  estairs: [2600, 2600],
-  efence: [1830, 1800],
-  egate: [1000, 1200],
-  ehedge: [3000, 1500],
-  etree: [3500, 5000],
-  eperson: [500, 1750],
-  cavity: [3000],
-  eground: [6000],
-  edpc: [6000],
-  egutter: [3000],
-  ewin: [1200, 1050],
-  edoor: [900, 2100],
-  efrench: [1500, 2100],
-  ebifold: [2400, 2100],
-  egarage: [2400, 2135],
-  eroofl: [780, 1180],
-  eroof: [6000, 2500],
-  elean: [3000, 1000],
-  edp: [68, 3000],
-  ebrick: [3000, 2400],
-  erender: [3000, 2400],
-  eclad: [3000, 2400],
-  etile: [3000, 1500],
-  einsul: [1000, 100],
-  econc: [600, 225],
-  ehard: [1000, 150],
-  elevel: [1200, 350],
-  door: [838],
-  door2: [1500],
-  sdoor: [1800],
-  bifold: [2400],
-  opening: [900],
-  wall: [3000],
-  dline: [3000],
-  stud: [3000],
-  beam: [3000],
-  pipe: [3000],
-  fence: [3000],
-  window: [1200, 100],
-  stairs: [2600, 900],
-  wc: [400, 700],
-  basin: [550, 450],
-  bath: [1700, 700],
-  shower: [900, 900],
-  sink: [1000, 500],
-  hob: [600, 600],
-  units: [1800, 600],
-  fridge: [600, 600],
-  wm: [600, 600],
-  rad: [1000, 100],
-  boiler: [450, 350],
-  cyl: [500, 500],
-  socket: [150, 90],
-  switch: [100, 100],
-  light: [300, 300],
-  smoke: [150, 150],
-  cu: [400, 250],
-  mh: [600, 450],
-  gully: [300, 300],
-  svp: [110, 110],
-  tap: [100, 100],
-  tree: [3000, 3000],
-};
-const NP_TYPES = [
-  "Sketch",
-  "Site visit notes",
-  "Existing floor plan",
-  "Proposed floor plan",
-  "Existing and proposed plan",
-  "Site / location plan",
-  "Elevations",
-  "Section",
-  "Roof plan",
-  "Foundation plan",
-  "Electrical layout",
-  "Plumbing and heating layout",
-  "Drainage layout",
-  "Kitchen layout",
-  "Bathroom layout",
-  "Structural / steel details",
-  "Detail drawing",
-  "Setting out",
-  "As built",
-];
-const NP_LAYERS = [
-  ["walls", "🧱 Walls & structure"],
-  ["openings", "🚪 Doors & windows"],
-  ["struct", "🪵 Timber & floors"],
-  ["elec", "⚡ Electrics"],
-  ["heat", "🔥 Heating & ventilation"],
-  ["drain", "💧 Drainage & plumbing"],
-  ["fittings", "🛁 Kitchen, bathroom & furniture"],
-  ["land", "🌳 Landscaping"],
-  ["elev", "🏡 Elevation & section"],
-  ["rooms", "⬠ Rooms"],
-  ["dims", "📏 Dimensions"],
-  ["notes", "📝 Notes & text"],
-  ["imports", "📥 Imported drawings & photos"],
-  ["general", "✏️ Lines & sketching"],
-];
-let NP_KLAY = null;
-
-function npLayerOf(o) {
-  if (o.ly) return o.ly;
-  if (o.t === "dim" || o.t === "ang") return "dims";
-  if (o.t === "room") return "rooms";
-  if (o.t === "img") return "imports";
-  if (o.t === "text" || o.t === "arrow") return "notes";
-  if (o.t !== "shape") return "general";
-  if (!NP_KLAY) {
-    NP_KLAY = {};
-    const m = {
-      "Walls & structure": "walls",
-      "Stairs": "walls",
-      "Doors & windows": "openings",
-      "Kitchen & bathroom": "fittings",
-      "Furniture": "fittings",
-      "Electrics": "elec",
-      "Heating & ventilation": "heat",
-      "Drainage": "drain",
-      "Drainage & water": "drain",
-      "Floors": "struct",
-      "Timber framing": "struct",
-      "Stud wall connections": "struct",
-      "Roof plan": "struct",
-      "Energy": "elec",
-      "Energy & wildlife": "elec",
-      "Landscaping": "land",
-      "Notes & details": "notes",
-      "Shapes": "general",
-      "Site set-up": "land",
-      "Site plant & equipment": "land",
-      "Fire safety": "elec",
-      "Accessibility & lifts": "fittings",
-      "Garden buildings": "land",
-      "Foundations": "struct",
-      "Bridges, poles & cables": "elec",
-      "Outside lights, gates & CCTV": "elec",
-      "Survey & existing site": "land",
-      "Services": "elec",
-      "Construction phase": "land",
-      "External works": "land",
-    };
-    NP_LIB.forEach(([v, c, ks]) =>
-      ks.forEach((k) => {
-        if (!NP_KLAY[k]) NP_KLAY[k] = v === "elev" ? "elev" : m[c] || "general";
-      }),
-    );
-  }
-  return NP_KLAY[o.k] || "general";
-}
-const npPolyArea = (p) => {
-  let a = 0;
-  for (let i = 0; i < p.length; i++) {
-    const q = p[i],
-      r = p[(i + 1) % p.length];
-    a += q[0] * r[1] - r[0] * q[1];
-  }
-  return Math.abs(a) / 2;
-};
-const npPolyPerim = (p) => {
-  let L = 0;
-  for (let i = 0; i < p.length; i++) {
-    const q = p[i],
-      r = p[(i + 1) % p.length];
-    L += Math.hypot(r[0] - q[0], r[1] - q[1]);
-  }
-  return L;
-};
-const npPolyCentroid = (p) => {
-  let a = 0,
-    cx = 0,
-    cy = 0;
-  for (let i = 0; i < p.length; i++) {
-    const q = p[i],
-      r = p[(i + 1) % p.length],
-      f = q[0] * r[1] - r[0] * q[1];
-    a += f;
-    cx += (q[0] + r[0]) * f;
-    cy += (q[1] + r[1]) * f;
-  }
-  if (Math.abs(a) < 1e-9) {
-    const n = p.length;
-    return [p.reduce((s2, q) => s2 + q[0], 0) / n, p.reduce((s2, q) => s2 + q[1], 0) / n];
-  }
-  return [cx / (3 * a), cy / (3 * a)];
-};
-const npInPoly = (pt, p) => {
-  let c = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const a = p[i],
-      b = p[j];
-    if (
-      a[1] > pt[1] !== b[1] > pt[1] &&
-      pt[0] < ((b[0] - a[0]) * (pt[1] - a[1])) / (b[1] - a[1] + 1e-12) + a[0]
-    )
-      c = !c;
-  }
-  return c;
-};
-const npFmtLen = (mm) =>
-  mm >= 1000
-    ? (Math.round(mm / 10) / 100).toLocaleString("en-GB") + " m"
-    : Math.round(mm).toLocaleString("en-GB") + " mm";
 async function openNotePage(opts) {
   opts = opts || {};
   let doc = null;
@@ -1399,16 +254,19 @@ async function openNotePage(opts) {
     }
     return best ? +best.vp : 0;
   };
+  const dzFrame = (k) => (vpList.objs || doc.objs).find((f) => vpOf(f) && f.dzk === k);
   const vpAnchor = (o) =>
-    o.t === "img" || o.t === "text"
-      ? [o.x, o.y]
-      : o.a && o.b && o.t !== "dim"
-        ? [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2]
-        : o.a
-          ? o.a
-          : o.p
-            ? o.p[0]
-            : o.v || null;
+    o.dz && dzFrame(o.dz)
+      ? ((f) => [(f.a[0] + f.b[0]) / 2, (f.a[1] + f.b[1]) / 2])(dzFrame(o.dz))
+      : o.t === "img" || o.t === "text"
+        ? [o.x, o.y]
+        : o.a && o.b && o.t !== "dim"
+          ? [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2]
+          : o.a
+            ? o.a
+            : o.p
+              ? o.p[0]
+              : o.v || null;
   const vpScaleFor = (o) => (vpOf(o) ? 0 : vpScaleAt(vpAnchor(o)));
   const vpKids = (v) => {
     const x0 = Math.min(v.a[0], v.b[0]),
@@ -1515,6 +373,7 @@ async function openNotePage(opts) {
         return "draw";
       }
     })()}"><div class="np-gtabs" role="tablist">${[
+      ["easy", "⭐ Easy"],
       ["draw", "✏️ Draw"],
       ["edit", "✂️ Edit"],
       ["measure", "📏 Measure"],
@@ -1528,6 +387,7 @@ async function openNotePage(opts) {
         "",
       )}</div><button type="button" class="np-t np-moretools" aria-label="Show all tools" aria-expanded="true" hidden>☰<small>Tools</small></button>
       ${[
+        ["smart", "✨", "Smart pen"],
         ["pen", "✎", "Pen"],
         ["hl", "🖍", "Highlighter"],
         ["erase", "⌫", "Rubber"],
@@ -1553,20 +413,23 @@ async function openNotePage(opts) {
       ]
         .map(
           ([k, i, l]) =>
-            `<button type="button" class="np-t" data-t="${k}" ${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k] ? `data-g="${{ pen: "draw", hl: "draw", erase: "draw edit", line: "draw", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure", pwall: "draw", trim: "edit", extend: "edit", corner: "edit", rect: "draw", circle: "draw", arrow: "draw", text: "draw", box: "edit" }[k]}"` : ""} aria-pressed="${k === "pen"}" title="${l}" aria-label="${l}">${i}<small>${l.split(" ")[0]}</small></button>`,
+            `<button type="button" class="np-t" data-t="${k}" ${{ smart: "draw easy", pen: "draw", hl: "draw", erase: "draw edit easy", line: "draw easy", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure easy", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure easy", pwall: "draw easy", trim: "edit", extend: "edit", corner: "edit", rect: "draw easy", circle: "draw", arrow: "draw", text: "draw easy", box: "edit" }[k] ? `data-g="${{ smart: "draw easy", pen: "draw", hl: "draw", erase: "draw edit easy", line: "draw easy", curve: "draw", pave: "draw insert", pstrip: "draw insert", dim: "measure easy", dimc: "measure", dima: "measure", tape: "measure", room: "draw measure easy", pwall: "draw easy", trim: "edit", extend: "edit", corner: "edit", rect: "draw easy", circle: "draw", arrow: "draw", text: "draw easy", box: "edit" }[k]}"` : ""} aria-pressed="${k === "pen"}" title="${l}" aria-label="${l}">${i}<small>${l.split(" ")[0]}</small></button>`,
         )
         .join("")}
       <button type="button" class="np-t np-view" data-g="${opts.pro ? "none" : "draw insert"}" title="Switch symbols between plan (looking down) and elevation (looking at the front)" aria-label="Plan or elevation symbols">🏠<small>Plan</small></button>
-      <select class="np-shape" data-g="${opts.pro ? "none" : "draw insert"}" aria-label="More shapes"></select>${opts.pro ? `<button type="button" class="np-libbtn" data-g="draw insert" aria-label="Symbols library">📚 <span>Symbols…</span></button>` : ""}
+      <select class="np-shape" data-g="${opts.pro ? "none" : "draw insert"}" aria-label="More shapes"></select>${opts.pro ? `<button type="button" class="np-libbtn" data-g="draw insert easy" aria-label="Symbols library">📚 <span>Symbols…</span></button>` : ""}
       <button type="button" class="np-t np-snap" data-g="page edit" aria-pressed="true" title="Snap to grid and line ends" aria-label="Snap to grid">🧲<small>Snap</small></button>
       <button type="button" class="np-t np-setup" data-g="page" title="Paper size, scale and background" aria-label="Paper size and scale">📐<small>Paper</small></button>
+      <button type="button" class="np-t np-findrooms" data-g="measure easy" title="Find the rooms the walls close off, with their areas" aria-label="Find rooms">⬠<small>Find rooms</small></button>
       <button type="button" class="np-t" data-t="roomsk" data-g="draw measure" title="Room sketch: draw the room in one line, it straightens the walls, then tap each wall to type its length" aria-label="Room sketch">✍️<small>Room sketch</small></button>
-      ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button>` : ""}
-      <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" accept="image/*" multiple hidden></label>
+      ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button><button type="button" class="np-t" data-t="zoomd" data-g="page insert" title="Box round part of the drawing and show it bigger somewhere else, e.g. the eaves at 1:10" aria-label="Zoom-in detail">🔎<small>Zoom-in detail</small></button>` : ""}
+      <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" class="fpick" accept="image/*" multiple></label>
       <button type="button" class="np-t np-apppic" data-g="insert" title="Photos already in the app" aria-label="Photos already in the app">🖼<small>App photos</small></button><button type="button" class="np-t np-mysym" data-g="insert" title="Symbols you have saved from your own drawings" aria-label="My symbols"${opts.pro ? "" : " hidden"}>⭐<small>My symbols</small></button><button type="button" class="np-t np-import" data-g="insert" title="Bring in a drawing or plan at its own scale" aria-label="Import a drawing">📥<small>Import drawing</small></button>${opts.pro ? `<button type="button" class="np-t np-qty" data-g="measure" title="Areas, lengths and materials from this drawing" aria-label="Quantities">🧮<small>Quantities</small></button><button type="button" class="np-t np-layers" data-g="page" title="Show, hide or lock groups of things, and show another floor underneath" aria-label="Layers and floors">🗂<small>Layers</small></button>` : ""}${
         opts.pro
           ? `<span class="np-build" style="display:contents">${[
               ["beam", "🔩", "Steel beam"],
+              ["stairb", "🪜", "Stair builder"],
+              ["secbu", "🧱", "Build-ups"],
               ["dimall", "📏", "Dimension walls"],
               ["num", "🔢", "Number"],
               ["sched", "📋", "Schedules"],
@@ -1607,7 +470,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-zo" data-g="page" aria-label="Zoom out">−<small>Zoom</small></button><button type="button" class="np-t np-zi" data-g="page" aria-label="Zoom in">+<small>Zoom</small></button><button type="button" class="np-t np-fit" aria-label="Fit page">⤢<small>Fit</small></button>
       <button type="button" class="np-t np-more" data-g="page" title="Make the page longer" aria-label="Make the page longer" hidden>⬇<small>Longer</small></button></div>
     <div class="np-pages" role="tablist" aria-label="Pages"></div>
-    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-x" aria-label="Close">✕</button></form><form class="np-lenbar" hidden><span>Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span>Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span>°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-x">✕</button></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
+    <div class="np-stage"><canvas class="np-cv"></canvas><form class="np-opbar" hidden><span class="nob-t">🚪 Width</span><select class="nob-std" aria-label="Standard sizes"></select><span class="nob-wl">Width</span><input class="nob-w" type="number" inputmode="decimal" step="any" aria-label="Width in mm"><span class="nob-dg">×</span><input class="nob-d nob-dg" type="number" inputmode="decimal" step="any" aria-label="Depth in mm"><span class="nob-mm">mm</span><span class="nob-pg">From the wall end</span><input class="nob-p nob-pg" type="number" inputmode="decimal" step="any" aria-label="Distance from the end of the wall in mm"><span class="nob-pg">mm</span><span class="nob-o nob-pg"></span><span class="nob-i"></span><button type="button" class="btn nob-chk">📏 Check the scale</button><button type="button" class="btn nob-fix">↺ Back to scale</button><button type="submit" class="btn primary nob-set">Set</button><button type="button" class="btn nob-min" aria-label="Make it small" title="Make it small">–</button><button type="button" class="btn nob-x" aria-label="Close">✕</button><button type="button" class="nob-sum" hidden title="Show the size"></button></form><form class="np-lenbar" hidden><span class="nlb-ll">Length</span><input class="nlb-l" type="number" inputmode="decimal" step="any"><span class="nlb-u">mm</span><span class="nlb-al">Angle</span><input class="nlb-a" type="number" inputmode="decimal" step="any" style="width:70px"><span class="nlb-au">°</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nlb-next" title="Set this one, then start the next from its end">Next ➜</button><button type="button" class="btn nlb-morebtn" aria-expanded="false" title="Which way, and a number pad">⋯</button><button type="button" class="btn nlb-min" title="Make it small" aria-label="Make it small">–</button><button type="button" class="btn nlb-x" aria-label="Close">✕</button><span class="nlb-extra" hidden><span class="nlb-dirs" role="group" aria-label="Which way"><button type="button" class="btn nlb-dir" data-a="0" aria-label="Right">→</button><button type="button" class="btn nlb-dir" data-a="90" aria-label="Up">↑</button><button type="button" class="btn nlb-dir" data-a="180" aria-label="Left">←</button><button type="button" class="btn nlb-dir" data-a="270" aria-label="Down">↓</button></span><button type="button" class="btn nlb-padb" aria-pressed="false" title="Number pad">🔢 Number pad</button></span><button type="button" class="nlb-sum" hidden title="Show the length and angle"></button><div class="nlb-pad" hidden>${["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => `<button type="button" class="btn nlb-k" data-k="${k}">${k}</button>`).join("")}</div></form><div class="np-chainbar" hidden><span class="np-chaintxt"></span><span class="np-ckbox" hidden><select class="np-ck" aria-label="Kind of corner"><option value="">⌐ Sharp corner</option><option value="r">◜ Rounded corner</option><option value="c">◸ Cut corner (splay)</option></select><input class="np-cks" type="number" inputmode="decimal" step="any" value="300" aria-label="Size of the rounded or cut corner"><span class="np-cku">mm</span></span><select class="np-pwk" hidden><option value="wall">Solid wall</option><option value="cavity">Cavity wall</option><option value="tstud">Timber stud wall</option><option value="stud">Stud wall</option><option value="dline">Wall (double line)</option><option value="line">Plain line</option></select><span class="np-pvbox" hidden><select class="np-pvm" aria-label="Material">${Object.entries(
       NP_PAVE,
     )
       .map(([k, v]) => `<option value="${k}">${v[0]}</option>`)
@@ -1626,9 +489,9 @@ async function openNotePage(opts) {
       .join(
         "",
       )}</span><input class="np-pwa" inputmode="decimal" placeholder="or angle °" aria-label="Angle in degrees" style="width:84px"><button type="submit" class="btn primary">Add</button></form><button type="button" class="btn np-pwclose" hidden>⟲ Close it up</button><button type="button" class="btn primary np-chainok">✓ Finish</button><button type="button" class="btn np-chainx">Cancel</button></div>
-      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
+      <div class="np-selbar" hidden><button type="button" class="np-sb" data-a="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-sb" data-a="turnby">∠<small>Turn by…</small></button><button type="button" class="np-sb" data-a="moveby">✥<small>Move by…</small></button><button type="button" class="np-sb" data-a="clip">📋<small>Copy</small></button><button type="button" class="np-sb" data-a="smaller" hidden>➖<small>Smaller</small></button><button type="button" class="np-sb" data-a="bigger" hidden>➕<small>Bigger</small></button><button type="button" class="np-sb" data-a="flip">⇋<small>Flip</small></button><button type="button" class="np-sb" data-a="crop" hidden>✂<small>Crop</small></button><button type="button" class="np-sb" data-a="dup">⧉<small>Copy</small></button><button type="button" class="np-sb" data-a="repeat">⋯<small>Copy in a row</small></button>${opts.pro ? `<button type="button" class="np-sb" data-a="mysym">⭐<small>Save as my symbol</small></button>` : ""}<button type="button" class="np-sb" data-a="size" hidden>📏<small>Size</small></button><button type="button" class="np-sb np-fine" data-a="fine">⚙<small>Properties</small></button><button type="button" class="np-sb" data-a="fill">🪣<small>Fill</small></button><button type="button" class="np-sb" data-a="front">⬆<small>To front</small></button><button type="button" class="np-sb" data-a="offset" hidden>⇉<small>Offset</small></button><button type="button" class="np-sb" data-a="autodim" hidden>📏<small>Dimension it</small></button><button type="button" class="np-sb" data-a="dstyle" hidden>⟋<small>Ticks</small></button><button type="button" class="np-sb" data-a="dnum" hidden>✏️<small>Change number</small></button><button type="button" class="np-sb" data-a="dside" hidden>⇅<small>Number other side</small></button><button type="button" class="np-sb" data-a="lock">🔒<small>Lock</small></button><button type="button" class="np-sb np-sbdel" data-a="del">🗑<small>Delete</small></button></div>
       <div class="np-selbar np-mbar" hidden><span class="np-mcount"></span><button type="button" class="np-mb" data-m="copy">⧉<small>Copy</small></button><button type="button" class="np-mb" data-m="rot">⟳<small>Turn 90°</small></button><button type="button" class="np-mb" data-m="mirh">⇋<small>Mirror</small></button><button type="button" class="np-mb" data-m="mirv">⇅<small>Mirror ↕</small></button><button type="button" class="np-mb" data-m="moveby">✥<small>Move by…</small></button><button type="button" class="np-mb" data-m="clip">📋<small>Copy</small></button><button type="button" class="np-mb" data-m="align">⫷<small>Align</small></button><button type="button" class="np-mb" data-m="group">🔗<small>Group</small></button><button type="button" class="np-mb" data-m="lock">🔒<small>Lock</small></button><button type="button" class="np-mb np-sbdel" data-m="del">🗑<small>Delete</small></button><button type="button" class="np-mb" data-m="done">✓<small>Done</small></button></div>
-      <div class="np-finebox" hidden><div class="nfrow"><b>⚙ <span class="nfwhatis">Properties</span></b><button type="button" class="nfx" aria-label="Close">✕</button></div>
+      <div class="np-finebox" hidden><div class="nfrow nfhead" title="Drag here to move it"><b>⚙ <span class="nfwhatis">Properties</span></b><span class="nfhbtns"><button type="button" class="nfmin" aria-label="Make it small" title="Make it small">–</button><button type="button" class="nfx" aria-label="Close">✕</button></span></div>
         <div class="nfprops"><div class="nfrow nfcolrow"><span class="nfl">Colour</span>${NP_COLS.map((c) => `<button type="button" class="np-c nfcol" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join("")}</div>
           <div class="nfrow nfwrow"><span class="nfl">Thickness</span><div class="seg nfseg nfw">${[
             [2, "Hairline"],
@@ -1655,10 +518,13 @@ async function openNotePage(opts) {
           <div class="nfrow nflinrow" style="flex-wrap:wrap"><span class="nfl">Linings</span><label style="flex:1 1 220px;display:flex;flex-direction:column;gap:3px;font-size:12px">Side 1<select class="nflin" data-s="1" style="min-height:40px;height:auto;font-size:14px;padding:6px 8px;width:100%;line-height:1.3">${NP_LINOPTS()}</select></label><label style="flex:1 1 220px;display:flex;flex-direction:column;gap:3px;font-size:12px">Side 2<select class="nflin" data-s="2" style="min-height:40px;height:auto;font-size:14px;padding:6px 8px;width:100%;line-height:1.3">${NP_LINOPTS()}</select></label><button type="button" class="nfb nflinsw">⇄ Swap sides</button></div>
           <div class="nfrow nfcallrow"><span class="nfl">Pointer</span><select class="nfc-lead"><option value="none">No arrow</option><option value="arrow">➜ Arrow</option><option value="dot">● Dot</option><option value="line">— Line</option></select><select class="nfc-box"><option value="">No box</option><option value="box">▭ Box</option><option value="round">▢ Rounded</option><option value="cloud">☁ Cloud</option><option value="under">_ Underline</option></select></div>
           <div class="nfrow nfbendrow"><span class="nfl">Curve</span><input type="range" class="nfbend" min="-100" max="100" step="1" style="flex:1"><button type="button" class="nfb nfbend0">Straight</button></div>
-          <form class="nfrow nftxrow"><span class="nfl">Text</span><input class="nftx" style="flex:1;min-width:120px"><input class="nftxs" inputmode="numeric" style="width:56px" aria-label="Text size"><button type="submit" class="btn primary">Set</button></form>
+          <form class="nfrow nftxrow"><span class="nfl">Text</span><textarea class="nftx" rows="3" maxlength="2000" style="flex:1;min-width:160px" aria-label="Text (Enter for a new line)"></textarea><input class="nftxs" inputmode="numeric" style="width:56px" aria-label="Text size"><button type="submit" class="btn primary">Set</button><div class="nftxsty" role="group" aria-label="How the text looks"><button type="button" class="np-tst nftst" data-k="b" title="Bold"><b>B</b></button><button type="button" class="np-tst nftst" data-k="i" title="Italic"><i>I</i></button><button type="button" class="np-tst nftst" data-k="al" data-v="l" title="Line up on the left">⇤</button><button type="button" class="np-tst nftst" data-k="al" data-v="c" title="Centre">↔</button><button type="button" class="np-tst nftst" data-k="al" data-v="r" title="Line up on the right">⇥</button><button type="button" class="np-tst nftst" data-k="sz" data-v="0.8" title="Smaller">A−</button><button type="button" class="np-tst nftst" data-k="sz" data-v="1.25" title="Bigger">A+</button></div></form>
           <div class="nfrow nflyrow"><span class="nfl">Layer</span><select class="nfly">${NP_LAYERS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></div>
           <div class="nfrow nflvrow" style="flex-wrap:wrap"><span class="nfl">Leaves (mm)</span><label class="nflv" data-f="a">Outer leaf<select data-f="a">${[75, 90, 100, 102.5, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="cav">Cavity<select data-f="cav">${[0, 25, 50, 75, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="ins">Insulation<select data-f="ins">${[0, 50, 75, 90, 100, 125, 150].map((v) => `<option>${v}</option>`).join("")}</select></label><label class="nflv" data-f="b">Inner leaf<select data-f="b">${[75, 90, 100, 140, 150, 190, 215].map((v) => `<option>${v}</option>`).join("")}</select></label></div>
           <div class="nfrow nfunrow" style="flex-wrap:wrap"><span class="nfl">Bricks / blocks</span><label class="nflv">Type<select class="nfun-p"><option value="block">Block 440×215</option><option value="block140">Block 440×140</option><option value="bigblock">Large block 620×215</option><option value="brick">Brick 215×65</option><option value="brickimp">Brick 9″ × 2⅞″ (imperial, 228×73)</option><option value="thinjoint">Block 440×215, thin joint (3 mm)</option></select></label><label class="nflv">Length<input class="nfun-L" inputmode="numeric" style="width:70px"></label><label class="nflv">Height<input class="nfun-H" inputmode="numeric" style="width:70px"></label><label class="nflv">Joint<input class="nfun-J" inputmode="numeric" style="width:56px"></label></div>
+          <div class="nfrow nfsvrow"><span class="nfl">From the survey</span><select class="nfsv" style="flex:1;min-height:44px" aria-label="Which opening in the survey this is"></select></div>
+          <div class="nfrow nfworow" style="flex-wrap:wrap"><span class="nfl">Opens</span><div class="seg nfseg nfwo"><button type="button" data-v="">Fixed</button><button type="button" data-v="sl">◁ Side hung, hinge left</button><button type="button" data-v="sr">▷ Side hung, hinge right</button><button type="button" data-v="th">△ Top hung</button><button type="button" data-v="tt">⟲ Tilt &amp; turn</button></div></div>
+          <div class="nfrow nfstrow"><span class="nfl">Wall is</span><div class="seg nfseg nfst"><button type="button" data-v="">Existing</button><button type="button" data-v="demo">✕ To knock down</button><button type="button" data-v="new">✚ New</button></div></div>
           <div class="nfrow nffdrow" style="flex-wrap:wrap"><span class="nfl">Footing (mm)</span><label class="nflv">Width<input class="nffd-w" inputmode="numeric" style="width:70px"></label><label class="nflv">Thickness<input class="nffd-d" inputmode="numeric" style="width:70px"></label><label class="nflv">Ground to underside<input class="nffd-dep" inputmode="numeric" style="width:80px"></label></div>
           <div class="nfrow nfpvrow"><span class="nfl">Material</span><select class="nfpv">${Object.entries(
             NP_PAVE,
@@ -1667,7 +533,7 @@ async function openNotePage(opts) {
             .join("")}</select></div>
           <div class="nfrow nfphrow"><span class="nfl">Supply</span><div class="seg nfseg nfph"><button type="button" data-v="cu">Single phase</button><button type="button" data-v="cu3">Three phase</button></div></div>
           <div class="nfrow nfvprow"><span class="nfl">Scaled area</span><button type="button" class="nfb nfa-vp">🔍 Scale &amp; name</button></div>
-          <div class="nfrow nfacts"><button type="button" class="nfb nfa-lock">🔒 Lock</button><button type="button" class="nfb nfa-dim">📏 Dimension it</button><button type="button" class="nfb nfa-std">↺ Standard size</button><button type="button" class="nfb nfa-dup">⧉ Copy</button><button type="button" class="nfb nfa-del" style="color:#ff8a8a">🗑 Delete</button></div></div>
+          <div class="nfrow nfacts"><button type="button" class="nfb nfa-lock">🔒 Lock</button><button type="button" class="nfb nfa-fix" aria-pressed="false" title="Keep this wall or line at its length when the walls round it are moved">📏 Keep length</button><button type="button" class="nfb nfa-dim">📏 Dimension it</button><button type="button" class="nfb nfa-std">↺ Standard size</button><button type="button" class="nfb nfa-dup">⧉ Copy</button><button type="button" class="nfb nfa-del" style="color:#ff8a8a">🗑 Delete</button></div></div>
         <div class="nfstudw" hidden><div class="nfrow"><span class="nfl">Timber</span><div class="seg nfseg nfsd"><button type="button" data-v="100">100×50</button><button type="button" data-v="150">150×50</button></div></div>
           <div class="nfrow"><span class="nfl">Centres</span><div class="seg nfseg nfcc"><button type="button" data-v="400">400 mm</button><button type="button" data-v="600">600 mm</button></div></div>
           <div class="nfrow nfcorner" hidden><span class="nfl">Corners</span><div class="seg nfseg"><button type="button" data-v="3stud">3-stud</button><button type="button" data-v="cal">California</button><button type="button" data-v="blk">Blocked</button></div></div>
@@ -1675,8 +541,11 @@ async function openNotePage(opts) {
           <div class="nfrow nftt" hidden><span class="nfl">Truss</span><div class="seg nfseg"><button type="button" data-v="fink">Fink (W)</button><button type="button" data-v="fan">Fan</button><button type="button" data-v="mono">Mono</button><button type="button" data-v="attic">Attic (room in roof)</button></div></div>
           <div class="nfrow nfdirn" hidden><span class="nfl">Direction</span><button type="button" class="nfb nfturnb">⇄ Turn the timbers</button></div>
           <div class="nfrow"><span class="nfl">Extra</span><button type="button" class="nfb nfaddt">➕ Add timber</button><button type="button" class="nfb nfclrt">Clear extras</button></div><div class="who nftinfo"></div></div>
+        <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div><div class="nfrow nfst-sheetrow"><button type="button" class="nfb nfst-sheet">📋 Open the beam sheet: lifting, props, padstones, fire, order, sign-off</button></div></div>
+        <div class="nfsecst" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfss-t" style="flex:1;min-height:44px" aria-label="Steel type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfss-s" style="flex:1;min-height:44px" aria-label="Steel size"></select></div><div class="nfrow nfss-svrow"><span class="nfl">Where</span><select class="nfss-sv" style="flex:1;min-height:44px" aria-label="Where the beam is"></select></div><div class="nfrow"><span class="nfl">Fire</span><select class="nfss-fp" style="flex:1;min-height:44px" aria-label="Fire protection"></select></div><div class="nfrow nfss-padrow"><span class="nfl">Padstone</span><select class="nfss-p" style="flex:1;min-height:44px" aria-label="Padstone"></select></div><form class="nfrow nfss-brf"><span class="nfl">Bearing</span><input class="nfss-br" inputmode="numeric" style="width:80px" aria-label="Bearing length in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><div class="nfrow"><button type="button" class="nfb nfss-lab">🏷 Label it</button><button type="button" class="nfb nfss-lr">⇄ Notes to the other side</button></div><div class="who nfss-info"></div></div>
+        <div class="nfsecbu" hidden><div class="nfrow"><button type="button" class="nfb nfbu-edit">🧱 Change the layers, thicknesses and tag</button><button type="button" class="nfb nfbu-flip">⇄ Layers to the other side</button><button type="button" class="nfb nfbu-lab">🏷 Label every layer</button><button type="button" class="nfb nfbu-ta">🪵 Timbers cut across</button></div><form class="nfrow nfbu-eof"><span class="nfl">Eaves overhang</span><input class="nfbu-eo" inputmode="numeric" style="width:80px" aria-label="Eaves overhang in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><form class="nfrow nfbu-fdf"><span class="nfl">Foundation</span><select class="nfbu-fd" aria-label="Foundation under the wall"><option value="trench">Trench fill</option><option value="strip">Strip</option><option value="none">None – stand on the floor</option></select><span class="nfl">Depth</span><input class="nfbu-fdd" inputmode="numeric" style="width:70px" aria-label="Foundation depth below ground in mm"><span class="nfl">Width</span><input class="nfbu-fdw" inputmode="numeric" style="width:70px" aria-label="Foundation width in mm"><span class="nfl">DPC above ground</span><input class="nfbu-gl" inputmode="numeric" style="width:60px" aria-label="DPC height above ground in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><div class="who nfbu-info"></div></div>
         <div class="nfstairs" hidden><div class="nfrow"><span class="nfl">Steps</span><button type="button" class="nfb nfst" data-d="-1" aria-label="One step fewer">−</button><b class="nfstn" style="min-width:34px;text-align:center"></b><button type="button" class="nfb nfst" data-d="1" aria-label="One step more">+</button><button type="button" class="nfb nfsdir">⇅ Up / down</button></div>
-          <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div></div>
+          <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div><div class="nfrow"><button type="button" class="nfb nfs-build">🪜 Open in the stair builder: type, materials, glass rail, checks, side view</button></div></div>
         <div class="nfrow nfwhat"><span class="nfl">Adjust</span><div class="seg nfseg"><button type="button" data-w="all" aria-pressed="true">Whole item</button><button type="button" data-w="a" aria-pressed="false">● Start</button><button type="button" data-w="b" aria-pressed="false">● End</button></div></div>
         <div class="nfrow"><span class="nfl">Move</span><button type="button" class="nfb" data-m="-1,0" aria-label="Left">◀</button><button type="button" class="nfb" data-m="0,-1" aria-label="Up">▲</button><button type="button" class="nfb" data-m="0,1" aria-label="Down">▼</button><button type="button" class="nfb" data-m="1,0" aria-label="Right">▶</button><select class="nfstep" aria-label="Step"></select></div>
         <div class="nfrow nfturn"><span class="nfl">Turn</span><button type="button" class="nfb" data-r="-15">↺15°</button><button type="button" class="nfb" data-r="-1">↺1°</button><button type="button" class="nfb" data-r="-0.1">↺0.1°</button><button type="button" class="nfb" data-r="0.1">↻0.1°</button><button type="button" class="nfb" data-r="1">↻1°</button><button type="button" class="nfb" data-r="15">↻15°</button></div>
@@ -1684,7 +553,7 @@ async function openNotePage(opts) {
         <div class="nfrow"><label class="inl nfslow" style="color:#fff;font-size:13px"><input type="checkbox" class="nfslowc"> 🐢 Slow drag: your finger moves things 5× slower and snapping is off, for tiny moves</label></div>
         <form class="nfrow nfsize"><span class="nfl nflab">Length</span><input class="nfa" inputmode="decimal" aria-label="Length"><span class="nfx2">×</span><input class="nfb2" inputmode="decimal" aria-label="Height"><span class="nfu"></span><button type="submit" class="btn primary nfset">Set</button></form>
         <div class="who nfhint"></div></div></div>
-    <form class="np-text" hidden><input maxlength="200" placeholder="Type your text…" aria-label="Text"><select class="np-tlead" aria-label="Arrow"><option value="none">No arrow</option><option value="arrow">➜ Arrow to where I tapped</option><option value="dot">● Dot pointer</option><option value="line">— Line pointer</option></select><select class="np-tbox" aria-label="Box"><option value="">No box</option><option value="box">▭ Box</option><option value="round">▢ Rounded box</option><option value="cloud">☁ Cloud</option><option value="under">_ Underline</option></select><button class="btn primary" type="submit">Add</button><button class="btn np-tcancel" type="button">✕ Cancel</button></form>
+    <form class="np-text" hidden><textarea class="np-ttx" maxlength="2000" rows="3" placeholder="Type your text… (Enter for a new line)" aria-label="Text"></textarea><div class="np-tsty" role="group" aria-label="How the text looks"><button type="button" class="np-tst" data-k="b" aria-pressed="false" title="Bold"><b>B</b></button><button type="button" class="np-tst" data-k="i" aria-pressed="false" title="Italic"><i>I</i></button><button type="button" class="np-tst" data-k="al" data-v="l" aria-pressed="true" title="Line up on the left">⇤ Left</button><button type="button" class="np-tst" data-k="al" data-v="c" aria-pressed="false" title="Centre">↔ Centre</button><button type="button" class="np-tst" data-k="al" data-v="r" aria-pressed="false" title="Line up on the right">⇥ Right</button><select class="np-tsz" aria-label="Text size"><option value="0.7">Small</option><option value="1" selected>Medium</option><option value="1.5">Large</option><option value="2.2">Huge</option></select></div><select class="np-tlead" aria-label="Arrow"><option value="none">No arrow</option><option value="arrow">➜ Arrow to where I tapped</option><option value="dot">● Dot pointer</option><option value="line">— Line pointer</option></select><select class="np-tbox" aria-label="Box"><option value="">No box</option><option value="box">▭ Box</option><option value="round">▢ Rounded box</option><option value="cloud">☁ Cloud</option><option value="under">_ Underline</option></select><button class="btn primary" type="submit">Add</button><button class="btn np-tcancel" type="button">✕ Cancel</button></form>
     <div class="np-status"></div>`;
   if (!opts.render) {
     document.body.appendChild(ov);
@@ -1712,6 +581,9 @@ async function openNotePage(opts) {
         return false;
       }
     })();
+  const lastSteel = {};
+  /* the build-up the 🧱 tool draws next */
+  let lastBu = null;
   let lastStud = { sd: 100, cc: 400 },
     addTimber = false;
   let fineNow = false,
@@ -1725,6 +597,8 @@ async function openNotePage(opts) {
     fineWhat = "all",
     shapeKind = "tri",
     dimAsk = null,
+    /* the last tap on a selected measurement, to spot a double tap */
+    dimTap = null,
     tool = "pen",
     col = NP_COLS[0],
     wid = 2,
@@ -1738,6 +612,8 @@ async function openNotePage(opts) {
     redo = [],
     dirty = false,
     textAt = null,
+    /* the text being changed in the writing box (its index), or null when adding new text */
+    textEd = null,
     snapOn = true,
     live = null;
   const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -1804,12 +680,17 @@ async function openNotePage(opts) {
   let snappedObj = false;
   /* CAD-style object snaps: ends, corners, centres, intersections, middles, perpendicular, along a line, then lining up with other points, then the grid */
   let snapMark = null;
+  /* the running total shown in the status bar (liveQty) */
+  let liveTxt = "",
+    liveT = 0;
+  /* a measurement just drawn, waiting to be pulled away from the thing it measures (James, Nov 2026) */
+  let dimPull = null;
   function snapPt(p, opt) {
     snappedObj = false;
     snapMark = null;
     if (!snapOn || fineNow) return p;
     opt = opt || {};
-    const tol = 16 / s;
+    const tol = (opt.tolPx || 16) / s;
     const cands = [];
     const add = (pt, k, w, r) => {
       const d = Math.hypot(pt[0] - p[0], pt[1] - p[1]);
@@ -1918,22 +799,39 @@ async function openNotePage(opts) {
       ay = null,
       bx = tol * 0.6,
       by = tol * 0.6;
-    doc.objs.forEach((o, i) => {
-      if (i === opt.skip) return;
-      const pts = o.t === "room" ? o.p : o.a && o.b && !npBoxy(o) ? [o.a, o.b] : [];
-      pts.forEach((q) => {
-        const dx = Math.abs(q[0] - p[0]),
-          dy = Math.abs(q[1] - p[1]);
-        if (dx < bx) {
-          bx = dx;
-          ax = q;
-        }
-        if (dy < by) {
-          by = dy;
-          ay = q;
-        }
-      });
-    });
+    const guidePts = (o) => {
+      if (o.t === "room") return o.p;
+      if (o.t === "text" || o.t === "img" || o.t === "circle") return [];
+      if (o.a && o.b && !npBoxy(o)) return [o.a, o.b];
+      if ((o.t === "rect" || npBoxy(o)) && o.a && o.b && !o.r) {
+        const [x, y, w, h] = baseBox(o);
+        return [
+          [x, y],
+          [x + w, y],
+          [x + w, y + h],
+          [x, y + h],
+        ];
+      }
+      return [];
+    };
+    doc.objs
+      .filter((o, i) => i !== opt.skip && !(doc.layers && lyHid(o)))
+      .map(guidePts)
+      .concat(opt.from ? [[opt.from]] : [])
+      .forEach((pts) =>
+        pts.forEach((q) => {
+          const dx = Math.abs(q[0] - p[0]),
+            dy = Math.abs(q[1] - p[1]);
+          if (dx < bx) {
+            bx = dx;
+            ax = q;
+          }
+          if (dy < by) {
+            by = dy;
+            ay = q;
+          }
+        }),
+      );
     if (opt.noGrid) {
       gx = p[0];
       gy = p[1];
@@ -2187,6 +1085,18 @@ async function openNotePage(opts) {
       o.a = [c[0] - len / 2, c[1] - T / 2];
       o.b = [c[0] + len / 2, c[1] + T / 2];
       o.r = Math.abs(an) < 1e-6 ? 0 : an;
+      if (isWin) {
+        /* which side of the wall is outside (for the sill): the side away from the middle of all the walls */
+        const W = doc.objs.filter(npIsWall);
+        const g = W.reduce(
+          (s2, y) => [s2[0] + (y.a[0] + y.b[0]) / 2, s2[1] + (y.a[1] + y.b[1]) / 2],
+          [0, 0],
+        ).map((q) => q / (W.length || 1));
+        const dn = [-Math.sin(an), Math.cos(an)],
+          k = (c[0] - g[0]) * dn[0] + (c[1] - g[1]) * dn[1];
+        if (W.length > 1 && Math.abs(k) > T) o.os = k > 0 ? 1 : -1;
+        else delete o.os;
+      }
     }
   }
   function orthoB(a, b, raw) {
@@ -2242,7 +1152,7 @@ async function openNotePage(opts) {
   function baseBox(o) {
     if (o.t === "img") return [o.x, o.y, o.w, o.h];
     if (o.t === "text") {
-      g.font = `600 ${o.size}px system-ui`;
+      g.font = npFont(o);
       const ls = String(o.s).split("\n");
       return [
         o.x,
@@ -2313,6 +1223,24 @@ async function openNotePage(opts) {
   }
   function drawObj(ctx, o) {
     const vb = vpOf(o) ? null : vpBoxAt(vpAnchor(o));
+    if (vb && vb.dzk && !ctx.__dzc) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(
+        Math.min(vb.a[0], vb.b[0]),
+        Math.min(vb.a[1], vb.b[1]),
+        Math.abs(vb.b[0] - vb.a[0]),
+        Math.abs(vb.b[1] - vb.a[1]),
+      );
+      ctx.clip();
+      ctx.__dzc = 1;
+      try {
+        return drawObj(ctx, o);
+      } finally {
+        ctx.__dzc = 0;
+        ctx.restore();
+      }
+    }
     const vs = vb ? +vb.vp : 0;
     const pv = ctx.__vpo;
     ctx.__vpo = vb ? [Math.min(vb.a[0], vb.b[0]), Math.min(vb.a[1], vb.b[1])] : null;
@@ -2512,7 +1440,7 @@ async function openNotePage(opts) {
         ctx.fill();
       } else if (o.t === "text") {
         const lines = String(o.s).split("\n");
-        ctx.font = `600 ${o.size}px system-ui, -apple-system, sans-serif`;
+        ctx.font = npFont(o);
         const tw = Math.max(...lines.map((l) => ctx.measureText(l).width));
         ctx.fillRect(
           o.x - o.size * 0.2,
@@ -2569,8 +1497,8 @@ async function openNotePage(opts) {
           ctx.stroke();
         });
         ctx.restore();
-        drawDim(ctx, A, B, o.c || "#111", o.w || 3, lab, o.size, o.tk);
-      } else drawDim(ctx, o.a, o.b, o.c || "#111", o.w || 3, lab, o.size, o.tk);
+        drawDim(ctx, A, B, o.c || "#111", o.w || 3, lab, o.size, o.tk, o.lb);
+      } else drawDim(ctx, o.a, o.b, o.c || "#111", o.w || 3, lab, o.size, o.tk, o.lb);
     } else if (o.t === "room" && o.pave) {
       npPaveDraw(ctx, o, doc.scale ? NP_U / doc.scale : 0);
     } else if (o.t === "room") {
@@ -2684,7 +1612,7 @@ async function openNotePage(opts) {
       ctx.closePath();
       ctx.fill();
     } else if (o.t === "text") {
-      ctx.font = `600 ${o.size}px system-ui, -apple-system, sans-serif`;
+      ctx.font = npFont(o);
       ctx.textBaseline = "top";
       const lines = String(o.s).split("\n");
       if (o.box || o.lead) {
@@ -2760,7 +1688,15 @@ async function openNotePage(opts) {
         }
         ctx.restore();
       }
-      lines.forEach((l, i) => ctx.fillText(l, o.x, o.y + i * o.size * 1.25));
+      {
+        /* each line lined up left, centred or right within the widest */
+        const tw0 = Math.max(...lines.map((l) => ctx.measureText(l).width));
+        lines.forEach((l, i) => {
+          const lw = ctx.measureText(l).width;
+          const dx = o.al === "c" ? (tw0 - lw) / 2 : o.al === "r" ? tw0 - lw : 0;
+          ctx.fillText(l, o.x + dx, o.y + i * o.size * 1.25);
+        });
+      }
     } else if (o.t === "img") {
       const im = loadImg(o.src);
       if (im.complete && im.naturalWidth) {
@@ -2778,7 +1714,10 @@ async function openNotePage(opts) {
     ctx.restore();
   }
   /* handles of the selected object, in page units */
-  const HR = window.matchMedia && window.matchMedia("(pointer:coarse)").matches ? 16 : 13;
+  const HR =
+    window.matchMedia && window.matchMedia("(pointer:coarse)").matches
+      ? 22
+      : 13; /* bigger to grab with a finger */
   function handles(o) {
     const H = [];
     if (!o) return H;
@@ -2790,6 +1729,14 @@ async function openNotePage(opts) {
         H.push({ k: "a", p: rot(o.a, c, r) }, { k: "b", p: rot(o.b, c, r) });
       } else {
         H.push({ k: "size", p: rot([bx + bw, by + bh], c, r) });
+        /* a photo: any corner resizes it, the opposite corner staying put (James, Nov 2026: "I can't make it small by
+           moving the corner of the photo") */
+        if (o.t === "img" && !r)
+          H.push(
+            { k: "size", c: "tl", p: [bx, by] },
+            { k: "size", c: "tr", p: [bx + bw, by] },
+            { k: "size", c: "bl", p: [bx, by + bh] },
+          );
       }
       H.push({
         k: "rot",
@@ -3022,6 +1969,16 @@ async function openNotePage(opts) {
           g.stroke();
         }
         g.setLineDash([]);
+        {
+          const t = "Lined up";
+          g.font = `700 ${12 / s}px system-ui`;
+          const tw = g.measureText(t).width;
+          g.fillStyle = "rgba(255,255,255,.92)";
+          g.fillRect(m.p[0] + R * 1.2, m.p[1] + R * 1.1, tw + 8 / s, 17 / s);
+          g.fillStyle = "#15803d";
+          g.textBaseline = "middle";
+          g.fillText(t, m.p[0] + R * 1.2 + 4 / s, m.p[1] + R * 1.1 + 8.5 / s);
+        }
       } else {
         g.beginPath();
         if (m.k === "end") {
@@ -3059,6 +2016,7 @@ async function openNotePage(opts) {
           int: "Crossing",
           perp: "Square to",
           on: "On line",
+          same: "Same length as the last line",
         }[m.k];
         if (lab) {
           g.font = `700 ${12 / s}px system-ui`;
@@ -3209,16 +2167,34 @@ async function openNotePage(opts) {
         });
       }
     }
-    q(".np-selbar:not(.np-mbar)").hidden = !so || msel.size > 0;
+    q(".np-selbar:not(.np-mbar)").hidden = !so || msel.size > 0 || !q(".np-finebox").hidden;
     opBar(so && msel.size === 0 ? so : null);
+    {
+      const sz = q('.np-selbar:not(.np-mbar) [data-a="size"]');
+      if (sz)
+        sz.hidden = !(
+          so &&
+          !msel.size &&
+          doc.scale &&
+          (opKind(so) ||
+            so.t === "line" ||
+            so.t === "arrow" ||
+            (so.t === "rect" && !so.r && !vpOf(so)) ||
+            (npLineShape(so) && !NP_OPENK.has(so.k)))
+        );
+    }
     {
       const lbe = q(".np-lenbar");
       const lineLike =
         so &&
         !msel.size &&
         !drag &&
+        q(".np-finebox").hidden &&
         doc.scale &&
-        (so.t === "line" || so.t === "arrow" || (npLineShape(so) && !NP_OPENK.has(so.k)));
+        (so.t === "line" ||
+          so.t === "arrow" ||
+          (so.t === "rect" && !so.r && !vpOf(so)) ||
+          (npLineShape(so) && !NP_OPENK.has(so.k)));
       if (lineLike) {
         if (!(lbe.__o === so && !lbe.hidden && lbe.contains(document.activeElement))) {
           showLenBar(so);
@@ -3249,6 +2225,7 @@ async function openNotePage(opts) {
       }, 0);
     if (so && !so.lk) {
       q('.np-sb[data-a="flip"]').hidden = !(so.t === "shape" || so.t === "img");
+      q('.np-sb[data-a="smaller"]').hidden = q('.np-sb[data-a="bigger"]').hidden = so.t !== "img";
       {
         const ad = q('.np-sb[data-a="autodim"]');
         ad.hidden = ["text", "stroke", "dim", "ang", "arrow"].includes(so.t) || vpOf(so);
@@ -3264,6 +2241,10 @@ async function openNotePage(opts) {
       const ds = q('.np-sb[data-a="dstyle"]');
       ds.hidden = so.t !== "dim";
       if (so.t === "dim") ds.innerHTML = so.tk ? "➤<small>Arrows</small>" : "⟋<small>Ticks</small>";
+      q('.np-sb[data-a="dnum"]').hidden = so.t !== "dim" && so.t !== "text";
+      q('.np-sb[data-a="dnum"]').innerHTML =
+        so.t === "text" ? "✏️<small>Change words</small>" : "✏️<small>Change number</small>";
+      q('.np-sb[data-a="dside"]').hidden = so.t !== "dim";
       q('.np-sb[data-a="crop"]').hidden = so.t !== "img";
     }
     status();
@@ -3274,7 +2255,40 @@ async function openNotePage(opts) {
       ? `${doc.size} ${doc.orient === "port" ? "portrait" : "landscape"}`
       : "Long page";
     q(".np-status").innerHTML =
-      `<span>${esc(sz)} · ${esc(sc)}${doc.scale && doc.paper === "grid" ? ` · 1 square = ${esc(npFmtLen(realMm(50)))}` : ""}${snapOn ? " · 🧲 snap on" : ""}</span><span class="np-hint2">${tool === "move" ? "Tap something to select it. Drag to move, white dots to resize, ⟳ to turn." : "Two fingers to zoom and move around."}</span>`;
+      `<span>${esc(sz)} · ${esc(sc)}${doc.scale && doc.paper === "grid" ? ` · 1 square = ${esc(npFmtLen(realMm(50)))}` : ""}${snapOn ? " · 🧲 snap on" : ""}</span><button type="button" class="np-livq"${liveTxt ? "" : " hidden"} title="Open 🧮 Quantities">🧮 ${esc(liveTxt)}</button><span class="np-hint2">${tool === "move" ? "Tap something to select it. Drag to move, white dots to resize, ⟳ to turn." : "Two fingers to zoom and move around."}</span>`;
+    {
+      const lv = q(".np-livq");
+      lv.onclick = () => {
+        const b = q(".np-qty");
+        if (b) b.click();
+      };
+    }
+    liveQty();
+  }
+  /* what the drawing adds up to so far (floor area, wall length, beams), worked out a moment after each change */
+  function liveQty() {
+    clearTimeout(liveT);
+    liveT = setTimeout(() => {
+      let t = "";
+      if (opts.pro && doc.scale)
+        try {
+          const r = qtyCalc(doc.wallH || 2400);
+          const fl = r.rooms.reduce((a, x) => a + x.A, 0),
+            wl = Object.values(r.walls).reduce((a, w) => a + w.L, 0);
+          const bits = [];
+          if (fl) bits.push("Floor " + fl.toFixed(1) + " m²");
+          if (wl) bits.push("Walls " + wl.toFixed(1) + " m");
+          if (r.beams.length)
+            bits.push(r.beams.length + (r.beams.length === 1 ? " beam" : " beams"));
+          t = bits.join(" · ");
+        } catch (e) {}
+      if (t === liveTxt) return;
+      liveTxt = t;
+      const b = q(".np-livq");
+      if (!b) return;
+      b.hidden = !t;
+      b.textContent = "🧮 " + t;
+    }, 400);
   }
   function hit(pt) {
     const tol = (HR + 2) / s;
@@ -3413,6 +2427,20 @@ async function openNotePage(opts) {
       d.of = best.dimg;
     }
   }
+  /* the box to type a measurement's number */
+  function dimNumAsk(o) {
+    const cur0 = o.auto && doc.scale ? dimAutoLab(o) : o.s || "";
+    askMeasure(ov, cur0, (v) => {
+      if (v !== null) {
+        snap();
+        o.s = v;
+        if (doc.scale && v === dimAutoLab(o)) o.auto = true;
+        else delete o.auto;
+        dirty = true;
+      }
+      draw();
+    });
+  }
   function dimN(o) {
     const dx = o.b[0] - o.a[0],
       dy = o.b[1] - o.a[1],
@@ -3464,6 +2492,17 @@ async function openNotePage(opts) {
     downXY = [e.clientX, e.clientY];
     const p = toPage(e.clientX, e.clientY);
     NP_SCX = tool === "vp" ? 0 : vpScaleAt(p);
+    /* a measurement just drawn: this press pulls it away from what it measures */
+    if (dimPull) {
+      if (tool === "dim" && doc.objs.indexOf(dimPull) >= 0) {
+        drag = { kind: "dimpull", o: dimPull, pd: p, hp: p };
+        dimPullTo(dimPull, p);
+        draw();
+        return;
+      }
+      dimPull = null;
+      chainUI();
+    }
     /* room sketch: with its tool picked, tapping one of its walls opens that wall's measurements
        (other tools work on the drawing as usual, so a door on a room wall can still be picked up and moved) */
     if (tool === "roomsk") {
@@ -3518,6 +2557,19 @@ async function openNotePage(opts) {
       msel.clear();
       const sp = snapPt(p);
       cur = { t: "line", a: sp, b: sp, c: col, w: pwFor(wid), bend: 0.35 };
+      draw();
+      return;
+    }
+    if (tool === "zoomd") {
+      sel = null;
+      msel.clear();
+      if (zoomPlace) {
+        const z = zoomPlace;
+        zoomPlace = null;
+        zoomMake(z, p, false);
+        return;
+      }
+      cur = { t: "rect", a: p, b: p, c: "#dc2626", w: pwFor(1.5), zsel: 1 };
       draw();
       return;
     }
@@ -3646,11 +2698,18 @@ async function openNotePage(opts) {
       return;
     }
     if (tool === "text") {
+      {
+        const ti = hit(p);
+        if (ti != null && doc.objs[ti].t === "text" && !doc.objs[ti].lk) {
+          textOpen(ti);
+          return;
+        }
+      }
       textAt = snapOn ? snapPt(p) : p;
       const f = q(".np-text");
       f.hidden = false;
-      f.querySelector("input").value = "";
-      f.querySelector("input").focus();
+      f.querySelector(".np-ttx").value = "";
+      f.querySelector(".np-ttx").focus();
       return;
     }
     if (tool === "move" && addTimber && sel != null && isStudW(doc.objs[sel])) {
@@ -3807,10 +2866,29 @@ async function openNotePage(opts) {
           }
           if (h.k === "size") {
             const b = baseBox(so);
-            drag = { kind: "resize", i: sel, start: p, o: o0, bw: b[2], bh: b[3], pd: p, hp: p };
+            drag = {
+              kind: "resize",
+              i: sel,
+              start: p,
+              o: o0,
+              bw: b[2],
+              bh: b[3],
+              pd: p,
+              hp: p,
+              c: h.c || "br",
+            };
             return;
           }
-          drag = { kind: "end", i: sel, which: h.k, o: o0, c: ctr(so), pd: p, hp: h.p.slice() };
+          drag = {
+            kind: "end",
+            i: sel,
+            which: h.k,
+            o: o0,
+            c: ctr(so),
+            pd: p,
+            hp: h.p.slice(),
+            jn: e.shiftKey ? [] : joinedEnds(sel).filter((x) => x[2] === h.k),
+          };
           return;
         }
       }
@@ -3826,11 +2904,23 @@ async function openNotePage(opts) {
         )
           i = sel;
       }
-      if (i != null && i === sel && doc.objs[i].t === "shape" && doc.objs[i].k === "legend") {
+      /* a key, a label or a room opens its box on a quick double tap; one tap or a drag just moves it */
+      let dblTap = false;
+      if (
+        i != null &&
+        i === sel &&
+        ((doc.objs[i].t === "shape" && (doc.objs[i].k === "legend" || NP_TEXTSYM[doc.objs[i].k])) ||
+          (doc.objs[i].t === "room" && !doc.objs[i].pave))
+      ) {
+        const now = Date.now();
+        dblTap = !!(dimTap && dimTap.i === i && now - dimTap.t < 400);
+        dimTap = dblTap ? null : { i, t: now };
+      }
+      if (dblTap && doc.objs[i].t === "shape" && doc.objs[i].k === "legend") {
         editKey(doc.objs[i]);
         return;
       }
-      if (i != null && i === sel && doc.objs[i].t === "shape" && NP_TEXTSYM[doc.objs[i].k]) {
+      if (dblTap && doc.objs[i].t === "shape" && NP_TEXTSYM[doc.objs[i].k]) {
         const o = doc.objs[i];
         askLabel(ov, NP_TEXTSYM[o.k][0], o.s || NP_TEXTSYM[o.k][1], (v) => {
           if (v !== null) {
@@ -3842,7 +2932,7 @@ async function openNotePage(opts) {
         });
         return;
       }
-      if (i != null && i === sel && doc.objs[i].t === "room" && !doc.objs[i].pave) {
+      if (dblTap && doc.objs[i].t === "room" && !doc.objs[i].pave) {
         roomDlg(doc.objs[i], false);
         return;
       }
@@ -3850,20 +2940,23 @@ async function openNotePage(opts) {
         vpDlg(doc.objs[i], false);
         return;
       }
+      if (i != null && i === sel && doc.objs[i].t === "text" && !doc.objs[i].lk) {
+        const now = Date.now();
+        if (dimTap && dimTap.i === i && now - dimTap.t < 400) {
+          dimTap = null;
+          textOpen(i);
+          return;
+        }
+        dimTap = { i, t: now };
+      }
       if (i != null && i === sel && doc.objs[i].t === "dim") {
-        const o = doc.objs[i];
-        const cur0 = o.auto && doc.scale ? dimAutoLab(o) : o.s || "";
-        askMeasure(ov, cur0, (v) => {
-          if (v !== null) {
-            snap();
-            o.s = v;
-            if (doc.scale && v === dimAutoLab(o)) o.auto = true;
-            else delete o.auto;
-            dirty = true;
-          }
-          draw();
-        });
-        return;
+        const now = Date.now();
+        if (dimTap && dimTap.i === i && now - dimTap.t < 400) {
+          dimTap = null;
+          dimNumAsk(doc.objs[i]);
+          return;
+        }
+        dimTap = { i, t: now };
       }
       if (i != null && doc.objs[i].lk) {
         msel.clear();
@@ -3907,6 +3000,7 @@ async function openNotePage(opts) {
           pd: p,
           hp: p,
           att: attOf(doc.objs[i]),
+          jn: e.shiftKey ? [] : joinedEnds(i),
         };
         draw();
         return;
@@ -3925,14 +3019,18 @@ async function openNotePage(opts) {
     }
     sel = null;
     const pw = pwFor(wid);
-    const sp = tool === "pen" || tool === "hl" || tool === "roomsk" ? p : snapPt(p);
+    const sp =
+      tool === "pen" || tool === "hl" || tool === "smart" || tool === "roomsk" ? p : snapPt(p);
     cur =
       tool === "tape"
         ? { t: "dim", a: sp, b: sp, c: "#2563eb", w: Math.max(pw, 2), tape: true }
         : tool === "roomsk"
           ? { t: "stroke", p: [p], c: "#c2410c", w: pw, rsk: true }
-          : tool === "pen" || tool === "hl"
-            ? { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" }
+          : tool === "pen" || tool === "hl" || tool === "smart"
+            ? Object.assign(
+                { t: "stroke", p: [p], c: col, w: pw, hl: tool === "hl" },
+                tool === "smart" ? { sm: 1 } : {},
+              )
             : Object.assign(
                 {
                   t: tool,
@@ -3952,6 +3050,21 @@ async function openNotePage(opts) {
         6,
         toUnits(shapeKind === "cavity" ? 350 : shapeKind === "tstud" ? lastStud.sd || 100 : 100),
       );
+    if (cur.t === "shape" && shapeKind === "secbu") {
+      if (!lastBu) {
+        const bu = npsuLayers("cavbrick");
+        lastBu = { bu, bn: NPSU_LIB[0][1], bc: npsuCode(doc.objs, "EW", bu, NPSU_LIB[0][1]) };
+      }
+      Object.assign(cur, JSON.parse(JSON.stringify(lastBu)));
+    }
+    if (cur.t === "shape" && shapeKind === "beam" && lastSteel.sec)
+      Object.assign(cur, { bt: lastSteel.bt, bz: lastSteel.bz, sec: lastSteel.sec });
+    if (
+      cur.t === "shape" &&
+      npIsWall(Object.assign({ a: [0, 0], b: [1, 0] }, cur)) &&
+      doc.pages[pg].wallSt
+    )
+      cur.st = doc.pages[pg].wallSt;
     if (cur.t === "shape" && shapeKind === "tstud") {
       cur.sd = lastStud.sd || 100;
       cur.cc = lastStud.cc || 400;
@@ -3960,6 +3073,64 @@ async function openNotePage(opts) {
     }
     draw();
   });
+  /* after a press: held still for a moment on something being moved → fine moving (🐢); with a drawing tool, held
+     still on something already drawn → it is picked up to move, no need to go to Select first (James, Nov 2026:
+     "hard to pick up") */
+  let holdT = 0,
+    drawRaf = 0;
+  /* one redraw per screen frame, however many finger movements come in (a Pencil sends 120 a second) */
+  const drawSoon = () => {
+    if (drawRaf) return;
+    drawRaf = requestAnimationFrame(() => {
+      drawRaf = 0;
+      draw();
+    });
+  };
+  cv.addEventListener("pointerdown", (e) => {
+    clearTimeout(holdT);
+    if (ptrs.size !== 1) return;
+    const p0 = toPage(e.clientX, e.clientY);
+    if (drag && NP_MOVEK.has(drag.kind)) {
+      const d0 = drag;
+      holdT = setTimeout(() => {
+        if (drag !== d0 || d0.go || slowDrag) return;
+        d0.fine = true;
+        toast("🐢 Fine moving: it moves a quarter as far as your finger");
+        draw();
+      }, 450);
+      return;
+    }
+    if (cur && !["pen", "hl", "smart", "erase", "roomsk"].includes(tool)) {
+      const i = hit(p0);
+      if (i == null || doc.objs[i].lk) return;
+      const c0 = cur;
+      holdT = setTimeout(() => {
+        if (cur !== c0 || ptrs.size !== 1) return;
+        const lp = ptrs.values().next().value;
+        if (!lp || Math.hypot(lp[0] - downXY[0], lp[1] - downXY[1]) > 10) return;
+        cur = null;
+        live = null;
+        sel = i;
+        msel.clear();
+        snap();
+        drag = {
+          kind: "move",
+          i,
+          start: p0,
+          o: JSON.parse(JSON.stringify(doc.objs[i])),
+          pd: p0,
+          hp: p0,
+          att: attOf(doc.objs[i]),
+          jn: joinedEnds(i),
+          go: true,
+        };
+        toast("Picked up – move it where you want it");
+        draw();
+      }, 600);
+    }
+  });
+  cv.addEventListener("pointerup", () => clearTimeout(holdT));
+  cv.addEventListener("pointercancel", () => clearTimeout(holdT));
   /* where the pointer is on the canvas (for the magnifier), and whether it's a finger or pen */
   const npLoupeOn = () => {
     try {
@@ -3989,37 +3160,50 @@ async function openNotePage(opts) {
       s = ns;
       ox = mx - r.left - px * ns;
       oy = my - r.top - py * ns;
-      draw();
+      drawSoon();
       return;
     }
     if (drag && NP_MOVEK.has(drag.kind) && !drag.go) {
       if (
         Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]) <
-        (e.pointerType === "touch" ? 12 : 6)
+        (drag.fine ? 2 : e.pointerType === "touch" ? 12 : 6)
       )
         return;
       drag.go = true;
     }
     let p = toPage(e.clientX, e.clientY);
-    fineNow = !!(slowDrag && drag && drag.pd && drag.kind !== "pan" && drag.kind !== "erase");
-    if (fineNow) {
-      const k = 0.2;
-      p = [drag.hp[0] + (p[0] - drag.pd[0]) * k, drag.hp[1] + (p[1] - drag.pd[1]) * k];
+    /* the thing stays under the finger (James, Nov 2026: it drifted away when speed decided it); held still for a
+       moment before moving (drag.fine) – or 🐢 Slow drag – it moves a quarter as far, for exact placing, snapping off */
+    fineNow = false;
+    if (drag && drag.pd && drag.hp && !["pan", "erase", "band", "dimpull"].includes(drag.kind)) {
+      const k = slowDrag || drag.fine ? 0.25 : 1;
+      if (!drag.ad) drag.ad = { raw: drag.pd, v: drag.hp };
+      const A = drag.ad;
+      A.v = [A.v[0] + (p[0] - A.raw[0]) * k, A.v[1] + (p[1] - A.raw[1]) * k];
+      A.raw = p;
+      fineNow = k < 1;
+      p = k < 1 ? A.v : [drag.hp[0] + p[0] - drag.pd[0], drag.hp[1] + p[1] - drag.pd[1]];
+      if (k === 1) A.v = p;
     }
     if (drag) {
       if (drag.kind === "pan") {
         ox = drag.ox + (e.clientX - drag.sx);
         oy = drag.oy + (e.clientY - drag.sy);
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "erase") {
         eraseAt(p);
         return;
       }
+      if (drag.kind === "dimpull") {
+        dimPullTo(drag.o, p);
+        drawSoon();
+        return;
+      }
       if (drag.kind === "band") {
         drag.b = p;
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "bend") {
@@ -4034,13 +3218,13 @@ async function openNotePage(opts) {
           o.bend = Math.max(-1.5, Math.min(1.5, (d * 2) / L));
           if (Math.abs(o.bend) < 0.01) o.bend = 0.0001;
         }
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "tip") {
         const o = doc.objs[drag.i];
         if (o && o.lead) o.lead.p = snapPt(p);
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "mmove") {
@@ -4053,6 +3237,7 @@ async function openNotePage(opts) {
             skip: drag.orig[0][0],
             skipSet: new Set(drag.orig.map((x) => x[0])),
             noGrid: true,
+            tolPx: 7,
           });
           dx = sp[0] - anc[0];
           dy = sp[1] - anc[1];
@@ -4063,7 +3248,7 @@ async function openNotePage(opts) {
           doc.objs[j] = o;
         });
         doc.pages[pg].objs = doc.objs;
-        draw();
+        drawSoon();
         return;
       }
       const o = doc.objs[drag.i];
@@ -4098,7 +3283,7 @@ async function openNotePage(opts) {
         );
         if (deg < 0) deg += 360;
         live = { p, t: (o.a && o.b ? deg : Math.round((a * 180) / Math.PI)) + "°" };
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "off") {
@@ -4112,7 +3297,7 @@ async function openNotePage(opts) {
         }
         o.off = f || undefined;
         if (!o.off) delete o.off;
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "rot") {
@@ -4122,7 +3307,7 @@ async function openNotePage(opts) {
         o.r = ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
         if (Math.abs(o.r) < 1e-6 || Math.abs(o.r - 2 * Math.PI) < 1e-6) o.r = 0;
         live = { p, t: Math.round((o.r * 180) / Math.PI) + "°" };
-        draw();
+        drawSoon();
         return;
       }
       if (drag.kind === "end") {
@@ -4137,15 +3322,27 @@ async function openNotePage(opts) {
           o[other] = [cw[0] + (f[0] - cm[0]), cw[1] + (f[1] - cm[1])];
           o[drag.which] = [cw[0] + (lp[0] - cm[0]), cw[1] + (lp[1] - cm[1])];
         } else {
-          let np = snapPt(p, { skip: drag.i });
+          let np = snapPt(p, { skip: drag.i, skipSet: new Set((drag.jn || []).map((x) => x[0])) });
           if (!npBoxy(o)) {
             const other = drag.which === "a" ? o.b : o.a;
             np = orthoB(other, np);
+            if (o.fix) {
+              const L0 = lenOf(drag.o.a, drag.o.b),
+                L = lenOf(other, np) || 1;
+              np = [
+                other[0] + ((np[0] - other[0]) * L0) / L,
+                other[1] + ((np[1] - other[1]) * L0) / L,
+              ];
+            }
           }
           o[drag.which] = np;
+          (drag.jn || []).forEach(([j, E]) => {
+            const x = doc.objs[j];
+            if (x && !x.fix) x[E] = np.slice();
+          });
         }
         live = liveFor(o) && { p, t: liveFor(o).t };
-        draw();
+        drawSoon();
         return;
       }
       const dx0 = p[0] - drag.start[0],
@@ -4157,22 +3354,52 @@ async function openNotePage(opts) {
         if (snapOn) {
           const sp = snapPt([anc[0] + dx0, anc[1] + dy0], {
             skip: drag.i,
-            skipSet: new Set((drag.att || []).map((x) => x[0])),
+            skipSet: new Set(
+              (drag.att || []).map((x) => x[0]).concat((drag.jn || []).map((x) => x[0])),
+            ),
             noGrid: true,
+            tolPx: 7,
           });
           dx = sp[0] - anc[0];
           dy = sp[1] - anc[1];
         }
+        if (drag.jn && drag.jn.length && drag.o.a && drag.o.b) {
+          /* only straight out or straight in, so the walls joined to it stay square */
+          const L = lenOf(drag.o.a, drag.o.b) || 1,
+            n = [-(drag.o.b[1] - drag.o.a[1]) / L, (drag.o.b[0] - drag.o.a[0]) / L],
+            k = dx * n[0] + dy * n[1];
+          dx = n[0] * k;
+          dy = n[1] * k;
+          const held = drag.jn.some(([j, E, M, p0, far]) => {
+            const x = doc.objs[j];
+            return (
+              x &&
+              x.fix &&
+              Math.abs(lenOf(far, [drag.o[M][0] + dx, drag.o[M][1] + dy]) - lenOf(far, p0)) > 0.5
+            );
+          });
+          if (held) {
+            dx = dy = 0;
+            if (!drag.fixSaid) {
+              drag.fixSaid = 1;
+              toast("A wall joined to it is kept at its length (📏 in Properties)");
+            }
+          }
+        }
         if (o.t === "img" || o.t === "text") {
           o.x = drag.o.x + dx;
           o.y = drag.o.y + dy;
-        } else if (o.t === "stroke" || o.t === "rsk") {
-          /* (a room sketch moves by all its corners) */
+        } else if (o.t === "stroke" || o.t === "rsk" || (o.t === "room" && o.p)) {
+          /* (a room, or a room sketch, moves by all its corners) */
           o.p = drag.o.p.map((q) => [q[0] + dx, q[1] + dy]);
         } else {
           o.a = [drag.o.a[0] + dx, drag.o.a[1] + dy];
           o.b = [drag.o.b[0] + dx, drag.o.b[1] + dy];
           if (drag.o.v) o.v = [drag.o.v[0] + dx, drag.o.v[1] + dy];
+          (drag.jn || []).forEach(([j, E, M]) => {
+            const x = doc.objs[j];
+            if (x) x[E] = o[M].slice();
+          });
         }
         (drag.att || []).forEach(([j, d0]) => {
           if (!doc.objs[j]) return;
@@ -4185,9 +3412,16 @@ async function openNotePage(opts) {
         const r = drag.o.r || 0;
         const ld = rot([dx0, dy0], [0, 0], -r);
         if (o.t === "img") {
-          const nw = Math.max(40, drag.o.w + ld[0]);
+          const cl = /l/.test(drag.c || ""),
+            ct = /t/.test(drag.c || "");
+          /* the bigger of the two moves decides the size, so a diagonal drag from any corner works */
+          const ex = cl ? -ld[0] : ld[0],
+            ey = ((ct ? -ld[1] : ld[1]) * drag.o.w) / drag.o.h;
+          const nw = Math.max(40, drag.o.w + (Math.abs(ex) >= Math.abs(ey) ? ex : ey));
           o.w = nw;
           o.h = (nw * drag.o.h) / drag.o.w;
+          if (cl) o.x = drag.o.x + drag.o.w - o.w;
+          if (ct) o.y = drag.o.y + drag.o.h - o.h;
         } else if (o.t === "text") {
           o.size = Math.max(8, Math.round((drag.o.size * (drag.bh + ld[1])) / drag.bh));
         }
@@ -4201,7 +3435,7 @@ async function openNotePage(opts) {
           o.y += tl[1] - tl2[1];
         }
       }
-      draw();
+      drawSoon();
       return;
     }
     if (!cur) return;
@@ -4210,12 +3444,24 @@ async function openNotePage(opts) {
       if (Math.hypot(p[0] - l[0], p[1] - l[1]) > 1.5 / s) cur.p.push(p);
     } else {
       let b = snapPt(p, { from: cur.a });
-      if (!snappedObj && (["line", "dim", "arrow"].includes(cur.t) || npLineShape(cur)))
+      if (!snappedObj && (["line", "dim", "arrow"].includes(cur.t) || npLineShape(cur))) {
         b = orthoB(cur.a, b, p);
+        const last = [...doc.objs]
+          .reverse()
+          .find((o) => o.t === cur.t && o.a && o.b && (o.t !== "shape" || o.k === cur.k));
+        if (last) {
+          const Lp = lenOf(last.a, last.b),
+            L = lenOf(cur.a, b);
+          if (L > 0 && Lp > 20 / s && Math.abs(L - Lp) < 10 / s) {
+            b = [cur.a[0] + ((b[0] - cur.a[0]) * Lp) / L, cur.a[1] + ((b[1] - cur.a[1]) * Lp) / L];
+            snapMark = { p: b, k: "same" };
+          }
+        }
+      }
       cur.b = b;
       live = liveFor(cur);
     }
-    draw();
+    drawSoon();
   });
   const end = (e) => {
     ptrs.delete(e.pointerId);
@@ -4238,6 +3484,14 @@ async function openNotePage(opts) {
                   " mm)"
               : "Set a scale in 📐 Paper to measure real distances.",
           );
+        return;
+      }
+      if (cur.zsel) {
+        const b = cur;
+        if (e && e.clientX != null && e.type === "pointerup") b.b = toPage(e.clientX, e.clientY);
+        cur = null;
+        draw();
+        zoomAsk(b);
         return;
       }
       /* room sketch: the hand-drawn line becomes a room with straight walls, where it was drawn */
@@ -4353,7 +3607,54 @@ async function openNotePage(opts) {
         }
         lastPlace = { k: cur.k, at: now, x: cur.a[0], y: cur.a[1] };
       }
-      doc.objs.push(cur);
+      if (cur.t === "shape" && (cur.k === "secsteel" || cur.k === "secbear")) {
+        if (
+          lastSteel.bt &&
+          ["UB", "UC", "RSJ", "PFC", "2PFC"].includes(lastSteel.bt) &&
+          lastSteel.bz
+        )
+          Object.assign(cur, { bt: lastSteel.bt, bz: lastSteel.bz });
+        cur.lab = 1;
+        ssToSize(cur);
+      }
+      if (cur.t === "shape" && cur.k === "column" && lastSteel.ct) {
+        Object.assign(cur, { ct: lastSteel.ct, cs: lastSteel.cs });
+        colToSize(cur);
+      }
+      let smartMade = null;
+      if (cur.t === "stroke" && cur.sm) {
+        delete cur.sm;
+        const r = npSmartShape(cur.p, 12 / s, (q) => snapPt(q));
+        if (r) {
+          smartMade = r.objs.map((o) => Object.assign(o, { c: cur.c, w: cur.w }));
+          toast(
+            {
+              line: "Straightened into a line",
+              lines: "Straightened into straight lines",
+              box: "Straightened into a box",
+              circle: "Made into a circle",
+              shape: "Straightened into a shape",
+            }[r.what] + " – Undo to keep it as drawn",
+          );
+        }
+      }
+      if (smartMade) {
+        /* Undo brings back the stroke as drawn */
+        doc.objs.push(cur);
+        snap();
+        doc.objs.pop();
+        doc.objs.push(...smartMade);
+      } else doc.objs.push(cur);
+      if (cur.t === "shape" && (cur.k === "beam" || cur.k === "column")) {
+        const ni = doc.objs.length - 1;
+        setTimeout(() => {
+          if (sel !== ni) {
+            sel = ni;
+            draw();
+          }
+          fineOpen();
+        }, 30);
+      }
       if (cur.t === "shape" && npBoxy(cur) && !isStair(cur) && cur.k !== "legend") {
         const ni = doc.objs.length - 1;
         setTimeout(() => {
@@ -4372,6 +3673,7 @@ async function openNotePage(opts) {
       if (
         cur.t === "line" ||
         cur.t === "arrow" ||
+        (cur.t === "rect" && !vpOf(cur)) ||
         (npLineShape(cur) && !NP_OPENK.has(cur.k) && cur.k !== "door")
       )
         showLenBar(cur);
@@ -4404,7 +3706,7 @@ async function openNotePage(opts) {
         }, 50);
       }
       if (cur.t === "shape" && cur.k === "legend")
-        toast("Key added. It lists the symbols you use. Select it and tap it again to change it.");
+        toast("Key added. It lists the symbols you use. Double-tap it to change it.");
       if (cur.t === "shape" && NP_TEXTSYM[cur.k]) {
         const o = cur;
         askLabel(ov, NP_TEXTSYM[o.k][0], o.s || NP_TEXTSYM[o.k][1], (v) => {
@@ -4415,19 +3717,18 @@ async function openNotePage(opts) {
       }
       if (cur.t === "dim") {
         attachDim(cur);
-        const o = cur;
-        const pre = doc.scale ? String(Math.round(realMm(lenOf(o.a, o.b)) / 5) * 5) : "";
-        if (dimTk) o.tk = 1;
-        askMeasure(ov, pre, (v) => {
-          if (v) o.s = v;
-          if (doc.scale && v === pre + " mm") o.auto = true;
-          else delete o.auto;
-          dirty = true;
-          draw();
-        });
+        if (dimTk) cur.tk = 1;
+        dimPull = cur;
+        chainUI();
       }
       cur = null;
       draw();
+    }
+    if (ptrs.size === 0 && drag && drag.kind === "dimpull") {
+      const o = drag.o;
+      drag = null;
+      dimDone(o);
+      return;
     }
     if (ptrs.size === 0 && drag && drag.kind === "band") {
       const x0 = Math.min(drag.a[0], drag.b[0]),
@@ -4520,6 +3821,20 @@ async function openNotePage(opts) {
     { passive: false },
   );
   function eraseAt(p) {
+    /* a line shared by two boxes / rooms: take out just that part, making one room */
+    if (drag && drag.joined && Math.hypot(p[0] - drag.joined[0], p[1] - drag.joined[1]) < 30 / s)
+      return;
+    {
+      const j = npJoinAt(doc.objs, p, (HR + 2) / s, doc.layers ? lyOff : null);
+      if (j) {
+        setObjs(j);
+        if (drag) drag.joined = p;
+        sel = null;
+        draw();
+        toast("Line in the middle taken out – one room now");
+        return;
+      }
+    }
     const i = hit(p);
     if (i != null && doc.objs[i].lk) {
       return;
@@ -4600,7 +3915,7 @@ async function openNotePage(opts) {
     } catch (e) {}
     requestAnimationFrame(size);
   };
-  bar.querySelectorAll(".np-gt").forEach((b) => (b.onclick = () => setGrp(b.dataset.gt)));
+  bar.querySelectorAll(".np-gt").forEach((b) => npFingerTap(b, () => setGrp(b.dataset.gt)));
   setGrp(bar.dataset.g || "draw");
   q(".np-moretools").onclick = () => {
     const c = bar.classList.toggle("compact");
@@ -4663,6 +3978,409 @@ async function openNotePage(opts) {
         : "Plan symbols: walls, doors, windows, kitchen, bathroom… (looking down from above)",
     );
   };
+  /* 🧱 build-ups: pick a wall, roof or floor build-up, change its layers, then draw it along a face */
+  function buDlg(o) {
+    let bu = JSON.parse(
+      JSON.stringify(o ? o.bu || [] : lastBu ? lastBu.bu : npsuLayers("cavbrick")),
+    );
+    let bn = o ? o.bn || "" : lastBu ? lastBu.bn : NPSU_LIB[0][1];
+    let pre = (NPSU_LIB.find((x) => x[1] === bn) || NPSU_LIB[0])[2];
+    let code = o ? o.bc || "" : npsuCode(doc.objs, pre, bu, bn);
+    const d = document.createElement("div");
+    d.className = "dimask bud";
+    const groups = [...new Set(NPSU_LIB.map((x) => x[3]))];
+    const matOpts = (m) =>
+      Object.entries(NPSU_MATS)
+        .map(
+          ([k2, v]) => `<option value="${k2}"${k2 === m ? " selected" : ""}>${esc(v[0])}</option>`,
+        )
+        .join("");
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Build-up"><b>🧱 ${o ? "Change the build-up" : "Draw a build-up"}</b><div class="who">A wall, roof or floor drawn layer by layer at its real thickness, with membranes in their colours, a tag and a written specification. Generic build-ups: check U-values and Building Regulations for the job.</div>
+      <label>Start from<select class="bud-pre"><option value="">Keep these layers</option>${groups
+        .map(
+          (g) =>
+            `<optgroup label="${esc(g)}">${NPSU_LIB.filter((x) => x[3] === g)
+              .map((x) => `<option value="${x[0]}">${esc(x[1])}</option>`)
+              .join("")}</optgroup>`,
+        )
+        .join("")}</select></label>
+      <div class="bud-row2"><label>Name<input class="bud-name" maxlength="60"></label><label>Tag<input class="bud-code" maxlength="8" style="width:90px"></label></div>
+      <div class="who">Layers from the line you draw outwards (a wall from the inside face, a floor from the ceiling up).</div>
+      <div class="bud-list"></div>
+      <div class="bud-row2"><button type="button" class="btn bud-add">➕ Add a layer</button><b class="bud-tot"></b></div>
+      <label class="tick"><input type="checkbox" class="bud-lab"${o && o.lab ? " checked" : ""}> <span>Label every layer on the drawing</span></label>
+      <div class="dimbtns"><button type="button" class="btn bud-x">Cancel</button><button type="button" class="btn bud-spec">📋 Specification page</button><button type="button" class="btn primary bud-go">${o ? "Save" : "✏️ Draw it"}</button></div></div>`;
+    ov.appendChild(d);
+    const q2 = (x) => d.querySelector(x);
+    q2(".bud-name").value = bn;
+    q2(".bud-code").value = code;
+    const list = () => {
+      q2(".bud-list").innerHTML = bu
+        .map(
+          (l, i) =>
+            `<div class="bud-l" data-i="${i}"><select class="bud-m" aria-label="Material">${matOpts(l.m)}</select><input class="bud-t" inputmode="decimal" aria-label="Thickness in mm" value="${npsuIsMem(l.m) ? "" : esc(String(l.t))}"${npsuIsMem(l.m) ? " disabled placeholder='–'" : ""}><span class="who">mm</span><input class="bud-n" aria-label="Words for the specification" placeholder="${esc((NPSU_MATS[l.m] || [""])[0])}" value="${esc(l.n || "")}"><button type="button" class="btn bud-up" aria-label="Move out">↑</button><button type="button" class="btn bud-dn" aria-label="Move in">↓</button><button type="button" class="btn bud-del" aria-label="Take this layer out">✕</button></div>`,
+        )
+        .reverse()
+        .join("");
+      q2(".bud-tot").textContent = Math.round(npsuTotal(bu)) + " mm overall";
+      d.querySelectorAll(".bud-l").forEach((row) => {
+        const i = +row.dataset.i;
+        row.querySelector(".bud-m").onchange = (e) => {
+          bu[i].m = e.target.value;
+          if (npsuIsMem(bu[i].m)) bu[i].t = 0;
+          else if (!+bu[i].t) bu[i].t = 25;
+          bu[i].n = "";
+          list();
+        };
+        row.querySelector(".bud-t").oninput = (e) => {
+          const old = +row.dataset.was || +bu[i].t || 0;
+          bu[i].t = Math.max(0, +e.target.value || 0);
+          /* keep the words in step: "140 mm … 47 × 140 studs" becomes "150 mm … 47 × 150 studs" */
+          if (bu[i].n && old && bu[i].t && old !== bu[i].t) {
+            bu[i].n = bu[i].n.replace(
+              new RegExp("(^|× )" + old + "(?=\\b| mm)", "g"),
+              "$1" + bu[i].t,
+            );
+            row.querySelector(".bud-n").value = bu[i].n;
+          }
+          if (bu[i].t) row.dataset.was = bu[i].t;
+          q2(".bud-tot").textContent = Math.round(npsuTotal(bu)) + " mm overall";
+        };
+        row.querySelector(".bud-n").oninput = (e) => (bu[i].n = e.target.value);
+        row.querySelector(".bud-up").onclick = () => {
+          if (i < bu.length - 1) [bu[i], bu[i + 1]] = [bu[i + 1], bu[i]];
+          list();
+        };
+        row.querySelector(".bud-dn").onclick = () => {
+          if (i > 0) [bu[i], bu[i - 1]] = [bu[i - 1], bu[i]];
+          list();
+        };
+        row.querySelector(".bud-del").onclick = () => {
+          bu.splice(i, 1);
+          list();
+        };
+      });
+    };
+    list();
+    q2(".bud-pre").onchange = (e) => {
+      const b = NPSU_LIB.find((x) => x[0] === e.target.value);
+      if (!b) return;
+      bu = npsuLayers(b[0]);
+      q2(".bud-name").value = b[1];
+      q2(".bud-code").value = npsuCode(
+        doc.objs.filter((x) => x !== o),
+        b[2],
+        bu,
+        b[1],
+      );
+      list();
+    };
+    q2(".bud-add").onclick = () => {
+      bu.push({ m: "timber", t: 25, n: "" });
+      list();
+    };
+    q2(".bud-x").onclick = () => d.remove();
+    q2(".bud-spec").onclick = () => {
+      d.remove();
+      buSpecPage();
+    };
+    q2(".bud-go").onclick = () => {
+      const v = {
+        bu: bu.map((l) => (l.n ? l : { m: l.m, t: +l.t || 0 })),
+        bn: q2(".bud-name").value.trim() || "Build-up",
+        bc: q2(".bud-code").value.trim().toUpperCase(),
+      };
+      if (q2(".bud-lab").checked) v.lab = 1;
+      d.remove();
+      if (o) {
+        snap();
+        Object.assign(o, v);
+        if (!v.lab) delete o.lab;
+        dirty = true;
+        draw();
+        fineFill();
+        toast("Build-up saved");
+        return;
+      }
+      lastBu = v;
+      pickShape("secbu");
+      toast(
+        "Draw along the face: a wall's inside face, a roof's underside, a floor's ceiling. ⇄ in Properties puts the layers on the other side",
+      );
+    };
+  }
+  /* 📋 every build-up on the drawing written out, outside to inside, on a new page */
+  function buSpecPage() {
+    doc.pages[pg].objs = doc.objs;
+    const all = npsuSpec(doc.pages.flatMap((p2) => p2.objs || []));
+    if (!all.length) {
+      toast("There are no build-ups on this drawing yet");
+      return;
+    }
+    const fs2 = Math.max(12, Math.round(doc.h * 0.014));
+    const objs = [
+      {
+        t: "text",
+        x: doc.w * 0.06,
+        y: doc.h * 0.07,
+        s: "Build-up specification",
+        c: "#111111",
+        size: Math.round(fs2 * 1.6),
+        wt: 800,
+        ly: "notes",
+      },
+    ];
+    let x = doc.w * 0.06,
+      y = doc.h * 0.07 + fs2 * 3.2;
+    all.forEach(([code, name, lines, tot]) => {
+      const need = (lines.length + 2.4) * fs2 * 1.5;
+      if (y + need > doc.h * 0.8 && y > doc.h * 0.2) {
+        x += doc.w * 0.31;
+        y = doc.h * 0.07 + fs2 * 3.2;
+      }
+      objs.push({
+        t: "text",
+        x,
+        y,
+        s: `${code}  ${name}`,
+        c: "#1f4e8c",
+        size: Math.round(fs2 * 1.1),
+        wt: 800,
+        ly: "notes",
+      });
+      y += fs2 * 1.6;
+      lines.forEach((l) => {
+        objs.push({
+          t: "text",
+          x: x + fs2,
+          y,
+          s: "• " + String(l).slice(0, 70),
+          c: "#111111",
+          size: fs2,
+          ly: "notes",
+        });
+        y += fs2 * 1.45;
+      });
+      if (tot != null)
+        objs.push({
+          t: "text",
+          x: x + fs2,
+          y,
+          s: `Overall ${Math.round(tot)} mm`,
+          c: "#555555",
+          size: Math.round(fs2 * 0.9),
+          ly: "notes",
+        });
+      y += fs2 * 2.4;
+    });
+    objs.push({
+      t: "text",
+      x: doc.w * 0.06,
+      y: doc.h * 0.86,
+      s: "Outside to inside / top to bottom. Generic build-ups: check U-values, fire and Building Regulations for the job.",
+      c: "#555555",
+      size: Math.round(fs2 * 0.9),
+      ly: "notes",
+    });
+    doc.pages.push({ name: "Build-up specification", type: "Construction details", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Specification put on a new page");
+  }
+  /* 🔎 zoom-in detail: a box round part of the drawing is copied bigger into a frame at a larger scale,
+     where James taps (or on a page of its own), with a lettered circle round the original */
+  let zoomPlace = null;
+  function zoomAsk(b) {
+    const x0 = Math.min(b.a[0], b.b[0]),
+      x1 = Math.max(b.a[0], b.b[0]),
+      y0 = Math.min(b.a[1], b.b[1]),
+      y1 = Math.max(b.a[1], b.b[1]);
+    if (x1 - x0 < 12 / s || y1 - y0 < 12 / s) {
+      toast("Drag a bigger box round the part you want to see");
+      return;
+    }
+    const base = vpScaleAt([(x0 + x1) / 2, (y0 + y1) / 2]) || doc.baseScale;
+    if (!base) {
+      toast("Give the page a scale first in 📐 Paper, then zoom in");
+      return;
+    }
+    const hits = (o) => {
+      if (vpOf(o) || o.dzc) return false;
+      const bb = bbox(o);
+      return bb && bb[0] <= x1 && bb[0] + bb[2] >= x0 && bb[1] <= y1 && bb[1] + bb[3] >= y0;
+    };
+    const src = doc.objs.filter(hits);
+    if (!src.length) {
+      toast("There is nothing drawn in that box");
+      return;
+    }
+    const used = new Set(
+      doc.pages.flatMap((p2, i) =>
+        (i === pg ? doc.objs : p2.objs || []).filter((o) => o.dzk).map((o) => o.dzk),
+      ),
+    );
+    const letter = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].find((L) => !used.has(L)) || "Z";
+    const scales = [1, 2, 5, 10, 20, 25, 50, 100].filter((v) => v < base);
+    if (!scales.length) {
+      toast("This is already drawn at 1:" + base + ", so it can't go bigger");
+      return;
+    }
+    const pick = scales.reduce(
+      (a, v) => (Math.abs(base / v - 5) < Math.abs(base / a - 5) ? v : a),
+      scales[0],
+    );
+    const d = document.createElement("div");
+    d.className = "dimask zd";
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Zoom-in detail"><b>🔎 Zoom-in detail ${letter}</b><div class="who">This part is drawn at 1:${base}. Pick how big to show it. You get a copy you can draw on and label, and a circle marked ${letter} round this part.</div>
+      <div class="zd-sc">${scales
+        .map(
+          (v) =>
+            `<button type="button" class="btn zd-n${v === pick ? " primary" : ""}" data-n="${v}">1:${v}<small>${Math.round((base / v) * 10) / 10}× bigger</small></button>`,
+        )
+        .join("")}</div>
+      <label>Name<input class="zd-name" maxlength="40" value="Detail ${letter}"></label>
+      <div class="dimbtns"><button type="button" class="btn zd-x">Cancel</button><button type="button" class="btn zd-page">📄 On a new page</button><button type="button" class="btn primary zd-go">👆 Tap where it goes</button></div></div>`;
+    ov.appendChild(d);
+    let N = pick;
+    d.querySelectorAll(".zd-n").forEach(
+      (bt) =>
+        (bt.onclick = () => {
+          N = +bt.dataset.n;
+          d.querySelectorAll(".zd-n").forEach((b2) => b2.classList.toggle("primary", b2 === bt));
+        }),
+    );
+    const z = () => ({
+      box: [x0, y0, x1, y1],
+      base,
+      N,
+      letter,
+      name: d.querySelector(".zd-name").value.trim() || "Detail " + letter,
+      src,
+    });
+    d.querySelector(".zd-x").onclick = () => d.remove();
+    d.querySelector(".zd-page").onclick = () => {
+      const zz = z();
+      d.remove();
+      zoomMake(zz, null, true);
+    };
+    d.querySelector(".zd-go").onclick = () => {
+      zoomPlace = z();
+      d.remove();
+      toast("Now tap where you want detail " + letter + " to go (the middle of it)");
+    };
+  }
+  /* a straight line or wall cut down to the part inside the box */
+  function zoomClipSeg(a, b, x0, y0, x1, y1) {
+    let t0 = 0,
+      t1 = 1;
+    const dx = b[0] - a[0],
+      dy = b[1] - a[1];
+    const ok = [
+      [-dx, a[0] - x0],
+      [dx, x1 - a[0]],
+      [-dy, a[1] - y0],
+      [dy, y1 - a[1]],
+    ].every(([p2, q2]) => {
+      if (!p2) return q2 >= 0;
+      const r = q2 / p2;
+      if (p2 < 0) t0 = Math.max(t0, r);
+      else t1 = Math.min(t1, r);
+      return t0 <= t1;
+    });
+    return ok
+      ? [
+          [a[0] + t0 * dx, a[1] + t0 * dy],
+          [a[0] + t1 * dx, a[1] + t1 * dy],
+        ]
+      : null;
+  }
+  function zoomMake(z, at, newPage) {
+    const [x0, y0, x1, y1] = z.box,
+      k = z.base / z.N,
+      W = (x1 - x0) * k,
+      H = (y1 - y0) * k;
+    snap();
+    /* the circle round the original, with its letter */
+    const cx = (x0 + x1) / 2,
+      cy = (y0 + y1) / 2,
+      rx = ((x1 - x0) / 2) * 1.42,
+      ry = ((y1 - y0) / 2) * 1.42,
+      tsz = Math.max(14, Math.round(Math.min(40, 20 / s)));
+    doc.objs.push({
+      t: "circle",
+      a: [cx - rx, cy - ry],
+      b: [cx + rx, cy + ry],
+      c: "#dc2626",
+      w: pwFor(1.5),
+      dzc: z.letter,
+    });
+    doc.objs.push({
+      t: "text",
+      x: cx + rx * 0.72,
+      y: cy - ry * 0.72 - tsz,
+      s: z.letter + (newPage ? " – see " + z.name : ""),
+      c: "#dc2626",
+      size: tsz,
+      wt: 800,
+      dzc: z.letter,
+    });
+    if (newPage) {
+      doc.pages[pg].objs = doc.objs;
+      doc.pages.push({ name: z.name, type: "Construction details", objs: [] });
+      goPage(doc.pages.length - 1);
+      at = [doc.w / 2, doc.h / 2];
+    }
+    const f0 = [at[0] - W / 2, at[1] - H / 2];
+    const T = (q2) => [f0[0] + (q2[0] - x0) * k, f0[1] + (q2[1] - y0) * k];
+    const frame = {
+      t: "rect",
+      a: f0,
+      b: [f0[0] + W, f0[1] + H],
+      c: "#2f5fb3",
+      w: pwFor(2),
+      vp: z.N,
+      vpn: z.name,
+      dzk: z.letter,
+    };
+    doc.objs.push(frame);
+    z.src.forEach((o0) => {
+      const o = JSON.parse(JSON.stringify(o0));
+      delete o.lk;
+      if (o.a && o.b && !o.bend && (o.t === "line" || npIsWall(o)) && !npBoxy(o)) {
+        const cl = zoomClipSeg(o.a, o.b, x0, y0, x1, y1);
+        if (!cl) return;
+        o.a = cl[0];
+        o.b = cl[1];
+      }
+      if (o.a) o.a = T(o.a);
+      if (o.b) o.b = T(o.b);
+      if (o.v) o.v = T(o.v);
+      if (o.p) o.p = o.p.map(T);
+      if (o.x != null && o.y != null) {
+        const q3 = T([o.x, o.y]);
+        o.x = q3[0];
+        o.y = q3[1];
+        if (o.t === "img" && o.w) {
+          o.w *= k;
+          o.h *= k;
+        }
+      }
+      if (o.th) o.th *= k;
+      if (o.off) o.off *= k;
+      o.dz = z.letter;
+      doc.objs.push(o);
+    });
+    dirty = true;
+    setTool("move");
+    sel = doc.objs.indexOf(frame);
+    draw();
+    const big = W > doc.w || H > doc.h;
+    toast(
+      big
+        ? `${z.name} at 1:${z.N} is bigger than the page – Undo and pick a smaller size, or a bigger paper`
+        : `${z.name} at 1:${z.N}. Drag the frame to move it; draw and label inside it`,
+    );
+  }
   function vpDlg(o, isNew) {
     const d = document.createElement("div");
     d.className = "dimask";
@@ -4733,6 +4451,7 @@ async function openNotePage(opts) {
     };
   }
   const setTool = (t) => {
+    if (dimPull && t !== "dim") dimDone(dimPull);
     tool = t;
     chain = [];
     setTimeout(() => {
@@ -4758,6 +4477,8 @@ async function openNotePage(opts) {
         chain = [lastStripEnd.slice()];
       }
     }
+    if (t !== "zoomd") zoomPlace = null;
+    if (t === "zoomd") toast("Drag a box round the part you want to see bigger, like the eaves");
     if (t === "vp")
       toast(
         "Drag a frame on the page. Then choose its scale. Anything you draw inside it uses that scale",
@@ -4782,7 +4503,7 @@ async function openNotePage(opts) {
     if (t !== "move") sel = null;
     draw();
   };
-  ov.querySelectorAll(".np-t[data-t]").forEach((b) => (b.onclick = () => setTool(b.dataset.t)));
+  ov.querySelectorAll(".np-t[data-t]").forEach((b) => npFingerTap(b, () => setTool(b.dataset.t)));
   /* colour picker pop-up: line colour or block fill colour */
   function colourPop(mode, o) {
     const old = ov.querySelector(".np-colpop");
@@ -5236,6 +4957,17 @@ async function openNotePage(opts) {
           }
         } else if (a === "flip") {
           o.fl = !o.fl;
+        } else if (a === "smaller" || a === "bigger") {
+          /* a photo a fifth smaller or a quarter bigger, about its middle */
+          const f = a === "smaller" ? 0.8 : 1.25;
+          if (o.w * f >= 40) {
+            const cx = o.x + o.w / 2,
+              cy = o.y + o.h / 2;
+            o.w *= f;
+            o.h *= f;
+            o.x = cx - o.w / 2;
+            o.y = cy - o.h / 2;
+          }
         } else if (a === "crop") {
           undo.pop();
           recropImg(o);
@@ -5264,6 +4996,14 @@ async function openNotePage(opts) {
             toast("Turned " + d + "°");
           });
           return;
+        } else if (a === "dnum") {
+          undo.pop();
+          if (o.t === "text") textOpen(sel);
+          else dimNumAsk(o);
+          return;
+        } else if (a === "dside") {
+          if (o.lb) delete o.lb;
+          else o.lb = 1;
         } else if (a === "dstyle") {
           o.tk = o.tk ? undefined : 1;
           if (!o.tk) delete o.tk;
@@ -5318,6 +5058,11 @@ async function openNotePage(opts) {
           undo.pop();
           fineOpen();
           return;
+        } else if (a === "size") {
+          undo.pop();
+          if (opKind(o)) opBar(o, true, true);
+          else showLenBar(o, true);
+          return;
         } else if (a === "fill") {
           undo.pop();
           if (o.t === "img") {
@@ -5343,6 +5088,52 @@ async function openNotePage(opts) {
 
   /* ===== fine-tune panel for the selected item: nudge, turn by degrees, exact length/size ===== */
   const fb = q(".np-finebox");
+  /* the Properties box (James, Nov 2026: "it should open to the left side but also be able to be moved about and
+     minimised"): on the left to start with; drag its top bar to put it anywhere on the drawing (it stays there while
+     the drawing is open); – folds it to its title bar, ▢ opens it again */
+  let fbPos = null,
+    fbSmall = false;
+  function fbPlace() {
+    fb.style.left = (fbPos ? fbPos[0] : 8) + "px";
+    fb.style.top = (fbPos ? fbPos[1] : 8) + "px";
+    fb.classList.toggle("nf-small", fbSmall);
+    const m = fb.querySelector(".nfmin");
+    m.textContent = fbSmall ? "▢" : "–";
+    m.setAttribute("aria-label", fbSmall ? "Open it out" : "Make it small");
+  }
+  fb.querySelector(".nfmin").onclick = () => {
+    fbSmall = !fbSmall;
+    fbPlace();
+  };
+  {
+    const h = fb.querySelector(".nfhead");
+    h.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button")) return;
+      e.preventDefault();
+      try {
+        h.setPointerCapture(e.pointerId);
+      } catch (err) {}
+      const st = stage.getBoundingClientRect(),
+        r = fb.getBoundingClientRect();
+      const dx = e.clientX - r.left,
+        dy = e.clientY - r.top;
+      const mv = (ev) => {
+        fbPos = [
+          Math.max(0, Math.min(st.width - Math.min(r.width, st.width), ev.clientX - st.left - dx)),
+          Math.max(0, Math.min(st.height - 48, ev.clientY - st.top - dy)),
+        ];
+        fbPlace();
+      };
+      const up = () => {
+        h.removeEventListener("pointermove", mv);
+        h.removeEventListener("pointerup", up);
+        h.removeEventListener("pointercancel", up);
+      };
+      h.addEventListener("pointermove", mv);
+      h.addEventListener("pointerup", up);
+      h.addEventListener("pointercancel", up);
+    });
+  }
   /* copy and paste: what's copied stays until something else is copied, so it can go onto another page */
   function npCopy(list) {
     if (!list.length) return;
@@ -5648,6 +5439,64 @@ async function openNotePage(opts) {
           : ""),
     );
   }
+  /* rooms that name themselves (James, Nov 2026): the spaces the walls close off become rooms with their area; the
+     first new one asks its name. quiet: after a wall run, say nothing if there's nothing new */
+  function findRooms(quiet) {
+    if (!doc.scale) {
+      if (!quiet) toast("Set a scale in 📐 Paper first, so the rooms get their real areas");
+      return 0;
+    }
+    const walls = doc.objs
+      .filter((o) => npIsWall(o) && o.st !== "demo" && !(doc.layers && lyHid(o)))
+      .map((o) => ({ a: o.a, b: o.b, T: npWallT(o, o.w || 6) }));
+    const found = npFindRooms(walls, toUnits(1000) ** 2);
+    const have = doc.objs.filter((o) => o.t === "room" && !o.pave && o.p && o.p.length > 2);
+    const add = found
+      .map((Q) => {
+        /* squared up where it is nearly square, unless that changes its size */
+        const R = npsRectilinear(Q, 8);
+        return R && Math.abs(npPolyArea(R) - npPolyArea(Q)) < npPolyArea(Q) * 0.1 ? R : Q;
+      })
+      .filter((Q) => npPolyArea(Q) >= toUnits(1000) ** 2 * 0.5)
+      /* already marked: a room over the same space, about the same size (a room split by a new wall isn't) */
+      .filter(
+        (Q) =>
+          !have.some((r) => {
+            const A = npPolyArea(Q),
+              B = npPolyArea(r.p);
+            return npInPoly(npPolyCentroid(Q), r.p) && B > A * 0.75 && B < A * 1.33;
+          }),
+      );
+    if (!add.length) {
+      if (!quiet)
+        toast(
+          found.length
+            ? "Those rooms are already marked"
+            : "No closed rooms found – the walls need to meet all the way round",
+        );
+      return 0;
+    }
+    snap();
+    const n0 = have.length;
+    const made = add.map((Q, i) => ({
+      t: "room",
+      p: Q.map((q) => [Math.round(q[0] * 100) / 100, Math.round(q[1] * 100) / 100]),
+      c: "#1e3a8a",
+      w: 2,
+      size: sized() ? Math.max(16, Math.round(Math.min(44, 24 / s))) : Math.round(28 / s),
+      name: "Room " + (n0 + i + 1),
+    }));
+    made.forEach((o) => doc.objs.unshift(o));
+    dirty = true;
+    draw();
+    toast(
+      made.length === 1
+        ? "Found a room – give it a name"
+        : `Found ${made.length} rooms – name this one, then tap the others with Select to name them`,
+    );
+    roomDlg(made[0], false);
+    return made.length;
+  }
   function finishRoom() {
     if (chain.length < 3) return;
     snap();
@@ -5684,6 +5533,10 @@ async function openNotePage(opts) {
       open = { door: 0, win: 0 },
       sym = {};
     let openArea = {};
+    /* existing and proposed: once any wall is marked new, the materials are for the new walls only */
+    const anyNewWall = doc.pages.some((pgx, pi) =>
+      (pi === pg ? doc.objs : pgx.objs || []).some((o) => npIsWall(o) && o.st === "new"),
+    );
     doc.pages.forEach((pgx, pi) => {
       const objs = pi === pg ? doc.objs : pgx.objs;
       objs.forEach((o) => {
@@ -5691,7 +5544,7 @@ async function openNotePage(opts) {
         if (vpOf(o)) return;
         if (o.t === "shape" && o.k === "beam" && o.a && o.b) {
           const span = Math.round(mm(lenOf(o.a, o.b)) / 5) * 5,
-            bear = +o.bear || 150;
+            bear = ((+o.bearA || +o.bear || 150) + (+o.bearB || +o.bear || 150)) / 2;
           beams.push({
             mark: o.mark || "",
             sec: o.sec || "section to be confirmed",
@@ -5717,6 +5570,12 @@ async function openNotePage(opts) {
             wall: P * h,
             vol: A * h,
           });
+        } else if (o.t === "shape" && QTY_WALL[o.k] && o.st === "demo") {
+          const L = mm(lenOf(o.a, o.b)) / 1000;
+          sym["Walls to knock down (m)"] =
+            Math.round(((sym["Walls to knock down (m)"] || 0) + L) * 100) / 100;
+        } else if (o.t === "shape" && QTY_WALL[o.k] && anyNewWall && o.st !== "new") {
+          /* existing: already there, nothing to build */
         } else if (o.t === "shape" && QTY_WALL[o.k]) {
           const L = mm(lenOf(o.a, o.b)) / 1000;
           if (o.lin)
@@ -5888,8 +5747,52 @@ async function openNotePage(opts) {
                 .join("")}</tbody></table></div>`
             : ""
         }
-        <div class="dimbtns"><button type="button" class="btn qcopy">📋 Copy as text</button>${mat.length && ownerMode() ? `<button type="button" class="btn qprice">💷 Price it and order</button>` : ""}<button type="button" class="btn primary qx">Close</button></div></div>`;
+        <div class="dimbtns"><button type="button" class="btn qcopy">📋 Copy as text</button>${mat.length && ownerMode() ? `<button type="button" class="btn qprice">💷 Price it and order</button><button type="button" class="btn qest">📝 Make a draft estimate</button>` : ""}<button type="button" class="btn primary qx">Close</button></div></div>`;
         d.querySelector(".qx").onclick = () => d.remove();
+        const qe = d.querySelector(".qest");
+        if (qe)
+          qe.onclick = async () => {
+            qe.disabled = true;
+            const vc = sdSet().vatReg === false ? "NV" : sdSet().vc || "S20";
+            const title =
+              (q(".np-title") && q(".np-title").value.trim()) || doc.title || "the drawing";
+            const lines = [{ h: 1, d: "Materials from " + title, vc }].concat(
+              mat.map(([a, b]) => {
+                const m = String(b).match(/^([\d,.]+)\s*(.*)$/);
+                return m
+                  ? {
+                      d: a,
+                      m: "q",
+                      q: +m[1].replace(/,/g, ""),
+                      u: m[2].slice(0, 12),
+                      r: "",
+                      vc,
+                      k: "mat",
+                    }
+                  : { d: a + " – " + b, a: "", vc, k: "mat" };
+              }),
+            );
+            try {
+              const r = await sdSaveRec({
+                type: "estimate",
+                status: "draft",
+                date: iso(new Date()),
+                site: doc.site || opts.site || "",
+                lines,
+              });
+              d.remove();
+              toast(
+                "Draft estimate " +
+                  r.number +
+                  " made with " +
+                  mat.length +
+                  " materials – price it in 💰 Estimates & invoices",
+              );
+            } catch (e) {
+              qe.disabled = false;
+              toast("Couldn't make the estimate. Check your connection.");
+            }
+          };
         const qp = d.querySelector(".qprice");
         if (qp)
           qp.onclick = () => {
@@ -5943,39 +5846,12 @@ async function openNotePage(opts) {
     });
 
   /* ===== BUILD TOOLS (ideas from Tekla): steel beams, auto dimensions, numbering, schedules, grids, elevations, checks, templates ===== */
-  const BEAM_SECS = [
-    ["127×76×13 UB", 13],
-    ["152×89×16 UB", 16],
-    ["178×102×19 UB", 19],
-    ["203×102×23 UB", 23],
-    ["203×133×25 UB", 25],
-    ["203×133×30 UB", 30],
-    ["254×102×22 UB", 22],
-    ["254×102×28 UB", 28],
-    ["254×146×31 UB", 31],
-    ["254×146×37 UB", 37],
-    ["305×102×25 UB", 25],
-    ["305×127×37 UB", 37],
-    ["305×165×40 UB", 40],
-    ["356×171×45 UB", 45],
-    ["152×152×23 UC", 23],
-    ["152×152×30 UC", 30],
-    ["152×152×37 UC", 37],
-    ["203×203×46 UC", 46],
-    ["203×203×52 UC", 52],
-    ["150×75 PFC", 17.9],
-    ["180×75 PFC", 20.3],
-    ["200×90 PFC", 29.7],
-    ["230×90 PFC", 32.2],
-    ["100×100×5 SHS", 14.7],
-    ["150×150×6.3 SHS", 28.1],
-    ["150×100×6.3 RHS", 23.9],
-    ["200×100×6.3 RHS", 28.1],
+  /* every type's sizes (steel-parts.js), and the words older drawings used */
+  const BEAM_SECS = npBeamSecs().concat([
     ["Box beam (2 × PFC, see engineer)", 0],
     ["Flitch beam (see engineer)", 0],
     ["Glulam (see engineer)", 0],
-    ["To engineer's design", 0],
-  ];
+  ]);
   const BEAM_PADS = [
     "None",
     "Concrete 440×215×100",
@@ -6402,7 +6278,9 @@ async function openNotePage(opts) {
     doc.objs.filter(isBeam).map((o) => {
       const span = Math.round(realMm(lenOf(o.a, o.b)) / 5) * 5,
         bear = +o.bear || 150,
-        len = span + 2 * bear,
+        bearA = +o.bearA || bear,
+        bearB = +o.bearB || bear,
+        len = span + bearA + bearB,
         kg = (secKg(o.sec || "") * len) / 1000;
       return {
         o,
@@ -6410,11 +6288,858 @@ async function openNotePage(opts) {
         sec: o.sec || "",
         span,
         bear,
+        bearA,
+        bearB,
         len,
         kg,
         pad: o.pad || "Concrete 440×215×100",
       };
     });
+  /* ===== a steel beam's sheet (beam-sheet.js does the working out): size and length, lifting, props, padstones,
+     fire protection, the order for the supplier, building control ticks, and the beam's detail drawn on a new page ===== */
+  function beamSheet(o) {
+    const r = beamRows().find((x) => x.o === o);
+    if (!r) return;
+    const [bt] = o.bt ? [o.bt] : npBeamOf(o.sec || "");
+    const dm = npbDims(o.sec, bt) || { d: 0, b: 0 };
+    const ord = Object.assign(
+      { grade: "S275", ends: "plain", finish: "primer", qty: 1, need: "", hiab: false },
+      o.ord || {},
+    );
+    const bc = Object.assign({}, o.bc || {});
+    const opt = (list, v) =>
+      list
+        .map(
+          ([k, l]) => `<option value="${esc(k)}"${k === v ? " selected" : ""}>${esc(l)}</option>`,
+        )
+        .join("");
+    const d = document.createElement("div");
+    d.className = "dimask bmsheet";
+    d.innerHTML = `<form class="dimbox" role="dialog" aria-label="Steel beam sheet"><b>🔩 Steel beam ${esc(r.mark || "")}${r.sec ? " · " + esc(r.sec) : ""}</b>
+      <div class="who">A guide to get the beam ordered, in and signed off. <b>The engineer's calcs and building control always win</b> – check every figure against them.</div>
+      <section class="bm-sec"><b>📏 Size and length</b>
+        <div class="bm-row"><label>Mark<input class="bm-mark" maxlength="8" value="${esc(o.mark || "")}" placeholder="e.g. B1"></label><label>Section (from the calcs)<select class="bm-sec-s"><option value="">Choose…</option>${BEAM_SECS.map(([x]) => `<option${x === o.sec ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label><label>Grade<select class="bm-grade">${opt(
+          [
+            ["S275", "S275"],
+            ["S355", "S355"],
+          ],
+          ord.grade,
+        )}</select></label><label>How many<input class="bm-qty" type="number" inputmode="numeric" min="1" value="${esc(ord.qty)}" style="width:80px"></label></div>
+        <div class="bm-row"><label>Clear span (from the drawing)<input value="${r.span} mm" readonly></label><label>Bearing, start end (mm)<input class="bm-ba" type="number" inputmode="numeric" value="${r.bearA}"></label><label>Bearing, far end (mm)<input class="bm-bb" type="number" inputmode="numeric" value="${r.bearB}"></label></div>
+        <div class="bm-fig bm-len"></div>
+      </section>
+      <section class="bm-sec"><b>🏋️ Lifting it</b><div class="bm-lift"></div></section>
+      <section class="bm-sec"><b>🪜 Temporary works</b>
+        <div class="bm-row"><label>Floor to ceiling (mm)<input class="bm-ht" type="number" inputmode="numeric" value="${esc(o.ht || 2400)}"></label><label>Holding the wall up with<select class="bm-tw">${opt(
+          [
+            ["strongboys", "Strongboys on props"],
+            ["needles", "Needles through the wall, a prop each side"],
+          ],
+          o.tw || "strongboys",
+        )}</select></label></div>
+        <div class="bm-props"></div>
+      </section>
+      <section class="bm-sec"><b>🧱 Padstones</b>
+        <div class="bm-row"><label>Padstones<select class="bm-pad">${BEAM_PADS.map((p) => `<option${p === r.pad ? " selected" : ""}>${esc(p)}</option>`).join("")}</select></label></div>
+        <div class="bm-padinfo"></div>
+      </section>
+      <section class="bm-sec"><b>🔥 Fire protection</b>
+        <div class="bm-row"><label>As specified<select class="bm-fire">${opt(
+          [
+            ["", "Not chosen yet"],
+            ["board", "2 layers of 12.5 mm fire board"],
+            ["paint", "Intumescent paint"],
+            ["none", "None needed"],
+          ],
+          o.fire || "",
+        )}</select></label></div>
+        <div class="bm-fireinfo who"></div>
+      </section>
+      <section class="bm-sec"><b>📦 Order from the steel supplier</b>
+        <div class="bm-row"><label>Ends<select class="bm-ends">${opt(NPB_ENDS, ord.ends)}</select></label><label>Finish<select class="bm-fin">${opt(NPB_FINISH, ord.finish)}</select></label><label>Needed by<input class="bm-need" type="date" value="${esc(ord.need || "")}"></label><label class="inl"><input type="checkbox" class="bm-hiab"${ord.hiab ? " checked" : ""}> Hiab / crane offload</label></div>
+        <div class="bm-order"></div>
+        <div class="bm-row"><button type="button" class="btn bm-copy">📋 Copy the order</button><a class="btn bm-mail" href="#" target="_blank" rel="noopener">✉️ Email the order</a></div>
+      </section>
+      <section class="bm-sec"><b>✅ Building control and site</b><div class="bm-stage who"></div><div class="bm-ticks">${NPB_TICKS.map(([k, l]) => `<label><input type="checkbox" class="bm-tick" data-k="${k}"${bc[k] ? " checked" : ""}> ${esc(l)}<small>${bc[k] ? esc(new Date(bc[k]).toLocaleDateString("en-GB")) : ""}</small></label>`).join("")}</div></section>
+      <div class="dimbtns"><button type="button" class="btn bm-detail">📐 Draw the beam detail</button><button type="button" class="btn bm-x">Cancel</button><button type="submit" class="btn primary">Save</button></div></form>`;
+    ov.appendChild(d);
+    const q2 = (c) => d.querySelector(c);
+    /* everything on the sheet worked out again from what's typed */
+    const read = () => {
+      const sec = q2(".bm-sec-s").value || o.sec || "";
+      const [bt2] = npBeamOf(sec);
+      const bA = Math.max(0, +q2(".bm-ba").value || 0),
+        bB = Math.max(0, +q2(".bm-bb").value || 0);
+      const len = r.span + bA + bB,
+        kgm = secKg(sec),
+        qty = Math.max(1, +q2(".bm-qty").value || 1);
+      return {
+        sec,
+        bt: bt2 || bt,
+        bA,
+        bB,
+        len,
+        kgm,
+        kg: (kgm * len) / 1000,
+        qty,
+        dm: npbDims(sec, bt2 || bt) || dm,
+      };
+    };
+    const show = () => {
+      const x = read();
+      q2(".bm-len").innerHTML =
+        `<span>Cut length <b>${x.len} mm</b></span><span>${x.kgm ? x.kgm + " kg a metre" : "weight: pick a steel size"}</span><span>${x.kg ? "<b>about " + Math.round(x.kg) + " kg</b> each" : ""}</span>${x.dm.d ? `<span>${x.dm.d} deep · ${x.dm.b} flange</span>` : ""}`;
+      const L = npbLift(x.kg);
+      q2(".bm-lift").innerHTML =
+        `<div class="${L.kit ? "bm-warn" : ""}">${L.kit ? "🏗️ " : L.people ? "👷 " : ""}${esc(L.note)}</div><div class="who">Rule of thumb from the manual handling guidance – plan the lift for the real route and the people you have.</div>`;
+      const P = npbProps(
+        r.span,
+        (x.bA + x.bB) / 2,
+        +q2(".bm-ht").value || 2400,
+        q2(".bm-tw").value,
+      );
+      q2(".bm-props").innerHTML =
+        `<div>${P.n} ${P.kind === "needles" ? "needles" : "strongboys"} at about 900 mm apart, <b>${P.props} props (${esc(P.size)})</b>, spreaders / timber lintels at the top, on a solid base.</div><div class="who">Check the engineer's temporary works notes. Props in before any brickwork comes out.</div>`;
+      const pm = String(q2(".bm-pad").value).match(/(\d+)\s*×\s*(\d+)/);
+      const warns = [];
+      if (pm && x.dm.b && x.dm.b > +pm[1])
+        warns.push(`the beam's flange (${x.dm.b}) is wider than the padstone (${pm[1]})`);
+      if (pm && Math.max(x.bA, x.bB) > +pm[2])
+        warns.push(
+          `the bearing (${Math.max(x.bA, x.bB)}) is longer than the padstone is deep (${pm[2]})`,
+        );
+      if (Math.min(x.bA, x.bB) < 100)
+        warns.push("a bearing under 100 mm is short – check the calcs");
+      q2(".bm-padinfo").innerHTML =
+        (warns.length
+          ? `<div class="bm-warn">⚠ ${esc(warns.join("; "))}.</div>`
+          : `<div>✓ Padstone wide enough for the flange, bearing within it.</div>`) +
+        `<div class="who">One each end, bedded in mortar and left to cure before the beam goes on. Size and type as the calcs.</div>`;
+      q2(".bm-fireinfo").textContent = npbFire(
+        x.dm.d || 200,
+        x.dm.b || 100,
+        x.len,
+        q2(".bm-fire").value,
+      ).text;
+      const ordNow = {
+        grade: q2(".bm-grade").value,
+        ends: q2(".bm-ends").value,
+        finish: q2(".bm-fin").value,
+        qty: x.qty,
+        need: q2(".bm-need").value,
+        hiab: q2(".bm-hiab").checked,
+      };
+      const txt = npbOrderText(
+        [
+          {
+            o: { ord: ordNow },
+            mark: q2(".bm-mark").value.trim(),
+            sec: x.sec,
+            len: x.len,
+            span: r.span,
+            bearA: x.bA,
+            bearB: x.bB,
+            kg: x.kg * x.qty,
+          },
+        ],
+        { site: doc.site || opts.site || "", who: coData().name || "" },
+      );
+      q2(".bm-order").textContent = txt;
+      q2(".bm-mail").href =
+        "mailto:?subject=" +
+        encodeURIComponent("Steel order" + (doc.site ? " – " + doc.site : "")) +
+        "&body=" +
+        encodeURIComponent(txt);
+      const bcNow = {};
+      d.querySelectorAll(".bm-tick").forEach((c) => {
+        if (c.checked) bcNow[c.dataset.k] = bc[c.dataset.k] || Date.now();
+      });
+      q2(".bm-stage").textContent = "Where it's got to: " + npbStage(bcNow);
+      return { x, ordNow, bcNow };
+    };
+    d.querySelectorAll("input,select").forEach((el) => el.addEventListener("input", show));
+    d.querySelectorAll("select,input[type=checkbox],input[type=date]").forEach((el) =>
+      el.addEventListener("change", show),
+    );
+    d.querySelectorAll(".bm-tick").forEach((c) =>
+      c.addEventListener("change", () => {
+        if (c.checked && !bc[c.dataset.k]) bc[c.dataset.k] = Date.now();
+        if (!c.checked) delete bc[c.dataset.k];
+        c.parentElement.querySelector("small").textContent = bc[c.dataset.k]
+          ? new Date(bc[c.dataset.k]).toLocaleDateString("en-GB")
+          : "";
+        show();
+      }),
+    );
+    show();
+    q2(".bm-copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(q2(".bm-order").textContent);
+        toast("Order copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    const save = () => {
+      const { x, ordNow, bcNow } = show();
+      snap();
+      o.mark = q2(".bm-mark").value.trim() || o.mark;
+      if (!o.mark) delete o.mark;
+      if (x.sec && x.sec !== o.sec) {
+        o.sec = x.sec;
+        [o.bt, o.bz] = npBeamOf(x.sec);
+        if (!o.bt) delete o.bt;
+      }
+      o.bearA = x.bA;
+      o.bearB = x.bB;
+      o.ht = +q2(".bm-ht").value || 2400;
+      o.tw = q2(".bm-tw").value;
+      o.pad = q2(".bm-pad").value;
+      o.fire = q2(".bm-fire").value;
+      if (!o.fire) delete o.fire;
+      o.ord = ordNow;
+      o.bc = bcNow;
+      dirty = true;
+      draw();
+    };
+    q2(".bm-x").onclick = () => d.remove();
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      save();
+      d.remove();
+      toast("Beam saved");
+    };
+    q2(".bm-detail").onclick = () => {
+      save();
+      d.remove();
+      beamDetail(o);
+    };
+  }
+  /* 📦 one order for all the beams on the page */
+  function beamOrder(rows) {
+    const txt = npbOrderText(
+      rows.map((r) => Object.assign({}, r, { kg: r.kg * ((r.o.ord && r.o.ord.qty) || 1) })),
+      { site: doc.site || opts.site || "", who: coData().name || "" },
+    );
+    const d = document.createElement("div");
+    d.className = "dimask bmsheet";
+    d.innerHTML = `<div class="dimbox"><b>📦 Steel order – ${rows.length} beam${rows.length === 1 ? "" : "s"}</b><div class="who">Grade, ends, finish and delivery come from each beam's sheet. Check it against the calcs before it goes.</div><div class="bm-order"></div><div class="dimbtns"><button type="button" class="btn bm-copy">📋 Copy</button><a class="btn bm-mail" href="#" target="_blank" rel="noopener">✉️ Email</a><button type="button" class="btn primary bm-x">Close</button></div></div>`;
+    ov.appendChild(d);
+    d.querySelector(".bm-order").textContent = txt;
+    d.querySelector(".bm-mail").href =
+      "mailto:?subject=" +
+      encodeURIComponent("Steel order" + (doc.site ? " – " + doc.site : "")) +
+      "&body=" +
+      encodeURIComponent(txt);
+    d.querySelector(".bm-copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(txt);
+        toast("Order copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    d.querySelector(".bm-x").onclick = () => d.remove();
+  }
+  /* 📐 the beam's detail on a new page: the wall either side, the opening, the beam with its bearings, the padstones,
+     and the sizes – drawn to fit the page, not to scale (the figures are written on) */
+  function beamDetail(o) {
+    const r = beamRows().find((x) => x.o === o);
+    if (!r) return;
+    const [bt] = o.bt ? [o.bt] : npBeamOf(o.sec || "");
+    const dm = npbDims(o.sec, bt) || { d: 200, b: 100 };
+    doc.pages[pg].objs = doc.objs;
+    const W = doc.w,
+      H = doc.h;
+    const k = (W * 0.62) / Math.max(1000, r.len + 1200);
+    const x0 = W * 0.16,
+      yb = H * 0.37;
+    const pier = 600 * k;
+    const dpt = Math.max(dm.d * k, H * 0.035),
+      padH = Math.max(100 * k, H * 0.02);
+    const xa = x0 + pier,
+      xb = xa + r.span * k;
+    const col = "#111111",
+      lw = pwFor(4),
+      fs = Math.max(14, Math.round(H * 0.018));
+    const objs = [];
+    const box = (ax, ay, bx, by, extra) =>
+      objs.push(Object.assign({ t: "rect", a: [ax, ay], b: [bx, by], c: col, w: lw }, extra || {}));
+    const txt = (x, y, s2, size) =>
+      objs.push({ t: "text", x, y, s: s2, c: "#222222", size: size || fs, ly: "notes" });
+    /* the wall either side, the opening */
+    box(x0, yb - H * 0.05, xa, yb + H * 0.1, { fill: "#d9c3a5", fa: 0.6 });
+    box(xb, yb - H * 0.05, xb + pier, yb + H * 0.1, { fill: "#d9c3a5", fa: 0.6 });
+    /* the padstones and the beam on them */
+    box(xa - r.bearA * k - 40 * k, yb, xa, yb + padH, { fill: "#9ca3af", fa: 0.7 });
+    box(xb, yb, xb + r.bearB * k + 40 * k, yb + padH, { fill: "#9ca3af", fa: 0.7 });
+    box(xa - r.bearA * k, yb - dpt, xb + r.bearB * k, yb, { fill: "#6b7280", fa: 0.55 });
+    /* the sizes */
+    const dim = (ax, bx, y, s2) =>
+      objs.push({ t: "dim", a: [ax, y], b: [bx, y], s: s2, c: "#e11d2a", w: pwFor(2), size: fs });
+    dim(xa, xb, yb + H * 0.07, "Clear span " + r.span + " mm");
+    dim(xa - r.bearA * k, xa, yb - dpt - H * 0.05, r.bearA + " bearing");
+    dim(xb, xb + r.bearB * k, yb - dpt - H * 0.05, r.bearB + " bearing");
+    dim(xa - r.bearA * k, xb + r.bearB * k, yb - dpt - H * 0.11, "Cut length " + r.len + " mm");
+    txt(
+      x0,
+      H * 0.08,
+      `${o.mark || "Beam"} – ${o.sec || "section to confirm"}${o.ord && o.ord.grade ? ", " + o.ord.grade : ""}`,
+      Math.round(fs * 1.5),
+    );
+    txt(x0, H * 0.08 + fs * 2.2, `Padstones: ${r.pad}, one each end, bedded in mortar.`);
+    txt(x0, H * 0.08 + fs * 3.6, npbFire(dm.d, dm.b, r.len, o.fire || "").text + ".");
+    /* the bearing on its padstone and a cut through the beam, drawn in full (section-steel.js) */
+    const [bt2, bz2] = o.bt ? [o.bt, o.bz] : npBeamOf(o.sec || "");
+    if (["UB", "UC", "RSJ", "PFC", "2PFC"].includes(bt2) && bz2) {
+      const st = { t: "shape", c: col, w: lw, bt: bt2, bz: bz2, lab: 1, ly: "elev" };
+      const bh = H * 0.23,
+        y2 = H * 0.54;
+      objs.push(
+        Object.assign({}, st, {
+          k: "secbear",
+          a: [W * 0.05, y2],
+          b: [W * 0.05 + bh * 1.47, y2 + bh],
+          pad: o.pad || "Concrete 440×215×100",
+          br: r.bearA,
+        }),
+        Object.assign({}, st, {
+          k: "secsteel",
+          a: [W * 0.62, y2],
+          b: [W * 0.62 + bh * 0.58, y2 + bh],
+          sv: "plate",
+        }),
+      );
+    }
+    txt(
+      x0,
+      H * 0.5,
+      "Not to scale. Check all sizes against the engineer's calculations before ordering or building.",
+      Math.round(fs * 0.85),
+    );
+    objs.forEach((ob) => (ob.ly = ob.ly || "elev"));
+    doc.pages.push({ name: (o.mark || "Beam") + " detail", type: "Steel beam detail", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Beam detail drawn on a new page");
+  }
+  /* ===== 🪜 the stair builder (stair-builder.js does the working out): pick the type and use, the floor-to-floor
+     height and width, the steps, materials and balustrade; Part K checks as you go; Save puts it on the plan (the
+     plan symbol sized to its footprint); 📐 draws the side view on a new page; the order to copy or email ===== */
+  function stairBuilder(o0) {
+    const c = Object.assign(
+      {
+        type: "straight",
+        use: "private",
+        ftf: (o0 && o0.rise) || 2600,
+        width: 860,
+        open: 1,
+        tread: "pine",
+        risers: "closed",
+        bal: "spindles",
+        rail: "pine",
+        glassFix: "channel",
+        head: "",
+        dia: 1600,
+        turn: 360,
+        n: "",
+        going: "",
+      },
+      (o0 && o0.sb) || {},
+    );
+    if (o0 && !o0.sb)
+      c.type =
+        o0.k === "stairsl"
+          ? "quarter"
+          : o0.k === "stairsu"
+            ? "half"
+            : o0.k === "spiral"
+              ? "spiral"
+              : "straight";
+    const opt = (list, v) =>
+      list
+        .map(
+          ([k, l]) =>
+            `<option value="${esc(k)}"${String(k) === String(v) ? " selected" : ""}>${esc(l)}</option>`,
+        )
+        .join("");
+    const d = document.createElement("div");
+    d.className = "dimask sbuild";
+    d.innerHTML = `<form class="dimbox" role="dialog" aria-label="Stair builder"><b>🪜 Stair builder</b>
+      <div class="who">Design it step by step – it checks it against Approved Document K as you go. A guide: the stair maker (and the engineer for steel) confirm the design.</div>
+      <section class="sb-sec"><b>1 · What kind of stair</b><div class="sb-types">${NPSB_TYPES.map(([k, l, i]) => `<button type="button" class="sb-type" data-k="${k}" aria-pressed="${k === c.type}"><span aria-hidden="true">${i}</span>${esc(l)}</button>`).join("")}</div>
+        <div class="sb-row"><label>Used as<select class="sb-use">${opt(
+          Object.entries(NPSB_USE).map(([k, v]) => [k, v.name]),
+          c.use,
+        )}</select></label></div></section>
+      <section class="sb-sec"><b>2 · Sizes</b><div class="sb-row"><label>Floor to floor (mm)<input class="sb-ftf" type="number" inputmode="numeric" value="${esc(c.ftf)}"></label><label>Width (mm)<input class="sb-w" type="number" inputmode="numeric" value="${esc(c.width)}"></label><label>Sides open (no wall)<select class="sb-open">${opt(
+        [
+          [0, "None – walls both sides"],
+          [1, "One side"],
+          [2, "Both sides"],
+        ],
+        c.open,
+      )}</select></label><label>Headroom you have (mm)<input class="sb-head" type="number" inputmode="numeric" value="${esc(c.head)}" placeholder="measure it"></label></div>
+        <div class="sb-row sb-spiral"><label>Diameter (mm)<select class="sb-dia">${opt(
+          [1200, 1400, 1600, 1800, 2000, 2200].map((v) => [v, v + " mm"]),
+          c.dia,
+        )}</select></label><label>Turns round<select class="sb-turn">${opt(
+          [
+            [180, "Half turn (180°)"],
+            [270, "Three-quarters (270°)"],
+            [360, "Full turn (360°)"],
+            [450, "1¼ turns (450°)"],
+          ],
+          c.turn,
+        )}</select></label></div></section>
+      <section class="sb-sec"><b>3 · Steps</b><div class="sb-row"><label>Risers<span class="sb-nrow"><button type="button" class="btn sb-n" data-d="-1" aria-label="One fewer">−</button><b class="sb-nv"></b><button type="button" class="btn sb-n" data-d="1" aria-label="One more">+</button><button type="button" class="btn sb-best">Best</button></span></label><label class="sb-goingl">Going (mm, blank = best)<input class="sb-going" type="number" inputmode="numeric" value="${esc(c.going)}"></label></div><div class="sb-fig"></div></section>
+      <section class="sb-sec"><b>4 · Materials</b><div class="sb-row"><label>Treads<select class="sb-tread">${opt(NPSB_TREADS, c.tread)}</select></label><label class="sb-risl">Risers<select class="sb-ris">${opt(
+        [
+          ["closed", "Closed"],
+          ["open", "Open"],
+        ],
+        c.risers,
+      )}</select></label></div></section>
+      <section class="sb-sec"><b>5 · Balustrade and handrail</b><div class="sb-row"><label>Balustrade<select class="sb-bal">${opt(NPSB_BAL, c.bal)}</select></label><label class="sb-gfl">Glass fixed by<select class="sb-gfix">${opt(NPSB_GLASSFIX, c.glassFix)}</select></label><label>Handrail<select class="sb-rail">${opt(NPSB_RAIL, c.rail)}</select></label></div><div class="sb-gnote who"></div></section>
+      <section class="sb-sec"><b>✅ Checks (Approved Document K)</b><div class="sb-checks"></div></section>
+      <section class="sb-sec"><b>🧾 What it needs</b><div class="sb-q"></div></section>
+      <section class="sb-sec"><b>🪚 Cutting list</b><div class="sb-cut"></div><div class="sb-row"><button type="button" class="btn primary sb-3d">🧊 See it in 3D</button><button type="button" class="btn sb-cutpage">🪚 Put the cutting list on the drawing</button><button type="button" class="btn sb-cutcopy">📋 Copy the cutting list</button></div></section>
+      <section class="sb-sec"><b>📦 Order for the joiner / fabricator</b><div class="sb-order"></div><div class="sb-row"><button type="button" class="btn sb-copy">📋 Copy</button><a class="btn sb-mail" href="#" target="_blank" rel="noopener">✉️ Email</a></div></section>
+      <div class="dimbtns"><button type="button" class="btn sb-side">📐 Draw the side view</button><button type="button" class="btn sb-x">Cancel</button><button type="submit" class="btn primary">${o0 ? "Save" : "Put it on the plan"}</button></div></form>`;
+    ov.appendChild(d);
+    const q2 = (x) => d.querySelector(x);
+    let k;
+    const read = () => {
+      c.use = q2(".sb-use").value;
+      c.ftf = Math.max(300, +q2(".sb-ftf").value || 2600);
+      c.width = Math.max(400, +q2(".sb-w").value || 860);
+      c.open = +q2(".sb-open").value;
+      c.head = q2(".sb-head").value;
+      c.dia = +q2(".sb-dia").value;
+      c.turn = +q2(".sb-turn").value;
+      c.going = q2(".sb-going").value;
+      c.tread = q2(".sb-tread").value;
+      c.risers = q2(".sb-ris").value;
+      c.bal = q2(".sb-bal").value;
+      c.glassFix = q2(".sb-gfix").value;
+      c.rail = q2(".sb-rail").value;
+    };
+    const show = () => {
+      read();
+      k = npsbCalc(c);
+      const steel = k.steel,
+        sp = k.spiral;
+      q2(".sb-spiral").hidden = !sp;
+      q2(".sb-goingl").hidden = sp;
+      q2(".sb-risl").hidden = steel || sp;
+      q2(".sb-gfl").hidden = c.bal !== "glass";
+      q2(".sb-nv").textContent = k.n + (c.n ? "" : " (best)");
+      q2(".sb-fig").innerHTML =
+        `<span><b>${k.n}</b> risers of <b>${Math.round(k.rise)} mm</b></span>${sp ? "" : `<span>going <b>${Math.round(k.going)} mm</b></span><span><b>${Math.round(k.pitch)}°</b></span><span>2R+G ${Math.round(k.two)}</span>`}<span>takes up about <b>${Math.round(k.foot[0])} × ${Math.round(k.foot[1])} mm</b></span>`;
+      q2(".sb-checks").innerHTML = k.ck
+        .map(
+          (x) =>
+            `<div class="sb-ck ${x.ok === false ? "sb-bad" : x.ok ? "sb-ok" : ""}">${x.ok === false ? "⚠" : x.ok ? "✓" : "•"} ${esc(x.t)}</div>`,
+        )
+        .join("");
+      q2(".sb-q").innerHTML = k.q
+        .map(([a, b]) => `<div class="drow"><span>${esc(a)}</span><b>${esc(String(b))}</b></div>`)
+        .join("");
+      q2(".sb-gnote").textContent = k.glassNote;
+      q2(".sb-cut").innerHTML =
+        `<div class="tablewrap"><table class="sb-tbl"><thead><tr><th>Part</th><th class="num">No.</th><th>Size (mm)</th><th>Note</th></tr></thead><tbody>${npsbCutList(
+          k,
+        )
+          .map(
+            ([a, n, z, nt]) =>
+              `<tr><td>${esc(a)}</td><td class="num">${esc(String(n))}</td><td>${esc(z)}</td><td class="who">${esc(nt || "")}</td></tr>`,
+          )
+          .join("")}</tbody></table></div>`;
+      const txt = npsbOrderText(k, { site: doc.site || opts.site || "", who: coData().name || "" });
+      q2(".sb-order").textContent = txt;
+      q2(".sb-mail").href =
+        "mailto:?subject=" +
+        encodeURIComponent("Stair" + (doc.site ? " – " + doc.site : "")) +
+        "&body=" +
+        encodeURIComponent(txt);
+    };
+    d.querySelectorAll(".sb-type").forEach(
+      (b) =>
+        (b.onclick = () => {
+          c.type = b.dataset.k;
+          d.querySelectorAll(".sb-type").forEach((x) =>
+            x.setAttribute("aria-pressed", String(x === b)),
+          );
+          if (c.type === "ext" || c.type === "extDog") {
+            q2(".sb-tread").value = "grating";
+            q2(".sb-rail").value = "steel";
+            q2(".sb-bal").value = "metal";
+            if (q2(".sb-use").value === "private") q2(".sb-use").value = "utility";
+          }
+          show();
+        }),
+    );
+    d.querySelectorAll(".sb-n").forEach(
+      (b) =>
+        (b.onclick = () => {
+          c.n = Math.max(2, (k ? k.n : 13) + +b.dataset.d);
+          show();
+        }),
+    );
+    q2(".sb-best").onclick = () => {
+      c.n = "";
+      q2(".sb-going").value = "";
+      show();
+    };
+    d.querySelectorAll("input,select").forEach((el) => el.addEventListener("input", show));
+    d.querySelectorAll("select").forEach((el) => el.addEventListener("change", show));
+    show();
+    q2(".sb-copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(q2(".sb-order").textContent);
+        toast("Copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    q2(".sb-x").onclick = () => d.remove();
+    q2(".sb-3d").onclick = () => {
+      show();
+      stair3d(k);
+    };
+    q2(".sb-cutcopy").onclick = async () => {
+      show();
+      const t = npsbCutList(k)
+        .map(([a, n, z, nt]) => `${a}: ${n}${z ? " × " + z : ""}${nt ? " (" + nt + ")" : ""}`)
+        .join("\n");
+      try {
+        await navigator.clipboard.writeText("Stair cutting list\n\n" + t);
+        toast("Cutting list copied");
+      } catch (e) {
+        toast("Couldn't copy here");
+      }
+    };
+    q2(".sb-cutpage").onclick = () => {
+      const o = save();
+      d.remove();
+      stairCutPage(o);
+    };
+    /* onto the plan: the stair symbol for the type, sized to its footprint */
+    const save = () => {
+      show();
+      const kind = k.spiral
+        ? "spiral"
+        : ["quarter", "quarterW"].includes(c.type)
+          ? "stairsl"
+          : ["half", "halfW", "extDog"].includes(c.type)
+            ? "stairsu"
+            : "stairs";
+      snap();
+      let o = o0;
+      if (!o) {
+        const r = stage.getBoundingClientRect();
+        const m = toPage(r.left + r.width / 2, r.top + r.height / 2);
+        o = {
+          t: "shape",
+          k: kind,
+          a: m.slice(),
+          b: [m[0] + 40, m[1] + 40],
+          c: "#111111",
+          w: pwFor(3),
+        };
+        doc.objs.push(o);
+      }
+      o.k = kind;
+      o.n = k.n;
+      o.rise = c.ftf;
+      o.sb = JSON.parse(JSON.stringify(c));
+      if (doc.scale) {
+        const cx = (o.a[0] + o.b[0]) / 2,
+          cy = (o.a[1] + o.b[1]) / 2,
+          W = toUnits(c.width);
+        let w, h;
+        if (kind === "stairs") {
+          w = toUnits(k.foot[0]);
+          h = toUnits(k.foot[1]);
+        } else if (kind === "stairsl") {
+          const mn = W / 0.38;
+          h = mn;
+          w = Math.max(mn, toUnits(k.run) + 2 * W - mn);
+        } else if (kind === "stairsu") {
+          w = W / 0.48;
+          h = toUnits(k.run) / 2 + W;
+          if (W > 0.3 * h) h = W / 0.3;
+        } else w = h = toUnits(c.dia);
+        o.a = [cx - w / 2, cy - h / 2];
+        o.b = [cx + w / 2, cy + h / 2];
+        delete o.r;
+      }
+      sel = doc.objs.indexOf(o);
+      dirty = true;
+      draw();
+      return o;
+    };
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      save();
+      d.remove();
+      toast(
+        doc.scale
+          ? "Stair on the plan, sized to its footprint"
+          : "Stair on the plan – set a scale in 📐 Paper to size it",
+      );
+    };
+    q2(".sb-side").onclick = () => {
+      const o = save();
+      d.remove();
+      stairSide(o);
+    };
+  }
+  /* 🧊 the stair in 3D: turn it with the slider or the arrows */
+  function stair3d(k) {
+    const M = nps3Model(k);
+    const d = document.createElement("div");
+    d.className = "dimask sbuild s3d";
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Stair in 3D"><b>🧊 The stair in 3D</b><div class="who">Turn it round. An illustration: the stair maker sets out the real one.</div><canvas class="s3d-cv" width="1000" height="680"></canvas><div class="sb-row"><button type="button" class="btn s3d-l" aria-label="Turn left">⟲</button><input type="range" class="s3d-yaw" min="0" max="360" value="35" aria-label="Turn it round" style="flex:1"><button type="button" class="btn s3d-r" aria-label="Turn right">⟳</button></div><div class="dimbtns"><button type="button" class="btn s3d-save">⬇ Save the picture</button><button type="button" class="btn primary s3d-x">Close</button></div></div>`;
+    ov.appendChild(d);
+    const cv = d.querySelector(".s3d-cv"),
+      yw = d.querySelector(".s3d-yaw");
+    const paint = () => nps3Draw(cv, M, (+yw.value * Math.PI) / 180);
+    yw.oninput = paint;
+    d.querySelector(".s3d-l").onclick = () => {
+      yw.value = (+yw.value + 345) % 360;
+      paint();
+    };
+    d.querySelector(".s3d-r").onclick = () => {
+      yw.value = (+yw.value + 15) % 360;
+      paint();
+    };
+    d.querySelector(".s3d-x").onclick = () => d.remove();
+    d.querySelector(".s3d-save").onclick = () =>
+      cv.toBlob(async (b) => {
+        try {
+          if (S.dl) await S.dl.save({ filename: "Stair 3D.png", data: b });
+          else toast("Downloads only work when the page is opened in claude.ai");
+        } catch (e) {
+          toast("Couldn't save the picture");
+        }
+      }, "image/png");
+    paint();
+  }
+  /* 🪚 the cutting list on a new page, as a table */
+  function stairCutPage(o) {
+    const k = npsbCalc(o.sb || {});
+    const rows = [["Part", "No.", "Size (mm)", "Note"]].concat(
+      npsbCutList(k).map(([a, n, z, nt]) => [a, String(n), z, nt || ""]),
+    );
+    doc.pages[pg].objs = doc.objs;
+    const fs2 = Math.max(13, Math.round(doc.h * 0.016));
+    const objs = [
+      {
+        t: "text",
+        x: doc.w * 0.08,
+        y: doc.h * 0.08,
+        s: "Stair cutting list",
+        c: "#111111",
+        size: Math.round(fs2 * 1.5),
+        ly: "notes",
+      },
+    ];
+    const T2 = (NPSB_TYPES.find((t) => t[0] === k.c.type) || [])[1] || "Stair";
+    objs.push({
+      t: "text",
+      x: doc.w * 0.08,
+      y: doc.h * 0.08 + fs2 * 2.2,
+      s: `${T2} – ${k.n} risers of ${Math.round(k.rise)}${k.spiral ? "" : ", going " + Math.round(k.going)}, width ${k.c.width}. Check against the stair maker's setting out.`,
+      c: "#333333",
+      size: fs2,
+      ly: "notes",
+    });
+    const cols = [0.08, 0.36, 0.43, 0.66];
+    rows.forEach((r, i) =>
+      r.forEach((v, j) =>
+        objs.push({
+          t: "text",
+          x: doc.w * cols[j],
+          y: doc.h * 0.16 + i * fs2 * 1.6,
+          s: String(v).slice(0, j === 3 ? 60 : 40),
+          c: i ? "#111111" : "#7c2d12",
+          size: i ? fs2 : Math.round(fs2 * 1.05),
+          wt: i ? undefined : 800,
+          ly: "notes",
+        }),
+      ),
+    );
+    objs.forEach((ob) => Object.keys(ob).forEach((x) => ob[x] === undefined && delete ob[x]));
+    doc.pages.push({ name: "Stair cutting list", type: "Staircase design", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Cutting list put on a new page");
+  }
+  /* 📐 the stair's side view on a new page, unfolded into one run: the steps, both floors, the pitch line, handrail
+     and headroom lines, the balustrade, and the sizes – drawn to fit, not to scale (the figures are written on) */
+  function stairSide(o) {
+    const k = npsbCalc(o.sb || {});
+    const c = k.c;
+    doc.pages[pg].objs = doc.objs;
+    const Wp = doc.w,
+      Hp = doc.h;
+    const going = k.spiral
+      ? (Math.PI * c.dia * 0.6 * (c.turn / 360)) / Math.max(1, k.treads)
+      : k.going;
+    const runAll = k.treads * going + (k.landing ? c.width : 0);
+    const sc = Math.min((Wp * 0.62) / (runAll + 600), (Hp * 0.5) / (c.ftf + 2200));
+    const x0 = Wp * 0.16,
+      y0 = Hp * 0.8;
+    const col = "#111111",
+      lw = pwFor(4),
+      thin = pwFor(1.5),
+      fs = Math.max(14, Math.round(Hp * 0.018));
+    const objs = [];
+    const L = (a, b, extra) =>
+      objs.push(Object.assign({ t: "line", a, b, c: col, w: lw }, extra || {}));
+    const T = (x, y, s2, size) =>
+      objs.push({ t: "text", x, y, s: s2, c: "#222222", size: size || fs, ly: "notes" });
+    const P = (xm, ym) => [x0 + xm * sc, y0 - ym * sc];
+    /* the floors */
+    L(P(-500, 0), P(0, 0));
+    L(P(runAll, c.ftf), P(runAll + 500, c.ftf));
+    /* the steps (a landing halfway for L / U types) */
+    let x = 0,
+      y = 0;
+    const half = k.landing ? Math.ceil(k.n / 2) : -1;
+    const nosings = [];
+    for (let i = 1; i <= k.n; i++) {
+      L(P(x, y), P(x, y + k.rise));
+      y += k.rise;
+      nosings.push([x, y]);
+      if (i < k.n) {
+        const g = i === half ? c.width : going;
+        L(P(x, y), P(x + g, y));
+        x += g;
+      }
+    }
+    /* the pitch line, the handrail above it and the headroom line */
+    const a0 = [0, k.rise],
+      a1 = nosings[nosings.length - 1];
+    L(P(...a0), P(...a1), { c: "#2563eb", w: thin, ls: "dash" });
+    L(P(a0[0], a0[1] + 900), P(a1[0], a1[1] + 900), { c: "#7c2d12", w: lw });
+    L(P(a0[0], a0[1] + 2000), P(a1[0], a1[1] + 2000), { c: "#16a34a", w: thin, ls: "dash" });
+    T(...P(a1[0] * 0.55, a1[1] * 0.55 + 2050), "2000 headroom", Math.round(fs * 0.8));
+    T(...P(a1[0] * 0.55, a1[1] * 0.55 + 950), "Handrail 900–1000", Math.round(fs * 0.8));
+    /* the balustrade between the treads and the handrail */
+    if (c.bal === "glass") {
+      const panels = Math.max(1, Math.ceil(Math.hypot(a1[0] - a0[0], a1[1] - a0[1]) / 1000));
+      for (let p2 = 0; p2 < panels; p2++) {
+        const f0 = p2 / panels + 0.01,
+          f1 = (p2 + 1) / panels - 0.01;
+        const s0 = [a0[0] + (a1[0] - a0[0]) * f0, a0[1] + (a1[1] - a0[1]) * f0 + 50],
+          s1 = [a0[0] + (a1[0] - a0[0]) * f1, a0[1] + (a1[1] - a0[1]) * f1 + 50];
+        const t0 = [s0[0], s0[1] + 800],
+          t1 = [s1[0], s1[1] + 800];
+        [
+          [s0, s1],
+          [s1, t1],
+          [t1, t0],
+          [t0, s0],
+        ].forEach(([u, v]) => L(P(...u), P(...v), { c: "#0ea5e9", w: thin }));
+      }
+    } else if (c.bal === "spindles" || c.bal === "metal") {
+      nosings.forEach(([nx, ny], i) => {
+        if (i === nosings.length - 1) return;
+        [0.25, 0.75].forEach((f) => {
+          const sx = nx + going * f,
+            top = a0[1] + ((sx - a0[0]) / Math.max(1, a1[0] - a0[0])) * (a1[1] - a0[1]) + 900;
+          L(P(sx, ny), P(sx, top), { w: thin });
+        });
+      });
+    } else if (c.bal === "cable") {
+      for (let h = 150; h < 900; h += 100)
+        L(P(a0[0], a0[1] + h), P(a1[0], a1[1] + h), { w: thin, c: "#64748b" });
+    }
+    if (k.steel) L(P(-100, 0), P(a1[0] + 100, c.ftf), { w: lw * 2.2, c: "#374151" });
+    else if (!k.spiral) {
+      /* the outer string: 275 deep, its top 50 above the nosings */
+      const sl = (a1[1] - a0[1]) / Math.max(1, a1[0] - a0[0]),
+        dropS = 275 / Math.cos(Math.atan(sl));
+      const at = (xx, up) => [xx, a0[1] + (xx - a0[0]) * sl + up];
+      L(P(...at(-150, 50)), P(...at(a1[0] + 150, 50)), { c: "#92400e", w: thin });
+      L(P(...at(-150, 50 - dropS)), P(...at(a1[0] + 150, 50 - dropS)), { c: "#92400e", w: thin });
+      T(...P(...at(a1[0] * 0.3, 50 - dropS - 120)), "String 275 × 32", Math.round(fs * 0.8));
+      /* the newels: at the bottom, at the top, and at a landing */
+      const newel = (xx, yBot, yTop) =>
+        objs.push({
+          t: "rect",
+          a: P(xx, yTop),
+          b: P(xx + 90, yBot),
+          c: col,
+          w: lw,
+          fill: "#c19a6b",
+          fa: 0.9,
+        });
+      newel(-120, 0, a0[1] + 900 + 150);
+      newel(a1[0] - 30, c.ftf - 300, a1[1] + 900 + 150);
+      if (k.landing) {
+        const lx = nosings[Math.ceil(k.n / 2) - 1];
+        if (lx) newel(lx[0] + c.width - 90, 0, lx[1] + 900 + 150);
+      }
+      T(...P(-120, a0[1] + 900 + 250), "Newel", Math.round(fs * 0.8));
+    }
+    /* the sizes */
+    objs.push({
+      t: "dim",
+      a: P(-350, 0),
+      b: P(-350, c.ftf),
+      s: "Floor to floor " + c.ftf,
+      c: "#e11d2a",
+      w: pwFor(2),
+      size: fs,
+    });
+    objs.push({
+      t: "dim",
+      a: P(0, -250),
+      b: P(runAll, -250),
+      s: (k.spiral ? "Unfolded " : "Going ") + Math.round(runAll) + " mm",
+      c: "#e11d2a",
+      w: pwFor(2),
+      size: fs,
+    });
+    const T2 = (NPSB_TYPES.find((t) => t[0] === c.type) || [])[1] || "Stair";
+    T(
+      x0,
+      Hp * 0.08,
+      `${T2} – ${k.n} risers of ${Math.round(k.rise)}${k.spiral ? "" : `, going ${Math.round(k.going)}, ${Math.round(k.pitch)}°`}`,
+      Math.round(fs * 1.4),
+    );
+    T(
+      x0,
+      Hp * 0.08 + fs * 2,
+      `Treads: ${(NPSB_TREADS.find((t) => t[0] === c.tread) || [])[1]}. Balustrade: ${(NPSB_BAL.find((t) => t[0] === c.bal) || [])[1]}. Handrail: ${(NPSB_RAIL.find((t) => t[0] === c.rail) || [])[1]}.`,
+    );
+    T(
+      x0,
+      Hp * 0.08 + fs * 3.4,
+      k.ck.filter((x2) => x2.ok === false).length
+        ? "⚠ " +
+            k.ck
+              .filter((x2) => x2.ok === false)
+              .map((x2) => x2.t)
+              .join("; ")
+        : "✓ Within Approved Document K for the use picked (check with building control).",
+    );
+    T(
+      x0,
+      Hp * 0.93,
+      (k.landing || k.spiral ? "Shown unfolded into one run. " : "") +
+        "Not to scale – sizes written on. The stair maker confirms the design.",
+      Math.round(fs * 0.8),
+    );
+    objs.forEach((ob) => (ob.ly = ob.ly || "elev"));
+    doc.pages.push({ name: "Stair side view", type: "Stair side view / section", objs });
+    dirty = true;
+    goPage(doc.pages.length - 1);
+    toast("Stair side view drawn on a new page");
+  }
   /* door & window survey items for this job, to check sizes against */
   const jobClient = () => {
     const s = doc.site || opts.site;
@@ -6462,8 +7187,8 @@ async function openNotePage(opts) {
         <div class="dimbtns" style="flex-wrap:wrap"><button type="button" class="btn sc-num">🔢 Number them</button><button type="button" class="btn sc-put">📝 Put on drawing</button>${ownerMode() ? `<button type="button" class="btn primary sc-dws">🪟 Start a door &amp; window survey from these</button>` : ""}</div>`
              : `<div class="nothing">No doors or windows on this page yet.</div>`
            : bms.length
-             ? `<div class="who">Pick the section from the engineer's calcs. Overall length = clear span + bearing at each end.</div><div class="tablewrap"><table><thead><tr><th>No.</th><th>Section</th><th class="num">Span</th><th class="num">Bearing</th><th class="num">Length</th><th>Padstones</th><th class="num">kg</th></tr></thead><tbody>${bms.map((r, i) => `<tr><td><b>${esc(r.mark || "–")}</b></td><td><select class="sc-sec" data-i="${i}" style="min-width:150px"><option value="">Choose…</option>${BEAM_SECS.map(([s]) => `<option${s === r.sec ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></td><td class="num">${r.span}</td><td class="num"><input class="sc-bear" data-i="${i}" inputmode="numeric" value="${r.bear}" style="width:64px"></td><td class="num"><b>${r.len}</b></td><td><select class="sc-pad" data-i="${i}">${BEAM_PADS.map((p) => `<option${p === r.pad ? " selected" : ""}>${esc(p)}</option>`).join("")}</select></td><td class="num">${r.kg ? Math.round(r.kg) : "–"}</td></tr>`).join("")}<tr><td colspan="6"><b>Total steel</b></td><td class="num"><b>${Math.round(bms.reduce((a, r) => a + r.kg, 0))}</b></td></tr></tbody></table></div>
-        <div class="dimbtns" style="flex-wrap:wrap"><button type="button" class="btn sc-num">🔢 Number them</button><button type="button" class="btn sc-put">📝 Put on drawing</button><button type="button" class="btn sc-copy">📋 Copy</button></div>`
+             ? `<div class="who">Pick the section from the engineer's calcs. Overall length = clear span + bearing at each end.</div><div class="tablewrap"><table><thead><tr><th>No.</th><th>Section</th><th class="num">Span</th><th class="num">Bearing</th><th class="num">Length</th><th>Padstones</th><th class="num">kg</th><th>Where it's got to</th><th></th></tr></thead><tbody>${bms.map((r, i) => `<tr><td><b>${esc(r.mark || "–")}</b></td><td><select class="sc-sec" data-i="${i}" style="min-width:150px"><option value="">Choose…</option>${BEAM_SECS.map(([s]) => `<option${s === r.sec ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></td><td class="num">${r.span}</td><td class="num"><input class="sc-bear" data-i="${i}" inputmode="numeric" value="${r.bear}" style="width:64px"></td><td class="num"><b>${r.len}</b></td><td><select class="sc-pad" data-i="${i}">${BEAM_PADS.map((p) => `<option${p === r.pad ? " selected" : ""}>${esc(p)}</option>`).join("")}</select></td><td class="num">${r.kg ? Math.round(r.kg) : "–"}</td><td>${esc(npbStage(r.o.bc))}</td><td><button type="button" class="btn sc-sheet" data-i="${i}">📋 Sheet</button></td></tr>`).join("")}<tr><td colspan="6"><b>Total steel</b></td><td class="num"><b>${Math.round(bms.reduce((a, r) => a + r.kg, 0))}</b></td><td colspan="2"></td></tr></tbody></table></div>
+        <div class="dimbtns" style="flex-wrap:wrap"><button type="button" class="btn sc-num">🔢 Number them</button><button type="button" class="btn sc-put">📝 Put on drawing</button><button type="button" class="btn sc-copy">📋 Copy</button><button type="button" class="btn primary sc-order">📦 Order all the steel</button></div>`
              : `<div class="nothing">No steel beams yet. Use 🔩 Steel beam in 🏗 Build, then draw it from bearing to bearing.</div>`
        }
        <div class="dimbtns"><button type="button" class="btn primary sc-x">Close</button></div></div>`;
@@ -6486,19 +7211,35 @@ async function openNotePage(opts) {
           (s.onchange = () => {
             const o = bms[+s.dataset.i].o;
             snap();
-            if (s.classList.contains("sc-sec")) o.sec = s.value;
-            else o.pad = s.value;
+            if (s.classList.contains("sc-sec")) {
+              o.sec = s.value;
+              [o.bt, o.bz] = npBeamOf(s.value);
+              if (!o.bt) delete o.bt;
+            } else o.pad = s.value;
             dirty = true;
             draw();
             render();
           }),
       );
+      d.querySelectorAll(".sc-sheet").forEach(
+        (b) =>
+          (b.onclick = () => {
+            d.remove();
+            beamSheet(bms[+b.dataset.i].o);
+          }),
+      );
+      {
+        const ob = d.querySelector(".sc-order");
+        if (ob) ob.onclick = () => beamOrder(bms);
+      }
       d.querySelectorAll(".sc-bear").forEach(
         (s) =>
           (s.onchange = () => {
             const o = bms[+s.dataset.i].o;
             snap();
             o.bear = Math.max(0, +s.value || 0);
+            delete o.bearA;
+            delete o.bearB;
             dirty = true;
             render();
           }),
@@ -6948,7 +7689,7 @@ async function openNotePage(opts) {
   }
   /* every storey (the plan here at the bottom), the box round the building and the roof */
   function elevBuild() {
-    const g = elevModel(doc.objs);
+    const g = elevModel(doc.objs.filter((o) => o.st !== "demo"));
     if (!g) return null;
     const st = elevSet();
     const FL = 300; /* the floor zone between storeys */
@@ -7039,16 +7780,51 @@ async function openNotePage(opts) {
     ["Left side", [-1, 0]],
     ["Right side", [1, 0]],
   ];
-  function elevAll() {
+  /* elevations stay in step with their plan: each elevation page remembers the plan page it came from (auto.from)
+     and what that plan looked like (auto.sig); opening it, or making a PDF, after the plan has changed draws it again
+     from the plan – anything added on the elevation by hand (not marked au) is kept */
+  const elevSig = (i) => {
+    const P = doc.pages[i];
+    if (!P) return "";
+    const st = doc.elevSet || {};
+    const up =
+      st.upper && st.upper !== "same" && doc.pages[+st.upper] ? doc.pages[+st.upper].objs : null;
+    const t = JSON.stringify([i === pg ? doc.objs : P.objs, st, up, doc.scale]);
+    let h = 5381;
+    for (let k = 0; k < t.length; k++) h = ((h << 5) + h + t.charCodeAt(k)) | 0;
+    return h.toString(36) + ":" + t.length;
+  };
+  function elevRefresh(i) {
+    const P = doc.pages[i];
+    if (!P || !P.auto) return false;
+    const j = doc.pages.findIndex((x) => x.pid && x.pid === P.auto.from);
+    if (j < 0 || elevSig(j) === P.auto.sig) return false;
+    doc.pages[pg].objs = doc.objs;
+    const back = pg;
+    pg = j;
+    doc.objs = doc.pages[j].objs;
+    try {
+      elevAll(true);
+    } finally {
+      pg = back;
+      doc.objs = doc.pages[pg].objs;
+    }
+    return true;
+  }
+  function elevAll(silent) {
+    const say = silent ? () => {} : toast;
     if (!doc.scale) {
-      toast("Set a scale in 📐 Paper first");
+      say("Set a scale in 📐 Paper first");
       return;
     }
     const B = elevBuild();
     if (!B) {
-      toast("Draw the walls first (Walls & structure), with the doors and windows in them");
+      say("Draw the walls first (Walls & structure), with the doors and windows in them");
       return;
     }
+    const pid = doc.pages[pg].pid || (doc.pages[pg].pid = "p" + Date.now().toString(36));
+    const sig = elevSig(pg);
+    let firstDone = -1;
     const st = B.st;
     const U = toUnits,
       col = "#111111",
@@ -7339,17 +8115,33 @@ async function openNotePage(opts) {
         ly: "notes",
       });
       objs.forEach((ob) => Object.keys(ob).forEach((k) => ob[k] === undefined && delete ob[k]));
-      doc.pages.push({ name: name + " elevation", type: "Elevation", objs });
+      objs.forEach((ob) => (ob.au = 1));
+      const ex = doc.pages.findIndex((x) => x.auto && x.auto.from === pid && x.auto.side === name);
+      if (ex >= 0) {
+        /* drawn again in its own page, keeping what was added by hand */
+        doc.pages[ex].objs = objs.concat((doc.pages[ex].objs || []).filter((o) => !o.au));
+        doc.pages[ex].auto.sig = sig;
+        if (firstDone < 0) firstDone = ex;
+      } else {
+        doc.pages.push({
+          name: name + " elevation",
+          type: "Elevation",
+          objs,
+          auto: { from: pid, side: name, sig },
+        });
+        if (firstDone < 0) firstDone = doc.pages.length - 1;
+      }
       made++;
     });
     if (!made) {
-      toast("Couldn't find walls to draw elevations from");
+      say("Couldn't find walls to draw elevations from");
       return;
     }
     dirty = true;
-    goPage(first);
+    if (silent) return;
+    goPage(firstDone >= 0 ? firstDone : first);
     toast(
-      `${made} elevations drawn, one a page. Change the roof, storeys or finish in 🏘️ and draw them again.`,
+      `${made} elevations drawn, one a page. They keep up with the plan: change the plan and they redraw when you open them.`,
     );
   }
   function elevMenu() {
@@ -8114,6 +8906,8 @@ async function openNotePage(opts) {
             d.querySelector(".nm-x").onclick = () => d.remove();
           }
         } else if (a === "sched") schedDlg();
+        else if (a === "stairb") stairBuilder(null);
+        else if (a === "secbu") buDlg(null);
         else if (a === "grid") gridDlg();
         else if (a === "elev") elevFromWall();
         else if (a === "elev3d") elevMenu();
@@ -8164,19 +8958,67 @@ async function openNotePage(opts) {
   }
 
   /* type an exact length and angle straight after drawing a line or wall */
-  let lenObj = null;
+  let lenObj = null,
+    lbField = null,
+    lbFresh = false;
+  /* the length bar small (just a tag) and its extras (which way, number pad) shown – remembered when the browser can */
+  const lbPref = (k) => {
+    try {
+      return localStorage.getItem(k) === "1";
+    } catch (e) {
+      return false;
+    }
+  };
+  let lbSmall = true,
+    lbBigFor = null,
+    lbMore = lbPref("np.lbmore");
+  function lbApply() {
+    lb.classList.toggle("nlb-small", lbSmall);
+    lb.querySelector(".nlb-extra").hidden = !lbMore;
+    lb.querySelector(".nlb-morebtn").setAttribute("aria-expanded", String(lbMore));
+    const box = lb.classList.contains("nlb-box"),
+      L = lb.querySelector(".nlb-l").value,
+      A = lb.querySelector(".nlb-a").value;
+    const sum = lb.querySelector(".nlb-sum");
+    sum.hidden = !lbSmall;
+    sum.textContent = box ? `📏 ${L} × ${A} mm` : `📏 ${L} mm · ${A}°`;
+  }
+  const lbKeep = (k, v) => {
+    try {
+      localStorage.setItem(k, v ? "1" : "0");
+    } catch (e) {}
+  };
   const lb = q(".np-lenbar");
-  function showLenBar(o) {
+  function showLenBar(o, open) {
     if (!doc.scale || !o || !o.a || !o.b) {
       lb.hidden = true;
       return;
     }
+    if (open) lbBigFor = o;
+    lbSmall = lbBigFor !== o;
     lenObj = o;
+    const box = o.t === "rect";
+    lb.classList.toggle("nlb-box", box);
+    lb.querySelector(".nlb-ll").textContent = box ? "Width" : "Length";
+    lb.querySelector(".nlb-al").textContent = box ? "× Depth" : "Angle";
+    lb.querySelector(".nlb-au").textContent = box ? "mm" : "°";
+    lb.querySelector(".nlb-dirs").hidden = box;
+    lb.querySelector(".nlb-next").hidden = box;
+    lbField = lb.querySelector(".nlb-l");
+    lbFresh = true;
+    if (box) {
+      lb.querySelector(".nlb-l").value = Math.round(realMm(Math.abs(o.b[0] - o.a[0])));
+      lb.querySelector(".nlb-a").value = Math.round(realMm(Math.abs(o.b[1] - o.a[1])));
+      lbApply();
+      lb.hidden = false;
+      return;
+    }
     const L = realMm(lenOf(o.a, o.b));
     let an = (Math.atan2(-(o.b[1] - o.a[1]), o.b[0] - o.a[0]) * 180) / Math.PI;
     if (an < 0) an += 360;
     lb.querySelector(".nlb-l").value = Math.round(L);
     lb.querySelector(".nlb-a").value = Math.round(an * 10) / 10;
+    lbApply();
     lb.hidden = false;
   }
   lb.querySelector(".nlb-x").onclick = () => {
@@ -8256,7 +9098,7 @@ async function openNotePage(opts) {
       tb = (e.b[0] - w.x.a[0]) * w.u[0] + (e.b[1] - w.x.a[1]) * w.u[1];
     return { ta, tb, t0: Math.min(ta, tb), t1: Math.max(ta, tb) };
   };
-  function opBar(o, force) {
+  function opBar(o, force, open) {
     if (drag) return;
     const bar = opbEl(),
       st = opSt(),
@@ -8301,6 +9143,12 @@ async function openNotePage(opts) {
         : "Not to scale – measure something you know to set it";
       bar.querySelector(".nob-fix").hidden = !(o.mmpp && Math.abs(off) >= 0.01);
       lb.hidden = true;
+      nobApply(
+        o,
+        open,
+        "🖼 Imported drawing" +
+          (o.mmpp ? (Math.abs(off) < 0.01 ? " · to scale" : " · ⚠ not to scale") : ""),
+      );
       bar.hidden = false;
       return;
     }
@@ -8346,8 +9194,36 @@ async function openNotePage(opts) {
         "· " + npFmtLen(Math.round(realMm(w2.L - A.t1))) + " to the other end";
     }
     lb.hidden = true;
+    nobApply(
+      o,
+      open,
+      (kind === "open" ? "🚪 " : kind === "win" ? "🪟 " : "📐 ") +
+        Math.round(W) +
+        (kind === "box" ? " × " + Math.round(D) : "") +
+        " mm",
+    );
     bar.hidden = false;
   }
+  /* the size bar small (just its size, tap to open) unless it has been opened for this thing */
+  function nobApply(o, open, txt) {
+    const st = opSt(),
+      bar = opbEl();
+    if (open) st.bigFor = o;
+    const small = st.bigFor !== o;
+    bar.classList.toggle("nob-small", small);
+    const sb = bar.querySelector(".nob-sum");
+    sb.hidden = !small;
+    sb.textContent = txt;
+  }
+  opbEl().querySelector(".nob-sum").onclick = () => {
+    const st = opSt();
+    if (st.o) opBar(st.o, true, true);
+  };
+  opbEl().querySelector(".nob-min").onclick = () => {
+    const st = opSt();
+    st.bigFor = null;
+    if (st.o) nobApply(st.o, false, opbEl().querySelector(".nob-sum").textContent);
+  };
   opbEl().querySelector(".nob-x").onclick = () => {
     opbEl().hidden = true;
     opSt().o = null;
@@ -8517,11 +9393,112 @@ async function openNotePage(opts) {
     const L = parseFloat(lb.querySelector(".nlb-l").value),
       A = parseFloat(lb.querySelector(".nlb-a").value);
     if (!(L > 0)) return;
+    if (o.t === "rect") {
+      if (!(A > 0)) return;
+      snap();
+      const sx = o.b[0] < o.a[0] ? -1 : 1,
+        sy = o.b[1] < o.a[1] ? -1 : 1;
+      o.b = [o.a[0] + sx * toUnits(L), o.a[1] + sy * toUnits(A)];
+      dirty = true;
+      draw();
+      lb.hidden = true;
+      toast("Box set to " + npFmtLen(L) + " × " + npFmtLen(A));
+      return;
+    }
     setLen(o, L, A);
     draw();
     lb.hidden = true;
     toast("Set to " + npFmtLen(L));
   };
+  /* which way: right, up, left, down */
+  lb.querySelectorAll(".nlb-dir").forEach(
+    (b) =>
+      (b.onclick = () => {
+        lb.querySelector(".nlb-a").value = b.dataset.a;
+        const o = lenObj;
+        const L = parseFloat(lb.querySelector(".nlb-l").value);
+        if (o && doc.objs.indexOf(o) >= 0 && L > 0) {
+          setLen(o, L, +b.dataset.a);
+          draw();
+        }
+      }),
+  );
+  /* the number pad: big keys for a finger, typing into the box last tapped (the length to start with) */
+  lb.querySelectorAll(".nlb-l,.nlb-a").forEach((x) =>
+    x.addEventListener("focus", () => {
+      lbField = x;
+      lbFresh = false;
+    }),
+  );
+  lb.querySelector(".nlb-min").onclick = () => {
+    lbSmall = true;
+    lbBigFor = null;
+    lbApply();
+  };
+  lb.querySelector(".nlb-sum").onclick = () => {
+    lbSmall = false;
+    lbBigFor = lenObj;
+    lbApply();
+  };
+  lb.querySelector(".nlb-morebtn").onclick = () => {
+    lbMore = !lbMore;
+    lbKeep("np.lbmore", lbMore);
+    lbApply();
+  };
+  lb.querySelectorAll(".nlb-l,.nlb-a").forEach((x) => x.addEventListener("input", lbApply));
+  lb.querySelector(".nlb-padb").onclick = () => {
+    const pad = lb.querySelector(".nlb-pad");
+    pad.hidden = !pad.hidden;
+    lb.querySelector(".nlb-padb").setAttribute("aria-pressed", String(!pad.hidden));
+    try {
+      localStorage.setItem("np.pad", pad.hidden ? "0" : "1");
+    } catch (e) {}
+  };
+  {
+    /* shut to start with (James, Nov 2026: "I don't always need that"), unless it was left open last time */
+    let on = false;
+    try {
+      on = localStorage.getItem("np.pad") === "1";
+    } catch (e) {}
+    if (on) {
+      lb.querySelector(".nlb-pad").hidden = false;
+      lb.querySelector(".nlb-padb").setAttribute("aria-pressed", "true");
+    }
+  }
+  const lbKey = (k) => {
+    const f = lbField || lb.querySelector(".nlb-l");
+    if (lbFresh) {
+      f.value = "";
+      lbFresh = false;
+    }
+    if (k === "⌫") f.value = f.value.slice(0, -1);
+    else if (k !== "." || !f.value.includes(".")) f.value += k;
+  };
+  lb.querySelectorAll(".nlb-k").forEach((b) => (b.onclick = () => lbKey(b.dataset.k)));
+  /* on a keyboard: just type the number after drawing, Enter to set */
+  ov.addEventListener(
+    "keydown",
+    (e) => {
+      if (lb.hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT"))
+        return;
+      if (/^[0-9.]$/.test(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (lbSmall) {
+          lbSmall = false;
+          lbBigFor = lenObj;
+          lbApply();
+        }
+        const f = lb.querySelector(".nlb-l");
+        f.value = e.key;
+        lbFresh = false;
+        f.focus();
+      }
+    },
+    true,
+  );
   /* Next ➜: set this one, then start another of the same kind from its end (type a whole room from a laser measure) */
   lb.querySelector(".nlb-next").onclick = () => {
     const o = lenObj;
@@ -8565,6 +9542,7 @@ async function openNotePage(opts) {
         o.cc = lastStud.cc || 400;
       }
     }
+    if (npIsWall(o) && doc.pages[pg].wallSt) o.st = doc.pages[pg].wallSt;
     doc.objs.push(o);
     if (npIsWall(o)) {
       weldWall(o);
@@ -8579,6 +9557,7 @@ async function openNotePage(opts) {
     chainUI();
     draw();
     toast("Closed up");
+    setTimeout(() => findRooms(true), 60);
   };
   const isSegObj = (o) =>
     o &&
@@ -8698,6 +9677,24 @@ async function openNotePage(opts) {
     draw();
     toast("Extended " + (doc.scale ? npFmtLen(realMm(best)) : ""));
   }
+  /* walls joined end to end with this wall (or lines with this line): [index, its end, this one's end, where its
+     end was, where its far end is] – they stretch with it when it is pushed or pulled, so the corners stay joined */
+  function joinedEnds(i) {
+    const o = doc.objs[i];
+    if (!isSegObj(o) || o.bend) return [];
+    const out = [];
+    doc.objs.forEach((x, j) => {
+      if (j === i || !isSegObj(x) || x.bend || x.lk || (doc.layers && lyOff(x))) return;
+      if (!!npIsWall(o) !== !!npIsWall(x)) return;
+      ["a", "b"].forEach((E) =>
+        ["a", "b"].forEach((M) => {
+          if (lenOf(x[E], o[M]) < 0.75)
+            out.push([j, E, M, x[E].slice(), x[E === "a" ? "b" : "a"].slice()]);
+        }),
+      );
+    });
+    return out;
+  }
   function cornerJoin(i, p, j, q2) {
     const A = doc.objs[i],
       B = doc.objs[j];
@@ -8732,6 +9729,47 @@ async function openNotePage(opts) {
         orientCavity(o);
       }
     });
+    const ck = q(".np-ck").value;
+    if (ck && A.t === "line" && B.t === "line" && !A.bend && !B.bend) {
+      const v = parseFloat(q(".np-cks").value) || 0;
+      const d0 = doc.scale ? toUnits(v) : v;
+      const endAt = (o) => (lenOf(o.a, P) < lenOf(o.b, P) ? "a" : "b");
+      const eA = endAt(A),
+        eB = endAt(B);
+      const far = (o, e) => o[e === "a" ? "b" : "a"];
+      const LA = lenOf(P, far(A, eA)),
+        LB = lenOf(P, far(B, eB));
+      const uA = [(far(A, eA)[0] - P[0]) / (LA || 1), (far(A, eA)[1] - P[1]) / (LA || 1)],
+        uB = [(far(B, eB)[0] - P[0]) / (LB || 1), (far(B, eB)[1] - P[1]) / (LB || 1)];
+      const th = Math.acos(Math.max(-1, Math.min(1, uA[0] * uB[0] + uA[1] * uB[1])));
+      /* how far back along each line the round / cut starts */
+      const t = ck === "r" ? d0 / Math.tan(th / 2) : d0;
+      if (!(d0 > 0) || !(th > 0.05) || th > Math.PI - 0.05 || t >= LA * 0.98 || t >= LB * 0.98) {
+        dirty = true;
+        draw();
+        toast(d0 > 0 ? "Corner made – too small to round or cut that much" : "Corner made");
+        return;
+      }
+      const PA = [P[0] + uA[0] * t, P[1] + uA[1] * t],
+        PB = [P[0] + uB[0] * t, P[1] + uB[1] * t];
+      A[eA] = PA;
+      B[eB] = PB;
+      const j = { t: "line", a: PA.slice(), b: PB.slice(), c: A.c, w: A.w };
+      ["ls", "ly"].forEach((k) => A[k] != null && (j[k] = A[k]));
+      if (ck === "r") {
+        /* a curve tangent to both lines, bowing out to the old corner */
+        const dx = PB[0] - PA[0],
+          dy = PB[1] - PA[1],
+          L = Math.hypot(dx, dy) || 1,
+          m = [(PA[0] + PB[0]) / 2, (PA[1] + PB[1]) / 2];
+        j.bend = ((P[0] - m[0]) * (-dy / L) + (P[1] - m[1]) * (dx / L)) / L || 0.0001;
+      }
+      doc.objs.splice(Math.max(doc.objs.indexOf(A), doc.objs.indexOf(B)) + 1, 0, j);
+      dirty = true;
+      draw();
+      toast(ck === "r" ? "Corner rounded" : "Corner cut across");
+      return;
+    }
     dirty = true;
     draw();
     toast("Corner made");
@@ -8989,8 +10027,61 @@ async function openNotePage(opts) {
       dimTk ? { tk: 1 } : {},
       extra || {},
     );
+  /* pull a measurement out to where the finger is, square to what it measures (in 50 mm steps with snap on) */
+  function dimPullTo(o, p) {
+    const n = dimN(o),
+      m = [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2];
+    let f = (p[0] - m[0]) * n[0] + (p[1] - m[1]) * n[1];
+    if (snapOn && doc.scale) {
+      const st = toUnits(50);
+      f = Math.round(f / st) * st;
+    }
+    if (Math.abs(f) < 3 / s) delete o.off;
+    else o.off = f;
+    dirty = true;
+  }
+  /* where it is now is where it stays; then its size */
+  function dimDone(o) {
+    dimPull = null;
+    chainUI();
+    draw();
+    if (doc.objs.indexOf(o) < 0) return;
+    const pre = doc.scale ? String(Math.round(realMm(lenOf(o.a, o.b)) / 5) * 5) : "";
+    askMeasure(ov, pre, (v) => {
+      if (v) o.s = v;
+      if (doc.scale && v === pre + " mm") o.auto = true;
+      else delete o.auto;
+      dirty = true;
+      draw();
+    });
+  }
   function chainUI() {
     const cb = q(".np-chainbar");
+    q(".np-ckbox").hidden = tool !== "corner";
+    if (dimPull && tool === "dim") {
+      q(".np-pvbox").hidden = true;
+      q(".np-pwk").hidden = true;
+      q(".np-pwclose").hidden = true;
+      q(".np-pwlen").hidden = true;
+      cb.hidden = false;
+      q(".np-chaintxt").textContent =
+        "Now pull the measurement away from what it measures, then let go";
+      q(".np-chainok").hidden = false;
+      q(".np-chainok").textContent = "✓ Leave it on the line";
+      return;
+    }
+    if (tool === "corner") {
+      q(".np-pvbox").hidden = true;
+      q(".np-pwk").hidden = true;
+      q(".np-pwclose").hidden = true;
+      q(".np-pwlen").hidden = true;
+      q(".np-chainok").hidden = true;
+      q(".np-cks").hidden = q(".np-cku").hidden = !q(".np-ck").value;
+      q(".np-cku").textContent = doc.scale ? "mm" : "on paper";
+      cb.hidden = false;
+      q(".np-chaintxt").textContent = "Tap one line or wall, then the other";
+      return;
+    }
     {
       const pv = tool === "pave" || tool === "pstrip";
       q(".np-pvbox").hidden = !pv;
@@ -9054,7 +10145,13 @@ async function openNotePage(opts) {
       q(".np-chainok").hidden = true;
     } else cb.hidden = true;
   }
+  q(".np-ck").onchange = () => chainUI();
+  q(".np-findrooms").onclick = () => findRooms(false);
   q(".np-chainx").onclick = () => {
+    if (dimPull) {
+      dimDone(dimPull);
+      return;
+    }
     chain = [];
     chainUI();
     draw();
@@ -9116,6 +10213,12 @@ async function openNotePage(opts) {
     draw();
   };
   q(".np-chainok").onclick = () => {
+    if (dimPull) {
+      const o = dimPull;
+      delete o.off;
+      dimDone(o);
+      return;
+    }
     if (tool === "pave" || tool === "pstrip") {
       finishPave();
       return;
@@ -9124,6 +10227,7 @@ async function openNotePage(opts) {
       chain = [];
       chainUI();
       draw();
+      setTimeout(() => findRooms(true), 60);
       return;
     }
     if (tool === "room") {
@@ -9555,9 +10659,28 @@ async function openNotePage(opts) {
         const tx = fb.querySelector(".nftx");
         if (document.activeElement !== tx) tx.value = labk ? o.lab || "" : o.s || "";
         fb.querySelector(".nftxs").value = Math.round(o.size || 20);
+        fb.querySelector(".nftxsty").hidden = o.t !== "text";
+        if (o.t === "text")
+          fb.querySelectorAll(".nftst").forEach((b) => {
+            const k = b.dataset.k;
+            if (k === "sz") return;
+            b.setAttribute(
+              "aria-pressed",
+              String(
+                k === "b"
+                  ? (o.wt || 600) >= 700
+                  : k === "i"
+                    ? !!o.it
+                    : (o.al || "l") === b.dataset.v,
+              ),
+            );
+          });
       }
       fb.querySelector(".nfly").value = npLayerOf(o);
       fb.querySelector(".nfa-lock").textContent = o.lk ? "🔓 Unlock" : "🔒 Lock";
+      fb.querySelector(".nfa-fix").hidden = !isSegObj(o) || !!o.bend;
+      fb.querySelector(".nfa-fix").setAttribute("aria-pressed", String(!!o.fix));
+      fb.querySelector(".nfa-fix").textContent = o.fix ? "📏 Length kept ✓" : "📏 Keep length";
       {
         const nd = fb.querySelector(".nfa-dim");
         nd.hidden = ["text", "stroke", "dim", "ang", "arrow"].includes(o.t) || vpOf(o);
@@ -9606,6 +10729,34 @@ async function openNotePage(opts) {
             if (document.activeElement !== el) el.value = v;
           });
         }
+        fb.querySelector(".nfstrow").hidden = !npIsWall(o);
+        fb.querySelector(".nfworow").hidden = !(o.t === "shape" && o.k === "window");
+        {
+          /* windows and doors: pick which opening in the client's survey this is */
+          const sv = isOpening(o) ? surveyItems() : [];
+          fb.querySelector(".nfsvrow").hidden = !sv.length;
+          if (sv.length)
+            fb.querySelector(".nfsv").innerHTML =
+              `<option value="">Choose W1, D1… from the survey</option>` +
+              sv
+                .map((x) => {
+                  let z = "";
+                  try {
+                    const q = DWS.sizeOf(x);
+                    z = q.W + " × " + q.H;
+                  } catch (e) {}
+                  return `<option value="${esc(x.ref)}"${x.ref === o.mark ? " selected" : ""}>${esc([x.ref, x.name, z, x.loc].filter(Boolean).join(" · "))}</option>`;
+                })
+                .join("");
+        }
+        if (o.t === "shape" && o.k === "window")
+          fb.querySelectorAll(".nfwo button").forEach((b) =>
+            b.setAttribute("aria-pressed", String((o.wo || "") === b.dataset.v)),
+          );
+        if (npIsWall(o))
+          fb.querySelectorAll(".nfst button").forEach((b) =>
+            b.setAttribute("aria-pressed", String((o.st || "") === b.dataset.v)),
+          );
         const fk = o.t === "shape" && o.k === "fdnsec";
         fb.querySelector(".nffdrow").hidden = !fk;
         if (fk) {
@@ -9652,6 +10803,8 @@ async function openNotePage(opts) {
         }
       }
     }
+    steelFill(o);
+    ssFill(o);
     {
       const sw = fb.querySelector(".nfstudw");
       sw.hidden = !isStudW(o);
@@ -9719,6 +10872,34 @@ async function openNotePage(opts) {
                   ? "Pick the truss type. Drag the box to set span and height (pitch)."
                   : "") +
           (doc.scale ? "" : " Set a scale in 📐 Paper for real timber sizes.");
+      }
+    }
+    {
+      const bx = fb.querySelector(".nfsecbu");
+      const isBu = o.t === "shape" && o.k === "secbu";
+      bx.hidden = !isBu;
+      if (isBu) {
+        fb.querySelector(".nfbu-info").textContent =
+          `${o.bc ? o.bc + " – " : ""}${o.bn || "Build-up"}: ${(o.bu || []).length} layers, ${Math.round(npsuTotal(o.bu))} mm overall`;
+        fb.querySelector(".nfbu-lab").setAttribute("aria-pressed", o.lab ? "true" : "false");
+        fb.querySelector(".nfbu-ta").textContent = npsuAcross(o)
+          ? "🪵 Timbers cut across (tap for running along)"
+          : "🪵 Timbers running along (tap for cut across)";
+        const eo = fb.querySelector(".nfbu-eo");
+        if (document.activeElement !== eo) eo.value = o.eo == null ? 300 : o.eo;
+        const wallish = /^EW/.test(o.bc || "") || /wall/i.test(o.bn || "");
+        fb.querySelector(".nfbu-fdf").hidden = !wallish;
+        if (wallish) {
+          fb.querySelector(".nfbu-fd").value = o.fd || "trench";
+          [
+            ["fdd", 1000],
+            ["fdw", 600],
+            ["gl", 150],
+          ].forEach(([f2, d2]) => {
+            const el = fb.querySelector(".nfbu-" + f2);
+            if (document.activeElement !== el) el.value = o[f2] == null ? d2 : o[f2];
+          });
+        }
       }
     }
     {
@@ -9807,13 +10988,136 @@ async function openNotePage(opts) {
         ? "The arrows move only the " + (fineWhat === "a" ? "start" : "end") + " point. "
         : "") + "Hold an arrow to keep moving. Pinch to zoom in for finer work.";
   }
+  /* 🔩 a steel beam detail's Properties: type and size, where it is, fire protection, padstone and bearing */
+  const NPSS_TYPES = ["UB", "UC", "RSJ", "PFC", "2PFC"];
+  function ssFill(o) {
+    const w = fb.querySelector(".nfsecst");
+    const on = o.t === "shape" && (o.k === "secsteel" || o.k === "secbear");
+    w.hidden = !on;
+    if (!on) return;
+    const opt = (list, v) =>
+      list
+        .map(
+          ([k2, l]) =>
+            `<option value="${esc(k2)}"${k2 === v ? " selected" : ""}>${esc(l)}</option>`,
+        )
+        .join("");
+    const bt = o.bt || "UB",
+      T = NP_BEAM_TYPES.find((x) => x[0] === bt) || NP_BEAM_TYPES[0];
+    fb.querySelector(".nfss-t").innerHTML = opt(
+      NP_BEAM_TYPES.filter((x) => NPSS_TYPES.includes(x[0])).map((x) => [x[0], x[1]]),
+      bt,
+    );
+    fb.querySelector(".nfss-s").innerHTML = opt(
+      T[2].map((x) => [x[0], x[0]]),
+      o.bz || "203×133×25",
+    );
+    const bear = o.k === "secbear";
+    fb.querySelector(".nfss-svrow").hidden = bear;
+    fb.querySelector(".nfss-padrow").hidden = !bear;
+    fb.querySelector(".nfss-brf").hidden = !bear;
+    fb.querySelector(".nfss-sv").innerHTML = opt(NPSS_SETS, o.sv || "plate");
+    fb.querySelector(".nfss-fp").innerHTML = opt(NPSS_FIRE, o.fp || "board");
+    fb.querySelector(".nfss-p").innerHTML = opt(
+      BEAM_PADS.map((x) => [x, x]),
+      o.pad || "Concrete 440×215×100",
+    );
+    const br = fb.querySelector(".nfss-br");
+    if (document.activeElement !== br) br.value = o.br == null ? 150 : o.br;
+    fb.querySelector(".nfss-lab").setAttribute("aria-pressed", o.lab ? "true" : "false");
+    fb.querySelector(".nfss-info").textContent =
+      npssName(o) +
+      (doc.scale ? " · drawn at real size" : " · set a scale in 📐 Paper to draw it at real size") +
+      ". Sizes from the engineer's calcs.";
+  }
+  /* a steel detail's box made its real size (when the page has a scale), about its centre */
+  const ssToSize = (o) => {
+    if (!doc.scale || !o.a || !o.b) return;
+    const E = npssExt(o),
+      c = [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2],
+      hw = toUnits(E[2] - E[0]) / 2,
+      hh = toUnits(E[3] - E[1]) / 2;
+    o.a = [c[0] - hw, c[1] - hh];
+    o.b = [c[0] + hw, c[1] + hh];
+  };
+  /* a beam's type and size, a post's type and size (steel-parts.js) */
+  function steelFill(o) {
+    const w = fb.querySelector(".nfsteel");
+    const beam = isBeam(o),
+      col = o.t === "shape" && o.k === "column";
+    w.hidden = !(beam || col);
+    if (w.hidden) return;
+    const ts = fb.querySelector(".nfst-t"),
+      ss = fb.querySelector(".nfst-s");
+    fb.querySelector(".nfst-padrow").hidden = !beam;
+    fb.querySelector(".nfst-sheetrow").hidden = !beam;
+    fb.querySelector(".nfst-xrow").hidden = true;
+    const info = fb.querySelector(".nfst-info");
+    if (beam) {
+      const [t, z] = o.bt ? [o.bt, o.bz || ""] : npBeamOf(o.sec || "");
+      ts.innerHTML =
+        `<option value="">Choose the type…</option>` +
+        NP_BEAM_TYPES.map(
+          ([k, l]) => `<option value="${k}"${k === t ? " selected" : ""}>${esc(l)}</option>`,
+        ).join("");
+      const T = NP_BEAM_TYPES.find((x) => x[0] === t);
+      ss.innerHTML = T
+        ? (z && !T[2].some((x) => x[0] === z)
+            ? `<option selected>${esc(z)}</option>`
+            : `<option value="">Choose the size…</option>`) +
+          T[2].map(([v]) => `<option${v === z ? " selected" : ""}>${esc(v)}</option>`).join("") +
+          `<option value="__other">Other size…</option>`
+        : `<option value="">Pick the type first</option>`;
+      fb.querySelector(".nfst-p").innerHTML = BEAM_PADS.map(
+        (p) =>
+          `<option${p === (o.pad || "Concrete 440×215×100") ? " selected" : ""}>${esc(p)}</option>`,
+      ).join("");
+      const kg = secKg(o.sec || "");
+      info.textContent = o.sec
+        ? `Shows on the drawing and in the beam schedule as "${o.sec}"${kg ? ` · about ${kg} kg a metre` : ""}.`
+        : "Pick the type and size from the engineer's calcs.";
+    } else {
+      const t = o.ct || "",
+        z = o.cs || "";
+      ts.innerHTML =
+        `<option value="">Plain (filled square)</option>` +
+        NP_COL_TYPES.map(
+          ([k, l]) => `<option value="${k}"${k === t ? " selected" : ""}>${esc(l)}</option>`,
+        ).join("");
+      const T = NP_COL_TYPES.find((x) => x[0] === t);
+      ss.innerHTML = T
+        ? (z && !T[2].includes(z) ? `<option selected>${esc(z)}</option>` : "") +
+          T[2].map((v) => `<option${v === z ? " selected" : ""}>${esc(v)}</option>`).join("") +
+          (t === "prop" ? "" : `<option value="__other">Other size…</option>`)
+        : `<option value="">Pick the type first</option>`;
+      info.textContent = !t
+        ? "Pick what it is: steel, timber, brick pier, concrete or a prop."
+        : doc.scale
+          ? "It is drawn at its real size, with its size written under it."
+          : "Its size is written under it. Set the drawing's scale to draw it at its real size.";
+    }
+  }
+  /* a post drawn at the size picked (when the drawing has a scale) */
+  const colToSize = (o) => {
+    const mm = doc.scale && npColMm(o.ct, o.cs);
+    if (!mm || !o.a || !o.b) return;
+    const c = [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2],
+      hw = toUnits(mm[0]) / 2,
+      hh = toUnits(mm[1]) / 2;
+    o.a = [c[0] - hw, c[1] - hh];
+    o.b = [c[0] + hw, c[1] + hh];
+  };
   function fineOpen() {
     fb.hidden = false;
+    fbPlace();
     fineFill();
+    /* the bars underneath step out of the way while it is open */
+    draw();
   }
   fb.querySelector(".nfx").onclick = () => {
     fb.hidden = true;
     addTimber = false;
+    draw();
   };
   {
     const cur = () => (sel != null ? doc.objs[sel] : null);
@@ -9922,6 +11226,243 @@ async function openNotePage(opts) {
       upd((o) => {
         o.brk = e.target.value;
       });
+    fb.querySelectorAll(".nftst").forEach(
+      (b) =>
+        (b.onclick = () =>
+          upd((o) => {
+            if (o.t !== "text") return;
+            const k = b.dataset.k;
+            if (k === "b") o.wt = (o.wt || 600) >= 700 ? 600 : 800;
+            else if (k === "i") o.it = !o.it;
+            else if (k === "al") o.al = b.dataset.v === "l" ? undefined : b.dataset.v;
+            else if (k === "sz") o.size = Math.max(4, Math.round((o.size || 20) * +b.dataset.v));
+            if (!o.it) delete o.it;
+            if (!o.al) delete o.al;
+          })),
+    );
+    {
+      const setSize = (o, z) => {
+        if (isBeam(o)) {
+          o.bz = z;
+          o.sec = o.bt && z ? npBeamLabel(o.bt, z) : z;
+          Object.assign(lastSteel, { bt: o.bt, bz: o.bz, sec: o.sec });
+        } else {
+          o.cs = z;
+          colToSize(o);
+          Object.assign(lastSteel, { ct: o.ct, cs: o.cs });
+        }
+      };
+      fb.querySelector(".nfst-t").onchange = (e) =>
+        upd((o) => {
+          const v = e.target.value;
+          if (isBeam(o)) {
+            o.bt = v;
+            const T = NP_BEAM_TYPES.find((x) => x[0] === v);
+            setSize(o, T && T[2].length === 1 ? T[2][0][0] : "");
+            if (!o.bt) delete o.bt;
+          } else {
+            o.ct = v;
+            const T = NP_COL_TYPES.find((x) => x[0] === v);
+            if (!T) {
+              delete o.ct;
+              delete o.cs;
+              return;
+            }
+            setSize(o, T[2].includes(o.cs) ? o.cs : T[2][Math.min(2, T[2].length - 1)]);
+          }
+        });
+      fb.querySelector(".nfst-s").onchange = (e) => {
+        if (e.target.value === "__other") {
+          fb.querySelector(".nfst-xrow").hidden = false;
+          fb.querySelector(".nfst-x").value = "";
+          fb.querySelector(".nfst-x").focus();
+          return;
+        }
+        upd((o) => setSize(o, e.target.value));
+      };
+      fb.querySelector(".nfst-xrow").onsubmit = (e) => {
+        e.preventDefault();
+        const v = fb
+          .querySelector(".nfst-x")
+          .value.trim()
+          .replace(/\s*[xX*]\s*/g, "×");
+        if (v) upd((o) => setSize(o, v));
+      };
+      fb.querySelector(".nfst-p").onchange = (e) => upd((o) => (o.pad = e.target.value));
+      const ssUpd = (fn) =>
+        upd((o) => {
+          fn(o);
+          ssToSize(o);
+        });
+      fb.querySelector(".nfss-t").onchange = (e) =>
+        ssUpd((o) => {
+          o.bt = e.target.value;
+          const T = NP_BEAM_TYPES.find((x) => x[0] === o.bt);
+          if (T && !T[2].some((x) => x[0] === o.bz)) o.bz = T[2][Math.min(2, T[2].length - 1)][0];
+          delete o.sec;
+        });
+      fb.querySelector(".nfss-s").onchange = (e) =>
+        ssUpd((o) => {
+          o.bz = e.target.value;
+          delete o.sec;
+        });
+      fb.querySelector(".nfss-sv").onchange = (e) => ssUpd((o) => (o.sv = e.target.value));
+      fb.querySelector(".nfss-fp").onchange = (e) => ssUpd((o) => (o.fp = e.target.value));
+      fb.querySelector(".nfss-p").onchange = (e) => ssUpd((o) => (o.pad = e.target.value));
+      fb.querySelector(".nfss-brf").onsubmit = (e) => {
+        e.preventDefault();
+        const v = Math.max(
+          50,
+          Math.min(600, Math.round(+fb.querySelector(".nfss-br").value || 150)),
+        );
+        ssUpd((o) => (o.br = v));
+        toast("Bearing " + v + " mm" + (v < 100 ? " – check it with the engineer" : ""));
+      };
+      fb.querySelector(".nfss-lab").onclick = () =>
+        upd((o) => {
+          if (o.lab) delete o.lab;
+          else o.lab = 1;
+        });
+      fb.querySelector(".nfss-lr").onclick = () =>
+        upd((o) => {
+          if (o.lr) delete o.lr;
+          else o.lr = 1;
+        });
+      fb.querySelector(".nfbu-edit").onclick = () => {
+        const o = cur();
+        if (o && o.k === "secbu") buDlg(o);
+      };
+      fb.querySelector(".nfbu-ta").onclick = () => upd((o) => (o.ta = npsuAcross(o) ? 0 : 1));
+      fb.querySelector(".nfbu-eof").onsubmit = (e) => {
+        e.preventDefault();
+        const v = Math.max(0, Math.min(1500, Math.round(+fb.querySelector(".nfbu-eo").value || 0)));
+        upd((o) => (o.eo = v));
+        toast(
+          v
+            ? "Eaves overhang " + v + " mm past the wall"
+            : "No eaves: the roof is mitred to the wall",
+        );
+      };
+      fb.querySelector(".nfbu-fd").onchange = (e) => {
+        const v = e.target.value;
+        upd((o) => {
+          if (v === "trench") delete o.fd;
+          else o.fd = v;
+        });
+        toast(
+          v === "none"
+            ? "No foundation: the wall stands on the floor"
+            : v === "strip"
+              ? "Strip foundation under the wall where it meets a ground floor"
+              : "Trench fill foundation under the wall where it meets a ground floor",
+        );
+      };
+      fb.querySelector(".nfbu-fdf").onsubmit = (e) => {
+        e.preventDefault();
+        const g2 = (c2, lo, hi, d2) => {
+          const v = Math.round(+fb.querySelector(".nfbu-" + c2).value);
+          return isFinite(v) && v ? Math.max(lo, Math.min(hi, v)) : d2;
+        };
+        const dd = g2("fdd", 450, 5000, 1000),
+          ww = g2("fdw", 300, 2000, 600),
+          gg = g2("gl", 75, 600, 150);
+        upd((o) => {
+          o.fdd = dd;
+          o.fdw = ww;
+          o.gl = gg;
+        });
+        toast(`Foundation ${ww} wide, ${dd} mm below ground; DPC ${gg} mm above ground`);
+      };
+      fb.querySelector(".nfbu-flip").onclick = () =>
+        upd((o) => {
+          if (o.fl) delete o.fl;
+          else o.fl = 1;
+        });
+      fb.querySelector(".nfbu-lab").onclick = () =>
+        upd((o) => {
+          if (o.lab) delete o.lab;
+          else o.lab = 1;
+        });
+      fb.querySelector(".nfs-build").onclick = () => {
+        const o = cur();
+        if (o) stairBuilder(o);
+      };
+      fb.querySelector(".nfst-sheet").onclick = () => {
+        const o = cur();
+        if (o && isBeam(o)) beamSheet(o);
+      };
+    }
+    /* a survey opening: its mark, its frame width (at the drawing's scale) and, for a window, how it opens */
+    fb.querySelector(".nfsv").onchange = (e) => {
+      const ref = e.target.value;
+      const x = surveyItems().find((y) => y.ref === ref);
+      if (!x) return;
+      upd((o) => {
+        if (!isOpening(o)) return;
+        o.mark = ref;
+        let W = 0;
+        try {
+          W = DWS.sizeOf(x).W;
+        } catch (err) {}
+        if (W > 0 && doc.scale) {
+          const len = toUnits(W);
+          if (o.k === "window") {
+            const cx = (o.a[0] + o.b[0]) / 2,
+              cy = (o.a[1] + o.b[1]) / 2,
+              h = Math.abs(o.b[1] - o.a[1]),
+              wide = Math.abs(o.b[0] - o.a[0]) >= h;
+            if (wide) {
+              o.a = [cx - len / 2, cy - h / 2];
+              o.b = [cx + len / 2, cy + h / 2];
+            } else {
+              const w0 = Math.abs(o.b[0] - o.a[0]);
+              o.a = [cx - w0 / 2, cy - len / 2];
+              o.b = [cx + w0 / 2, cy + len / 2];
+            }
+          } else {
+            const L = lenOf(o.a, o.b) || 1;
+            o.b = [o.a[0] + ((o.b[0] - o.a[0]) * len) / L, o.a[1] + ((o.b[1] - o.a[1]) * len) / L];
+          }
+        }
+        if (o.k === "window") {
+          const n = String(x.name || "").toLowerCase();
+          const wo = /tilt/.test(n)
+            ? "tt"
+            : /top hung|top light/.test(n) && !/side hung/.test(n)
+              ? "th"
+              : /hinge right/.test(n)
+                ? "sr"
+                : /side hung|casement|hinge left/.test(n)
+                  ? "sl"
+                  : "";
+          if (wo) o.wo = wo;
+          else delete o.wo;
+        }
+        seatOnWall(o);
+      });
+      toast(ref + " from the survey: its width and how it opens are set");
+    };
+    fb.querySelectorAll(".nfwo button").forEach(
+      (b) =>
+        (b.onclick = () =>
+          upd((o) => {
+            if (!(o.t === "shape" && o.k === "window")) return;
+            if (b.dataset.v) o.wo = b.dataset.v;
+            else delete o.wo;
+            if (b.dataset.v && !o.os) seatOnWall(o);
+          })),
+    );
+    /* existing, to knock down or new; the next walls drawn on this page take it too */
+    fb.querySelectorAll(".nfst button").forEach(
+      (b) =>
+        (b.onclick = () =>
+          upd((o) => {
+            if (!npIsWall(o)) return;
+            if (b.dataset.v) o.st = b.dataset.v;
+            else delete o.st;
+            doc.pages[pg].wallSt = b.dataset.v || "";
+          })),
+    );
     fb.querySelector(".nftxrow").onsubmit = (e) => {
       e.preventDefault();
       upd((o) => {
@@ -9988,6 +11529,11 @@ async function openNotePage(opts) {
             }
           })),
     );
+    fb.querySelector(".nfa-fix").onclick = () =>
+      upd((o) => {
+        if (o.fix) delete o.fix;
+        else o.fix = 1;
+      });
     fb.querySelector(".nfa-lock").onclick = () =>
       upd((o) => {
         o.lk = !o.lk;
@@ -10394,6 +11940,7 @@ async function openNotePage(opts) {
   }
   function goPage(i) {
     doc.pages[pg].objs = doc.objs;
+    if (elevRefresh(i)) setTimeout(() => toast("Brought up to date with the plan"), 50);
     msel.clear();
     chain = [];
     pg = i;
@@ -10524,11 +12071,76 @@ async function openNotePage(opts) {
     };
   };
   const tf = q(".np-text");
+  /* opens the writing box on a text already on the drawing, to change its words and look */
+  function textOpen(i) {
+    const o = doc.objs[i];
+    if (!o || o.t !== "text") return;
+    textEd = i;
+    textAt = null;
+    sel = i;
+    tf.hidden = false;
+    tf.querySelector(".np-ttx").value = o.s || "";
+    tf.querySelector(".np-tsz").value = "1";
+    tf.querySelector('.np-tst[data-k="b"]').setAttribute(
+      "aria-pressed",
+      String((o.wt || 600) >= 700),
+    );
+    tf.querySelector('.np-tst[data-k="i"]').setAttribute("aria-pressed", String(!!o.it));
+    tf.querySelectorAll('.np-tst[data-k="al"]').forEach((x) =>
+      x.setAttribute("aria-pressed", String(x.dataset.v === (o.al || "l"))),
+    );
+    tf.querySelector(".np-tlead").value = (o.lead && o.lead.k) || "none";
+    tf.querySelector(".np-tbox").value = o.box || "";
+    tf.querySelector('[type="submit"]').textContent = "Save";
+    tf.querySelector(".np-ttx").focus();
+    draw();
+  }
+  const textEdDone = () => {
+    textEd = null;
+    tf.querySelector('[type="submit"]').textContent = "Add";
+    try {
+      const v = (localStorage.getItem("np.tcall") || "none|").split("|");
+      tf.querySelector(".np-tlead").value = v[0] || "none";
+      tf.querySelector(".np-tbox").value = v[1] || "";
+    } catch (e) {}
+  };
   tf.onsubmit = (e) => {
     e.preventDefault();
-    const t = tf.querySelector("input").value.trim();
+    const t = tf
+      .querySelector(".np-ttx")
+      .value.replace(/[ \t]+$/gm, "")
+      .replace(/^\n+|\n+$/g, "");
     tf.hidden = true;
-    tf.querySelector("input").placeholder = "Type your text…";
+    tf.querySelector(".np-ttx").placeholder = "Type your text… (Enter for a new line)";
+    if (textEd != null) {
+      const o = doc.objs[textEd];
+      textEdDone();
+      if (!o || o.t !== "text") return;
+      snap();
+      if (t) o.s = t;
+      const f = +tf.querySelector(".np-tsz").value || 1;
+      if (f !== 1) o.size = Math.max(6, Math.round((o.size || 20) * f));
+      if (tf.querySelector('.np-tst[data-k="b"]').getAttribute("aria-pressed") === "true")
+        o.wt = 800;
+      else delete o.wt;
+      if (tf.querySelector('.np-tst[data-k="i"]').getAttribute("aria-pressed") === "true")
+        o.it = true;
+      else delete o.it;
+      const al = tf.querySelector('.np-tst[data-k="al"][aria-pressed="true"]');
+      if (al && al.dataset.v !== "l") o.al = al.dataset.v;
+      else delete o.al;
+      const bk = tf.querySelector(".np-tbox").value,
+        lk = tf.querySelector(".np-tlead").value;
+      if (bk) o.box = bk;
+      else delete o.box;
+      if (lk === "none") delete o.lead;
+      else if (o.lead) o.lead.k = lk;
+      else o.lead = { p: [o.x - (o.size || 20) * 2.2, o.y + (o.size || 20) * 3.2], k: lk };
+      dirty = true;
+      draw();
+      if (!t) toast("The words were left as they were – use 🗑 Delete to take the text off");
+      return;
+    }
     if (dimAsk != null) {
       const o = doc.objs[dimAsk];
       dimAsk = null;
@@ -10548,8 +12160,22 @@ async function openNotePage(opts) {
     try {
       localStorage.setItem("np.tcall", lk + "|" + bk);
     } catch (e) {}
-    const o = { t: "text", x: textAt[0], y: textAt[1], s: t, c: col, size };
+    const o = {
+      t: "text",
+      x: textAt[0],
+      y: textAt[1],
+      s: t,
+      c: col,
+      size: Math.round(size * (+tf.querySelector(".np-tsz").value || 1)),
+    };
     if (bk) o.box = bk;
+    if (tf.querySelector('.np-tst[data-k="b"]').getAttribute("aria-pressed") === "true") o.wt = 800;
+    if (tf.querySelector('.np-tst[data-k="i"]').getAttribute("aria-pressed") === "true")
+      o.it = true;
+    {
+      const al = tf.querySelector('.np-tst[data-k="al"][aria-pressed="true"]');
+      if (al && al.dataset.v !== "l") o.al = al.dataset.v;
+    }
     if (lk !== "none") {
       o.lead = { p: textAt.slice(), k: lk };
       o.x = textAt[0] + size * 2.2;
@@ -10571,10 +12197,28 @@ async function openNotePage(opts) {
   q(".np-tcancel").onclick = () => {
     tf.hidden = true;
     textAt = null;
+    if (textEd != null) textEdDone();
     dimAsk = null;
-    tf.querySelector("input").placeholder = "Type your text…";
+    tf.querySelector(".np-ttx").placeholder = "Type your text… (Enter for a new line)";
   };
-  tf.querySelector("input").addEventListener("keydown", (e) => {
+  /* bold, italic, line-up and size for new text */
+  tf.querySelectorAll(".np-tst").forEach(
+    (b) =>
+      (b.onclick = () => {
+        if (b.dataset.k === "al")
+          tf.querySelectorAll('.np-tst[data-k="al"]').forEach((x) =>
+            x.setAttribute("aria-pressed", String(x === b)),
+          );
+        else b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
+      }),
+  );
+  tf.querySelector(".np-ttx").addEventListener("keydown", (e) => {
+    /* Ctrl/⌘ + Enter adds it; Enter on its own is a new line */
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      tf.querySelector('[type="submit"]').click();
+      return;
+    }
     if (e.key === "Escape") {
       e.preventDefault();
       q(".np-tcancel").click();
@@ -11100,7 +12744,7 @@ async function openNotePage(opts) {
     const d = document.createElement("div");
     d.className = "dimask";
     d.innerHTML = `<div class="dimbox"><b>📥 Import a drawing</b><div class="who">Bring in a plan or drawing (PDF or picture). Tell it the scale, or measure a length you know, and it goes in at the right size for this drawing. Then crop away what you don't need. <b>CAD files:</b> ask for a DXF (in AutoCAD: Save As › DXF) and it comes in as real lines at real size, ready to draw over.</div>
-      <label class="btn primary" style="text-align:center">📁 From my files<input type="file" accept="application/pdf,.pdf,image/*,.dxf" hidden></label>
+      <label class="btn primary" style="text-align:center">📁 From my files<input type="file" class="fpick" accept="application/pdf,.pdf,image/*,.dxf"></label>
       <button type="button" class="btn npiapp">🏗️ From the app (site plans & drawings)</button>
       <div class="dimbtns"><button type="button" class="btn npx3">Cancel</button></div></div>`;
     ov.appendChild(d);
@@ -11405,9 +13049,9 @@ async function openNotePage(opts) {
       pgx = doc.pages[pg];
     const known = NP_TYPES.includes(pgx.type || "");
     d.innerHTML = `<form class="dimbox npsetup"><b>🏷 Drawing details</b><div class="who">Shown in the title box on the drawing and on the PDF.</div>
-      <label>What drawing is this?${doc.pages.length > 1 ? ` <span class="who">(this page: ${esc(pgx.name || "Page " + (pg + 1))})</span>` : ""}<select class="ni-type"><option value="">Choose…</option>${NP_TYPES.map((t) => `<option ${pgx.type === t ? "selected" : ""}>${esc(t)}</option>`).join("")}<option value="__other" ${pgx.type && !known ? "selected" : ""}>Other (type it in)</option></select></label>
+      <label>What drawing is this?${doc.pages.length > 1 ? ` <span class="who">(this page: ${esc(pgx.name || "Page " + (pg + 1))})</span>` : ""}<select class="ni-type"><option value="">Choose…</option>${NP_TYPE_GROUPS.map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map((t) => `<option ${pgx.type === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</optgroup>`).join("")}<option value="__other" ${pgx.type && !known ? "selected" : ""}>Other (type it in)</option></select></label>
       <input class="ni-other" maxlength="60" placeholder="e.g. Garage conversion layout" value="${esc(pgx.type && !known ? pgx.type : "")}" ${pgx.type && !known ? "" : "hidden"}>
-      ${pickField("ni-job", "Job", siteNames(), doc.site || opts.site || "", "e.g. 12 Marine Way, Exmouth", false)}
+      ${pickField("ni-job", "Job", siteNames(), doc.site || opts.site || "", "e.g. 12 High Street", false)}
       <div class="grid2"><label>Date<input type="date" class="ni-date" value="${esc(inf.date || iso(new Date()))}"></label><label>Scale<select class="ni-scale">${NP_SCALES.map((v) => `<option value="${v}" ${(+doc.scale || 0) === v ? "selected" : ""}>${v ? "1:" + v : "Not to scale"}</option>`).join("")}</select></label></div>
       ${(() => {
         const cl =
@@ -11711,6 +13355,7 @@ async function openNotePage(opts) {
     };
   q(".np-pdf").onclick = async () => {
     NP_SCX = 0;
+    if (doc.pages.some((x, i) => x.auto && elevRefresh(i))) draw();
     const btn = q(".np-pdf");
     if (!S.dl) {
       toast("Downloads only work when the page is opened in claude.ai");

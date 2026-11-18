@@ -158,7 +158,7 @@ function salesView() {
       ];
   $("main").innerHTML = `<div class="sd-page">
     <div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="${!est}">Invoices</button><button type="button" data-v="est" aria-pressed="${est}">Estimates</button><button type="button" data-v="var" aria-pressed="false">📝 Variations</button></div>
-    <div class="sd-acts"><button type="button" class="btn primary" id="sd-new">+ New ${est ? "estimate" : "invoice"}</button>${est ? `<span class="btn sd-filebtn">📄 Bring in a Word estimate<input type="file" class="sd-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Bring in a Word estimate"></span>` : ""}<button type="button" class="btn" id="sd-set">⚙️ Letterhead, terms & bank</button></div>
+    <div class="sd-acts"><button type="button" class="btn primary" id="sd-new">+ New ${est ? "estimate" : "invoice"}</button>${est ? "" : `<button type="button" class="btn" id="sd-newpf">+ New pro forma</button>`}${est ? `<span class="btn sd-filebtn">📄 Bring in a Word estimate<input type="file" class="sd-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Bring in a Word estimate"></span>` : ""}<button type="button" class="btn" id="sd-set">⚙️ Letterhead, terms & bank</button></div>
     ${sdSetupCard()}
     <div class="sd-boxes">${tiles}</div>
     ${extra}
@@ -169,7 +169,7 @@ function salesView() {
             .map((d) => {
               const c = sdCalc(d),
                 st = sdStatus(d);
-              return `<button type="button" class="sd-row" data-id="${esc(d.id)}"><span class="sd-no">${esc(sdNo(d))}</span><span class="sd-who"><b>${esc(d.client || "No client yet")}</b><small>${esc([!est && sdIk(d) !== "oneoff" ? SD_IK[sdIk(d)] : "", d.title, d.site].filter(Boolean).join(" · "))}</small></span><span class="sd-dt"><small>${d.date ? esc(shortDay(d.date)) : ""}</small>${!est && st !== "draft" && st !== "paid" ? `<small class="${st === "overdue" ? "sd-late" : ""}">due ${esc(shortDay(sdDueDate(d)))}</small>` : ""}</span><span class="sd-amt"><b>${gbp(est ? c.net : st === "paid" || st === "draft" ? c.due : c.balance)}</b>${sdTag(d)}</span></button>`;
+              return `<button type="button" class="sd-row" data-id="${esc(d.id)}"><span class="sd-no">${esc(sdNo(d))}</span><span class="sd-who"><b>${esc(d.client || "No client yet")}</b><small>${esc([!est && sdIk(d) !== "oneoff" ? SD_IK[sdIk(d)] : "", d.title, d.site].filter(Boolean).join(" · "))}</small></span><span class="sd-dt"><small>${d.date ? esc(shortDay(d.date)) : ""}</small>${!est && st !== "draft" && st !== "paid" ? `<small class="${st === "overdue" ? "sd-late" : ""}">due ${esc(shortDay(sdDueDate(d)))}</small>` : ""}</span><span class="sd-amt"><b>${gbp(est ? c.net : st === "paid" || st === "draft" ? c.due : c.balance)}</b>${sdTag(d)}${!est && (d.payments || []).some((p) => !p.receiptAt) ? `<span class="tag bad sd-norc">🧾 Receipt not sent</span>` : ""}</span></button>`;
             })
             .join("")}</div>`
         : `<div class="empty"><strong>${list0.length ? "Nothing here" : est ? "No estimates yet" : "No invoices yet"}</strong>${list0.length ? "Try another filter." : est ? "Tap + New estimate, or bring in one you wrote in Word." : "Tap + New invoice, or turn an accepted estimate into one."}</div>`
@@ -208,6 +208,8 @@ function salesView() {
     }, 300);
   };
   $("sd-new").onclick = () => sdEdit({ type: est ? "estimate" : "invoice" });
+  /* a pro forma first, then the proper invoice once the client's happy (James, Nov 2026) */
+  if ($("sd-newpf")) $("sd-newpf").onclick = () => sdEdit({ type: "invoice", ik: "proforma" });
   $("sd-set").onclick = sdSettings;
   $("main")
     .querySelectorAll(".sd-row")

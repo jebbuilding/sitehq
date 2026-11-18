@@ -1,6 +1,7 @@
 /* ================= MY SIGNATURE (owner, in Setup): draw or upload James's signature for his documents ================= */
 import { $, esc, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
+import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl, uploadFile } from "../files/files.js";
 import { sigPad } from "../safety/site-inductions.js";
@@ -10,17 +11,24 @@ import { sdSaveSet } from "./sales-settings.js";
 export { sdSigCard, sdWireSig };
 /* One signature, kept with the estimate and invoice settings (todos/salesset sigId), used on estimates, invoices,
    payment receipts and CIS statements. Draw it with a finger or pen, or upload a photo of it signed on white paper. */
+/* whose signature: the account holder's (kept with the estimate settings) or the person's own (their record) */
+const sgId = () => (ownerMode() ? sdSet().sigId : (S.myProfile || {}).sigId) || "";
 function sdSigCard() {
-  const id = sdSet().sigId;
+  const id = sgId();
   return `<div class="card sg-card"><div class="cardbody" style="border:0"><b>✍️ My signature</b>
-    <div class="who">Goes on your estimates, invoices, payment receipts and CIS statements.</div>
+    <div class="who">${ownerMode() ? "Goes on your estimates, invoices, payment receipts and CIS statements, and on the company forms you fill in (CDM documents)." : "Goes on the company forms you fill in (CDM documents) when you're picked as the one filling them in."}</div>
     <div class="sg-now">${id ? `<img src="${esc(blobUrl(id))}" alt="Your signature" class="sg-img">` : `<span class="who">No signature yet.</span>`}</div>
     <div class="actions"><button type="button" class="btn primary" id="sg-draw">✍️ ${id ? "Draw it again" : "Draw my signature"}</button><span class="btn sd-filebtn">📷 Upload a photo of it<input type="file" class="sg-file" accept="image/*" aria-label="Upload a photo of your signature"></span>${id ? `<button type="button" class="linkdanger" id="sg-del">Remove</button>` : ""}</div>
   </div></div>`;
 }
 async function sdSigSave(blob, name) {
   const a = await uploadFile(blob, name);
-  await sdSaveSet({ sigId: a.id });
+  await sgPut(a.id);
+}
+async function sgPut(id) {
+  if (ownerMode()) return sdSaveSet({ sigId: id });
+  await S.db.doc("sheets/" + S.me).update({ sigId: id });
+  S.myProfile = Object.assign({}, S.myProfile, { sigId: id });
 }
 function sdWireSig() {
   if (!$("sg-draw")) return;
@@ -64,7 +72,7 @@ function sdWireSig() {
   if ($("sg-del"))
     $("sg-del").onclick = async () => {
       try {
-        await sdSaveSet({ sigId: "" });
+        await sgPut("");
         toast("Signature removed");
         render();
       } catch (e) {
