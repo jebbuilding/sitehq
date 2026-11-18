@@ -243,16 +243,19 @@ async function openNotePage(opts) {
     }
     return best ? +best.vp : 0;
   };
+  const dzFrame = (k) => (vpList.objs || doc.objs).find((f) => vpOf(f) && f.dzk === k);
   const vpAnchor = (o) =>
-    o.t === "img" || o.t === "text"
-      ? [o.x, o.y]
-      : o.a && o.b && o.t !== "dim"
-        ? [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2]
-        : o.a
-          ? o.a
-          : o.p
-            ? o.p[0]
-            : o.v || null;
+    o.dz && dzFrame(o.dz)
+      ? ((f) => [(f.a[0] + f.b[0]) / 2, (f.a[1] + f.b[1]) / 2])(dzFrame(o.dz))
+      : o.t === "img" || o.t === "text"
+        ? [o.x, o.y]
+        : o.a && o.b && o.t !== "dim"
+          ? [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2]
+          : o.a
+            ? o.a
+            : o.p
+              ? o.p[0]
+              : o.v || null;
   const vpScaleFor = (o) => (vpOf(o) ? 0 : vpScaleAt(vpAnchor(o)));
   const vpKids = (v) => {
     const x0 = Math.min(v.a[0], v.b[0]),
@@ -408,7 +411,7 @@ async function openNotePage(opts) {
       <button type="button" class="np-t np-setup" data-g="page" title="Paper size, scale and background" aria-label="Paper size and scale">📐<small>Paper</small></button>
       <button type="button" class="np-t np-findrooms" data-g="measure easy" title="Find the rooms the walls close off, with their areas" aria-label="Find rooms">⬠<small>Find rooms</small></button>
       <button type="button" class="np-t" data-t="roomsk" data-g="draw measure" title="Room sketch: draw the room in one line, it straightens the walls, then tap each wall to type its length" aria-label="Room sketch">✍️<small>Room sketch</small></button>
-      ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button>` : ""}
+      ${opts.pro ? `<button type="button" class="np-t" data-t="vp" data-g="page insert" title="Draw a frame with its own scale, e.g. a 1:10 detail next to a 1:50 plan" aria-label="Scaled area">🔍<small>Scaled area</small></button><button type="button" class="np-t" data-t="zoomd" data-g="page insert" title="Box round part of the drawing and show it bigger somewhere else, e.g. the eaves at 1:10" aria-label="Zoom-in detail">🔎<small>Zoom-in detail</small></button>` : ""}
       <label class="np-t np-photo" data-g="insert" title="Take or upload photos" aria-label="Take or upload photos">📷<small>Add photo</small><input type="file" class="fpick" accept="image/*" multiple></label>
       <button type="button" class="np-t np-apppic" data-g="insert" title="Photos already in the app" aria-label="Photos already in the app">🖼<small>App photos</small></button><button type="button" class="np-t np-mysym" data-g="insert" title="Symbols you have saved from your own drawings" aria-label="My symbols"${opts.pro ? "" : " hidden"}>⭐<small>My symbols</small></button><button type="button" class="np-t np-import" data-g="insert" title="Bring in a drawing or plan at its own scale" aria-label="Import a drawing">📥<small>Import drawing</small></button>${opts.pro ? `<button type="button" class="np-t np-qty" data-g="measure" title="Areas, lengths and materials from this drawing" aria-label="Quantities">🧮<small>Quantities</small></button><button type="button" class="np-t np-layers" data-g="page" title="Show, hide or lock groups of things, and show another floor underneath" aria-label="Layers and floors">🗂<small>Layers</small></button>` : ""}${
         opts.pro
@@ -1200,6 +1203,24 @@ async function openNotePage(opts) {
   }
   function drawObj(ctx, o) {
     const vb = vpOf(o) ? null : vpBoxAt(vpAnchor(o));
+    if (vb && vb.dzk && !ctx.__dzc) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(
+        Math.min(vb.a[0], vb.b[0]),
+        Math.min(vb.a[1], vb.b[1]),
+        Math.abs(vb.b[0] - vb.a[0]),
+        Math.abs(vb.b[1] - vb.a[1]),
+      );
+      ctx.clip();
+      ctx.__dzc = 1;
+      try {
+        return drawObj(ctx, o);
+      } finally {
+        ctx.__dzc = 0;
+        ctx.restore();
+      }
+    }
     const vs = vb ? +vb.vp : 0;
     const pv = ctx.__vpo;
     ctx.__vpo = vb ? [Math.min(vb.a[0], vb.b[0]), Math.min(vb.a[1], vb.b[1])] : null;
@@ -2501,6 +2522,19 @@ async function openNotePage(opts) {
       draw();
       return;
     }
+    if (tool === "zoomd") {
+      sel = null;
+      msel.clear();
+      if (zoomPlace) {
+        const z = zoomPlace;
+        zoomPlace = null;
+        zoomMake(z, p, false);
+        return;
+      }
+      cur = { t: "rect", a: p, b: p, c: "#dc2626", w: pwFor(1.5), zsel: 1 };
+      draw();
+      return;
+    }
     if (tool === "vp") {
       sel = null;
       msel.clear();
@@ -3385,6 +3419,14 @@ async function openNotePage(opts) {
           );
         return;
       }
+      if (cur.zsel) {
+        const b = cur;
+        if (e && e.clientX != null && e.type === "pointerup") b.b = toPage(e.clientX, e.clientY);
+        cur = null;
+        draw();
+        zoomAsk(b);
+        return;
+      }
       /* room sketch: the hand-drawn line becomes a room with straight walls, where it was drawn */
       if (cur.rsk) {
         const o = rsFromStroke(cur.p);
@@ -3859,6 +3901,200 @@ async function openNotePage(opts) {
         : "Plan symbols: walls, doors, windows, kitchen, bathroom… (looking down from above)",
     );
   };
+  /* 🔎 zoom-in detail: a box round part of the drawing is copied bigger into a frame at a larger scale,
+     where James taps (or on a page of its own), with a lettered circle round the original */
+  let zoomPlace = null;
+  function zoomAsk(b) {
+    const x0 = Math.min(b.a[0], b.b[0]),
+      x1 = Math.max(b.a[0], b.b[0]),
+      y0 = Math.min(b.a[1], b.b[1]),
+      y1 = Math.max(b.a[1], b.b[1]);
+    if (x1 - x0 < 12 / s || y1 - y0 < 12 / s) {
+      toast("Drag a bigger box round the part you want to see");
+      return;
+    }
+    const base = vpScaleAt([(x0 + x1) / 2, (y0 + y1) / 2]) || doc.baseScale;
+    if (!base) {
+      toast("Give the page a scale first in 📐 Paper, then zoom in");
+      return;
+    }
+    const hits = (o) => {
+      if (vpOf(o) || o.dzc) return false;
+      const bb = bbox(o);
+      return bb && bb[0] <= x1 && bb[0] + bb[2] >= x0 && bb[1] <= y1 && bb[1] + bb[3] >= y0;
+    };
+    const src = doc.objs.filter(hits);
+    if (!src.length) {
+      toast("There is nothing drawn in that box");
+      return;
+    }
+    const used = new Set(
+      doc.pages.flatMap((p2, i) =>
+        (i === pg ? doc.objs : p2.objs || []).filter((o) => o.dzk).map((o) => o.dzk),
+      ),
+    );
+    const letter = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].find((L) => !used.has(L)) || "Z";
+    const scales = [1, 2, 5, 10, 20, 25, 50, 100].filter((v) => v < base);
+    if (!scales.length) {
+      toast("This is already drawn at 1:" + base + ", so it can't go bigger");
+      return;
+    }
+    const pick = scales.reduce(
+      (a, v) => (Math.abs(base / v - 5) < Math.abs(base / a - 5) ? v : a),
+      scales[0],
+    );
+    const d = document.createElement("div");
+    d.className = "dimask zd";
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Zoom-in detail"><b>🔎 Zoom-in detail ${letter}</b><div class="who">This part is drawn at 1:${base}. Pick how big to show it. You get a copy you can draw on and label, and a circle marked ${letter} round this part.</div>
+      <div class="zd-sc">${scales
+        .map(
+          (v) =>
+            `<button type="button" class="btn zd-n${v === pick ? " primary" : ""}" data-n="${v}">1:${v}<small>${Math.round((base / v) * 10) / 10}× bigger</small></button>`,
+        )
+        .join("")}</div>
+      <label>Name<input class="zd-name" maxlength="40" value="Detail ${letter}"></label>
+      <div class="dimbtns"><button type="button" class="btn zd-x">Cancel</button><button type="button" class="btn zd-page">📄 On a new page</button><button type="button" class="btn primary zd-go">👆 Tap where it goes</button></div></div>`;
+    ov.appendChild(d);
+    let N = pick;
+    d.querySelectorAll(".zd-n").forEach(
+      (bt) =>
+        (bt.onclick = () => {
+          N = +bt.dataset.n;
+          d.querySelectorAll(".zd-n").forEach((b2) => b2.classList.toggle("primary", b2 === bt));
+        }),
+    );
+    const z = () => ({
+      box: [x0, y0, x1, y1],
+      base,
+      N,
+      letter,
+      name: d.querySelector(".zd-name").value.trim() || "Detail " + letter,
+      src,
+    });
+    d.querySelector(".zd-x").onclick = () => d.remove();
+    d.querySelector(".zd-page").onclick = () => {
+      const zz = z();
+      d.remove();
+      zoomMake(zz, null, true);
+    };
+    d.querySelector(".zd-go").onclick = () => {
+      zoomPlace = z();
+      d.remove();
+      toast("Now tap where you want detail " + letter + " to go (the middle of it)");
+    };
+  }
+  /* a straight line or wall cut down to the part inside the box */
+  function zoomClipSeg(a, b, x0, y0, x1, y1) {
+    let t0 = 0,
+      t1 = 1;
+    const dx = b[0] - a[0],
+      dy = b[1] - a[1];
+    const ok = [
+      [-dx, a[0] - x0],
+      [dx, x1 - a[0]],
+      [-dy, a[1] - y0],
+      [dy, y1 - a[1]],
+    ].every(([p2, q2]) => {
+      if (!p2) return q2 >= 0;
+      const r = q2 / p2;
+      if (p2 < 0) t0 = Math.max(t0, r);
+      else t1 = Math.min(t1, r);
+      return t0 <= t1;
+    });
+    return ok
+      ? [
+          [a[0] + t0 * dx, a[1] + t0 * dy],
+          [a[0] + t1 * dx, a[1] + t1 * dy],
+        ]
+      : null;
+  }
+  function zoomMake(z, at, newPage) {
+    const [x0, y0, x1, y1] = z.box,
+      k = z.base / z.N,
+      W = (x1 - x0) * k,
+      H = (y1 - y0) * k;
+    snap();
+    /* the circle round the original, with its letter */
+    const cx = (x0 + x1) / 2,
+      cy = (y0 + y1) / 2,
+      rx = ((x1 - x0) / 2) * 1.42,
+      ry = ((y1 - y0) / 2) * 1.42,
+      tsz = Math.max(14, Math.round(Math.min(40, 20 / s)));
+    doc.objs.push({
+      t: "circle",
+      a: [cx - rx, cy - ry],
+      b: [cx + rx, cy + ry],
+      c: "#dc2626",
+      w: pwFor(1.5),
+      dzc: z.letter,
+    });
+    doc.objs.push({
+      t: "text",
+      x: cx + rx * 0.72,
+      y: cy - ry * 0.72 - tsz,
+      s: z.letter + (newPage ? " – see " + z.name : ""),
+      c: "#dc2626",
+      size: tsz,
+      wt: 800,
+      dzc: z.letter,
+    });
+    if (newPage) {
+      doc.pages[pg].objs = doc.objs;
+      doc.pages.push({ name: z.name, type: "Construction details", objs: [] });
+      goPage(doc.pages.length - 1);
+      at = [doc.w / 2, doc.h / 2];
+    }
+    const f0 = [at[0] - W / 2, at[1] - H / 2];
+    const T = (q2) => [f0[0] + (q2[0] - x0) * k, f0[1] + (q2[1] - y0) * k];
+    const frame = {
+      t: "rect",
+      a: f0,
+      b: [f0[0] + W, f0[1] + H],
+      c: "#2f5fb3",
+      w: pwFor(2),
+      vp: z.N,
+      vpn: z.name,
+      dzk: z.letter,
+    };
+    doc.objs.push(frame);
+    z.src.forEach((o0) => {
+      const o = JSON.parse(JSON.stringify(o0));
+      delete o.lk;
+      if (o.a && o.b && !o.bend && (o.t === "line" || npIsWall(o)) && !npBoxy(o)) {
+        const cl = zoomClipSeg(o.a, o.b, x0, y0, x1, y1);
+        if (!cl) return;
+        o.a = cl[0];
+        o.b = cl[1];
+      }
+      if (o.a) o.a = T(o.a);
+      if (o.b) o.b = T(o.b);
+      if (o.v) o.v = T(o.v);
+      if (o.p) o.p = o.p.map(T);
+      if (o.x != null && o.y != null) {
+        const q3 = T([o.x, o.y]);
+        o.x = q3[0];
+        o.y = q3[1];
+        if (o.t === "img" && o.w) {
+          o.w *= k;
+          o.h *= k;
+        }
+      }
+      if (o.th) o.th *= k;
+      if (o.off) o.off *= k;
+      o.dz = z.letter;
+      doc.objs.push(o);
+    });
+    dirty = true;
+    setTool("move");
+    sel = doc.objs.indexOf(frame);
+    draw();
+    const big = W > doc.w || H > doc.h;
+    toast(
+      big
+        ? `${z.name} at 1:${z.N} is bigger than the page – Undo and pick a smaller size, or a bigger paper`
+        : `${z.name} at 1:${z.N}. Drag the frame to move it; draw and label inside it`,
+    );
+  }
   function vpDlg(o, isNew) {
     const d = document.createElement("div");
     d.className = "dimask";
@@ -3955,6 +4191,8 @@ async function openNotePage(opts) {
         chain = [lastStripEnd.slice()];
       }
     }
+    if (t !== "zoomd") zoomPlace = null;
+    if (t === "zoomd") toast("Drag a box round the part you want to see bigger, like the eaves");
     if (t === "vp")
       toast(
         "Drag a frame on the page. Then choose its scale. Anything you draw inside it uses that scale",

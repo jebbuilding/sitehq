@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 245 files, 4614 KB, 117202 lines.
+- 245 files, 4626 KB, 117566 lines.
 - 2401 names declared at the top level (the shared scope); 1236 of them are used by a file other than the one that declares them.
 - 2567 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -538,7 +538,7 @@ BEND LINES: where a curved line bows out to
 
 building components: roof parts, claddings, render, walls, floors, foundations, drainage, electrics
 
-- 1618 lines, 44 KB. Declares 5 names, 5 used elsewhere.
+- 1730 lines, 47 KB. Declares 5 names, 5 used elsewhere.
 - **Used elsewhere:** `NP_LIB` (3), `NP_BLD_BOX` (2), `NP_BLD_LINE` (1), `npBldLine` (1), `npBldSym` (1)
 - **Uses names from 2 files:** `drawing/walls.js` (2), `drawing/construction-details.js` (1)
 - **Used by 4 files**
@@ -547,7 +547,7 @@ building components: roof parts, claddings, render, walls, floors, foundations, 
 
 construction details: stud wall connections, framing, headers, ground floor and floor details
 
-- 2349 lines, 79 KB. Declares 24 names, 18 used elsewhere.
+- 2356 lines, 79 KB. Declares 24 names, 18 used elsewhere.
 - **Used elsewhere:** `npLbl` (5), `NP_U` (4), `npSymLabel` (2), `drawShape` (1), `initConstructionDetails` (1), `NP_COLS` (1), `NP_DET_BOX` (1), `NP_ELEV_BOX` (1), `NP_LINE` (1), `NP_MORECOLS` (1), `NP_SCALES` (1), `NP_SHAPES` (1), `NP_SIZES` (1), `NP_SYM` (1), `npKeyEntries` (1), `npStairN` (1), `npStairs` (1), `npUnit` (1)
 - **Uses names from 9 files:** `drawing/symbols-annotation.js` (5), `drawing/walls.js` (5), `drawing/components.js` (4), `drawing/nice-symbols.js` (4), `drawing/symbols-design.js` (3), `drawing/symbols-elevation.js` (2), `drawing/timber.js` (2), `drawing/standard-sizes.js` (1), `drawing/window-plan.js` (1)
 - **Used by 10 files**
@@ -718,7 +718,7 @@ PAVING DRAW: patio and drive materials drawn at real size, paths round a buildin
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 12861 lines, 488 KB. Declares 9 names, 5 used elsewhere.
+- 13099 lines, 495 KB. Declares 9 names, 5 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_SCX` (1), `setNpScx` (1)
 - **Uses names from 52 files:** `drawing/construction-details.js` (16), `drawing/beam-sheet.js` (9), `drawing/room-sketch.js` (9), `drawing/stair-builder.js` (8), `drawing/walls.js` (7), `drawing/steel-parts.js` (6), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/drawing-layers.js` (5), `drawing/plan-geometry.js` (5), `drawing/cupboard-maker.js` (4), `drawing/retaining-wall.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `drawing/paving-draw.js` (3), `drawing/stair-3d.js` (3), `files/files.js` (3), `survey/door-window-survey.js` (3), `drawing/bend-lines.js` (2), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/smart-pen.js` (2), `drawing/standard-sizes.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `photos/photos.js` (2), `sales/sales-calc.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `drawing/find-rooms.js` (1), `drawing/finger-tap.js` (1), `drawing/house-render.js` (1), `drawing/join-rooms.js` (1), `drawing/undo-list.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `purchasing/price-order.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sales/letterhead-setup.js` (1), `sites/summary.js` (1)
 - **Used by 17 files**
@@ -799,7 +799,7 @@ STAIR BUILDER: a stair designed step by step – type, sizes, steps, materials, 
 
 STANDARD SIZES: the sizes doors, windows, fittings and the rest usually come in
 
-- 437 lines, 10 KB. Declares 2 names, 2 used elsewhere.
+- 444 lines, 11 KB. Declares 2 names, 2 used elsewhere.
 - **Used elsewhere:** `NP_REAL` (2), `NP_STD` (1)
 - **Uses names from 0 files:** none
 - **Used by 2 files**

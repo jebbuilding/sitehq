@@ -229,3 +229,8 @@ body>.dimask.cb3-sg{z-index:320}
 .sbuild .sb-tbl td,.sbuild .sb-tbl th{padding:4px 6px;text-align:left}
 .sbuild .sb-tbl .num{text-align:right}
 .s3d .s3d-cv{width:100%;height:auto;border-radius:10px;background:#f4f1ee;touch-action:none}
+
+/* drawing › zoom-in detail */
+.zd .zd-sc{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.zd .zd-sc .btn{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 12px}
+.zd .zd-sc .btn small{font-size:11px;opacity:.8;font-weight:500}
