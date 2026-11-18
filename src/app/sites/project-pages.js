@@ -39,6 +39,8 @@ import { jobCard } from "./job-sheets.js";
 import { dropPin } from "./maps-pins.js";
 import { RAMS_SIGN, docPath, docPickBar, docRow, wireDocs } from "./plans-specs.js";
 import { QRSITE } from "./qr-sign-in.js";
+import { rfiHtml, rfiNoticeHtml, rfiWire } from "./rfi.js";
+import { sodHtml, sodWire } from "./signoff-due.js";
 import { sdiHtml, sdiWire } from "./site-diary.js";
 import { jhCardHtml, jhWire } from "./site-health.js";
 import { sqMap, sqOpen } from "./snag-quick.js";
@@ -306,6 +308,15 @@ function ownerProjects() {
   const openJobs = sj.filter((j) => j.status !== "closed").length;
   const T = [
     ["overview", "Overview"],
+    [
+      "rfi",
+      "RFIs",
+      (() => {
+        const L = (S.rfis || []).filter((r) => same(r.site, site));
+        const o = L.filter((r) => r.status === "open").length;
+        return o ? o + " waiting" : L.length;
+      })(),
+    ],
     ["hours", "Hours", hrs(sumH(ts, () => true)) + " h"],
     ["photos", "Photos", photos.length],
     ["plans", "Plans & drawings", dPlans.length],
@@ -354,17 +365,19 @@ function ownerProjects() {
     diary: "📔",
     programme: "📊",
     bc: "🏛️",
+    rfi: "❓",
     stages: "✅",
     money: "🧾",
   };
   P.diary = sdiHtml(site);
   P.programme = pgHtml(site);
   P.bc = bcHtml(site);
+  P.rfi = rfiHtml(site);
   P.stages = stgHtml(site);
   let tab = S.f.pjtab || "overview";
   if (!T.some((t) => t[0] === tab)) tab = "overview";
   const sr0 = siteRec(site) || {};
-  P.overview = `${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}${jhCardHtml(site)}
+  P.overview = `${sodHtml(site)}${rfiNoticeHtml(site)}${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}${jhCardHtml(site)}
     <div class="actions"><button type="button" class="btn" id="sq-new">📸 Snag</button><button type="button" class="btn" id="jk-open">📦 Send job details to someone not on the app</button></div>
     <div class="totals"><div class="tot"><div class="n">${hrs(sumH(ts, () => true))}</div><div class="l">Timesheet hours</div></div><div class="tot hi"><div class="n">${hrs(sumH(extra, () => true))}</div><div class="l">Extra work hours</div></div><div class="tot"><div class="n">${people.length}</div><div class="l">People worked here</div></div></div>
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
@@ -382,6 +395,16 @@ function ownerProjects() {
             .join("")}</div>`
         : ""
     }`;
+  /* the tabs along the top of the site: the overview, RFIs and the most used folders */
+  const tabsTop = ["overview", "rfi", "diary", "photos", "plans", "programme"]
+    .map((k) => T.find((t) => t[0] === k))
+    .filter(Boolean);
+  html += `<div class="pjtst" role="tablist" aria-label="This site">${tabsTop
+    .map(
+      ([k, l, c]) =>
+        `<button type="button" class="pjtst-b" role="tab" data-t="${k}" aria-selected="${tab === k}">${k === "overview" ? "🏠" : ICON[k]} ${esc(l)}${k === "rfi" && /waiting/.test(String(c)) ? ` <span class="pjtst-n">${esc(String(c).split(" ")[0])}</span>` : ""}</button>`,
+    )
+    .join("")}</div>`;
   html +=
     (tab === "overview"
       ? ""
@@ -391,7 +414,7 @@ function ownerProjects() {
   $("main").innerHTML = html;
   if (tab === "overview") jhWire(site);
   $("main")
-    .querySelectorAll("#pj-back,.pjtile")
+    .querySelectorAll("#pj-back,.pjtile,.pjtst-b")
     .forEach(
       (b) =>
         (b.onclick = () => {
@@ -519,6 +542,15 @@ function ownerProjects() {
   wireInvoices(invs, true);
   if (tab === "diary") sdiWire(site);
   if (tab === "bc") bcWire(site);
+  if (tab === "rfi") rfiWire(site);
+  if (tab === "overview") {
+    sodWire(site);
+    if ($("rfi-go"))
+      $("rfi-go").onclick = () => {
+        S.f.pjtab = "rfi";
+        render();
+      };
+  }
   if (tab === "stages") stgWire(site);
   if (tab === "programme") pgWire(site);
   if ($("dcm-open")) $("dcm-open").onclick = () => dcmOpen(site);

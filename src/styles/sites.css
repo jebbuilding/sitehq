@@ -125,3 +125,30 @@
 
 /* sites › labour against what's allowed, on the job's page */
 .jh-card .jh-lab{margin:8px 0}
+/* RFIs: the register, one RFI, and the notice on the site */
+.rfi-wrap .seg{margin:8px 0}
+.rfi-row{width:100%}
+.rfi-note{display:block;width:100%;text-align:left;cursor:pointer;min-height:44px;font:inherit;color:inherit}
+.rfi-view h2{font-size:1.2rem;margin:0 0 6px}
+.rfi-sec{margin:12px 0;padding-top:8px;border-top:1px solid var(--line)}
+.rfi-sec>b{display:block;margin-bottom:4px}
+.rfi-txt{white-space:pre-wrap}
+.rfi-ans{background:var(--soft);border-radius:10px;padding:10px;border-top:0}
+.rfi-files,.rfi-afiles{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.rfi-file,.rfi-afile{min-height:44px}
+/* sign-off sheets still to sort, at the top of a site */
+.sod{display:flex;flex-direction:column;gap:6px}
+.sod .sod-row{width:100%}
+/* the site diary's week strip and summary */
+.sdi-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
+.sdi-wd{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:64px;padding:6px 2px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:.8rem;cursor:pointer}
+.sdi-wd.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.sdi-wd:disabled{opacity:.6;cursor:default}
+.sdi-wd .sdi-wi{font-size:1.2rem;line-height:1}
+.sdi-sum{margin:-4px 0 8px}
+.sdi-todo ul{margin:6px 0 0}
+/* the tabs along the top of a site page */
+.pjtst{display:flex;gap:6px;overflow-x:auto;margin:6px 0 12px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.pjtst-b{flex:0 0 auto;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+.pjtst-b[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.pjtst-n{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:999px;background:var(--danger);color:#fff;font-size:.8rem;text-align:center}

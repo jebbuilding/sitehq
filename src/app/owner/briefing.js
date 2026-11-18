@@ -15,7 +15,9 @@ import { gpToChase } from "../sales/getting-paid.js";
 import { sdSigned } from "../sales/sales-calc.js";
 import { appAll, appCalc } from "../sales/valuations.js";
 import { taskDone } from "../sites/job-sheets.js";
+import { rfiOver } from "../sites/rfi.js";
 import { onSiteNow } from "../sites/roll-call.js";
+import { sodAll } from "../sites/signoff-due.js";
 export { brfCardHtml, brfWire };
 /* One card that reads like a briefing: who's on site and who's booked in today, what's happening today (deliveries,
    inspections, key dates, vehicles in for MOT), weather problems in the next three days, money (overdue invoices and
@@ -142,6 +144,35 @@ function brfLines() {
       .filter((j) => j.kind === "snag" && j.status !== "closed")
       .forEach((j) => (j.tasks || []).forEach((t) => !(taskDone(j, t) || {}).done && n++));
     if (n) add("📸", `${n} snag${n === 1 ? "" : "s"} still open`, toTab("jobs"));
+  });
+  /* sign-off sheets not signed yet, and RFI answers that are late: open the (first) site they are on */
+  const toSite = (site, tab) => () => {
+    S.f.proj = site;
+    S.f.projList = false;
+    S.f.pjtab = tab;
+    nlGo("projects");
+  };
+  safe(() => {
+    const L = sodAll();
+    if (!L.length) return;
+    const sites = [...new Set(L.map((r) => r.site).filter(Boolean))];
+    add(
+      "✍️",
+      `${L.length} sign-off sheet${L.length === 1 ? "" : "s"} still to sort${sites.length ? " (" + sites.slice(0, 2).join(", ") + (sites.length > 2 ? "…" : "") + ")" : ""}`,
+      sites.length ? toSite(sites[0], "overview") : toTab("signoffs"),
+      true,
+    );
+  });
+  safe(() => {
+    const L = (S.rfis || []).filter(rfiOver);
+    if (!L.length) return;
+    const sites = [...new Set(L.map((r) => r.site))];
+    add(
+      "❓",
+      `${L.length} RFI answer${L.length === 1 ? "" : "s"} overdue (${sites.slice(0, 2).join(", ")}${sites.length > 2 ? "…" : ""})`,
+      toSite(sites[0], "rfi"),
+      true,
+    );
   });
   return L;
 }
