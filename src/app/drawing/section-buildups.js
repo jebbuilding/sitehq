@@ -534,10 +534,19 @@ function npsuDraw(ctx, o, P, L, lw) {
   let lining = !!ev,
     tl = 0;
   const zoneOf = [];
-  bu.forEach((l) => {
+  /* over a foundation the plaster stops at the floor and an outside finish (render) at the DPC */
+  const fdn = poly && NPSU_FOUND.get(o);
+  bu.forEach((l, li) => {
     if (lining && ["pirb", "studins", "void", "timber", "wool"].includes(l.m)) lining = false;
-    const tA = lining ? (ev.er ? t0 : ti) : t0,
+    let tA = lining ? (ev.er ? t0 : ti) : t0,
       tB = lining ? (ev.er ? ti : t1) : t1;
+    const yc = fdn ? fdn.cut[li] : null;
+    if (yc != null) {
+      const dy = X[1] - O[1] || -1e-9,
+        tc = (yc - O[1]) / dy;
+      if (dy < 0) tA = Math.max(tA, tc);
+      else tB = Math.min(tB, tc);
+    }
     const M = NPSU_MATS[l.m] || ["", "", ""];
     if (npsuIsMem(l.m)) {
       ctx.save();
@@ -635,7 +644,8 @@ function npsuDraw(ctx, o, P, L, lw) {
     ctx.save();
     ctx.lineWidth = pw(0.3);
     ctx.beginPath();
-    const evo = NPSU_EAVES.get(o);
+    const evo = NPSU_EAVES.get(o),
+      fdF = NPSU_FOUND.get(o);
     if (evo) {
       const u = [X[0] - O[0], X[1] - O[1]],
         w = [-(Y[0] - O[0]) * side, -(Y[1] - O[1]) * side];
@@ -652,11 +662,17 @@ function npsuDraw(ctx, o, P, L, lw) {
         ctx.lineTo(Pz[0], Pz[1]);
       }
     } else {
-      ctx.moveTo(poly[0][0], poly[0][1]);
-      ctx.lineTo(poly[1][0], poly[1][1]);
+      const ed = npsuFace(poly[0], poly[1], fdF ? (fdF.lineInner ? fdF.yIn : fdF.yOut) : null);
+      if (ed) {
+        ctx.moveTo(ed[0][0], ed[0][1]);
+        ctx.lineTo(ed[1][0], ed[1][1]);
+      }
     }
-    ctx.moveTo(poly[2][0], poly[2][1]);
-    ctx.lineTo(poly[3][0], poly[3][1]);
+    const ed2 = npsuFace(poly[2], poly[3], fdF ? (fdF.lineInner ? fdF.yOut : fdF.yIn) : null);
+    if (ed2) {
+      ctx.moveTo(ed2[0][0], ed2[0][1]);
+      ctx.lineTo(ed2[1][0], ed2[1][1]);
+    }
     ctx.stroke();
     ctx.lineWidth = pw(0.18);
     ctx.beginPath();
@@ -684,6 +700,19 @@ function npsuDraw(ctx, o, P, L, lw) {
     ctx.restore();
     const ev = NPSU_EAVES.get(o);
     if (ev) npsuEaves(ctx, ev, ev.er ? [poly[1], poly[2]] : [poly[0], poly[3]], lw);
+    const fd = NPSU_FOUND.get(o);
+    if (fd) npsuFound(ctx, fd, lw, o.lab);
+    const us = NPSU_UPST.get(o);
+    if (us) {
+      ctx.save();
+      ctx.fillStyle = NPSU_MATS.pir[1];
+      ctx.fillRect(us.x0, us.y0, us.x1 - us.x0, us.y1 - us.y0);
+      ctx.strokeStyle = ink;
+      npsuPat(ctx, "hex", us.x0, us.y0, us.x1, us.y1, lw, k);
+      ctx.lineWidth = pw(0.13);
+      ctx.strokeRect(us.x0, us.y0, us.x1 - us.x0, us.y1 - us.y0);
+      ctx.restore();
+    }
   }
   /* page point for (along, up-from-line) in the build-up's own frame */
   const Q = (t, up) => P(t, -up * side);
@@ -780,6 +809,21 @@ function npsuDraw(ctx, o, P, L, lw) {
 const NPSU_JOIN = new WeakMap();
 /* a pitched roof's eaves where it runs past a wall: { er (which end), xp (plumb cut), xo / xi (wall outer / inner face), sgn (outwards), lp, ld (roof underside), k } */
 const NPSU_EAVES = new WeakMap();
+/* a masonry wall's foundation where it stands on a ground floor: { type, xi, xo, sgn, yDPC, yGL, yTop (wall foot),
+   yBot, width, depth, gl, k, spans [{m, x0, x1}] } – and the floor's edge insulation upstand { x0, x1, y0, y1 } */
+const NPSU_FOUND = new WeakMap();
+const NPSU_UPST = new WeakMap();
+const npsuMasonry = (m) => m === "block" || m === "brick";
+/* the part of a face from A to B that lies above the level yc (page y grows downwards); the whole face when yc is null */
+function npsuFace(A, B, yc) {
+  if (yc == null) return [A, B];
+  const lo = A[1] > B[1] ? A : B,
+    hi = lo === A ? B : A;
+  if (hi[1] >= yc) return null;
+  if (lo[1] <= yc) return [hi, lo];
+  const t = (yc - hi[1]) / (lo[1] - hi[1]);
+  return [hi, [hi[0] + (lo[0] - hi[0]) * t, yc]];
+}
 const npsuX = (p, d, q, e) => {
   const den = d[0] * e[1] - d[1] * e[0];
   if (Math.abs(den) < 1e-9) return null;
@@ -810,12 +854,140 @@ function npsuTie(objs, k) {
   F.forEach((f) => {
     NPSU_JOIN.delete(f.o);
     NPSU_EAVES.delete(f.o);
+    NPSU_FOUND.delete(f.o);
+    NPSU_UPST.delete(f.o);
   });
   if (F.length < 2) return;
   const cuts = new Map();
   const end = (f, e) => (e ? f.b : f.a);
   const off = (p, w, d) => [p[0] + w[0] * d, p[1] + w[1] * d];
   const cross = (f, g) => f.u[0] * g.u[1] - f.u[1] * g.u[0];
+  /* foundations: an upright masonry wall standing on a ground floor carries on down past the floor to its
+     foundation, and the floor stops at the wall's inside face */
+  const kk0 = k || 0.12;
+  const isGF = (h) =>
+    Math.abs(h.u[1]) < 0.2 && (/^GF/.test(h.o.bc || "") || /ground floor/i.test(h.o.bn || ""));
+  F.forEach((W, wi) => {
+    if (Math.abs(W.u[0]) >= 0.2 || W.o.fd === "none") return;
+    const wbu = W.o.bu && W.o.bu.length ? W.o.bu : npsuLayers("cavbrick");
+    if (!wbu.some((l) => npsuMasonry(l.m))) return;
+    const ew = W.a[1] > W.b[1] ? 0 : 1;
+    const p = end(W, ew);
+    F.forEach((G, gi) => {
+      if (gi === wi || !isGF(G) || cuts.get(wi + ":" + ew)) return;
+      const rel = [p[0] - G.a[0], p[1] - G.a[1]];
+      const t = rel[0] * G.u[0] + rel[1] * G.u[1],
+        d = rel[0] * G.w[0] + rel[1] * G.w[1];
+      const tol = Math.max(W.T, 6);
+      if (t < -tol - W.T || t > G.L + tol + W.T || d < -tol || d > G.T + tol) return;
+      const wx = [W.a[0], W.a[0] + W.w[0] * W.T];
+      const gc = (G.a[0] + G.b[0]) / 2,
+        wc = (wx[0] + wx[1]) / 2;
+      const sgn = gc < wc ? 1 : -1;
+      const xi = sgn > 0 ? Math.min(...wx) : Math.max(...wx),
+        xo = sgn > 0 ? Math.max(...wx) : Math.min(...wx);
+      /* the floor's levels: DPM, insulation, screed and top */
+      const gbu = G.o.bu && G.o.bu.length ? G.o.bu : [];
+      const yl = (G.a[1] + G.b[1]) / 2,
+        yAt = (mm) => yl + G.w[1] * mm * kk0;
+      let cum = 0,
+        dpm = null,
+        struct = null,
+        pirB = null,
+        pirT = null,
+        scr = null;
+      gbu.forEach((l) => {
+        const th = npsuIsMem(l.m) ? 0 : +l.t || 0;
+        if (l.m === "dpm" && dpm == null) dpm = cum;
+        if (l.m === "conc" || l.m === "bblock") struct = cum + th;
+        if (l.m === "pir" && pirB == null) {
+          pirB = cum;
+          pirT = cum + th;
+        }
+        if (l.m === "screed") scr = cum + th;
+        cum += th;
+      });
+      const yDPC = dpm != null ? yAt(dpm) : struct != null ? yAt(struct) : yAt(cum) + 150 * kk0;
+      const gl = W.o.gl == null ? 150 : +W.o.gl,
+        depth = W.o.fdd == null ? 1000 : +W.o.fdd,
+        width = W.o.fdw == null ? 600 : +W.o.fdw,
+        type = W.o.fd === "strip" ? "strip" : "trench";
+      const yGL = yDPC + gl * kk0,
+        yBot = yGL + Math.max(depth, 450) * kk0;
+      const yTop =
+        type === "trench" ? Math.min(yGL + 150 * kk0, yBot - 150 * kk0) : yBot - 225 * kk0;
+      /* the wall's layers across the page */
+      let c2 = 0;
+      const spans = [];
+      wbu.forEach((l) => {
+        const th = npsuIsMem(l.m) ? 0 : +l.t || 0;
+        if (th) {
+          const xa = W.a[0] + W.w[0] * c2 * kk0,
+            xb = W.a[0] + W.w[0] * (c2 + th) * kk0;
+          spans.push({ m: l.m, x0: Math.min(xa, xb), x1: Math.max(xa, xb) });
+        }
+        c2 += th;
+      });
+      cuts.set(wi + ":" + ew, { p: [0, yTop], d: [1, 0] });
+      /* finishes: layers inside the inner leaf stop at the floor, outside the outer leaf at the DPC */
+      const lineInner = Math.abs(W.a[0] - xi) < 1e-6;
+      const mIdx = wbu.map((l, i) => (npsuMasonry(l.m) ? i : -1)).filter((i) => i >= 0);
+      const yFin = yAt(cum);
+      const cut = wbu.map((l, i) =>
+        i < mIdx[0]
+          ? lineInner
+            ? yFin
+            : yDPC
+          : i > mIdx[mIdx.length - 1]
+            ? lineInner
+              ? yDPC
+              : yFin
+            : null,
+      );
+      const hasThick = (a, b) => wbu.slice(a, b).some((l) => !npsuIsMem(l.m) && +l.t > 0);
+      const lineHas = hasThick(0, mIdx[0]),
+        farHas = hasThick(mIdx[mIdx.length - 1] + 1, wbu.length);
+      const innerHas = lineInner ? lineHas : farHas,
+        outerHas = lineInner ? farHas : lineHas;
+      const mSp = spans.filter((sp) => npsuMasonry(sp.m));
+      const xm =
+        sgn > 0 ? Math.min(...mSp.map((sp) => sp.x0)) : Math.max(...mSp.map((sp) => sp.x1));
+      const xmo =
+        sgn > 0 ? Math.max(...mSp.map((sp) => sp.x1)) : Math.min(...mSp.map((sp) => sp.x0));
+      const xs = innerHas ? xm : xi;
+      const eg = (G.a[0] - xi) * sgn > (G.b[0] - xi) * sgn ? 0 : 1;
+      if (!cuts.get(gi + ":" + eg) && (end(G, eg)[0] - xi) * sgn > -W.T - 6)
+        cuts.set(gi + ":" + eg, { p: [xs, 0], d: [0, 1] });
+      if (pirT != null)
+        NPSU_UPST.set(G.o, {
+          x0: Math.min(xs, xs - sgn * 25 * kk0),
+          x1: Math.max(xs, xs - sgn * 25 * kk0),
+          y0: Math.min(yAt(pirT), yAt(scr != null ? scr : cum)),
+          y1: Math.max(yAt(pirT), yAt(scr != null ? scr : cum)),
+        });
+      NPSU_FOUND.set(W.o, {
+        type,
+        xi,
+        xo,
+        sgn,
+        yDPC,
+        yGL,
+        yTop,
+        yBot,
+        width,
+        depth,
+        gl,
+        k: kk0,
+        spans,
+        cut,
+        lineInner,
+        yIn: innerHas ? yFin : null,
+        yOut: outerHas ? yDPC : null,
+        xm,
+        xmo,
+      });
+    });
+  });
   /* corners: two ends close together, not in line */
   F.forEach((f, i) =>
     F.forEach((g, j) => {
@@ -906,6 +1078,144 @@ function npsuTie(objs, k) {
     pl.free = [!ca, !cb];
     NPSU_JOIN.set(f.o, pl);
   });
+}
+/* the foundation under a masonry wall: ground level outside, the concrete trench fill (or strip), lean-mix
+   concrete in the cavity to 225 mm below the DPC, and the DPC in each leaf; notes when the wall is labelled */
+function npsuFound(ctx, f, lw, lab) {
+  const { type, xi, xo, sgn, yDPC, yGL, yTop, yBot, width, depth, gl, k, spans } = f;
+  const pw = (mmP) => npsuPw(ctx, lw, mmP);
+  const ink = ctx.strokeStyle;
+  ctx.save();
+  /* the ground outside: a line at ground level with a band of earth hatching under it */
+  const gLen = Math.min(600 * k, pw(30)),
+    gx0 = Math.min(xo, xo + sgn * gLen),
+    gx1 = Math.max(xo, xo + sgn * gLen),
+    band = pw(2);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(gx0, yGL, gx1 - gx0, band);
+  ctx.clip();
+  ctx.strokeStyle = "rgba(60,45,30,0.7)";
+  ctx.lineWidth = pw(0.1);
+  ctx.beginPath();
+  for (let x = gx0 - band; x < gx1 + band; x += pw(1)) {
+    ctx.moveTo(x, yGL + band);
+    ctx.lineTo(x + band, yGL);
+  }
+  ctx.stroke();
+  ctx.restore();
+  ctx.lineWidth = pw(0.3);
+  ctx.beginPath();
+  ctx.moveTo(gx0, yGL);
+  ctx.lineTo(gx1, yGL);
+  ctx.stroke();
+  /* the foundation concrete, centred on the wall */
+  const xc = (xi + xo) / 2,
+    fx0 = xc - (width * k) / 2,
+    fx1 = xc + (width * k) / 2,
+    fTop = type === "trench" ? yTop : yBot - 225 * k;
+  ctx.fillStyle = NPSU_MATS.conc[1];
+  ctx.fillRect(fx0, fTop, fx1 - fx0, yBot - fTop);
+  ctx.strokeStyle = ink;
+  npsuPat(ctx, "conc", fx0, fTop, fx1, yBot, lw, k);
+  ctx.lineWidth = pw(0.3);
+  ctx.strokeRect(fx0, fTop, fx1 - fx0, yBot - fTop);
+  /* the cavity: the layers between the two masonry leaves, filled with lean-mix below ground */
+  const mi = spans.map((sp, i) => (npsuMasonry(sp.m) ? i : -1)).filter((i) => i >= 0);
+  const yCF = yDPC + 225 * k;
+  let cav = null;
+  if (mi.length >= 2 && mi[mi.length - 1] - mi[0] > 1) {
+    const inner = spans.slice(mi[0] + 1, mi[mi.length - 1]);
+    cav = [Math.min(...inner.map((x) => x.x0)), Math.max(...inner.map((x) => x.x1))];
+    if (yTop > yCF) {
+      ctx.fillStyle = "#dedede";
+      ctx.fillRect(cav[0], yCF, cav[1] - cav[0], yTop - yCF);
+      npsuPat(ctx, "conc", cav[0], yCF, cav[1], yTop, lw, k);
+      ctx.lineWidth = pw(0.13);
+      ctx.strokeRect(cav[0], yCF, cav[1] - cav[0], yTop - yCF);
+    }
+  }
+  /* the masonry faces below where the plaster and render stop */
+  ctx.lineWidth = pw(0.3);
+  ctx.beginPath();
+  if (f.yIn != null) {
+    ctx.moveTo(f.xm, f.yIn);
+    ctx.lineTo(f.xm, yTop);
+  }
+  if (f.yOut != null) {
+    ctx.moveTo(f.xmo, f.yOut);
+    ctx.lineTo(f.xmo, yTop);
+  }
+  ctx.stroke();
+  /* the DPC: a bold blue dashed line through each masonry leaf */
+  ctx.save();
+  ctx.strokeStyle = NPSU_MATS.dpc[1];
+  ctx.lineWidth = pw(0.45);
+  ctx.setLineDash([pw(2.4), pw(1.2)]);
+  ctx.beginPath();
+  mi.forEach((i) => {
+    ctx.moveTo(spans[i].x0, yDPC);
+    ctx.lineTo(spans[i].x1, yDPC);
+  });
+  ctx.stroke();
+  ctx.restore();
+  if (lab) {
+    const fs = ctx.__mm ? 2.5 * NP_U : Math.max(8, Math.min(lw * 5.5, 22)),
+      gap = fs * 1.35;
+    const outer = mi.length ? spans[mi[sgn > 0 ? mi.length - 1 : 0]] : null;
+    const rows = [
+      outer && [
+        (outer.x0 + outer.x1) / 2,
+        yDPC,
+        `DPC min. ${Math.round(gl)} mm above ground, lapped with the floor DPM`,
+      ],
+      [xo + sgn * gLen * 0.7, yGL, "Ground level"],
+      cav &&
+        yTop > yCF && [
+          (cav[0] + cav[1]) / 2,
+          (yCF + yTop) / 2,
+          "Cavity filled with lean-mix concrete to 225 mm below DPC",
+        ],
+      [
+        xc,
+        (fTop + yBot) / 2,
+        type === "trench"
+          ? `Concrete trench fill, ${Math.round(width)} wide, min. ${Math.round(depth)} below ground`
+          : `${Math.round(width)} × 225 concrete strip, min. ${Math.round(depth)} below ground`,
+      ],
+    ].filter(Boolean);
+    const ex = xo + sgn * (gLen + fs * 0.8);
+    let last = -1e9;
+    ctx.lineWidth = pw(0.13);
+    ctx.fillStyle = ink;
+    ctx.font = `400 ${fs}px Helvetica, Arial, system-ui, sans-serif`;
+    ctx.textAlign = sgn > 0 ? "left" : "right";
+    ctx.textBaseline = "middle";
+    rows.forEach(([px, py, t]) => {
+      const ry = Math.max(py, last + gap);
+      last = ry;
+      const an = Math.atan2(py - ry, px - ex),
+        ah = pw(1.6);
+      ctx.beginPath();
+      ctx.moveTo(px - ah * Math.cos(an - 0.3), py - ah * Math.sin(an - 0.3));
+      ctx.lineTo(px, py);
+      ctx.lineTo(px - ah * Math.cos(an + 0.3), py - ah * Math.sin(an + 0.3));
+      ctx.moveTo(px, py);
+      ctx.lineTo(ex, ry);
+      ctx.lineTo(ex + sgn * fs * 0.6, ry);
+      ctx.stroke();
+      ctx.fillText(t, ex + sgn * fs * 0.9, ry);
+    });
+    if (type === "trench" || type === "strip") {
+      ctx.fillStyle = "#555555";
+      ctx.fillText(
+        "Depth and width to Building Control's approval on site",
+        ex + sgn * fs * 0.9,
+        last + gap,
+      );
+    }
+  }
+  ctx.restore();
 }
 /* how deep the ceiling lining is (mm): the layers under the rafter zone */
 function npsuLiningDepth(bu) {
@@ -1000,5 +1310,28 @@ function npsuSpec(objs) {
           npsuTotal(o.bu),
         ]);
     });
-  return [...seen.values()].sort((a, b) => a[0].localeCompare(b[0]));
+  /* foundations under the walls, one entry for each kind */
+  let n = 0;
+  const fds = new Map();
+  objs.forEach((o) => {
+    const f = o.k === "secbu" && NPSU_FOUND.get(o);
+    if (!f) return;
+    const key = [f.type, f.width, f.depth, f.gl].join();
+    if (fds.has(key)) return;
+    fds.set(key, [
+      "FD" + String(++n).padStart(2, "0"),
+      f.type === "trench" ? "Foundation: concrete trench fill" : "Foundation: concrete strip",
+      [
+        f.type === "trench"
+          ? `Concrete trench fill ${Math.round(f.width)} wide, min. ${Math.round(f.depth)} below ground`
+          : `${Math.round(f.width)} × 225 concrete strip, min. ${Math.round(f.depth)} below ground`,
+        "Depth and width to Building Control's approval on site",
+        "Dense concrete blockwork / frost-resistant brick below DPC",
+        "Cavity filled with lean-mix concrete to 225 mm below DPC",
+        `DPC min. ${Math.round(f.gl)} mm above ground, lapped with floor DPM`,
+      ],
+      null,
+    ]);
+  });
+  return [...seen.values()].sort((a, b) => a[0].localeCompare(b[0])).concat([...fds.values()]);
 }

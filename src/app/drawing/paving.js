@@ -541,7 +541,7 @@ async function openNotePage(opts) {
           <div class="nfrow nfdirn" hidden><span class="nfl">Direction</span><button type="button" class="nfb nfturnb">⇄ Turn the timbers</button></div>
           <div class="nfrow"><span class="nfl">Extra</span><button type="button" class="nfb nfaddt">➕ Add timber</button><button type="button" class="nfb nfclrt">Clear extras</button></div><div class="who nftinfo"></div></div>
         <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div><div class="nfrow nfst-sheetrow"><button type="button" class="nfb nfst-sheet">📋 Open the beam sheet: lifting, props, padstones, fire, order, sign-off</button></div></div>
-        <div class="nfsecbu" hidden><div class="nfrow"><button type="button" class="nfb nfbu-edit">🧱 Change the layers, thicknesses and tag</button><button type="button" class="nfb nfbu-flip">⇄ Layers to the other side</button><button type="button" class="nfb nfbu-lab">🏷 Label every layer</button><button type="button" class="nfb nfbu-ta">🪵 Timbers cut across</button></div><form class="nfrow nfbu-eof"><span class="nfl">Eaves overhang</span><input class="nfbu-eo" inputmode="numeric" style="width:80px" aria-label="Eaves overhang in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><div class="who nfbu-info"></div></div>
+        <div class="nfsecbu" hidden><div class="nfrow"><button type="button" class="nfb nfbu-edit">🧱 Change the layers, thicknesses and tag</button><button type="button" class="nfb nfbu-flip">⇄ Layers to the other side</button><button type="button" class="nfb nfbu-lab">🏷 Label every layer</button><button type="button" class="nfb nfbu-ta">🪵 Timbers cut across</button></div><form class="nfrow nfbu-eof"><span class="nfl">Eaves overhang</span><input class="nfbu-eo" inputmode="numeric" style="width:80px" aria-label="Eaves overhang in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><form class="nfrow nfbu-fdf"><span class="nfl">Foundation</span><select class="nfbu-fd" aria-label="Foundation under the wall"><option value="trench">Trench fill</option><option value="strip">Strip</option><option value="none">None – stand on the floor</option></select><span class="nfl">Depth</span><input class="nfbu-fdd" inputmode="numeric" style="width:70px" aria-label="Foundation depth below ground in mm"><span class="nfl">Width</span><input class="nfbu-fdw" inputmode="numeric" style="width:70px" aria-label="Foundation width in mm"><span class="nfl">DPC above ground</span><input class="nfbu-gl" inputmode="numeric" style="width:60px" aria-label="DPC height above ground in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><div class="who nfbu-info"></div></div>
         <div class="nfstairs" hidden><div class="nfrow"><span class="nfl">Steps</span><button type="button" class="nfb nfst" data-d="-1" aria-label="One step fewer">−</button><b class="nfstn" style="min-width:34px;text-align:center"></b><button type="button" class="nfb nfst" data-d="1" aria-label="One step more">+</button><button type="button" class="nfb nfsdir">⇅ Up / down</button></div>
           <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div><div class="nfrow"><button type="button" class="nfb nfs-build">🪜 Open in the stair builder: type, materials, glass rail, checks, side view</button></div></div>
         <div class="nfrow nfwhat"><span class="nfl">Adjust</span><div class="seg nfseg"><button type="button" data-w="all" aria-pressed="true">Whole item</button><button type="button" data-w="a" aria-pressed="false">● Start</button><button type="button" data-w="b" aria-pressed="false">● End</button></div></div>
@@ -4105,15 +4105,16 @@ async function openNotePage(opts) {
         });
         y += fs2 * 1.45;
       });
-      objs.push({
-        t: "text",
-        x: x + fs2,
-        y,
-        s: `Overall ${Math.round(tot)} mm`,
-        c: "#555555",
-        size: Math.round(fs2 * 0.9),
-        ly: "notes",
-      });
+      if (tot != null)
+        objs.push({
+          t: "text",
+          x: x + fs2,
+          y,
+          s: `Overall ${Math.round(tot)} mm`,
+          c: "#555555",
+          size: Math.round(fs2 * 0.9),
+          ly: "notes",
+        });
       y += fs2 * 2.4;
     });
     objs.push({
@@ -10799,6 +10800,19 @@ async function openNotePage(opts) {
           : "🪵 Timbers running along (tap for cut across)";
         const eo = fb.querySelector(".nfbu-eo");
         if (document.activeElement !== eo) eo.value = o.eo == null ? 300 : o.eo;
+        const wallish = /^EW/.test(o.bc || "") || /wall/i.test(o.bn || "");
+        fb.querySelector(".nfbu-fdf").hidden = !wallish;
+        if (wallish) {
+          fb.querySelector(".nfbu-fd").value = o.fd || "trench";
+          [
+            ["fdd", 1000],
+            ["fdw", 600],
+            ["gl", 150],
+          ].forEach(([f2, d2]) => {
+            const el = fb.querySelector(".nfbu-" + f2);
+            if (document.activeElement !== el) el.value = o[f2] == null ? d2 : o[f2];
+          });
+        }
       }
     }
     {
@@ -11150,6 +11164,36 @@ async function openNotePage(opts) {
             ? "Eaves overhang " + v + " mm past the wall"
             : "No eaves: the roof is mitred to the wall",
         );
+      };
+      fb.querySelector(".nfbu-fd").onchange = (e) => {
+        const v = e.target.value;
+        upd((o) => {
+          if (v === "trench") delete o.fd;
+          else o.fd = v;
+        });
+        toast(
+          v === "none"
+            ? "No foundation: the wall stands on the floor"
+            : v === "strip"
+              ? "Strip foundation under the wall where it meets a ground floor"
+              : "Trench fill foundation under the wall where it meets a ground floor",
+        );
+      };
+      fb.querySelector(".nfbu-fdf").onsubmit = (e) => {
+        e.preventDefault();
+        const g2 = (c2, lo, hi, d2) => {
+          const v = Math.round(+fb.querySelector(".nfbu-" + c2).value);
+          return isFinite(v) && v ? Math.max(lo, Math.min(hi, v)) : d2;
+        };
+        const dd = g2("fdd", 450, 5000, 1000),
+          ww = g2("fdw", 300, 2000, 600),
+          gg = g2("gl", 75, 600, 150);
+        upd((o) => {
+          o.fdd = dd;
+          o.fdw = ww;
+          o.gl = gg;
+        });
+        toast(`Foundation ${ww} wide, ${dd} mm below ground; DPC ${gg} mm above ground`);
       };
       fb.querySelector(".nfbu-flip").onclick = () =>
         upd((o) => {

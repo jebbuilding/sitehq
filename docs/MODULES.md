@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 246 files, 4671 KB, 118851 lines.
-- 2422 names declared at the top level (the shared scope); 1246 of them are used by a file other than the one that declares them.
+- 246 files, 4686 KB, 119228 lines.
+- 2427 names declared at the top level (the shared scope); 1246 of them are used by a file other than the one that declares them.
 - 2571 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 206 files, 11 files depend on each other in a loop (directly or through other files); the other 29 files are outside any loop.
@@ -718,7 +718,7 @@ PAVING DRAW: patio and drive materials drawn at real size, paths round a buildin
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 13369 lines, 507 KB. Declares 9 names, 5 used elsewhere.
+- 13413 lines, 509 KB. Declares 9 names, 5 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_SCX` (1), `setNpScx` (1)
 - **Uses names from 53 files:** `drawing/construction-details.js` (16), `drawing/beam-sheet.js` (9), `drawing/room-sketch.js` (9), `drawing/section-buildups.js` (8), `drawing/stair-builder.js` (8), `drawing/walls.js` (7), `drawing/steel-parts.js` (6), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/drawing-layers.js` (5), `drawing/plan-geometry.js` (5), `drawing/cupboard-maker.js` (4), `drawing/retaining-wall.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `drawing/paving-draw.js` (3), `drawing/stair-3d.js` (3), `files/files.js` (3), `survey/door-window-survey.js` (3), `drawing/bend-lines.js` (2), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/smart-pen.js` (2), `drawing/standard-sizes.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `photos/photos.js` (2), `sales/sales-calc.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `drawing/find-rooms.js` (1), `drawing/finger-tap.js` (1), `drawing/house-render.js` (1), `drawing/join-rooms.js` (1), `drawing/undo-list.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `purchasing/price-order.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sales/letterhead-setup.js` (1), `sites/summary.js` (1)
 - **Used by 17 files**
@@ -754,7 +754,7 @@ ROOM SKETCH: draw a room by hand, straighten it, measure it, make it to scale
 
 SECTION BUILD-UPS: walls, roofs and floors drawn layer by layer at real thickness, with tags and a specification
 
-- 1004 lines, 34 KB. Declares 21 names, 10 used elsewhere.
+- 1337 lines, 46 KB. Declares 26 names, 10 used elsewhere.
 - **Used elsewhere:** `NPSU_LIB` (1), `NPSU_MATS` (1), `npsuAcross` (1), `npsuCode` (1), `npsuDraw` (1), `npsuIsMem` (1), `npsuLayers` (1), `npsuSpec` (1), `npsuTie` (1), `npsuTotal` (1)
 - **Uses names from 1 files:** `drawing/construction-details.js` (1)
 - **Used by 3 files**
