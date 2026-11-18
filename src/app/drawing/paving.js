@@ -612,6 +612,8 @@ async function openNotePage(opts) {
     redo = [],
     dirty = false,
     textAt = null,
+    /* the text being changed in the writing box (its index), or null when adding new text */
+    textEd = null,
     snapOn = true,
     live = null;
   const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -2239,7 +2241,9 @@ async function openNotePage(opts) {
       const ds = q('.np-sb[data-a="dstyle"]');
       ds.hidden = so.t !== "dim";
       if (so.t === "dim") ds.innerHTML = so.tk ? "➤<small>Arrows</small>" : "⟋<small>Ticks</small>";
-      q('.np-sb[data-a="dnum"]').hidden = so.t !== "dim";
+      q('.np-sb[data-a="dnum"]').hidden = so.t !== "dim" && so.t !== "text";
+      q('.np-sb[data-a="dnum"]').innerHTML =
+        so.t === "text" ? "✏️<small>Change words</small>" : "✏️<small>Change number</small>";
       q('.np-sb[data-a="dside"]').hidden = so.t !== "dim";
       q('.np-sb[data-a="crop"]').hidden = so.t !== "img";
     }
@@ -2694,6 +2698,13 @@ async function openNotePage(opts) {
       return;
     }
     if (tool === "text") {
+      {
+        const ti = hit(p);
+        if (ti != null && doc.objs[ti].t === "text" && !doc.objs[ti].lk) {
+          textOpen(ti);
+          return;
+        }
+      }
       textAt = snapOn ? snapPt(p) : p;
       const f = q(".np-text");
       f.hidden = false;
@@ -2916,6 +2927,15 @@ async function openNotePage(opts) {
       if (i != null && i === sel && vpOf(doc.objs[i]) && !doc.objs[i].lk && e.detail >= 2) {
         vpDlg(doc.objs[i], false);
         return;
+      }
+      if (i != null && i === sel && doc.objs[i].t === "text" && !doc.objs[i].lk) {
+        const now = Date.now();
+        if (dimTap && dimTap.i === i && now - dimTap.t < 400) {
+          dimTap = null;
+          textOpen(i);
+          return;
+        }
+        dimTap = { i, t: now };
       }
       if (i != null && i === sel && doc.objs[i].t === "dim") {
         const now = Date.now();
@@ -4966,7 +4986,8 @@ async function openNotePage(opts) {
           return;
         } else if (a === "dnum") {
           undo.pop();
-          dimNumAsk(o);
+          if (o.t === "text") textOpen(sel);
+          else dimNumAsk(o);
           return;
         } else if (a === "dside") {
           if (o.lb) delete o.lb;
@@ -12038,6 +12059,39 @@ async function openNotePage(opts) {
     };
   };
   const tf = q(".np-text");
+  /* opens the writing box on a text already on the drawing, to change its words and look */
+  function textOpen(i) {
+    const o = doc.objs[i];
+    if (!o || o.t !== "text") return;
+    textEd = i;
+    textAt = null;
+    sel = i;
+    tf.hidden = false;
+    tf.querySelector(".np-ttx").value = o.s || "";
+    tf.querySelector(".np-tsz").value = "1";
+    tf.querySelector('.np-tst[data-k="b"]').setAttribute(
+      "aria-pressed",
+      String((o.wt || 600) >= 700),
+    );
+    tf.querySelector('.np-tst[data-k="i"]').setAttribute("aria-pressed", String(!!o.it));
+    tf.querySelectorAll('.np-tst[data-k="al"]').forEach((x) =>
+      x.setAttribute("aria-pressed", String(x.dataset.v === (o.al || "l"))),
+    );
+    tf.querySelector(".np-tlead").value = (o.lead && o.lead.k) || "none";
+    tf.querySelector(".np-tbox").value = o.box || "";
+    tf.querySelector('[type="submit"]').textContent = "Save";
+    tf.querySelector(".np-ttx").focus();
+    draw();
+  }
+  const textEdDone = () => {
+    textEd = null;
+    tf.querySelector('[type="submit"]').textContent = "Add";
+    try {
+      const v = (localStorage.getItem("np.tcall") || "none|").split("|");
+      tf.querySelector(".np-tlead").value = v[0] || "none";
+      tf.querySelector(".np-tbox").value = v[1] || "";
+    } catch (e) {}
+  };
   tf.onsubmit = (e) => {
     e.preventDefault();
     const t = tf
@@ -12046,6 +12100,35 @@ async function openNotePage(opts) {
       .replace(/^\n+|\n+$/g, "");
     tf.hidden = true;
     tf.querySelector(".np-ttx").placeholder = "Type your text… (Enter for a new line)";
+    if (textEd != null) {
+      const o = doc.objs[textEd];
+      textEdDone();
+      if (!o || o.t !== "text") return;
+      snap();
+      if (t) o.s = t;
+      const f = +tf.querySelector(".np-tsz").value || 1;
+      if (f !== 1) o.size = Math.max(6, Math.round((o.size || 20) * f));
+      if (tf.querySelector('.np-tst[data-k="b"]').getAttribute("aria-pressed") === "true")
+        o.wt = 800;
+      else delete o.wt;
+      if (tf.querySelector('.np-tst[data-k="i"]').getAttribute("aria-pressed") === "true")
+        o.it = true;
+      else delete o.it;
+      const al = tf.querySelector('.np-tst[data-k="al"][aria-pressed="true"]');
+      if (al && al.dataset.v !== "l") o.al = al.dataset.v;
+      else delete o.al;
+      const bk = tf.querySelector(".np-tbox").value,
+        lk = tf.querySelector(".np-tlead").value;
+      if (bk) o.box = bk;
+      else delete o.box;
+      if (lk === "none") delete o.lead;
+      else if (o.lead) o.lead.k = lk;
+      else o.lead = { p: [o.x - (o.size || 20) * 2.2, o.y + (o.size || 20) * 3.2], k: lk };
+      dirty = true;
+      draw();
+      if (!t) toast("The words were left as they were – use 🗑 Delete to take the text off");
+      return;
+    }
     if (dimAsk != null) {
       const o = doc.objs[dimAsk];
       dimAsk = null;
@@ -12102,6 +12185,7 @@ async function openNotePage(opts) {
   q(".np-tcancel").onclick = () => {
     tf.hidden = true;
     textAt = null;
+    if (textEd != null) textEdDone();
     dimAsk = null;
     tf.querySelector(".np-ttx").placeholder = "Type your text… (Enter for a new line)";
   };
