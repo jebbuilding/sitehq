@@ -2904,11 +2904,23 @@ async function openNotePage(opts) {
         )
           i = sel;
       }
-      if (i != null && i === sel && doc.objs[i].t === "shape" && doc.objs[i].k === "legend") {
+      /* a key, a label or a room opens its box on a quick double tap; one tap or a drag just moves it */
+      let dblTap = false;
+      if (
+        i != null &&
+        i === sel &&
+        ((doc.objs[i].t === "shape" && (doc.objs[i].k === "legend" || NP_TEXTSYM[doc.objs[i].k])) ||
+          (doc.objs[i].t === "room" && !doc.objs[i].pave))
+      ) {
+        const now = Date.now();
+        dblTap = !!(dimTap && dimTap.i === i && now - dimTap.t < 400);
+        dimTap = dblTap ? null : { i, t: now };
+      }
+      if (dblTap && doc.objs[i].t === "shape" && doc.objs[i].k === "legend") {
         editKey(doc.objs[i]);
         return;
       }
-      if (i != null && i === sel && doc.objs[i].t === "shape" && NP_TEXTSYM[doc.objs[i].k]) {
+      if (dblTap && doc.objs[i].t === "shape" && NP_TEXTSYM[doc.objs[i].k]) {
         const o = doc.objs[i];
         askLabel(ov, NP_TEXTSYM[o.k][0], o.s || NP_TEXTSYM[o.k][1], (v) => {
           if (v !== null) {
@@ -2920,7 +2932,7 @@ async function openNotePage(opts) {
         });
         return;
       }
-      if (i != null && i === sel && doc.objs[i].t === "room" && !doc.objs[i].pave) {
+      if (dblTap && doc.objs[i].t === "room" && !doc.objs[i].pave) {
         roomDlg(doc.objs[i], false);
         return;
       }
@@ -3377,8 +3389,8 @@ async function openNotePage(opts) {
         if (o.t === "img" || o.t === "text") {
           o.x = drag.o.x + dx;
           o.y = drag.o.y + dy;
-        } else if (o.t === "stroke" || o.t === "rsk") {
-          /* (a room sketch moves by all its corners) */
+        } else if (o.t === "stroke" || o.t === "rsk" || (o.t === "room" && o.p)) {
+          /* (a room, or a room sketch, moves by all its corners) */
           o.p = drag.o.p.map((q) => [q[0] + dx, q[1] + dy]);
         } else {
           o.a = [drag.o.a[0] + dx, drag.o.a[1] + dy];
@@ -3694,7 +3706,7 @@ async function openNotePage(opts) {
         }, 50);
       }
       if (cur.t === "shape" && cur.k === "legend")
-        toast("Key added. It lists the symbols you use. Select it and tap it again to change it.");
+        toast("Key added. It lists the symbols you use. Double-tap it to change it.");
       if (cur.t === "shape" && NP_TEXTSYM[cur.k]) {
         const o = cur;
         askLabel(ov, NP_TEXTSYM[o.k][0], o.s || NP_TEXTSYM[o.k][1], (v) => {
