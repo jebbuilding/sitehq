@@ -23,6 +23,7 @@ import { CDMRA } from "../safety/cdm-rams.js";
 import { ramsMaker } from "../safety/rams-maker.js";
 import { indFor, indSectionWithId, wireInduction } from "../safety/site-inductions.js";
 import { bcHtml, bcWire } from "./building-control.js";
+import { pjdKept, pjdWire } from "./doc-folders.js";
 import { dcmOpen } from "./drawing-compare.js";
 import {
   editSiteJob,
@@ -219,30 +220,36 @@ function ownerProjects() {
   const sj = S.jobs.filter((j) => same(j.site, site));
   P.jobs = `<div class="actions"><button type="button" class="btn primary" id="sq-new2">📸 Snag</button><button type="button" class="btn" id="sq-map">🗺 Snags on drawings</button></div><div class="day"><div class="dayh"><span>Job sheets and snag lists</span><span class="sum">${sj.length}</span></div>${sj.length ? sj.map((j) => jobCard(j, true)).join("") : '<div class="nothing">None for this site yet. Create one in the Jobs tab.</div>'}</div>`;
   P.induction = `<div class="day"><div class="dayh"><span>Site induction</span></div>${indSectionWithId(site, true)}</div>`;
+  /* plans, RAMS and specs in folders: tiles for the sub-folders where you are, the files in this folder, a trail
+     back up, + New folder (kept even while empty) and upload straight into the folder you're in */
   const dSec = (k, title, up, empty, list) => {
-    const groups = {};
+    const key = site + "|" + k;
+    const cur = String((S.f.dpath || {})[key] || "").replace(/^\/+|\/+$/g, "");
+    const pre = cur ? cur + "/" : "";
+    const subs = {};
+    const sub = (p) => {
+      if (cur ? !(p + "/").startsWith(pre) || p === cur : !p) return null;
+      return (cur ? p.slice(pre.length) : p).split("/")[0] || null;
+    };
     list.forEach((d) => {
-      const p = docPath(d) || "";
-      (groups[p] = groups[p] || []).push(d);
+      const t = sub(docPath(d));
+      if (t) (subs[t] = subs[t] || []).push(d);
     });
-    return `<div class="actions"><button type="button" class="btn primary pj-up" data-c="${k}">${up}</button></div>${list.length ? docPickBar() : ""}${
-      list.length
-        ? Object.keys(groups)
-            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-            .map(
-              (p) =>
-                `<div class="day"><div class="dayh"><span>${esc(p || title)}</span><span class="sum">${groups[p].length}</span></div>${groups[
-                  p
-                ]
-                  .sort((a, b) =>
-                    (a.title || "").localeCompare(b.title || "", undefined, { numeric: true }),
-                  )
-                  .map((d) => docRow(d, true))
-                  .join("")}</div>`,
-            )
-            .join("")
-        : `<div class="nothing">${empty}</div>`
-    }`;
+    pjdKept(site, k).forEach((p) => {
+      const t = sub(p);
+      if (t && !subs[t]) subs[t] = [];
+    });
+    const here = list
+      .filter((d) => docPath(d) === cur)
+      .sort((x, y) => (x.title || "").localeCompare(y.title || "", undefined, { numeric: true }));
+    const segs = cur ? cur.split("/") : [];
+    const names = Object.keys(subs).sort((x, y) =>
+      x.localeCompare(y, undefined, { numeric: true }),
+    );
+    return `<div class="actions"><button type="button" class="btn primary pj-up" data-c="${k}" data-p="${esc(cur)}">${up}${cur ? " here" : ""}</button><button type="button" class="btn pjd-new" data-k="${k}" data-p="${esc(cur)}">📁 + New folder</button></div>
+    ${cur ? `<div class="crumbs pjd-crumbs"><button type="button" class="pillbtn pjd-go" data-k="${k}" data-p="">📁 ${esc(title)}</button>${segs.map((x, i) => `<span aria-hidden="true">›</span>${i === segs.length - 1 ? `<b>${esc(x)}</b>` : `<button type="button" class="pillbtn pjd-go" data-k="${k}" data-p="${esc(segs.slice(0, i + 1).join("/"))}">${esc(x)}</button>`}`).join("")}</div>` : ""}
+    ${names.length ? `<div class="folders">${names.map((n) => `<button type="button" class="folder pjd-fold" data-k="${k}" data-p="${esc(pre + n)}">${folderIcon()}<span class="fname">${esc(n)}</span><span class="who">${subs[n].length ? subs[n].length + " file" + (subs[n].length === 1 ? "" : "s") : "Empty"}</span></button>`).join("")}</div>` : ""}
+    ${here.length ? docPickBar() + `<div class="day"><div class="dayh"><span>${esc(cur ? segs[segs.length - 1] : title)}</span><span class="sum">${here.length}</span></div>${here.map((d) => docRow(d, true)).join("")}</div>` : !names.length ? `<div class="nothing">${cur ? "Nothing in this folder yet. Upload files into it, or make a folder inside it." : empty}</div>` : ""}`;
   };
   const dPlans = docs.filter((d) => (d.cat || "other") === "plans"),
     dRams = docs.filter((d) => d.cat === "rams"),
@@ -543,6 +550,7 @@ function ownerProjects() {
   if (tab === "diary") sdiWire(site);
   if (tab === "bc") bcWire(site);
   if (tab === "rfi") rfiWire(site);
+  if (["plans", "rams", "specs"].includes(tab)) pjdWire(site);
   if (tab === "overview") {
     sodWire(site);
     if ($("rfi-go"))
@@ -559,7 +567,9 @@ function ownerProjects() {
   $("main")
     .querySelectorAll(".pj-up")
     .forEach(
-      (b) => (b.onclick = () => openDoc(site, "", b.dataset.c === "specs" ? "specs" : b.dataset.c)),
+      (b) =>
+        (b.onclick = () =>
+          openDoc(site, b.dataset.p || "", b.dataset.c === "specs" ? "specs" : b.dataset.c)),
     );
   $("main")
     .querySelectorAll(".matc")
