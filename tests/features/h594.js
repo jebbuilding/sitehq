@@ -54,7 +54,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.nfbu-lab');await p.waitForTimeout(150);
  await p.click('.nfbu-flip');await p.waitForTimeout(150);
  const w2=await p.evaluate((i)=>window.__np.get()[i],wi);
- ok(w2.lab===1&&w2.fl===1,'🏷 labels every layer and ⇄ puts the layers on the other side');
+ ok(w2.lab===1&&w2.fl===1,'🏷 labels every layer and ⇄ puts the layers on the other side');await p.click('.nfbu-ta');await p.waitForTimeout(150);ok(await p.evaluate((i)=>window.__np.get()[i].ta,wi)===1&&/cut across/.test(await p.innerText('.nfbu-ta')),'🪵 switches the wall to timbers cut across');
  await p.click('.nfbu-flip');await p.waitForTimeout(150);
  await p.keyboard.press('Escape');await p.waitForTimeout(150);
  await p.screenshot({path:SP+'bu-labelled.png'});

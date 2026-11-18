@@ -3,6 +3,7 @@ import { NP_U } from "./construction-details.js";
 export {
   NPSU_LIB,
   NPSU_MATS,
+  npsuAcross,
   npsuCode,
   npsuDraw,
   npsuIsMem,
@@ -16,44 +17,44 @@ export {
    Membranes have no thickness and are drawn as coloured lines (orange breather, pink vapour control, purple DPM,
    blue DPC, green insect mesh). Generic UK build-ups only: the drawer checks U-values and Building Regulations. */
 const NPSU_MATS = {
-  brick: ["Facing brick", "#e9b8a2", "brick"],
-  block: ["Concrete block", "#d9d9d9", "block"],
-  conc: ["Concrete", "#e5e7eb", "conc"],
-  bblock: ["Beam & block", "#d1d5db", "bblock"],
+  brick: ["Facing brick", "#e8cfc4", "brick"],
+  block: ["Concrete block", "#e4e4e4", "block"],
+  conc: ["Concrete", "#e6e6e6", "conc"],
+  bblock: ["Beam & block", "#dadada", "bblock"],
   screed: ["Screed", "#eeeeee", "dots"],
-  render: ["Render", "#f1f1f1", "dots"],
-  rboard: ["Render carrier board", "#d1d5db", "dash"],
-  plaster: ["Plaster", "#ffffff", "dots"],
-  pb: ["Plasterboard", "#ffffff", "pb"],
-  pir: ["PIR insulation board", "#fde68a", "pir"],
-  pirb: ["PIR insulation between timbers", "#fde68a", "pirb"],
-  wool: ["Mineral wool insulation", "#fff3c4", "wool"],
-  studins: ["Mineral wool between timbers", "#fff3c4", "woolb"],
-  acoustic: ["Acoustic insulation", "#e0f2fe", "acoustic"],
-  xps: ["XPS insulation", "#bfdbfe", "xps"],
-  timber: ["Timber", "#f3e2c4", "grain"],
-  osb: ["OSB / plywood", "#e8c98f", "dash"],
-  chip: ["Chipboard flooring", "#e8c98f", "dots"],
-  clad: ["Timber cladding", "#d6a76c", "clad"],
+  render: ["Render", "#f1f0ee", "dots"],
+  rboard: ["Render carrier board", "#dddddd", "dash"],
+  plaster: ["Plaster", "#f6f1ec", ""],
+  pb: ["Plasterboard", "#efe1d8", ""],
+  pir: ["PIR insulation board", "#d2e3de", "hex"],
+  pirb: ["PIR insulation between timbers", "#d2e3de", "hexb"],
+  wool: ["Mineral wool insulation", "#e4dfc5", "hex"],
+  studins: ["Mineral wool between timbers", "#e4dfc5", "hexb"],
+  acoustic: ["Acoustic insulation", "#d9e6f2", "wave"],
+  xps: ["XPS insulation", "#c9daf0", "hex"],
+  timber: ["Timber", "#dcc4b4", "grain"],
+  osb: ["OSB / plywood", "#e3cba9", "dash"],
+  chip: ["Chipboard flooring", "#dcc4b4", ""],
+  clad: ["Timber cladding", "#d9bfa8", "clad"],
   batten: ["Battens", "", "batten"],
-  cbatt: ["Battens (continuous)", "#f3e2c4", "grain"],
-  slate: ["Slates", "#4b5563", "slate"],
-  tile: ["Roof tiles", "#b45309", "slate"],
-  epdm: ["Roof membrane (EPDM / single ply)", "#111827", ""],
-  grp: ["GRP roof covering", "#374151", ""],
-  finish: ["Floor finish", "#c4b5a5", ""],
-  sand: ["Sand blinding", "#fef3c7", "dots"],
-  hardcore: ["Hardcore", "#f3f4f6", "stones"],
+  cbatt: ["Battens (continuous)", "#dcc4b4", ""],
+  slate: ["Slates", "#7b8794", "slate"],
+  tile: ["Roof tiles", "#b98b6e", "slate"],
+  epdm: ["Roof membrane (EPDM / single ply)", "#2b2b2b", ""],
+  grp: ["GRP roof covering", "#4b5563", ""],
+  finish: ["Floor finish", "#cbb9a6", ""],
+  sand: ["Sand blinding", "#f4ead2", "dots"],
+  hardcore: ["Hardcore", "#f0f0f0", "stones"],
   cavity: ["Clear cavity", "", ""],
   void: ["Void", "", ""],
   /* membranes: no thickness */
-  breather: ["Breather membrane", "#ea580c", "m-dash"],
-  vcl: ["Vapour control layer", "#db2777", "m-dash"],
-  dpm: ["DPM", "#7c3aed", "m-dashdot"],
+  breather: ["Breather membrane", "#f08a24", "m-dash"],
+  vcl: ["Vapour control layer", "#e8458b", "m-dash"],
+  dpm: ["DPM", "#8b5cf6", "m-dashdot"],
   dpc: ["DPC", "#2563eb", "m-dash"],
-  mesh: ["Insect mesh", "#16a34a", "m-line"],
-  lead: ["Lead flashing", "#065f46", "m-thick"],
-  poly: ["Separating layer (polythene)", "#db2777", "m-dashdot"],
+  mesh: ["Insect mesh", "#15803d", "m-line"],
+  lead: ["Lead flashing", "#0f766e", "m-thick"],
+  poly: ["Separating layer (polythene)", "#e8458b", "m-dashdot"],
 };
 const npsuIsMem = (m) => /^m-/.test((NPSU_MATS[m] || [])[2] || "");
 /* [key, name, code prefix, group, layers [material, mm, words]] – layers from the line outwards */
@@ -296,180 +297,212 @@ function npsuCode(objs, prefix, bu, bn) {
   }
   return prefix + "99";
 }
-/* the fill pattern for one layer, in the band's own frame: x along, y across (y0 < y1) */
+/* line weights in paper millimetres, as a drawing office would set them; lw (the pen) when the page has no scale */
+const npsuPw = (ctx, lw, mmP) => (ctx.__mm ? NP_U * mmP : Math.max(lw * (mmP / 0.3), 0.3));
+/* the fill pattern for one layer, in the band's own frame: x along, y across (y0 < y1); hatching is sized to the
+   paper so it reads the same at 1:5 or 1:50 */
 function npsuPat(ctx, pat, x0, y0, x1, y1, lw, k) {
   const w = x1 - x0,
     h = y1 - y0;
-  if (h <= 0 || w <= 0) return;
-  const thin = Math.max(lw * 0.45, 0.4);
+  if (h <= 0 || w <= 0 || !pat) return;
+  const pm = (mmP) => npsuPw(ctx, lw, mmP);
   const ln = (a, b, c, d) => {
-    ctx.beginPath();
     ctx.moveTo(a, b);
     ctx.lineTo(c, d);
-    ctx.stroke();
   };
   ctx.save();
   ctx.beginPath();
   ctx.rect(x0, y0, w, h);
   ctx.clip();
-  ctx.lineWidth = thin;
+  ctx.strokeStyle = "rgba(40,40,40,0.55)";
+  ctx.fillStyle = "rgba(40,40,40,0.55)";
+  ctx.lineWidth = pm(0.08);
   const hatch = (st) => {
+    ctx.beginPath();
     for (let t = -h; t < w + h; t += st) ln(x0 + t, y1, x0 + t + h, y0);
+    ctx.stroke();
   };
   const dots = (st) => {
     let r = 0;
+    ctx.beginPath();
     for (let y = y0 + st / 2; y < y1; y += st, r++)
       for (let x = x0 + (r % 2 ? st / 2 : 0); x < x1; x += st) {
-        ctx.beginPath();
-        ctx.arc(x, y, Math.max(thin * 0.6, 0.35), 0, 7);
-        ctx.fill();
+        ctx.moveTo(x + pm(0.07), y);
+        ctx.arc(x, y, pm(0.07), 0, 7);
       }
+    ctx.fill();
   };
-  const zig = (st) => {
+  /* honeycomb: the usual insulation hatch */
+  const hex = () => {
+    let r = pm(0.55);
+    while (((w / (r * 1.73)) * h) / (r * 1.5) > 9000) r *= 1.5;
+    const hw = r * 0.866;
     ctx.beginPath();
-    for (let x = x0, i = 0; x <= x1 + st; x += st / 2, i++) {
-      const y = i % 2 ? y0 + h * 0.08 : y1 - h * 0.08;
-      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-    }
-    ctx.stroke();
-  };
-  const loops = (st) => {
-    ctx.beginPath();
-    for (let x = x0; x < x1; x += st) {
-      ctx.moveTo(x, y1 - h * 0.12);
-      ctx.bezierCurveTo(
-        x - st * 0.35,
-        y0 - h * 0.05,
-        x + st * 1.35,
-        y0 - h * 0.05,
-        x + st,
-        y1 - h * 0.12,
-      );
-    }
+    for (let j = 0, y = y0 - r; y < y1 + r; j++, y += r * 1.5)
+      for (let x = x0 - hw * 2 + (j % 2 ? hw : 0); x < x1 + hw; x += hw * 2) {
+        ctx.moveTo(x - hw, y + r / 2);
+        ctx.lineTo(x - hw, y - r / 2);
+        ctx.lineTo(x, y - r);
+        ctx.lineTo(x + hw, y - r / 2);
+      }
     ctx.stroke();
   };
   const between = () => {
+    /* the timbers behind: fine dashed lines at the faces of the zone */
     ctx.save();
-    ctx.setLineDash([lw * 4, lw * 2.5]);
-    ctx.lineWidth = Math.max(lw * 0.7, 0.5);
-    ln(x0, y0 + thin, x1, y0 + thin);
-    ln(x0, y1 - thin, x1, y1 - thin);
+    ctx.strokeStyle = "rgba(40,40,40,0.8)";
+    ctx.lineWidth = pm(0.1);
+    ctx.setLineDash([pm(1.6), pm(0.9)]);
+    ctx.beginPath();
+    ln(x0, y0 + h * 0.5, x1, y0 + h * 0.5);
+    ctx.stroke();
     ctx.restore();
   };
-  const st = Math.max(lw * 2.2, 2);
   switch (pat) {
     case "brick":
-      hatch(Math.max(k * 22, lw * 1.8));
+      hatch(pm(0.9));
       break;
     case "block":
-      hatch(Math.max(k * 45, lw * 3));
+      hatch(pm(1.8));
       break;
     case "bblock": {
-      hatch(Math.max(k * 45, lw * 3));
-      const bw = Math.max(k * 155, 6);
-      for (let x = x0; x < x1; x += Math.max(k * 600, 20)) {
-        ctx.save();
-        ctx.fillStyle = "#9ca3af";
+      hatch(pm(1.8));
+      const bw = Math.max(k * 155, pm(3));
+      ctx.fillStyle = "#c9c9c9";
+      ctx.strokeStyle = "rgba(40,40,40,0.8)";
+      ctx.lineWidth = pm(0.13);
+      for (let x = x0; x < x1; x += Math.max(k * 600, pm(10))) {
         ctx.beginPath();
         ctx.moveTo(x, y1);
         ctx.lineTo(x + bw, y1);
-        ctx.lineTo(x + bw * 0.75, y0);
-        ctx.lineTo(x + bw * 0.25, y0);
+        ctx.lineTo(x + bw * 0.72, y0);
+        ctx.lineTo(x + bw * 0.28, y0);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-        ctx.restore();
       }
       break;
     }
     case "conc": {
-      dots(Math.max(k * 18, st));
-      const tr = Math.max(k * 12, lw * 1.5);
+      dots(pm(0.8));
+      const tr = pm(0.45);
       let r = 0;
-      for (let y = y0 + tr * 2; y < y1 - tr; y += tr * 4, r++)
-        for (let x = x0 + (r % 2 ? tr * 3 : tr); x < x1; x += tr * 6) {
-          ctx.beginPath();
+      ctx.beginPath();
+      for (let y = y0 + tr * 3; y < y1 - tr; y += tr * 5, r++)
+        for (let x = x0 + (r % 2 ? tr * 4 : tr); x < x1; x += tr * 8) {
           ctx.moveTo(x, y - tr);
           ctx.lineTo(x + tr, y + tr * 0.7);
           ctx.lineTo(x - tr, y + tr * 0.7);
           ctx.closePath();
-          ctx.stroke();
         }
+      ctx.stroke();
       break;
     }
     case "dots":
-      dots(Math.max(k * 8, st));
+      dots(pm(0.6));
       break;
-    case "pb":
-      dots(Math.max(k * 20, st * 2));
+    case "hex":
+      hex();
       break;
-    case "pir":
-    case "pirb":
-      zig(Math.max(h * 0.9, st * 2));
-      ln(x0, y0 + thin, x1, y0 + thin);
-      ln(x0, y1 - thin, x1, y1 - thin);
-      if (pat === "pirb") between();
+    case "hexb":
+      hex();
+      between();
       break;
-    case "wool":
-    case "woolb":
-      loops(Math.max(h * 0.55, st * 2));
-      if (pat === "woolb") between();
+    case "wave": {
+      ctx.strokeStyle = "rgba(37,99,235,0.7)";
+      const st = pm(1.2);
+      ctx.beginPath();
+      for (let x = x0, i = 0; x <= x1 + st; x += st / 2, i++) {
+        const yy = i % 2 ? y0 + h * 0.15 : y1 - h * 0.15;
+        i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
+      }
+      ctx.stroke();
       break;
-    case "acoustic":
-      ctx.strokeStyle = "#2563eb";
-      zig(Math.max(h * 0.35, st));
-      break;
-    case "xps":
-      ctx.strokeStyle = "#1d4ed8";
-      zig(Math.max(h * 0.6, st * 2));
-      break;
-    case "grain":
-      for (let y = y0 + h / 3; y < y1; y += h / 3) {
-        ctx.beginPath();
-        for (let x = x0; x <= x1; x += Math.max(h, 4)) {
-          const yy = y + Math.sin(x / Math.max(h, 4)) * h * 0.06;
+    }
+    case "grain": {
+      ctx.beginPath();
+      for (let y = y0 + h / 3; y < y1 - h * 0.1; y += h / 3)
+        for (let x = x0; x <= x1; x += pm(2)) {
+          const yy = y + Math.sin(x / pm(2)) * h * 0.04;
           x === x0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
         }
+      ctx.stroke();
+      break;
+    }
+    case "dash": {
+      ctx.beginPath();
+      for (let x = x0 + pm(1); x < x1; x += pm(3)) ln(x, y0 + h * 0.5, x + pm(1.4), y0 + h * 0.5);
+      ctx.stroke();
+      break;
+    }
+    case "clad": {
+      ctx.beginPath();
+      for (let x = x0; x < x1; x += Math.max(k * 150, pm(3))) ln(x, y0, x, y1);
+      ctx.stroke();
+      break;
+    }
+    case "slate": {
+      /* overlapping slates: thin plates laid at a slight angle */
+      const gauge = Math.max(k * 230, pm(2.5));
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.strokeStyle = "rgba(30,30,30,0.85)";
+      ctx.lineWidth = pm(0.1);
+      ctx.beginPath();
+      for (let x = x0 - gauge * 2; x < x1; x += gauge) {
+        ctx.moveTo(x, y1);
+        ctx.lineTo(x + gauge * 2.1, y0);
+      }
+      ctx.stroke();
+      break;
+    }
+    case "batten": {
+      const bw = Math.max(k * 50, pm(0.8)),
+        gap = Math.max(k * 300, pm(4));
+      ctx.fillStyle = "#dcc4b4";
+      ctx.strokeStyle = "rgba(30,30,30,0.85)";
+      ctx.lineWidth = pm(0.1);
+      for (let x = x0 + gap / 2; x < x1 - bw; x += gap) {
+        ctx.fillRect(x, y0, bw, h);
+        ctx.beginPath();
+        ctx.rect(x, y0, bw, h);
+        ln(x, y0, x + bw, y1);
+        ln(x + bw, y0, x, y1);
         ctx.stroke();
       }
       break;
-    case "dash":
-      for (let y = y0 + h * 0.5, r = 0; r < 1; r++)
-        for (let x = x0 + h; x < x1; x += h * 3) ln(x, y, x + h * 1.2, y);
-      break;
-    case "clad":
-      for (let x = x0; x < x1; x += Math.max(k * 150, 6)) ln(x, y0, x, y1);
-      ln(x0, y0 + h * 0.5, x1, y0 + h * 0.5);
-      break;
-    case "slate":
-      for (let x = x0; x < x1; x += Math.max(k * 250, 8)) ln(x, y1, x + Math.max(k * 60, 3), y0);
-      break;
-    case "batten": {
-      const bw = Math.max(k * 50, 3),
-        gap = Math.max(k * 300, 12);
-      ctx.save();
-      ctx.fillStyle = "#f3e2c4";
-      for (let x = x0 + gap / 2; x < x1 - bw; x += gap) {
-        ctx.fillRect(x, y0, bw, h);
-        ctx.strokeRect(x, y0, bw, h);
-      }
-      ctx.restore();
-      break;
     }
     case "stones": {
-      const r0 = Math.max(k * 25, 2);
+      const r0 = Math.max(k * 25, pm(0.7));
       let i = 0;
+      ctx.beginPath();
       for (let y = y0 + r0; y < y1; y += r0 * 2.2)
         for (let x = x0 + ((i++ % 3) * r0) / 1.5; x < x1; x += r0 * 2.6) {
-          ctx.beginPath();
+          ctx.moveTo(x + r0 * 0.9, y);
           ctx.ellipse(x, y, r0 * 0.9, r0 * 0.6, (i % 5) * 0.6, 0, 7);
-          ctx.stroke();
         }
+      ctx.stroke();
       break;
     }
   }
   ctx.restore();
 }
+/* the layers that make up a timber zone (rafters, joists or studs with or without insulation between) */
+const npsuIsZone = (l) =>
+  ["pirb", "studins", "void", "timber"].includes(l.m) || /between/i.test(l.n || "");
+/* timber size and centres from the words, e.g. "47 × 220 C24 joists at 400 c/c" */
+function npsuTimbers(layers) {
+  for (const l of layers) {
+    const m = /(\d{2,3})\s*[×x]\s*(\d{2,3})/.exec(l.n || "");
+    if (m) {
+      const c = /at\s*(\d{3})\s*c\/c/i.exec(l.n || "");
+      return { b: +m[1], d: +m[2], cc: c ? +c[1] : 400 };
+    }
+  }
+  return { b: 47, d: 0, cc: 400 };
+}
+/* floors are cut across their joists unless set otherwise; walls and roofs run along their studs and rafters */
+const npsuAcross = (o) =>
+  o.ta == null ? /^(FF|GF)/.test(o.bc || "") || /floor|ceiling/i.test(o.bn || "") : !!o.ta;
 /* draws the build-up along a line: P(t, off) maps along / across to the page */
 function npsuDraw(ctx, o, P, L, lw) {
   const bu = o.bu && o.bu.length ? o.bu : npsuLayers("cavbrick");
@@ -479,6 +512,7 @@ function npsuDraw(ctx, o, P, L, lw) {
     Y = P(0, 1);
   const side = o.fl ? -1 : 1;
   const ink = ctx.strokeStyle;
+  const pw = (mmP) => npsuPw(ctx, lw, mmP);
   const poly = NPSU_JOIN.get(o);
   const E = poly ? npsuTotal(bu) * k * 3 + L * 0.5 : 0,
     t0 = -E,
@@ -494,60 +528,104 @@ function npsuDraw(ctx, o, P, L, lw) {
   /* in this frame layers stack from y = 0 upwards to y = -total */
   let y = 0;
   const mids = [];
+  /* at the eaves the ceiling lining (everything under the rafter zone) stops at the wall's inside face */
+  const ev = poly && NPSU_EAVES.get(o);
+  const ti = ev ? (ev.xi - O[0]) / (X[0] - O[0] || 1e-9) : 0;
+  let lining = !!ev,
+    tl = 0;
+  const zoneOf = [];
   bu.forEach((l) => {
+    if (lining && ["pirb", "studins", "void", "timber", "wool"].includes(l.m)) lining = false;
+    const tA = lining ? (ev.er ? t0 : ti) : t0,
+      tB = lining ? (ev.er ? ti : t1) : t1;
     const M = NPSU_MATS[l.m] || ["", "", ""];
     if (npsuIsMem(l.m)) {
       ctx.save();
       ctx.strokeStyle = M[1];
-      ctx.lineWidth = Math.max(lw * (M[2] === "m-thick" ? 1.6 : 0.9), 0.6);
-      if (M[2] === "m-dash") ctx.setLineDash([lw * 5, lw * 3]);
-      if (M[2] === "m-dashdot") ctx.setLineDash([lw * 6, lw * 2, lw * 1.2, lw * 2]);
+      ctx.lineWidth = pw(M[2] === "m-thick" ? 0.6 : 0.4);
+      if (M[2] === "m-dash") ctx.setLineDash([pw(2.4), pw(1.2)]);
+      if (M[2] === "m-dashdot") ctx.setLineDash([pw(3), pw(0.9), pw(0.5), pw(0.9)]);
       ctx.beginPath();
-      ctx.moveTo(t0, y);
-      ctx.lineTo(t1, y);
+      ctx.moveTo(tA, y);
+      ctx.lineTo(tB, y);
       ctx.stroke();
       ctx.restore();
       mids.push(y);
       return;
     }
     const t = Math.max(+l.t || 0, 0) * k;
-    if (!t) return;
+    if (!t) {
+      mids.push(null);
+      return;
+    }
+    if (lining) tl += t;
     const y0 = y - t;
     if (M[1]) {
       ctx.save();
       ctx.fillStyle = M[1];
-      ctx.fillRect(t0, y0, t1 - t0, t);
+      ctx.fillRect(tA, y0, tB - tA, t);
       ctx.restore();
     }
     ctx.save();
     ctx.strokeStyle = ink;
     ctx.fillStyle = ink;
-    npsuPat(ctx, M[2], t0, y0, t1, y, lw, k);
+    npsuPat(ctx, M[2], tA, y0, tB, y, lw, k);
+    zoneOf.push([npsuIsZone(l), y0, y, tA, tB, l]);
     ctx.restore();
     ctx.save();
-    ctx.lineWidth = Math.max(lw * 0.6, 0.5);
+    ctx.lineWidth = pw(0.13);
     ctx.beginPath();
-    ctx.moveTo(t0, y0);
-    ctx.lineTo(t1, y0);
+    ctx.moveTo(tA, y0);
+    ctx.lineTo(tB, y0);
     ctx.stroke();
     ctx.restore();
     mids.push(y0 + t / 2);
     y = y0;
   });
   const total = -y;
+  if (npsuAcross(o)) {
+    /* group the zone layers that lie together, and draw each timber once through the group */
+    const groups = [];
+    zoneOf.forEach((z) => {
+      const g = groups[groups.length - 1];
+      if (z[0] && g && g.open && Math.abs(g.yTop - z[2]) < 1e-6) {
+        g.yTop = z[1];
+        g.ls.push(z[5]);
+        g.tA = Math.max(g.tA, z[3]);
+        g.tB = Math.min(g.tB, z[4]);
+      } else if (z[0])
+        groups.push({ open: true, yTop: z[1], yBot: z[2], tA: z[3], tB: z[4], ls: [z[5]] });
+      else if (g) g.open = false;
+    });
+    groups.forEach((g) => {
+      const tm = npsuTimbers(g.ls);
+      const bw = tm.b * k,
+        cc = Math.max(tm.cc * k, bw * 2);
+      ctx.save();
+      ctx.fillStyle = "#dcc4b4";
+      ctx.strokeStyle = ink;
+      for (let x = Math.ceil((g.tA - bw) / cc) * cc + cc / 2 - bw / 2; x < g.tB; x += cc) {
+        ctx.fillRect(x, g.yTop, bw, g.yBot - g.yTop);
+        ctx.lineWidth = pw(0.18);
+        ctx.strokeRect(x, g.yTop, bw, g.yBot - g.yTop);
+        ctx.lineWidth = pw(0.09);
+        ctx.beginPath();
+        ctx.moveTo(x, g.yTop);
+        ctx.lineTo(x + bw, g.yBot);
+        ctx.moveTo(x + bw, g.yTop);
+        ctx.lineTo(x, g.yBot);
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
+  }
+  const free = poly ? poly.free || [false, false] : [true, true];
   if (!poly) {
-    ctx.lineWidth = lw;
+    ctx.lineWidth = pw(0.3);
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(L, 0);
     ctx.moveTo(0, -total);
-    ctx.lineTo(L, -total);
-    ctx.stroke();
-    ctx.lineWidth = Math.max(lw * 0.6, 0.5);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, -total);
-    ctx.moveTo(L, 0);
     ctx.lineTo(L, -total);
     ctx.stroke();
   }
@@ -555,29 +633,86 @@ function npsuDraw(ctx, o, P, L, lw) {
   if (poly) {
     /* the joined outline: faces at full pen, the joint lines a little lighter */
     ctx.save();
-    ctx.lineWidth = lw;
+    ctx.lineWidth = pw(0.3);
     ctx.beginPath();
-    ctx.moveTo(poly[0][0], poly[0][1]);
-    ctx.lineTo(poly[1][0], poly[1][1]);
+    const evo = NPSU_EAVES.get(o);
+    if (evo) {
+      const u = [X[0] - O[0], X[1] - O[1]],
+        w = [-(Y[0] - O[0]) * side, -(Y[1] - O[1]) * side];
+      const Iw = npsuX(poly[0], u, [evo.xi, 0], [0, 1]) || poly[0];
+      const inner = evo.er ? poly[0] : poly[1];
+      ctx.moveTo(inner[0], inner[1]);
+      ctx.lineTo(Iw[0], Iw[1]);
+      /* the rafter zone's underside, out to the plumb cut */
+      const Lz = npsuLiningDepth(bu) * k;
+      const A2 = [Iw[0] + w[0] * Lz, Iw[1] + w[1] * Lz];
+      const Pz = npsuX(A2, u, [evo.xp, 0], [0, 1]);
+      if (Pz) {
+        ctx.moveTo(A2[0], A2[1]);
+        ctx.lineTo(Pz[0], Pz[1]);
+      }
+    } else {
+      ctx.moveTo(poly[0][0], poly[0][1]);
+      ctx.lineTo(poly[1][0], poly[1][1]);
+    }
     ctx.moveTo(poly[2][0], poly[2][1]);
     ctx.lineTo(poly[3][0], poly[3][1]);
     ctx.stroke();
-    ctx.lineWidth = Math.max(lw * 0.6, 0.5);
+    ctx.lineWidth = pw(0.18);
     ctx.beginPath();
-    ctx.moveTo(poly[1][0], poly[1][1]);
-    ctx.lineTo(poly[2][0], poly[2][1]);
-    ctx.moveTo(poly[3][0], poly[3][1]);
-    ctx.lineTo(poly[0][0], poly[0][1]);
+    const eend = evo ? (evo.er ? 1 : 0) : -1;
+    if (eend !== 1 && !free[1]) {
+      ctx.moveTo(poly[1][0], poly[1][1]);
+      ctx.lineTo(poly[2][0], poly[2][1]);
+    }
+    if (eend !== 0 && !free[0]) {
+      ctx.moveTo(poly[3][0], poly[3][1]);
+      ctx.lineTo(poly[0][0], poly[0][1]);
+    }
+    if (evo) {
+      /* the plumb cut, from the rafter zone's underside to the top */
+      const top = eend ? poly[2] : poly[3];
+      const u = [X[0] - O[0], X[1] - O[1]],
+        w = [-(Y[0] - O[0]) * side, -(Y[1] - O[1]) * side];
+      const Lz = npsuLiningDepth(bu) * k,
+        bot = eend ? poly[1] : poly[0];
+      const Pz = npsuX([bot[0] + w[0] * Lz, bot[1] + w[1] * Lz], u, [evo.xp, 0], [0, 1]) || bot;
+      ctx.moveTo(Pz[0], Pz[1]);
+      ctx.lineTo(top[0], top[1]);
+    }
     ctx.stroke();
     ctx.restore();
+    const ev = NPSU_EAVES.get(o);
+    if (ev) npsuEaves(ctx, ev, ev.er ? [poly[1], poly[2]] : [poly[0], poly[3]], lw);
   }
   /* page point for (along, up-from-line) in the build-up's own frame */
   const Q = (t, up) => P(t, -up * side);
-  const fs = ctx.__mm ? 2.8 * NP_U : Math.max(8, Math.min(lw * 5.5, 22));
+  /* a loose end is broken off with a break line, as on a drawing that shows only part of something */
+  [0, 1].forEach((e) => {
+    if (!free[e]) return;
+    const t = e ? L : 0,
+      ext = pw(1.5),
+      z = Math.min(pw(1.2), total * 0.25 + pw(0.4));
+    const pts = [
+      Q(t, -ext),
+      Q(t, total * 0.42),
+      Q(t + z, total * 0.47),
+      Q(t - z, total * 0.53),
+      Q(t, total * 0.58),
+      Q(t, total + ext),
+    ];
+    ctx.save();
+    ctx.lineWidth = pw(0.13);
+    ctx.beginPath();
+    pts.forEach((q2, i) => (i ? ctx.lineTo(q2[0], q2[1]) : ctx.moveTo(q2[0], q2[1])));
+    ctx.stroke();
+    ctx.restore();
+  });
+  const fs = ctx.__mm ? 2.5 * NP_U : Math.max(8, Math.min(lw * 5.5, 22));
   const txt = (s, x, y2, al, bold) => {
     ctx.save();
     ctx.fillStyle = ink;
-    ctx.font = `${bold ? 800 : 500} ${bold ? fs * 1.05 : fs * 0.9}px system-ui,-apple-system,sans-serif`;
+    ctx.font = `${bold ? 700 : 400} ${bold ? fs * 1.05 : fs}px Helvetica, Arial, system-ui, sans-serif`;
     ctx.textAlign = al;
     ctx.textBaseline = "middle";
     ctx.fillText(s, x, y2);
@@ -588,17 +723,17 @@ function npsuDraw(ctx, o, P, L, lw) {
     const a = Q(L * (o.lab ? 0.88 : 0.5), total * 0.5),
       b = Q(L * (o.lab ? 0.88 : 0.5), total + fs * 2.6);
     ctx.save();
-    ctx.lineWidth = Math.max(lw * 0.6, 0.5);
+    ctx.lineWidth = pw(0.13);
     ctx.beginPath();
     ctx.moveTo(a[0], a[1]);
     ctx.lineTo(b[0], b[1]);
     ctx.stroke();
-    ctx.font = `800 ${fs}px system-ui,-apple-system,sans-serif`;
+    ctx.font = `700 ${fs}px Helvetica, Arial, system-ui, sans-serif`;
     const tw = ctx.measureText(o.bc).width + fs * 0.8;
     ctx.fillStyle = "#e8f1fb";
     ctx.fillRect(b[0] - tw / 2, b[1] - fs * 0.75, tw, fs * 1.5);
     ctx.strokeStyle = "#1f4e8c";
-    ctx.lineWidth = Math.max(lw * 0.8, 0.6);
+    ctx.lineWidth = pw(0.25);
     ctx.strokeRect(b[0] - tw / 2, b[1] - fs * 0.75, tw, fs * 1.5);
     ctx.restore();
     txt(o.bc, b[0], b[1], "center", true);
@@ -616,16 +751,20 @@ function npsuDraw(ctx, o, P, L, lw) {
       right = vertical ? nx > 0 : true;
     const at = vertical ? Math.max(0, L * 0.5 - ((n - 1) * gap) / 2) : L * 0.12;
     ctx.save();
-    ctx.lineWidth = Math.max(lw * 0.5, 0.45);
+    ctx.lineWidth = pw(0.13);
     rows.forEach(([s2, m], i) => {
       const p = Q(at + i * (vertical ? gap : fs * 0.9), -m);
       const e = vertical
         ? Q(at + i * gap, total + fs * 2)
         : Q(at + i * fs * 0.9, total + fs * (1.5 + (n - 1 - i) * 1.35));
+      /* an open arrowhead on the layer */
+      const an = Math.atan2(p[1] - e[1], p[0] - e[0]),
+        ah = pw(1.6);
       ctx.beginPath();
-      ctx.arc(p[0], p[1], Math.max(lw * 0.9, 1.2), 0, 7);
-      ctx.fillStyle = ink;
-      ctx.fill();
+      ctx.moveTo(p[0] - ah * Math.cos(an - 0.3), p[1] - ah * Math.sin(an - 0.3));
+      ctx.lineTo(p[0], p[1]);
+      ctx.lineTo(p[0] - ah * Math.cos(an + 0.3), p[1] - ah * Math.sin(an + 0.3));
+      ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(p[0], p[1]);
       ctx.lineTo(e[0], e[1]);
@@ -639,6 +778,8 @@ function npsuDraw(ctx, o, P, L, lw) {
 }
 /* how build-ups tie together: worked out before each drawing pass, kept off the saved drawing */
 const NPSU_JOIN = new WeakMap();
+/* a pitched roof's eaves where it runs past a wall: { er (which end), xp (plumb cut), xo / xi (wall outer / inner face), sgn (outwards), lp, ld (roof underside), k } */
+const NPSU_EAVES = new WeakMap();
 const npsuX = (p, d, q, e) => {
   const den = d[0] * e[1] - d[1] * e[0];
   if (Math.abs(den) < 1e-9) return null;
@@ -666,7 +807,10 @@ function npsuTie(objs, k) {
   const F = objs
     .filter((o) => o && o.t === "shape" && o.k === "secbu" && o.a && o.b)
     .map((o) => npsuFrame(o, k || 0.12));
-  F.forEach((f) => NPSU_JOIN.delete(f.o));
+  F.forEach((f) => {
+    NPSU_JOIN.delete(f.o);
+    NPSU_EAVES.delete(f.o);
+  });
   if (F.length < 2) return;
   const cuts = new Map();
   const end = (f, e) => (e ? f.b : f.a);
@@ -683,6 +827,34 @@ function npsuTie(objs, k) {
             q = end(g, eg);
           const tol = Math.max(f.T, g.T) * 1.2 + 6;
           if (Math.hypot(p[0] - q[0], p[1] - q[1]) > tol) return;
+          /* a sloping roof meeting the head of an upright wall: eaves, unless the overhang is set to 0 */
+          const up = (h) => Math.abs(h.u[0]) < 0.2,
+            slope = (h) => Math.abs(h.u[0]) >= 0.2 && Math.abs(h.u[1]) >= 0.2;
+          const pair =
+            up(f) && slope(g)
+              ? [f, ef, i, g, eg, j]
+              : up(g) && slope(f)
+                ? [g, eg, j, f, ef, i]
+                : null;
+          if (pair && pair[3].o.eo !== 0) {
+            const [W, ew, wi, R, er, ri] = pair;
+            const kk = k || 0.12;
+            const ov = (pair[3].o.eo == null ? 300 : +pair[3].o.eo) * kk;
+            const wx = [W.a[0], W.a[0] + W.w[0] * W.T];
+            const rfar = end(R, 1 - er);
+            const sgn = rfar[0] > (wx[0] + wx[1]) / 2 ? -1 : 1;
+            const xo = sgn > 0 ? Math.max(...wx) : Math.min(...wx),
+              xi = sgn > 0 ? Math.min(...wx) : Math.max(...wx);
+            const xp = xo + sgn * ov;
+            /* the wall stops at the roof's underside: the face of the roof nearer the wall's foot */
+            const wfoot = end(W, 1 - ew);
+            const df = (wfoot[0] - R.a[0]) * R.w[0] + (wfoot[1] - R.a[1]) * R.w[1];
+            const lp = off(R.a, R.w, df < R.T / 2 ? npsuLiningDepth(R.o.bu || []) * kk : R.T);
+            cuts.set(wi + ":" + ew, { p: lp, d: R.u });
+            cuts.set(ri + ":" + er, { p: [xp, 0], d: [0, 1] });
+            NPSU_EAVES.set(R.o, { er, xp, xo, xi, sgn, lp, ld: R.u, k: kk });
+            return;
+          }
           const X = npsuX(f.a, f.u, g.a, g.u),
             Y = npsuX(off(f.a, f.w, f.T), f.u, off(g.a, g.w, g.T), g.u);
           if (!X || !Y || Math.hypot(X[0] - p[0], X[1] - p[1]) > tol * 3) return;
@@ -730,8 +902,88 @@ function npsuTie(objs, k) {
       O0 = at(ca, outA) || outA,
       I1 = at(cb, inA) || inB,
       O1 = at(cb, outA) || outB;
-    NPSU_JOIN.set(f.o, [I0, I1, O1, O0]);
+    const pl = [I0, I1, O1, O0];
+    pl.free = [!ca, !cb];
+    NPSU_JOIN.set(f.o, pl);
   });
+}
+/* how deep the ceiling lining is (mm): the layers under the rafter zone */
+function npsuLiningDepth(bu) {
+  let d = 0;
+  for (const l of bu) {
+    if (["pirb", "studins", "void", "timber", "wool"].includes(l.m)) break;
+    if (!npsuIsMem(l.m)) d += +l.t || 0;
+  }
+  return d;
+}
+/* the eaves: wall plate on the wall head, fascia on the plumb cut, soffit back to the wall, gutter,
+   over-fascia vent – drawn at real sizes (k = page units per mm) */
+function npsuEaves(ctx, e, ends, lw) {
+  const { xp, xo, xi, sgn, lp, ld, k } = e;
+  const ys = ends.map((p) => p[1]);
+  const yTop = Math.min(...ys),
+    yLow = Math.max(...ys);
+  const R = (x0, y0, x1, y1, fill) => {
+    const x = Math.min(x0, x1),
+      y = Math.min(y0, y1),
+      w = Math.abs(x1 - x0),
+      h = Math.abs(y1 - y0);
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fillRect(x, y, w, h);
+    }
+    ctx.strokeRect(x, y, w, h);
+  };
+  const cross = (x0, y0, x1, y1) => {
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.moveTo(x0, y1);
+    ctx.lineTo(x1, y0);
+    ctx.stroke();
+  };
+  const under = (x) => lp[1] + (ld[1] * (x - lp[0])) / (ld[0] || 1e-9);
+  ctx.save();
+  ctx.lineWidth = npsuPw(ctx, lw, 0.18);
+  /* fascia: 22 thick, from just under the covering down past the underside */
+  const fT = 22 * k,
+    fTop = yTop + (yLow - yTop) * 0.35,
+    fBot = yLow + 60 * k;
+  R(xp, fTop, xp + sgn * fT, fBot, "#dcc4b4");
+  /* soffit: 12 board back to the wall at the bottom of the fascia */
+  R(xo, fBot - 12 * k, xp, fBot, "#dcc4b4");
+  /* soffit vent gap: dashed, 10 mm from the wall */
+  ctx.save();
+  ctx.setLineDash([npsuPw(ctx, lw, 0.8), npsuPw(ctx, lw, 0.6)]);
+  ctx.beginPath();
+  ctx.moveTo(xo + sgn * 15 * k, fBot - 6 * k);
+  ctx.lineTo(xo + sgn * 40 * k, fBot - 6 * k);
+  ctx.stroke();
+  ctx.restore();
+  /* over-fascia vent on top of the fascia */
+  R(xp, fTop - 10 * k, xp + sgn * fT, fTop, "#374151");
+  /* half-round gutter on brackets off the fascia */
+  const gr = 57 * k,
+    gx = xp + sgn * (fT + gr + 5 * k),
+    gy = fTop + 25 * k;
+  ctx.beginPath();
+  ctx.arc(gx, gy, gr, 0, Math.PI);
+  ctx.closePath();
+  ctx.fillStyle = "#c7cbd1";
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(xp + sgn * fT, gy);
+  ctx.lineTo(gx + sgn * gr, gy);
+  ctx.stroke();
+  /* wall plate: 100 × 50 on the wall head, under the roof */
+  const wx0 = xi + sgn * 10 * k,
+    wx1 = wx0 + sgn * 100 * k,
+    wTop = Math.max(under(wx0), under(wx1));
+  ctx.lineWidth = npsuPw(ctx, lw, 0.13);
+  R(wx0, wTop, wx1, wTop + 50 * k, "#dcc4b4");
+  cross(wx0, wTop, wx1, wTop + 50 * k);
+  ctx.restore();
 }
 /* the written specification for every build-up on a drawing: [[code, name, [lines]]] */
 function npsuSpec(objs) {

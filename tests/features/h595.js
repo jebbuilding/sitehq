@@ -1,5 +1,5 @@
 // Build-ups tie together (made-up drawing): a timber frame wall drawn up its inside face, a warm slate roof off the
-// wall head, an upper floor run into the wall and a ground slab under it. The wall and roof meet in a mitre (the same
+// wall head, an upper floor run into the wall and a ground slab under it. The wall and roof meet in a mitre when the eaves overhang is 0 (the same
 // outer corner point), the floor stops at the wall's inside face, the wall stands on the slab's top face, and a
 // build-up on its own is drawn as before.
 const fs=require('fs');const {chromium}=require('playwright');
@@ -20,7 +20,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
   const X0=330,Ytop=230,Yf=Ytop+u(150),Yslab=Ytop+u(2700);
   const slabT=u(150+25+100+100+65+10);
   const wall=mk('tfclad',[X0,Yslab-slabT],[X0,Ytop],'EW01');
-  const roof=mk('slatewarm',[X0,Ytop],[X0+u(2000),Ytop-u(2000)],'RF01');
+  const roof=mk('slatewarm',[X0,Ytop],[X0+u(2000),Ytop-u(2000)],'RF01',{eo:0});
   const floor=mk('upfloor',[X0,Yf],[X0+u(3200),Yf],'FF01');
   const slab=mk('gslab',[X0-u(600),Yslab],[X0+u(3200),Yslab],'GF01');
   const lone=mk('cavbrick',[X0+u(5000),Yslab-u(400)],[X0+u(5000),Yslab-u(2400)],'EW02');
@@ -33,7 +33,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
    slabCut:J[3]&&Math.min(J[3][0][0],J[3][3][0])>X0-u(500),wallFoot:J[0]?Math.abs(J[0][0][1]-(Yslab-slabT))+Math.abs(J[0][3][1]-(Yslab-slabT)):99};});
  ok(r.has[0]&&r.has[1]&&r.has[2],'the wall, roof and floor are tied together');
  ok(!r.has[4],'a build-up on its own is left as it is');
- ok(r.mitre<0.5&&r.inner<0.5,'the wall and roof meet in a mitre: same inner and outer corner points');
+ ok(r.mitre<0.5&&r.inner<0.5,'the wall and roof meet in a mitre when the eaves overhang is 0: same inner and outer corner points');
  ok(r.floorEnd<0.5,'the upper floor stops at the wall\'s inside face');
  ok(r.wallFoot<0.5,'the wall stands on the top of the slab');ok(!r.slabCut,'the slab runs on under the wall');
  await p.waitForTimeout(300);

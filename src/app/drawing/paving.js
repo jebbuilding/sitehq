@@ -66,6 +66,7 @@ import {
 import {
   NPSU_LIB,
   NPSU_MATS,
+  npsuAcross,
   npsuCode,
   npsuIsMem,
   npsuLayers,
@@ -540,7 +541,7 @@ async function openNotePage(opts) {
           <div class="nfrow nfdirn" hidden><span class="nfl">Direction</span><button type="button" class="nfb nfturnb">⇄ Turn the timbers</button></div>
           <div class="nfrow"><span class="nfl">Extra</span><button type="button" class="nfb nfaddt">➕ Add timber</button><button type="button" class="nfb nfclrt">Clear extras</button></div><div class="who nftinfo"></div></div>
         <div class="nfsteel" hidden><div class="nfrow"><span class="nfl">Type</span><select class="nfst-t" style="flex:1;min-height:44px" aria-label="Type"></select></div><div class="nfrow"><span class="nfl">Size</span><select class="nfst-s" style="flex:1;min-height:44px" aria-label="Size"></select></div><form class="nfrow nfst-xrow" hidden><span class="nfl">Other size</span><input class="nfst-x" maxlength="60" placeholder="e.g. 254×146×31" style="flex:1" aria-label="Other size"><button type="submit" class="btn primary">Set</button></form><div class="nfrow nfst-padrow"><span class="nfl">Padstones</span><select class="nfst-p" style="flex:1;min-height:44px" aria-label="Padstones"></select></div><div class="who nfst-info"></div><div class="nfrow nfst-sheetrow"><button type="button" class="nfb nfst-sheet">📋 Open the beam sheet: lifting, props, padstones, fire, order, sign-off</button></div></div>
-        <div class="nfsecbu" hidden><div class="nfrow"><button type="button" class="nfb nfbu-edit">🧱 Change the layers, thicknesses and tag</button><button type="button" class="nfb nfbu-flip">⇄ Layers to the other side</button><button type="button" class="nfb nfbu-lab">🏷 Label every layer</button></div><div class="who nfbu-info"></div></div>
+        <div class="nfsecbu" hidden><div class="nfrow"><button type="button" class="nfb nfbu-edit">🧱 Change the layers, thicknesses and tag</button><button type="button" class="nfb nfbu-flip">⇄ Layers to the other side</button><button type="button" class="nfb nfbu-lab">🏷 Label every layer</button><button type="button" class="nfb nfbu-ta">🪵 Timbers cut across</button></div><form class="nfrow nfbu-eof"><span class="nfl">Eaves overhang</span><input class="nfbu-eo" inputmode="numeric" style="width:80px" aria-label="Eaves overhang in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button></form><div class="who nfbu-info"></div></div>
         <div class="nfstairs" hidden><div class="nfrow"><span class="nfl">Steps</span><button type="button" class="nfb nfst" data-d="-1" aria-label="One step fewer">−</button><b class="nfstn" style="min-width:34px;text-align:center"></b><button type="button" class="nfb nfst" data-d="1" aria-label="One step more">+</button><button type="button" class="nfb nfsdir">⇅ Up / down</button></div>
           <form class="nfrow nfrise"><span class="nfl">Floor to floor</span><input class="nfrisev" inputmode="numeric" style="width:80px" aria-label="Floor to floor height in mm"><span class="nfu2">mm</span><button type="submit" class="btn primary">Set</button><button type="button" class="btn nfsauto">Best steps</button></form><div class="who nfsinfo"></div><div class="nfrow"><button type="button" class="nfb nfs-build">🪜 Open in the stair builder: type, materials, glass rail, checks, side view</button></div></div>
         <div class="nfrow nfwhat"><span class="nfl">Adjust</span><div class="seg nfseg"><button type="button" data-w="all" aria-pressed="true">Whole item</button><button type="button" data-w="a" aria-pressed="false">● Start</button><button type="button" data-w="b" aria-pressed="false">● End</button></div></div>
@@ -10793,6 +10794,11 @@ async function openNotePage(opts) {
         fb.querySelector(".nfbu-info").textContent =
           `${o.bc ? o.bc + " – " : ""}${o.bn || "Build-up"}: ${(o.bu || []).length} layers, ${Math.round(npsuTotal(o.bu))} mm overall`;
         fb.querySelector(".nfbu-lab").setAttribute("aria-pressed", o.lab ? "true" : "false");
+        fb.querySelector(".nfbu-ta").textContent = npsuAcross(o)
+          ? "🪵 Timbers cut across (tap for running along)"
+          : "🪵 Timbers running along (tap for cut across)";
+        const eo = fb.querySelector(".nfbu-eo");
+        if (document.activeElement !== eo) eo.value = o.eo == null ? 300 : o.eo;
       }
     }
     {
@@ -11133,6 +11139,17 @@ async function openNotePage(opts) {
       fb.querySelector(".nfbu-edit").onclick = () => {
         const o = cur();
         if (o && o.k === "secbu") buDlg(o);
+      };
+      fb.querySelector(".nfbu-ta").onclick = () => upd((o) => (o.ta = npsuAcross(o) ? 0 : 1));
+      fb.querySelector(".nfbu-eof").onsubmit = (e) => {
+        e.preventDefault();
+        const v = Math.max(0, Math.min(1500, Math.round(+fb.querySelector(".nfbu-eo").value || 0)));
+        upd((o) => (o.eo = v));
+        toast(
+          v
+            ? "Eaves overhang " + v + " mm past the wall"
+            : "No eaves: the roof is mitred to the wall",
+        );
       };
       fb.querySelector(".nfbu-flip").onclick = () =>
         upd((o) => {
