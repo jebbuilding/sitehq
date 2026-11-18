@@ -11,8 +11,10 @@ import { openFile } from "../files/in-app-files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { allVisitInds } from "../people/foreman.js";
+import { isendOpen } from "../people/induction-send.js";
 import { meInfo, myDetails } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
+import { planEntries } from "../planner/time-off.js";
 import { shrinkImage } from "./training.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { RAMS_SIGN } from "../sites/plans-specs.js";
@@ -86,6 +88,19 @@ function empIndTodo() {
   const recent = new Set(
     S.mine.entries.filter((e) => e.date >= since).map((e) => (e.job || "").trim().toLowerCase()),
   );
+  /* and the sites they're booked on in the planner from today to a week ahead – so they do it before they go */
+  const today = iso(new Date()),
+    wk = iso(addDays(new Date(), 7));
+  planEntries()
+    .filter(
+      (p) =>
+        p.site &&
+        Array.isArray(p.people) &&
+        p.people.includes(S.me) &&
+        p.from <= wk &&
+        (p.to || p.from) >= today,
+    )
+    .forEach((p) => recent.add(String(p.site).trim().toLowerCase()));
   return S.inductions.filter((i) => recent.has((i.site || "").trim().toLowerCase()) && !myInd(i));
 }
 function inductionSection(site, owner) {
@@ -112,7 +127,7 @@ function inductionSection0(site, owner) {
     return `<div class="card indcard"><div class="cardbody" style="border:0">
       <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start"><div><b>Site induction</b><div class="who">${ind.items.length} points · last changed ${stamp(ind.updated)}</div></div>
       <button type="button" class="pillbtn ind-edit" data-site="${esc(site)}">Edit induction</button></div>
-      <div class="actions"><button type="button" class="btn primary ind-device" data-site="${esc(site)}">Induct someone on this device</button><button type="button" class="pillbtn ind-reg" data-site="${esc(site)}">Download register (PDF)</button></div>
+      <div class="actions"><button type="button" class="btn primary ind-send" data-site="${esc(site)}" data-need="${esc(notDone.join(","))}">📤 Send to someone</button><button type="button" class="btn ind-device" data-site="${esc(site)}">📱 Induct someone on this device</button><button type="button" class="pillbtn ind-reg" data-site="${esc(site)}">Download register (PDF)</button></div>
       ${notDone.length ? `<div class="sub" style="color:var(--danger)">Worked here but not inducted${outdated.length ? " (or induction changed since)" : ""}: ${notDone.map((id) => esc(nameOf(id))).join(", ")}</div>` : ""}
       ${
         done.length
@@ -169,6 +184,13 @@ function wireInduction() {
         const rec = ind && teamInd(ind, b.dataset.w);
         if (!rec) return;
         b.classList.contains("ind-pdf") ? pdfRecord(rec) : viewRecord(rec, true);
+      }),
+  );
+  m.querySelectorAll(".ind-send").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const i = indFor(b.dataset.site);
+        if (i) isendOpen(i.id, (b.dataset.need || "").split(",").filter(Boolean));
       }),
   );
   m.querySelectorAll(".ind-device").forEach(

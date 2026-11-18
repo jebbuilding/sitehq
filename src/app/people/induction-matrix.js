@@ -3,6 +3,7 @@ import { $, esc, iso, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
+import { isendBarHtml, isendOpen, isendWaiting, isendWire } from "./induction-send.js";
 import { viewRecord } from "../safety/site-inductions.js";
 import { same } from "../sites/project-pages.js";
 export { inductionsView };
@@ -72,20 +73,26 @@ function inductionsView() {
   const cols = inds.map((ind, i) => [ind, i]).filter(([ind]) => !site || ind.site === site);
   const shown = rows.filter(
     (p) =>
-      cols.some(([, i]) => p.cells[i].st) &&
+      (cols.some(([, i]) => p.cells[i].st) ||
+        (p.app && cols.some(([ind]) => isendWaiting(p.id, ind.id)))) &&
       (!gaps || cols.some(([, i]) => ["need", "old"].includes(p.cells[i].st))),
   );
   const n = (st) =>
     rows.reduce((a, p) => a + cols.filter(([, i]) => p.cells[i].st === st).length, 0);
-  const sq = (c) =>
-    c.st === "ok"
-      ? `<button type="button" class="im-c ok" data-r="1">✓<small>${esc(shortDay(iso(new Date(c.rec.signedAt))))}</small></button>`
-      : c.st === "old"
-        ? `<button type="button" class="im-c old" data-r="1">Old<small>${esc(shortDay(iso(new Date(c.rec.signedAt))))}</small></button>`
-        : c.st === "need"
-          ? `<span class="im-c need">Needed</span>`
-          : `<span class="im-c"></span>`;
-  $("main").innerHTML = `<div class="im-page">
+  /* Needed / Old are buttons to send the induction; one sent and not signed yet shows "Sent" */
+  const sq = (c, p, ind) =>
+    p.app && c.st !== "ok" && isendWaiting(p.id, ind.id)
+      ? `<button type="button" class="im-c sent im-send" data-p="${esc(p.id)}" data-ind="${esc(ind.id)}">Sent<small>waiting</small></button>`
+      : c.st === "ok"
+        ? `<button type="button" class="im-c ok" data-r="1">✓<small>${esc(shortDay(iso(new Date(c.rec.signedAt))))}</small></button>`
+        : c.st === "old"
+          ? `<button type="button" class="im-c old" data-r="1">Old<small>${esc(shortDay(iso(new Date(c.rec.signedAt))))}</small></button>${p.app ? `<button type="button" class="im-send im-sendl" data-p="${esc(p.id)}" data-ind="${esc(ind.id)}">📤 Send</button>` : ""}`
+          : c.st === "need"
+            ? p.app
+              ? `<button type="button" class="im-c need im-send" data-p="${esc(p.id)}" data-ind="${esc(ind.id)}">Needed<small>📤 Send</small></button>`
+              : `<span class="im-c need">Needed</span>`
+            : `<span class="im-c"></span>`;
+  $("main").innerHTML = `<div class="im-page">${isendBarHtml()}
     <div class="im-boxes">
       <div class="im-box ok"><small>Inducted</small><b>${n("ok")}</b><span>person-sites</span></div>
       <div class="im-box${n("need") ? " bad" : ""}"><small>Worked there, not inducted</small><b>${n("need")}</b><span>to sort</span></div>
@@ -99,13 +106,17 @@ function inductionsView() {
           ? `<div class="tablewrap im-wrap"><table class="im-t"><thead><tr><th>Person</th>${cols.map(([ind]) => `<th>${esc(ind.site)}</th>`).join("")}</tr></thead><tbody>${shown
               .map(
                 (p) =>
-                  `<tr data-p="${esc(p.id)}"><th>${esc(p.name)}${p.app ? "" : ` <small class="who">in person</small>`}</th>${cols.map(([, i]) => `<td data-i="${i}">${sq(p.cells[i])}</td>`).join("")}</tr>`,
+                  `<tr data-p="${esc(p.id)}"><th>${esc(p.name)}${p.app ? "" : ` <small class="who">in person</small>`}</th>${cols.map(([ind, i]) => `<td data-i="${i}">${sq(p.cells[i], p, ind)}</td>`).join("")}</tr>`,
               )
               .join("")}</tbody></table></div>`
           : `<div class="empty"><strong>${gaps ? "No gaps" : "Nobody inducted yet"}</strong>${gaps ? "Everyone who has worked on a site has signed its induction." : ""}</div>`
     }
-    <div class="who">✓ signed (tap to see the record) · Old: the induction has changed since they signed · Needed: they've worked on the site but not signed.</div>
+    <div class="who">✓ signed (tap to see the record) · Old: the induction has changed since they signed · Needed: they've worked on the site but not signed (tap to send it) · Sent: sent to them, not signed yet.</div>
   </div>`;
+  isendWire();
+  document
+    .querySelectorAll("#main .im-send")
+    .forEach((b) => (b.onclick = () => isendOpen(b.dataset.ind, [b.dataset.p])));
   $("im-site").onchange = () => {
     S.f.imsite = $("im-site").value;
     render();

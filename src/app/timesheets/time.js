@@ -39,7 +39,7 @@ import { nameOf } from "../owner/owner.js";
 import { proxyFor, setProxyFor } from "../people/foreman.js";
 import { myTrade, siteRec } from "../photos/photos.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
-import { empIndTodo, openInduction } from "../safety/site-inductions.js";
+import { empIndTodo, indFor, myInd, openInduction } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
@@ -157,6 +157,13 @@ async function checkInAt(site) {
     );
   } catch (e) {
     toast(`Couldn't check in. Ask ${bossFirst()} to check you're an Editor.`);
+  }
+  /* first time on this site and it has an induction they haven't signed: open it now (James, Nov 2026: "when there is
+     a new site and they go onto it for the first time they need to do the induction") */
+  const ind = indFor(site);
+  if (ind && !myInd(ind) && !S.preview) {
+    toast("First time on this site – do the site induction before you start");
+    openInduction(ind);
   }
 }
 async function checkOut(e) {
