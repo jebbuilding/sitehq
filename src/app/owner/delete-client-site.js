@@ -11,6 +11,7 @@ import { render } from "../core/tabs-week.js";
 import { closeViewer } from "../core/viewer.js";
 import { auditFirst } from "./deletion-record.js";
 import { siteRec } from "../photos/photos.js";
+import { siteFull } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
 export { deleteClientFlow, deleteSiteFlow, deleteSitesPicker };
@@ -196,7 +197,7 @@ function deleteSitesPicker() {
   openSheet(
     `<h3 id="sheettitle">🗑 Delete sites</h3><div class="who">Tick the sites to delete. Their timesheets, day work, photos and documents are kept for your records; the site just disappears from the lists for you and the trades. Clients are kept.</div>
     <input type="search" id="dsp-q" placeholder="🔍 Search sites" aria-label="Search sites">
-    <div class="dsp-list">${all.map((n) => `<label class="tick dsp-row" data-q="${esc(n.toLowerCase())}"><input type="checkbox" class="dsp-c" value="${esc(n)}"> <span>${esc(n)}${isArchivedSite(n) ? ' <span class="tag">In storage</span>' : ""}${siteRec(n) ? "" : ' <span class="who">(only a name on logged work)</span>'}</span></label>`).join("") || '<div class="nothing">No sites.</div>'}</div>
+    <div class="dsp-list">${all.map((n) => `<label class="tick dsp-row" data-q="${esc(n.toLowerCase())}"><input type="checkbox" class="dsp-c" value="${esc(n)}"> <span>${esc(siteFull(n))}${isArchivedSite(n) ? ' <span class="tag">In storage</span>' : ""}${siteRec(n) ? "" : ' <span class="who">(only a name on logged work)</span>'}</span></label>`).join("") || '<div class="nothing">No sites.</div>'}</div>
     <label class="tick"><input type="checkbox" id="dsp-docs" checked> <span>Also delete their plans, RAMS and documents</span></label>
     <div class="notice warn" style="margin:0">Deleting can't be undone. Inductions, jobs, planner entries and site chats go too. If you just want a site out of the way, open it and use <b>Move to storage</b>.</div>
     ${formFoot(false, "Delete ticked sites")}`,
@@ -247,7 +248,7 @@ function deleteSiteFlow(site) {
   const sr = siteRec(site);
   const c = siteClient(site);
   openSheet(
-    `<h3 id="sheettitle">🗑 Delete ${esc(site)}?</h3><div class="notice warn" style="margin:0">This permanently removes the site${sr ? ", its job details and who-sees-what settings" : " from your lists"}. Trades will no longer see it. It can't be undone.</div>
+    `<h3 id="sheettitle">🗑 Delete ${esc(siteFull(site))}?</h3><div class="notice warn" style="margin:0">This permanently removes the site${sr ? ", its job details and who-sees-what settings" : " from your lists"}. Trades will no longer see it. It can't be undone.</div>
     <div class="who">Its induction, jobs, planner entries and site chat go with it. Timesheets, day work and photos already logged against it are kept for your records.${c ? ` The client ${esc(c.name)} is kept.` : ""} If you just want it out of the way, use <b>Move to storage</b> instead.</div>
     ${(() => {
       const n = (RAW.docs || []).filter((x) => same(x.site, site)).length;

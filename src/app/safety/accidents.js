@@ -22,6 +22,7 @@ import {
 } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { siteLabel } from "../sites/job-details.js";
 export { INC_KINDS, incidentsBlock, openIncident, viewIncident, wireIncidents };
 const INC_KINDS = {
   injury: "Accident (someone hurt)",
@@ -226,7 +227,7 @@ async function saveIncident() {
 }
 function incRow(x, owner) {
   return `<button type="button" class="incrow" data-i="${esc(x.id)}" data-w="${esc(x.who || "")}"><span><b>${esc(INC_KINDS[x.kind] || "Incident")}</b>${x.riddor ? ' <span class="tag bad">RIDDOR?</span>' : ""}${owner && x.status !== "reviewed" ? ' <span class="tag day">New</span>' : ""}
-    <br><span class="who">${esc(x.site || "")} · ${esc(shortDay(x.date))} ${esc(x.time || "")}${owner ? " · reported by " + esc(x.name || nameOf(x.who)) : ""}</span><br><span class="sub">${esc((x.what || "").slice(0, 120))}</span></span><span aria-hidden="true">›</span></button>`;
+    <br><span class="who">${esc(siteLabel(x.site) || "")} · ${esc(shortDay(x.date))} ${esc(x.time || "")}${owner ? " · reported by " + esc(x.name || nameOf(x.who)) : ""}</span><br><span class="sub">${esc((x.what || "").slice(0, 120))}</span></span><span aria-hidden="true">›</span></button>`;
 }
 function incidentsBlock(owner) {
   const list = (

@@ -13,6 +13,7 @@ import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "../sales/letterhead-setup.
 import { sdR2 } from "../sales/sales-calc.js";
 import { sdShareMail } from "../sales/sales-email.js";
 import { sdImgData, sdLongDate } from "../sales/sales-pdf.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { loadXlsx } from "../timesheets/day-work-xlsx.js";
 export { plSupName, plView, poAll, poOrdersSheet, poPdf, poPriceSheet, poSave, poSaveOrKeep };
 /* Owner-private (prices are never sent to trades, unlike the merchant records):
@@ -294,7 +295,7 @@ function poPriceSheet(lines, site0) {
     `<h3 id="sheettitle">💷 Price it and order</h3>
     <div class="who">Each material matched to your merchants' prices (before VAT), the cheapest good match first. Change the quantity or the merchant as needed.</div>
     ${noLists ? `<div class="notice warn">You haven't put in any merchants' prices yet: Merchants › 💷 Price lists. Until then nothing can be priced.</div>` : ""}
-    <label for="po-site">Job<select id="po-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}"${s === site0 ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
+    <label for="po-site">Job<select id="po-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}"${s === site0 ? " selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label>
     <div class="po-lines" id="po-lines"></div>
     <div class="po-tot" id="po-tot"></div>
     <div class="po-acts"><button type="button" class="btn" id="po-budget">💷 Make it the job's materials budget</button></div>
@@ -425,7 +426,7 @@ function poOrdersSheet(orders) {
     ${orders
       .map(
         (o, i) =>
-          `<div class="po-ord"><div><b>${esc(o.number)} · ${esc(o.supName)}</b><div class="who">${esc(o.site)} · ${o.lines.length} item${o.lines.length === 1 ? "" : "s"} · ${gbp(o.net)} + VAT</div></div><div class="po-acts"><button type="button" class="btn primary po-mail" data-i="${i}">📧 Email it</button><button type="button" class="btn po-pdf" data-i="${i}">📄 PDF</button></div></div>`,
+          `<div class="po-ord"><div><b>${esc(o.number)} · ${esc(o.supName)}</b><div class="who">${esc(siteLabel(o.site))} · ${o.lines.length} item${o.lines.length === 1 ? "" : "s"} · ${gbp(o.net)} + VAT</div></div><div class="po-acts"><button type="button" class="btn primary po-mail" data-i="${i}">📧 Email it</button><button type="button" class="btn po-pdf" data-i="${i}">📄 PDF</button></div></div>`,
       )
       .join("")}
     ${formFoot(false, "Done")}`,

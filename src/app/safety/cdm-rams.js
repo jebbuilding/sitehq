@@ -7,6 +7,7 @@ import { uploadErr, uploadFile } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { allTeam } from "../owner/owner.js";
 import { RA_PERMITS, RA_PPE, RA_WHO, openRaForm, raPdf } from "./rams.js";
+import { siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 export { CDMRA };
 /* James, Nov 2026: "we should have a box to auto make the rams … without going into the rams page but places them in
@@ -506,8 +507,8 @@ const CDMRA = (() => {
     if (!need.length)
       return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b><div class="who">${onSite ? "No hazards ticked for this job yet. Tick them in 🦺 Health &amp; safety › CDM documents and the RAMS they need show here – or make one below." : "Tick the hazards above and the RAMS this job needs show here, ready to make in one tap."}</div></div>`;
     return `<div class="cdm-rabox"><b>📝 RAMS for these hazards</b>
-      ${done.length ? `<div class="who">✓ Already on ${esc(site)}: ${done.map((k) => esc(LIB[k].activity)).join(" · ")}</div>` : ""}
-      ${todo.length ? `<div class="who">To make: ${todo.map((k) => `<b>${esc(LIB[k].activity)}</b>`).join(" · ")}</div><button type="button" class="btn primary" id="${px}-mkra">📝 Make ${todo.length === 1 ? "the RAMS" : "these " + todo.length + " RAMS"} and file ${todo.length === 1 ? "it" : "them"} in ${esc(site)} › RAMS</button><div class="who">Written from the hazards, with controls, PPE, permits and a step-by-step method – check them and add anything specific to this job.</div>` : `<div class="who">✓ Every hazard ticked has its RAMS on this site.</div>`}</div>`;
+      ${done.length ? `<div class="who">✓ Already on ${esc(siteLabel(site))}: ${done.map((k) => esc(LIB[k].activity)).join(" · ")}</div>` : ""}
+      ${todo.length ? `<div class="who">To make: ${todo.map((k) => `<b>${esc(LIB[k].activity)}</b>`).join(" · ")}</div><button type="button" class="btn primary" id="${px}-mkra">📝 Make ${todo.length === 1 ? "the RAMS" : "these " + todo.length + " RAMS"} and file ${todo.length === 1 ? "it" : "them"} in ${esc(siteLabel(site))} › RAMS</button><div class="who">Written from the hazards, with controls, PPE, permits and a step-by-step method – check them and add anything specific to this job.</div>` : `<div class="who">✓ Every hazard ticked has its RAMS on this site.</div>`}</div>`;
   }
   /* file a risk assessment in the site's RAMS as a PDF (for one made by hand or by Claude) */
   async function file(site, d) {

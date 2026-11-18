@@ -1,6 +1,7 @@
 /* ================= JOB SHEETS & SNAG LISTS ================= */
 import { $, esc, iso, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
+import { siteLabel } from "./job-details.js";
 export { JOB_DET, JOB_KINDS, doneKey, jobCard, jobDetRead, jobProgress, myJobs, taskDone };
 const JOB_KINDS = { job: "Job sheet", snag: "Snag list" };
 const JOB_DET = [
@@ -47,7 +48,7 @@ function jobCard(j, owner) {
   const late = j.status !== "closed" && j.due && j.due < iso(new Date()) && d < n;
   return `<button type="button" class="entry jobc" data-j="${esc(j.id)}"><div class="main">
     <div class="job"><span class="tag ${j.kind === "snag" ? "day" : ""}">${JOB_KINDS[j.kind] || "Job sheet"}</span>${j.status === "closed" ? '<span class="tag ok">Signed off</span>' : d === n && n ? '<span class="tag ok">All ticked</span>' : ""}${late ? '<span class="tag bad">Overdue</span>' : ""}${esc(j.title)}</div>
-    <div class="sub">${esc(j.site || "No site")}${j.due ? ` · due ${shortDay(j.due)}` : ""} · ${esc((j.assigneeNames || []).join(", ") || "Nobody assigned")}${(j.files || []).length ? ` · ${j.files.length} document${j.files.length === 1 ? "" : "s"}` : ""}</div>
+    <div class="sub">${esc(siteLabel(j.site) || "No site")}${j.due ? ` · due ${shortDay(j.due)}` : ""} · ${esc((j.assigneeNames || []).join(", ") || "Nobody assigned")}${(j.files || []).length ? ` · ${j.files.length} document${j.files.length === 1 ? "" : "s"}` : ""}</div>
     <div class="prog" aria-label="${d} of ${n} done"><span style="width:${pct}%"></span></div></div>
     <div class="amt">${d}/${n}</div></button>`;
 }

@@ -11,6 +11,7 @@ import { ukDate } from "../safety/rams-maker.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { sdAmt, sdLines, sdNo, sdR2, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 export { appAll, appCalc, appView };
 /* Accounts › 🏗 Applications. For a job paid in stages against a priced list (often for a main contractor or a
@@ -65,7 +66,7 @@ function appView(tabs) {
       L.map((v) => {
         const c = appCalc(v);
         const warn = !v.paidAt && c.plDate >= today && daysTo(c.plDate) <= 3;
-        return `<div class="card app-row"><div class="app-h"><b>${esc(v.site || "Job")} · application ${esc(v.no)}</b><span class="tag ${v.paidAt ? "ok" : c.finalDate < today ? "bad" : "day"}">${v.paidAt ? "Paid" : c.finalDate < today ? "Past the final date" : "Due " + esc(shortDay(c.dueDate))}</span></div>
+        return `<div class="card app-row"><div class="app-h"><b>${esc(siteLabel(v.site) || "Job")} · application ${esc(v.no)}</b><span class="tag ${v.paidAt ? "ok" : c.finalDate < today ? "bad" : "day"}">${v.paidAt ? "Paid" : c.finalDate < today ? "Past the final date" : "Due " + esc(shortDay(c.dueDate))}</span></div>
         <div class="who">${esc(ukDate(v.date))} · ${esc(v.client || "")} · valued ${gbp(c.gross)} · <b>${gbp(c.due)} due this time</b></div>
         <div class="who">Pay less notice by ${esc(shortDay(c.plDate))} · final date for payment ${esc(shortDay(c.finalDate))}${warn ? ' · <span class="app-warn">pay less notice deadline soon</span>' : ""}</div>
         <div class="actions"><button type="button" class="btn app-open" data-id="${esc(v.id)}">✎ Open</button><button type="button" class="btn app-pdf" data-id="${esc(v.id)}">📄 PDF</button>${v.invId ? `<span class="who">Invoiced</span>` : `<button type="button" class="btn app-inv" data-id="${esc(v.id)}">🧾 Make the invoice</button>`}<button type="button" class="btn app-next" data-id="${esc(v.id)}">+ Next application</button></div></div>`;
@@ -105,9 +106,9 @@ function appEdit(v0) {
   const sites = siteNames();
   openSheet(
     `<h3 id="sheettitle">🏗 Application for payment ${esc(v.no)}</h3>
-    <div class="grid2"><label for="app-site">Job<select id="app-site"><option value="">Pick the job…</option>${sites.map((s) => `<option${same(s, v.site) ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></label><label for="app-client">Who to (client or main contractor)<input id="app-client" maxlength="80" value="${esc(v.client || "")}"></label></div>
+    <div class="grid2"><label for="app-site">Job<select id="app-site"><option value="">Pick the job…</option>${sites.map((s) => `<option value="${esc(s)}"${same(s, v.site) ? " selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label><label for="app-client">Who to (client or main contractor)<input id="app-client" maxlength="80" value="${esc(v.client || "")}"></label></div>
     <div class="grid2"><label for="app-no">Application number<input id="app-no" type="number" min="1" value="${esc(v.no)}"></label><label for="app-date">Date<input id="app-date" type="date" value="${esc(v.date)}"></label></div>
-    ${!v0 || !items.length ? `<label for="app-est">Start from an accepted estimate<select id="app-est"><option value="">– type the items instead –</option>${ests.map((d) => `<option value="${esc(d.id)}">${esc(sdNo(d))} · ${esc(d.client || "")} · ${esc(d.site || "")}</option>`).join("")}</select></label>` : ""}
+    ${!v0 || !items.length ? `<label for="app-est">Start from an accepted estimate<select id="app-est"><option value="">– type the items instead –</option>${ests.map((d) => `<option value="${esc(d.id)}">${esc(sdNo(d))} · ${esc(d.client || "")} · ${esc(siteLabel(d.site) || "")}</option>`).join("")}</select></label>` : ""}
     <div class="flabel">Items: the price of each and how far through it is</div><div id="app-items"></div>
     <div class="actions"><button type="button" class="btn" id="app-add">+ Add an item</button></div>
     <div class="grid2"><label for="app-ret">Retention %<input id="app-ret" type="number" inputmode="decimal" min="0" max="10" step="0.5" value="${esc(v.ret)}"></label><label for="app-dd">Payment due (days after the application)<input id="app-dd" type="number" min="0" value="${esc(v.dueDays)}"></label></div>
@@ -233,7 +234,7 @@ async function appPdf(v) {
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(`To: ${v.client || ""}   Job: ${v.site || ""}   Date: ${ukDate(v.date)}`, M, y);
+  doc.text(`To: ${v.client || ""}   Job: ${siteFull(v.site)}   Date: ${ukDate(v.date)}`, M, y);
   y += 9;
   const row = (a, b, cc, d, bold) => {
     if (y > bottom) {

@@ -23,6 +23,7 @@ import { nameOf, teamIds } from "../owner/owner.js";
 import { myTrade } from "../photos/photos.js";
 import { sigPad } from "../safety/site-inductions.js";
 import { drawShare } from "../sites/doc-visibility.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { jobDraft, myName, openJobEditor } from "../survey/door-window-survey.js";
 export { drawOpen, drawView, myDrawings };
@@ -41,7 +42,7 @@ function drawView() {
         ? `<div class="flabel">My drawings (${list.length})</div><div class="drawgrid">${list
             .map(
               (p) =>
-                `<button type="button" class="drawtile" data-id="${esc(p.id)}"><img src="${blobUrl(p.assetId)}" alt="" loading="lazy"><span class="dtt"><b>${esc(p.title || "Drawing")}</b><span class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(p.site) : ""}</span>${p.check === "open" ? `<span class="tag day">Sent to ${esc(bossFirst())}</span>` : p.check === "ok" ? `<span class="tag ok">${esc(bossFirst())}: right ✓</span>` : p.check === "change" ? '<span class="tag bad">Needs changing</span>' : ""}${p.signReq === "open" ? '<span class="tag bad">✍ Please check &amp; sign</span>' : p.signReq === "ok" ? '<span class="tag ok">✓ You approved</span>' : p.signReq === "change" ? '<span class="tag day">You asked for changes</span>' : ""}${
+                `<button type="button" class="drawtile" data-id="${esc(p.id)}"><img src="${blobUrl(p.assetId)}" alt="" loading="lazy"><span class="dtt"><b>${esc(p.title || "Drawing")}</b><span class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(siteLabel(p.site)) : ""}</span>${p.check === "open" ? `<span class="tag day">Sent to ${esc(bossFirst())}</span>` : p.check === "ok" ? `<span class="tag ok">${esc(bossFirst())}: right ✓</span>` : p.check === "change" ? '<span class="tag bad">Needs changing</span>' : ""}${p.signReq === "open" ? '<span class="tag bad">✍ Please check &amp; sign</span>' : p.signReq === "ok" ? '<span class="tag ok">✓ You approved</span>' : p.signReq === "change" ? '<span class="tag day">You asked for changes</span>' : ""}${
                   own && p.signSent
                     ? (() => {
                         const st = dwSignStatus(p);
@@ -151,7 +152,7 @@ async function drawSiteSync(p) {
 }
 function drawOpen(p) {
   const own = ownerMode();
-  openViewer(`<h3 style="margin:0 0 6px">${esc(p.title || "Drawing")}</h3><div class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(p.site) : ""}</div>
+  openViewer(`<h3 style="margin:0 0 6px">${esc(p.title || "Drawing")}</h3><div class="who">${esc(stamp(p.editedAt || p.created))}${p.site ? " · " + esc(siteLabel(p.site)) : ""}</div>
     <button type="button" class="invimg" id="dw-big" style="margin:10px 0"><img src="${blobUrl(p.assetId)}" alt="${esc(p.title || "Drawing")}"></button>
     <label for="dw-title">Name<input id="dw-title" maxlength="80" value="${esc(p.title || "")}"></label>
     ${pickField("dw-site", "Site (optional)", siteNames(), p.site || "", "e.g. 12 High Street", false)}
@@ -293,7 +294,7 @@ function drawOpen(p) {
       d.className = "dimask";
       d.style.zIndex = "90";
       d.innerHTML = `<form class="dimbox"><b>🔨 Add this drawing to a job sheet</b><div class="who">It's added to the job's files as a PDF, so the trades on that job can open it.</div>
-      ${jobs.length ? `<select class="dwj-j"><option value="">Choose a job sheet…</option>${jobs.map((j) => `<option value="${esc(j.id)}">${esc(j.title || "Job")}${j.site ? " · " + esc(j.site) : ""}${j.kind === "snag" ? " (snags)" : ""}</option>`).join("")}</select>` : '<div class="notice">No open job sheets yet.</div>'}
+      ${jobs.length ? `<select class="dwj-j"><option value="">Choose a job sheet…</option>${jobs.map((j) => `<option value="${esc(j.id)}">${esc(j.title || "Job")}${j.site ? " · " + esc(siteFull(j.site)) : ""}${j.kind === "snag" ? " (snags)" : ""}</option>`).join("")}</select>` : '<div class="notice">No open job sheets yet.</div>'}
       <div class="dimbtns"><button type="button" class="btn dwj-new">+ New job sheet with this drawing</button><button type="button" class="btn dwj-x">Cancel</button>${jobs.length ? '<button type="submit" class="btn primary">Add</button>' : ""}</div></form>`;
       document.body.appendChild(d);
       d.querySelector(".dwj-x").onclick = () => d.remove();
@@ -370,7 +371,7 @@ function drawOpen(p) {
       d.className = "dimask";
       d.style.zIndex = "90";
       d.innerHTML = `<form class="dimbox"><b>📋 Which client?</b><div class="who">The drawing goes into a sign-off sheet as a PDF. You can add photos, more files and a price before sending.</div>
-      <select class="dws-c">${cl.map((c) => `<option value="${esc(c.id)}" ${sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select>
+      <select class="dws-c">${cl.map((c) => `<option value="${esc(c.id)}" ${sc && sc.id === c.id ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(siteFull(c.site)) : ""}</option>`).join("")}</select>
       <div class="dimbtns"><button type="button" class="btn dws-x">Cancel</button><button type="submit" class="btn primary">Next</button></div></form>`;
       document.body.appendChild(d);
       d.querySelector(".dws-x").onclick = () => d.remove();

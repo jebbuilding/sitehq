@@ -33,7 +33,7 @@ import { nameOf, teamIds } from "../owner/owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { pgClientHtml } from "../planner/programme.js";
 import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
-import { sjClientOK, sjMaster, sjPayload } from "../sites/job-details.js";
+import { siteLabel, sjClientOK, sjMaster, sjPayload } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { myName } from "../survey/door-window-survey.js";
 export {
@@ -906,7 +906,7 @@ function portalTab() {
   const row = (c) => {
     const p = ptOf(c),
       s = st(c);
-    return `<div class="ptrow"><div><b>${esc(c.name)}</b> <span class="tag ${s === "on" ? "ok" : s === "wait" ? "day" : ""}">${s === "on" ? "Connected" : s === "wait" ? "Invite sent" : "Not set up"}</span><br><span class="who">${c.phone ? "📞 " + esc(c.phone) + " · " : ""}${c.site ? "🏗️ " + esc(c.site) + " · " : ""}${esc([c.work, c.address && c.address.split("\n")[0], c.postcode].filter(Boolean).join(" · "))}${p && p.lastWhat ? ` · ${esc(p.name)} ${esc(p.lastWhat)} ${esc(stamp(p.lastAct))}` : ""}</span></div>
+    return `<div class="ptrow"><div><b>${esc(c.name)}</b> <span class="tag ${s === "on" ? "ok" : s === "wait" ? "day" : ""}">${s === "on" ? "Connected" : s === "wait" ? "Invite sent" : "Not set up"}</span><br><span class="who">${c.phone ? "📞 " + esc(c.phone) + " · " : ""}${c.site ? "🏗️ " + esc(siteLabel(c.site)) + " · " : ""}${esc([c.work, c.address && c.address.split("\n")[0], c.postcode].filter(Boolean).join(" · "))}${p && p.lastWhat ? ` · ${esc(p.name)} ${esc(p.lastWhat)} ${esc(stamp(p.lastAct))}` : ""}</span></div>
     <div class="actions"><button type="button" class="btn primary pt-mg" data-c="${esc(c.id)}">Open portal</button><button type="button" class="btn pt-pv" data-c="${esc(c.id)}">👁 See what they see</button></div></div>`;
   };
   $("main").innerHTML =
@@ -915,7 +915,7 @@ function portalTab() {
     ${on.length ? `<div class="flabel">Connected (${on.length})</div>${on.map(row).join("")}` : ""}
     ${wait.length ? `<div class="flabel">Invite sent, waiting for them to join (${wait.length})</div>${wait.map(row).join("")}` : ""}
     ${off.length ? `<div class="flabel">Not set up yet (${off.length})</div>${off.map(row).join("")}` : ""}
-    ${stored.length ? `<details class="card arcbox" ${S.f.ptArc ? "open" : ""} id="pt-arc"><summary><b>🗄 Storage (${stored.length})</b> <span class="who">completed and rejected jobs</span></summary><div class="arclist">${stored.map((c) => `<div class="arcrow"><span><b>${esc(c.name)}</b><br><span class="who">${esc(clStage(c.stage))}${c.site ? " · " + esc(c.site) : ""}${ptOf(c) ? " · portal still open for them" : ""}</span></span><span class="arcbtns"><button type="button" class="pillbtn pt-mg" data-c="${esc(c.id)}">Open portal</button></span></div>`).join("")}</div></details>` : ""}
+    ${stored.length ? `<details class="card arcbox" ${S.f.ptArc ? "open" : ""} id="pt-arc"><summary><b>🗄 Storage (${stored.length})</b> <span class="who">completed and rejected jobs</span></summary><div class="arclist">${stored.map((c) => `<div class="arcrow"><span><b>${esc(c.name)}</b><br><span class="who">${esc(clStage(c.stage))}${c.site ? " · " + esc(siteLabel(c.site)) : ""}${ptOf(c) ? " · portal still open for them" : ""}</span></span><span class="arcbtns"><button type="button" class="pillbtn pt-mg" data-c="${esc(c.id)}">Open portal</button></span></div>`).join("")}</div></details>` : ""}
     <details class="pthow"><summary><b>How a client joins</b></summary><ol><li>Tap <b>Set up</b> on the client. They get a 6-letter code.</li><li>In Claude, open this app's <b>Share</b> menu and add their email with <b>can use</b> access. They need a free Claude account.</li><li>Send them the invite message (Text, WhatsApp or Email). They open the link, tap <b>I'm a ${esc(coShort())} client</b> and type the code.</li><li>They're connected automatically and you get a pop-up.</li></ol></details>`;
   const C = (id) => clsAll.find((x) => x.id === id);
   if ($("pt-arc"))

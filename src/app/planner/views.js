@@ -26,6 +26,7 @@ import { openPlanEditor } from "./board.js";
 import { crsRows } from "./course-booking.js";
 import { hpOpen } from "./holiday-person.js";
 import { PTYPES, VIS, entryChip, onDay, planEntries } from "./time-off.js";
+import { siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { openJob } from "../survey/door-window-survey.js";
 export {
@@ -429,7 +430,7 @@ function openPlanImport() {
           .slice(0, 6)
           .map(
             (r) =>
-              `${esc(shortDay(r.from))}${r.to !== r.from ? "–" + esc(shortDay(r.to)) : ""}: ${esc(r.title)} <span class="who">(${esc(PTYPES[r.type])}${r.site ? ", " + esc(r.site) : ""}${r.people.length ? ", " + r.people.map(nameOf).map(esc).join(", ") : ""})</span>`,
+              `${esc(shortDay(r.from))}${r.to !== r.from ? "–" + esc(shortDay(r.to)) : ""}: ${esc(r.title)} <span class="who">(${esc(PTYPES[r.type])}${r.site ? ", " + esc(siteLabel(r.site)) : ""}${r.people.length ? ", " + r.people.map(nameOf).map(esc).join(", ") : ""})</span>`,
           )
           .join("<br>")}${rows.length > 6 ? "<br>…" : ""}`
       : "Paste rows to see a preview.";

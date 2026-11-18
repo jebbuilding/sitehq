@@ -111,7 +111,7 @@ function tdwCard() {
         ? `<div class="tdw-strip">${strip}</div><div class="tdw-wrap"><table class="tdw-t"><thead><tr><th>Job</th>${g.days.map((d, i) => `<th${d === g.today ? ' class="now"' : ""}>${TDW_DAYS[i]}</th>`).join("")}</tr></thead><tbody>${g.rows
             .map(
               (r, ri) =>
-                `<tr><td class="tdw-job">${esc(r.site)}</td>${g.days.map((_, i) => cell(r, ri, i)).join("")}</tr>`,
+                `<tr><td class="tdw-job">${esc(siteLabel(r.site))}</td>${g.days.map((_, i) => cell(r, ri, i)).join("")}</tr>`,
             )
             .join(
               "",
@@ -179,7 +179,7 @@ function tdoCard() {
         rows
           .map(
             (r) =>
-              `<div class="tdo-r"><span class="tdo-av" aria-hidden="true">${esc(ini(nameOf(r.who)))}</span><span><b>${esc(nameOf(r.who))}</b><br><small class="who">${esc(r.job || "No site")} · since ${esc(r.actualIn || r.start || "")}</small></span></div>`,
+              `<div class="tdo-r"><span class="tdo-av" aria-hidden="true">${esc(ini(nameOf(r.who)))}</span><span><b>${esc(nameOf(r.who))}</b><br><small class="who">${esc(siteLabel(r.job) || "No site")} · since ${esc(r.actualIn || r.start || "")}</small></span></div>`,
           )
           .join("") +
         `</div>`

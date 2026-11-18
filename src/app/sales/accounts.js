@@ -52,6 +52,7 @@ import { sdReceipt } from "./sales-sign.js";
 import { txView } from "./tax-aside.js";
 import { appView } from "./valuations.js";
 import { vtPeriodAsk, vtView } from "./vat-return.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 export { acPeriod, accountsView };
 /* Two tabs. Overview: money in, money out and profit for the period, bank balances, month-by-month bars, the profit
    and loss by category, a VAT estimate, what customers owe and what's owed to trades, and an export for the
@@ -354,7 +355,7 @@ function acBankView(tabs) {
                 : `<label class="acr-tick" title="${t.ok ? "Ticked off against the statement" : "Tick off when it matches your statement"}"><input type="checkbox" class="acr-okc"${t.ok ? " checked" : ""}${lk ? " disabled" : ""} aria-label="Ticked off against the statement"></label>`;
               return `<div class="ac-tx ${t.amt > 0 ? "in" : "out"}${acrSorted(t) ? "" : " uns"}${t.ok ? " acr-done" : ""}" data-k="${esc(k)}">
             <div class="ac-txh">${box}<small>${esc(shortDay(t.date))}</small><span class="ac-desc">${lk ? `<span title="This month is locked" aria-label="Locked">🔒 </span>` : ""}${esc(t.desc)}</span><b class="ac-amt">${t.amt > 0 ? "+" : "−"}${gbp(Math.abs(t.amt))}</b></div>
-            <div class="ac-txr">${split ? `<button type="button" class="pillbtn acr-splab"${lk ? " disabled" : ""}>✂️ ${esc(acTxCatLabel(t))}</button>` : `<select class="ac-cat" aria-label="Category"${lk ? " disabled" : ""}>${opts(t.cat)}</select>`}${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${t.rcpt ? `<button type="button" class="pillbtn ac-rlink" data-id="${esc(t.rcpt)}">📎 Receipt</button>` : ""}${ln ? `<button type="button" class="pillbtn acr-learn" data-c="${esc(ln.cat)}">💡 ${esc(acCatName(ln.cat))}? <small>(${ln.n} before)</small></button>` : ""}${t.site ? `<span class="tag">📍 ${esc(t.site)}</span>` : ""}${jg ? `<button type="button" class="pillbtn acr-job" data-s="${esc(jg)}">📍 ${esc(jg)}?</button>` : ""}${xf ? `<button type="button" class="pillbtn acr-xf">🔁 ${t.amt < 0 ? "Transfer to" : "Transfer from"} ${esc(acrAccName(xf.acc))}?</button>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
+            <div class="ac-txr">${split ? `<button type="button" class="pillbtn acr-splab"${lk ? " disabled" : ""}>✂️ ${esc(acTxCatLabel(t))}</button>` : `<select class="ac-cat" aria-label="Category"${lk ? " disabled" : ""}>${opts(t.cat)}</select>`}${t.vat ? `<span class="who">VAT ${gbp(t.vat)}</span>` : ""}${t.link ? `<span class="tag ok">✓ ${esc(t.link.label || "matched")}</span>` : ""}${t.rcpt ? `<button type="button" class="pillbtn ac-rlink" data-id="${esc(t.rcpt)}">📎 Receipt</button>` : ""}${ln ? `<button type="button" class="pillbtn acr-learn" data-c="${esc(ln.cat)}">💡 ${esc(acCatName(ln.cat))}? <small>(${ln.n} before)</small></button>` : ""}${t.site ? `<span class="tag">📍 ${esc(siteLabel(t.site))}</span>` : ""}${jg ? `<button type="button" class="pillbtn acr-job" data-s="${esc(jg)}">📍 ${esc(jg)}?</button>` : ""}${xf ? `<button type="button" class="pillbtn acr-xf">🔁 ${t.amt < 0 ? "Transfer to" : "Transfer from"} ${esc(acrAccName(xf.acc))}?</button>` : ""}${ms.map((m) => `<button type="button" class="pillbtn ac-match" data-t="${m[0]}" data-id="${esc(m[1])}" data-w="${esc(m[3] || "")}">💡 Pays ${esc(m[2])}?</button>`).join("")}<button type="button" class="iconbtn ac-more" aria-label="More for this payment">⋯</button></div>
           </div>`;
             })
             .join(
@@ -609,7 +610,7 @@ function acTxSheet(t) {
             .filter((x) => !x.archived && x.name)
             .map(
               (x) =>
-                `<option value="${esc(x.name)}"${x.name === t.site ? " selected" : ""}>${esc(x.name)}</option>`,
+                `<option value="${esc(x.name)}"${x.name === t.site ? " selected" : ""}>${esc(siteFull(x.name))}</option>`,
             )
             .join("")}</select></label>`
         : ""

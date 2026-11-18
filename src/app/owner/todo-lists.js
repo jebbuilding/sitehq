@@ -9,6 +9,7 @@ import { coData } from "./company-details.js";
 import { allTeam, nameOf, roleShort, teamIds } from "./owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { siteFull } from "../sites/job-details.js";
 import { jobsView } from "../survey/door-window-survey.js";
 export { sentTodosHTML, todoView, todosOf, tradeTodosHTML, wireSentTodos, wireTradeTodos };
 const todosOf = (list) => (list || []).filter((s) => s.type === "todo");
@@ -179,7 +180,7 @@ function todoView() {
       <form id="td-add" class="tdadd"><input id="td-text" maxlength="200" placeholder="Add a to-do, e.g. Order skip for Kennford" aria-label="New to-do">
         <input id="td-due" type="date" aria-label="Due date (optional)" title="Due date (optional)"><button class="btn primary" type="submit">Add</button></form>
       <div class="tdopts"><label class="inl"><input type="checkbox" id="td-urg"> Urgent</label><select id="td-site" aria-label="Site (optional)"><option value="">No site</option>${siteNames()
-        .map((n) => `<option>${esc(n)}</option>`)
+        .map((n) => `<option value="${esc(n)}">${esc(siteFull(n))}</option>`)
         .join("")}</select></div>
       ${
         mineList
@@ -372,7 +373,7 @@ function openTodoSender(ids) {
     <label for="ts-text">To-dos (one per line)<textarea id="ts-text" style="min-height:140px" maxlength="3000" placeholder="e.g.\nClear the rear garden ready for the skip\nBring the 110v transformer back to the yard"></textarea></label>
     <div class="grid2"><label for="ts-due">Due (optional)<input id="ts-due" type="date"></label>
       <label for="ts-site">Site (optional)<select id="ts-site"><option value="">No site</option>${siteNames()
-        .map((n) => `<option>${esc(n)}</option>`)
+        .map((n) => `<option value="${esc(n)}">${esc(siteFull(n))}</option>`)
         .join("")}</select></label></div>
     <label class="inl" style="font-size:15px;color:var(--ink);font-weight:500"><input type="checkbox" id="ts-urg"> Urgent</label>
     <label for="ts-note">Note (optional)<input id="ts-note" maxlength="200"></label>

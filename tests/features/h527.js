@@ -19,7 +19,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(false)+page_src+'</body></html>');await p.clock.runFor(2500);await p.keyboard.press('Escape');
  await p.click('.tab[data-t=time]').catch(()=>{});await p.clock.runFor(400);
  await p.evaluate(()=>{const i=document.querySelector('#ci-site input, #ci-site select, input#ci-site, select#ci-site');if(i){i.value='12 Marine Way, Exmouth';i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));}});
- await p.click('.ci-in');await p.clock.runFor(600);
+ await p.click('.ci-in');await p.clock.runFor(600);/* the site's induction opens on a first check-in – close it */if(await p.isVisible('#f-cancel'))await p.click('#f-cancel');await p.clock.runFor(300);
  ok(await p.isVisible('.ci-diff'),'signed in: ⏱ Started early or working through lunch? is there');
  /* 12:40 – he's working through lunch */
  await p.clock.setFixedTime(new Date('2026-11-10T12:40:00'));await p.clock.runFor(200);

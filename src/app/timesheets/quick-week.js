@@ -6,6 +6,7 @@ import { S, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
 import { nameOf, weekEntries } from "../owner/owner.js";
+import { siteFull } from "../sites/job-details.js";
 export { qwOpen };
 /* James (Nov 2026): "I also need to adjust trades' timesheets" → "Quicker week view". On Timesheets, each person's
    card has ✎ Quick edit this week: every day of the week shown on the Timesheets page, one line per timesheet day –
@@ -29,7 +30,7 @@ function qwOpen(id) {
     ...new Set(siteNames().concat(rows.filter((r) => r.e).map((r) => r.e.job))),
   ].filter(Boolean);
   const siteSel = (v) =>
-    `<select class="qw-site" aria-label="Site"><option value="">–</option>${sites.map((n) => `<option${n === v ? " selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
+    `<select class="qw-site" aria-label="Site"><option value="">–</option>${sites.map((n) => `<option value="${esc(n)}"${n === v ? " selected" : ""}>${esc(siteFull(n))}</option>`).join("")}</select>`;
   const line = (r, i) => {
     const e = r.e || {};
     const d = parse(r.di);

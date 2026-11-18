@@ -57,7 +57,7 @@ import { pvOn } from "../people/portal-access.js";
 import { siteRec, wireVoice } from "../photos/photos.js";
 import { sigPad } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
-import { clientJobCard, wireSjPhotos } from "../sites/job-details.js";
+import { clientJobCard, siteFull, siteLabel, wireSjPhotos } from "../sites/job-details.js";
 import { gmapDir, miniMap } from "../sites/maps-pins.js";
 import { docPath } from "../sites/plans-specs.js";
 import { same } from "../sites/project-pages.js";
@@ -374,7 +374,7 @@ function renderClient() {
               const sr = siteRec(C.site) || {};
               const j = (C.siteJob && C.siteJob.job) || {};
               const work = j.work || C.project || sr.project || "";
-              return `<div class="sitesum"><div class="sshead">${C.siteJob && C.siteJob.photo ? `<img class="ssph" src="${blobUrl(C.siteJob.photo)}" alt="Your property">` : ""}<div style="flex:1"><div class="who">Your job</div><b>📍 ${esc(C.site)}</b>${(() => {
+              return `<div class="sitesum"><div class="sshead">${C.siteJob && C.siteJob.photo ? `<img class="ssph" src="${blobUrl(C.siteJob.photo)}" alt="Your property">` : ""}<div style="flex:1"><div class="who">Your job</div><b>📍 ${esc(siteLabel(C.site))}</b>${(() => {
                 const ad = (C.siteJob && C.siteJob.address) || "";
                 return ad && !String(C.site).toLowerCase().includes(ad.toLowerCase())
                   ? `<div class="who">${esc(ad)}</div>`
@@ -1047,11 +1047,11 @@ function ptManager(c) {
     ${p ? stToggleHtml(c) : ""}
     <div class="actions" style="margin-top:6px">${p ? "" : `<button type="button" class="btn primary" id="pm-invite">${c.portalCode ? "Send the invite again" : "Invite them"}</button>`}<button type="button" class="btn" id="pm-pv">👁 See what they see</button></div>
     <div class="ptsec"><b>🏗️ Their job site</b>
-      <label for="pm-site" style="max-width:420px">Site for this client<select id="pm-site"><option value="">Not linked to a site yet</option>${sites.map((s) => `<option ${same(s, site) ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
+      <label for="pm-site" style="max-width:420px">Site for this client<select id="pm-site"><option value="">Not linked to a site yet</option>${sites.map((s) => `<option value="${esc(s)}" ${same(s, site) ? "selected" : ""}>${esc(siteFull(s))}</option>`).join("")}</select></label>
       ${site ? "" : `<button type="button" class="btn hv" id="pm-mksite" style="align-self:flex-start">+ Make their address a new site</button>`}</div>
     ${p ? `<div class="ptsec"><div class="ptsech"><b>📥 Sent to you by ${esc(p.name)} (${(PT.mgrUps || []).length})</b></div>${cuListHtml(PT.mgrUps || [], true)}</div>` : ""}
     <div class="ptsec"><div class="ptsech"><b>📁 Documents they can see (${docs.length})</b></div>
-      <div class="actions">${site ? `<button type="button" class="btn primary" id="pm-fromsite">📂 Send from ${esc(site)}</button>` : ""}<button type="button" class="btn ${site ? "" : "primary"}" id="pm-up">⬆ Upload new</button></div>
+      <div class="actions">${site ? `<button type="button" class="btn primary" id="pm-fromsite">📂 Send from ${esc(siteLabel(site))}</button>` : ""}<button type="button" class="btn ${site ? "" : "primary"}" id="pm-up">⬆ Upload new</button></div>
       ${docs.map((d) => `<div class="pmdoc"><button type="button" class="linkbtn pm-open" data-id="${esc(d.id)}">${isImg(d.contentType) ? "🖼" : "📄"} ${esc(d.title || d.fileName)}</button><span class="who">${esc((PT_FOLDERS.find((x) => x[0] === (d.folder || "other")) || [, ""])[1])} · ${esc(stamp(d.sharedAt))}</span><button type="button" class="linkdanger pm-del" data-id="${esc(d.id)}">Remove</button></div>`).join("") || '<div class="nothing">Nothing shared yet. Only what you send here is visible to the client.</div>'}</div>
     <div class="ptsec"><div class="ptsech"><b>✍ Sign-offs (${signs.length})</b><button type="button" class="btn primary" id="pm-ask">+ Ask for a sign-off</button></div>
       ${signs.map((x) => `<button type="button" class="incrow pm-sign" data-id="${esc(x.id)}"><span><b>${esc(x.title)}</b> <span class="tag ${x.status === "signed" ? "ok" : x.status === "changes" ? "bad" : "day"}">${x.status === "signed" ? "Signed" : x.status === "changes" ? "Changes asked" : "Waiting"}</span><br><span class="who">${esc(ptKind(x.kind)[1])}${x.amount ? " · " + gbp(+x.amount) : ""} · ${x.signedAt ? esc((x.status === "signed" ? "signed " : "replied ") + stamp(x.signedAt)) : "sent " + esc(stamp(x.created))}</span></span><span aria-hidden="true">›</span></button>`).join("") || '<div class="nothing">Nothing sent for sign-off yet.</div>'}</div>
@@ -1206,7 +1206,7 @@ function ptSumHtml(c) {
   const row = (l, v) =>
     v ? `<div class="drow"><span>${esc(l)}</span><span>${v}</span></div>` : "";
   return `<div class="sitesum" style="margin-top:8px">
-    <div class="sshead"><div><div class="who">Job address</div>${site ? `<button type="button" class="maplink ssaddr" data-addr="${esc(site)}">📍 ${esc(site)}</button>` : clAddr(c) ? `<button type="button" class="maplink ssaddr" data-addr="${esc(clAddr(c))}" data-client="${esc(c.id)}">📍 ${esc(clAddr(c))}</button>` : `<b>No address yet</b>`}${work ? `<div class="sswork">${esc(work)}</div>` : ""}</div><span class="tag">${esc(clStage(c.stage))}</span></div>
+    <div class="sshead"><div><div class="who">Job address</div>${site ? `<button type="button" class="maplink ssaddr" data-addr="${esc(site)}">📍 ${esc(siteLabel(site))}</button>` : clAddr(c) ? `<button type="button" class="maplink ssaddr" data-addr="${esc(clAddr(c))}" data-client="${esc(c.id)}">📍 ${esc(clAddr(c))}</button>` : `<b>No address yet</b>`}${work ? `<div class="sswork">${esc(work)}</div>` : ""}</div><span class="tag">${esc(clStage(c.stage))}</span></div>
     ${clMainHtml(c)}${clContactsHtml(c)}<div class="details" style="margin-top:8px">${[row("Property", clAddr(c) && !same(clAddr(c), site) ? esc(clAddr(c)) : ""), row("Estimate", c.quote ? gbp(+c.quote) : ""), row("What they want", c.desc ? esc(c.desc.length > 160 ? c.desc.slice(0, 160) + "…" : c.desc) : "")].join("")}</div>${clInvHtml(c)}
     <div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}">📞 Call</a><a class="btn" href="sms:${esc(tel)}">💬 Text</a>` : ""}${site ? `<a class="btn" href="${esc(gmapDir(sr.lat != null ? sr.lat + "," + sr.lon : site))}" target="_blank" rel="noopener">🚗 Directions</a>` : ""}</div></div>`;
 }
@@ -1226,7 +1226,7 @@ function ptFromSite(c, site) {
   const item = (id, label, sub, on) =>
     `<label class="pfitem ${on ? "done" : ""}"><input type="checkbox" value="${esc(id)}" ${on ? "disabled checked" : ""}><span><b>${esc(label)}</b><br><span class="who">${on ? "Already shared" : esc(sub)}</span></span></label>`;
   openSheet(
-    `<h3 id="sheettitle">Send from ${esc(site)}</h3><div class="who">Tick what ${esc(c.name)} should see. Only the ticked items go to their portal.</div>
+    `<h3 id="sheettitle">Send from ${esc(siteFull(site))}</h3><div class="who">Tick what ${esc(c.name)} should see. Only the ticked items go to their portal.</div>
     ${
       groups
         .map(([k, l]) => {

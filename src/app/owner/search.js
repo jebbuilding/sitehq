@@ -11,6 +11,7 @@ import { cmpEdit } from "../people/companies.js";
 import { openDetails } from "../people/personal-details.js";
 import { eqmView } from "../planner/plant-care.js";
 import { openSupplier } from "../purchasing/suppliers.js";
+import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { openJob } from "../survey/door-window-survey.js";
 export { searchOpen };
 /* Opened from the 🔍 button in the header, or the search box on Today. Looks only at what is already loaded in the
@@ -112,14 +113,20 @@ function srFind(q) {
       });
   });
   siteNames().forEach((s) => {
-    if (hit(s)) out.push({ k: "site", label: s, sub: "Site", go: () => srGoSite(s) });
+    if (hit(s, jobNameOf(s)))
+      out.push({
+        k: "site",
+        label: siteLabel(s),
+        sub: jobNameOf(s) ? "Site · " + s : "Site",
+        go: () => srGoSite(s),
+      });
   });
   (S.jobs || []).forEach((j) => {
-    if (j.status !== "closed" && hit(j.title, j.site, j.kind))
+    if (j.status !== "closed" && hit(j.title, j.site, jobNameOf(j.site), j.kind))
       out.push({
         k: "job",
         label: j.title || "Job",
-        sub: [j.site, j.status === "closed" ? "closed" : ""].filter(Boolean).join(" · "),
+        sub: [siteLabel(j.site), j.status === "closed" ? "closed" : ""].filter(Boolean).join(" · "),
         go: () => openJob(j.id),
       });
   });
@@ -149,11 +156,11 @@ function srFind(q) {
       });
   });
   myDrawings().forEach((p) => {
-    if (hit(p.title, p.site))
+    if (hit(p.title, p.site, jobNameOf(p.site)))
       out.push({
         k: "drawing",
         label: p.title || "Drawing",
-        sub: p.site || "Drawing",
+        sub: (p.site && siteLabel(p.site)) || "Drawing",
         go: () => {
           closeViewer();
           drawOpen(p);

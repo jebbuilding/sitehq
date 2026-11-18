@@ -18,7 +18,7 @@ import { ukDate } from "./rams-maker.js";
 import { indFor, loadJsPdf } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { sdSet } from "../sales/sales-calc.js";
-import { sjMaster } from "../sites/job-details.js";
+import { siteFull, siteLabel, sjMaster } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
 export { cdmMaker, cdmSignState };
@@ -2177,8 +2177,8 @@ function cdmMaker(site0) {
     $("cdm-body").innerHTML =
       `<div id="cdm-assess">${cdmAssessHtml(cd)}</div><div class="flabel">1. Which document(s)?</div><div class="actions" style="margin:0"><button type="button" class="btn" id="cdm-none">Clear</button><button type="button" class="btn" id="cdm-todo">Tick the ones not made yet</button><button type="button" class="btn" id="cdm-all">Tick all</button></div><div>${docsHtml}</div>
       ${cd._from ? `<div class="notice" style="margin:6px 0">📌 Remembered from last time${cd._from > 1 ? " (" + esc(stamp(cd._from)) + ")" : ""}: everything you put in before is filled in below. Just check anything that's changed.</div>` : cd._carried ? `<div class="notice" style="margin:6px 0">📌 First CDM document for this site. Your usual details (hours, site rules, welfare, first aid) are copied from your last site: check them.</div>` : ""}
-      <div class="flabel">2. Check the details</div><label>Site<select id="cdm-site">${sites.map((n) => `<option ${n === site ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
-      <label>Client (fills in their details)<select id="cdm-cl"><option value="">Choose a client…</option>${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cd.clientId ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select></label>
+      <div class="flabel">2. Check the details</div><label>Site<select id="cdm-site">${sites.map((n) => `<option value="${esc(n)}" ${n === site ? "selected" : ""}>${esc(siteFull(n))}</option>`).join("")}</select></label>
+      <label>Client (fills in their details)<select id="cdm-cl"><option value="">Choose a client…</option>${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cd.clientId ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(siteFull(c.site)) : ""}</option>`).join("")}</select></label>
       <div class="seg" id="cdm-ct"><button type="button" data-v="domestic" aria-pressed="${cd.clientType === "domestic"}">🏠 Domestic client</button><button type="button" data-v="commercial" aria-pressed="${cd.clientType !== "domestic"}">🏢 Commercial client</button></div>
       <div class="seg" id="cdm-nc"><button type="button" data-v="one" aria-pressed="${cd.contractors === "one"}">One contractor</button><button type="button" data-v="many" aria-pressed="${cd.contractors !== "one"}">More than one contractor (subbies, other trades)</button></div>
       <label>Filled in and signed by<select class="cdf" data-k="filledBy">${cdmSigners()
@@ -2201,7 +2201,7 @@ function cdmMaker(site0) {
       <div class="flabel">3. Make</div><button type="button" class="btn" id="cdm-keep">💾 Save these details for next time (don't make anything yet)</button>
       <div class="seg" id="cdm-out"><button type="button" data-v="pack" aria-pressed="true">📕 One full CDM pack (PDF)</button><button type="button" data-v="sep" aria-pressed="false">Separate PDFs</button></div>
       <div class="flabel">Who can see it?</div><div class="seg" id="cdm-vis"><button type="button" data-v="me" aria-pressed="${vis === "me"}">🔒 Only me</button><button type="button" data-v="trades" aria-pressed="${vis === "trades"}">👷 Me and the trades on this site</button></div>
-      <div class="who">Filed in ${esc(site)} › RAMS › CDM either way.</div>
+      <div class="who">Filed in ${esc(siteLabel(site))} › RAMS › CDM either way.</div>
       <label class="tick"><input type="checkbox" id="cdm-cl2" ${toCl ? "checked" : ""} ${cd.clientId ? "" : "disabled"}> <span>🏡 Send to ${cd.clientId ? esc(cd.client || "the client") + "'s" : "the client's"} portal${cd.clientId ? "" : " (choose a client above first)"}</span></label>
       <label class="tick" style="margin-left:28px" ${toCl && cd.clientId ? "" : "hidden"} id="cdm-asklab"><input type="checkbox" id="cdm-ask" ${askSign ? "checked" : ""}> <span>✍ Ask them to sign / approve it. When they sign, the signed copy is filed here automatically.</span></label>
       <label class="tick"><input type="checkbox" id="cdm-dl"> <span>Also download</span></label><div class="who" id="cdm-prog"></div>`;

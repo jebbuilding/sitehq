@@ -230,14 +230,14 @@ function empSitesView() {
     induction: ind
       ? indSectionWithId(site, false)
       : '<div class="nothing">There\'s no site induction for this site.</div>',
-    chat: `<div class="actions"><button type="button" class="btn primary" id="es-chat">💬 Open the ${esc(site)} chat</button></div>`,
+    chat: `<div class="actions"><button type="button" class="btn primary" id="es-chat">💬 Open the ${esc(siteLabel(site))} chat</button></div>`,
   };
-  const head = `<div class="crumbs"><button type="button" class="pillbtn" id="es-all">‹ All sites</button><b>${esc(site)}</b></div>`;
+  const head = `<div class="crumbs"><button type="button" class="pillbtn" id="es-all">‹ All sites</button><b>${esc(siteLabel(site))}</b></div>`;
   const sr = siteRec(site) || {};
   $("main").innerHTML =
     head +
     (tab
-      ? `<div class="actions pjback"><button type="button" class="btn" id="es-back">‹ Back to ${esc(site)}</button><b class="pjsec">${(T.find((t) => t[0] === tab) || [])[2]} ${esc((T.find((t) => t[0] === tab) || [])[1])}</b></div>${P[tab]}`
+      ? `<div class="actions pjback"><button type="button" class="btn" id="es-back">‹ Back to ${esc(siteLabel(site))}</button><b class="pjsec">${(T.find((t) => t[0] === tab) || [])[2]} ${esc((T.find((t) => t[0] === tab) || [])[1])}</b></div>${P[tab]}`
       : `${
           site !== "General"
             ? (() => {
@@ -332,7 +332,7 @@ function plansView0() {
   const banner =
     todo.length || indTodo.length
       ? `<div class="notice warn"><b>You have ${todo.length + indTodo.length} thing${todo.length + indTodo.length === 1 ? "" : "s"} to read and sign.</b> ${indTodo
-          .map((i) => "Site induction (" + esc(i.site) + ")")
+          .map((i) => "Site induction (" + esc(siteLabel(i.site)) + ")")
           .concat(todo.map((d) => esc(d.title) + " (" + esc(docSite(d)) + ")"))
           .join(", ")}</div>`
       : "";

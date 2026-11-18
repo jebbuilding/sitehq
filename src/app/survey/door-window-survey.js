@@ -40,6 +40,7 @@ import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { WTN } from "../safety/waste-transfer-note.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import {
   JOB_DET,
   JOB_KINDS,
@@ -3120,7 +3121,10 @@ const DWS = (() => {
         g("j-site").innerHTML =
           `<option value="">${sites.length ? "– no site –" : "No active sites"}</option>` +
           sites
-            .map((n) => `<option ${same(n, pref || "") ? "selected" : ""}>${esc(n)}</option>`)
+            .map(
+              (n) =>
+                `<option value="${esc(n)}" ${same(n, pref || "") ? "selected" : ""}>${esc(siteFull(n))}</option>`,
+            )
             .join("");
       };
       fillSites(R.site || "");
@@ -5016,7 +5020,7 @@ function jobSummaryHtml(j, owner, n, d) {
     row(
       "Site",
       site
-        ? `<button type="button" class="maplink" data-addr="${esc(site)}">📍 ${esc(site)}</button>`
+        ? `<button type="button" class="maplink" data-addr="${esc(site)}">📍 ${esc(siteLabel(site))}</button>`
         : "No site",
     ),
     row(
@@ -5619,7 +5623,7 @@ function siteFilePicker(site, have, done) {
     const list = (q ? Object.values(all).flat() : all[tab]).filter(
       (x) => !q || (x.name + " " + x.sub).toLowerCase().includes(q),
     );
-    d.innerHTML = `<div class="dimbox sfp"><div class="sfphead"><b>📁 ${esc(site || "All sites")}</b><button type="button" class="sfpx" aria-label="Close">✕</button></div>
+    d.innerHTML = `<div class="dimbox sfp"><div class="sfphead"><b>📁 ${esc(siteLabel(site) || "All sites")}</b><button type="button" class="sfpx" aria-label="Close">✕</button></div>
       <input type="search" class="sfpq" placeholder="🔍 Search photos and files" value="${esc(q)}">
       ${q ? "" : `<div class="sfptabs">${tabs.map(([k, l]) => `<button type="button" data-t="${k}" aria-pressed="${k === tab}">${l} <span class="who">${all[k].length}</span></button>`).join("")}</div>`}
       <div class="sfpgrid">${list.map((x) => `<button type="button" class="sfpit${picked.has(x.id) ? " on" : ""}${have.has(x.id) ? " had" : ""}" data-id="${esc(x.id)}">${x.thumb ? `<img src="${blobUrl(x.id)}" alt="" loading="lazy">` : `<span class="sfpic">${/pdf/.test(x.type || "") ? "📄" : isWord({ type: x.type, name: x.name }) ? "📝" : "📎"}</span>`}<span class="sfpn">${esc(x.name)}</span><span class="who">${esc(x.sub || "")}</span>${have.has(x.id) ? '<span class="sfptick">✓ added</span>' : picked.has(x.id) ? '<span class="sfptick">✓</span>' : ""}</button>`).join("") || '<div class="nothing">Nothing here for this site.</div>'}</div>

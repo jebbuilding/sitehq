@@ -9,6 +9,7 @@ import { openPlanEditor } from "./board.js";
 import { onDay } from "./time-off.js";
 import { openPlanDetail } from "./views.js";
 import { dueSoonItems } from "../safety/expiry-dates.js";
+import { siteLabel } from "../sites/job-details.js";
 import { onSiteNow } from "../sites/roll-call.js";
 import { WE } from "../timesheets/working-day.js";
 export { diaryHtml, diaryRows, dyGroupName, toHM, wireDiary };
@@ -114,7 +115,7 @@ function diaryHtml(shown, owner) {
     const l = ((s - DY.h0 * 60) / 60) * DY.px,
       w = Math.max(28, ((Math.max(e, s + 15) - s) / 60) * DY.px);
     const canDrag = owner && !p.auto && !p.pending;
-    return `<div class="dy-blk t-${esc(p.type)} ${canDrag ? "drag" : ""}" data-p="${esc(p.id)}" data-w="${esc(rowId)}" style="left:${l}px;width:${w}px" title="${esc(p.title)}"><b>${esc(p.title)}</b><span>${esc(p.time)}${p.endTime ? "–" + esc(p.endTime) : ""}${p.site ? " · " + esc(p.site) : ""}</span>${canDrag ? '<i class="dy-rs" aria-hidden="true"></i>' : ""}</div>`;
+    return `<div class="dy-blk t-${esc(p.type)} ${canDrag ? "drag" : ""}" data-p="${esc(p.id)}" data-w="${esc(rowId)}" style="left:${l}px;width:${w}px" title="${esc(p.title)}"><b>${esc(p.title)}</b><span>${esc(p.time)}${p.endTime ? "–" + esc(p.endTime) : ""}${p.site ? " · " + esc(siteLabel(p.site)) : ""}</span>${canDrag ? '<i class="dy-rs" aria-hidden="true"></i>' : ""}</div>`;
   };
   const onsite = owner ? onSiteNow() : [];
   return (
@@ -139,7 +140,7 @@ function diaryHtml(shown, owner) {
         const os = onsite.find((e) => e.who === r.id);
         return `${gh}<div class="dy-row"><div class="dy-name">${esc(r.name)}${os ? `<span class="tag ok">On site</span>` : ""}${r.id && r.id !== S.me && owner ? `<span class="who">${esc((S.team[r.id] && S.team[r.id].details && S.team[r.id].details.trade) || "")}</span>` : ""}</div>
         <div class="dy-lane ${off ? "off" : ""}" data-w="${esc(r.id)}">${hours.map((h) => `<i class="dy-hl" style="left:${(h - DY.h0) * DY.px}px"></i>`).join("")}
-          ${os ? `<div class="dy-onsite" style="left:${Math.max(0, ((toMin(os.actualIn || os.start) - DY.h0 * 60) / 60) * DY.px)}px;width:${Math.max(4, (((nowM || toMin(WE())) - toMin(os.actualIn || os.start)) / 60) * DY.px)}px" title="Checked in ${esc(os.actualIn || os.start)} at ${esc(os.job)}"></div>` : ""}
+          ${os ? `<div class="dy-onsite" style="left:${Math.max(0, ((toMin(os.actualIn || os.start) - DY.h0 * 60) / 60) * DY.px)}px;width:${Math.max(4, (((nowM || toMin(WE())) - toMin(os.actualIn || os.start)) / 60) * DY.px)}px" title="Checked in ${esc(os.actualIn || os.start)} at ${esc(siteLabel(os.job))}"></div>` : ""}
           ${allday.length ? `<div class="dy-allday">${allday.map((p) => `<button type="button" class="dy-adchip t-${esc(p.type)}" data-p="${esc(p.id)}">${esc(p.title)}</button>`).join("")}</div>` : ""}
           ${items.map((p) => block(p, r.id)).join("")}</div></div>`;
       })

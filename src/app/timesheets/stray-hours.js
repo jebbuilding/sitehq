@@ -4,6 +4,7 @@ import { esc, hrs, toast } from "../core/helpers.js";
 import { S, archivedSites, siteGone, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { nameOf, teamIds } from "../owner/owner.js";
+import { siteFull } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { nstIs } from "./non-site-time.js";
 export { shCardHtml, shWire };
@@ -94,7 +95,7 @@ function shCardHtml() {
     ${L.map((g, i) => {
       const guess = shGuess(g.name);
       return `<div class="shrow"><div class="shwhat"><b>“${esc(g.name)}”</b> · ${g.ents.length} entr${g.ents.length === 1 ? "y" : "ies"}${g.h ? " · " + hrs(g.h) + " h" : ""} · ${esc([...g.who].map(nameOf).join(", "))}${guess ? `<br><span class="shguess">Looks like <b>${esc(guess)}</b></span>` : ""}</div>
-      <div class="shacts"><select class="sh-to" data-k="${i}" aria-label="Move to which job"><option value="">Choose the job…</option>${jobs.map((n) => `<option${n === guess ? " selected" : ""}>${esc(n)}</option>`).join("")}</select><button type="button" class="btn primary sh-move" data-k="${i}">Move to this job</button><button type="button" class="btn sh-keep" data-k="${i}">Leave it</button></div></div>`;
+      <div class="shacts"><select class="sh-to" data-k="${i}" aria-label="Move to which job"><option value="">Choose the job…</option>${jobs.map((n) => `<option value="${esc(n)}"${n === guess ? " selected" : ""}>${esc(siteFull(n))}</option>`).join("")}</select><button type="button" class="btn primary sh-move" data-k="${i}">Move to this job</button><button type="button" class="btn sh-keep" data-k="${i}">Leave it</button></div></div>`;
     }).join("")}</div>`;
 }
 function shWire() {

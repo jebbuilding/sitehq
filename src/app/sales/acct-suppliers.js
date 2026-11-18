@@ -7,6 +7,7 @@ import { acAllTx, acCatName } from "./acct-data.js";
 import { acRcptParts, acReceipts, acSaveRcpt } from "./acct-receipts.js";
 import { acRcptSheet } from "./acct-review.js";
 import { sdR2, sdTaxYear } from "./sales-calc.js";
+import { siteLabel } from "../sites/job-details.js";
 export { acSupKey, acSupSpent, acSupView };
 /* Built from the receipts and bills (and, for a shop, bank payments that have no receipt yet). The same shop written
    different ways ("Screwfix Exmouth", "SCREWFIX DIRECT") goes in one file; two files can be merged by hand, which
@@ -142,7 +143,7 @@ function acSupView(tabs) {
               .map(([site, t]) => {
                 const mine = parts.filter((p) => (p.site || "") === site);
                 const bySup = acsGroup(mine, (p) => (p.sup ? p.sup.name : "Not named"));
-                return `<details class="card acs-site"${open === site ? " open" : ""} data-s="${esc(site)}"><summary><span><b>${esc(site || "Not booked to a site")}</b><small>${t.n} item${t.n === 1 ? "" : "s"} · VAT ${gbp(t.vat)}</small></span><b>${gbp(t.gross)}</b></summary><div class="cardbody">
+                return `<details class="card acs-site"${open === site ? " open" : ""} data-s="${esc(site)}"><summary><span><b>${esc(siteLabel(site) || "Not booked to a site")}</b><small>${t.n} item${t.n === 1 ? "" : "s"} · VAT ${gbp(t.vat)}</small></span><b>${gbp(t.gross)}</b></summary><div class="cardbody">
                   ${bySup.map(([n, x]) => `<div class="drow"><span>${esc(n)}</span><span>${gbp(x.gross)}</span></div>`).join("")}
                   <div class="flabel">Every item</div>
                   ${mine
@@ -236,7 +237,7 @@ function acSupFile(s, D) {
         <div class="sd-box"><small>Without VAT</small><b>${gbp(sdR2(s.gross - s.vat))}</b><span>cost to the jobs</span></div>
       </div>
       <div class="flabel">By site</div>
-      ${bySite.map(([site, t]) => `<div class="drow"><span>${esc(site || "Not booked to a site")}</span><span>${gbp(t.gross)}</span></div>`).join("")}
+      ${bySite.map(([site, t]) => `<div class="drow"><span>${esc(siteLabel(site) || "Not booked to a site")}</span><span>${gbp(t.gross)}</span></div>`).join("")}
       <div class="flabel">By month</div>
       ${byMonth.map(([m, t]) => `<div class="drow"><span>${esc(acsMonth(m))}</span><span>${gbp(t.gross)}</span></div>`).join("")}
       <div class="flabel">Receipts and bills</div>

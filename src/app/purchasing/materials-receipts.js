@@ -11,6 +11,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { shrinkImage } from "../safety/training.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { myJobs } from "../sites/job-sheets.js";
 import { myName } from "../survey/door-window-survey.js";
 export {
@@ -80,7 +81,7 @@ function matCount(m) {
 function rcRow(r, owner, who) {
   return `<div class="entry rc" data-r="${esc(r.id)}" data-w="${esc(who || "")}"><div class="main">
     <div class="job"><span class="tag ${r.type === "fuel" ? "day" : ""}">${esc(RC_TYPES[r.type] || "Receipt")}</span>${r.checked ? '<span class="tag ok">Checked</span>' : ""}${r.paidBy === "own" ? (r.repaid ? '<span class="tag ok">Paid back</span>' : '<span class="tag bad">Pay back</span>') : ""}${esc(r.supplier || "Receipt")}${owner ? ` <span class="who">· ${esc(nameOf(who))}</span>` : ""}</div>
-    <div class="sub">${shortDay(r.date)}${r.site ? " · " + esc(r.site) : ""}${r.vehicle ? " · " + esc(r.vehicle) : ""}${r.litres ? " · " + esc(r.litres) + " L" : ""}${r.mileage ? " · " + esc(r.mileage) + " miles" : ""} · ${esc(PAID_BY[r.paidBy] || "")}</div>
+    <div class="sub">${shortDay(r.date)}${r.site ? " · " + esc(siteLabel(r.site)) : ""}${r.vehicle ? " · " + esc(r.vehicle) : ""}${r.litres ? " · " + esc(r.litres) + " L" : ""}${r.mileage ? " · " + esc(r.mileage) + " miles" : ""} · ${esc(PAID_BY[r.paidBy] || "")}</div>
     ${r.notes ? `<div class="sub">${esc(r.notes)}</div>` : ""}
     <div class="filerow">${r.fileId ? `<button type="button" class="pillbtn rc-open">Open receipt</button>` : '<span class="who">No photo</span>'}
       ${owner ? `<label class="inl"><input type="checkbox" class="rc-chk" ${r.checked ? "checked" : ""}>Checked</label>${r.paidBy === "own" ? `<label class="inl"><input type="checkbox" class="rc-rep" ${r.repaid ? "checked" : ""}>Paid back</label>` : ""}` : !r.checked ? `<button type="button" class="linkdanger rc-del">Delete</button>` : ""}</div></div>
@@ -97,7 +98,7 @@ function matCard(m, owner, who) {
     const n = (m.items || []).length,
       g = (m.items || []).filter((i) => i.ordered).length;
     return `<button type="button" class="entry matc" data-m="${esc(m.id)}" data-w="${esc(who || "")}"><div class="main">
-    <div class="job"><span class="tag ${st[1]}">${st[0]}</span><span class="tag">${owner ? "Sent to " + esc(nameOf(who)) : `From ${bossFirst()}`}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}${esc(m.site || "No site")}</div>
+    <div class="job"><span class="tag ${st[1]}">${st[0]}</span><span class="tag">${owner ? "Sent to " + esc(nameOf(who)) : `From ${bossFirst()}`}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}${esc(siteLabel(m.site) || "No site")}</div>
     ${m.jobTitle ? `<div class="sub"><b style="color:var(--ink)">${esc(m.jobTitle)}</b></div>` : ""}
     <div class="sub">${matCount(m)}${m.needBy ? " · by " + shortDay(m.needBy) : ""} · ${g} of ${n} ticked off</div></div></button>`;
   }
@@ -105,7 +106,7 @@ function matCard(m, owner, who) {
   const n = (m.items || []).length,
     o = (m.items || []).filter((i) => i.ordered).length;
   return `<button type="button" class="entry matc" data-m="${esc(m.id)}" data-w="${esc(who || "")}"><div class="main">
-    <div class="job"><span class="tag ${st[1]}">${st[0]}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}${esc(m.site || "No site")}${owner ? ` <span class="who">· ${esc(nameOf(who))}</span>` : ""}</div>
+    <div class="job"><span class="tag ${st[1]}">${st[0]}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}${esc(siteLabel(m.site) || "No site")}${owner ? ` <span class="who">· ${esc(nameOf(who))}</span>` : ""}</div>
     ${m.jobTitle ? `<div class="sub"><b style="color:var(--ink)">${esc(m.jobTitle)}</b></div>` : ""}
     <div class="sub">${matCount(m)}${m.needBy ? " · needed by " + shortDay(m.needBy) : ""} · sent ${stamp(m.sentAt)}${o && m.status !== "delivered" ? ` · ${o} of ${n} ordered` : ""}</div>
     ${m.reply ? `<div class="sub"><b>${esc(bossFirst())}:</b> ${esc(m.reply)}</div>` : ""}</div></button>`;
@@ -449,7 +450,7 @@ function openMatEditor(m) {
       .filter((j) => j.status !== "closed")
       .map(
         (j) =>
-          `<option value="${esc(j.id)}" ${m && m.jobId === j.id ? "selected" : ""}>${esc(j.title)} · ${esc(j.site)}</option>`,
+          `<option value="${esc(j.id)}" ${m && m.jobId === j.id ? "selected" : ""}>${esc(j.title)} · ${esc(siteFull(j.site))}</option>`,
       )
       .join("")}</select></label>
     <div class="grid2"><label for="mt-need">Needed by<input id="mt-need" type="date" value="${esc(m ? m.needBy || "" : iso(addDays(new Date(), 2)))}"></label>
@@ -713,7 +714,7 @@ function openSentList(m) {
   const st = SENT_ST[m.status || "sent"] || SENT_ST.sent;
   const path = "sheets/" + (owner ? m.who : S.me) + "/invoices/" + m.id;
   openViewer(`<div><span class="tag ${st[1]}">${st[0]}</span><span class="tag">${owner ? "Sent to " + esc(nameOf(m.who)) : `From ${bossFirst()}`}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}</div>
-    <h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 0;color:var(--accent);text-transform:uppercase">Materials & tools · ${esc(m.site)}</h3>
+    <h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 0;color:var(--accent);text-transform:uppercase">Materials & tools · ${esc(siteFull(m.site))}</h3>
     ${m.jobTitle ? `<div><b>${esc(m.jobTitle)}</b></div>` : ""}
     <div class="who">Sent ${stamp(m.sentAt)}${m.needBy ? " · needed by " + shortDay(m.needBy) : ""}</div>
     ${m.notes ? `<div class="notice" style="white-space:pre-line">${esc(m.notes)}</div>` : ""}
@@ -812,7 +813,7 @@ function openMat(m) {
   const st = MAT_ST[m.status || "sent"] || MAT_ST.sent;
   const path = "sheets/" + (owner ? m.who : S.me) + "/invoices/" + m.id;
   openViewer(`<div><span class="tag ${st[1]}">${st[0]}</span>${m.urgent ? '<span class="tag bad">Urgent</span>' : ""}</div>
-    <h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 0;color:var(--accent);text-transform:uppercase">Materials & tools · ${esc(m.site)}</h3>
+    <h3 style="font-family:var(--f-display);font-size:22px;margin:6px 0 0;color:var(--accent);text-transform:uppercase">Materials & tools · ${esc(siteFull(m.site))}</h3>
     ${m.jobTitle ? `<div><b>${esc(m.jobTitle)}</b></div>` : ""}
     <div class="who">${owner ? esc(nameOf(m.who)) + " · " : ""}sent ${stamp(m.sentAt)}${m.needBy ? " · needed by " + shortDay(m.needBy) : ""}</div>
     ${m.notes ? `<div class="notice" style="white-space:pre-line">${esc(m.notes)}</div>` : ""}
@@ -950,7 +951,7 @@ function receiptsCsv(m) {
 function matPassOn(m) {
   const team = teamIds().filter((w) => w !== m.who);
   openSheet(
-    `<h3 id="sheettitle">📤 Pass on ${esc(nameOf(m.who))}'s list</h3><div class="who">${esc(m.site || "")}${m.needBy ? " · needed by " + esc(shortDay(m.needBy)) : ""} · ${(m.items || []).length} item${(m.items || []).length === 1 ? "" : "s"}. Not to clients.</div>
+    `<h3 id="sheettitle">📤 Pass on ${esc(nameOf(m.who))}'s list</h3><div class="who">${esc(siteLabel(m.site) || "")}${m.needBy ? " · needed by " + esc(shortDay(m.needBy)) : ""} · ${(m.items || []).length} item${(m.items || []).length === 1 ? "" : "s"}. Not to clients.</div>
     <label for="mp-to">Pass it to<select id="mp-to"><option value="">Choose…</option>${team.length ? `<optgroup label="A trade on the team">${team.map((w) => `<option value="${esc(w)}">${esc(nameOf(w))}</option>`).join("")}</optgroup>` : ""}<option value="__other">Someone else – by text or email</option></select></label>
     <div id="mp-other" hidden><label for="mp-tel">Their mobile (for a text)<input id="mp-tel" type="tel" maxlength="20"></label><label for="mp-mail">or their email<input id="mp-mail" type="email" maxlength="120"></label></div>
     <label for="mp-note">Note (optional)<input id="mp-note" maxlength="200" placeholder="e.g. Can you pick these up on your way in?"></label>

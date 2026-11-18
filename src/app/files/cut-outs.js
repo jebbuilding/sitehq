@@ -11,6 +11,7 @@ import { nameOf } from "../owner/owner.js";
 import { avatarHtml, personPhoto } from "../people/profile-photos.js";
 import { loadImage } from "../photos/photos.js";
 import { shrinkImage } from "../safety/training.js";
+import { siteFull, siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 export { CUT, personPhotoClear, personPhotoDlg, personPhotoSet };
 const CUT = (() => {
@@ -287,7 +288,7 @@ const CUT = (() => {
         .filter(clActive)
         .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
       d.querySelector(".dimbox").innerHTML =
-        `<b>Which client?</b><select class="ct-cl"><option value="__manual">✏️ Type their details in (not in Clients)</option>${cl.map((x) => `<option value="${esc(x.id)}">${esc(x.name)}${x.site ? " · " + esc(x.site) : ""}</option>`).join("")}</select><div class="dimbtns"><button type="button" class="btn ct-x2">Cancel</button><button type="button" class="btn primary ct-go">Next</button></div>`;
+        `<b>Which client?</b><select class="ct-cl"><option value="__manual">✏️ Type their details in (not in Clients)</option>${cl.map((x) => `<option value="${esc(x.id)}">${esc(x.name)}${x.site ? " · " + esc(siteFull(x.site)) : ""}</option>`).join("")}</select><div class="dimbtns"><button type="button" class="btn ct-x2">Cancel</button><button type="button" class="btn primary ct-go">Next</button></div>`;
       d.querySelector(".ct-x2").onclick = () => d.remove();
       d.querySelector(".ct-go").onclick = () => {
         const v = d.querySelector(".ct-cl").value;
@@ -333,8 +334,8 @@ const CUT = (() => {
     d.style.zIndex = "134";
     d.innerHTML = `<div class="dimbox" style="width:min(560px,100%);max-height:88vh;overflow:auto"><b>✂️ Cut a bit out of…</b>${sites ? `<div class="who">${sites.length ? "Drawings and documents for " + esc(sites.join(", ")) + "." : "Choose the client first to see the drawings and documents for their site."}</div>` : ""}
     <label class="btn primary" style="position:relative;overflow:hidden;margin:8px 0;display:block;text-align:center">📱 A PDF or photo on this device<input type="file" class="cc-file" accept="application/pdf,image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>
-    ${dws.length ? `<div class="flabel">✏️ Drawings</div>${dws.map((p) => `<div style="display:flex;gap:6px;align-items:center"><button type="button" class="incrow cc-pick" style="flex:1" data-k="dw" data-id="${esc(p.id)}"><span><b>${esc(p.title || "Drawing")}</b><br><span class="who">${esc(p.site || "")}</span></span><span>›</span></button><button type="button" class="pillbtn cc-dl" data-a="${esc(p.assetId)}" data-n="${esc((p.title || "Drawing") + ".jpg")}" aria-label="Download">⬇</button></div>`).join("")}` : ""}
-    ${docs.length ? `<div class="flabel">📁 Site documents</div>${docs.map((x) => `<div style="display:flex;gap:6px;align-items:center"><button type="button" class="incrow cc-pick" style="flex:1" data-k="doc" data-id="${esc(x.id)}"><span><b>${esc(x.title || x.fileName)}</b><br><span class="who">${esc(x.site || "")}${/pdf/.test(x.contentType || "") || /\.pdf$/i.test(x.fileName || "") ? " · PDF" : ""}</span></span><span>›</span></button><button type="button" class="pillbtn cc-dl" data-a="${esc(x.assetId)}" data-n="${esc(x.fileName || x.title || "Document")}" aria-label="Download">⬇</button></div>`).join("")}` : ""}
+    ${dws.length ? `<div class="flabel">✏️ Drawings</div>${dws.map((p) => `<div style="display:flex;gap:6px;align-items:center"><button type="button" class="incrow cc-pick" style="flex:1" data-k="dw" data-id="${esc(p.id)}"><span><b>${esc(p.title || "Drawing")}</b><br><span class="who">${esc(siteLabel(p.site) || "")}</span></span><span>›</span></button><button type="button" class="pillbtn cc-dl" data-a="${esc(p.assetId)}" data-n="${esc((p.title || "Drawing") + ".jpg")}" aria-label="Download">⬇</button></div>`).join("")}` : ""}
+    ${docs.length ? `<div class="flabel">📁 Site documents</div>${docs.map((x) => `<div style="display:flex;gap:6px;align-items:center"><button type="button" class="incrow cc-pick" style="flex:1" data-k="doc" data-id="${esc(x.id)}"><span><b>${esc(x.title || x.fileName)}</b><br><span class="who">${esc(siteLabel(x.site) || "")}${/pdf/.test(x.contentType || "") || /\.pdf$/i.test(x.fileName || "") ? " · PDF" : ""}</span></span><span>›</span></button><button type="button" class="pillbtn cc-dl" data-a="${esc(x.assetId)}" data-n="${esc(x.fileName || x.title || "Document")}" aria-label="Download">⬇</button></div>`).join("")}` : ""}
     <div class="dimbtns"><button type="button" class="btn cc-x">Cancel</button></div></div>`;
     document.body.appendChild(d);
     d.querySelector(".cc-x").onclick = () => d.remove();

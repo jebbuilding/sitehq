@@ -17,6 +17,7 @@ import {
 } from "./acct-receipts.js";
 import { rcsNoticeHtml, rcsWire } from "./receipt-smarts.js";
 import { sdR2 } from "./sales-calc.js";
+import { siteFull } from "../sites/job-details.js";
 export { acRcptSheet, acRcptView };
 /* Three panes on a wide screen (stacked on a phone): the receipts on the left (⚠ to check, ✓ done), the photo or PDF
    in the middle (zoom and rotate), and the details on the right – type (receipt, bill, credit note), supplier,
@@ -58,7 +59,9 @@ const acvCatOpts = (v) =>
 const acvSiteOpts = (v) =>
   `<option value="">No site (office / yard / van)</option>` +
   [...new Set(acvSites().concat(v ? [v] : []))]
-    .map((n) => `<option value="${esc(n)}"${n === v ? " selected" : ""}>${esc(n)}</option>`)
+    .map(
+      (n) => `<option value="${esc(n)}"${n === v ? " selected" : ""}>${esc(siteFull(n))}</option>`,
+    )
     .join("");
 /* the VAT rate a receipt's figures look like */
 function acvRateOf(r) {

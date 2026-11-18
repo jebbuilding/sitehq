@@ -8,7 +8,7 @@ import { render } from "../core/tabs-week.js";
 import { assetBlob, isWordId, uploadErr, uploadFile } from "../files/files.js";
 import { loadZip } from "../owner/backup.js";
 import { indFor } from "./site-inductions.js";
-import { sjMaster } from "../sites/job-details.js";
+import { siteFull, sjMaster } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
 export { ramsMaker, ramsTemplates, ukDate };
@@ -203,8 +203,8 @@ function ramsMaker(site) {
     fire: det.assembly ? "Assembly point: " + det.assembly : "",
   };
   openSheet(
-    `<h3 id="sheettitle">📝 Make RAMS for ${esc(site)}</h3>
-    <label>Copy from the RAMS set at<select id="rm-src">${srcs.map((x) => `<option ${x === src ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+    `<h3 id="sheettitle">📝 Make RAMS for ${esc(siteFull(site))}</h3>
+    <label>Copy from the RAMS set at<select id="rm-src">${srcs.map((x) => `<option value="${esc(x)}" ${x === src ? "selected" : ""}>${esc(siteFull(x))}</option>`).join("")}</select></label>
     <div class="flabel" style="display:flex;justify-content:space-between;align-items:center">Which RAMS does this job need?<span><button type="button" class="pillbtn" id="rm-all">Tick all</button> <button type="button" class="pillbtn" id="rm-none">None</button></span></div>
     <div id="rm-list" class="dsp-list"></div>
     <div class="flabel" style="margin-top:6px">Fill in the blanks</div><div class="who" id="rm-oldnote">Reading your RAMS…</div>

@@ -3,6 +3,7 @@ import { $, esc } from "../core/helpers.js";
 import { S, liveSite } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { nameOf } from "../owner/owner.js";
+import { siteFull } from "../sites/job-details.js";
 export { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt };
 const fltNorm = (t) =>
   String(t || "")
@@ -39,7 +40,10 @@ function fltBar(people, sites) {
       sm,
     )
       .sort((a, b) => sm[a].localeCompare(sm[b]))
-      .map((k) => `<option value="${esc(k)}" ${st === k ? "selected" : ""}>${esc(sm[k])}</option>`)
+      .map(
+        (k) =>
+          `<option value="${esc(k)}" ${st === k ? "selected" : ""}>${esc(siteFull(sm[k]))}</option>`,
+      )
       .join("")}</select></label>
     ${ws.length || st ? `<button type="button" class="pillbtn" id="flt-clear">✕ Clear</button>` : ""}</div>`;
 }

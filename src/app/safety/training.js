@@ -24,6 +24,7 @@ import { meBtn, meInfo } from "../people/personal-details.js";
 import { BRGB, loadImage, pdfLogo, readExif } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { siteLabel } from "../sites/job-details.js";
 export { expiryState, myTalkTodo, openCert, openTalk, shrinkImage, trainingView };
 const TALK_TEMPLATES = [
   [
@@ -137,7 +138,7 @@ function talkCard(t, owner) {
       ids.filter((id) => talkSigs(S.data.signoffs[id], t.id).length).length +
       (t.onsite || []).length;
     return `<button type="button" class="entry talkc" data-t="${esc(t.id)}"><div class="main"><div class="job"><span class="tag ${t.kind === "training" ? "" : "day"}">${t.kind === "training" ? "Training" : "Toolbox talk"}</span>${esc(t.title)}</div>
-      <div class="sub">${t.site ? esc(t.site) + " · " : ""}${t.due ? "by " + shortDay(t.due) + " · " : ""}${signed} signed${ids.length ? ` · ${ids.filter((id) => !talkSigs(S.data.signoffs[id], t.id).length).length} still to sign` : ""}</div></div></button>`;
+      <div class="sub">${t.site ? esc(siteLabel(t.site)) + " · " : ""}${t.due ? "by " + shortDay(t.due) + " · " : ""}${signed} signed${ids.length ? ` · ${ids.filter((id) => !talkSigs(S.data.signoffs[id], t.id).length).length} still to sign` : ""}</div></div></button>`;
   }
   const s = talkSigs(S.mine.signoffs, t.id)[0];
   return `<button type="button" class="entry talkc" data-t="${esc(t.id)}"><div class="main"><div class="job"><span class="tag ${t.kind === "training" ? "" : "day"}">${t.kind === "training" ? "Training" : "Toolbox talk"}</span>${s ? '<span class="tag ok">Signed</span>' : '<span class="tag bad">To do</span>'}${esc(t.title)}</div>
@@ -379,7 +380,7 @@ function openTalk(id) {
     : "";
   let html = `<span class="tag ${t.kind === "training" ? "" : "day"}">${t.kind === "training" ? "Training" : "Toolbox talk"}</span>
     <h3 style="font-family:var(--f-display);font-size:24px;margin:6px 0 0;color:var(--accent);text-transform:uppercase;letter-spacing:.02em">${esc(t.title)}</h3>
-    <div class="who">${t.site ? esc(t.site) + " · " : ""}${esc(coName())}${t.due ? " · sign by " + shortDay(t.due) : ""}</div>
+    <div class="who">${t.site ? esc(siteLabel(t.site)) + " · " : ""}${esc(coName())}${t.due ? " · sign by " + shortDay(t.due) : ""}</div>
     <div class="talkbody">${esc(t.body)}</div>${attach}`;
   if (owner) {
     const ids = talkAssignees(t);

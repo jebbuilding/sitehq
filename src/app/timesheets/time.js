@@ -39,7 +39,7 @@ import { nameOf } from "../owner/owner.js";
 import { proxyFor, setProxyFor } from "../people/foreman.js";
 import { myTrade, siteRec } from "../photos/photos.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
-import { empIndTodo, openInduction } from "../safety/site-inductions.js";
+import { empIndTodo, indFor, myInd, openInduction } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
@@ -112,7 +112,7 @@ function clockOff(today, D) {
   )}
     <button class="btn primary big ci-in" type="button">Check in now</button>
     <div class="who">⏰ Your usual day: ${esc(dayLine(D))}${D.own ? "" : " (standard)"} · <button type="button" class="linkbtn ci-day">Change</button></div>
-    ${done.length ? `<div class="who">Today so far: ${done.map((e) => `${esc(e.job)} ${esc(e.start)}–${esc(e.finish)}`).join(", ")}</div>` : `<div class="who">Forgot to check in? Use <b>+ Timesheet</b> to add the day by hand.</div>`}</div>`;
+    ${done.length ? `<div class="who">Today so far: ${done.map((e) => `${esc(siteLabel(e.job))} ${esc(e.start)}–${esc(e.finish)}`).join(", ")}</div>` : `<div class="who">Forgot to check in? Use <b>+ Timesheet</b> to add the day by hand.</div>`}</div>`;
 }
 async function checkIn() {
   return checkInAt(pickVal("ci-site"));
@@ -157,6 +157,13 @@ async function checkInAt(site) {
     );
   } catch (e) {
     toast(`Couldn't check in. Ask ${bossFirst()} to check you're an Editor.`);
+  }
+  /* first time on this site and it has an induction they haven't signed: open it now (James, Nov 2026: "when there is
+     a new site and they go onto it for the first time they need to do the induction") */
+  const ind = indFor(site);
+  if (ind && !myInd(ind) && !S.preview) {
+    toast("First time on this site – do the site induction before you start");
+    openInduction(ind);
   }
 }
 async function checkOut(e) {
@@ -223,14 +230,14 @@ function empTime() {
       html += `<div class="day"><div class="dayh ${di === today ? "today" : ""}"><span>${dayLabel(day)}${di === today ? " · Today" : ""}</span><span class="sum">${sum}</span></div>`;
       if (!list.length) html += `<div class="nothing">Nothing logged</div>`;
       list.forEach((e) => {
-        html += `<button type="button" class="entry" data-id="${esc(e.id)}"><div class="main"><div class="job">${typeTag(e)}${e.approved ? '<span class="tag ok">Approved</span>' : ""}${esc(e.job || "No site given")}</div><div class="sub">${entrySub(e)}</div></div><div class="amt">${hrs(e.hours)} h</div></button>`;
+        html += `<button type="button" class="entry" data-id="${esc(e.id)}"><div class="main"><div class="job">${typeTag(e)}${e.approved ? '<span class="tag ok">Approved</span>' : ""}${esc(siteLabel(e.job) || "No site given")}</div><div class="sub">${entrySub(e)}</div></div><div class="amt">${hrs(e.hours)} h</div></button>`;
       });
       html += `</div>`;
     });
   const it = empIndTodo();
   if (it.length)
     html =
-      `<div class="notice warn"><b>Site induction needed:</b> ${it.map((i) => `${esc(i.site)} <button type="button" class="pillbtn ind-go" data-id="${esc(i.id)}" style="margin:4px 0 0 4px">Do it now</button>`).join(" ")}</div>` +
+      `<div class="notice warn"><b>Site induction needed:</b> ${it.map((i) => `${esc(siteLabel(i.site))} <button type="button" class="pillbtn ind-go" data-id="${esc(i.id)}" style="margin:4px 0 0 4px">Do it now</button>`).join(" ")}</div>` +
       html;
   $("main").innerHTML = html;
   $("main")
@@ -296,7 +303,7 @@ function empTime() {
       const e = S.mine.entries.find((x) => x.id === ce.dataset.id);
       if (!e) return;
       openSheet(
-        `<h3 id="sheettitle">Change my start time</h3><div class="who">${esc(e.job)} · ${esc(shortDay(e.date))}</div>
+        `<h3 id="sheettitle">Change my start time</h3><div class="who">${esc(siteLabel(e.job))} · ${esc(shortDay(e.date))}</div>
       <label for="cs-t">Start time<input id="cs-t" type="time" required value="${esc(e.start)}"></label>
       <div class="who">You'll still check out as normal. To change the whole day, tap it in the list below once you've checked out.</div>${formFoot(false, "Save")}`,
         async () => {

@@ -23,6 +23,7 @@ import { nameOf } from "../owner/owner.js";
 import { markPrompt, myOpenPrompts } from "../people/reminders.js";
 import { markupBlock, markupSend } from "./mark-up.js";
 import { lhLogoId } from "../sales/letterhead-setup.js";
+import { siteLabel } from "../sites/job-details.js";
 import { hereNow } from "../sites/maps-pins.js";
 import { same } from "../sites/project-pages.js";
 import { photoDelete } from "../sites/tiles.js";
@@ -365,7 +366,7 @@ async function saveFolders(site, list) {
 }
 function openAddFolder(site) {
   openSheet(
-    `<h3 id="sheettitle">Add a photo folder</h3><div class="who">${esc(site)}</div>
+    `<h3 id="sheettitle">Add a photo folder</h3><div class="who">${esc(siteLabel(site))}</div>
     <label for="nf-name">Folder name<input id="nf-name" required maxlength="60" placeholder="e.g. Steel beam installation"></label>${formFoot(false, "Add folder")}`,
     async () => {
       const n = $("nf-name").value.trim();
@@ -386,7 +387,7 @@ function openAddFolder(site) {
 }
 function openEditFolders(site) {
   openSheet(
-    `<h3 id="sheettitle">Photo folders</h3><div class="who">${esc(site)}</div>
+    `<h3 id="sheettitle">Photo folders</h3><div class="who">${esc(siteLabel(site))}</div>
     <label for="ef-list">One folder per line, in the order you want them<textarea id="ef-list" style="min-height:300px">${esc(siteFolders(site).join("\n"))}</textarea></label>
     <div class="who">Renaming or removing a folder doesn't change photos already taken. They'll show under "Other photos" until you move them.</div>
     ${formFoot(false, "Save folders")}`,
@@ -763,7 +764,7 @@ function photoTile(p, owner, who) {
       50,
     )} ${iso(new Date(p.takenAt || p.created || Date.now()))} ${new Date(p.takenAt || p.created || Date.now()).toTimeString().slice(0, 5).replace(":", "")}${owner && who ? " " + String(nameOf(who)).replace(/[^\w\s-]/g, "") : ""}.jpg`;
   return `<button type="button" class="ph${isVid(p) ? " phvid" : ""}" data-p="${esc(p.id)}" data-w="${esc(who || "")}" data-a="${esc(p.assetId)}" data-n="${esc(isVid(p) ? fnm.replace(/\.jpg$/, "." + vidExt(p.contentType)) : fnm)}">${isVid(p) ? vidTag(p.assetId) + '<span class="vidplay" aria-hidden="true">▶</span>' : `<img src="${blobUrl(p.assetId)}" alt="${esc(p.caption || p.site || "Site photo")}" loading="lazy">`}
-    ${isSketch(p) ? `<span class="mkbadge skb sk-${skState(p)[0]}">✏️ ${esc(skState(p)[0] === "open" ? (owner ? "Check this" : `Waiting for ${bossFirst()}`) : skState(p)[0] === "ok" ? "Right ✓" : skState(p)[0] === "change" ? "Needs changing" : p.mine ? "Mine" : p.fromOwner ? (owner ? "Sent" : `From ${bossFirst()}`) : "Drawing")}</span>` : (p.markups || []).length ? `<span class="mkbadge">✎ ${owner ? "Marked up" : `Notes from ${bossFirst()}`}</span>` : ""}<span class="phcap"><b>${isSketch(p) ? esc(p.title || "Drawing") + "</b> · " + esc(p.site || "No site") + "<b>" : esc(p.site || "No site")}</b>${p.plot ? " · " + esc(p.plot) : ""}${owner && !p.mine ? ` · ${esc(nameOf(who))}` : ""}<br>${new Date(p.takenAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}${p.lat != null ? "" : " · no location"}</span></button>`;
+    ${isSketch(p) ? `<span class="mkbadge skb sk-${skState(p)[0]}">✏️ ${esc(skState(p)[0] === "open" ? (owner ? "Check this" : `Waiting for ${bossFirst()}`) : skState(p)[0] === "ok" ? "Right ✓" : skState(p)[0] === "change" ? "Needs changing" : p.mine ? "Mine" : p.fromOwner ? (owner ? "Sent" : `From ${bossFirst()}`) : "Drawing")}</span>` : (p.markups || []).length ? `<span class="mkbadge">✎ ${owner ? "Marked up" : `Notes from ${bossFirst()}`}</span>` : ""}<span class="phcap"><b>${isSketch(p) ? esc(p.title || "Drawing") + "</b> · " + esc(siteLabel(p.site) || "No site") + "<b>" : esc(siteLabel(p.site) || "No site")}</b>${p.plot ? " · " + esc(p.plot) : ""}${owner && !p.mine ? ` · ${esc(nameOf(who))}` : ""}<br>${new Date(p.takenAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}${p.lat != null ? "" : " · no location"}</span></button>`;
 }
 function photoViewer(p, owner, who) {
   if (isSketch(p)) return sketchViewer(p, owner, who);

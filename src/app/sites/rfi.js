@@ -13,6 +13,7 @@ import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { siteFull, siteLabel } from "./job-details.js";
 import { same } from "./project-pages.js";
 export { rfiCode, rfiHtml, rfiNoticeHtml, rfiOver, rfiWire };
 /* An RFI (request for information) is a written question about the design, asked before the work it holds up: what it
@@ -147,7 +148,7 @@ function rfiEdit(site, r0) {
   let picked = [];
   openSheet(
     `<h3 id="sheettitle">❓ ${r0 ? esc(rfiCode(r0)) : "New RFI"}</h3>
-    <div class="who">${esc(site)}</div>
+    <div class="who">${esc(siteLabel(site))}</div>
     <label for="rfi-subj">Subject<input id="rfi-subj" maxlength="100" value="${esc(r.subject || "")}" placeholder="e.g. Beam B1 bearing on the party wall"></label>
     <label for="rfi-ref">What it refers to (optional)<input id="rfi-ref" maxlength="120" value="${esc(r.ref || "")}" placeholder="e.g. Drawing 101 rev B, section A-A; spec clause 4.2"></label>
     <label for="rfi-q">The question<textarea id="rfi-q" rows="4" maxlength="2000" placeholder="Say exactly what isn't clear, and what you've found on site.">${esc(r.question || "")}</textarea></label>
@@ -248,7 +249,7 @@ function rfiView(r) {
     r.time && "⏱ May add time",
   ].filter(Boolean);
   openViewer(`<div class="rfi-view"><h2>${esc(rfiCode(r))} · ${esc(r.subject || "")} <span class="tag ${cls}">${st}</span></h2>
-    <div class="who">${esc(r.site)} · raised ${esc(shortDay(r.raised))} · to ${esc(r.to || "–")}${r.role ? " (" + esc(r.role) + ")" : ""}${r.status === "open" && r.due ? " · answer needed by " + esc(shortDay(r.due)) : ""}</div>
+    <div class="who">${esc(siteLabel(r.site))} · raised ${esc(shortDay(r.raised))} · to ${esc(r.to || "–")}${r.role ? " (" + esc(r.role) + ")" : ""}${r.status === "open" && r.due ? " · answer needed by " + esc(shortDay(r.due)) : ""}</div>
     ${flags.length ? `<div class="who">${flags.map(esc).join(" · ")}</div>` : ""}
     ${r.ref ? `<div class="rfi-sec"><b>Refers to</b><div>${esc(r.ref)}</div></div>` : ""}
     <div class="rfi-sec"><b>Question</b><div class="rfi-txt">${esc(r.question || "")}</div></div>
@@ -523,7 +524,7 @@ async function rfiRegister(site) {
   await pdfLogo(doc, W - M, 8, 40, 16);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.text(rfiClean("RFI register – " + site), M, y);
+  doc.text(rfiClean("RFI register – " + siteFull(site)), M, y);
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);

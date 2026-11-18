@@ -16,6 +16,7 @@ import { CDMRA } from "../safety/cdm-rams.js";
 import { cdmMaker, cdmSignState } from "../safety/cdm.js";
 import { ramsMaker, ramsTemplates, ukDate } from "../safety/rams-maker.js";
 import { indFor } from "../safety/site-inductions.js";
+import { siteFull, siteLabel } from "./job-details.js";
 import { same } from "./project-pages.js";
 export { cdmShare, docFolders, docMove, drawShare, hsView };
 const docFolders = (site, cat) => {
@@ -76,7 +77,7 @@ function audienceHtml(cur, site) {
     <label class="tick"><input type="checkbox" id="au-some" ${!cur.all && (cur.who || []).length ? "checked" : ""}> <span>👤 Only the trades I pick</span></label>
     <div id="au-list" class="aulist" ${!cur.all && (cur.who || []).length ? "" : "hidden"}>${tids.map((id) => `<label class="tick"><input type="checkbox" class="au-t" value="${esc(id)}" ${(cur.who || []).includes(id) ? "checked" : ""}> <span>${esc(nameOf(id))}</span></label>`).join("") || '<div class="who">No trades on the app yet.</div>'}</div>
     <label class="tick"><input type="checkbox" id="au-cl" ${cur.client ? "checked disabled" : ""}> <span>🏡 The client, in their portal${cur.client ? " (already sent)" : ""}</span></label>
-    <div id="au-clbox" hidden><label>Client<select id="au-cid">${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cid ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(c.site) : ""}</option>`).join("")}</select></label><label class="tick"><input type="checkbox" id="au-ask"> <span>✍ Ask them to sign / approve it (the signed copy is filed here automatically)</span></label></div>
+    <div id="au-clbox" hidden><label>Client<select id="au-cid">${cls.map((c) => `<option value="${esc(c.id)}" ${c.id === cid ? "selected" : ""}>${esc(c.name)}${c.site ? " · " + esc(siteFull(c.site)) : ""}</option>`).join("")}</select></label><label class="tick"><input type="checkbox" id="au-ask"> <span>✍ Ask them to sign / approve it (the signed copy is filed here automatically)</span></label></div>
     <div class="who" id="au-sum"></div>`;
 }
 function audienceWire() {
@@ -163,7 +164,7 @@ async function audienceClient(a, rec) {
 function cdmShare(d, after) {
   const cat = d.cat || "other";
   openSheet(
-    `<h3 id="sheettitle">👁 ${esc(d.title || d.fileName)}</h3><div class="who">${esc(d.site || "General")}</div>
+    `<h3 id="sheettitle">👁 ${esc(d.title || d.fileName)}</h3><div class="who">${esc(siteLabel(d.site) || "General")}</div>
     ${audienceHtml({ all: !d._priv && !(d.who || []).length, who: d.who || [], client: !!d.clientShared, clientId: d.clientId }, d.site)}
     <div class="flabel">Folder</div>${folderPick("sh-fold", d.site, cat === "other" ? "specs" : cat, d.path || "")}
     ${formFoot(false, "Save")}`,
@@ -347,12 +348,12 @@ function hsView() {
   $("main").innerHTML =
     `<div class="card"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">🏛️ CDM 2015 documents</b>
       <div class="who">Duty holder appointments, pre-construction information, construction phase plan, CDM checklist, F10 check and health &amp; safety file, filled in from the client and site you pick. One full CDM pack or separate PDFs.</div>
-      ${sites.length ? `<div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Site<select id="hs-cdmsite">${sites.map((n) => `<option>${esc(n)}</option>`).join("")}</select></label><button type="button" class="btn primary" id="hs-cdm">🏛️ Make CDM documents</button></div><div id="hs-cdmmade"></div>` : '<div class="who">Add a site first.</div>'}</div></div>
+      ${sites.length ? `<div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Site<select id="hs-cdmsite">${sites.map((n) => `<option value="${esc(n)}">${esc(siteFull(n))}</option>`).join("")}</select></label><button type="button" class="btn primary" id="hs-cdm">🏛️ Make CDM documents</button></div><div id="hs-cdmmade"></div>` : '<div class="who">Add a site first.</div>'}</div></div>
     <div class="card"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">📝 Make RAMS for a site</b>
       <div class="who">${tpl.length ? `Copies your ${tpl.length} Word RAMS to a site: tick the ones the job needs and fill in the blanks (address, client, dates, first aiders…).` : "Upload your RAMS as Word files to any site first (Sites › the site › RAMS). Then you can copy them to new sites from here."}</div>
-      ${sites.length ? `<div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Site<select id="hs-site">${sites.map((n) => `<option${n === S.f.hsSite ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label><button type="button" class="btn" id="hs-mk" ${tpl.length ? "" : "disabled"}>📝 Make from saved RAMS</button></div><div id="hs-rawrap"></div><div id="hs-ramsmade"></div>` : '<div class="who">Add a site first.</div>'}</div></div>
+      ${sites.length ? `<div class="actions" style="align-items:flex-end"><label style="flex:1;min-width:200px">Site<select id="hs-site">${sites.map((n) => `<option value="${esc(n)}"${n === S.f.hsSite ? " selected" : ""}>${esc(siteFull(n))}</option>`).join("")}</select></label><button type="button" class="btn" id="hs-mk" ${tpl.length ? "" : "disabled"}>📝 Make from saved RAMS</button></div><div id="hs-rawrap"></div><div id="hs-ramsmade"></div>` : '<div class="who">Add a site first.</div>'}</div></div>
     <div class="card"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">📂 RAMS on your sites</b>
-      ${sites.map((n) => `<button type="button" class="incrow hs-rams" data-s="${esc(n)}" style="border-left-color:${rams(n) ? "var(--ok)" : "var(--danger)"}"><span><b>${esc(n)}</b><br><span class="who">${rams(n) ? rams(n) + " RAMS" : "No RAMS yet"}${cdmN(n) ? " · " + cdmN(n) + " CDM document" + (cdmN(n) === 1 ? "" : "s") : ""} · ${indFor(n) ? "Induction set up" : "No induction yet"}</span></span><span aria-hidden="true">›</span></button>`).join("") || '<div class="who">No sites yet.</div>'}</div></div>
+      ${sites.map((n) => `<button type="button" class="incrow hs-rams" data-s="${esc(n)}" style="border-left-color:${rams(n) ? "var(--ok)" : "var(--danger)"}"><span><b>${esc(siteLabel(n))}</b><br><span class="who">${rams(n) ? rams(n) + " RAMS" : "No RAMS yet"}${cdmN(n) ? " · " + cdmN(n) + " CDM document" + (cdmN(n) === 1 ? "" : "s") : ""} · ${indFor(n) ? "Induction set up" : "No induction yet"}</span></span><span aria-hidden="true">›</span></button>`).join("") || '<div class="who">No sites yet.</div>'}</div></div>
     <div class="card"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">🛡️ Policies &amp; insurance</b><div class="who">${(S.policies || []).length} document${(S.policies || []).length === 1 ? "" : "s"} that everyone on the app can read.</div><div class="actions"><button type="button" class="btn" id="hs-pol">Open Policies &amp; insurance ›</button><button type="button" class="btn" id="hs-inc">⚠️ Accidents &amp; near misses ›</button></div></div></div>
     <div class="card ${lgNew && lgNew.length ? "lgnew" : ""}"><div class="cardbody" style="border:0"><b style="font-family:var(--f-display);font-size:18px">📜 Legislation watch</b>
       <div class="who">Checked every month for changes to CDM 2015, health &amp; safety law, HSE guidance and the Building Regulations.${lg && lg.checkedAt ? ` Last checked <b>${esc(stamp(lg.checkedAt))}</b>.` : " The first check runs soon."}</div>

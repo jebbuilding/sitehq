@@ -4,6 +4,7 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { onDay } from "../planner/time-off.js";
+import { siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
 import { qwOpen } from "./quick-week.js";
 export { pcCardHtml, pcList, pcOff, pcWire, pcYesterday };
@@ -66,7 +67,7 @@ function pcCardHtml() {
   return `<div class="notice warn pccard"><b>🗓 The planner and the timesheets don't match (${L.length})</b><div class="who">People booked on a job this week, by the planner, with no timesheet for that day or a timesheet on another job.</div>
     ${L.map(
       (x, i) =>
-        `<div class="pcrow"><span><b>${esc(nameOf(x.id))}</b> · ${esc(shortDay(x.d))} · booked on <b>${esc(x.site)}</b> · ${x.kind === "none" ? "<b>no timesheet</b>" : "timesheet says <b>" + esc(x.said.join(", ")) + "</b>"}</span><span class="pcacts"><button type="button" class="btn pc-fix" data-w="${esc(x.id)}">✎ Put it right</button><button type="button" class="btn pc-ok" data-k="${i}">It's fine</button></span></div>`,
+        `<div class="pcrow"><span><b>${esc(nameOf(x.id))}</b> · ${esc(shortDay(x.d))} · booked on <b>${esc(siteLabel(x.site))}</b> · ${x.kind === "none" ? "<b>no timesheet</b>" : "timesheet says <b>" + esc(x.said.join(", ")) + "</b>"}</span><span class="pcacts"><button type="button" class="btn pc-fix" data-w="${esc(x.id)}">✎ Put it right</button><button type="button" class="btn pc-ok" data-k="${i}">It's fine</button></span></div>`,
     ).join("")}</div>`;
 }
 function pcWire() {

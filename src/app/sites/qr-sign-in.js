@@ -8,6 +8,7 @@ import { pdfShow } from "../drawing/paving.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { IND_DETAILS, indFor, loadJsPdf, openIndEditor } from "../safety/site-inductions.js";
+import { siteFull, siteLabel } from "./job-details.js";
 import { same } from "./project-pages.js";
 export { QRSITE };
 const QRSITE = (() => {
@@ -113,7 +114,7 @@ const QRSITE = (() => {
     const r = recOf(site) || {};
     const s = (S.sites || []).find((x) => same(x.name, site)) || {};
     openSheet(
-      `<h3 id="sheettitle">📱 QR sign-in – ${esc(site)}</h3>
+      `<h3 id="sheettitle">📱 QR sign-in – ${esc(siteFull(site))}</h3>
     <div class="who">Visitors read this site's induction (version ${ind.version || 1}) the first time, and again whenever you tick “everyone must re-read” when editing it.</div>
     <div class="grid2"><label for="qq-out">Sign everyone out automatically at<input id="qq-out" type="time" value="${esc(r.autoOut || "19:00")}"></label>
       <label for="qq-exp">Redo the induction if not here for<select id="qq-exp">${[
@@ -128,7 +129,7 @@ const QRSITE = (() => {
         )
         .join("")}</select></label></div>
     <div class="flabel">1. Send this site to your sign-in sheet</div><div class="who">Opens a tab that says “set up” – then come back here. Do this again after changing the induction.</div>
-    <button type="button" class="btn primary" id="qq-send">🔗 Send ${esc(site)} to the sign-in sheet</button>
+    <button type="button" class="btn primary" id="qq-send">🔗 Send ${esc(siteLabel(site))} to the sign-in sheet</button>
     <div class="flabel">2. Print the poster for the site office</div><div id="qq-prev" style="display:flex;justify-content:center;padding:8px;background:#fff;border-radius:10px">Making the QR code…</div>
     <div class="actions"><button type="button" class="btn" id="qq-pdf">🖨 Poster PDF</button><button type="button" class="btn" id="qq-copy">📋 Copy the link</button><a class="btn" href="${esc(linkFor(site))}" target="_blank" rel="noopener">Open it ↗</a></div>
     ${formFoot(false, "Done")}`,
@@ -232,7 +233,7 @@ const QRSITE = (() => {
       } catch (e) {}
       doc.setTextColor(25, 22, 21);
       doc.setFontSize(20);
-      doc.text(doc.splitTextToSize(site, W - 40), W / 2, 52, { align: "center" });
+      doc.text(doc.splitTextToSize(siteFull(site), W - 40), W / 2, 52, { align: "center" });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(14);
       doc.text(
