@@ -152,3 +152,4 @@
 .pjtst-b{flex:0 0 auto;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
 .pjtst-b[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .pjtst-n{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:999px;background:var(--danger);color:#fff;font-size:.8rem;text-align:center}
+.pjtst .pjtst-act{background:var(--soft);border-style:dashed}

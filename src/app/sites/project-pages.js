@@ -388,7 +388,6 @@ function ownerProjects() {
   const sr0 = siteRec(site) || {};
   /* the job at a glance (stages, money, photos, who is on it, paperwork, ✍️ sign-off sheet) tops the one site page */
   P.overview = `${jbJobHtml(site, true)}${sodHtml(site)}${rfiNoticeHtml(site)}${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}${jhCardHtml(site)}
-    <div class="actions"><button type="button" class="btn" id="sq-new">📸 Snag</button><button type="button" class="btn" id="jk-open">📦 Send job details to someone not on the app</button></div>
     <div class="totals"><div class="tot"><div class="n">${hrs(sumH(ts, () => true))}</div><div class="l">Timesheet hours</div></div><div class="tot hi"><div class="n">${hrs(sumH(extra, () => true))}</div><div class="l">Extra work hours</div></div><div class="tot"><div class="n">${people.length}</div><div class="l">People worked here</div></div></div>
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
     <div class="folders">${T.slice(1)
@@ -414,7 +413,9 @@ function ownerProjects() {
       ([k, l, c]) =>
         `<button type="button" class="pjtst-b" role="tab" data-t="${k}" aria-selected="${tab === k}">${k === "overview" ? "🏠" : ICON[k]} ${esc(l)}${k === "rfi" && /waiting/.test(String(c)) ? ` <span class="pjtst-n">${esc(String(c).split(" ")[0])}</span>` : ""}</button>`,
     )
-    .join("")}</div>`;
+    .join(
+      "",
+    )}<button type="button" class="pjtst-b pjtst-act" id="sq-new">📸 Snag</button><button type="button" class="pjtst-b pjtst-act" id="jk-open">📦 Send job details to someone not on the app</button></div>`;
   html +=
     (tab === "overview"
       ? ""
