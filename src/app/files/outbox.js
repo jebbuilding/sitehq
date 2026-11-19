@@ -1,7 +1,7 @@
 /* ================= SENDING (keeps work when signal drops) ================= */
 import { esc, shortDay, toast } from "../core/helpers.js";
 import { touch } from "../core/sheet.js";
-import { S } from "../core/state.js";
+import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { uploadErr, uploadFile } from "./files.js";
 import { autoClearPrompts, promptForJob } from "../people/reminders.js";
@@ -202,6 +202,26 @@ function saveOrKeep(path, op, data, label, files) {
 async function refreshOutbox() {
   S.outbox = await obAll();
   render();
+  obReport();
+}
+/* a trade's phone tells James what is still waiting on it (sheets/{me}: waiting, waitingSince, waitingErr), so
+   Timesheets can show whose hours haven't come through */
+function obReport() {
+  if (!S.db || !S.me || ownerMode() || S.client) return;
+  const L = S.outbox || [];
+  const errs = L.map((j) => j.err).filter(Boolean);
+  const rep = {
+    waiting: L.length,
+    waitingSince: L.length ? Math.min(...L.map((j) => j.queued || Date.now())) : null,
+    waitingErr: errs.length ? errs[errs.length - 1] : "",
+  };
+  const k = JSON.stringify(rep);
+  if (OB.rep === k) return;
+  OB.rep = k;
+  S.db
+    .doc("sheets/" + S.me)
+    .update(Object.assign({ waitingAt: Date.now() }, rep))
+    .catch(() => {});
 }
 async function flushOutbox() {
   if (OB.busy || !S.db || !S.me) return;
@@ -213,9 +233,17 @@ async function flushOutbox() {
         await obDel(j.qid);
         touch();
       } catch (e) {
-        if (isNetErr(e)) break;
-        await obDel(j.qid);
-        toast("One item couldn't be sent: " + uploadErr(e));
+        if (!isNetErr(e)) {
+          await obDel(j.qid);
+          toast("One item couldn't be sent: " + uploadErr(e));
+          continue;
+        }
+        if (navigator.onLine === false) break;
+        /* one that keeps failing no longer holds up everything queued after it (James, Nov 2026: a trade's hours
+           were on his phone but never reached Timesheets); it is tried again next time, with what went wrong kept */
+        j.tries = (j.tries || 0) + 1;
+        j.err = String((e && (e.code || e.message)) || e).slice(0, 120);
+        await obPut(j);
       }
     }
   } finally {
