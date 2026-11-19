@@ -55,6 +55,7 @@ import { mytCardHtml, mytWire } from "../timesheets/my-time.js";
 import { ncoCardHtml, ncoNothingHtml, ncoWire } from "../timesheets/not-checked-out.js";
 import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
+import { psyncHtml } from "../timesheets/phone-sync.js";
 import { pcCardHtml, pcWire } from "../timesheets/plan-check.js";
 import { qwOpen } from "../timesheets/quick-week.js";
 import { shCardHtml, shWire } from "../timesheets/stray-hours.js";
@@ -435,6 +436,7 @@ function ownerTime() {
         }</div></details>`;
   });
   html =
+    psyncHtml() +
     ncoCardHtml() +
     mytCardHtml() +
     awCardHtml() +
