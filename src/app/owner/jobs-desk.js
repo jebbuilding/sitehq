@@ -4,6 +4,7 @@ import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { mjHas } from "../clients/more-jobs.js";
 import { ptOf } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
+import { soNewSheet } from "../clients/sign-offs.js";
 import { $, addDays, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -14,12 +15,13 @@ import { EMP_TYPES } from "../people/employment-types.js";
 import { siteRec } from "../photos/photos.js";
 import { jcData } from "../sales/job-costs.js";
 import { sdR2 } from "../sales/sales-calc.js";
+import { goSite } from "../sites/go-site.js";
 import { empTypeOf, jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
 import { stgEdit, stgSign } from "../sites/stage-signoff.js";
 import { siteClient } from "../sites/summary.js";
-export { jbView };
+export { jbJobHtml, jbView, jbWireJob };
 /* Tabs: Jobs, Clients, Enquiries, Planner, More (everything else in the section). Jobs: the live jobs on the left
    (stage and who's on site), the chosen one on the right – its client and dates, Message client, Sign-off to the
    client, the stages (tap one to move the job on; ✎ to change the list), Money on this job (only James: spent so
@@ -76,26 +78,19 @@ function jbView() {
   $("main").innerHTML = `<div class="jb-page">${seg}
     ${
       list.length
-        ? `<div class="jb-two"><section class="jb-list" aria-label="Jobs">${list
+        ? `<div class="jb-two"><section class="jb-list jb-full" aria-label="Jobs">${list
             .map(
               (x) =>
                 `<button type="button" class="jb-item${x.hold ? " jb-held" : ""}" data-s="${esc(x.n)}"${x.n === sel ? ' aria-current="true"' : ""}><b>${esc(siteLabel(x.n))}</b><small>${x.hold ? '<span class="tag">🙈 Hidden for now</span> ' : ""}${esc([jobNameOf(x.n) ? x.n : "", x.sub].filter(Boolean).join(" · "))}</small></button>`,
             )
-            .join("")}</section>${jbJobHtml(sel)}</div>`
+            .join("")}</section></div>`
         : `<div class="empty"><strong>No live jobs</strong>Add a site in Setup, or make an enquiry into a site.</div>`
     }</div>`;
   jbWireTabs();
-  document.querySelectorAll("#main .jb-item").forEach(
-    (b) =>
-      (b.onclick = () => {
-        S.f.jbSel = b.dataset.s;
-        render();
-        const d = document.querySelector("#main .jb-job");
-        if (d && d.getBoundingClientRect().top > window.innerHeight * 0.6)
-          d.scrollIntoView({ block: "start" });
-      }),
-  );
-  if (sel) jbWireJob(sel);
+  /* a job opens the one site page, like a site tapped anywhere else (sites/go-site.js) */
+  document
+    .querySelectorAll("#main .jb-item")
+    .forEach((b) => (b.onclick = () => goSite(b.dataset.s)));
 }
 function jbWireTabs() {
   document.querySelectorAll("#main .jb-tabs button").forEach(
@@ -123,7 +118,7 @@ function jbWireTabs() {
   );
 }
 /* the chosen job */
-function jbJobHtml(n) {
+function jbJobHtml(n, embed) {
   const sr = siteRec(n) || {};
   const j = sr.job || {};
   const c = siteClient(n);
@@ -158,8 +153,8 @@ function jbJobHtml(n) {
     .filter(Boolean)
     .join(" · ");
   return `<section class="jb-job" aria-label="${esc(n)}">
-    <div class="jb-card"><div class="jb-head"><div><h2>${esc(n)}</h2><span class="who">${esc(dates || "No client or dates yet")}</span><label class="jb-hide"><input type="checkbox" id="jb-hide"${sr.hold ? " checked" : ""}> <span><b>Hide for now</b> – nobody else sees this job (trades, the planner, sign-in) until you untick it</span></label></div>
-      <div class="jb-acts">${c ? `<button type="button" class="btn" id="jb-msg">Message client</button><button type="button" class="btn primary" id="jb-sign">Sign-off to client</button>` : ""}<button type="button" class="btn" id="jb-open">Open the site page</button></div></div>
+    <div class="jb-card"><div class="jb-head"><div>${embed ? "" : `<h2>${esc(n)}</h2>`}<span class="who">${esc(dates || "No client or dates yet")}</span><label class="jb-hide"><input type="checkbox" id="jb-hide"${sr.hold ? " checked" : ""}> <span><b>Hide for now</b> – nobody else sees this job (trades, the planner, sign-in) until you untick it</span></label></div>
+      <div class="jb-acts">${c ? `<button type="button" class="btn" id="jb-msg">Message client</button>` : ""}<button type="button" class="btn primary" id="jb-sign">✍️ Sign-off sheet for the client</button>${embed ? "" : `<button type="button" class="btn" id="jb-open">Open the site page</button>`}</div></div>
       <div class="jb-stages" role="group" aria-label="Stages – tap one to sign it off">${st
         .map(
           (s, i) =>
@@ -189,13 +184,8 @@ function jbJobHtml(n) {
 function jbWireJob(n) {
   const sr = siteRec(n) || {};
   const c = siteClient(n);
-  const openSite = (tab) => {
-    S.f.proj = n;
-    S.f.projList = false;
-    S.f.pjtab = tab || "overview";
-    nlGo("projects");
-  };
-  $("jb-open").onclick = () => openSite();
+  const openSite = (tab) => goSite(n, tab);
+  if ($("jb-open")) $("jb-open").onclick = () => openSite();
   $("jb-hide").onchange = async (e) => {
     if (!sr.id) return toast("Save this site in Setup first.");
     const on = e.target.checked;
@@ -211,7 +201,7 @@ function jbWireJob(n) {
     nlGo("accounts");
   };
   if ($("jb-msg")) $("jb-msg").onclick = () => (ptOf(c) ? openClientChat(c) : viewClient(c));
-  if ($("jb-sign")) $("jb-sign").onclick = () => viewClient(c);
+  if ($("jb-sign")) $("jb-sign").onclick = () => soNewSheet(n, () => render());
   /* stages are signed off, with a record kept (sites/stage-signoff.js) */
   document
     .querySelectorAll("#main .jb-st")

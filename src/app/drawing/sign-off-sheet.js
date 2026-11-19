@@ -729,7 +729,7 @@ const SIGNSHEET = (() => {
     if (!L.includes(p) && !L.some((x) => x.id === p.id)) L.push(p);
   };
   function openSolo(o) {
-    const p = { id: "gs-" + newId(), assetId: "", site: "", title: "" };
+    const p = { id: "gs-" + newId(), assetId: "", site: (o && o.site) || "", title: "" };
     open(p, soloUpd(p), o);
   }
   function view(p) {

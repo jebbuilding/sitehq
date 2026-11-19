@@ -5,6 +5,7 @@ import { S, archivedSites, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { deleteSiteFlow } from "../owner/delete-client-site.js";
 import { siteRec } from "../photos/photos.js";
+import { goSite } from "./go-site.js";
 import { siteClient } from "./summary.js";
 export {
   arcMigrate,
@@ -114,10 +115,7 @@ function wireStorage() {
   document.querySelectorAll(".arc-open").forEach(
     (b) =>
       (b.onclick = () => {
-        S.f.proj = b.dataset.s;
-        S.f.projList = false;
-        render();
-        window.scrollTo(0, 0);
+        goSite(b.dataset.s);
       }),
   );
   document

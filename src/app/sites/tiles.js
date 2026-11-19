@@ -3,11 +3,11 @@ import { initials } from "../chat/chat.js";
 import { $, esc, hrs, iso, shortDay } from "../core/helpers.js";
 import { myDoc } from "../core/sheet.js";
 import { S, ownerMode } from "../core/state.js";
-import { render } from "../core/tabs-week.js";
 import { blobUrl } from "../files/files.js";
 import { deleteSitesPicker } from "../owner/delete-client-site.js";
 import { allTeam } from "../owner/owner.js";
 import { siteRec } from "../photos/photos.js";
+import { goSite } from "./go-site.js";
 import { siteFront, siteHead, siteHeadHtml } from "./job-details.js";
 import { same } from "./project-pages.js";
 import { sodSites } from "./signoff-due.js";
@@ -49,10 +49,7 @@ function siteTiles(sites) {
     .forEach(
       (b) =>
         (b.onclick = () => {
-          S.f.proj = b.dataset.s;
-          S.f.projList = false;
-          render();
-          window.scrollTo(0, 0);
+          goSite(b.dataset.s);
         }),
     );
   wireStorage();

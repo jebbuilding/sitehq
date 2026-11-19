@@ -3,9 +3,9 @@ import { viewClient } from "../clients/quick-enquiry.js";
 import { coHome } from "../core/company-names.js";
 import { $, esc } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
-import { render } from "../core/tabs-week.js";
-import { closeViewer, openViewer } from "../core/viewer.js";
+import { openViewer } from "../core/viewer.js";
 import { siteRec } from "../photos/photos.js";
+import { goSite } from "./go-site.js";
 import { gmapDir, pcGeo, pcOf } from "./maps-pins.js";
 import { projectSites } from "./project-pages.js";
 import { siteClient } from "./summary.js";
@@ -220,13 +220,7 @@ function smCard(p) {
   };
   if ($("sm-go"))
     $("sm-go").onclick = () => {
-      closeViewer();
-      S.otab = "projects";
-      S.f.proj = p.name;
-      S.f.projList = false;
-      S.f.pjtab = "overview";
-      render();
-      window.scrollTo(0, 0);
+      goSite(p.name);
     };
   if ($("sm-cl"))
     $("sm-cl").onclick = () => {

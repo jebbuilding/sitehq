@@ -11,6 +11,7 @@ import { onDay } from "../planner/time-off.js";
 import { openIncident } from "../safety/accidents.js";
 import { sdEdit } from "../sales/sales-edit.js";
 import { vrNew } from "../sales/variations.js";
+import { goSite } from "../sites/go-site.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { onSiteNow } from "../sites/roll-call.js";
@@ -193,10 +194,7 @@ function tdDeskWire() {
       (r.onclick = r.onkeydown =
         (e) => {
           if (e.type === "keydown" && e.key !== "Enter") return;
-          S.f.proj = r.dataset.s;
-          S.f.projList = false;
-          S.f.pjtab = "overview";
-          nlGo("projects");
+          goSite(r.dataset.s);
         }),
   );
 }

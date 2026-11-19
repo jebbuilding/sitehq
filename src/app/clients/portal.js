@@ -1373,9 +1373,19 @@ function ptShareDocs(c) {
     },
   );
 }
-function ptAskSign(c, x0, preKind, after) {
+function ptAskSign(c, x0, preKind, after, site0) {
   const src = ptSrc(c);
   const docs = src.docs();
+  /* anything already on the site can go in: its photos and its documents and drawings (James, Nov 2026: "the sign off
+     should be able to take information from anywhere on the site or external") */
+  const pSite = site0 || c.site || "";
+  const sPh = pSite
+    ? allTeam("photos")
+        .filter((p) => same(p.site, pSite) && p.assetId && !/^video/.test(p.contentType || ""))
+        .sort((a, b) => (b.takenAt || 0) - (a.takenAt || 0))
+        .slice(0, 30)
+    : [];
+  const sDocs = pSite ? (S.docs || []).filter((d) => same(d.site, pSite) && d.assetId) : [];
   openSheet(
     `<h3 id="sheettitle">Ask ${esc(c.name)} to sign off</h3>
     <label for="pa-kind">What is it?<select id="pa-kind">${PT_KINDS.map(([k, l]) => `<option value="${k}" ${k === preKind ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
@@ -1384,7 +1394,8 @@ function ptAskSign(c, x0, preKind, after) {
     <div class="grid2" id="pa-amtrow"><label for="pa-amt">Amount £ (optional)<input id="pa-amt" inputmode="decimal" maxlength="12"></label><label for="pa-vat">VAT<select id="pa-vat"><option value="">Not stated</option><option>plus VAT</option><option>including VAT</option><option>no VAT</option></select></label></div>
     <label for="pa-stmt">What they're agreeing to<textarea id="pa-stmt" maxlength="400" style="min-height:60px"></textarea></label>
     ${docs.length ? `<div class="flabel">Attach documents they can already see</div><fieldset class="pa-docs">${docs.map((d) => `<label class="inl" style="font-size:14px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(d.id)}"> ${esc(d.title || d.fileName)}</label>`).join("")}</fieldset>` : ""}
-    <div class="flabel">${docs.length ? "Or add new photos or files" : "Add photos or files for them to check"}</div><div id="pa-pick"></div>
+    ${sPh.length || sDocs.length ? `<div class="flabel">📎 From ${esc(siteLabel(pSite))}</div>${sDocs.length ? `<fieldset class="pa-sdocs">${sDocs.map((d) => `<label class="inl" style="font-size:14px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(d.id)}"> ${esc(d.title || d.fileName || "Document")}</label>`).join("")}</fieldset>` : ""}${sPh.length ? `<div class="pa-sph">${sPh.map((p) => `<label class="pa-sphi"><input type="checkbox" value="${esc(p.id)}" aria-label="${esc(p.caption || "Site photo")}"><img src="${esc(blobUrl(p.assetId))}" alt="" loading="lazy"></label>`).join("")}</div>` : ""}` : ""}
+    <div class="flabel">${docs.length || sPh.length || sDocs.length ? "Or add new photos or files (from your phone, a supplier, anywhere)" : "Add photos or files for them to check"}</div><div id="pa-pick"></div>
     <div class="flabel">✂️ Parts of PDFs or drawings</div>${CUT.pickerBox("pa-clip", S.preClips || [])}
     <div class="who" id="pa-prog"></div>${formFoot(false, "Send for sign-off")}`,
     async () => {
@@ -1414,6 +1425,48 @@ function ptAskSign(c, x0, preKind, after) {
             note: "For sign-off: " + title,
             sharedAt: Date.now(),
           });
+        }
+        const addSite = async (title2, fileName, assetId, contentType) => {
+          const id = newId();
+          docIds.push(id);
+          await ptSrc(c).addDoc(id, {
+            title: title2,
+            fileName,
+            assetId,
+            contentType,
+            folder:
+              kind === "variation"
+                ? "quotes"
+                : kind === "design" || kind === "materials"
+                  ? "designs"
+                  : "other",
+            note: "For sign-off: " + title,
+            sharedAt: Date.now(),
+          });
+        };
+        for (const v of [...document.querySelectorAll(".pa-sdocs input:checked")].map(
+          (x) => x.value,
+        )) {
+          const d = sDocs.find((x) => x.id === v);
+          if (d)
+            await addSite(
+              d.title || d.fileName || "Document",
+              d.fileName || (d.title || "Document") + ".pdf",
+              d.assetId,
+              d.contentType || "application/pdf",
+            );
+        }
+        for (const v of [...document.querySelectorAll(".pa-sph input:checked")].map(
+          (x) => x.value,
+        )) {
+          const p = sPh.find((x) => x.id === v);
+          if (p)
+            await addSite(
+              p.caption || "Site photo " + (p.date || ""),
+              "photo-" + p.id + ".jpg",
+              p.assetId,
+              p.contentType || "image/jpeg",
+            );
         }
         for (const ck of [...document.querySelectorAll(".pa-clip:checked")].map((x) => x.value)) {
           const cl = (S.clips || []).find((x) => x.id === ck);
@@ -1445,6 +1498,7 @@ function ptAskSign(c, x0, preKind, after) {
           vat: $("pa-vat").value,
           statement: $("pa-stmt").value.trim() || ptKind(kind)[2],
           docIds,
+          site: pSite,
           status: "open",
           created: Date.now(),
         });

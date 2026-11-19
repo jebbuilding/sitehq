@@ -11,6 +11,7 @@ import { cmpEdit } from "../people/companies.js";
 import { openDetails } from "../people/personal-details.js";
 import { eqmView } from "../planner/plant-care.js";
 import { openSupplier } from "../purchasing/suppliers.js";
+import { goSite } from "../sites/go-site.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { openJob } from "../survey/door-window-survey.js";
 export { searchOpen };
@@ -30,14 +31,7 @@ const SR_KINDS = [
 ];
 
 function srGoSite(site) {
-  closeViewer();
-  S.f.proj = site;
-  S.f.projList = false;
-  S.f.pjtab = "overview";
-  S.otab = "projects";
-  store.set("jeb.otab", "projects");
-  render();
-  window.scrollTo(0, 0);
+  goSite(site);
 }
 function srGoTab(t) {
   closeViewer();
