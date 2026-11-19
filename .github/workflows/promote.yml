@@ -95,10 +95,10 @@ jobs:
             case "$mode" in
               first)    echo "- First promotion: the \`production\` branch will be created at this commit." ;;
               forward)  echo "- Forward: \`production\` will be fast-forwarded from \`$(git rev-parse --short origin/production)\`."
-                        echo "- Commits going live:"; git log --format='  - %h %s' "origin/production..$sha" | head -50 ;;
+                        echo "- Commits going live:"; git log -n 50 --format='  - %h %s' "origin/production..$sha" ;;
               redeploy) echo "- This commit is already the tip of \`production\`: it will be deployed again." ;;
               rollback) echo "- **Roll back**: this commit is behind \`production\` (\`$(git rev-parse --short origin/production)\`). The branch is not moved; this commit is deployed."
-                        echo "- Commits being taken out of service:"; git log --format='  - %h %s' "$sha..origin/production" | head -50 ;;
+                        echo "- Commits being taken out of service:"; git log -n 50 --format='  - %h %s' "$sha..origin/production" ;;
             esac
             echo "- Waiting for approval in the \`production\` environment."
           } >> "$GITHUB_STEP_SUMMARY"
