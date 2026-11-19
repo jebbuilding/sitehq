@@ -70,3 +70,7 @@
 .aw-tbl .aw-tot td{border-top:2px solid var(--line)}
 .aw-empty .aw-go{margin-left:6px}
 .aw-h{margin:0 0 4px}
+.checkin .crs-trv{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0}
+.checkin .ci-move{min-height:44px;margin-top:6px}
+.crs-seg{flex-wrap:wrap;margin:4px 0 8px}
+.crs-seg button{min-height:44px}

@@ -46,6 +46,7 @@ import { lhCard, lhWire } from "../sales/letterhead-setup.js";
 import { siteFull, siteHeadHtml, siteLabel } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { awCardHtml, awWire } from "../timesheets/all-weeks.js";
+import { crsLine } from "../timesheets/check-reasons.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
@@ -422,7 +423,7 @@ function ownerTime() {
               (
                 e,
               ) => `<tr><td style="white-space:nowrap">${parse(e.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}</td><td style="white-space:nowrap">${typeTag(e)}</td>
-            <td class="job">${esc(siteLabel(e.job))}${e.task ? `<div>${esc(e.task)}</div>` : ""}${e.notes ? `<div class="who">${esc(e.notes)}</div>` : ""}${e.forName ? `<div class="who">${e.forId ? "" : "<b>For " + esc(e.forName) + "</b> · "}Filled in by ${esc(e.byForeman || nameOf(e._src || id))} (foreman)</div>` : ""}${e.editedBy || e.startedBy || e.stoppedBy ? `<div class="who">${[e.startedBy ? "Started by " + e.startedBy : "", e.stoppedBy ? "Stopped by " + e.stoppedBy : "", e.editedBy ? "Changed by " + e.editedBy : ""].filter(Boolean).map(esc).join(" · ")}</div>` : ""}</td>
+            <td class="job">${esc(siteLabel(e.job))}${e.task ? `<div>${esc(e.task)}</div>` : ""}${e.notes ? `<div class="who">${esc(e.notes)}</div>` : ""}${crsLine(e) ? `<div class="who crs-why">${esc(crsLine(e))}</div>` : ""}${e.forName ? `<div class="who">${e.forId ? "" : "<b>For " + esc(e.forName) + "</b> · "}Filled in by ${esc(e.byForeman || nameOf(e._src || id))} (foreman)</div>` : ""}${e.editedBy || e.startedBy || e.stoppedBy ? `<div class="who">${[e.startedBy ? "Started by " + e.startedBy : "", e.stoppedBy ? "Stopped by " + e.stoppedBy : "", e.editedBy ? "Changed by " + e.editedBy : ""].filter(Boolean).map(esc).join(" · ")}</div>` : ""}</td>
             <td style="white-space:nowrap">${e.type === "hours" ? `${esc(e.start)}–${esc(e.finish)}${+e.breakMin ? `<div class="who">${e.breakMin}m break</div>` : ""}` : "–"}${otmLine(e)}${otmButtons(e)}</td>
             <td class="num">${hrs(e.hours)} h</td><td><input type="checkbox" class="appr" data-e="${esc(e.id)}" ${e.approved ? "checked" : ""} data-src="${esc(e._src || "")}" aria-label="Approve" style="width:22px;height:22px"></td><td><button type="button" class="pillbtn te-edit" data-e="${esc(e.id)}">Edit</button></td></tr>`,
             )
