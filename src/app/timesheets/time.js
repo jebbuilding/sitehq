@@ -43,6 +43,16 @@ import { empIndTodo, indFor, myInd, openInduction } from "../safety/site-inducti
 import { shrinkImage } from "../safety/training.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
+import {
+  crsArrived,
+  crsEarlyAsk,
+  crsIsEarly,
+  crsIsLate,
+  crsLateAsk,
+  crsLine,
+  crsMove,
+  crsTravelHtml,
+} from "./check-reasons.js";
 import { dwTradeSheet } from "./day-work.js";
 import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
 import { nstClientId, nstGroups, nstIs } from "./non-site-time.js";
@@ -67,6 +77,7 @@ function entrySub(e) {
         : `${esc(e.start)}–${esc(e.finish)}${+e.breakMin ? ` · ${e.breakMin} min unpaid lunch` : ""}${e.checkIn ? " · checked in" : ""}${(e.actualIn && e.actualIn !== e.start) || (e.actualOut && e.actualOut !== e.finish) ? ` (on site ${esc(e.actualIn || e.start)}–${esc(e.actualOut || e.finish)})` : ""}`,
     );
   else if (e.task) p.push(esc(e.task));
+  if (crsLine(e)) p.push(esc(crsLine(e)));
   if (e.notes) p.push(esc(e.notes));
   return p.join(" · ") + otmLine(e);
 }
@@ -94,7 +105,7 @@ function clockOn(open, D) {
     const s = siteRec(open.job) || {};
     return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>${nstIs(open.job) ? "Clocked in" : "On site"}</div><b class="cisite">${esc(siteLabel(open.job))}</b>${jobNameOf(open.job) ? `<div class="sub">📍 ${esc(open.job)}</div>` : ""}${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
-    <button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button>
+    ${crsTravelHtml(open)}<button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button><button class="btn ci-move" type="button" data-id="${esc(open.id)}">🚚 Stop here / move to another job</button>
     <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button><button class="pillbtn ci-diff" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">⏱ Started early or working through lunch?</button>
     <div class="who">Your paid day: ${esc(dayLine(D))}. Arrive early or leave late and you're paid from ${esc(D.s)} to ${esc(D.e)} – or ask for overtime when you check out. The lunch is taken off automatically. <button type="button" class="linkbtn ci-day">Change my usual day</button></div></div>`;
   }
@@ -115,10 +126,13 @@ function clockOff(today, D) {
     ${done.length ? `<div class="who">Today so far: ${done.map((e) => `${esc(siteLabel(e.job))} ${esc(e.start)}–${esc(e.finish)}`).join(", ")}</div>` : `<div class="who">Forgot to check in? Use <b>+ Timesheet</b> to add the day by hand.</div>`}</div>`;
 }
 async function checkIn() {
-  return checkInAt(pickVal("ci-site"));
+  const site = pickVal("ci-site");
+  const D = dayFor(S.me);
+  if (site && !S.preview && crsIsLate(D)) return crsLateAsk(site, D, (x) => checkInAt(site, x));
+  return checkInAt(site);
 }
 /* check in at a site: records when they arrived, and the timesheet day is paid from their usual start (James, Nov 2026) */
-async function checkInAt(site) {
+async function checkInAt(site, extra = {}) {
   if (!site) {
     toast("Choose the site first");
     return;
@@ -145,6 +159,7 @@ async function checkInAt(site) {
     created: now,
     updated: now,
   };
+  Object.assign(data, extra);
   if (nstClientId(site)) data.clientId = nstClientId(site);
   S.mine.entries = S.mine.entries.concat([Object.assign({ id }, data)]);
   render();
@@ -166,20 +181,25 @@ async function checkInAt(site) {
     openInduction(ind);
   }
 }
-async function checkOut(e) {
+async function checkOut(e, extra = {}) {
   const D = dayFor(S.me);
   const actual = nowHM();
   const finish = toMin(actual) > toMin(D.e) ? D.e : actual;
   const br = lunchBreak(e.start, finish, D);
-  const data = Object.assign({}, e, {
-    finish,
-    actualOut: actual,
-    breakMin: br,
-    hours: Math.round(calcHours(e.start, finish, br) * 100) / 100,
-    open: false,
-    outAt: Date.now(),
-    updated: Date.now(),
-  });
+  const data = Object.assign(
+    {},
+    e,
+    {
+      finish,
+      actualOut: actual,
+      breakMin: br,
+      hours: Math.round(calcHours(e.start, finish, br) * 100) / 100,
+      open: false,
+      outAt: Date.now(),
+      updated: Date.now(),
+    },
+    extra,
+  );
   delete data.id;
   S.mine.entries = S.mine.entries.map((x) =>
     x.id === e.id ? Object.assign({ id: e.id }, data) : x,
@@ -191,7 +211,7 @@ async function checkOut(e) {
       `Checked out at ${actual}${finish !== actual ? " · paid to " + finish : ""} · ${hrs(data.hours)} hours` +
         (r === "queued" ? " (sends when you have signal)" : ""),
     );
-    otmOffer(Object.assign({ id: e.id }, data));
+    if (!extra.moveTo) otmOffer(Object.assign({ id: e.id }, data));
   } catch (err) {
     toast("Couldn't check out. Try again.");
   }
@@ -290,12 +310,21 @@ function empTime() {
     co.onclick = () => {
       const e = S.mine.entries.find((x) => x.id === co.dataset.id);
       if (!e) return;
-      if (co.dataset.armed !== "1" && toMin(nowHM()) < toMin(dayFor(S.me).e) - 30) {
-        co.dataset.armed = "1";
-        co.textContent = "Tap again to check out now (" + nowHM() + ")";
-        return;
-      }
+      const D = dayFor(S.me);
+      if (!S.preview && crsIsEarly(D)) return crsEarlyAsk(e, D, (x) => checkOut(e, x));
       checkOut(e);
+    };
+  const cm = $("main").querySelector(".ci-move");
+  if (cm)
+    cm.onclick = () => {
+      const e = S.mine.entries.find((x) => x.id === cm.dataset.id);
+      if (e) crsMove(e);
+    };
+  const ca = $("main").querySelector(".crs-arr");
+  if (ca)
+    ca.onclick = () => {
+      const e = S.mine.entries.find((x) => x.id === ca.dataset.id);
+      if (e) crsArrived(e);
     };
   const ce = $("main").querySelector(".ci-edit");
   if (ce)

@@ -65,3 +65,12 @@
 .nco-row .btn,.nco-row .pillbtn,.nco-last .pillbtn{min-height:44px}
 .nco-last{display:block;margin-top:6px}
 .qw-tbl .qw-nco{font-size:12px;color:var(--danger);font-weight:600}
+.aw-tbl .aw-go{min-height:44px;min-width:44px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.aw-tbl .aw-go.aw-cur{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.aw-tbl .aw-tot td{border-top:2px solid var(--line)}
+.aw-empty .aw-go{margin-left:6px}
+.aw-h{margin:0 0 4px}
+.checkin .crs-trv{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0}
+.checkin .ci-move{min-height:44px;margin-top:6px}
+.crs-seg{flex-wrap:wrap;margin:4px 0 8px}
+.crs-seg button{min-height:44px}

@@ -3037,7 +3037,14 @@ async function openNotePage(opts) {
                   a: sp,
                   b: sp,
                   c: tool === "dim" ? "#e11d2a" : col,
-                  w: tool === "dim" ? Math.max(pw, sized() ? 2 : pw) : pw,
+                  /* walls, doors and other symbols keep their own standard line weight: a thick pen
+                     picked for sketching made them come out as one solid line (James, Nov 2026) */
+                  w:
+                    tool === "dim"
+                      ? Math.max(pw, sized() ? 2 : pw)
+                      : tool === "shape"
+                        ? pwFor(2)
+                        : pw,
                 },
                 tool === "shape" ? { k: shapeKind } : {},
               );
@@ -9531,7 +9538,7 @@ async function openNotePage(opts) {
     let o;
     if (pwk === "line") o = { t: "line", a: a.slice(), b: b.slice(), c: col, w: pwFor(wid) };
     else {
-      o = { t: "shape", k: pwk, a: a.slice(), b: b.slice(), c: col, w: pwFor(wid) };
+      o = { t: "shape", k: pwk, a: a.slice(), b: b.slice(), c: col, w: pwFor(2) };
       if (doc.scale)
         o.th = Math.max(
           6,
