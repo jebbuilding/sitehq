@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 256 files, 4813 KB, 122115 lines.
+- 256 files, 4815 KB, 122160 lines.
 - 2515 names declared at the top level (the shared scope); 1290 of them are used by a file other than the one that declares them.
 - 2729 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -268,7 +268,7 @@ CLIENT PORTAL: SHARED JOB CALENDAR
 
 CLIENT PORTAL
 
-- 1531 lines, 70 KB. Declares 35 names, 25 used elsewhere.
+- 1575 lines, 72 KB. Declares 35 names, 25 used elsewhere.
 - **Used elsewhere:** `ptOf` (14), `ptSrc` (13), `ptCl` (11), `PT` (8), `ptKind` (5), `ptAskSign` (3), `ptManager` (3), `APP_LINK` (2), `ptChatId` (2), `ptMgrSubscribe` (2), `ptOnFor` (2), `newCode` (1), `PT_FOLDERS` (1), `PT_KINDS` (1), `ptAttach` (1), `ptClientBlock` (1), `ptInvite` (1), `ptRefresh` (1), `renderClient` (1), `renderClientJoin` (1), `renderWelcomeChoice` (1), `startClient` (1), `startPortalOwner` (1), `wireAttDl` (1), `wirePtClientBlock` (1)
 - **Uses names from 34 files:** `clients/portal-calendar.js` (12), `clients/choices.js` (7), `clients/uploads.js` (7), `core/helpers.js` (7), `files/files.js` (5), `chat/chat.js` (4), `clients/address-book.js` (4), `clients/job-story.js` (4), `core/sheet.js` (4), `sites/job-details.js` (4), `clients/clients.js` (3), `core/company-names.js` (3), `owner/client-look.js` (3), `owner/owner.js` (3), `core/state.js` (2), `core/viewer.js` (2), `owner/company-details.js` (2), `photos/photos.js` (2), `sites/maps-pins.js` (2), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/data.js` (1), `core/tabs-week.js` (1), `drawing/trade-drawings.js` (1), `files/attachment-picker.js` (1), `files/cut-outs.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `people/portal-access.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sites/plans-specs.js` (1), `sites/project-pages.js` (1), `sites/trade-sites.js` (1)
 - **Used by 37 files**
@@ -2131,7 +2131,7 @@ PLANS & SPECS
 
 OWNER: SITE PROJECT PAGES
 
-- 679 lines, 30 KB. Declares 7 names, 3 used elsewhere.
+- 680 lines, 30 KB. Declares 7 names, 3 used elsewhere.
 - **Used elsewhere:** `same` (48), `projectSites` (5), `ownerProjects` (1)
 - **Uses names from 37 files:** `core/helpers.js` (10), `sites/job-details.js` (9), `photos/photos.js` (6), `core/state.js` (5), `purchasing/materials-receipts.js` (5), `sites/plans-specs.js` (5), `sites/storage.js` (5), `chat/chat.js` (4), `planner/board.js` (4), `owner/owner.js` (3), `planner/programme.js` (3), `safety/site-inductions.js` (3), `sites/rfi.js` (3), `files/files.js` (2), `owner/jobs-desk.js` (2), `purchasing/invoices.js` (2), `sites/building-control.js` (2), `sites/doc-folders.js` (2), `sites/signoff-due.js` (2), `sites/site-diary.js` (2), `sites/site-health.js` (2), `sites/snag-quick.js` (2), `sites/stage-signoff.js` (2), `sites/trade-sites.js` (2), `core/tabs-week.js` (1), `owner/delete-client-site.js` (1), `planner/time-off.js` (1), `safety/cdm-rams.js` (1), `safety/rams-maker.js` (1), `sites/drawing-compare.js` (1), `sites/job-pack.js` (1), `sites/job-sheets.js` (1), `sites/maps-pins.js` (1), `sites/qr-sign-in.js` (1), `sites/tiles.js` (1), `survey/door-window-survey.js` (1), `timesheets/time.js` (1)
 - **Used by 50 files**

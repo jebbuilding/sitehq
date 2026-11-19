@@ -1393,10 +1393,12 @@ function ptAskSign(c, x0, preKind, after, site0) {
     <label for="pa-det">Details<textarea id="pa-det" maxlength="3000" style="min-height:90px" placeholder="e.g. Shaker doors in sage green, oak worktops, island with 3 stools"></textarea></label>
     <div class="grid2" id="pa-amtrow"><label for="pa-amt">Amount £ (optional)<input id="pa-amt" inputmode="decimal" maxlength="12"></label><label for="pa-vat">VAT<select id="pa-vat"><option value="">Not stated</option><option>plus VAT</option><option>including VAT</option><option>no VAT</option></select></label></div>
     <label for="pa-stmt">What they're agreeing to<textarea id="pa-stmt" maxlength="400" style="min-height:60px"></textarea></label>
-    ${docs.length ? `<div class="flabel">Attach documents they can already see</div><fieldset class="pa-docs">${docs.map((d) => `<label class="inl" style="font-size:14px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(d.id)}"> ${esc(d.title || d.fileName)}</label>`).join("")}</fieldset>` : ""}
-    ${sPh.length || sDocs.length ? `<div class="flabel">📎 From ${esc(siteLabel(pSite))}</div>${sDocs.length ? `<fieldset class="pa-sdocs">${sDocs.map((d) => `<label class="inl" style="font-size:14px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(d.id)}"> ${esc(d.title || d.fileName || "Document")}</label>`).join("")}</fieldset>` : ""}${sPh.length ? `<div class="pa-sph">${sPh.map((p) => `<label class="pa-sphi"><input type="checkbox" value="${esc(p.id)}" aria-label="${esc(p.caption || "Site photo")}"><img src="${esc(blobUrl(p.assetId))}" alt="" loading="lazy"></label>`).join("")}</div>` : ""}` : ""}
-    <div class="flabel">${docs.length || sPh.length || sDocs.length ? "Or add new photos or files (from your phone, a supplier, anywhere)" : "Add photos or files for them to check"}</div><div id="pa-pick"></div>
-    <div class="flabel">✂️ Parts of PDFs or drawings</div>${CUT.pickerBox("pa-clip", S.preClips || [])}
+    <div class="flabel">📋 What goes in it</div><div class="pa-in" id="pa-in"></div>
+    <div class="pa-addbar">${sPh.length || sDocs.length ? `<button type="button" class="btn pa-open" data-s="pa-sec-site" aria-expanded="false">📎 From ${esc(siteLabel(pSite))}</button>` : ""}${docs.length ? `<button type="button" class="btn pa-open" data-s="pa-sec-docs" aria-expanded="false">📂 Documents they can already see</button>` : ""}<button type="button" class="btn pa-open" data-s="pa-sec-clip" aria-expanded="false">✂️ Parts of PDFs or drawings</button></div>
+    ${sPh.length || sDocs.length ? `<div class="pa-sec" id="pa-sec-site" hidden><div class="who">Tick what to put in. Nothing goes in unless you tick it.</div>${sDocs.length ? `<fieldset class="pa-sdocs">${sDocs.map((d) => `<label class="inl" style="font-size:14px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(d.id)}"> ${esc(d.title || d.fileName || "Document")}</label>`).join("")}</fieldset>` : ""}${sPh.length ? `<div class="pa-sph">${sPh.map((p) => `<label class="pa-sphi"><input type="checkbox" value="${esc(p.id)}" aria-label="${esc(p.caption || "Site photo")}"><img src="${esc(blobUrl(p.assetId))}" alt="" loading="lazy"></label>`).join("")}</div>` : ""}</div>` : ""}
+    ${docs.length ? `<div class="pa-sec" id="pa-sec-docs" hidden><fieldset class="pa-docs">${docs.map((d) => `<label class="inl" style="font-size:14px;color:var(--ink);font-weight:500"><input type="checkbox" value="${esc(d.id)}"> ${esc(d.title || d.fileName)}</label>`).join("")}</fieldset></div>` : ""}
+    <div class="pa-sec" id="pa-sec-clip"${(S.preClips || []).length ? "" : " hidden"}>${CUT.pickerBox("pa-clip", S.preClips || [])}</div>
+    <div class="flabel">Add photos or files (from your phone, a supplier, anywhere)</div><div id="pa-pick"></div>
     <div class="who" id="pa-prog"></div>${formFoot(false, "Send for sign-off")}`,
     async () => {
       const title = $("pa-title").value.trim();
@@ -1528,4 +1530,46 @@ function ptAskSign(c, x0, preKind, after, site0) {
   const pick = attachPicker($("pa-pick"));
   CUT.wireBox($("form"), () => ({ sites: clientSites(c), client: c.id }));
   S.preClips = null;
+  /* it starts empty (James, Nov 2026: "it should be blank until I chose what I want to put into it"): the site's
+     things, the client's documents and parts of PDFs open only when asked for, and everything ticked is listed in
+     "What goes in it" with ✕ to take it out again before sending */
+  const form = $("form");
+  form.querySelectorAll(".pa-open").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const s = $(b.dataset.s);
+        s.hidden = !s.hidden;
+        b.setAttribute("aria-expanded", String(!s.hidden));
+      }),
+  );
+  const inList = () => {
+    const ins = [
+      ...form.querySelectorAll(
+        ".pa-sdocs input:checked, .pa-sph input:checked, .pa-docs input:checked, .pa-clip:checked",
+      ),
+    ];
+    $("pa-in").innerHTML = ins.length
+      ? ins
+          .map((x, i) => {
+            const l = x.closest("label");
+            const t =
+              x.getAttribute("aria-label") || (l && l.textContent.trim()) || "Picture " + (i + 1);
+            return `<div class="pa-inrow"><span>${esc(t)}</span><button type="button" class="iconbtn pa-inx" data-i="${i}" aria-label="Take out ${esc(t)}">✕</button></div>`;
+          })
+          .join("")
+      : '<span class="who">Nothing yet. Add what you want them to see and sign – from this site, their documents, parts of PDFs, or new photos and files below.</span>';
+    $("pa-in")
+      .querySelectorAll(".pa-inx")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            ins[+b.dataset.i].checked = false;
+            inList();
+          }),
+      );
+  };
+  form.addEventListener("change", (e) => {
+    if (e.target && e.target.type === "checkbox") inList();
+  });
+  inList();
 }
