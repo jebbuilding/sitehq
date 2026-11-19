@@ -46,6 +46,7 @@ import { rfiHtml, rfiNoticeHtml, rfiWire } from "./rfi.js";
 import { sodHtml, sodWire } from "./signoff-due.js";
 import { sdiHtml, sdiWire } from "./site-diary.js";
 import { jhCardHtml, jhWire } from "./site-health.js";
+import { shrsHtml, shrsWire } from "./site-hours.js";
 import { sqMap, sqOpen } from "./snag-quick.js";
 import { stgHtml, stgWire } from "./stage-signoff.js";
 import { arcWhy, siteArchive, siteRestore, storageHtml, wireStorage } from "./storage.js";
@@ -388,7 +389,7 @@ function ownerProjects() {
   const sr0 = siteRec(site) || {};
   /* the job at a glance (stages, money, photos, who is on it, paperwork, ✍️ sign-off sheet) tops the one site page */
   P.overview = `${jbJobHtml(site, true)}${sodHtml(site)}${rfiNoticeHtml(site)}${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}${jhCardHtml(site)}
-    <div class="totals"><div class="tot"><div class="n">${hrs(sumH(ts, () => true))}</div><div class="l">Timesheet hours</div></div><div class="tot hi"><div class="n">${hrs(sumH(extra, () => true))}</div><div class="l">Extra work hours</div></div><div class="tot"><div class="n">${people.length}</div><div class="l">People worked here</div></div></div>
+    ${shrsHtml(ts, extra, people)}
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
     <div class="folders">${T.slice(1)
       .map(
@@ -426,6 +427,7 @@ function ownerProjects() {
   if (tab === "overview") {
     jhWire(site);
     jbWireJob(site);
+    shrsWire(site, ts.concat(extra));
   }
   $("main")
     .querySelectorAll("#pj-back,.pjtile,.pjtst-b")
