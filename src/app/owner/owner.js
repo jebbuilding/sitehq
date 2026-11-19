@@ -45,6 +45,7 @@ import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dat
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
 import { siteFull, siteHeadHtml, siteLabel } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
+import { awCardHtml, awWire } from "../timesheets/all-weeks.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
@@ -412,7 +413,7 @@ function ownerTime() {
     html += `<details class="card" data-id="${esc(id)}" ${S.open.has(id) ? "open" : ""}><summary>
       <div class="nm">${esc(nameOf(id))} ${roleTag(id)}<small>${upd ? "Last updated " + upd.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" }) : "Nothing yet"}${pend ? ` · ${pend} to approve` : ""}</small></div>
       <div class="figs"><span><b>${hrs(sumH(we, (e) => e.type === "hours"))}</b> h worked</span><span><b>${hrs(sumH(we, (e) => e.type === "job" && e.kind === "extra"))}</b> h extra</span><span><b>${hrs(sumH(we, (e) => e.type === "job"))}</b> h on jobs</span></div></summary>
-      <div class="cardbody">${!String(id).startsWith("px:") && !String(id).startsWith("off:") ? `<button type="button" class="btn sjbig pm-open" data-w="${esc(id)}" style="margin:0 0 10px">📅 ${esc(nameOf(id))}: all details &amp; month timesheet ›</button><button type="button" class="btn primary qw-open" data-w="${esc(id)}" style="margin:0 0 10px 8px">✎ Quick edit this week</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? timeControls(id) : id === S.me ? `<div class="tctl"><button type="button" class="pillbtn me-addh">+ Timesheet day</button><button type="button" class="pillbtn me-addj">🧱 + Day work / job time</button></div>` : ""}<div class="actions">${pend ? `<button type="button" class="btn" data-approveall="1">Approve all this week</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? `<button type="button" class="pillbtn pr-send" data-w="${esc(id)}">Ask ${esc(nameOf(id))} to fix or fill in…</button>` : ""}</div>
+      <div class="cardbody">${!String(id).startsWith("px:") && !String(id).startsWith("off:") ? `<button type="button" class="btn sjbig pm-open" data-w="${esc(id)}" style="margin:0 0 10px">📅 ${esc(nameOf(id))}: all details &amp; month timesheet ›</button><button type="button" class="btn primary qw-open" data-w="${esc(id)}" style="margin:0 0 10px 8px">✎ Quick edit this week</button><button type="button" class="btn aw-all" data-w="${esc(id)}" style="margin:0 0 10px 8px">📚 All timesheets</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? timeControls(id) : id === S.me ? `<div class="tctl"><button type="button" class="pillbtn me-addh">+ Timesheet day</button><button type="button" class="pillbtn me-addj">🧱 + Day work / job time</button></div>` : ""}<div class="actions">${pend ? `<button type="button" class="btn" data-approveall="1">Approve all this week</button>` : ""}${id !== S.me && !String(id).startsWith("px:") ? `<button type="button" class="pillbtn pr-send" data-w="${esc(id)}">Ask ${esc(nameOf(id))} to fix or fill in…</button>` : ""}</div>
         ${
           we.length
             ? `<div class="tablewrap"><table><thead><tr><th>Day</th><th>Sheet</th><th>Site / task</th><th>Time</th><th class="num">Hours</th><th>OK</th><th></th></tr></thead><tbody>
@@ -430,11 +431,12 @@ function ownerTime() {
             : ncoNothingHtml(id)
         }</div></details>`;
   });
-  html = ncoCardHtml() + goneWorkCard() + shCardHtml() + pcCardHtml() + html;
+  html = ncoCardHtml() + awCardHtml() + goneWorkCard() + shCardHtml() + pcCardHtml() + html;
   $("main").innerHTML = html;
   wireFlt();
   wireGoneWork();
   ncoWire();
+  awWire();
   shWire();
   pcWire();
   if ($("wu-open")) $("wu-open").onclick = () => wuOpen();
