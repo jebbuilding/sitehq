@@ -205,3 +205,6 @@
 .crs-ppl{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:6px}
 .crs-ppl .crs-p{font-size:15px;color:var(--ink);font-weight:500;min-height:44px}
 .crs-ppl .crs-p input{width:22px;height:22px}
+.pg-empty .pg-simbox{margin:10px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:var(--surface)}
+.pg-sim .pg-simst{font-size:1.15rem;margin-bottom:4px}
+.pg-sim .pg-simst.done{color:var(--ink)}

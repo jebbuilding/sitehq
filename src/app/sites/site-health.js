@@ -151,7 +151,7 @@ function jhCardHtml(site) {
     : "";
   return `<section class="card jh-card"><div class="cardbody"><div class="jh-h"><b>📊 How this job is going</b>${flags.length ? "" : '<span class="tag ok">On track</span>'}</div>
     ${flags.length ? `<div class="jh-flags">${flags.join("")}</div>` : ""}
-    <div class="jh-sec"><div class="jh-h"><b>🧱 Progress</b><span class="who">${p.total ? `${p.done} of ${p.total} ${p.from === "programme" ? "stages done" : "stages signed off"}` : "No stages yet"}</span></div>
+    <div class="jh-sec jh-prog" role="button" tabindex="0" aria-label="Open the programme for this job"><div class="jh-h"><b>🧱 Progress <span class="jh-open">· open the programme ›</span></b><span class="who">${p.total ? `${p.done} of ${p.total} ${p.from === "programme" ? "stages done" : "stages signed off"}` : "No stages yet"}</span></div>
       ${p.total ? jhBar(p.pct, p.behind ? "bad" : "", p.pct + "% done") : ""}
       <div class="jh-line who"><span>${p.now ? `Now: <b>${esc(p.now)}</b>` : p.next ? `Next: <b>${esc(p.next)}</b>` : p.total ? "<b>All done</b>" : ""}</span><span>${p.finish ? `Finishes ${esc(shortDay(p.finish))}${h.daysLeft != null ? (h.daysLeft >= 0 ? ` · ${h.daysLeft} day${h.daysLeft === 1 ? "" : "s"} left` : "") : ""}` : "No finish date yet"}</span></div>
       ${p.from === "stages" && !p.done && !p.finish ? `<div class="who">Add a programme (📊 Programme) for dates, what's on now and whether it's behind.</div>` : ""}
@@ -160,6 +160,14 @@ function jhCardHtml(site) {
   </div></section>`;
 }
 function jhWire(site) {
+  /* tap the progress to open this job's programme (James, Nov 2026: "click on the programme and it open into the
+     programme for that job") */
+  const pg = document.querySelector("#main .jh-prog");
+  if (pg)
+    pg.onclick = pg.onkeydown = (e) => {
+      if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+      goSite(site, "programme");
+    };
   const b = $("jh-costs");
   if (b)
     b.onclick = () => {

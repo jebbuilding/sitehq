@@ -153,3 +153,12 @@
 .pjtst-b[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .pjtst-n{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:999px;background:var(--danger);color:#fff;font-size:.8rem;text-align:center}
 .pjtst .pjtst-act{background:var(--soft);border-style:dashed}
+.shrs-tots .tot.shrs-go{font:inherit;color:inherit;text-align:left;cursor:pointer;min-height:44px}
+.shrs-list{display:flex;flex-direction:column;gap:4px;margin:6px 0 12px}
+.shrs-list .shrs-row{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.shrs-list .shrs-row .who{display:block}
+.shrs-list .shrs-h{text-align:right;white-space:nowrap}
+.shrs-list .shrs-warn{color:var(--danger)}
+.jh-card .jh-prog{cursor:pointer;border-radius:12px;padding:6px;margin:-6px}
+.jh-card .jh-prog:hover,.jh-card .jh-prog:focus-visible{background:var(--soft)}
+.jh-card .jh-prog .jh-open{font-weight:500;color:var(--accent);font-size:.9em}

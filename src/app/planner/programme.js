@@ -108,7 +108,12 @@ function pgHtml(site) {
   if (!pr)
     return `<div class="card pg-empty"><b>📊 No programme for this job yet</b><div class="who">List the stages in order, how long each takes and what it can't start until. The dates work themselves out and move when something slips; they go on the planner, and the client can see them.</div>
       <label for="pg-start">Start date<input id="pg-start" type="date" value="${esc(pgOnWork(iso(new Date())))}"></label>
+      <div class="pg-simbox"><b>🟢 A simple job?</b><div class="who">No stages – just open the job, and close it when it's done. It goes on the planner from the start date.</div>
+      <label for="pg-sfin">Expected to finish (optional)<input id="pg-sfin" type="date"></label>
+      <div class="actions"><button type="button" class="btn primary" id="pg-simple">🟢 Open the job</button></div></div>
+      <div class="flabel">Or a full programme</div>
       <div class="actions"><button type="button" class="btn primary pg-new" data-t="extension">Start from a typical extension</button><button type="button" class="btn pg-new" data-t="loft">… a loft conversion</button><button type="button" class="btn pg-new" data-t="kitchen">… a kitchen</button><button type="button" class="btn pg-new" data-t="">Start blank</button></div></div>`;
+  if (pr.simple) return pgSimpleHtml(pr);
   const dt = pgCalc(pr);
   const st = pr.stages || [];
   const today = iso(new Date());
@@ -252,6 +257,34 @@ async function pgSave(site, pr, quiet) {
   if (!quiet) toast("Saved. The planner has the new dates");
 }
 function pgWire(site) {
+  if ($("pg-simple"))
+    $("pg-simple").onclick = async () => {
+      const start = pgOnWork($("pg-start").value || iso(new Date()));
+      const fin = $("pg-sfin").value;
+      const c = siteClient(site);
+      try {
+        await pgSave(site, {
+          simple: true,
+          start,
+          expFin: fin || "",
+          stages: [
+            {
+              id: newId(),
+              name: "The job",
+              days: fin && fin > start ? pgWorkBetween(start, fin) + 1 : 1,
+              after: "",
+              link: "",
+              lag: 0,
+            },
+          ],
+          toClient: !!(c && c.portalUid),
+        });
+        toast("Job open");
+        render();
+      } catch (e) {
+        toast("Couldn't save – check your connection");
+      }
+    };
   document.querySelectorAll(".pg-new").forEach(
     (b) =>
       (b.onclick = async () => {
@@ -283,6 +316,7 @@ function pgWire(site) {
   );
   const pr = pgRec(site);
   if (!pr) return;
+  if (pr.simple) pgSimpleWire(site);
   const redo = (fn) => {
     const p2 = pgRead(pgRec(site));
     fn(p2);
@@ -433,4 +467,69 @@ function pgClientHtml(C) {
         `<div class="pg-crow${s.done ? " pg-done" : ""}"><span>${s.done ? "✓ " : !s.done && s.from <= today && s.to >= today ? "▶ " : ""}${esc(s.name)}</span><span class="who">${esc(shortDay(s.from))}${s.to !== s.from ? " – " + esc(shortDay(s.to)) : ""}</span></div>`,
     )
     .join("")}</div>`;
+}
+/* a simple job (James, Nov 2026: "allow just open job and then close job for simple jobs that dont require a full
+   programme"): one stage, "The job", from the day it opens; closing it marks it done today, so the planner shows
+   the days it really took. It can be turned into a full programme at any time. */
+function pgSimpleHtml(pr) {
+  const s = (pr.stages || [])[0] || {};
+  const d = pgCalc(pr)[s.id] || { from: pr.start, to: pr.start };
+  return `<div class="card pg-sim"><div class="cardbody" style="border:0">
+    ${
+      s.done
+        ? `<div class="pg-simst done">✅ Job closed <b>${esc(shortDay(s.actTo || d.to))}</b></div><div class="who">Opened ${esc(shortDay(pr.start))} · ${pgWorkBetween(pr.start, s.actTo || d.to) + 1} working day${pgWorkBetween(pr.start, s.actTo || d.to) ? "s" : ""}</div>
+      <div class="actions"><button type="button" class="btn" id="pg-sreopen">↺ Reopen the job</button></div>`
+        : `<div class="pg-simst">🟢 Job open since <b>${esc(shortDay(pr.start))}</b></div>
+      <div class="grid2"><label for="pg-sstart">Opened<input id="pg-sstart" type="date" value="${esc(pr.start || "")}"></label><label for="pg-sfin2">Expected to finish<input id="pg-sfin2" type="date" value="${esc(s.days > 1 || pr.expFin ? d.to : "")}"></label></div>
+      <div class="actions"><button type="button" class="btn primary" id="pg-sclose">✅ Close the job</button></div>`
+    }
+    <div class="actions"><button type="button" class="btn" id="pg-sfull">📊 Turn it into a full programme</button><button type="button" class="btn danger" id="pg-del">Delete</button></div>
+  </div></div>`;
+}
+function pgSimpleWire(site) {
+  const save = async (fn, msg) => {
+    /* a copy of the saved one (the simple card has no stage table for pgRead to read) */
+    const p = JSON.parse(JSON.stringify(pgRec(site)));
+    fn(p, p.stages[0]);
+    try {
+      await pgSave(site, p, true);
+      if (msg) toast(msg);
+      render();
+    } catch (e) {
+      toast("Couldn't save – check your connection");
+    }
+  };
+  const today = iso(new Date());
+  if ($("pg-sclose"))
+    $("pg-sclose").onclick = () =>
+      save((p, s) => {
+        const st = pgOnWork(p.start || today);
+        s.done = true;
+        s.actFrom = st;
+        s.actTo = today < st ? st : today;
+      }, "Job closed");
+  if ($("pg-sreopen"))
+    $("pg-sreopen").onclick = () =>
+      save((p, s) => {
+        s.done = false;
+        delete s.actFrom;
+        delete s.actTo;
+      }, "Job open again");
+  if ($("pg-sstart"))
+    $("pg-sstart").onchange = (e) =>
+      save((p) => {
+        p.start = pgOnWork(e.target.value || today);
+      });
+  if ($("pg-sfin2"))
+    $("pg-sfin2").onchange = (e) =>
+      save((p, s) => {
+        const f = e.target.value;
+        p.expFin = f || "";
+        s.days = f && f > p.start ? pgWorkBetween(p.start, f) + 1 : 1;
+      });
+  if ($("pg-sfull"))
+    $("pg-sfull").onclick = () =>
+      save((p) => {
+        p.simple = false;
+      }, "Now a full programme – add the stages");
 }
