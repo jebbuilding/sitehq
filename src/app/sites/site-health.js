@@ -1,13 +1,13 @@
 /* ================= JOB HEALTH: how a job is going – money spent and left, what the client still owes, progress and what needs doing ================= */
 import { $, esc, gbp, hrs, iso, parse, shortDay } from "../core/helpers.js";
 import { S, isArchivedSite, ownerMode } from "../core/state.js";
-import { render } from "../core/tabs-week.js";
 import { nlGo } from "../owner/today.js";
 import { siteRec } from "../photos/photos.js";
 import { pgCalc, pgRec } from "../planner/programme.js";
 import { jbBudget } from "../sales/job-budget.js";
 import { jcData } from "../sales/job-costs.js";
 import { sdCalc, sdR2, sdStatus } from "../sales/sales-calc.js";
+import { goSite } from "./go-site.js";
 import { siteLabel } from "./job-details.js";
 import { same } from "./project-pages.js";
 import { onSiteNow } from "./roll-call.js";
@@ -216,11 +216,7 @@ function jhAllWire() {
   };
   d.querySelectorAll(".jh-row").forEach((r) => {
     const go = () => {
-      S.f.proj = r.dataset.s;
-      S.f.projList = false;
-      S.f.pjtab = "overview";
-      render();
-      window.scrollTo(0, 0);
+      goSite(r.dataset.s);
     };
     r.onclick = go;
     r.onkeydown = (e) => {

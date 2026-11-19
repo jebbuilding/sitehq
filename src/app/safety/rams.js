@@ -15,6 +15,7 @@ import { BRGB, pdfLogo } from "../photos/photos.js";
 import { CDMRA } from "./cdm-rams.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
+import { goSite } from "../sites/go-site.js";
 import { siteLabel } from "../sites/job-details.js";
 export { RA_PERMITS, RA_PPE, RA_WHO, openRaForm, raAll, raBlock, raPdf, viewRa, wireRa };
 const RA_HAZARDS = [
@@ -381,13 +382,7 @@ function viewRa(r, owner) {
   };
   if ($("rv-site"))
     $("rv-site").onclick = () => {
-      closeViewer();
-      S.otab = "projects";
-      S.f.projList = false;
-      S.f.proj = r.site;
-      render();
-      S.f.pjtab = "rams";
-      render();
+      goSite(r.site, "rams");
     };
   if ($("rv-file"))
     $("rv-file").onclick = async () => {

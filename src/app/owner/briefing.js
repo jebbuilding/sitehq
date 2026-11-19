@@ -14,6 +14,7 @@ import { csfPlan } from "../sales/cash-flow.js";
 import { gpToChase } from "../sales/getting-paid.js";
 import { sdSigned } from "../sales/sales-calc.js";
 import { appAll, appCalc } from "../sales/valuations.js";
+import { goSite } from "../sites/go-site.js";
 import { taskDone } from "../sites/job-sheets.js";
 import { rfiOver } from "../sites/rfi.js";
 import { onSiteNow } from "../sites/roll-call.js";
@@ -147,10 +148,7 @@ function brfLines() {
   });
   /* sign-off sheets not signed yet, and RFI answers that are late: open the (first) site they are on */
   const toSite = (site, tab) => () => {
-    S.f.proj = site;
-    S.f.projList = false;
-    S.f.pjtab = tab;
-    nlGo("projects");
+    goSite(site, tab);
   };
   safe(() => {
     const L = sodAll();

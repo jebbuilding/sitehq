@@ -19,10 +19,10 @@ import { $, esc, gbp, hrs, iso, parse, shortDay, store, toast } from "../core/he
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { closeViewer } from "../core/viewer.js";
 import { blobUrl, csvSave } from "../files/files.js";
 import { newId } from "../files/outbox.js";
 import { allTeam } from "../owner/owner.js";
+import { goSite } from "../sites/go-site.js";
 import { siteLabel } from "../sites/job-details.js";
 import { JOB_KINDS, jobProgress } from "../sites/job-sheets.js";
 import { same } from "../sites/project-pages.js";
@@ -183,13 +183,7 @@ function wireHist(c) {
               viewClient((S.clients || []).find((y) => y.id === c.id) || c);
             };
           } else if (x.type === "site") {
-            closeViewer();
-            S.f.proj = x.site;
-            S.f.projList = false;
-            S.f.pjtab = "overview";
-            S.otab = "projects";
-            store.set("jeb.otab", "projects");
-            render();
+            goSite(x.site);
           } else pastJobEditor(c, x);
         }),
     );

@@ -3,7 +3,8 @@ import { chatTime, chatTitle, openChat, unread, visibleChats } from "../chat/cha
 import { $, addDays, esc, hrs, iso } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { allTeam, nameOf } from "./owner.js";
-import { nlGo, nlOpenTab } from "./today.js";
+import { nlOpenTab } from "./today.js";
+import { goSite } from "../sites/go-site.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { projectSites, same } from "../sites/project-pages.js";
 import { smOpen } from "../sites/sites-map.js";
@@ -70,10 +71,7 @@ function tdWire() {
   document.querySelectorAll("#main .td-s").forEach(
     (b) =>
       (b.onclick = () => {
-        S.f.proj = b.dataset.s;
-        S.f.projList = false;
-        S.f.pjtab = "overview";
-        nlGo("projects");
+        goSite(b.dataset.s);
       }),
   );
   if ($("td-chats")) $("td-chats").onclick = () => nlOpenTab("chat");

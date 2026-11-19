@@ -271,3 +271,6 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .wu .wu-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
 .wu .drow{gap:12px}
 .wu .drow>span:last-child{text-align:right}
+.jb-list.jb-full{max-width:none;max-height:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.jb-list.jb-full .jb-item{border:1px solid var(--line);background:var(--surface)}
+.jb-job .jb-card .jb-acts #jb-sign{white-space:normal}

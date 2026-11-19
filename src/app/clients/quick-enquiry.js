@@ -26,7 +26,7 @@ import {
   wireClSteps,
 } from "./stages-planner.js";
 import { webEnqFiled } from "./web-enquiries.js";
-import { $, addDays, esc, gbp, iso, shortDay, stamp, store, toast } from "../core/helpers.js";
+import { $, addDays, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { RAW, S, ownerMode, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -41,6 +41,7 @@ import { toHM } from "../planner/diary.js";
 import { SAMPLES } from "../purchasing/samples.js";
 import { shrinkImage } from "../safety/training.js";
 import { jfOpenClient } from "../sales/job-file.js";
+import { goSite } from "../sites/go-site.js";
 import { editSiteJob, siteLabel, syncSiteJobs } from "../sites/job-details.js";
 import { dropPin, miniMap } from "../sites/maps-pins.js";
 import { same } from "../sites/project-pages.js";
@@ -600,12 +601,7 @@ ${clMediaHtml(c)}
     };
   if ($("cv-gosite"))
     $("cv-gosite").onclick = () => {
-      closeViewer();
-      S.f.proj = c.site;
-      S.f.projList = false;
-      S.otab = "projects";
-      store.set("jeb.otab", "projects");
-      render();
+      goSite(c.site);
     };
 }
 

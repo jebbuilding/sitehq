@@ -16,6 +16,7 @@ import { CDMRA } from "../safety/cdm-rams.js";
 import { cdmMaker, cdmSignState } from "../safety/cdm.js";
 import { ramsMaker, ramsTemplates, ukDate } from "../safety/rams-maker.js";
 import { indFor } from "../safety/site-inductions.js";
+import { goSite } from "./go-site.js";
 import { siteFull, siteLabel } from "./job-details.js";
 import { same } from "./project-pages.js";
 export { cdmShare, docFolders, docMove, drawShare, hsView };
@@ -442,13 +443,7 @@ function hsView() {
     .forEach(
       (b) =>
         (b.onclick = () => {
-          S.f.proj = b.dataset.s;
-          S.f.projList = false;
-          S.f.pjtab = "rams";
-          S.otab = "projects";
-          store.set("jeb.otab", "projects");
-          render();
-          window.scrollTo(0, 0);
+          goSite(b.dataset.s, "rams");
         }),
     );
   $("hs-pol").onclick = () => {
