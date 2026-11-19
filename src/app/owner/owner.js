@@ -51,6 +51,7 @@ import { crsLine } from "../timesheets/check-reasons.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
+import { mytCardHtml, mytWire } from "../timesheets/my-time.js";
 import { ncoCardHtml, ncoNothingHtml, ncoWire } from "../timesheets/not-checked-out.js";
 import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
@@ -433,12 +434,20 @@ function ownerTime() {
             : ncoNothingHtml(id)
         }</div></details>`;
   });
-  html = ncoCardHtml() + awCardHtml() + goneWorkCard() + shCardHtml() + pcCardHtml() + html;
+  html =
+    ncoCardHtml() +
+    mytCardHtml() +
+    awCardHtml() +
+    goneWorkCard() +
+    shCardHtml() +
+    pcCardHtml() +
+    html;
   $("main").innerHTML = html;
   wireFlt();
   wireGoneWork();
   ncoWire();
   awWire();
+  mytWire();
   shWire();
   pcWire();
   if ($("wu-open")) $("wu-open").onclick = () => wuOpen();
