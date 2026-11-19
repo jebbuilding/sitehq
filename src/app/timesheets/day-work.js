@@ -25,6 +25,7 @@ import { myName } from "../survey/door-window-survey.js";
 import { dwXlsPick } from "./day-work-xlsx.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "./filters.js";
 import { personEntries } from "./monthly-sheet.js";
+import { mytCardHtml, mytWire } from "./my-time.js";
 import { openEntry, sumH } from "./time.js";
 export { dayworkView, dwRate, dwTradeSheet, myDayworkView, pickPersonFor };
 const dwRate = (id) => {
@@ -137,6 +138,7 @@ function dayworkView() {
     ),
     grandM = list.reduce((a, e) => a + money(e), 0);
   $("main").innerHTML =
+    mytCardHtml() +
     `<div class="notice">🧱 <b>Day work</b> is chargeable time: anything trades log as <b>day work / extra to be billed</b>. Check it, add materials, then make a day work sheet for the client or mark it as billed.</div>
     <div class="actions"><button type="button" class="btn primary" id="dw-add">+ Add day work</button><button type="button" class="btn" id="dw-rates">🧱 Rates: ${r.def ? gbp(+r.def) + "/h" : "not set"}${Object.keys(r.per || {}).length ? " (+ personal rates)" : ""}</button></div>
     ${fltBar(
@@ -341,6 +343,7 @@ function dayworkView() {
     .querySelectorAll(".dwphb")
     .forEach((b) => (b.onclick = () => openFile(b.dataset.a, "photo.jpg", "image/jpeg")));
   $("dw-add").onclick = () => pickPersonFor("job");
+  mytWire();
   const picked = (card) => {
     const ks = [...card.querySelectorAll(".dw-pick:checked")].map((x) => x.dataset.k);
     const g = groups[card.dataset.s] || [];
