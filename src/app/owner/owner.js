@@ -35,6 +35,7 @@ import { wuOpen } from "./week-wrap.js";
 import { acView } from "../people/access.js";
 import { pvView } from "../people/portal-access.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
+import { dscOpen } from "../photos/doc-scan.js";
 import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
 import { kitView } from "../planner/kit-out.js";
 import { eqmView } from "../planner/plant-care.js";
@@ -796,7 +797,7 @@ function ownerPhotos() {
     .filter((p) => isSketch(p) && p.check === "open" && (!S.f.who || p.who === S.f.who))
     .sort((a, b) => (a.editedAt || a.created) - (b.editedAt || b.created));
   $("main").innerHTML =
-    `<div class="actions"><button class="btn primary" id="addD" type="button">✏️ Draw it out</button></div>
+    `<div class="actions"><button class="btn primary" id="addD" type="button">✏️ Draw it out</button><button class="btn primary" id="dsc-open" type="button">📄 Scan a document</button></div>
     <div class="notice">✏️ Trades have a <b>Draw it out</b> button on their Photos tab. When they send you a drawing it appears here under <b>Drawings to check</b>.</div>
     ${myd.length ? `<div class="flabel">My drawings</div><div class="phgrid">${myd.map((p) => photoTile(p, true, S.me)).join("")}</div>` : ""}
     ${tochk.length ? `<div class="flabel" style="margin-top:14px">Drawings to check (${tochk.length})</div><div class="phgrid sk-chk">${tochk.map((p) => photoTile(p, true, p.who)).join("")}</div><div class="flabel" style="margin-top:14px">This week</div>` : ""}<div class="filters"><label for="pf-when">Show<select id="pf-when">${[
@@ -813,6 +814,7 @@ function ownerPhotos() {
     <label for="pf-who">Employee<select id="pf-who"><option value="">Everyone</option>${ids.map((id) => `<option value="${esc(id)}" ${id === S.f.who ? "selected" : ""}>${esc(nameOf(id))}</option>`).join("")}</select></label></div>
     ${list.length ? `<div class="phgrid">${list.map((p) => photoTile(p, true, p.who)).join("")}</div>` : '<div class="empty"><strong>No photos ${pw==="week"?"this week":S.f.site?"for this site":"yet"}</strong>Photos your employees send appear here, stamped with site, time and location.</div>'}`;
   $("addD").onclick = ownerDrawing;
+  $("dsc-open").onclick = () => dscOpen();
   $("pf-site").onchange = (e) => {
     S.f.site = e.target.value;
     e.target.blur();
