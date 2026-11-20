@@ -92,6 +92,34 @@ function smBase(x0, y0, W, H, z) {
       return any ? `<path d="${d}Z"/>` : "";
     })
     .join("");
+  /* main roads: motorways from far out, A roads closer in, other main roads closer still; a road's number once */
+  const maxRoad = z <= 6 ? 1 : z <= 8 ? 2 : 3;
+  const named = new Set();
+  let roadLabels = "";
+  const roads = (m.roads || [])
+    .filter((r) => r[0] <= maxRoad)
+    .map(([cls, ref, pts]) => {
+      let d = "",
+        any = false,
+        mid = null;
+      pts.forEach(([lon, lat], i) => {
+        const [px, py] = smWorld(lat, lon, z);
+        const X = px - x0,
+          Y = py - y0;
+        if (X > -50 && X < W + 50 && Y > -50 && Y < H + 50) {
+          any = true;
+          if (!mid && X > 30 && X < W - 30 && Y > 20 && Y < H - 20) mid = [X, Y];
+        }
+        d += (i ? "L" : "M") + X.toFixed(1) + " " + Y.toFixed(1);
+      });
+      if (!any) return "";
+      if (ref && mid && z >= 8 && !named.has(ref)) {
+        named.add(ref);
+        roadLabels += `<span class="sm-rd r${cls}" style="left:${Math.round(mid[0])}px;top:${Math.round(mid[1])}px">${esc(ref)}</span>`;
+      }
+      return `<path class="r${cls}" d="${d}"/>`;
+    })
+    .join("");
   const maxTier = z <= 7 ? 1 : z <= 8 ? 2 : z <= 10 ? 3 : 4;
   const used = new Set();
   let labels = "";
@@ -106,7 +134,7 @@ function smBase(x0, y0, W, H, z) {
     used.add(k);
     labels += `<span class="sm-pl t${tier}" style="left:${Math.round(X)}px;top:${Math.round(Y)}px">${esc(nm)}</span>`;
   }
-  return `<svg class="sm-land" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${paths}</svg>${labels}`;
+  return `<svg class="sm-land" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${paths}<g class="sm-roads">${roads}</g></svg>${roadLabels}${labels}`;
 }
 /* towns to name when there are no map pictures: the ones given (cfg.towns), else each pin's own town */
 function smTowns() {
