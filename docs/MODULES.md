@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 272 files, 5281 KB, 125216 lines.
-- 2617 names declared at the top level (the shared scope); 1330 of them are used by a file other than the one that declares them.
-- 2877 file-to-file dependencies (file A uses at least one name from file B).
+- 272 files, 5286 KB, 125289 lines.
+- 2621 names declared at the top level (the shared scope); 1332 of them are used by a file other than the one that declares them.
+- 2878 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 230 files, 12 files depend on each other in a loop (directly or through other files); the other 30 files are outside any loop.
 
@@ -1915,9 +1915,9 @@ CIS RETURNS (owner): the monthly CIS return – what each subcontractor was paid
 
 EST DOCS: the job's information and documents, in the estimate or invoice window
 
-- 70 lines, 3.6 KB. Declares 3 names, 2 used elsewhere.
+- 73 lines, 3.8 KB. Declares 3 names, 2 used elsewhere.
 - **Used elsewhere:** `edcHtml` (2), `edcWire` (2)
-- **Uses names from 5 files:** `core/helpers.js` (2), `sales/job-file.js` (2), `core/state.js` (1), `files/in-app-files.js` (1), `photos/photos.js` (1)
+- **Uses names from 6 files:** `core/helpers.js` (2), `sales/job-file.js` (2), `sales/job-pricing.js` (2), `core/state.js` (1), `files/in-app-files.js` (1), `photos/photos.js` (1)
 - **Used by 2 files**
 
 ### `sales/est-files.js`
@@ -1978,10 +1978,10 @@ JOB FILE: every document, plan, price and photo for a job, in folders, tied to t
 
 JOB PRICING: one page to price a job – what it is, every price from suppliers and trades, then the estimate
 
-- 278 lines, 13 KB. Declares 7 names, 1 used elsewhere.
-- **Used elsewhere:** `jprOpen` (2)
+- 345 lines, 17 KB. Declares 11 names, 3 used elsewhere.
+- **Used elsewhere:** `jprOpen` (2), `jprCosts` (1), `jprCounts` (1)
 - **Uses names from 14 files:** `core/sheet.js` (5), `core/helpers.js` (4), `sales/est-docs.js` (2), `sales/job-file.js` (2), `sales/sales-calc.js` (2), `clients/stages-planner.js` (1), `core/state.js` (1), `core/viewer.js` (1), `files/files.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `safety/training.js` (1), `sales/estimating.js` (1), `sales/sales-edit.js` (1)
-- **Used by 2 files**
+- **Used by 3 files**
 
 ### `sales/letterhead-setup.js`
 
@@ -2176,7 +2176,7 @@ GO SITE: every tap on a site opens the same site page
 
 JOB DETAILS FOR TRADES (kept on the site record, which trades can read)
 
-- 1010 lines, 40 KB. Declares 51 names, 24 used elsewhere.
+- 1013 lines, 40 KB. Declares 51 names, 24 used elsewhere.
 - **Used elsewhere:** `siteLabel` (77), `siteFull` (41), `empTypeOf` (12), `jobNameOf` (7), `sjMaster` (5), `syncSiteJobs` (4), `siteHeadHtml` (3), `editSiteJob` (2), `siteJobCard` (2), `wireSjPhotos` (2), `clientJobCard` (1), `editSiteVis` (1), `siteFromClient` (1), `siteFront` (1), `siteHead` (1), `siteNameBar` (1), `siteNameSheet` (1), `siteSumHtml` (1), `sjClientOK` (1), `sjCopy` (1), `sjEffective` (1), `sjPayload` (1), `wireSiteNameBar` (1), `wireSiteSum` (1)
 - **Uses names from 17 files:** `core/helpers.js` (5), `clients/clients.js` (4), `core/sheet.js` (4), `clients/address-book.js` (3), `files/files.js` (3), `owner/owner.js` (3), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `people/employment-types.js` (1), `photos/photos.js` (1), `safety/training.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
 - **Used by 98 files**
