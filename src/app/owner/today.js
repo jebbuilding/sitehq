@@ -18,6 +18,7 @@ import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
+import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
 export {
   NL_BY,
   NL_SUBS,
@@ -495,7 +496,7 @@ function todayView() {
     }
     ${tdwCard()}
     ${jbTodayCard()}
-    ${pcTodayCard()}
+    ${chsCardHtml()}${pcTodayCard()}
     ${wuTodayCard()}
     ${wpCard()}
     <div class="nl-cols">
@@ -511,6 +512,7 @@ function todayView() {
   tdDeskWire();
   jbTodayWire();
   pcTodayWire();
+  chsWire();
   wuTodayWire();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();

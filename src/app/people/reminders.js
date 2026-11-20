@@ -45,7 +45,15 @@ export {
   wireSched,
 };
 const PROMPT_FORMS = {
-  timesheet: ["Fill in your timesheet", "time", () => openEntry("hours")],
+  timesheet: [
+    "Fill in your timesheet",
+    "time",
+    (ref) => {
+      /* a reminder for a missing day opens the timesheet on that day (timesheets/chase-hours.js) */
+      if (/^d{4}-dd-dd$/.test(ref || "")) S.entryDatePreset = ref;
+      openEntry("hours");
+    },
+  ],
   jobtime: ["Log your day work / job time", "time", () => openEntry("job")],
   "check-vehicle": ["Do a Vehicle check", "checks", () => openCheck("vehicle", null)],
   "check-digger": ["Do a Digger check", "checks", () => openCheck("digger", null)],

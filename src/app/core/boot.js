@@ -16,6 +16,7 @@ import { refreshNowWx, startNowBar } from "./now-bar.js";
 import { initOpening } from "./opening-screen.js";
 import { initReportIssue } from "./report-issue.js";
 import { initSheet } from "./sheet.js";
+import { smvBanner, smvBlock, smvIsOld } from "./site-moved.js";
 import { initSpellCheck } from "./spell-check.js";
 import { RAW, S, applyGone } from "./state.js";
 import { curTab, initTabsWeek, refreshJobDetail, render } from "./tabs-week.js";
@@ -102,6 +103,12 @@ initOpening();
   OB.db = await obOpen();
   refreshOutbox().then(flushOutbox);
   S.owner = await user.isOwner();
+  /* the old claude.ai copy, once the firm has moved to its own website: trades and clients get the moved screen
+     (what is still on their phone keeps sending); the owner gets a banner (core/site-moved.js) */
+  if (smvIsOld()) {
+    if (!S.owner) return smvBlock();
+    smvBanner();
+  }
   db.collection("sites").onSnapshot(
     (snap) => {
       S.sites = mapDocs(snap)
@@ -224,6 +231,8 @@ initOpening();
         S.wnSnooze = all.find((t) => t.kind === "wnsnooze") || null;
         S.stageTpls = all.filter((t) => t.kind === "stagetpl");
         S.programmes = all.filter((t) => t.kind === "programme");
+        S.weekCloses = all.filter((t) => t.kind === "weekclose");
+        S.payRates = all.find((t) => t.kind === "payrates") || null;
         S.vatReturns = all.filter((t) => t.kind === "vatreturn");
         S.rfqs = all.filter((t) => t.kind === "rfq");
         S.valuations = all.filter((t) => t.kind === "valuation");
