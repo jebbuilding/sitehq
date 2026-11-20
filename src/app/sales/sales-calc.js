@@ -310,7 +310,10 @@ function sdNextNumber(type, pf) {
   const k = type === "estimate" ? "nextEst" : pf ? "nextPf" : "nextInv";
   const used = sdSales()
     .filter((d) => d.type === type && (type === "estimate" || !!pf === sdIsPf(d)))
-    .map((d) => +d.number || 0);
+    .flatMap((d) =>
+      [+d.number || 0].concat((d.versions || []).map((v) => +((v.snap || {}).number || 0))),
+    )
+    .concat([0]);
   return Math.max(+sdSet()[k] || 1, used.length ? Math.max(...used) + 1 : 1);
 }
 /* UK tax year (6 April – 5 April) that a date falls in: its start year */

@@ -98,7 +98,11 @@ async function sdPdf(d) {
   const ink = () => doc.setTextColor(20, 20, 20);
   const red = () => doc.setTextColor(...brand);
   const logo = await sdImgData(lhLogoId());
-  const sig = await sdImgData(set.sigId);
+  /* the signature from My signature (estimate settings), else the one on the owner's own record */
+  const sig = await sdImgData(set.sigId || (S.myProfile && S.myProfile.sigId) || "");
+  /* who wrote it: the name on this estimate or invoice, else the owner's */
+  const byName = d.byName || co.owner;
+  const terms = d.terms != null ? d.terms : est ? set.terms : set.invTerms;
   const headLines = sdHeadLines();
   const pics = await lhPics();
   if (pics && pics.bot) BOT = Math.min(BOT, pics.bot.y - 12);
@@ -369,14 +373,22 @@ async function sdPdf(d) {
       doc.addImage(sig.u, sig.f, M - 9, y, sig.w * k, sig.h * k, "sdsig", "FAST");
       y += sig.h * k + 4;
     } else y += 12;
-    para(co.owner, { gap: 0 });
+    para(byName, { gap: 0 });
     const rule = () => {
       doc.setDrawColor(...brand);
       doc.setLineWidth(0.3);
       doc.line(M, y - 5, R, y - 5);
     };
-    if (set.terms)
-      sdTermsPages(set, { head: newPage, para, list, rule, at: () => y, set: (v) => (y = v), M });
+    if (terms)
+      sdTermsPages(Object.assign({}, set, { terms }), {
+        head: newPage,
+        para,
+        list,
+        rule,
+        at: () => y,
+        set: (v) => (y = v),
+        M,
+      });
   } else {
     /* invoice: set out like the estimate letter – address, number, dates, Re:, the costs, totals, how to pay, sign-off */
     const pf = sdIsPf(d);
@@ -508,7 +520,14 @@ async function sdPdf(d) {
       doc.addImage(sig.u, sig.f, M - 9, y, sig.w * k, sig.h * k, "sdsig", "FAST");
       y += sig.h * k + 4;
     } else y += 10;
-    para(co.owner, { gap: 0 });
+    para(byName, { gap: 0 });
+    /* the invoice's own terms (James, Nov 2026), under the sign-off */
+    if (String(terms || "").trim()) {
+      need(18);
+      y += 6;
+      para("Terms", { st: "bold", gap: 2 });
+      paras(terms, { gap: 3 });
+    }
   }
   /* footer on every page */
   const n = doc.getNumberOfPages();

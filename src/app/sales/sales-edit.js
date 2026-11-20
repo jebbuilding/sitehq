@@ -4,6 +4,8 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
+import { coData } from "../owner/company-details.js";
+import { edcHtml, edcWire } from "./est-docs.js";
 import { efMount } from "./est-files.js";
 import { jfFor, jfOpen } from "./job-file.js";
 import {
@@ -115,6 +117,10 @@ function sdEdit(d0) {
     JSON.parse(JSON.stringify(d0)),
   );
   if (!d.number) d.number = String(sdNextNumber(d.type, sdIsPf(d)));
+  /* each one starts with the standard terms and the name of who wrote it, and keeps its own copy to change
+     (James, Nov 2026: "set terms that automatically start with them and then i can adjust each one") */
+  if (d.terms == null) d.terms = est ? set.terms || "" : set.invTerms || "";
+  if (d.byName == null) d.byName = coData().owner || (S.myProfile && S.myProfile.name) || "";
   if (est) {
     /* everything the estimate says, from its own record (a brought-in Word estimate keeps its own), else the usual */
     if (d.intro == null) d.intro = set.intro;
@@ -138,7 +144,7 @@ function sdEdit(d0) {
     .slice()
     .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   openViewer(`<div class="sd-ed">
-    <div class="sd-edtop"><h3 style="margin:0">${est ? "📝 Estimate " + esc(d.number) + ((+d.ver || 1) > 1 ? " · version " + d.ver : "") : "🧾 " + esc(SD_IK[sdIk(d)]) + " " + esc(sdNo(d))}</h3>${d0.id ? sdTag(d) : ""}</div>
+    <div class="sd-edtop"><h3 style="margin:0">${est ? "📝 Estimate " + esc(d.number) + ((+d.ver || 1) > 1 ? " · version " + d.ver + (d.firstNo && d.firstNo !== d.number ? " (first sent as " + esc(d.firstNo) + ")" : "") : "") : "🧾 " + esc(SD_IK[sdIk(d)]) + " " + esc(sdNo(d))}</h3>${d0.id ? sdTag(d) : ""}</div>
     ${est && (d.versions || []).length ? `<div class="who sd-vers">Earlier versions: ${d.versions.map((v, i) => `<button type="button" class="pillbtn sd-vpdf" data-i="${i}">v${v.ver} · ${esc(shortDay(v.date || ""))} · ${gbp(v.net || 0)} 📄</button>`).join(" ")}</div>` : ""}
     ${
       !est
@@ -173,6 +179,7 @@ function sdEdit(d0) {
           : `<div class="notice">Waiting for ${esc(d.client)} to sign (sent ${esc(stamp(x.created))}).</div>`;
     })()}
     ${sdJobHtml(d)}
+    ${edcHtml(d)}
     <div class="grid2">
       <label for="sd-no">${est ? "Estimate" : "Invoice"} number<input id="sd-no" maxlength="20" value="${esc(d.number)}"></label>
       <label for="sd-date">Date<input id="sd-date" type="date" value="${esc(d.date)}"></label>
@@ -224,6 +231,8 @@ function sdEdit(d0) {
       <label for="sd-ret">Retention held back %<input id="sd-ret" type="number" inputmode="decimal" step="0.5" value="${esc(d.ret || "")}" placeholder="e.g. 5"></label></div>`
     }
     <label for="sd-notes">Notes on the ${est ? "estimate" : "invoice"} (optional)<textarea id="sd-notes" rows="2" maxlength="2000">${esc(d.notes || "")}</textarea></label>
+    <label for="sd-by">Written by (your name under your signature)<input id="sd-by" maxlength="80" value="${esc(d.byName || "")}"></label>
+    <details class="sd-tdet"><summary>📜 Terms on this ${est ? "estimate" : "invoice"}<span class="who"> – your standard terms, change them for this one if you need to</span></summary><textarea id="sd-terms" rows="10" maxlength="80000">${esc(d.terms || "")}</textarea><button type="button" class="linkbtn" id="sd-tstd">↺ Put back my standard terms</button></details>
     <div class="sd-tot" id="sd-tot"></div>
     ${!est && (d.payments || []).length ? `<div class="flabel">Payments</div>${d.payments.map((p, i) => `<div class="drow"><span>${esc(shortDay(p.date))}${p.note ? " · " + esc(p.note) : ""}</span><span>${gbp(p.amt)} <button type="button" class="pillbtn sd-rcpt" data-i="${i}">🧾 ${p.receiptAt ? "Receipt sent" : "Send a receipt"}</button> <button type="button" class="linkdanger sd-pdel" data-i="${i}">Remove</button></span></div>`).join("")}` : ""}
     <div class="sd-edacts">
@@ -285,6 +294,8 @@ function sdEdit(d0) {
       title: $("sd-title").value.trim(),
       site: $("sd-site").value.trim(),
       notes: $("sd-notes").value.trim(),
+      terms: $("sd-terms").value,
+      byName: $("sd-by").value.trim(),
       inc: $("sd-inc") ? $("sd-inc").value === "1" : false,
       lines: lines.filter((l) => (l.h ? l.d || l.w || l.a !== "" : l.d || l.a !== "")),
     });
@@ -568,18 +579,31 @@ function sdEdit(d0) {
       };
       $("sv-new").onclick = async () => {
         const snap = {};
-        VER_KEYS.concat(["date", "number"]).forEach((k) => (snap[k] = d0[k]));
+        VER_KEYS.concat(["date", "number", "terms"]).forEach((k) => (snap[k] = d0[k]));
+        /* a new version also gets its own estimate number; the first number is kept (James, Nov 2026: "a new estimate
+           number but also a version number") */
+        const newNo = String(sdNextNumber("estimate"));
         const versions = (d0.versions || []).concat([
           { ver: v, date: d0.date, net: sdCalc(d0).net, sentAt: d0.sentAt || 0, snap },
         ]);
         closeForm();
         if (
           await save(
-            { ver: v + 1, versions, status: "draft", sentAt: 0, date: iso(new Date()) },
+            {
+              ver: v + 1,
+              versions,
+              number: newNo,
+              firstNo: d0.firstNo || d0.number,
+              status: "draft",
+              sentAt: 0,
+              date: iso(new Date()),
+            },
             true,
           )
         ) {
-          toast("Saved as version " + (v + 1) + " – send it when it's ready");
+          toast(
+            "Saved as estimate " + newNo + ", version " + (v + 1) + " – send it when it's ready",
+          );
           done();
         }
       };
@@ -587,6 +611,12 @@ function sdEdit(d0) {
     }
     if (await save()) done();
   };
+  edcWire(d);
+  if ($("sd-tstd"))
+    $("sd-tstd").onclick = () => {
+      $("sd-terms").value = est ? set.terms || "" : set.invTerms || "";
+      toast("Your standard terms are back – Save to keep them");
+    };
   document.querySelectorAll(".sd-vpdf").forEach(
     (b) =>
       (b.onclick = () => {
