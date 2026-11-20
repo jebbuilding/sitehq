@@ -54,7 +54,7 @@ import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/fil
 import { openPersonMonth } from "../timesheets/monthly-sheet.js";
 import { mytCardHtml, mytWire } from "../timesheets/my-time.js";
 import { ncoCardHtml, ncoNothingHtml, ncoWire } from "../timesheets/not-checked-out.js";
-import { otmButtons, otmLine, otmWire } from "../timesheets/overtime.js";
+import { otmButtons, otmCardHtml, otmCardWire, otmLine, otmWire } from "../timesheets/overtime.js";
 import { openPaySummary } from "../timesheets/pay-summary.js";
 import { psyncHtml } from "../timesheets/phone-sync.js";
 import { pcCardHtml, pcWire } from "../timesheets/plan-check.js";
@@ -439,6 +439,7 @@ function ownerTime() {
   });
   html =
     psyncHtml() +
+    otmCardHtml() +
     chsCardHtml() +
     ncoCardHtml() +
     mytCardHtml() +
@@ -454,6 +455,7 @@ function ownerTime() {
   awWire();
   mytWire();
   chsWire();
+  otmCardWire();
   if ($("wkc-open")) $("wkc-open").onclick = wkcOpen;
   shWire();
   pcWire();

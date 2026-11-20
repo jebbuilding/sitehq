@@ -16,7 +16,7 @@ import { refreshNowWx, startNowBar } from "./now-bar.js";
 import { initOpening } from "./opening-screen.js";
 import { initReportIssue } from "./report-issue.js";
 import { initSheet } from "./sheet.js";
-import { smvBanner, smvBlock, smvIsOld } from "./site-moved.js";
+import { smvBlock, smvIsOld } from "./site-moved.js";
 import { initSpellCheck } from "./spell-check.js";
 import { RAW, S, applyGone } from "./state.js";
 import { curTab, initTabsWeek, refreshJobDetail, render } from "./tabs-week.js";
@@ -104,11 +104,9 @@ initOpening();
   refreshOutbox().then(flushOutbox);
   S.owner = await user.isOwner();
   /* the old claude.ai copy, once the firm has moved to its own website: trades and clients get the moved screen
-     (what is still on their phone keeps sending); the owner gets a banner (core/site-moved.js) */
-  if (smvIsOld()) {
-    if (!S.owner) return smvBlock();
-    smvBanner();
-  }
+     (what is still on their phone keeps sending); the owner sees it as normal, with no banner (James, 20 Nov 2026:
+     it covered the top of the page) – core/site-moved.js */
+  if (smvIsOld() && !S.owner) return smvBlock();
   db.collection("sites").onSnapshot(
     (snap) => {
       S.sites = mapDocs(snap)

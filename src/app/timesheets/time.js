@@ -45,6 +45,7 @@ import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
 import { chsTradeHtml, chsTradeWire } from "./chase-hours.js";
 import {
+  CRS_EARLY_MIN,
   crsArrived,
   crsEarlyAsk,
   crsIsEarly,
@@ -185,7 +186,9 @@ async function checkInAt(site, extra = {}) {
 async function checkOut(e, extra = {}) {
   const D = dayFor(S.me);
   const actual = nowHM();
-  const finish = toMin(actual) > toMin(D.e) ? D.e : actual;
+  /* within 30 minutes of the usual finish (either side) it stops at the finish; earlier is an early finish, asked
+     about first (timesheets/check-reasons.js) – James, Nov 2026 */
+  const finish = toMin(actual) >= toMin(D.e) - CRS_EARLY_MIN ? D.e : actual;
   const br = lunchBreak(e.start, finish, D);
   const data = Object.assign(
     {},

@@ -1,12 +1,14 @@
 /* ================= OVERTIME: trades ask for an early start or late finish to be paid; James approves it ================= */
 import { bossFirst } from "../core/company-names.js";
-import { $, calcHours, esc, lunchBreak, toMin, toast } from "../core/helpers.js";
+import { $, calcHours, esc, lunchBreak, shortDay, toMin, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { submitJob } from "../files/outbox.js";
+import { allIds, nameOf } from "../owner/owner.js";
+import { siteLabel } from "../sites/job-details.js";
 import { dayFor } from "./working-day.js";
-export { otmAsk, otmButtons, otmLine, otmOffer, otmWire };
+export { otmAsk, otmButtons, otmCardHtml, otmCardWire, otmLine, otmOffer, otmWire };
 /* Checking in before the start of someone's usual day, or out after its finish, still pays the usual day – unless
    they ask for the extra as overtime. At check-out, if they arrived at least 10 minutes early or left at least 10
    minutes late, they're asked: tick early and/or late, say why, and it goes to James. On the owner's timesheet the
@@ -174,3 +176,25 @@ const otmHours = (list) =>
       .filter((e) => e.ot && e.ot.status === "ok")
       .reduce((a, e) => a + (e.ot.early || 0) + (e.ot.late || 0) + (e.ot.lunch || 0), 0) / 0.6,
   ) / 100;
+/* James is told: every overtime ask still waiting, on Today and Timesheets, with Pay / Decline (James, Nov 2026:
+   "if they start early or finish late they can state that … and notifies me of this") */
+function otmAskedList() {
+  const out = [];
+  allIds().forEach((id) =>
+    (S.data.entries[id] || []).forEach((e) => {
+      if (e.ot && e.ot.status === "asked") out.push(Object.assign({}, e, { _src: e._src || id }));
+    }),
+  );
+  return out.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+}
+function otmCardHtml() {
+  if (!S.owner || S.preview) return "";
+  const L = otmAskedList();
+  if (!L.length) return "";
+  return `<div class="card otm-card"><div class="cardbody" style="border:0"><div class="otm-h">⏱ Extra hours to approve (${L.length})</div>
+    ${L.map((e) => `<div class="otm-row"><div><b>${esc(nameOf(e._src))}</b> <span class="who">${esc(shortDay(e.date))} · ${esc(siteLabel(e.job))}</span>${otmLine(e)}</div>${otmButtons(e)}</div>`).join("")}
+    <div class="who">Pay it and their hours change to the times they gave; decline and their usual day is paid.</div></div></div>`;
+}
+function otmCardWire() {
+  document.querySelectorAll("#main .otm-card").forEach((c) => otmWire(c, "", otmAskedList));
+}

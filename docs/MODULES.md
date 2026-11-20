@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 264 files, 4867 KB, 123310 lines.
-- 2560 names declared at the top level (the shared scope); 1309 of them are used by a file other than the one that declares them.
-- 2798 file-to-file dependencies (file A uses at least one name from file B).
+- 264 files, 4869 KB, 123334 lines.
+- 2563 names declared at the top level (the shared scope); 1311 of them are used by a file other than the one that declares them.
+- 2801 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 223 files, 12 files depend on each other in a loop (directly or through other files); the other 29 files are outside any loop.
 
@@ -28,11 +28,11 @@ The de facto shared API: names used by the most files.
 | `openSheet` | `core/sheet.js` | 122 files |
 | `formFoot` | `core/sheet.js` | 118 files |
 | `showErr` | `core/sheet.js` | 114 files |
-| `nameOf` | `owner/owner.js` | 94 files |
+| `nameOf` | `owner/owner.js` | 95 files |
 | `newId` | `files/outbox.js` | 91 files |
-| `shortDay` | `core/helpers.js` | 82 files |
+| `shortDay` | `core/helpers.js` | 83 files |
 | `ownerMode` | `core/state.js` | 75 files |
-| `siteLabel` | `sites/job-details.js` | 74 files |
+| `siteLabel` | `sites/job-details.js` | 75 files |
 | `coData` | `owner/company-details.js` | 56 files |
 | `gbp` | `core/helpers.js` | 56 files |
 | `uploadFile` | `files/files.js` | 54 files |
@@ -376,9 +376,9 @@ phone / browser Back button: steps back through the app (closes the top pop-up, 
 
 BOOT: get the platform (database, user, files, downloads), work out who is signed in, start the app
 
-- 372 lines, 12 KB. Declares 0 names, 0 used elsewhere.
+- 370 lines, 12 KB. Declares 0 names, 0 used elsewhere.
 - **Used elsewhere:** nothing
-- **Uses names from 38 files:** `files/outbox.js` (5), `chat/chat.js` (4), `core/tabs-week.js` (4), `core/data.js` (3), `core/site-moved.js` (3), `core/state.js` (3), `clients/portal.js` (2), `core/now-bar.js` (2), `files/in-app-files.js` (2), `calculators/roofing.js` (1), `clients/job-story.js` (1), `clients/quick-enquiry.js` (1), `clients/sign-offs.js` (1), `clients/web-enquiries.js` (1), `core/ask-claude.js` (1), `core/back-button.js` (1), `core/dictation.js` (1), `core/helpers.js` (1), `core/live-feed.js` (1), `core/opening-screen.js` (1), `core/report-issue.js` (1), `core/sheet.js` (1), `core/spell-check.js` (1), `core/viewer.js` (1), `drawing/construction-details.js` (1), `drawing/paving.js` (1), `drawing/symbols-more.js` (1), `files/files.js` (1), `files/print.js` (1), `files/scale-ruler.js` (1), `owner/deleted-items.js` (1), `people/foreman.js` (1), `photos/photo-test.js` (1), `photos/photos.js` (1), `photos/select-zip.js` (1), `purchasing/suppliers.js` (1), `safety/expiry-dates.js` (1), `sites/maps-pins.js` (1)
+- **Uses names from 38 files:** `files/outbox.js` (5), `chat/chat.js` (4), `core/tabs-week.js` (4), `core/data.js` (3), `core/state.js` (3), `clients/portal.js` (2), `core/now-bar.js` (2), `core/site-moved.js` (2), `files/in-app-files.js` (2), `calculators/roofing.js` (1), `clients/job-story.js` (1), `clients/quick-enquiry.js` (1), `clients/sign-offs.js` (1), `clients/web-enquiries.js` (1), `core/ask-claude.js` (1), `core/back-button.js` (1), `core/dictation.js` (1), `core/helpers.js` (1), `core/live-feed.js` (1), `core/opening-screen.js` (1), `core/report-issue.js` (1), `core/sheet.js` (1), `core/spell-check.js` (1), `core/viewer.js` (1), `drawing/construction-details.js` (1), `drawing/paving.js` (1), `drawing/symbols-more.js` (1), `files/files.js` (1), `files/print.js` (1), `files/scale-ruler.js` (1), `owner/deleted-items.js` (1), `people/foreman.js` (1), `photos/photo-test.js` (1), `photos/photos.js` (1), `photos/select-zip.js` (1), `purchasing/suppliers.js` (1), `safety/expiry-dates.js` (1), `sites/maps-pins.js` (1)
 - **Used by 0 files**
 
 ### `core/company-names.js`
@@ -422,7 +422,7 @@ GENERIC FIELDS
 HELPERS: page lookups, dates, money and hours formatting, toast, working-day times, local storage
 
 - 123 lines, 3.3 KB. Declares 21 names, 20 used elsewhere.
-- **Used elsewhere:** `esc` (203), `$` (192), `toast` (171), `iso` (126), `shortDay` (82), `gbp` (56), `stamp` (53), `parse` (50), `addDays` (47), `store` (30), `hrs` (23), `monday` (18), `toMin` (8), `dayLabel` (6), `nowHM` (6), `calcHours` (4), `fsize` (4), `dayLine` (3), `lunchBreak` (3), `pad` (3)
+- **Used elsewhere:** `esc` (203), `$` (192), `toast` (171), `iso` (126), `shortDay` (83), `gbp` (56), `stamp` (53), `parse` (50), `addDays` (47), `store` (30), `hrs` (23), `monday` (18), `toMin` (8), `dayLabel` (6), `nowHM` (6), `calcHours` (4), `fsize` (4), `dayLine` (3), `lunchBreak` (3), `pad` (3)
 - **Uses names from 0 files:** none
 - **Used by 224 files**
 
@@ -484,8 +484,8 @@ SHEET (forms)
 
 SITE MOVED: the old claude.ai copy sends everyone to the firm's own website
 
-- 33 lines, 2.2 KB. Declares 4 names, 3 used elsewhere.
-- **Used elsewhere:** `smvBlock` (2), `smvBanner` (1), `smvIsOld` (1)
+- 25 lines, 1.7 KB. Declares 3 names, 2 used elsewhere.
+- **Used elsewhere:** `smvBlock` (2), `smvIsOld` (1)
 - **Uses names from 2 files:** `core/helpers.js` (1), `core/state.js` (1)
 - **Used by 2 files**
 
@@ -1123,10 +1123,10 @@ PLANNING LEADS (owner only): moved in from the Devon Planning Leads page
 
 OWNER
 
-- 1198 lines, 54 KB. Declares 27 names, 19 used elsewhere.
-- **Used elsewhere:** `nameOf` (94), `teamIds` (52), `allTeam` (44), `crewIds` (6), `roleOf` (4), `roleShort` (3), `sheetOf` (3), `startPreview` (3), `teamPlusMe` (3), `weekEntries` (3), `allIds` (2), `checkDetail` (2), `roleTag` (2), `companyOf` (1), `openStopFor` (1), `ownerInvoices` (1), `ownerPhotos` (1), `ownerSetup` (1), `ownerTime` (1)
-- **Uses names from 49 files:** `core/helpers.js` (14), `core/state.js` (5), `timesheets/filters.js` (5), `core/sheet.js` (4), `photos/photos.js` (4), `safety/expiry-dates.js` (4), `core/fields.js` (3), `sites/job-details.js` (3), `timesheets/not-checked-out.js` (3), `timesheets/overtime.js` (3), `timesheets/time.js` (3), `timesheets/working-day.js` (3), `core/tabs-week.js` (2), `drawing/trade-drawings.js` (2), `files/files.js` (2), `owner/backup.js` (2), `owner/company-details.js` (2), `owner/today-desk.js` (2), `people/reminders.js` (2), `purchasing/invoices.js` (2), `safety/checklists.js` (2), `sales/letterhead-setup.js` (2), `timesheets/all-weeks.js` (2), `timesheets/chase-hours.js` (2), `timesheets/my-time.js` (2), `timesheets/plan-check.js` (2), `timesheets/stray-hours.js` (2), `timesheets/week-close.js` (2), `core/company-names.js` (1), `core/data.js` (1), `core/dictation.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `owner/deletion-record.js` (1), `owner/reports.js` (1), `owner/week-wrap.js` (1), `people/access.js` (1), `people/portal-access.js` (1), `photos/doc-scan.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `purchasing/materials-receipts.js` (1), `sites/roll-call.js` (1), `timesheets/check-reasons.js` (1), `timesheets/day-work.js` (1), `timesheets/monthly-sheet.js` (1), `timesheets/pay-summary.js` (1), `timesheets/phone-sync.js` (1), `timesheets/quick-week.js` (1)
-- **Used by 102 files**
+- 1200 lines, 54 KB. Declares 27 names, 19 used elsewhere.
+- **Used elsewhere:** `nameOf` (95), `teamIds` (52), `allTeam` (44), `crewIds` (6), `roleOf` (4), `allIds` (3), `roleShort` (3), `sheetOf` (3), `startPreview` (3), `teamPlusMe` (3), `weekEntries` (3), `checkDetail` (2), `roleTag` (2), `companyOf` (1), `openStopFor` (1), `ownerInvoices` (1), `ownerPhotos` (1), `ownerSetup` (1), `ownerTime` (1)
+- **Uses names from 49 files:** `core/helpers.js` (14), `core/state.js` (5), `timesheets/filters.js` (5), `timesheets/overtime.js` (5), `core/sheet.js` (4), `photos/photos.js` (4), `safety/expiry-dates.js` (4), `core/fields.js` (3), `sites/job-details.js` (3), `timesheets/not-checked-out.js` (3), `timesheets/time.js` (3), `timesheets/working-day.js` (3), `core/tabs-week.js` (2), `drawing/trade-drawings.js` (2), `files/files.js` (2), `owner/backup.js` (2), `owner/company-details.js` (2), `owner/today-desk.js` (2), `people/reminders.js` (2), `purchasing/invoices.js` (2), `safety/checklists.js` (2), `sales/letterhead-setup.js` (2), `timesheets/all-weeks.js` (2), `timesheets/chase-hours.js` (2), `timesheets/my-time.js` (2), `timesheets/plan-check.js` (2), `timesheets/stray-hours.js` (2), `timesheets/week-close.js` (2), `core/company-names.js` (1), `core/data.js` (1), `core/dictation.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `owner/deletion-record.js` (1), `owner/reports.js` (1), `owner/week-wrap.js` (1), `people/access.js` (1), `people/portal-access.js` (1), `photos/doc-scan.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `purchasing/materials-receipts.js` (1), `sites/roll-call.js` (1), `timesheets/check-reasons.js` (1), `timesheets/day-work.js` (1), `timesheets/monthly-sheet.js` (1), `timesheets/pay-summary.js` (1), `timesheets/phone-sync.js` (1), `timesheets/quick-week.js` (1)
+- **Used by 103 files**
 
 ### `owner/pin.js`
 
@@ -1186,9 +1186,9 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 572 lines, 23 KB. Declares 23 names, 11 used elsewhere.
+- 574 lines, 23 KB. Declares 23 names, 11 used elsewhere.
 - **Used elsewhere:** `nlGo` (5), `nlOpenTab` (5), `coTileOf` (3), `NL_BY` (2), `nlBrandHtml` (2), `nlSectionView` (2), `NL_SUBS` (1), `nlApply` (1), `nlName` (1), `nlOn` (1), `todayView` (1)
-- **Uses names from 20 files:** `owner/today-desk.js` (5), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `clients/address-book.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/search.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
+- **Uses names from 21 files:** `owner/today-desk.js` (5), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `timesheets/overtime.js` (2), `clients/address-book.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/search.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 14 files**
 
 ### `owner/todo-lists.js`
@@ -2114,9 +2114,9 @@ GO SITE: every tap on a site opens the same site page
 JOB DETAILS FOR TRADES (kept on the site record, which trades can read)
 
 - 990 lines, 39 KB. Declares 50 names, 23 used elsewhere.
-- **Used elsewhere:** `siteLabel` (74), `siteFull` (41), `empTypeOf` (12), `jobNameOf` (7), `sjMaster` (5), `syncSiteJobs` (4), `siteHeadHtml` (3), `editSiteJob` (2), `siteJobCard` (2), `wireSjPhotos` (2), `clientJobCard` (1), `editSiteVis` (1), `siteFromClient` (1), `siteFront` (1), `siteHead` (1), `siteNameBar` (1), `siteSumHtml` (1), `sjClientOK` (1), `sjCopy` (1), `sjEffective` (1), `sjPayload` (1), `wireSiteNameBar` (1), `wireSiteSum` (1)
+- **Used elsewhere:** `siteLabel` (75), `siteFull` (41), `empTypeOf` (12), `jobNameOf` (7), `sjMaster` (5), `syncSiteJobs` (4), `siteHeadHtml` (3), `editSiteJob` (2), `siteJobCard` (2), `wireSjPhotos` (2), `clientJobCard` (1), `editSiteVis` (1), `siteFromClient` (1), `siteFront` (1), `siteHead` (1), `siteNameBar` (1), `siteSumHtml` (1), `sjClientOK` (1), `sjCopy` (1), `sjEffective` (1), `sjPayload` (1), `wireSiteNameBar` (1), `wireSiteSum` (1)
 - **Uses names from 17 files:** `core/helpers.js` (5), `clients/clients.js` (4), `core/sheet.js` (4), `clients/address-book.js` (3), `files/files.js` (3), `owner/owner.js` (3), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `people/employment-types.js` (1), `photos/photos.js` (1), `safety/training.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
-- **Used by 95 files**
+- **Used by 96 files**
 
 ### `sites/job-pack.js`
 
@@ -2329,8 +2329,8 @@ CHASE HOURS: missing timesheets found the next morning, reminders in one tap, an
 
 CHECK REASONS: late in, early out, and moving to another job during the day
 
-- 170 lines, 7.2 KB. Declares 15 names, 8 used elsewhere.
-- **Used elsewhere:** `crsLine` (2), `crsArrived` (1), `crsEarlyAsk` (1), `crsIsEarly` (1), `crsIsLate` (1), `crsLateAsk` (1), `crsMove` (1), `crsTravelHtml` (1)
+- 173 lines, 7.3 KB. Declares 16 names, 9 used elsewhere.
+- **Used elsewhere:** `crsLine` (2), `CRS_EARLY_MIN` (1), `crsArrived` (1), `crsEarlyAsk` (1), `crsIsEarly` (1), `crsIsLate` (1), `crsLateAsk` (1), `crsMove` (1), `crsTravelHtml` (1)
 - **Uses names from 9 files:** `core/helpers.js` (6), `core/sheet.js` (4), `core/fields.js` (3), `core/state.js` (2), `timesheets/time.js` (2), `core/tabs-week.js` (1), `files/outbox.js` (1), `sites/job-details.js` (1), `timesheets/non-site-time.js` (1)
 - **Used by 2 files**
 
@@ -2401,10 +2401,10 @@ NOT CHECKED OUT: trades still checked in from an earlier day, and when each last
 
 OVERTIME: trades ask for an early start or late finish to be paid; James approves it
 
-- 176 lines, 8.0 KB. Declares 9 names, 5 used elsewhere.
-- **Used elsewhere:** `otmAsk` (2), `otmLine` (2), `otmButtons` (1), `otmOffer` (1), `otmWire` (1)
-- **Uses names from 7 files:** `core/helpers.js` (6), `core/sheet.js` (4), `core/company-names.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `timesheets/working-day.js` (1)
-- **Used by 3 files**
+- 200 lines, 9.3 KB. Declares 12 names, 7 used elsewhere.
+- **Used elsewhere:** `otmAsk` (2), `otmCardHtml` (2), `otmCardWire` (2), `otmLine` (2), `otmButtons` (1), `otmOffer` (1), `otmWire` (1)
+- **Uses names from 9 files:** `core/helpers.js` (7), `core/sheet.js` (4), `owner/owner.js` (2), `core/company-names.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `sites/job-details.js` (1), `timesheets/working-day.js` (1)
+- **Used by 4 files**
 
 ### `timesheets/pay-summary.js`
 
@@ -2455,9 +2455,9 @@ STRAY HOURS: time booked to a name that isn't one of the jobs
 
 EMPLOYEE: TIME
 
-- 635 lines, 25 KB. Declares 13 names, 8 used elsewhere.
+- 638 lines, 25 KB. Declares 13 names, 8 used elsewhere.
 - **Used elsewhere:** `sumH` (12), `openEntry` (8), `checkOut` (3), `typeTag` (3), `checkInAt` (2), `checkIn` (1), `empTime` (1), `entrySub` (1)
-- **Uses names from 23 files:** `core/helpers.js` (14), `core/sheet.js` (12), `timesheets/check-reasons.js` (8), `core/state.js` (4), `safety/site-inductions.js` (4), `core/fields.js` (3), `files/files.js` (3), `files/outbox.js` (3), `timesheets/non-site-time.js` (3), `timesheets/overtime.js` (3), `core/company-names.js` (2), `people/foreman.js` (2), `photos/photos.js` (2), `sites/job-details.js` (2), `timesheets/chase-hours.js` (2), `timesheets/monthly-sheet.js` (2), `timesheets/working-day.js` (2), `core/tabs-week.js` (1), `owner/owner.js` (1), `safety/expiry-dates.js` (1), `safety/training.js` (1), `survey/door-window-survey.js` (1), `timesheets/day-work.js` (1)
+- **Uses names from 23 files:** `core/helpers.js` (14), `core/sheet.js` (12), `timesheets/check-reasons.js` (9), `core/state.js` (4), `safety/site-inductions.js` (4), `core/fields.js` (3), `files/files.js` (3), `files/outbox.js` (3), `timesheets/non-site-time.js` (3), `timesheets/overtime.js` (3), `core/company-names.js` (2), `people/foreman.js` (2), `photos/photos.js` (2), `sites/job-details.js` (2), `timesheets/chase-hours.js` (2), `timesheets/monthly-sheet.js` (2), `timesheets/working-day.js` (2), `core/tabs-week.js` (1), `owner/owner.js` (1), `safety/expiry-dates.js` (1), `safety/training.js` (1), `survey/door-window-survey.js` (1), `timesheets/day-work.js` (1)
 - **Used by 19 files**
 
 ### `timesheets/week-close.js`
