@@ -232,7 +232,7 @@ function sdEdit(d0) {
     }
     <label for="sd-notes">Notes on the ${est ? "estimate" : "invoice"} (optional)<textarea id="sd-notes" rows="2" maxlength="2000">${esc(d.notes || "")}</textarea></label>
     <label for="sd-by">Written by (your name under your signature)<input id="sd-by" maxlength="80" value="${esc(d.byName || "")}"></label>
-    <details class="sd-tdet"><summary>📜 Terms on this ${est ? "estimate" : "invoice"}<span class="who"> – your standard terms, change them for this one if you need to</span></summary><textarea id="sd-terms" rows="10" maxlength="80000">${esc(d.terms || "")}</textarea><button type="button" class="linkbtn" id="sd-tstd">↺ Put back my standard terms</button></details>
+    <details class="sd-tdet"><summary>📜 Terms on this ${est ? "estimate" : "invoice"}<span class="who"> – your standard terms, change them for this one if you need to</span></summary>${est && set.termsPdfId ? `<div class="seg sd-tuse" id="sd-tuse" role="group"><button type="button" data-v="pdf" aria-pressed="${d.termsUse !== "typed"}">📄 My terms PDF, as uploaded</button><button type="button" data-v="typed" aria-pressed="${d.termsUse === "typed"}">✏️ The typed terms below</button></div>` : ""}<textarea id="sd-terms" rows="10" maxlength="80000">${esc(d.terms || "")}</textarea><button type="button" class="linkbtn" id="sd-tstd">↺ Put back my standard terms</button></details>
     <div class="sd-tot" id="sd-tot"></div>
     ${!est && (d.payments || []).length ? `<div class="flabel">Payments</div>${d.payments.map((p, i) => `<div class="drow"><span>${esc(shortDay(p.date))}${p.note ? " · " + esc(p.note) : ""}</span><span>${gbp(p.amt)} <button type="button" class="pillbtn sd-rcpt" data-i="${i}">🧾 ${p.receiptAt ? "Receipt sent" : "Send a receipt"}</button> <button type="button" class="linkdanger sd-pdel" data-i="${i}">Remove</button></span></div>`).join("")}` : ""}
     <div class="sd-edacts">
@@ -295,6 +295,10 @@ function sdEdit(d0) {
       site: $("sd-site").value.trim(),
       notes: $("sd-notes").value.trim(),
       terms: $("sd-terms").value,
+      termsUse: $("sd-tuse")
+        ? ($("sd-tuse").querySelector('[aria-pressed="true"]') || { dataset: {} }).dataset.v ||
+          "pdf"
+        : d.termsUse || "",
       byName: $("sd-by").value.trim(),
       inc: $("sd-inc") ? $("sd-inc").value === "1" : false,
       lines: lines.filter((l) => (l.h ? l.d || l.w || l.a !== "" : l.d || l.a !== "")),
@@ -612,6 +616,16 @@ function sdEdit(d0) {
     if (await save()) done();
   };
   edcWire(d);
+  if ($("sd-tuse"))
+    $("sd-tuse")
+      .querySelectorAll("button")
+      .forEach(
+        (b) =>
+          (b.onclick = () =>
+            $("sd-tuse")
+              .querySelectorAll("button")
+              .forEach((x) => x.setAttribute("aria-pressed", String(x === b)))),
+      );
   if ($("sd-tstd"))
     $("sd-tstd").onclick = () => {
       $("sd-terms").value = est ? set.terms || "" : set.invTerms || "";

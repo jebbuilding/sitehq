@@ -292,3 +292,14 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 @media (max-width:560px){.jp-lines .jp-l{grid-template-columns:1fr 1fr 1fr;}.jp-lines .jp-l .jp-ld{grid-column:1/-1}.jp-lines .jp-l .jp-x{display:none}}
 .jp-ltot{display:flex;justify-content:space-between;align-items:center;margin:6px 0 10px}
 .jpr-g .jpr-ls{display:flex;flex-direction:column;font-size:13px;color:var(--muted);margin-top:2px}
+.ss-tpdf{margin:6px 0 10px;padding:10px;border:1px dashed var(--line);border-radius:12px}
+.ss-tpdf .ss-tpdfb{position:relative;overflow:hidden;min-height:44px;margin-top:6px}
+.ss-tpdf .ss-tpdfb .fpick{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.sd-tdet .sd-tuse{flex-wrap:wrap;margin:6px 0}
+.sd-tdet .sd-tuse button{min-height:44px}
+.lhb-prev{margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.lhb-prev canvas{display:block;width:100%;height:auto}
+.lhb-prev .lhb-gap{text-align:center;color:#999;padding:6px 0}
+.lhb-logob{position:relative;overflow:hidden;min-height:44px;margin:4px 0 8px}
+.lhb-logob .fpick{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.lhb-colin{height:48px;min-height:48px;padding:4px;cursor:pointer}
