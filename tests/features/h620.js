@@ -17,8 +17,9 @@ const now=new Date();const ym=now.getFullYear()+'-'+String(now.getMonth()+1).pad
  await ctx.route(/^https?:\/\//,r=>r.abort());
  const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2200);await p.keyboard.press('Escape');
+ await p.evaluate(async()=>{const S=window.__S;const co=Object.assign({},(S.settings||{}).company||{},{lat:52.5,lon:-1.9});await S.db.doc('settings/app').update({company:co});S.settings=Object.assign({},S.settings,{company:co});});
  await p.evaluate(async ym=>{const S=window.__S;const col='data/users/'+S.me+'/leads/apps/';
-  await S.db.doc(col+'m1').set({address:'1 Map Street, Northtown',council:'Northtown',month:ym,category:'single',status:'Pending',postcode:'NT1 1AA',lat:52.55,lon:-1.9,ref:'N/1',desc:'Single-storey rear extension'});
+  await S.db.doc(col+'m1').set({address:'1 Map Street, Northtown',council:'Northtown',month:ym,category:'single',status:'Pending',postcode:'NT1 1AA',lat:52.55,lon:-1.9,ref:'N/1',town:'Northtown',desc:'Single-storey rear extension'});
   await S.db.doc(col+'m2').set({address:'2 Map Road, Northtown',council:'Northtown',month:ym,category:'loft',status:'Pending',postcode:'NT2 2BB',lat:52.5,lon:-1.95,ref:'N/2',sent:true,sentDate:ym+'-03',letter:'homeowner',desc:'Dormer loft'});
   await S.db.doc(col+'m3').set({address:'3 Map Lane, Northtown',council:'Northtown',month:ym,category:'two',status:'Pending',postcode:'NT3 3CC',lat:52.45,lon:-1.85,ref:'N/3',saved:true,desc:'Two-storey side'});},ym);
  await p.evaluate(()=>{const S=window.__S;S.otab='leads';window.render()});await p.waitForTimeout(800);await p.evaluate(()=>window.render());await p.waitForTimeout(400);
@@ -27,6 +28,9 @@ const now=new Date();const ym=now.getFullYear()+'-'+String(now.getMonth()+1).pad
  const pins=()=>p.evaluate(()=>[...document.querySelectorAll('#sm-map .sm-pin')].map(x=>x.className.replace('sm-pin','').trim()));
  let pc=await pins();
  ok(pc.length===3&&pc.some(x=>/ldsent/.test(x))&&pc.some(x=>/ldsaved/.test(x))&&pc.some(x=>/ldnew/.test(x)),'all three leads are pins, coloured by sent / saved / not written to ('+pc.join(', ')+')');
+ await p.waitForTimeout(800);
+ const bk=await p.evaluate(()=>({plain:document.getElementById('sm-map').classList.contains('sm-plain'),home:!!document.querySelector('#sm-map .sm-home'),rings:document.querySelectorAll('#sm-map .sm-ring').length,towns:[...document.querySelectorAll('#sm-map .sm-town')].map(x=>x.innerText)}));
+ ok(bk.plain&&bk.home&&bk.rings>=1&&bk.towns.includes('Northtown'),'with no map pictures it still draws your base, distance rings and the towns ('+JSON.stringify(bk)+')');
  await p.screenshot({path:'h620-map.png'});
  await p.click('#sm-f button[data-v="sent"]');await p.waitForTimeout(400);
  pc=await pins();ok(pc.length===1&&/ldsent/.test(pc[0]),'Letters sent shows only the one written to');

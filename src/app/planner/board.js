@@ -34,6 +34,7 @@ import { crsOpen } from "./course-booking.js";
 import { diaryHtml, diaryRows, dyGroupName, wireDiary } from "./diary.js";
 import { htHtml, htWire } from "./holiday-tab.js";
 import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
+import { pmfBarHtml, pmfClash, pmfClashHtml, pmfFilter, pmfWire } from "./month-filter.js";
 import {
   plClashHtml,
   plClashes,
@@ -969,7 +970,11 @@ function plannerView() {
     }
     const first = S.f.pmonth,
       start = monday(first);
-    html += `<div class="mhead"><button type="button" class="iconbtn" id="pm-prev" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg></button><b style="flex:1;text-align:center">${first.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</b><button type="button" class="iconbtn" id="pm-next" aria-label="Next month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 3 5 5-5 5"/></svg></button></div><div class="who">Tap a day to see everything on it</div><div class="mgrid">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => `<div class="mdow">${d}</div>`).join("")}`;
+    /* all jobs, some jobs or just the diary, with the clashes (planner/month-filter.js) */
+    const mshown = owner ? pmfFilter(shown) : shown;
+    html +=
+      (owner ? pmfBarHtml(shown, first) : "") +
+      `<div class="mhead"><button type="button" class="iconbtn" id="pm-prev" aria-label="Previous month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg></button><b style="flex:1;text-align:center">${first.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</b><button type="button" class="iconbtn" id="pm-next" aria-label="Next month"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 3 5 5-5 5"/></svg></button></div><div class="who">Tap a day to see everything on it</div><div class="mgrid">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => `<div class="mdow">${d}</div>`).join("")}`;
     for (let i = 0; i < 42; i++) {
       const d = addDays(start, i),
         di = iso(d);
@@ -979,8 +984,9 @@ function plannerView() {
         d > addDays(new Date(first.getFullYear(), first.getMonth() + 1, 1), -1)
       )
         break;
-      const list = shown.filter((p) => onDay(p, di));
-      html += `<button type="button" class="mcell ${d.getMonth() !== first.getMonth() ? "out" : ""} ${di === today ? "today" : ""}" data-d="${di}"><span class="mnum">${d.getDate()}</span>${list
+      const list = mshown.filter((p) => onDay(p, di));
+      const clash = owner && (S.f.pmshow || "all") !== "diary" ? pmfClash(mshown, di) : null;
+      html += `<button type="button" class="mcell ${d.getMonth() !== first.getMonth() ? "out" : ""} ${di === today ? "today" : ""}${clash ? (clash.people.length ? " pmf-cbad" : " pmf-c") : ""}" data-d="${di}">${clash ? `<span class="pmf-flag" title="${clash.keys.length} jobs this day">${clash.people.length ? "⚠️" : clash.keys.length}</span>` : ""}<span class="mnum">${d.getDate()}</span>${list
         .slice(0, 4)
         .map(
           (p) =>
@@ -991,6 +997,7 @@ function plannerView() {
         )}${list.length > 3 ? `<span class="mmore">+${list.length - 3}</span>` : ""}</button>`;
     }
     html += `</div>`;
+    if (owner) html += pmfClashHtml(mshown, first);
   }
   const myLeave = owner
     ? []
@@ -1068,6 +1075,7 @@ function plannerView() {
   $("main")
     .querySelectorAll(".yday[data-d]")
     .forEach((b) => (b.onclick = () => openDayPlan(b.dataset.d)));
+  if ($("pmf-show") && S.f.pmonth) pmfWire(planEntries(), S.f.pmonth);
   if ($("pm-prev")) {
     $("pm-prev").onclick = () => {
       const f = S.f.pmonth;

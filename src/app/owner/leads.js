@@ -170,6 +170,18 @@ const LEADS = (() => {
       },
       keyHtml:
         '<span><i class="ldk ldnew"></i> Not written to</span><span><i class="ldk ldhot"></i> Hot</span><span><i class="ldk ldsaved"></i> Saved</span><span><i class="ldk ldsent"></i> Letter sent</span><span class="who">Shows what the filters on the Leads page show.</span>',
+      /* each town the leads are in, at the middle of its leads, named when the map pictures can't load */
+      towns: Object.values(
+        pts
+          .filter((p) => p.lat != null && p.r.town)
+          .reduce((o, p) => {
+            const t = (o[p.r.town] = o[p.r.town] || { t: p.r.town, lat: 0, lon: 0, n: 0 });
+            t.lat += p.lat;
+            t.lon += p.lon;
+            t.n++;
+            return o;
+          }, {}),
+      ).map((t) => ({ t: t.t, lat: t.lat / t.n, lon: t.lon / t.n })),
       card,
       wire: (p, c) => {
         c.querySelector(".ld-mpick").onclick = () => {
