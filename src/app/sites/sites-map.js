@@ -68,6 +68,11 @@ function smPoints() {
     );
   return out;
 }
+/* towns to name when there are no map pictures: the ones given (cfg.towns), else each pin's own town */
+function smTowns() {
+  if (SM.cfg && SM.cfg.towns) return SM.cfg.towns;
+  return [];
+}
 /* the same map for other things (James, Nov 2026: the planning leads). cfg: { title, label, pts [{lat, lon, st,
    name}], segs [[key, label]], f (the chosen seg), show(p, f), keyHtml, card(p) → html, wire(p, cardEl) } */
 function smOpenWith(cfg) {
@@ -77,7 +82,7 @@ function smOpenWith(cfg) {
   openViewer(`<div class="sm-page"><h2>${esc(cfg.title)}</h2>
     <div class="seg" id="sm-f">${cfg.segs.map(([k, l]) => `<button type="button" data-v="${esc(k)}" aria-pressed="${cfg.f === k}">${esc(l)}</button>`).join("")}</div>
     <div class="sm-key">${cfg.keyHtml || ""}</div>
-    <div class="sm-map" id="sm-map" role="application" aria-label="${esc(cfg.label || cfg.title)}. Drag to move, use + and − to zoom."><div class="sm-tiles"></div><div class="sm-pins"></div>
+    <div class="sm-map" id="sm-map" role="application" aria-label="${esc(cfg.label || cfg.title)}. Drag to move, use + and − to zoom."><div class="sm-tiles"></div><div class="sm-back"></div><div class="sm-pins"></div>
       <div class="sm-zoom"><button type="button" class="iconbtn" id="sm-in" aria-label="Zoom in">+</button><button type="button" class="iconbtn" id="sm-out" aria-label="Zoom out">−</button><button type="button" class="iconbtn" id="sm-fit" aria-label="Show them all">⤢</button></div>
       <span class="sm-attr">© OpenStreetMap</span><div class="sm-card" id="sm-card" hidden></div></div>
     <div id="sm-none"></div><div class="who" id="sm-count"></div>
@@ -119,7 +124,7 @@ function smOpen() {
       )
       .join("")}</div>
     <div class="sm-key"><span><i class="sm-dot live"></i> Live job</span><span><i class="sm-dot done"></i> Finished</span><span><i class="sm-dot enq"></i> Enquiry</span></div>
-    <div class="sm-map" id="sm-map" role="application" aria-label="Map of your sites. Drag to move, use + and − to zoom."><div class="sm-tiles"></div><div class="sm-pins"></div>
+    <div class="sm-map" id="sm-map" role="application" aria-label="Map of your sites. Drag to move, use + and − to zoom."><div class="sm-tiles"></div><div class="sm-back"></div><div class="sm-pins"></div>
       <div class="sm-zoom"><button type="button" class="iconbtn" id="sm-in" aria-label="Zoom in">+</button><button type="button" class="iconbtn" id="sm-out" aria-label="Zoom out">−</button><button type="button" class="iconbtn" id="sm-fit" aria-label="Show all">⤢</button></div>
       <span class="sm-attr">© OpenStreetMap</span><div class="sm-card" id="sm-card" hidden></div></div>
     <div id="sm-none"></div>
@@ -230,6 +235,35 @@ function smDraw() {
       t += `<img src="https://tile.openstreetmap.org/${z}/${X}/${ty}.png" alt="" draggable="false" style="left:${Math.round(tx * 256 - x0)}px;top:${Math.round(ty * 256 - y0)}px">`;
     }
   el.querySelector(".sm-tiles").innerHTML = t;
+  /* the map's own background: rings 5, 10 and 20 miles from your base, your base, and – when the map pictures can't
+     load (the claude.ai copy blocks pictures from other websites; James, Nov 2026: "the map … is blank") – the towns */
+  const home = coHome();
+  let bk = "";
+  if (home) {
+    const [hx, hy] = smWorld(home[0], home[1], z);
+    const mpp = (156543.03 * Math.cos((home[0] * Math.PI) / 180)) / n;
+    [5, 10, 20].forEach((mi) => {
+      const r = (mi * 1609.34) / mpp;
+      if (r < 12 || r > 4000) return;
+      bk += `<span class="sm-ring" style="left:${Math.round(hx - x0 - r)}px;top:${Math.round(hy - y0 - r)}px;width:${Math.round(2 * r)}px;height:${Math.round(2 * r)}px"><i>${mi} mi</i></span>`;
+    });
+    bk += `<span class="sm-home" style="left:${Math.round(hx - x0)}px;top:${Math.round(hy - y0)}px" title="Your base">🏠</span>`;
+  }
+  if (SM.noTiles)
+    smTowns().forEach((tw) => {
+      const [tx2, ty2] = smWorld(tw.lat, tw.lon, z);
+      bk += `<span class="sm-town" style="left:${Math.round(tx2 - x0)}px;top:${Math.round(ty2 - y0)}px">${esc(tw.t)}</span>`;
+    });
+  el.querySelector(".sm-back").innerHTML = bk;
+  el.classList.toggle("sm-plain", !!SM.noTiles);
+  const im = el.querySelector(".sm-tiles img");
+  if (im && SM.noTiles == null) {
+    im.onerror = () => {
+      SM.noTiles = true;
+      smDraw();
+    };
+    im.onload = () => (SM.noTiles = false);
+  }
   el.querySelector(".sm-pins").innerHTML = smShown()
     .map((p, i) => {
       const [px, py] = smWorld(p.lat, p.lon, z);

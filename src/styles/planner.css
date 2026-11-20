@@ -208,3 +208,13 @@
 .pg-empty .pg-simbox{margin:10px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:var(--surface)}
 .pg-sim .pg-simst{font-size:1.15rem;margin-bottom:4px}
 .pg-sim .pg-simst.done{color:var(--ink)}
+.pmf-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 10px}
+.pmf-bar .pmf-pick{min-height:44px}
+.mcell.pmf-c{box-shadow:inset 0 0 0 2px var(--accent)}
+.mcell.pmf-cbad{box-shadow:inset 0 0 0 2px var(--danger);background:var(--soft)}
+.mcell .pmf-flag{position:absolute;top:2px;right:4px;font-size:11px;font-weight:700}
+.pmf-clashes .pmf-row{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.pmf-clashes .pmf-d{flex:0 0 90px;font-weight:600}
+.pmf-clashes .pmf-w{display:block;color:var(--danger);font-weight:600}
+.pmf-list{display:flex;flex-direction:column;gap:2px;margin:8px 0}
+.mcell.pmf-c,.mcell.pmf-cbad{position:relative}
