@@ -44,6 +44,8 @@ const tm=(()=>{const d=new Date();d.setDate(d.getDate()+1);return fmt(d)})();
  await p.click('#ss-name');await p.waitForTimeout(300);
  await p.fill('#ss-nm','Marine Way loft');await p.fill('#ss-ds','Dormer loft conversion with en-suite');await p.click('#f-save');await p.waitForTimeout(700);
  ok(/Dormer loft conversion with en-suite/.test(await p.innerText('#main .ss-namebar')),'the short description shows under the job name');
+ await p.evaluate(()=>{const S=window.__S;S.f.projList=true;window.render()});await p.waitForTimeout(400);
+ ok(/Dormer loft conversion with en-suite/.test(await p.innerText('#main'))&&await p.locator('#main .sttile .st-desc').count()>=1,'the description shows under the job name in the Sites list');
  /* Setup: a new site goes straight to naming it */
  await p.evaluate(()=>{const S=window.__S;S.otab='setup';S.f.stab='setup';S.open.add('__sites');window.render()});await p.waitForTimeout(400);
  await p.fill('#add-sites','9 New Street, Exmouth');await p.evaluate(()=>document.querySelector('.addform[data-k="sites"]').requestSubmit());await p.waitForTimeout(900);

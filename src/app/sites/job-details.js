@@ -872,7 +872,10 @@ function siteHead(site) {
 }
 const siteHeadHtml = (site) => {
   const h = siteHead(site);
-  return `<b>${esc(h.big)}</b>${h.small ? `<span class="who">📍 ${esc(h.small)}</span>` : ""}`;
+  /* the job's short description under its name, wherever a site is listed (James, Nov 2026: "for better reference
+     of each job") */
+  const ds = String((siteRec(site) || {}).jobDesc || "").trim();
+  return `<b>${esc(h.big)}</b>${ds ? `<span class="st-desc">${esc(ds)}</span>` : ""}${h.small ? `<span class="who">📍 ${esc(h.small)}</span>` : ""}`;
 };
 /* the top of each site's page: the job name big (or "Name this job" if it hasn't one), the address small, and one tap
    to name it or change the name (James, Nov 2026: "needs to be in each site information at the top to choose the name") */

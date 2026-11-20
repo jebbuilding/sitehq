@@ -37,7 +37,7 @@ function siteTiles(sites) {
       .filter((p) => same(p.site, n))
       .sort((a, b) => (b.takenAt || 0) - (a.takenAt || 0))[0];
     const img = siteFront(n);
-    return `<button type="button" class="sttile" data-s="${esc(n)}" data-q="${esc([n, sr.jobName, c && c.name, sr.project, c && c.work, c && c.postcode, c && c.phone].filter(Boolean).join(" ").toLowerCase())}">${img ? `<img src="${blobUrl(img)}" alt="" loading="lazy">` : `<span class="stini">${esc(initials(siteHead(n).big))}</span>`}<span class="sttx">${siteHeadHtml(n)}${c ? `<span class="who">👤 ${esc(c.name)}${sr.project || c.work ? " · " + esc(sr.project || c.work) : ""}</span>` : sr.project ? `<span class="who">${esc(sr.project)}</span>` : ""}
+    return `<button type="button" class="sttile" data-s="${esc(n)}" data-q="${esc([n, sr.jobName, sr.jobDesc, c && c.name, sr.project, c && c.work, c && c.postcode, c && c.phone].filter(Boolean).join(" ").toLowerCase())}">${img ? `<img src="${blobUrl(img)}" alt="" loading="lazy">` : `<span class="stini">${esc(initials(siteHead(n).big))}</span>`}<span class="sttx">${siteHeadHtml(n)}${c ? `<span class="who">👤 ${esc(c.name)}${sr.project || c.work ? " · " + esc(sr.project || c.work) : ""}</span>` : sr.project ? `<span class="who">${esc(sr.project)}</span>` : ""}
       <span class="stmeta">${sr.hold ? '<span class="tag">🙈 Hidden for now</span>' : ""}${soSites.some((x) => same(x, n)) ? '<span class="tag bad">✍️ Sign-off to sort</span>' : ""}${on.length ? `<span class="tag ok">${on.length} on site now</span>` : ""}<span>${hrs(hm)} h this month</span>${last > 1e12 ? `<span class="who">· last ${esc(shortDay(iso(new Date(last))))}</span>` : ""}</span></span><span class="ppchev" aria-hidden="true">›</span></button>`;
   };
   $("main").innerHTML =

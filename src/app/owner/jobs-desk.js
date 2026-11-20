@@ -81,7 +81,7 @@ function jbView() {
         ? `<div class="jb-two"><section class="jb-list jb-full" aria-label="Jobs">${list
             .map(
               (x) =>
-                `<button type="button" class="jb-item${x.hold ? " jb-held" : ""}" data-s="${esc(x.n)}"${x.n === sel ? ' aria-current="true"' : ""}><b>${esc(siteLabel(x.n))}</b><small>${x.hold ? '<span class="tag">🙈 Hidden for now</span> ' : ""}${esc([jobNameOf(x.n) ? x.n : "", x.sub].filter(Boolean).join(" · "))}</small></button>`,
+                `<button type="button" class="jb-item${x.hold ? " jb-held" : ""}" data-s="${esc(x.n)}"${x.n === sel ? ' aria-current="true"' : ""}><b>${esc(siteLabel(x.n))}</b>${(siteRec(x.n) || {}).jobDesc ? `<small class="st-desc">${esc(siteRec(x.n).jobDesc)}</small>` : ""}<small>${x.hold ? '<span class="tag">🙈 Hidden for now</span> ' : ""}${esc([jobNameOf(x.n) ? x.n : "", x.sub].filter(Boolean).join(" · "))}</small></button>`,
             )
             .join("")}</section></div>`
         : `<div class="empty"><strong>No live jobs</strong>Add a site in Setup, or make an enquiry into a site.</div>`

@@ -13,7 +13,7 @@ import { EST_LINK } from "./estimating.js";
 import { jfOpenClient, jfSave } from "./job-file.js";
 import { sdR2, sdSet } from "./sales-calc.js";
 import { sdEdit } from "./sales-edit.js";
-export { jprOpen };
+export { jprCosts, jprCounts, jprOpen };
 /* James (Nov 2026): "jobs to cost and estimates should link to creating an estimate and the estimating software if
    needed. It should have all the information about the job that is easy to read and be able to store the different
    costings from suppliers and company/trades for the jobs neatly and easy to access to be able to create the estimate
@@ -74,12 +74,29 @@ const jprCosts = (j) =>
         ck: i.ck || (i.folder === "supq" ? "sup" : i.folder === "subq" ? "trade" : "other"),
       }),
     );
+/* quotes for the same thing (James, Nov 2026: compare quotes): prices sharing a grp are compared; the one ticked
+   "use" counts – the cheapest until one is ticked – and the others are kept but not added in */
+const jprGroup = (L, i) => (i.grp ? L.filter((x) => x.grp === i.grp) : [i]);
+function jprChosen(L, i) {
+  const G = jprGroup(L, i);
+  return G.find((x) => x.use) || G.slice().sort((a, b) => (+a.price || 0) - (+b.price || 0))[0];
+}
+const jprCounts = (L, i) => !i.grp || jprChosen(L, i).id === i.id;
+function jprRow(i, L) {
+  const inG = !!i.grp && jprGroup(L, i).length > 1;
+  const on = jprCounts(L, i);
+  const G = inG ? jprGroup(L, i) : [];
+  const cheapest =
+    inG && G.slice().sort((a, b) => (+a.price || 0) - (+b.price || 0))[0].id === i.id;
+  return `<div class="jpr-row${inG ? (on ? " jpr-on" : " jpr-off") : ""}">${inG ? `<button type="button" class="jpr-use" data-id="${esc(i.id)}" aria-pressed="${on}" aria-label="Use ${esc(i.from || "this quote")}">${on ? "✓" : ""}</button>` : ""}<span><b>${esc(i.from || "–")}</b>${cheapest ? ' <span class="tag ok">Cheapest</span>' : ""}${inG && on ? ' <span class="tag">Using</span>' : ""}<span class="who">${esc(i.note || i.name || "")}</span>${(i.lines || []).length ? `<span class="jpr-ls">${i.lines.map((l) => `<span>${esc(l.d || "")} ${esc(String(l.q))}${l.u ? " " + esc(l.u) : ""} × ${gbp(l.r)} = ${gbp(sdR2(l.q * l.r))}</span>`).join("")}</span>` : ""}</span><b>${gbp(+i.price || 0)}</b>${i.assetId ? `<button type="button" class="pillbtn jpr-open" data-id="${esc(i.id)}">📄 Quote</button>` : ""}<button type="button" class="pillbtn jpr-cmp" data-id="${esc(i.id)}" title="Another quote for the same thing">⇄ Compare</button><button type="button" class="iconbtn jpr-ed" data-id="${esc(i.id)}" aria-label="Change">✎</button></div>`;
+}
 function jprOpen(c0) {
   const c = (S.clients || []).find((x) => x.id === c0.id) || c0;
   const j = jprFileOf(c);
   const L = jprCosts(j);
   const mk = j.markup != null ? +j.markup : 20;
-  const tot = (k) => L.filter((i) => !k || i.ck === k).reduce((a, i) => a + (+i.price || 0), 0);
+  const tot = (k) =>
+    L.filter((i) => (!k || i.ck === k) && jprCounts(L, i)).reduce((a, i) => a + (+i.price || 0), 0);
   const all = tot();
   const price = sdR2(all * (1 + mk / 100));
   openViewer(`<div class="jpr-page"><h2 class="jpr-h">💷 Price this job</h2><div class="who">${esc([c.name, c.work, clAddr(c)].filter(Boolean).join(" · "))}</div>
@@ -87,7 +104,21 @@ function jprOpen(c0) {
     ${JPR_KINDS.map(([k, l]) => {
       const g = L.filter((i) => i.ck === k);
       return `<section class="card jpr-g"><div class="cardbody"><div class="jpr-gh"><b>${l}</b><span>${g.length ? gbp(tot(k)) : ""}</span></div>
-        ${g.map((i) => `<div class="jpr-row"><span><b>${esc(i.from || "–")}</b><span class="who">${esc(i.note || i.name || "")}</span>${(i.lines || []).length ? `<span class="jpr-ls">${i.lines.map((l) => `<span>${esc(l.d || "")} ${esc(String(l.q))}${l.u ? " " + esc(l.u) : ""} × ${gbp(l.r)} = ${gbp(sdR2(l.q * l.r))}</span>`).join("")}</span>` : ""}</span><b>${gbp(+i.price || 0)}</b>${i.assetId ? `<button type="button" class="pillbtn jpr-open" data-id="${esc(i.id)}">📄 Quote</button>` : ""}<button type="button" class="iconbtn jpr-ed" data-id="${esc(i.id)}" aria-label="Change">✎</button></div>`).join("")}
+        ${(() => {
+          /* single prices, then each set of quotes for the same thing in its own box */
+          const seen = new Set();
+          return g
+            .map((i) => {
+              if (!i.grp || jprGroup(L, i).length < 2) return jprRow(i, L);
+              if (seen.has(i.grp)) return "";
+              seen.add(i.grp);
+              const G = jprGroup(L, i).sort((a, b) => (+a.price || 0) - (+b.price || 0));
+              const hi = +G[G.length - 1].price || 0,
+                lo = +G[0].price || 0;
+              return `<div class="jpr-cbox"><div class="jpr-ch">⇄ ${G.length} quotes for <b>${esc(G[0].note || "the same thing")}</b><span class="who"> · ${gbp(hi - lo)} between them · tap ✓ to use one</span></div>${G.map((x) => jprRow(x, L)).join("")}</div>`;
+            })
+            .join("");
+        })()}
         <button type="button" class="pillbtn jpr-add" data-k="${k}">+ Add a price</button></div></section>`;
     }).join("")}
     <section class="card jpr-sum"><div class="cardbody">
@@ -110,6 +141,30 @@ function jprOpen(c0) {
       (b.onclick = () => {
         const it = (j.items || []).find((i) => i.id === b.dataset.id);
         if (it) jprEdit(c, j, it, jprCosts({ items: [it] })[0].ck, again);
+      }),
+  );
+  /* ⇄ Compare: a new price for the same thing; ✓ uses one of the quotes */
+  document.querySelectorAll("#viewer-body .jpr-cmp").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const it = (j.items || []).find((i) => i.id === b.dataset.id);
+        if (it) jprEdit(c, j, null, jprCosts({ items: [it] })[0].ck, again, it);
+      }),
+  );
+  document.querySelectorAll("#viewer-body .jpr-use").forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const it = L.find((i) => i.id === b.dataset.id);
+        if (!it) return;
+        const items = (j.items || []).map((x) =>
+          x.grp && x.grp === it.grp ? Object.assign({}, x, { use: x.id === it.id }) : x,
+        );
+        try {
+          again(await jfSave(Object.assign({}, j, { items })));
+          toast("Using " + (it.from || "that quote"));
+        } catch (e) {
+          toast("Couldn't save. Check your connection.");
+        }
       }),
   );
   document.querySelectorAll("#viewer-body .jpr-open").forEach(
@@ -153,7 +208,8 @@ function jprOpen(c0) {
   };
 }
 /* add or change one costing: who it's from, what, the price, the quote */
-function jprEdit(c, j, it, k, after) {
+/* cmp: the price this one is another quote for – same thing, same lines and quantities, rates to fill in */
+function jprEdit(c, j, it, k, after, cmp) {
   const names = [
     ...new Set(
       (S.suppliers || [])
@@ -163,10 +219,10 @@ function jprEdit(c, j, it, k, after) {
     ),
   ];
   openSheet(
-    `<h3 id="sheettitle">${it ? "✎ Change the price" : "+ Add a price"}</h3>
+    `<h3 id="sheettitle">${it ? "✎ Change the price" : cmp ? "⇄ Another quote for the same thing" : "+ Add a price"}</h3>${cmp ? `<div class="who">To compare with <b>${esc(cmp.from || "")}</b> at ${gbp(+cmp.price || 0)}. The lines and quantities are filled in – put in this one's rates.</div>` : ""}
     <label for="jp-k">What kind<select id="jp-k">${JPR_KINDS.map(([v, l]) => `<option value="${v}"${v === k ? " selected" : ""}>${l}</option>`).join("")}</select></label>
     <label for="jp-from">Who it's from<input id="jp-from" maxlength="80" list="jp-names" value="${esc((it && it.from) || "")}" placeholder="e.g. Travis Perkins, Dave the plasterer, us"></label><datalist id="jp-names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>
-    <label for="jp-what">What it's for<input id="jp-what" maxlength="160" value="${esc((it && (it.note || "")) || "")}" placeholder="e.g. Blocks, sand and cement for the walls"></label>
+    <label for="jp-what">What it's for<input id="jp-what" maxlength="160" value="${esc((it && (it.note || "")) || (cmp && cmp.note) || "")}" placeholder="e.g. Blocks, sand and cement for the walls"></label>
     <div class="flabel">The prices (before VAT): how many × the rate, a line for each thing</div>
     <div class="jp-lines" id="jp-lines"></div>
     <div class="jp-ltot"><button type="button" class="pillbtn" id="jp-addl">+ Add a line</button><span>Total <b id="jp-tot">£0.00</b></span></div>
@@ -200,7 +256,14 @@ function jprEdit(c, j, it, k, after) {
           });
         }
         if (!row.name) row.name = (row.from || "Price") + (row.note ? " – " + row.note : "");
-        const items = (j.items || []).filter((x) => x.id !== row.id).concat([row]);
+        /* another quote for the same thing: both share a group, and nothing is ticked so the cheaper counts */
+        let base = j.items || [];
+        if (cmp) {
+          const g = cmp.grp || "g" + newId();
+          row.grp = g;
+          base = base.map((x) => (x.id === cmp.id ? Object.assign({}, x, { grp: g }) : x));
+        }
+        const items = base.filter((x) => x.id !== row.id).concat([row]);
         const saved = await jfSave(Object.assign({}, j, { items }));
         closeForm();
         toast(it ? "Saved" : "Price added");
@@ -220,7 +283,11 @@ function jprEdit(c, j, it, k, after) {
       ? it.lines.map((l) => Object.assign({}, l))
       : it && it.price
         ? [{ d: it.note || "", q: 1, u: "item", r: +it.price }]
-        : [{ d: "", q: 1, u: "", r: "" }];
+        : cmp
+          ? (cmp.lines || []).length
+            ? cmp.lines.map((l) => Object.assign({}, l, { r: "" }))
+            : [{ d: cmp.note || "", q: 1, u: "item", r: "" }]
+          : [{ d: "", q: 1, u: "", r: "" }];
   const jpLines = () =>
     [...document.querySelectorAll("#jp-lines .jp-l")].map((row) => ({
       d: row.querySelector(".jp-ld").value.trim(),
