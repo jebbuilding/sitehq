@@ -174,3 +174,10 @@
 .sm-back .sm-town{position:absolute;transform:translate(-50%,14px);font-size:12px;font-weight:700;color:#334155;background:rgba(255,255,255,.75);padding:0 4px;border-radius:4px;white-space:nowrap}
 .sm-map.sm-plain{background:repeating-linear-gradient(0deg,#eef2ee 0 39px,#dfe6df 39px 40px),repeating-linear-gradient(90deg,#eef2ee 0 39px,#dfe6df 39px 40px);background-blend-mode:multiply}
 .sm-map.sm-plain .sm-tiles{display:none}
+.sm-map.sm-plain{background:#cfe0ea}
+.sm-back .sm-land{position:absolute;left:0;top:0;overflow:visible}
+.sm-back .sm-land path{fill:#f2efe6;stroke:#9fb3bf;stroke-width:1;fill-rule:evenodd}
+.sm-back .sm-pl{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;color:#3f3f46;font-size:11px;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.sm-back .sm-pl::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:#52525b;margin-right:3px;vertical-align:1px}
+.sm-back .sm-pl.t1{font-size:14px;font-weight:700}
+.sm-back .sm-pl.t2{font-size:12.5px;font-weight:600}

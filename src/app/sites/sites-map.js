@@ -9,6 +9,7 @@ import { goSite } from "./go-site.js";
 import { gmapDir, pcGeo, pcOf } from "./maps-pins.js";
 import { projectSites } from "./project-pages.js";
 import { siteClient } from "./summary.js";
+import { ukMap } from "./uk-map-data.js";
 export { smOpen, smOpenWith };
 /* OpenStreetMap tiles drawn by hand (no map library): drag to move, + / − or pinch / the wheel to zoom. A pin for each
    site – live jobs red, finished (archived) grey – and each enquiry with a location blue. A site's place is its own
@@ -68,6 +69,45 @@ function smPoints() {
     );
   return out;
 }
+/* the built-in map (sites/uk-map-data.js) for when the map pictures can't load: land, sea and the places, more of
+   them the closer you zoom in, never two names on top of each other */
+function smBase(x0, y0, W, H, z) {
+  let m;
+  try {
+    m = ukMap();
+  } catch (e) {
+    return "";
+  }
+  const paths = m.rings
+    .map((r) => {
+      let d = "",
+        any = false;
+      for (let i = 0; i < r.length; i++) {
+        const [px, py] = smWorld(r[i][1], r[i][0], z);
+        const X = px - x0,
+          Y = py - y0;
+        if (X > -W && X < 2 * W && Y > -H && Y < 2 * H) any = true;
+        d += (i ? "L" : "M") + X.toFixed(1) + " " + Y.toFixed(1);
+      }
+      return any ? `<path d="${d}Z"/>` : "";
+    })
+    .join("");
+  const maxTier = z <= 7 ? 1 : z <= 8 ? 2 : z <= 10 ? 3 : 4;
+  const used = new Set();
+  let labels = "";
+  for (const [nm, lat, lon, tier] of m.places) {
+    if (tier > maxTier) continue;
+    const [px, py] = smWorld(lat, lon, z);
+    const X = px - x0,
+      Y = py - y0;
+    if (X < 0 || Y < 0 || X > W || Y > H) continue;
+    const k = Math.floor(X / 90) + ":" + Math.floor(Y / 20);
+    if (used.has(k)) continue;
+    used.add(k);
+    labels += `<span class="sm-pl t${tier}" style="left:${Math.round(X)}px;top:${Math.round(Y)}px">${esc(nm)}</span>`;
+  }
+  return `<svg class="sm-land" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${paths}</svg>${labels}`;
+}
 /* towns to name when there are no map pictures: the ones given (cfg.towns), else each pin's own town */
 function smTowns() {
   if (SM.cfg && SM.cfg.towns) return SM.cfg.towns;
@@ -84,7 +124,7 @@ function smOpenWith(cfg) {
     <div class="sm-key">${cfg.keyHtml || ""}</div>
     <div class="sm-map" id="sm-map" role="application" aria-label="${esc(cfg.label || cfg.title)}. Drag to move, use + and − to zoom."><div class="sm-tiles"></div><div class="sm-back"></div><div class="sm-pins"></div>
       <div class="sm-zoom"><button type="button" class="iconbtn" id="sm-in" aria-label="Zoom in">+</button><button type="button" class="iconbtn" id="sm-out" aria-label="Zoom out">−</button><button type="button" class="iconbtn" id="sm-fit" aria-label="Show them all">⤢</button></div>
-      <span class="sm-attr">© OpenStreetMap</span><div class="sm-card" id="sm-card" hidden></div></div>
+      <span class="sm-attr">© OpenStreetMap · places GeoNames</span><div class="sm-card" id="sm-card" hidden></div></div>
     <div id="sm-none"></div><div class="who" id="sm-count"></div>
   </div>`);
   SM.el = $("sm-map");
@@ -249,7 +289,8 @@ function smDraw() {
     });
     bk += `<span class="sm-home" style="left:${Math.round(hx - x0)}px;top:${Math.round(hy - y0)}px" title="Your base">🏠</span>`;
   }
-  if (SM.noTiles)
+  if (SM.noTiles) bk = smBase(x0, y0, W, H, z) + bk;
+  if (SM.noTiles && !bk.includes("sm-land"))
     smTowns().forEach((tw) => {
       const [tx2, ty2] = smWorld(tw.lat, tw.lon, z);
       bk += `<span class="sm-town" style="left:${Math.round(tx2 - x0)}px;top:${Math.round(ty2 - y0)}px">${esc(tw.t)}</span>`;
