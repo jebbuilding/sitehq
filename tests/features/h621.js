@@ -25,7 +25,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  ok(await p.isVisible('#cv-price'),'the client card has 💷 Price this job');
  await p.click('#cv-price');await p.waitForTimeout(500);
  ok(/Price this job/.test(await p.innerText('#viewer-body'))&&await p.isVisible('#viewer-body .edc-card'),'it opens with the job and its documents');
- const add=async(k,from,what,pr,file)=>{await p.click(`#viewer-body .jpr-add[data-k="${k}"]`);await p.waitForTimeout(300);await p.fill('#jp-from',from);await p.fill('#jp-what',what);await p.fill('#jp-p',pr);if(file)await p.setInputFiles('#jp-file',file);await p.click('#f-save');await p.waitForTimeout(800);};
+ const add=async(k,from,what,pr,file)=>{await p.click(`#viewer-body .jpr-add[data-k="${k}"]`);await p.waitForTimeout(300);await p.fill('#jp-from',from);await p.fill('#jp-what',what);await p.fill('#jp-lines .jp-lq','1');await p.fill('#jp-lines .jp-lr',pr);if(file)await p.setInputFiles('#jp-file',file);await p.click('#f-save');await p.waitForTimeout(800);};
  await add('sup','Builders Merchant','Blocks and cement','1000',{name:'quote.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\n%made-up\n')});
  await add('trade','Plasterer','Skim the loft','600');
  await add('lab','Us','Two weeks, two men','2400');

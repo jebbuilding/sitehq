@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 270 files, 4930 KB, 124634 lines.
-- 2605 names declared at the top level (the shared scope); 1327 of them are used by a file other than the one that declares them.
+- 270 files, 4933 KB, 124714 lines.
+- 2606 names declared at the top level (the shared scope); 1327 of them are used by a file other than the one that declares them.
 - 2864 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 229 files, 12 files depend on each other in a loop (directly or through other files); the other 29 files are outside any loop.
@@ -1978,7 +1978,7 @@ JOB FILE: every document, plan, price and photo for a job, in folders, tied to t
 
 JOB PRICING: one page to price a job – what it is, every price from suppliers and trades, then the estimate
 
-- 198 lines, 10 KB. Declares 6 names, 1 used elsewhere.
+- 278 lines, 13 KB. Declares 7 names, 1 used elsewhere.
 - **Used elsewhere:** `jprOpen` (2)
 - **Uses names from 14 files:** `core/sheet.js` (5), `core/helpers.js` (4), `sales/est-docs.js` (2), `sales/job-file.js` (2), `sales/sales-calc.js` (2), `clients/stages-planner.js` (1), `core/state.js` (1), `core/viewer.js` (1), `files/files.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `safety/training.js` (1), `sales/estimating.js` (1), `sales/sales-edit.js` (1)
 - **Used by 2 files**

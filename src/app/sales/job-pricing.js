@@ -31,6 +31,27 @@ const JPR_KINDS = [
   ["plant", "🚜 Plant and hire", "other", "oth", "Plant and hire"],
   ["other", "📦 Other costs", "other", "oth", "Other costs"],
 ];
+/* units for the quantity × rate lines (James, Nov 2026: "better controllability … for the costing process") */
+const JPR_UNITS = [
+  "item",
+  "no.",
+  "m",
+  "m²",
+  "m³",
+  "kg",
+  "tonne",
+  "bag",
+  "pack",
+  "pallet",
+  "length",
+  "sheet",
+  "litre",
+  "hour",
+  "day",
+  "week",
+  "load",
+  "visit",
+];
 const jprKind = (k) => JPR_KINDS.find((x) => x[0] === k) || JPR_KINDS[4];
 function jprFileOf(c) {
   return (
@@ -66,7 +87,7 @@ function jprOpen(c0) {
     ${JPR_KINDS.map(([k, l]) => {
       const g = L.filter((i) => i.ck === k);
       return `<section class="card jpr-g"><div class="cardbody"><div class="jpr-gh"><b>${l}</b><span>${g.length ? gbp(tot(k)) : ""}</span></div>
-        ${g.map((i) => `<div class="jpr-row"><span><b>${esc(i.from || "–")}</b><span class="who">${esc(i.note || i.name || "")}</span></span><b>${gbp(+i.price || 0)}</b>${i.assetId ? `<button type="button" class="pillbtn jpr-open" data-id="${esc(i.id)}">📄 Quote</button>` : ""}<button type="button" class="iconbtn jpr-ed" data-id="${esc(i.id)}" aria-label="Change">✎</button></div>`).join("")}
+        ${g.map((i) => `<div class="jpr-row"><span><b>${esc(i.from || "–")}</b><span class="who">${esc(i.note || i.name || "")}</span>${(i.lines || []).length ? `<span class="jpr-ls">${i.lines.map((l) => `<span>${esc(l.d || "")} ${esc(String(l.q))}${l.u ? " " + esc(l.u) : ""} × ${gbp(l.r)} = ${gbp(sdR2(l.q * l.r))}</span>`).join("")}</span>` : ""}</span><b>${gbp(+i.price || 0)}</b>${i.assetId ? `<button type="button" class="pillbtn jpr-open" data-id="${esc(i.id)}">📄 Quote</button>` : ""}<button type="button" class="iconbtn jpr-ed" data-id="${esc(i.id)}" aria-label="Change">✎</button></div>`).join("")}
         <button type="button" class="pillbtn jpr-add" data-k="${k}">+ Add a price</button></div></section>`;
     }).join("")}
     <section class="card jpr-sum"><div class="cardbody">
@@ -146,12 +167,16 @@ function jprEdit(c, j, it, k, after) {
     <label for="jp-k">What kind<select id="jp-k">${JPR_KINDS.map(([v, l]) => `<option value="${v}"${v === k ? " selected" : ""}>${l}</option>`).join("")}</select></label>
     <label for="jp-from">Who it's from<input id="jp-from" maxlength="80" list="jp-names" value="${esc((it && it.from) || "")}" placeholder="e.g. Travis Perkins, Dave the plasterer, us"></label><datalist id="jp-names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>
     <label for="jp-what">What it's for<input id="jp-what" maxlength="160" value="${esc((it && (it.note || "")) || "")}" placeholder="e.g. Blocks, sand and cement for the walls"></label>
-    <label for="jp-p">Price £ (before VAT)<input id="jp-p" inputmode="decimal" value="${it && it.price ? esc(String(it.price)) : ""}"></label>
+    <div class="flabel">The prices (before VAT): how many × the rate, a line for each thing</div>
+    <div class="jp-lines" id="jp-lines"></div>
+    <div class="jp-ltot"><button type="button" class="pillbtn" id="jp-addl">+ Add a line</button><span>Total <b id="jp-tot">£0.00</b></span></div>
+    <datalist id="jp-units">${JPR_UNITS.map((u) => `<option value="${u}">`).join("")}</datalist>
     <div class="flabel">The quote (optional)</div><label class="btn jp-fb">📄 ${it && it.assetId ? "Change the quote" : "Add the quote (PDF or photo)"}<input type="file" id="jp-file" class="fpick" accept="application/pdf,image/*" data-cam="1"></label><span class="who" id="jp-fn"></span>
     ${formFoot(!!it, it ? "Save" : "Add")}`,
     async () => {
-      const p = +String($("jp-p").value).replace(/[£,\s]/g, "");
-      if (!(p > 0)) return showErr("Put in the price.");
+      const lines = jpLines().filter((l) => l.d || l.r);
+      const p = sdR2(lines.reduce((a, l) => a + l.q * l.r, 0));
+      if (!(p > 0)) return showErr("Put in at least one price (how many and the rate).");
       $("f-save").disabled = true;
       try {
         const kk = $("jp-k").value;
@@ -162,6 +187,7 @@ function jprEdit(c, j, it, k, after) {
           from: $("jp-from").value.trim(),
           note: $("jp-what").value.trim(),
           price: sdR2(p),
+          lines,
         });
         const f = $("jp-file").files && $("jp-file").files[0];
         if (f) {
@@ -188,6 +214,60 @@ function jprEdit(c, j, it, k, after) {
   );
   $("jp-file").onchange = (e) =>
     ($("jp-fn").textContent = e.target.files.length ? "✓ " + e.target.files[0].name : "");
+  /* the lines: an older price with none becomes one line, 1 × its price */
+  let rows =
+    it && (it.lines || []).length
+      ? it.lines.map((l) => Object.assign({}, l))
+      : it && it.price
+        ? [{ d: it.note || "", q: 1, u: "item", r: +it.price }]
+        : [{ d: "", q: 1, u: "", r: "" }];
+  const jpLines = () =>
+    [...document.querySelectorAll("#jp-lines .jp-l")].map((row) => ({
+      d: row.querySelector(".jp-ld").value.trim(),
+      q: +String(row.querySelector(".jp-lq").value).replace(/[,\s]/g, "") || 0,
+      u: row.querySelector(".jp-lu").value.trim(),
+      r: +String(row.querySelector(".jp-lr").value).replace(/[£,\s]/g, "") || 0,
+    }));
+  const sum = () => {
+    let t = 0;
+    document.querySelectorAll("#jp-lines .jp-l").forEach((row) => {
+      const q = +String(row.querySelector(".jp-lq").value).replace(/[,\s]/g, "") || 0,
+        r = +String(row.querySelector(".jp-lr").value).replace(/[£,\s]/g, "") || 0;
+      row.querySelector(".jp-lt").textContent = gbp(sdR2(q * r));
+      t += q * r;
+    });
+    $("jp-tot").textContent = gbp(sdR2(t));
+  };
+  const draw = () => {
+    $("jp-lines").innerHTML = rows
+      .map(
+        (l, i) =>
+          `<div class="jp-l" data-i="${i}"><input class="jp-ld" maxlength="120" value="${esc(l.d || "")}" placeholder="e.g. Concrete blocks 440×215" aria-label="What, line ${i + 1}"><input class="jp-lq" inputmode="decimal" value="${l.q === "" || l.q == null ? "" : esc(String(l.q))}" aria-label="How many, line ${i + 1}"><input class="jp-lu" list="jp-units" maxlength="16" value="${esc(l.u || "")}" placeholder="unit" aria-label="Unit, line ${i + 1}"><span class="jp-x">×</span><input class="jp-lr" inputmode="decimal" value="${l.r === "" || l.r == null ? "" : esc(String(l.r))}" placeholder="£ rate" aria-label="Rate in pounds, line ${i + 1}"><b class="jp-lt"></b><button type="button" class="iconbtn jp-lx" aria-label="Take out line ${i + 1}">✕</button></div>`,
+      )
+      .join("");
+    $("jp-lines")
+      .querySelectorAll("input")
+      .forEach((x) => (x.oninput = sum));
+    $("jp-lines")
+      .querySelectorAll(".jp-lx")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            rows = jpLines();
+            rows.splice(+b.closest(".jp-l").dataset.i, 1);
+            if (!rows.length) rows = [{ d: "", q: 1, u: "", r: "" }];
+            draw();
+          }),
+      );
+    sum();
+  };
+  $("jp-addl").onclick = () => {
+    rows = jpLines().concat([{ d: "", q: 1, u: "", r: "" }]);
+    draw();
+    const ds = document.querySelectorAll("#jp-lines .jp-ld");
+    ds[ds.length - 1].focus();
+  };
+  draw();
   if (it)
     armDelete(async () => {
       const saved = await jfSave(
