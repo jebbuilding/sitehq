@@ -283,3 +283,12 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .jpr-g .jpr-add{margin-top:6px}
 .jp-fb{position:relative;overflow:hidden;min-height:48px}
 .jp-fb .fpick{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.jp-lines{display:flex;flex-direction:column;gap:6px;margin:4px 0}
+.jp-lines .jp-l{display:grid;grid-template-columns:1fr 64px 72px 14px 84px 86px 44px;gap:6px;align-items:center}
+.jp-lines .jp-l input{min-height:44px;min-width:0}
+.jp-lines .jp-lt{text-align:right;font-variant-numeric:tabular-nums}
+.jp-lines .jp-x{text-align:center;color:var(--muted)}
+.jp-lines .jp-lx{min-width:44px;min-height:44px}
+@media (max-width:560px){.jp-lines .jp-l{grid-template-columns:1fr 1fr 1fr;}.jp-lines .jp-l .jp-ld{grid-column:1/-1}.jp-lines .jp-l .jp-x{display:none}}
+.jp-ltot{display:flex;justify-content:space-between;align-items:center;margin:6px 0 10px}
+.jpr-g .jpr-ls{display:flex;flex-direction:column;font-size:13px;color:var(--muted);margin-top:2px}
