@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 266 files, 4895 KB, 123926 lines.
-- 2579 names declared at the top level (the shared scope); 1313 of them are used by a file other than the one that declares them.
-- 2825 file-to-file dependencies (file A uses at least one name from file B).
+- 266 files, 4901 KB, 124047 lines.
+- 2580 names declared at the top level (the shared scope); 1314 of them are used by a file other than the one that declares them.
+- 2826 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 225 files, 12 files depend on each other in a loop (directly or through other files); the other 29 files are outside any loop.
 
@@ -1123,9 +1123,9 @@ JOBS DESK: Jobs & clients as in the layout picture – the jobs down the side, t
 
 PLANNING LEADS (owner only): moved in from the Devon Planning Leads page
 
-- 943 lines, 39 KB. Declares 2 names, 1 used elsewhere.
+- 1010 lines, 42 KB. Declares 2 names, 1 used elsewhere.
 - **Used elsewhere:** `LEADS` (1)
-- **Uses names from 6 files:** `core/helpers.js` (5), `core/company-names.js` (4), `core/state.js` (2), `core/tabs-week.js` (2), `owner/backup.js` (1), `owner/company-details.js` (1)
+- **Uses names from 7 files:** `core/helpers.js` (5), `core/company-names.js` (4), `core/state.js` (2), `core/tabs-week.js` (2), `owner/backup.js` (1), `owner/company-details.js` (1), `sites/sites-map.js` (1)
 - **Used by 1 files**
 
 ### `owner/owner.js`
@@ -2257,10 +2257,10 @@ SITE HOURS: the site page's hours, person by person, each opening Timesheets on 
 
 SITES MAP: every site and job on one map you can drag and zoom
 
-- 287 lines, 11 KB. Declares 10 names, 1 used elsewhere.
-- **Used elsewhere:** `smOpen` (2)
+- 341 lines, 13 KB. Declares 11 names, 2 used elsewhere.
+- **Used elsewhere:** `smOpen` (2), `smOpenWith` (1)
 - **Uses names from 10 files:** `sites/maps-pins.js` (3), `core/helpers.js` (2), `core/state.js` (2), `clients/quick-enquiry.js` (1), `core/company-names.js` (1), `core/viewer.js` (1), `photos/photos.js` (1), `sites/go-site.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
-- **Used by 2 files**
+- **Used by 3 files**
 
 ### `sites/snag-quick.js`
 

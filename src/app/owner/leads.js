@@ -5,6 +5,7 @@ import { S, ownerMode } from "../core/state.js";
 import { curTab, render } from "../core/tabs-week.js";
 import { loadZip } from "./backup.js";
 import { coData } from "./company-details.js";
+import { smOpenWith } from "../sites/sites-map.js";
 export { LEADS };
 /* the weekly leads check is a claude.ai routine; its page has Run now, so James can look whenever he wants (Nov 2026).
    On our own hosting the server runs the check, and this becomes a button that asks it to (Jasper). */
@@ -116,6 +117,71 @@ const LEADS = (() => {
     "Woodbury": "EX5",
   };
   const LETTER_NAME = { homeowner: "Homeowner letter", original: "Original letter" };
+  /* where a lead is: its own place, else the middle of its postcode area or town */
+  function llOf(r) {
+    let oc = (r.postcode || "").split(" ")[0];
+    if (!OUTCODE[oc]) oc = TOWN[r.town] || "";
+    return r.lat != null && r.lon != null ? [+r.lat, +r.lon] : OUTCODE[oc] || null;
+  }
+  /* 🗺️ Map: the leads the filters above show (month, councils, distance, status, small jobs, type), on the same map as
+     the sites; Everything / Not written to / Letters sent / Saved / Hot. Tap a pin for the lead, the council page,
+     directions and ✉️ tick it for a letter (James, Nov 2026: "an interactive map that filters the preferences and ones
+     I have sent letters to") */
+  function mapOpen() {
+    const pts = filtered({ keepSent: true }).map((r) => {
+      const c = llOf(r);
+      return {
+        lat: c ? c[0] : null,
+        lon: c ? c[1] : null,
+        st: r.sent ? "ldsent" : r.saved ? "ldsaved" : hot(r) ? "ldhot" : "ldnew",
+        name: r.address,
+        r,
+      };
+    });
+    const card = (p) => {
+      const r = p.r,
+        st = statusOf(r);
+      const cat = (CATS.find((x) => x[0] === r.category) || [0, ""])[1];
+      return `<b>${esc(r.address)}</b><div class="who">${esc(cat)} · ${esc(st.t)}${r._mi != null ? " · " + r._mi + " miles" : ""}</div><div class="ld-mdesc">${esc(r.desc || "")}</div>${r.sent ? `<div class="who">✉️ Letter sent ${esc(fmtD(r.sentDate || ""))}${r.letter ? " · " + esc(LETTER_NAME[r.letter] || "") : ""}${r.outcome ? " · " + esc(r.outcome) : ""}</div>` : ""}
+        <div class="actions"><button type="button" class="btn primary ld-mpick">${L.picked.has(r._id) ? "✓ Ticked for a letter" : "✉️ Tick for a letter"}</button>${r.link ? `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener">Council page ↗</a>` : ""}<a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(r.address || "")}" target="_blank" rel="noopener">🚗 Directions</a></div>`;
+    };
+    smOpenWith({
+      title: "🗺️ Planning leads",
+      label: "Map of the planning leads",
+      pts,
+      f: L.mapF || "all",
+      segs: [
+        ["all", "Everything shown"],
+        ["notsent", "Not written to"],
+        ["sent", "Letters sent"],
+        ["saved", "Saved"],
+        ["hot", "Hot"],
+      ],
+      show: (p, f) => {
+        L.mapF = f;
+        const r = p.r;
+        return (
+          f === "all" ||
+          (f === "notsent" && !r.sent) ||
+          (f === "sent" && r.sent) ||
+          (f === "saved" && r.saved) ||
+          (f === "hot" && hot(r))
+        );
+      },
+      keyHtml:
+        '<span><i class="ldk ldnew"></i> Not written to</span><span><i class="ldk ldhot"></i> Hot</span><span><i class="ldk ldsaved"></i> Saved</span><span><i class="ldk ldsent"></i> Letter sent</span><span class="who">Shows what the filters on the Leads page show.</span>',
+      card,
+      wire: (p, c) => {
+        c.querySelector(".ld-mpick").onclick = () => {
+          if (L.picked.has(p.r._id)) L.picked.delete(p.r._id);
+          else L.picked.add(p.r._id);
+          c.querySelector(".ld-mpick").textContent = L.picked.has(p.r._id)
+            ? "✓ Ticked for a letter"
+            : "✉️ Tick for a letter";
+        };
+      },
+    });
+  }
   function miles(r) {
     const HOME = coHome();
     if (!HOME) return null;
@@ -289,7 +355,7 @@ const LEADS = (() => {
     <label class="ld-tog"><input type="checkbox" id="ld-small" ${L.skipSmall ? "checked" : ""}> Skip small jobs</label>
     <label class="ld-tog"><input type="checkbox" id="ld-hide" ${L.hideSent ? "checked" : ""}> Hide letters sent</label></div>
   <div class="actions" style="margin-top:8px"><select id="ld-style" aria-label="Which letter"><option value="homeowner" ${L.style === "homeowner" ? "selected" : ""}>Homeowner letter</option><option value="original" ${L.style === "original" ? "selected" : ""}>Original letter (architects)</option></select>
-    <button type="button" class="btn primary" id="ld-letters">${L.picked.size ? `Download ${L.picked.size} letter${L.picked.size === 1 ? "" : "s"} (Word)` : "Download letters (Word)"}</button><button type="button" class="btn" id="ld-csv">Mailing list (CSV)</button><button type="button" class="btn" id="ld-copy">Copy addresses</button></div>
+    <button type="button" class="btn primary" id="ld-letters">${L.picked.size ? `Download ${L.picked.size} letter${L.picked.size === 1 ? "" : "s"} (Word)` : "Download letters (Word)"}</button><button type="button" class="btn" id="ld-csv">Mailing list (CSV)</button><button type="button" class="btn" id="ld-map">🗺️ Map</button><button type="button" class="btn" id="ld-copy">Copy addresses</button></div>
   <div class="actions" style="margin-top:6px"><span class="who">${L.picked.size ? `<b>${L.picked.size}</b> ticked` : "Tick the leads you want letters for."}</span><button type="button" class="btn" id="ld-all">Tick everything shown</button><button type="button" class="btn" id="ld-none" ${L.picked.size ? "" : "disabled"}>Clear ticks</button></div>
   <div class="notice" id="ld-confirm" ${L.pending.length ? "" : "hidden"} style="margin-top:8px;display:${L.pending.length ? "flex" : "none"};gap:8px;flex-wrap:wrap;align-items:center"><span>Mark these ${L.pending.length} letters as sent?</span><button type="button" class="btn primary" id="ld-yes">Mark as sent</button><button type="button" class="btn" id="ld-no">Not yet</button></div>
   <textarea id="ld-text" readonly hidden aria-label="Text to copy" style="width:100%;min-height:110px;margin-top:8px;font-family:ui-monospace,monospace;font-size:12px"></textarea>
@@ -874,6 +940,7 @@ const LEADS = (() => {
       L.picked.clear();
       render();
     };
+    $("ld-map").onclick = () => mapOpen();
     $("ld-letters").onclick = async () => {
       const rows = pickedRows();
       if (!rows.length) {

@@ -274,3 +274,8 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .jb-list.jb-full{max-width:none;max-height:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
 .jb-list.jb-full .jb-item{border:1px solid var(--line);background:var(--surface)}
 .jb-job .jb-card .jb-acts #jb-sign{white-space:normal}
+.ldk{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.ldk.ldnew{background:#2563eb}
+.ldk.ldhot{background:#dc2626}
+.ldk.ldsaved{background:#d97706}
+.ldk.ldsent{background:#16a34a}

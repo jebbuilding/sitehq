@@ -9,7 +9,7 @@ import { goSite } from "./go-site.js";
 import { gmapDir, pcGeo, pcOf } from "./maps-pins.js";
 import { projectSites } from "./project-pages.js";
 import { siteClient } from "./summary.js";
-export { smOpen };
+export { smOpen, smOpenWith };
 /* OpenStreetMap tiles drawn by hand (no map library): drag to move, + / − or pinch / the wheel to zoom. A pin for each
    site – live jobs red, finished (archived) grey – and each enquiry with a location blue. A site's place is its own
    pin, else its client's, else its postcode (looked up once with postcodes.io and remembered for this visit). Tap a
@@ -68,7 +68,42 @@ function smPoints() {
     );
   return out;
 }
+/* the same map for other things (James, Nov 2026: the planning leads). cfg: { title, label, pts [{lat, lon, st,
+   name}], segs [[key, label]], f (the chosen seg), show(p, f), keyHtml, card(p) → html, wire(p, cardEl) } */
+function smOpenWith(cfg) {
+  SM.cfg = cfg;
+  SM.pts = cfg.pts;
+  SM.sel = "";
+  openViewer(`<div class="sm-page"><h2>${esc(cfg.title)}</h2>
+    <div class="seg" id="sm-f">${cfg.segs.map(([k, l]) => `<button type="button" data-v="${esc(k)}" aria-pressed="${cfg.f === k}">${esc(l)}</button>`).join("")}</div>
+    <div class="sm-key">${cfg.keyHtml || ""}</div>
+    <div class="sm-map" id="sm-map" role="application" aria-label="${esc(cfg.label || cfg.title)}. Drag to move, use + and − to zoom."><div class="sm-tiles"></div><div class="sm-pins"></div>
+      <div class="sm-zoom"><button type="button" class="iconbtn" id="sm-in" aria-label="Zoom in">+</button><button type="button" class="iconbtn" id="sm-out" aria-label="Zoom out">−</button><button type="button" class="iconbtn" id="sm-fit" aria-label="Show them all">⤢</button></div>
+      <span class="sm-attr">© OpenStreetMap</span><div class="sm-card" id="sm-card" hidden></div></div>
+    <div id="sm-none"></div><div class="who" id="sm-count"></div>
+  </div>`);
+  SM.el = $("sm-map");
+  $("sm-f")
+    .querySelectorAll("button")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          cfg.f = b.dataset.v;
+          $("sm-f")
+            .querySelectorAll("button")
+            .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+          $("sm-card").hidden = true;
+          smFit();
+        }),
+    );
+  $("sm-in").onclick = () => smZoom(1);
+  $("sm-out").onclick = () => smZoom(-1);
+  $("sm-fit").onclick = smFit;
+  smWire();
+  smFit();
+}
 function smOpen() {
+  SM.cfg = null;
   SM.pts = smPoints();
   SM.sel = "";
   const f = S.f.smf || "live";
@@ -122,6 +157,7 @@ function smOpen() {
   })();
 }
 const smShown = () => {
+  if (SM.cfg) return SM.pts.filter((p) => p.lat != null && SM.cfg.show(p, SM.cfg.f));
   const f = S.f.smf || "live";
   return SM.pts.filter((p) => p.lat != null && (f === "all" || p.st === f));
 };
@@ -150,6 +186,12 @@ function smFit() {
     SM.y = (Math.min(...xy.map((a) => a[1])) + Math.max(...xy.map((a) => a[1]))) / 2;
   }
   smDraw();
+  if (SM.cfg) {
+    const n = smShown().length,
+      off = SM.pts.filter((p) => p.lat == null && SM.cfg.show(p, SM.cfg.f)).length;
+    $("sm-count").textContent = n + " on the map" + (off ? ` · ${off} with no known place` : "");
+    return;
+  }
   const none = SM.pts.filter((p) => p.k === "site" && p.lat == null);
   $("sm-none").innerHTML = none.length
     ? `<div class="who">Not on the map (no pin or postcode): ${none.map((p) => esc(p.name)).join(", ")}. Add the postcode to the site's name or address, or drop a pin on the site page.</div>`
@@ -210,6 +252,18 @@ function smCard(p) {
   SM.sel = p.name;
   const c = $("sm-card");
   c.hidden = false;
+  if (SM.cfg) {
+    c.innerHTML =
+      `<button type="button" class="iconbtn sm-x" aria-label="Close">✕</button>` + SM.cfg.card(p);
+    c.querySelector(".sm-x").onclick = () => {
+      c.hidden = true;
+      SM.sel = "";
+      smDraw();
+    };
+    if (SM.cfg.wire) SM.cfg.wire(p, c);
+    smDraw();
+    return;
+  }
   c.innerHTML = `<button type="button" class="iconbtn sm-x" aria-label="Close">✕</button><b>${esc(p.name)}</b>
     <div class="who">${p.st === "live" ? "Live job" : p.st === "done" ? "Finished" : "Enquiry"}${p.client && p.client !== p.name ? " · " + esc(p.client) : ""}${p.work ? " · " + esc(p.work) : ""}</div>
     <div class="actions">${p.k === "site" ? `<button type="button" class="btn primary" id="sm-go">Open the site</button>` : `<button type="button" class="btn primary" id="sm-cl">Open the enquiry</button>`}<a class="btn" href="${esc(gmapDir(p.lat + "," + p.lon))}" target="_blank" rel="noopener">🚗 Directions</a></div>`;
