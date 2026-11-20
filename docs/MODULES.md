@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 271 files, 5160 KB, 124769 lines.
+- 271 files, 5262 KB, 124798 lines.
 - 2610 names declared at the top level (the shared scope); 1328 of them are used by a file other than the one that declares them.
 - 2865 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -2293,7 +2293,7 @@ SITE HOURS: the site page's hours, person by person, each opening Timesheets on 
 
 SITES MAP: every site and job on one map you can drag and zoom
 
-- 416 lines, 16 KB. Declares 13 names, 2 used elsewhere.
+- 444 lines, 17 KB. Declares 13 names, 2 used elsewhere.
 - **Used elsewhere:** `smOpen` (2), `smOpenWith` (1)
 - **Uses names from 11 files:** `sites/maps-pins.js` (3), `core/helpers.js` (2), `core/state.js` (2), `clients/quick-enquiry.js` (1), `core/company-names.js` (1), `core/viewer.js` (1), `photos/photos.js` (1), `sites/go-site.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1), `sites/uk-map-data.js` (1)
 - **Used by 3 files**
@@ -2356,7 +2356,7 @@ TRADES: SITES (plans, RAMS, specs, induction, chat per site)
 
 UK MAP DATA: a built-in outline map of the UK for when map pictures can't load
 
-- 14 lines, 225 KB. Declares 3 names, 1 used elsewhere.
+- 15 lines, 326 KB. Declares 3 names, 1 used elsewhere.
 - **Used elsewhere:** `ukMap` (1)
 - **Uses names from 0 files:** none
 - **Used by 1 files**
