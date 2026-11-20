@@ -97,7 +97,7 @@ const EMP_TABS = [
   ["time", "⏱️ Timesheets"],
   ["mydw", "🧱 Day work"],
   ["chat", "💬 Chat"],
-  ["planner", "🗓️ Planner"],
+  ["planner", "📅 Calendar"],
   ["jobs", "📋 Forms"],
   ["plans", "🏗️ Sites"],
   ["checks", "📋 Reports"],
@@ -114,7 +114,7 @@ const EMP_TABS = [
 ];
 const OWN_TABS = [
   ["me", "📝 My forms"],
-  ["planner", "🗓️ Planner"],
+  ["planner", "📅 Calendar"],
   ["todo", "✅ My to-do"],
   ["time", "⏱️ Timesheets"],
   ["signin", "📍 Sign-in book"],

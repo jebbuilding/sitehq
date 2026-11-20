@@ -26,7 +26,7 @@ export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
    the older tests are written for; store "jeb.tradelook" true switches it on (tests/features/h500.js). */
 const TL_BAR = [
   ["home", "Today", "🏠"],
-  ["planner", "Planner", "🗓️"],
+  ["planner", "Calendar", "📅"],
   ["plans", "Sites", "🏗️"],
   ["photos", "Photos", "📷"],
   ["more", "More", "☰"],
