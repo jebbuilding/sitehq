@@ -43,6 +43,7 @@ import { empIndTodo, indFor, myInd, openInduction } from "../safety/site-inducti
 import { shrinkImage } from "../safety/training.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { myName } from "../survey/door-window-survey.js";
+import { chsTradeHtml, chsTradeWire } from "./chase-hours.js";
 import {
   crsArrived,
   crsEarlyAsk,
@@ -222,6 +223,7 @@ function empTime() {
   const ym = S.f.tsm;
   const wk = S.mine.entries.filter((e) => (e.date || "").slice(0, 7) === ym && !e.forName);
   let html =
+    chsTradeHtml() +
     clockCard() +
     dueSoonCard("mine") +
     `<div class="actions"><button class="btn primary" id="addH" type="button">+ Timesheet</button><button class="btn hv" id="addJ" type="button">+ Day work / job time</button></div>
@@ -296,6 +298,7 @@ function empTime() {
         }),
     );
   if ($("main").querySelector(".ci-in")) $("main").querySelector(".ci-in").onclick = checkIn;
+  chsTradeWire();
   $("main")
     .querySelectorAll(".ci-diff")
     .forEach(

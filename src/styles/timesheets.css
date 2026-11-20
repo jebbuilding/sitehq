@@ -77,3 +77,16 @@
 .myt-card .myt-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}
 .myt-card .myt-row{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:48px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .myt-card .myt-row .who{display:block}
+.chs-card{border-left:4px solid var(--accent)}
+.chs-card .chs-h{font-weight:700;font-size:1.05rem;margin-bottom:4px}
+.chs-card .chs-row{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:48px;border-bottom:1px solid var(--line)}
+.chs-card .chs-row .who{display:block}
+.chs-nudge{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.chs-nudge .chs-put{min-height:44px}
+.wkc-h{margin:0}
+.wkc-step{margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.wkc-step h3{margin:0 0 6px}
+.wkc-tbl .wkc-rate{width:84px;min-height:40px;text-align:right}
+.wkc-tbl .wkc-tot td{border-top:2px solid var(--line)}
+.wkc-step .wkc-job{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:52px;margin:4px 0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.wkc-step .wkc-job .who{display:block}

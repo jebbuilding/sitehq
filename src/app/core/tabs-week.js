@@ -9,6 +9,7 @@ import { bossFirst } from "./company-names.js";
 import { $, addDays, esc, iso, monday, store, toast } from "./helpers.js";
 import { drawNowBar } from "./now-bar.js";
 import { issueBadge } from "./report-issue.js";
+import { smvBlock } from "./site-moved.js";
 import { S, ownerMode } from "./state.js";
 import { drawView } from "../drawing/drawings-tab.js";
 import { SIGNSHEET } from "../drawing/sign-off-sheet.js";
@@ -330,6 +331,8 @@ function renderWeek() {
 }
 
 function render() {
+  /* the old claude.ai copy for a trade or client: only the moved screen (core/site-moved.js) */
+  if (S.moved) return smvBlock();
   const m0 = $("main");
   if (m0) {
     const keep =

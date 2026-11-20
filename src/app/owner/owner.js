@@ -47,6 +47,7 @@ import { lhCard, lhWire } from "../sales/letterhead-setup.js";
 import { siteFull, siteHeadHtml, siteLabel } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { awCardHtml, awWire } from "../timesheets/all-weeks.js";
+import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
 import { crsLine } from "../timesheets/check-reasons.js";
 import { pickPersonFor } from "../timesheets/day-work.js";
 import { fltBar, fltSiteOk, fltWhoOk, fltWhos, wireFlt } from "../timesheets/filters.js";
@@ -60,6 +61,7 @@ import { pcCardHtml, pcWire } from "../timesheets/plan-check.js";
 import { qwOpen } from "../timesheets/quick-week.js";
 import { shCardHtml, shWire } from "../timesheets/stray-hours.js";
 import { openEntry, sumH, typeTag } from "../timesheets/time.js";
+import { wkcOpen, wkcRec } from "../timesheets/week-close.js";
 import { WE, WS, dayFor } from "../timesheets/working-day.js";
 export {
   allIds,
@@ -378,7 +380,7 @@ function ownerTime() {
     <div class="tot"><div class="n">${hrs(sumH(all, (e) => e.type === "job"))}</div><div class="l">Job log hours</div></div></div>
     ${all.length ? `<div class="who">Timesheet hours: employees ${hrs(sumH(all, (e) => e.type === "hours" && roleOf(e.who) === "employee"))} h · subcontractors ${hrs(sumH(all, (e) => e.type === "hours" && roleOf(e.who) === "sub"))} h${all.some((e) => !["employee", "sub", "owner"].includes(roleOf(e.who))) ? " · not set " + hrs(sumH(all, (e) => e.type === "hours" && !["employee", "sub", "owner"].includes(roleOf(e.who)))) + " h" : ""}</div>` : ""}
     <div class="actions"><button class="btn primary" id="ot-addh" type="button">+ Add a timesheet day</button><button class="btn hv" id="ot-addj" type="button">+ Add day work</button></div>
-    <div class="actions"><button class="btn primary" id="paysum" type="button">Weekly pay summary</button><button class="btn" id="wu-open" type="button">📋 Week wrap-up</button><button class="btn" id="csv" type="button">Download this week (CSV)</button>
+    <div class="actions"><button class="btn primary" id="wkc-open" type="button">${wkcRec() ? "✅ Week closed – look again" : "✅ Close the week"}</button><button class="btn primary" id="paysum" type="button">Weekly pay summary</button><button class="btn" id="wu-open" type="button">📋 Week wrap-up</button><button class="btn" id="csv" type="button">Download this week (CSV)</button>
     <button class="btn" id="monthly" type="button">Monthly report by site</button>
     <button class="btn" id="preview" type="button">Fill in forms as me</button></div>`;
   if (!S.sites.length)
@@ -437,6 +439,7 @@ function ownerTime() {
   });
   html =
     psyncHtml() +
+    chsCardHtml() +
     ncoCardHtml() +
     mytCardHtml() +
     awCardHtml() +
@@ -450,6 +453,8 @@ function ownerTime() {
   ncoWire();
   awWire();
   mytWire();
+  chsWire();
+  if ($("wkc-open")) $("wkc-open").onclick = wkcOpen;
   shWire();
   pcWire();
   if ($("wu-open")) $("wu-open").onclick = () => wuOpen();
