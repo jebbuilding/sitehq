@@ -9,6 +9,7 @@ import { siteLabel } from "../sites/job-details.js";
 import { nstGroups } from "./non-site-time.js";
 import { checkInAt, checkOut } from "./time.js";
 export {
+  CRS_EARLY_MIN,
   crsArrived,
   crsEarlyAsk,
   crsIsEarly,
@@ -35,7 +36,9 @@ function crsIsLate(D) {
   if (S.mine.entries.some((e) => e.date === today && e.type === "hours")) return false;
   return toMin(nowHM()) > toMin(D.s) + crsLateMin;
 }
-const crsIsEarly = (D) => toMin(nowHM()) < toMin(D.e) - crsLateMin;
+/* leaving more than 30 minutes before the usual finish is an early finish; within 30 it counts as the finish */
+const CRS_EARLY_MIN = 30;
+const crsIsEarly = (D) => toMin(nowHM()) < toMin(D.e) - CRS_EARLY_MIN;
 function crsSeg(id, opts) {
   return `<div class="seg crs-seg" id="${id}" role="group">${opts.map((o, i) => `<button type="button" data-v="${esc(o)}" aria-pressed="${i === 0}">${esc(o)}</button>`).join("")}</div>`;
 }

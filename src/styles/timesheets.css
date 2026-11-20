@@ -90,3 +90,6 @@
 .wkc-tbl .wkc-tot td{border-top:2px solid var(--line)}
 .wkc-step .wkc-job{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:52px;margin:4px 0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .wkc-step .wkc-job .who{display:block}
+.otm-card{border-left:4px solid var(--accent)}
+.otm-card .otm-h{font-weight:700;font-size:1.05rem;margin-bottom:4px}
+.otm-card .otm-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}

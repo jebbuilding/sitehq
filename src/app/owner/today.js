@@ -19,6 +19,7 @@ import { dueSoonCard } from "../safety/expiry-dates.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
 import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
+import { otmCardHtml, otmCardWire } from "../timesheets/overtime.js";
 export {
   NL_BY,
   NL_SUBS,
@@ -496,7 +497,7 @@ function todayView() {
     }
     ${tdwCard()}
     ${jbTodayCard()}
-    ${chsCardHtml()}${pcTodayCard()}
+    ${otmCardHtml()}${chsCardHtml()}${pcTodayCard()}
     ${wuTodayCard()}
     ${wpCard()}
     <div class="nl-cols">
@@ -513,6 +514,7 @@ function todayView() {
   jbTodayWire();
   pcTodayWire();
   chsWire();
+  otmCardWire();
   wuTodayWire();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
