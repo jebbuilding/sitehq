@@ -4,6 +4,7 @@ import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { blobUrl, uploadFile } from "../files/files.js";
+import { openFile } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
 import { SD_VATC, sdCalc, sdNextNumber, sdSales, sdSaveRec, sdSet } from "./sales-calc.js";
 import { sdParseEstimate, sdReadDocxAll } from "./sales-docx.js";
@@ -67,6 +68,9 @@ function sdSettings() {
     <label for="ss-close">Closing words<textarea id="ss-close" rows="5" maxlength="6000">${esc(s.closing)}</textarea></label>
     <label for="ss-so">Sign-off (one line each, then your signature and name)<textarea id="ss-so" rows="2" maxlength="200">${esc(s.signoff)}</textarea></label>
     <div class="flabel">Terms and conditions (printed after each estimate)</div>
+    <div class="ss-tpdf"><b>📄 Your terms as a PDF</b><div class="who">Upload your own terms and each estimate ends with them exactly as they are, page for page. Without one, the typed terms below are used.</div>
+      <div id="ss-tpdfnow">${s.termsPdfId ? `✓ <b>${esc(s.termsPdfName || "Terms PDF")}</b> <button type="button" class="linkbtn" id="ss-tpdfopen">Open</button> · <button type="button" class="linkbtn" id="ss-tpdfx">Stop using it</button>` : '<span class="who">No terms PDF yet.</span>'}</div>
+      <label class="btn ss-tpdfb">📄 ${s.termsPdfId ? "Upload a new one" : "Upload my terms PDF"}<input type="file" id="ss-tpdf" class="fpick" accept="application/pdf,.pdf" data-cam="1"></label></div>
     <div class="grid2"><label for="ss-tt">Title<input id="ss-tt" maxlength="120" value="${esc(s.termsTitle)}"></label><label for="ss-tv">Version line<input id="ss-tv" maxlength="80" value="${esc(s.termsVer)}" placeholder="e.g. Version date: 22 May 2026"></label></div>
     <label for="ss-terms">The terms<textarea id="ss-terms" rows="10" maxlength="80000">${esc(s.terms)}</textarea></label>
     <div class="who">A line starting <b>#</b> is a heading, <b>##</b> a smaller heading, <b>-</b> a bullet point. Bringing in a Word estimate fills this in for you.</div>
@@ -124,6 +128,41 @@ function sdSettings() {
       }
     },
   );
+  /* the terms PDF saves straight away, kept as uploaded */
+  const tpNow = (name) =>
+    name
+      ? `✓ <b>${esc(name)}</b> <button type="button" class="linkbtn" id="ss-tpdfopen">Open</button> · <button type="button" class="linkbtn" id="ss-tpdfx">Stop using it</button>`
+      : `<span class="who">No terms PDF – the typed terms are used.</span>`;
+  const tpWire = () => {
+    if ($("ss-tpdfopen"))
+      $("ss-tpdfopen").onclick = () => openFile(sdSet().termsPdfId, "Terms", "application/pdf");
+    if ($("ss-tpdfx"))
+      $("ss-tpdfx").onclick = async () => {
+        try {
+          await sdSaveSet({ termsPdfId: "", termsPdfName: "" });
+          $("ss-tpdfnow").innerHTML = tpNow("");
+        } catch (e) {
+          toast("Couldn't save");
+        }
+      };
+  };
+  tpWire();
+  $("ss-tpdf").onchange = async (e) => {
+    const f = e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!/pdf/i.test(f.type || "") && !/\.pdf$/i.test(f.name || "")) return toast("Choose a PDF");
+    toast("Uploading your terms…");
+    try {
+      const a = await uploadFile(f, f.name || "Terms.pdf");
+      await sdSaveSet({ termsPdfId: a.id, termsPdfName: f.name || "Terms.pdf" });
+      $("ss-tpdfnow").innerHTML = tpNow(f.name || "Terms PDF");
+      tpWire();
+      toast("Your terms PDF will go on the end of each estimate, as it is");
+    } catch (er) {
+      toast("Couldn't upload it. Check your connection.");
+    }
+  };
   /* pictures save straight away */
   const upImg = (cls, key, box, what) => {
     const fi = document.querySelector("." + cls);

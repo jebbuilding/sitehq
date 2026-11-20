@@ -5,6 +5,7 @@ import { render } from "../core/tabs-week.js";
 import { blobUrl, uploadFile } from "../files/files.js";
 import { loadPdfJs } from "../files/in-app-files.js";
 import { loadImage, logoId } from "../photos/photos.js";
+import { lhbOpen, lhbTermsOpen } from "./lh-builder.js";
 import { sdSet } from "./sales-calc.js";
 import { sdHeadLines, sdImgData, sdPdf } from "./sales-pdf.js";
 import { sdQuickLetterhead, sdSaveSet, sdSettings } from "./sales-settings.js";
@@ -300,9 +301,12 @@ function lhCard() {
     }
     ${pics ? `<label class="inl lh-allrow"><input type="checkbox" id="lh-all" ${s.lhAll === false ? "" : "checked"}> Put it on all documents too: policies, RAMS, inductions, toolbox talks, reports, agreements and the rest (drawings and posters keep their own look)</label>` : ""}
     <div class="actions"><span class="btn ${pics ? "" : "primary "}sd-filebtn">📄 ${has ? "Bring in a new letterhead" : "Bring in my letterhead"}<input type="file" class="lh-file" accept="${LH_ACCEPT}" aria-label="Bring in my letterhead (PDF, picture or Word)"></span>${has ? `<button type="button" class="btn" id="lh-pdf">👁 See a sample page</button>` : ""}${has && !pics ? `<button type="button" class="btn" id="lh-edit">✎ Change the lines or logo</button>` : ""}</div>
+    <div class="actions lhb-acts"><button type="button" class="btn" id="lhb-make">✨ ${s.lhMade ? "Change the letterhead I made" : "No letterhead? Make one"}</button><button type="button" class="btn" id="lhb-terms">✨ ${s.terms ? "Write new terms for me" : "No terms? Make them"}</button></div>
   </div></div>`;
 }
 function lhWire() {
+  if ($("lhb-make")) $("lhb-make").onclick = () => lhbOpen();
+  if ($("lhb-terms")) $("lhb-terms").onclick = () => lhbTermsOpen();
   const fi = document.querySelector(".lh-file");
   if (!fi) return;
   fi.onchange = async () => {

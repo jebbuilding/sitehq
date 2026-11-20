@@ -1,7 +1,7 @@
 /* ================= SALES PDF: estimates as a letter on the letterhead, invoices with totals, VAT and CIS ================= */
 import { gbp, iso, parse, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
-import { getFileBlob } from "../files/in-app-files.js";
+import { getFileBlob, loadPdfJs } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
@@ -103,6 +103,9 @@ async function sdPdf(d) {
   /* who wrote it: the name on this estimate or invoice, else the owner's */
   const byName = d.byName || co.owner;
   const terms = d.terms != null ? d.terms : est ? set.terms : set.invTerms;
+  /* the terms as James uploaded them (a PDF), page for page, unless this estimate uses typed terms (James, Nov 2026:
+     "why does it change it and not keep it as what is uploaded") */
+  const termsPdfId = est && set.termsPdfId && d.termsUse !== "typed" ? set.termsPdfId : "";
   const headLines = sdHeadLines();
   const pics = await lhPics();
   if (pics && pics.bot) BOT = Math.min(BOT, pics.bot.y - 12);
@@ -379,7 +382,7 @@ async function sdPdf(d) {
       doc.setLineWidth(0.3);
       doc.line(M, y - 5, R, y - 5);
     };
-    if (terms)
+    if (terms && !termsPdfId)
       sdTermsPages(Object.assign({}, set, { terms }), {
         head: newPage,
         para,
@@ -573,7 +576,36 @@ async function sdPdf(d) {
     }
     doc.text("Page | " + i, W / 2, fy, { align: "center" });
   }
+  if (termsPdfId) await sdAddPdfPages(doc, termsPdfId);
   return doc.output("blob");
+}
+/* every page of an uploaded PDF added as it is (drawn as a picture of each page, so it looks exactly the same) */
+async function sdAddPdfPages(doc, id) {
+  try {
+    const blob = await getFileBlob(id);
+    await loadPdfJs();
+    const pdf = await window.pdfjsLib.getDocument({
+      data: new Uint8Array(await blob.arrayBuffer()),
+    }).promise;
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const v1 = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: 1654 / v1.width });
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(vp.width);
+      cv.height = Math.round(vp.height);
+      const g = cv.getContext("2d");
+      g.fillStyle = "#fff";
+      g.fillRect(0, 0, cv.width, cv.height);
+      await page.render({ canvasContext: g, viewport: vp }).promise;
+      const w = 210,
+        h = Math.min(297, (210 * cv.height) / cv.width);
+      doc.addPage();
+      doc.addImage(cv.toDataURL("image/jpeg", 0.88), "JPEG", 0, 0, w, h, "", "FAST");
+    }
+  } catch (e) {
+    toast("Your terms PDF couldn't be added – check you have signal");
+  }
 }
 /* the terms: company name and title centred, the version in grey, then the clauses ("# " headings, "## " sub-headings,
    "- " bullets, ">> " centred lines, lines of ____ for signing, others as justified paragraphs) */

@@ -6,11 +6,11 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 271 files, 5262 KB, 124798 lines.
-- 2610 names declared at the top level (the shared scope); 1328 of them are used by a file other than the one that declares them.
-- 2865 file-to-file dependencies (file A uses at least one name from file B).
+- 272 files, 5281 KB, 125216 lines.
+- 2617 names declared at the top level (the shared scope); 1330 of them are used by a file other than the one that declares them.
+- 2877 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
-- Dependency cycles: 229 files, 12 files depend on each other in a loop (directly or through other files); the other 30 files are outside any loop.
+- Dependency cycles: 230 files, 12 files depend on each other in a loop (directly or through other files); the other 30 files are outside any loop.
 
 ## The most widely used names
 
@@ -19,23 +19,23 @@ The de facto shared API: names used by the most files.
 | Name | Declared in | Used by |
 |---|---|---|
 | `S` | `core/state.js` | 213 files |
-| `esc` | `core/helpers.js` | 209 files |
-| `$` | `core/helpers.js` | 197 files |
-| `toast` | `core/helpers.js` | 174 files |
-| `render` | `core/tabs-week.js` | 147 files |
+| `esc` | `core/helpers.js` | 210 files |
+| `$` | `core/helpers.js` | 198 files |
+| `toast` | `core/helpers.js` | 175 files |
+| `render` | `core/tabs-week.js` | 148 files |
 | `iso` | `core/helpers.js` | 129 files |
-| `closeForm` | `core/sheet.js` | 125 files |
-| `openSheet` | `core/sheet.js` | 125 files |
-| `formFoot` | `core/sheet.js` | 121 files |
-| `showErr` | `core/sheet.js` | 116 files |
+| `closeForm` | `core/sheet.js` | 126 files |
+| `openSheet` | `core/sheet.js` | 126 files |
+| `formFoot` | `core/sheet.js` | 122 files |
+| `showErr` | `core/sheet.js` | 117 files |
 | `nameOf` | `owner/owner.js` | 98 files |
 | `newId` | `files/outbox.js` | 94 files |
 | `shortDay` | `core/helpers.js` | 86 files |
 | `siteLabel` | `sites/job-details.js` | 77 files |
 | `ownerMode` | `core/state.js` | 75 files |
-| `coData` | `owner/company-details.js` | 58 files |
+| `coData` | `owner/company-details.js` | 59 files |
 | `gbp` | `core/helpers.js` | 58 files |
-| `uploadFile` | `files/files.js` | 54 files |
+| `uploadFile` | `files/files.js` | 55 files |
 | `openViewer` | `core/viewer.js` | 53 files |
 | `stamp` | `core/helpers.js` | 53 files |
 | `bossFirst` | `core/company-names.js` | 52 files |
@@ -46,11 +46,11 @@ The de facto shared API: names used by the most files.
 | `addDays` | `core/helpers.js` | 48 files |
 | `uploadErr` | `files/files.js` | 45 files |
 | `allTeam` | `owner/owner.js` | 44 files |
-| `openFile` | `files/in-app-files.js` | 43 files |
+| `openFile` | `files/in-app-files.js` | 44 files |
 | `loadJsPdf` | `safety/site-inductions.js` | 42 files |
 | `siteFull` | `sites/job-details.js` | 41 files |
 | `closeViewer` | `core/viewer.js` | 40 files |
-| `BRGB` | `photos/photos.js` | 38 files |
+| `BRGB` | `photos/photos.js` | 39 files |
 | `siteNames` | `core/state.js` | 37 files |
 | `shrinkImage` | `safety/training.js` | 34 files |
 | `store` | `core/helpers.js` | 30 files |
@@ -96,7 +96,7 @@ Only `core/boot.js` has statements that run at load; every other file only decla
 
 The order the files are joined in: from `core/boot.js`, each file after the files it imports (the order ES modules are evaluated in). Derived from the imports, not maintained by hand.
 
-`core/helpers.js` → `calculators/falls.js` → `people/employment-types.js` → `core/privacy-notice.js` → `sales/sales-calc.js` → `people/invite.js` → `people/leavers.js` → `people/personal-documents.js` → `drawing/section-buildups.js` → `drawing/section-steel.js` → `drawing/window-plan.js` → `drawing/walls.js` → `drawing/components.js` → `drawing/plan-geometry.js` → `drawing/paving-draw.js` → `drawing/nice-symbols.js` → `drawing/standard-sizes.js` → `drawing/symbols-annotation.js` → `drawing/steel-parts.js` → `drawing/symbols-more.js` → `drawing/symbols-design.js` → `drawing/symbols-elevation.js` → `drawing/timber.js` → `drawing/construction-details.js` → `drawing/room-sketch.js` → `owner/delete-client-site.js` → `clients/more-jobs.js` → `clients/sign-offs.js` → `sales/est-docs.js` → `sales/estimating.js` → `sales/est-files.js` → `sales/sales-email.js` → `sales/sales-sign.js` → `sales/sales-edit.js` → `sales/job-pricing.js` → `sales/job-file.js` → `clients/web-enquiries.js` → `owner/account-setup.js` → `planner/course-booking.js` → `safety/rams-maker.js` → `planner/holidays.js` → `planner/holiday-person.js` → `planner/views.js` → `sites/job-sheets.js` → `planner/time-off.js` → `timesheets/working-day.js` → `timesheets/overtime.js` → `owner/trade-signin.js` → `safety/checklists.js` → `planner/kit-out.js` → `safety/checks.js` → `planner/qr-stickers.js` → `purchasing/sup-send.js` → `purchasing/makers.js` → `people/wage-pdf.js` → `people/wage-calc.js` → `purchasing/materials-receipts.js` → `sales/receipt-smarts.js` → `sales/acct-review.js` → `sales/acct-receipts.js` → `sales/acct-reconcile.js` → `sales/acct-trade-paid.js` → `sales/acct-data.js` → `sales/job-budget.js` → `timesheets/filters.js` → `timesheets/monthly-sheet.js` → `timesheets/my-time.js` → `timesheets/day-work.js` → `sales/job-costs.js` → `purchasing/price-order.js` → `purchasing/price-ask.js` → `purchasing/orders.js` → `sales/cis-returns.js` → `sales/cis-bill.js` → `sales/acct-due.js` → `sales/acct-export.js` → `sales/vat-return.js` → `sales/cash-flow.js` → `sales/getting-paid.js` → `sales/tax-aside.js` → `sales/valuations.js` → `sales/accounts.js` → `sales/acct-suppliers.js` → `purchasing/suppliers.js` → `purchasing/merchants.js` → `safety/accidents.js` → `owner/trade-look.js` → `sites/qr-sign-in.js` → `sites/sign-in-book.js` → `timesheets/non-site-time.js` → `sites/roll-call.js` → `planner/diary.js` → `planner/holiday-tab.js` → `planner/month-filter.js` → `planner/planner-extras.js` → `planner/plant-care.js` → `planner/weather-plan.js` → `planner/board.js` → `sites/go-site.js` → `safety/cdm-rams.js` → `safety/rams.js` → `files/attachment-picker.js` → `safety/cdm.js` → `sites/doc-visibility.js` → `sites/trade-sites.js` → `sites/plans-specs.js` → `files/file-it.js` → `files/print.js` → `sites/rfi.js` → `sites/signoff-due.js` → `owner/briefing.js` → `people/companies.js` → `owner/search.js` → `sites/uk-map-data.js` → `sites/sites-map.js` → `owner/today-cards.js` → `sales/variations.js` → `owner/today-desk.js` → `timesheets/quick-week.js` → `timesheets/plan-check.js` → `owner/week-wrap.js` → `timesheets/chase-hours.js` → `owner/today.js` → `sites/stage-signoff.js` → `owner/jobs-desk.js` → `sites/job-pack.js` → `sites/site-diary.js` → `planner/programme.js` → `purchasing/invoices.js` → `safety/custom-forms.js` → `sites/building-control.js` → `sites/doc-folders.js` → `sites/snag-quick.js` → `sites/drawing-compare.js` → `sites/site-health.js` → `sites/site-hours.js` → `sites/storage.js` → `sites/tiles.js` → `sites/project-pages.js` → `sites/summary.js` → `drawing/sign-off.js` → `drawing/drawings-tab.js` → `safety/waste-transfer-note.js` → `survey/door-window-survey.js` → `files/send-to.js` → `people/reminders.js` → `people/subcontractor-agreement.js` → `sales/sig-setup.js` → `people/profile-photos.js` → `timesheets/day-work-xlsx.js` → `sales/sales-docx.js` → `sales/sales-settings.js` → `sales/sales-pdf.js` → `sales/letterhead-setup.js` → `safety/training.js` → `core/report-issue.js` → `owner/alerts.js` → `owner/whats-new.js` → `safety/expiry-dates.js` → `timesheets/check-reasons.js` → `timesheets/time.js` → `people/foreman.js` → `people/induction-send.js` → `safety/site-inductions.js` → `owner/deletion-record.js` → `purchasing/brochures.js` → `purchasing/samples.js` → `owner/company-details.js` → `people/personal-details.js` → `owner/backup.js` → `owner/reports.js` → `people/portal-access.js` → `photos/doc-scan.js` → `safety/form-builder.js` → `timesheets/all-weeks.js` → `timesheets/not-checked-out.js` → `timesheets/pay-summary.js` → `timesheets/phone-sync.js` → `timesheets/stray-hours.js` → `timesheets/week-close.js` → `owner/owner.js` → `chat/contacts.js` → `drawing/beam-sheet.js` → `drawing/bend-lines.js` → `drawing/cupboard-pics.js` → `drawing/cupboard-shapes.js` → `drawing/cupboard-maker.js` → `drawing/cupboard-alcove.js` → `drawing/cupboard-3d.js` → `drawing/cupboard-pack.js` → `drawing/drawing-layers.js` → `drawing/dxf-export.js` → `drawing/dxf-import.js` → `drawing/find-rooms.js` → `drawing/finger-tap.js` → `drawing/hatch.js` → `drawing/house-render.js` → `drawing/join-rooms.js` → `drawing/notebook.js` → `drawing/retaining-wall.js` → `drawing/smart-pen.js` → `drawing/stair-builder.js` → `drawing/stair-3d.js` → `drawing/undo-list.js` → `drawing/wall-buildups.js` → `drawing/paving.js` → `photos/mark-up.js` → `drawing/trade-drawings.js` → `photos/photos.js` → `sites/maps-pins.js` → `core/viewer.js` → `clients/gdpr-consent.js` → `clients/property-info.js` → `clients/record-pdf.js` → `clients/sketches.js` → `clients/visit-diary.js` → `clients/quick-enquiry.js` → `clients/review-ask.js` → `clients/stages-planner.js` → `clients/portal-calendar.js` → `drawing/sign-off-sheet.js` → `files/cut-outs.js` → `files/scale-ruler.js` → `files/in-app-files.js` → `files/files.js` → `files/outbox.js` → `owner/pin.js` → `core/dictation.js` → `owner/deleted-items.js` → `core/live-feed.js` → `core/data.js` → `clients/choices.js` → `clients/job-story.js` → `clients/uploads.js` → `owner/client-look.js` → `clients/portal.js` → `clients/documents.js` → `clients/clients.js` → `clients/address-book-jobs.js` → `clients/address-import.js` → `clients/address-book.js` → `sites/job-details.js` → `core/fields.js` → `core/sheet.js` → `chat/calls.js` → `chat/chat.js` → `core/now-bar.js` → `core/site-moved.js` → `owner/biz-costs.js` → `owner/leads.js` → `owner/reports-home.js` → `owner/todo-lists.js` → `people/induction-matrix.js` → `photos/select-zip.js` → `safety/company-docs.js` → `safety/policies-insurance.js` → `sales/sales.js` → `core/tabs-week.js` → `people/access.js` → `core/state.js` → `core/company-names.js` → `calculators/materials.js` → `calculators/more.js` → `calculators/calculator.js` → `calculators/roofing.js` → `core/ask-claude.js` → `core/back-button.js` → `core/opening-screen.js` → `core/spell-check.js` → `photos/photo-test.js` → `core/boot.js`
+`core/helpers.js` → `calculators/falls.js` → `people/employment-types.js` → `core/privacy-notice.js` → `sales/sales-calc.js` → `people/invite.js` → `people/leavers.js` → `people/personal-documents.js` → `drawing/section-buildups.js` → `drawing/section-steel.js` → `drawing/window-plan.js` → `drawing/walls.js` → `drawing/components.js` → `drawing/plan-geometry.js` → `drawing/paving-draw.js` → `drawing/nice-symbols.js` → `drawing/standard-sizes.js` → `drawing/symbols-annotation.js` → `drawing/steel-parts.js` → `drawing/symbols-more.js` → `drawing/symbols-design.js` → `drawing/symbols-elevation.js` → `drawing/timber.js` → `drawing/construction-details.js` → `drawing/room-sketch.js` → `owner/delete-client-site.js` → `clients/more-jobs.js` → `clients/sign-offs.js` → `sales/est-docs.js` → `sales/estimating.js` → `sales/est-files.js` → `sales/sales-pdf.js` → `sales/sales-email.js` → `sales/sales-sign.js` → `sales/sales-edit.js` → `sales/job-pricing.js` → `sales/job-file.js` → `clients/web-enquiries.js` → `owner/account-setup.js` → `planner/course-booking.js` → `safety/rams-maker.js` → `planner/holidays.js` → `planner/holiday-person.js` → `planner/views.js` → `sites/job-sheets.js` → `planner/time-off.js` → `timesheets/working-day.js` → `timesheets/overtime.js` → `owner/trade-signin.js` → `safety/checklists.js` → `planner/kit-out.js` → `safety/checks.js` → `planner/qr-stickers.js` → `purchasing/sup-send.js` → `purchasing/makers.js` → `people/wage-pdf.js` → `people/wage-calc.js` → `purchasing/materials-receipts.js` → `sales/receipt-smarts.js` → `sales/acct-review.js` → `sales/acct-receipts.js` → `sales/acct-reconcile.js` → `sales/acct-trade-paid.js` → `sales/acct-data.js` → `sales/job-budget.js` → `timesheets/filters.js` → `timesheets/monthly-sheet.js` → `timesheets/my-time.js` → `timesheets/day-work.js` → `sales/job-costs.js` → `purchasing/price-order.js` → `purchasing/price-ask.js` → `purchasing/orders.js` → `sales/cis-returns.js` → `sales/cis-bill.js` → `sales/acct-due.js` → `sales/acct-export.js` → `sales/vat-return.js` → `sales/cash-flow.js` → `sales/getting-paid.js` → `sales/tax-aside.js` → `sales/valuations.js` → `sales/accounts.js` → `sales/acct-suppliers.js` → `purchasing/suppliers.js` → `purchasing/merchants.js` → `safety/accidents.js` → `owner/trade-look.js` → `sites/qr-sign-in.js` → `sites/sign-in-book.js` → `timesheets/non-site-time.js` → `sites/roll-call.js` → `planner/diary.js` → `planner/holiday-tab.js` → `planner/month-filter.js` → `planner/planner-extras.js` → `planner/plant-care.js` → `planner/weather-plan.js` → `planner/board.js` → `sites/go-site.js` → `safety/cdm-rams.js` → `safety/rams.js` → `files/attachment-picker.js` → `safety/cdm.js` → `sites/doc-visibility.js` → `sites/trade-sites.js` → `sites/plans-specs.js` → `files/file-it.js` → `files/print.js` → `sites/rfi.js` → `sites/signoff-due.js` → `owner/briefing.js` → `people/companies.js` → `owner/search.js` → `sites/uk-map-data.js` → `sites/sites-map.js` → `owner/today-cards.js` → `sales/variations.js` → `owner/today-desk.js` → `timesheets/quick-week.js` → `timesheets/plan-check.js` → `owner/week-wrap.js` → `timesheets/chase-hours.js` → `owner/today.js` → `sites/stage-signoff.js` → `owner/jobs-desk.js` → `sites/job-pack.js` → `sites/site-diary.js` → `planner/programme.js` → `purchasing/invoices.js` → `safety/custom-forms.js` → `sites/building-control.js` → `sites/doc-folders.js` → `sites/snag-quick.js` → `sites/drawing-compare.js` → `sites/site-health.js` → `sites/site-hours.js` → `sites/storage.js` → `sites/tiles.js` → `sites/project-pages.js` → `sites/summary.js` → `drawing/sign-off.js` → `drawing/drawings-tab.js` → `safety/waste-transfer-note.js` → `survey/door-window-survey.js` → `files/send-to.js` → `people/reminders.js` → `people/subcontractor-agreement.js` → `sales/sig-setup.js` → `people/profile-photos.js` → `timesheets/day-work-xlsx.js` → `sales/sales-docx.js` → `sales/sales-settings.js` → `sales/lh-builder.js` → `sales/letterhead-setup.js` → `safety/training.js` → `core/report-issue.js` → `owner/alerts.js` → `owner/whats-new.js` → `safety/expiry-dates.js` → `timesheets/check-reasons.js` → `timesheets/time.js` → `people/foreman.js` → `people/induction-send.js` → `safety/site-inductions.js` → `owner/deletion-record.js` → `purchasing/brochures.js` → `purchasing/samples.js` → `owner/company-details.js` → `people/personal-details.js` → `owner/backup.js` → `owner/reports.js` → `people/portal-access.js` → `photos/doc-scan.js` → `safety/form-builder.js` → `timesheets/all-weeks.js` → `timesheets/not-checked-out.js` → `timesheets/pay-summary.js` → `timesheets/phone-sync.js` → `timesheets/stray-hours.js` → `timesheets/week-close.js` → `owner/owner.js` → `chat/contacts.js` → `drawing/beam-sheet.js` → `drawing/bend-lines.js` → `drawing/cupboard-pics.js` → `drawing/cupboard-shapes.js` → `drawing/cupboard-maker.js` → `drawing/cupboard-alcove.js` → `drawing/cupboard-3d.js` → `drawing/cupboard-pack.js` → `drawing/drawing-layers.js` → `drawing/dxf-export.js` → `drawing/dxf-import.js` → `drawing/find-rooms.js` → `drawing/finger-tap.js` → `drawing/hatch.js` → `drawing/house-render.js` → `drawing/join-rooms.js` → `drawing/notebook.js` → `drawing/retaining-wall.js` → `drawing/smart-pen.js` → `drawing/stair-builder.js` → `drawing/stair-3d.js` → `drawing/undo-list.js` → `drawing/wall-buildups.js` → `drawing/paving.js` → `photos/mark-up.js` → `drawing/trade-drawings.js` → `photos/photos.js` → `sites/maps-pins.js` → `core/viewer.js` → `clients/gdpr-consent.js` → `clients/property-info.js` → `clients/record-pdf.js` → `clients/sketches.js` → `clients/visit-diary.js` → `clients/quick-enquiry.js` → `clients/review-ask.js` → `clients/stages-planner.js` → `clients/portal-calendar.js` → `drawing/sign-off-sheet.js` → `files/cut-outs.js` → `files/scale-ruler.js` → `files/in-app-files.js` → `files/files.js` → `files/outbox.js` → `owner/pin.js` → `core/dictation.js` → `owner/deleted-items.js` → `core/live-feed.js` → `core/data.js` → `clients/choices.js` → `clients/job-story.js` → `clients/uploads.js` → `owner/client-look.js` → `clients/portal.js` → `clients/documents.js` → `clients/clients.js` → `clients/address-book-jobs.js` → `clients/address-import.js` → `clients/address-book.js` → `sites/job-details.js` → `core/fields.js` → `core/sheet.js` → `chat/calls.js` → `chat/chat.js` → `core/now-bar.js` → `core/site-moved.js` → `owner/biz-costs.js` → `owner/leads.js` → `owner/reports-home.js` → `owner/todo-lists.js` → `people/induction-matrix.js` → `photos/select-zip.js` → `safety/company-docs.js` → `safety/policies-insurance.js` → `sales/sales.js` → `core/tabs-week.js` → `people/access.js` → `core/state.js` → `core/company-names.js` → `calculators/materials.js` → `calculators/more.js` → `calculators/calculator.js` → `calculators/roofing.js` → `core/ask-claude.js` → `core/back-button.js` → `core/opening-screen.js` → `core/spell-check.js` → `photos/photo-test.js` → `core/boot.js`
 
 ## Files
 
@@ -431,9 +431,9 @@ GENERIC FIELDS
 HELPERS: page lookups, dates, money and hours formatting, toast, working-day times, local storage
 
 - 123 lines, 3.3 KB. Declares 21 names, 20 used elsewhere.
-- **Used elsewhere:** `esc` (209), `$` (197), `toast` (174), `iso` (129), `shortDay` (86), `gbp` (58), `stamp` (53), `parse` (51), `addDays` (48), `store` (30), `hrs` (23), `monday` (18), `toMin` (9), `dayLabel` (6), `nowHM` (6), `calcHours` (4), `fsize` (4), `dayLine` (3), `lunchBreak` (3), `pad` (3)
+- **Used elsewhere:** `esc` (210), `$` (198), `toast` (175), `iso` (129), `shortDay` (86), `gbp` (58), `stamp` (53), `parse` (51), `addDays` (48), `store` (30), `hrs` (23), `monday` (18), `toMin` (9), `dayLabel` (6), `nowHM` (6), `calcHours` (4), `fsize` (4), `dayLine` (3), `lunchBreak` (3), `pad` (3)
 - **Uses names from 0 files:** none
-- **Used by 230 files**
+- **Used by 231 files**
 
 ### `core/live-feed.js`
 
@@ -485,9 +485,9 @@ REPORT AN ISSUE with the app
 SHEET (forms)
 
 - 404 lines, 13 KB. Declares 18 names, 15 used elsewhere.
-- **Used elsewhere:** `closeForm` (125), `openSheet` (125), `formFoot` (121), `showErr` (116), `armDelete` (21), `setEditing` (11), `setFormType` (11), `myDoc` (8), `editing` (4), `formType` (1), `initSheet` (1), `kindVal` (1), `myColl` (1), `setKindVal` (1), `touch` (1)
+- **Used elsewhere:** `closeForm` (126), `openSheet` (126), `formFoot` (122), `showErr` (117), `armDelete` (21), `setEditing` (11), `setFormType` (11), `myDoc` (8), `editing` (4), `formType` (1), `initSheet` (1), `kindVal` (1), `myColl` (1), `setKindVal` (1), `touch` (1)
 - **Uses names from 7 files:** `core/helpers.js` (3), `core/state.js` (2), `core/fields.js` (1), `core/tabs-week.js` (1), `core/viewer.js` (1), `files/files.js` (1), `photos/photos.js` (1)
-- **Used by 132 files**
+- **Used by 133 files**
 
 ### `core/site-moved.js`
 
@@ -521,9 +521,9 @@ STATE
 TABS & WEEK
 
 - 781 lines, 28 KB. Declares 12 names, 8 used elsewhere.
-- **Used elsewhere:** `render` (147), `curTab` (9), `empTabs` (6), `OWN_TABS` (4), `EMP_TABS` (2), `refreshJobDetail` (2), `initTabsWeek` (1), `renderTabs` (1)
+- **Used elsewhere:** `render` (148), `curTab` (9), `empTabs` (6), `OWN_TABS` (4), `EMP_TABS` (2), `refreshJobDetail` (2), `initTabsWeek` (1), `renderTabs` (1)
 - **Uses names from 62 files:** `people/reminders.js` (11), `core/helpers.js` (7), `owner/owner.js` (7), `owner/todo-lists.js` (6), `owner/trade-look.js` (5), `owner/today.js` (4), `chat/chat.js` (3), `clients/portal.js` (3), `owner/whats-new.js` (3), `people/personal-details.js` (3), `purchasing/materials-receipts.js` (3), `safety/training.js` (3), `core/state.js` (2), `files/outbox.js` (2), `owner/alerts.js` (2), `owner/reports-home.js` (2), `people/foreman.js` (2), `people/profile-photos.js` (2), `safety/custom-forms.js` (2), `safety/policies-insurance.js` (2), `safety/site-inductions.js` (2), `sites/job-sheets.js` (2), `sites/plans-specs.js` (2), `sites/sign-in-book.js` (2), `survey/door-window-survey.js` (2), `timesheets/day-work.js` (2), `calculators/calculator.js` (1), `clients/address-book.js` (1), `clients/portal-calendar.js` (1), `clients/sign-offs.js` (1), `core/company-names.js` (1), `core/now-bar.js` (1), `core/report-issue.js` (1), `core/site-moved.js` (1), `drawing/drawings-tab.js` (1), `drawing/sign-off-sheet.js` (1), `drawing/trade-drawings.js` (1), `owner/biz-costs.js` (1), `owner/leads.js` (1), `owner/trade-signin.js` (1), `people/access.js` (1), `people/companies.js` (1), `people/induction-matrix.js` (1), `people/wage-calc.js` (1), `photos/photos.js` (1), `photos/select-zip.js` (1), `planner/board.js` (1), `purchasing/invoices.js` (1), `purchasing/samples.js` (1), `purchasing/suppliers.js` (1), `safety/checklists.js` (1), `safety/expiry-dates.js` (1), `sales/accounts.js` (1), `sales/acct-receipts.js` (1), `sales/cis-returns.js` (1), `sales/estimating.js` (1), `sales/sales.js` (1), `sites/doc-visibility.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/storage.js` (1), `timesheets/time.js` (1)
-- **Used by 148 files**
+- **Used by 149 files**
 
 ### `core/viewer.js`
 
@@ -971,18 +971,18 @@ FILE IT: save any PDF the app makes into a client's job file and/or a site's doc
 FILES
 
 - 225 lines, 7.7 KB. Declares 21 names, 13 used elsewhere.
-- **Used elsewhere:** `uploadFile` (54), `blobUrl` (51), `uploadErr` (45), `saveAsset` (16), `csvSave` (10), `isImg` (10), `isWord` (4), `assetBlob` (3), `uploadAnyFile` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
+- **Used elsewhere:** `uploadFile` (55), `blobUrl` (51), `uploadErr` (45), `saveAsset` (16), `csvSave` (10), `isImg` (10), `isWord` (4), `assetBlob` (3), `uploadAnyFile` (3), `isWordId` (1), `loadMammoth` (1), `wordType` (1), `wrapAssets` (1)
 - **Uses names from 5 files:** `core/state.js` (2), `core/company-names.js` (1), `core/helpers.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1)
-- **Used by 93 files**
+- **Used by 94 files**
 
 ### `files/in-app-files.js`
 
 IN-APP FILES (kept inside the app, not in the phone's downloads)
 
 - 691 lines, 21 KB. Declares 29 names, 12 used elsewhere.
-- **Used elsewhere:** `openFile` (43), `getFileBlob` (17), `loadPdfJs` (7), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `loadScript` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1)
+- **Used elsewhere:** `openFile` (44), `getFileBlob` (18), `loadPdfJs` (8), `closeFile` (3), `FC` (2), `fcOpen` (2), `FV` (2), `keepFolder` (2), `loadScript` (2), `fcPut` (1), `fvHostAt` (1), `initInAppFiles` (1)
 - **Uses names from 11 files:** `files/scale-ruler.js` (8), `files/files.js` (4), `core/helpers.js` (3), `core/state.js` (2), `owner/deleted-items.js` (2), `core/company-names.js` (1), `core/tabs-week.js` (1), `files/cut-outs.js` (1), `files/print.js` (1), `files/send-to.js` (1), `photos/photos.js` (1)
-- **Used by 62 files**
+- **Used by 64 files**
 
 ### `files/outbox.js`
 
@@ -1079,9 +1079,9 @@ CLIENTS' LOOK: the client's portal in the new look – Home, Photos, Documents, 
 COMPANY DETAILS card (Policies & insurance, seen by everyone)
 
 - 287 lines, 15 KB. Declares 4 names, 3 used elsewhere.
-- **Used elsewhere:** `coData` (58), `companyCard` (3), `wireCompany` (2)
+- **Used elsewhere:** `coData` (59), `companyCard` (3), `wireCompany` (2)
 - **Uses names from 16 files:** `photos/photos.js` (7), `core/helpers.js` (4), `core/sheet.js` (4), `files/files.js` (3), `core/company-names.js` (2), `core/state.js` (2), `core/tabs-week.js` (1), `owner/deleted-items.js` (1), `owner/deletion-record.js` (1), `owner/pin.js` (1), `purchasing/brochures.js` (1), `purchasing/samples.js` (1), `safety/expiry-dates.js` (1), `safety/training.js` (1), `safety/waste-transfer-note.js` (1), `sites/qr-sign-in.js` (1)
-- **Used by 60 files**
+- **Used by 61 files**
 
 ### `owner/delete-client-site.js`
 
@@ -1421,9 +1421,9 @@ Photo test: plain phone file boxes, to tell an app/phone problem from a SiteHQ o
 PHOTOS
 
 - 1172 lines, 41 KB. Declares 52 names, 31 used elsewhere.
-- **Used elsewhere:** `BRGB` (38), `siteRec` (22), `pdfLogo` (21), `loadImage` (11), `photoViewer` (7), `audTag` (5), `readExif` (5), `vidExt` (5), `audExt` (4), `exifDate` (4), `myTrade` (4), `photoTile` (4), `stampPhoto` (4), `VID_MAX` (4), `wireVoice` (4), `openPhoto` (3), `brandHex` (2), `isAud` (2), `isVid` (2), `logoId` (2), `openEditFolders` (2), `vidTag` (2), `applyBrand` (1), `applyColour` (1), `BRAND_COLS` (1), `BRAND_DEF` (1), `empPhotos` (1), `feedNear` (1), `LOGO_ID` (1), `openAddFolder` (1), `siteFolders` (1)
+- **Used elsewhere:** `BRGB` (39), `siteRec` (22), `pdfLogo` (21), `loadImage` (12), `photoViewer` (7), `audTag` (5), `readExif` (5), `vidExt` (5), `audExt` (4), `exifDate` (4), `myTrade` (4), `photoTile` (4), `stampPhoto` (4), `VID_MAX` (4), `wireVoice` (4), `openPhoto` (3), `brandHex` (2), `isAud` (2), `isVid` (2), `logoId` (2), `openEditFolders` (2), `vidTag` (2), `applyBrand` (1), `applyColour` (1), `BRAND_COLS` (1), `BRAND_DEF` (1), `empPhotos` (1), `feedNear` (1), `LOGO_ID` (1), `openAddFolder` (1), `siteFolders` (1)
 - **Uses names from 24 files:** `core/helpers.js` (8), `core/sheet.js` (6), `drawing/trade-drawings.js` (5), `core/company-names.js` (4), `core/state.js` (4), `files/outbox.js` (4), `core/fields.js` (3), `files/files.js` (3), `core/tabs-week.js` (2), `core/viewer.js` (2), `files/in-app-files.js` (2), `people/reminders.js` (2), `photos/mark-up.js` (2), `clients/portal-calendar.js` (1), `clients/portal.js` (1), `owner/deleted-items.js` (1), `owner/owner.js` (1), `photos/doc-scan.js` (1), `sales/letterhead-setup.js` (1), `sites/job-details.js` (1), `sites/maps-pins.js` (1), `sites/project-pages.js` (1), `sites/tiles.js` (1), `sites/trade-sites.js` (1)
-- **Used by 80 files**
+- **Used by 81 files**
 
 ### `photos/select-zip.js`
 
@@ -1987,10 +1987,19 @@ JOB PRICING: one page to price a job – what it is, every price from suppliers 
 
 LETTERHEAD SETUP: one place in Setup to bring in the letterhead every PDF uses
 
-- 353 lines, 16 KB. Declares 19 names, 8 used elsewhere.
-- **Used elsewhere:** `lhLogoId` (14), `lhPics` (14), `lhPutTop` (14), `lhFinish` (11), `lhFrame` (11), `lhPutBot` (11), `lhCard` (1), `lhWire` (1)
-- **Uses names from 9 files:** `core/helpers.js` (4), `sales/sales-pdf.js` (3), `sales/sales-settings.js` (3), `files/files.js` (2), `photos/photos.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `sales/sales-calc.js` (1)
-- **Used by 29 files**
+- 357 lines, 16 KB. Declares 19 names, 8 used elsewhere.
+- **Used elsewhere:** `lhLogoId` (15), `lhPics` (14), `lhPutTop` (14), `lhFinish` (11), `lhFrame` (11), `lhPutBot` (11), `lhCard` (1), `lhWire` (1)
+- **Uses names from 10 files:** `core/helpers.js` (4), `sales/sales-pdf.js` (3), `sales/sales-settings.js` (3), `files/files.js` (2), `photos/photos.js` (2), `sales/lh-builder.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `sales/sales-calc.js` (1)
+- **Used by 30 files**
+
+### `sales/lh-builder.js`
+
+LETTERHEAD BUILDER: make a letterhead and starter terms for a firm that hasn't got its own
+
+- 329 lines, 15 KB. Declares 6 names, 2 used elsewhere.
+- **Used elsewhere:** `lhbOpen` (1), `lhbTermsOpen` (1)
+- **Uses names from 10 files:** `core/sheet.js` (4), `core/helpers.js` (3), `photos/photos.js` (2), `core/tabs-week.js` (1), `files/files.js` (1), `files/in-app-files.js` (1), `owner/company-details.js` (1), `sales/letterhead-setup.js` (1), `sales/sales-calc.js` (1), `sales/sales-settings.js` (1)
+- **Used by 1 files**
 
 ### `sales/receipt-smarts.js`
 
@@ -2006,9 +2015,9 @@ RECEIPT SMARTS: supplier rules, a duplicate warning, and checking a merchant's m
 SALES SUMS: estimates and invoices to clients – totals, VAT, CIS, status, numbers
 
 - 344 lines, 12 KB. Declares 29 names, 27 used elsewhere.
-- **Used elsewhere:** `sdR2` (27), `sdCalc` (20), `sdSales` (18), `sdSet` (18), `sdNo` (13), `sdSaveRec` (10), `sdStatus` (9), `sdTaxYear` (7), `SD_VATC` (6), `sdDueDate` (6), `sdCounts` (5), `sdIk` (5), `sdSigned` (5), `SD_IK` (4), `sdIsPf` (4), `sdAmt` (3), `sdTag` (3), `SD_KINDS` (2), `sdLines` (2), `sdNextNumber` (2), `sdPricedHead` (2), `sdVc` (2), `sdFinalLines` (1), `sdGroups` (1), `sdJob` (1), `sdKind` (1), `sdPlain` (1)
+- **Used elsewhere:** `sdR2` (27), `sdCalc` (20), `sdSet` (19), `sdSales` (18), `sdNo` (13), `sdSaveRec` (10), `sdStatus` (9), `sdTaxYear` (7), `SD_VATC` (6), `sdDueDate` (6), `sdCounts` (5), `sdIk` (5), `sdSigned` (5), `SD_IK` (4), `sdIsPf` (4), `sdAmt` (3), `sdTag` (3), `SD_KINDS` (2), `sdLines` (2), `sdNextNumber` (2), `sdPricedHead` (2), `sdVc` (2), `sdFinalLines` (1), `sdGroups` (1), `sdJob` (1), `sdKind` (1), `sdPlain` (1)
 - **Uses names from 3 files:** `core/helpers.js` (5), `core/state.js` (1), `files/outbox.js` (1)
-- **Used by 44 files**
+- **Used by 45 files**
 
 ### `sales/sales-docx.js`
 
@@ -2023,7 +2032,7 @@ SALES WORD IMPORT: bring in an estimate written in Word (client, number, wording
 
 SALES EDIT: one estimate or invoice, full screen – client, lines with amounts and VAT, totals
 
-- 956 lines, 43 KB. Declares 8 names, 3 used elsewhere.
+- 970 lines, 44 KB. Declares 8 names, 3 used elsewhere.
 - **Used elsewhere:** `sdEdit` (7), `sdPayment` (1), `sdToInvoice` (1)
 - **Uses names from 13 files:** `sales/sales-calc.js` (24), `core/helpers.js` (7), `core/sheet.js` (4), `sales/sales-sign.js` (3), `core/viewer.js` (2), `sales/est-docs.js` (2), `sales/job-file.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `sales/est-files.js` (1), `sales/sales-email.js` (1), `sales/sales-pdf.js` (1)
 - **Used by 7 files**
@@ -2041,19 +2050,19 @@ SALES EMAIL: send an estimate, invoice or statement as an email with its PDF att
 
 SALES PDF: estimates as a letter on the letterhead, invoices with totals, VAT and CIS
 
-- 651 lines, 22 KB. Declares 8 names, 5 used elsewhere.
+- 683 lines, 24 KB. Declares 9 names, 5 used elsewhere.
 - **Used elsewhere:** `sdImgData` (12), `sdHeadLines` (5), `sdLongDate` (5), `sdPdf` (3), `sdSavePdf` (1)
-- **Uses names from 9 files:** `sales/sales-calc.js` (12), `core/helpers.js` (4), `sales/letterhead-setup.js` (4), `core/state.js` (1), `files/in-app-files.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-settings.js` (1)
+- **Uses names from 9 files:** `sales/sales-calc.js` (12), `core/helpers.js` (4), `sales/letterhead-setup.js` (4), `files/in-app-files.js` (2), `core/state.js` (1), `owner/company-details.js` (1), `photos/photos.js` (1), `safety/site-inductions.js` (1), `sales/sales-settings.js` (1)
 - **Used by 14 files**
 
 ### `sales/sales-settings.js`
 
 SALES SETTINGS: letterhead, logo, signature, VAT, wording, terms and bank – and bringing them in from Word
 
-- 355 lines, 18 KB. Declares 8 names, 7 used elsewhere.
-- **Used elsewhere:** `sdLetterheadAsk` (2), `sdSaveSet` (2), `sdSettings` (2), `sdImportWord` (1), `sdQuickLetterhead` (1), `sdSetupCard` (1), `sdWireSetup` (1)
-- **Uses names from 9 files:** `sales/sales-calc.js` (6), `core/helpers.js` (5), `core/sheet.js` (4), `files/files.js` (2), `sales/sales-docx.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `sales/sales-email.js` (1)
-- **Used by 5 files**
+- 394 lines, 20 KB. Declares 8 names, 7 used elsewhere.
+- **Used elsewhere:** `sdSaveSet` (3), `sdLetterheadAsk` (2), `sdSettings` (2), `sdImportWord` (1), `sdQuickLetterhead` (1), `sdSetupCard` (1), `sdWireSetup` (1)
+- **Uses names from 10 files:** `sales/sales-calc.js` (6), `core/helpers.js` (5), `core/sheet.js` (4), `files/files.js` (2), `sales/sales-docx.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `owner/company-details.js` (1), `sales/sales-email.js` (1)
+- **Used by 6 files**
 
 ### `sales/sales-sign.js`
 
