@@ -45,7 +45,7 @@ import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
 import { cfbView } from "../safety/form-builder.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
-import { siteFull, siteHeadHtml, siteLabel } from "../sites/job-details.js";
+import { siteFull, siteHeadHtml, siteLabel, siteNameSheet } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { awCardHtml, awWire } from "../timesheets/all-weeks.js";
 import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
@@ -1037,8 +1037,12 @@ function ownerSetup() {
           inp.blur();
           S.open.add("__" + k);
           try {
-            if (k === "sites") await S.db.collection("sites").add({ name: n, created: Date.now() });
-            else await S.db.collection("equipment").add({ kind: k, name: n, created: Date.now() });
+            if (k === "sites") {
+              /* a new site: straight on to its job name and short description */
+              const ref = await S.db.collection("sites").add({ name: n, created: Date.now() });
+              setTimeout(() => siteNameSheet(n, ref && ref.id), 200);
+            } else
+              await S.db.collection("equipment").add({ kind: k, name: n, created: Date.now() });
             toast("Added");
           } catch (e) {
             toast("Couldn't add it");
@@ -1136,6 +1140,7 @@ function ownerSetup() {
           openSheet(
             `<h3 id="sheettitle">Site details</h3>
       <label for="sd-jname">Job name (shows big everywhere, with the address small under it)<input id="sd-jname" maxlength="60" value="${esc(x.jobName || "")}" placeholder="e.g. Carpenter renovation"></label>
+      <label for="sd-jdesc">Short description of the job (shows with the name)<textarea id="sd-jdesc" maxlength="200" style="min-height:56px">${esc(x.jobDesc || "")}</textarea></label>
       <label for="sd-name">Site address<input id="sd-name" required maxlength="120" value="${esc(x.name)}"></label>
       <div class="who">Use the full address with postcode, e.g. 9 Station Road, Anytown AB1 2CD. It's printed on every photo. Changing it doesn't change older records.</div>
       <label for="sd-proj">Project name (printed on photos)<input id="sd-proj" maxlength="80" value="${esc(x.project || "")}" placeholder="e.g. La Falaise"></label>
@@ -1167,6 +1172,7 @@ function ownerSetup() {
                   name,
                   aka,
                   jobName: $("sd-jname").value.trim().replace(/\s+/g, " "),
+                  jobDesc: $("sd-jdesc").value.trim(),
                   project: $("sd-proj").value.trim(),
                   plots: $("sd-plots")
                     .value.split(",")

@@ -162,3 +162,4 @@
 .jh-card .jh-prog{cursor:pointer;border-radius:12px;padding:6px;margin:-6px}
 .jh-card .jh-prog:hover,.jh-card .jh-prog:focus-visible{background:var(--soft)}
 .jh-card .jh-prog .jh-open{font-weight:500;color:var(--accent);font-size:.9em}
+.ss-namebar .ss-ndesc{display:block;font-size:.95rem;color:var(--ink);margin:2px 0}

@@ -30,6 +30,7 @@ export {
   siteJobCard,
   siteLabel,
   siteNameBar,
+  siteNameSheet,
   siteSumHtml,
   sjClientOK,
   sjCopy,
@@ -528,7 +529,17 @@ async function siteFromClient(c, start, finish) {
   await ensureSiteRec(
     name,
     Object.assign(
-      { project: c.work || "", client: c.name },
+      {
+        project: c.work || "",
+        client: c.name,
+        /* the name and short description given at the enquiry come with it (James, Nov 2026) */
+        jobName: c.jobName || "",
+        jobDesc:
+          c.jobDesc ||
+          String(c.desc || "")
+            .split(/\n/)[0]
+            .slice(0, 160),
+      },
       c.lat != null ? { lat: c.lat, lon: c.lon, pins: c.pins || [] } : {},
     ),
   );
@@ -871,33 +882,39 @@ function siteNameBar(site) {
   const can = S.owner && sr.id;
   return `<div class="ss-namebar">${
     jn
-      ? `<div class="ss-nmain"><b class="ss-nbig">🔨 ${esc(jn)}</b><span class="who">📍 ${esc(site)}</span></div>${can ? `<button type="button" class="pillbtn" id="ss-name">✎ Change name</button>` : ""}`
+      ? `<div class="ss-nmain"><b class="ss-nbig">🔨 ${esc(jn)}</b>${sr.jobDesc ? `<span class="ss-ndesc">${esc(sr.jobDesc)}</span>` : ""}<span class="who">📍 ${esc(site)}</span></div>${can ? `<button type="button" class="pillbtn" id="ss-name">✎ Change name</button>` : ""}`
       : `<div class="ss-nmain"><b class="ss-nbig">📍 ${esc(site)}</b>${can ? `<span class="who">No job name yet</span>` : ""}</div>${can ? `<button type="button" class="btn primary" id="ss-name">✎ Name this job</button>` : ""}`
   }</div>`;
 }
 function wireSiteNameBar(site) {
-  if (!$("ss-name")) return;
-  $("ss-name").onclick = () => {
-    const sr = siteRec(site) || {};
-    openSheet(
-      `<h3 id="sheettitle">✎ Job name</h3><div class="who">📍 ${esc(site)}</div>
-      <label for="ss-nm">What do you call this job? (shows big everywhere, with the address small under it)<input id="ss-nm" maxlength="60" value="${esc(sr.jobName || "")}" placeholder="e.g. Jones kitchen extension"></label>
-      ${formFoot(false, "Save")}`,
-      async () => {
-        try {
-          await S.db
-            .doc("sites/" + sr.id)
-            .update({ jobName: $("ss-nm").value.trim().replace(/\s+/g, " ") });
-          closeForm();
-          toast("Name saved");
-          render();
-        } catch (e) {
-          showErr("Couldn't save. Check your connection.");
-        }
-      },
-      "ss-nm",
-    );
-  };
+  if ($("ss-name")) $("ss-name").onclick = () => siteNameSheet(site);
+}
+/* name the job and say in a line what it is – from the site page, from Setup when a site is added, and carried over
+   from the enquiry (James, Nov 2026: "need a small description of the job that comes up with it") */
+function siteNameSheet(site, id) {
+  const sr = siteRec(site) || {};
+  const sid = id || sr.id;
+  if (!sid) return;
+  openSheet(
+    `<h3 id="sheettitle">✎ Name this job</h3><div class="who">📍 ${esc(site)}</div>
+    <label for="ss-nm">What do you call this job? (shows big everywhere, with the address small under it)<input id="ss-nm" maxlength="60" value="${esc(sr.jobName || "")}" placeholder="e.g. Jones kitchen extension"></label>
+    <label for="ss-ds">A short description of the job (shows with the name)<textarea id="ss-ds" maxlength="200" style="min-height:64px" placeholder="e.g. Single-storey rear extension with bi-folds and a new kitchen">${esc(sr.jobDesc || "")}</textarea></label>
+    ${formFoot(false, "Save")}`,
+    async () => {
+      try {
+        await S.db.doc("sites/" + sid).update({
+          jobName: $("ss-nm").value.trim().replace(/\s+/g, " "),
+          jobDesc: $("ss-ds").value.trim(),
+        });
+        closeForm();
+        toast("Saved");
+        render();
+      } catch (e) {
+        showErr("Couldn't save. Check your connection.");
+      }
+    },
+    "ss-nm",
+  );
 }
 function siteSumHtml(site, compact, inner) {
   const sr = siteRec(site) || {};
@@ -931,6 +948,7 @@ function wireSiteSum(site) {
     openSheet(
       `<h3 id="sheettitle">Job details</h3><div class="who">${esc(site)}</div>
       <label for="ss-jname">Job name (everyone sees this as the job)<input id="ss-jname" maxlength="60" value="${esc(sr.jobName || "")}" placeholder="e.g. Jones kitchen extension"></label>
+      <label for="ss-jdesc">Short description of the job<textarea id="ss-jdesc" maxlength="200" style="min-height:56px">${esc(sr.jobDesc || "")}</textarea></label>
       <label for="ss-work">Type of work<input id="ss-work" maxlength="80" list="ss-wl" value="${esc((cl && cl.work) || sr.project || "")}" placeholder="e.g. Single-storey extension"><datalist id="ss-wl">${CL_WORK.map((w) => `<option value="${esc(w)}">`).join("")}</datalist></label>
       <label for="ss-cl">Client<select id="ss-cl"><option value="">No client</option>${clList()
         .sort((a, b) => String(a.name).localeCompare(String(b.name)))
@@ -946,9 +964,11 @@ function wireSiteSum(site) {
           cid = $("ss-cl").value;
         try {
           if (sr.id)
-            await S.db
-              .doc("sites/" + sr.id)
-              .update({ project: w, jobName: $("ss-jname").value.trim().replace(/\s+/g, " ") });
+            await S.db.doc("sites/" + sr.id).update({
+              project: w,
+              jobName: $("ss-jname").value.trim().replace(/\s+/g, " "),
+              jobDesc: $("ss-jdesc").value.trim(),
+            });
           if (cl && cl.id !== cid) {
             const r = Object.assign({}, cl);
             if (same(r.site, site)) r.site = "";

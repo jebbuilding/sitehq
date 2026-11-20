@@ -25,6 +25,7 @@ import {
   clStepsHtml,
   wireClSteps,
 } from "./stages-planner.js";
+import { vdWire } from "./visit-diary.js";
 import { webEnqFiled } from "./web-enquiries.js";
 import { $, addDays, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -124,9 +125,11 @@ function quickEnquiry(pre = {}) {
     <div class="grid2"><label for="qe-phone">Phone<input id="qe-phone" type="tel" maxlength="40" placeholder="07…" value="${esc(pre.phone || "")}"></label><label for="qe-pc">Postcode<input id="qe-pc" maxlength="10" autocapitalize="characters" value="${esc(((pre.address || "").match(/[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i) || [""])[0].toUpperCase())}"></label></div>
     ${pre.email ? `<label for="qe-email">Email<input id="qe-email" type="email" maxlength="120" value="${esc(pre.email)}"></label>` : ""}
     <label for="qe-addr">Address<input id="qe-addr" maxlength="200" placeholder="e.g. 14 Church Lane, Topsham" value="${esc(pre.address || "")}"></label>
-    <label for="qe-what">What it's about<textarea id="qe-what" maxlength="600" style="min-height:64px" placeholder="e.g. Wants a quote for a garden room, saw the van">${esc(pre.what || "")}</textarea></label>
+    <label for="qe-jn">Job name (optional – what you'll call the job)<input id="qe-jn" maxlength="60" placeholder="e.g. Jones garden room" value="${esc(pre.jobName || "")}"></label>
+    <label for="qe-what">What it's about (the short description that goes with the job)<textarea id="qe-what" maxlength="600" style="min-height:64px" placeholder="e.g. Wants a quote for a garden room, saw the van">${esc(pre.what || "")}</textarea></label>
     <div class="grid2"><label for="qe-d">Visit date<input id="qe-d" type="date" value="${tm}" required></label><label for="qe-t">Time<input id="qe-t" type="time" value="10:00" required></label></div>
     <label for="qe-len">How long<select id="qe-len"><option value="30">30 minutes</option><option value="60" selected>1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
+    <div class="vd-box" id="qe-diary" aria-live="polite"></div>
     <label class="tick"><input type="checkbox" id="qe-ics" checked> <span>Also add it to my phone's calendar (reminds me ${VISIT_REMIND_MIN / 60} hour before, even when SiteHQ is closed)</span></label>
     ${formFoot(false, "Save and book the visit")}`,
     async () => {
@@ -154,6 +157,7 @@ function quickEnquiry(pre = {}) {
           address: v("qe-addr"),
           postcode: v("qe-pc").toUpperCase(),
           desc: v("qe-what"),
+          jobName: v("qe-jn").replace(/\s+/g, " "),
           stage: "enquiry",
           source: pre.source || "",
           email: $("qe-email") ? v("qe-email") : "",
@@ -209,6 +213,7 @@ function quickEnquiry(pre = {}) {
     },
     "qe-name",
   );
+  vdWire($("qe-diary"), "qe-d", "qe-t", "qe-len");
 }
 /* while the app is open, pop up a reminder an hour before any planner entry that asks for one */
 function visitWatch() {
