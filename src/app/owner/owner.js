@@ -43,6 +43,7 @@ import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
+import { cfbView } from "../safety/form-builder.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
 import { siteFull, siteHeadHtml, siteLabel } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
@@ -904,7 +905,7 @@ function ownerInvoices() {
   wireInvoices(list, true);
 }
 function ownerSetup() {
-  const stSeg = `<div class="seg st-tabs" id="st-tabs"><button type="button" data-v="setup" aria-pressed="${S.f.stab !== "access" && S.f.stab !== "portal"}">⚙️ Setup</button><button type="button" data-v="access" aria-pressed="${S.f.stab === "access"}">👥 People &amp; access</button><button type="button" data-v="portal" aria-pressed="${S.f.stab === "portal"}">🏡 Client portal</button></div>`;
+  const stSeg = `<div class="seg st-tabs" id="st-tabs"><button type="button" data-v="setup" aria-pressed="${S.f.stab !== "access" && S.f.stab !== "portal" && S.f.stab !== "forms"}">⚙️ Setup</button><button type="button" data-v="access" aria-pressed="${S.f.stab === "access"}">👥 People &amp; access</button><button type="button" data-v="portal" aria-pressed="${S.f.stab === "portal"}">🏡 Client portal</button><button type="button" data-v="forms" aria-pressed="${S.f.stab === "forms"}">📝 Your forms</button></div>`;
   const stWire = () =>
     $("st-tabs")
       .querySelectorAll("button")
@@ -918,6 +919,11 @@ function ownerSetup() {
       );
   if (S.f.stab === "access") {
     acView(stSeg);
+    stWire();
+    return;
+  }
+  if (S.f.stab === "forms") {
+    cfbView(stSeg);
     stWire();
     return;
   }

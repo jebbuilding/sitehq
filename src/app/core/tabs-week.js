@@ -68,6 +68,7 @@ import { isInv, materialsView, receiptsView } from "../purchasing/materials-rece
 import { SAMPLES } from "../purchasing/samples.js";
 import { suppliersView } from "../purchasing/suppliers.js";
 import { hasProblem } from "../safety/checklists.js";
+import { cfmCardHtml, cfmWire } from "../safety/custom-forms.js";
 import { myVehIns } from "../safety/expiry-dates.js";
 import { myPolTodo, policiesView } from "../safety/policies-insurance.js";
 import { empIndTodo, indFor } from "../safety/site-inductions.js";
@@ -519,6 +520,8 @@ function render() {
       })[t] || ownerTime
     )();
     if (t === "jobs") {
+      $("main").insertAdjacentHTML("afterbegin", cfmCardHtml());
+      cfmWire();
       $("main").insertAdjacentHTML("afterbegin", sentTodosHTML());
       wireSentTodos();
     }
@@ -628,6 +631,10 @@ function render() {
         foreman: amForeman() ? foremanView : empTime,
       })[t] || empTime
     )();
+    if (t === "jobs") {
+      $("main").insertAdjacentHTML("afterbegin", cfmCardHtml());
+      cfmWire();
+    }
     if (t === "jobs" || t === "todo") {
       const th = tradeTodosHTML();
       if (th) {

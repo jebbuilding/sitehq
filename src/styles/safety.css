@@ -37,3 +37,36 @@
 
 .cdm-rabox .cdm-raown{border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
 .cdm-raai{width:min(560px,94vw)}
+.cfb-row .cfb-edit{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;margin:4px 0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.cfb-row .cfb-ic{font-size:26px}
+.cfb-row .who{display:block}
+.cfb-h{margin:0 0 8px}
+.cfb-top{display:flex;gap:10px;align-items:flex-end}
+.cfb-top .cfb-icl{width:80px}
+.cfb-top .cfb-nml{flex:1}
+.cfb-who{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:10px 0}
+.cfb-fields{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+.cfb-fields .cfb-q{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.cfb-fields .cfb-qh{background:var(--soft)}
+.cfb-fields .cfb-t{flex:0 0 190px;min-height:44px}
+.cfb-fields .cfb-l{flex:1 1 220px;min-height:44px}
+.cfb-fields .cfb-o{flex:1 1 100%;min-height:44px}
+.cfb-fields .cfb-qb{display:flex;gap:4px;align-items:center;margin-left:auto}
+.cfb-fields .cfb-qb .iconbtn{min-width:44px;min-height:44px}
+.cfb-add{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.cfm-card .cfm-h{font-weight:700;font-size:1.05rem;margin-bottom:6px}
+.cfm-card .cfm-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.cfm-card .cfm-btns .cfm-go{min-height:48px}
+.cfm-card .cfm-row{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:52px;margin:4px 0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.cfm-card .cfm-row .who{display:block}
+.cfm-sec{font-weight:700;font-size:1.05rem;margin:14px 0 4px;padding-bottom:4px;border-bottom:2px solid var(--line)}
+.cfm-tick{margin:8px 0}
+.cfm-ch{flex-wrap:wrap;margin:4px 0 10px}
+.cfm-ch button{min-height:44px}
+.cfm-ph{position:relative;overflow:hidden;min-height:48px;margin:4px 0 10px}
+.cfm-ph .fpick{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.cfm-sig{display:block;width:100%;height:160px;border:1px solid var(--line);border-radius:12px;background:#fff;margin:4px 0}
+.cfm-ans .cfm-a{padding:8px 0;border-bottom:1px solid var(--line)}
+.cfm-ans .cfm-img{max-width:100%;max-height:320px;border-radius:10px;margin-top:4px}
+.cfm-ans .cfm-sigimg{max-width:260px;background:#fff;border:1px solid var(--line);border-radius:8px;margin-top:4px}
+.cfm-vh{margin:0}

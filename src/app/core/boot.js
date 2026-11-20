@@ -169,6 +169,14 @@ initOpening();
     },
     () => {},
   );
+  /* the forms made in Setup › Your forms (safety/form-builder.js) */
+  db.doc("settings/cforms").onSnapshot(
+    (s) => {
+      S.cforms = s.exists ? s.data() : { forms: [] };
+      render();
+    },
+    () => {},
+  );
   db.doc("settings/matcalc").onSnapshot(
     (s) => {
       S.matcalc = s.exists ? s.data() : { lists: [] };

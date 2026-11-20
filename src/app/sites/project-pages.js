@@ -21,6 +21,7 @@ import { planEntries } from "../planner/time-off.js";
 import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv, matCard, openMat, rcRow, wireReceipts } from "../purchasing/materials-receipts.js";
 import { CDMRA } from "../safety/cdm-rams.js";
+import { cfmSiteHtml, cfmWire } from "../safety/custom-forms.js";
 import { ramsMaker } from "../safety/rams-maker.js";
 import { indFor, indSectionWithId, wireInduction } from "../safety/site-inductions.js";
 import { bcHtml, bcWire } from "./building-control.js";
@@ -389,7 +390,7 @@ function ownerProjects() {
   const sr0 = siteRec(site) || {};
   /* the job at a glance (stages, money, photos, who is on it, paperwork, ✍️ sign-off sheet) tops the one site page */
   P.overview = `${jbJobHtml(site, true)}${sodHtml(site)}${rfiNoticeHtml(site)}${QRSITE.cardHtml(site)}${siteSumHtml(site, false, siteJobCard(site, true, true))}${jhCardHtml(site)}
-    ${shrsHtml(ts, extra, people)}
+    ${shrsHtml(ts, extra, people)}${cfmSiteHtml(site)}
     ${nextKd ? `<div class="notice"><b>Next key date:</b> ${esc(nextKd.title)} · ${esc(shortDay(nextKd.from))}</div>` : ""}
     <div class="folders">${T.slice(1)
       .map(
@@ -428,6 +429,7 @@ function ownerProjects() {
     jhWire(site);
     jbWireJob(site);
     shrsWire(site, ts.concat(extra));
+    cfmWire();
   }
   $("main")
     .querySelectorAll("#pj-back,.pjtile,.pjtst-b")
