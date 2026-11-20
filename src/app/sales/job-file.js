@@ -11,6 +11,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { binFromViewer } from "../owner/deleted-items.js";
 import { shrinkImage } from "../safety/training.js";
+import { jprOpen } from "./job-pricing.js";
 import { SD_IK, sdCalc, sdIk, sdNo, sdR2, sdSales, sdTag } from "./sales-calc.js";
 import { sdEdit, sdToInvoice } from "./sales-edit.js";
 export { JF_FOLDERS, jfFolderName, jfFor, jfOpen, jfOpenClient, jfSave };
@@ -156,7 +157,7 @@ function jfView(j, ctx) {
     }
     <section class="card jf-money"><div class="cardbody"><b>💰 Estimates & invoices</b>
       ${sales.length ? sales.map((x) => `<button type="button" class="drow jf-sale" data-id="${esc(x.id)}"><span>${esc(sdNo(x))}${x.type === "invoice" ? " · " + esc(SD_IK[sdIk(x)]) : ""} ${sdTag(x)}</span><span>${gbp(x.type === "estimate" ? sdCalc(x).net : sdCalc(x).due)}</span></button>`).join("") : `<div class="who">No estimate yet.</div>`}
-      <div class="sd-acts"><button type="button" class="btn primary" id="jf-newest">📝 ${est ? "Another estimate" : "Make the estimate"}</button><button type="button" class="btn" id="jf-newinv">🧾 ${est ? "Make an invoice" : "An invoice"}</button></div>
+      <div class="sd-acts">${c ? `<button type="button" class="btn" id="jf-price">💷 Price this job</button>` : ""}<button type="button" class="btn primary" id="jf-newest">📝 ${est ? "Another estimate" : "Make the estimate"}</button><button type="button" class="btn" id="jf-newinv">🧾 ${est ? "Make an invoice" : "An invoice"}</button></div>
     </div></section>
     <div class="sd-acts">
       <label for="jf-fold" class="jf-foldl">Put new files in<select id="jf-fold">${JF_FOLDERS.map(([k, l]) => `<option value="${k}"${k === (S.f.jfadd || "plans") ? " selected" : ""}>${l}</option>`).join("")}</select></label>
@@ -223,6 +224,7 @@ function jfView(j, ctx) {
     if (type === "invoice" && est) Object.assign(base, { fromId: est.id });
     return base;
   };
+  if ($("jf-price")) $("jf-price").onclick = () => jprOpen(c);
   $("jf-newest").onclick = () => sdEdit(from("estimate"));
   $("jf-newinv").onclick = () => (est ? sdToInvoice(est) : sdEdit(from("invoice")));
   const add = async (files) => {

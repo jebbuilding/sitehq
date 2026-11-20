@@ -71,6 +71,7 @@ function sdSettings() {
     <label for="ss-terms">The terms<textarea id="ss-terms" rows="10" maxlength="80000">${esc(s.terms)}</textarea></label>
     <div class="who">A line starting <b>#</b> is a heading, <b>##</b> a smaller heading, <b>-</b> a bullet point. Bringing in a Word estimate fills this in for you.</div>
     <div class="flabel">Invoices</div>
+    <label for="ss-iterms">Invoice terms (printed on each invoice, e.g. payment terms; you can change them on any one)<textarea id="ss-iterms" rows="5" maxlength="20000">${esc(s.invTerms || "")}</textarea></label>
     <label for="ss-bank">Bank details<textarea id="ss-bank" rows="3" maxlength="400" placeholder="Account name, sort code, account number">${esc(s.bank)}</textarea></label>
     <div class="flabel">Email wording</div>
     <div class="who">Leave a box empty to use the app's wording (shown faintly). Words in {brackets} are filled in for you: {name} {dear} {number} {job} {total} {due} {date} {valid} {ver} {part} {bank}. Your name and phone go at the end.</div>
@@ -106,6 +107,7 @@ function sdSettings() {
           termsTitle: $("ss-tt").value.trim(),
           termsVer: $("ss-tv").value.trim(),
           terms: $("ss-terms").value,
+          invTerms: $("ss-iterms").value,
           bank: $("ss-bank").value.trim(),
           invNote: $("ss-in").value.trim(),
           invIntro: $("ss-ii").value.trim(),

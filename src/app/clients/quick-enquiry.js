@@ -42,6 +42,7 @@ import { toHM } from "../planner/diary.js";
 import { SAMPLES } from "../purchasing/samples.js";
 import { shrinkImage } from "../safety/training.js";
 import { jfOpenClient } from "../sales/job-file.js";
+import { jprOpen } from "../sales/job-pricing.js";
 import { goSite } from "../sites/go-site.js";
 import { editSiteJob, siteLabel, syncSiteJobs } from "../sites/job-details.js";
 import { dropPin, miniMap } from "../sites/maps-pins.js";
@@ -466,7 +467,7 @@ ${clMediaHtml(c)}
         )
         .join("") || '<div class="nothing">No notes yet.</div>'
     }</div>
-    <div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
+    <div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-price" type="button">💷 Price this job</button><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
       const j = (S.jobFiles || []).find((x) => x.clientId === c.id);
       return j && (j.items || []).length ? " (" + j.items.length + ")" : "";
     })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button></div>
@@ -539,6 +540,7 @@ ${clMediaHtml(c)}
   wireHist(c);
   wireClSteps(c);
   $("cv-jf").onclick = () => jfOpenClient(c);
+  if ($("cv-price")) $("cv-price").onclick = () => jprOpen(c);
   $("cv-pdf").onclick = (e) => clientPdf(c, e.currentTarget);
   if ($("cv-msg")) $("cv-msg").onclick = () => openClientChat(c);
   wireClMedia(c);
