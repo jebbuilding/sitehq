@@ -30,7 +30,7 @@ const page=async(ctx,owner,old)=>{const p=await ctx.newPage();p.on('pageerror',e
  ok(/SiteHQ has moved/.test(mv.txt)&&/sitehq\.jevul\.com/.test(mv.href)&&mv.tabs,'a trade on the old copy only sees "SiteHQ has moved" and the link');
  await ot.screenshot({path:'h615-moved.png'});await ot.close();
  const oo=await page(ctx,true,true);
- ok(await oo.isVisible('#smv-bar')&&await oo.isVisible('#main'),'James on the old copy gets a banner and can still look things up');await oo.close();
+ ok(!(await oo.locator('#smv-bar').count())&&await oo.isVisible('#main .smv-box')===false,'James on the old copy sees it as normal, with no banner');await oo.close();
  /* 2. missing hours: emp1 worked the day before, not the last working day */
  const p=await page(ctx,true,false);
  await p.click('#nl-tog');await p.waitForTimeout(300);

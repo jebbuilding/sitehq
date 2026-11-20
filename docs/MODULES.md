@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 263 files, 4863 KB, 123229 lines.
-- 2554 names declared at the top level (the shared scope); 1305 of them are used by a file other than the one that declares them.
+- 263 files, 4863 KB, 123219 lines.
+- 2553 names declared at the top level (the shared scope); 1304 of them are used by a file other than the one that declares them.
 - 2791 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 222 files, 12 files depend on each other in a loop (directly or through other files); the other 29 files are outside any loop.
@@ -376,9 +376,9 @@ phone / browser Back button: steps back through the app (closes the top pop-up, 
 
 BOOT: get the platform (database, user, files, downloads), work out who is signed in, start the app
 
-- 371 lines, 12 KB. Declares 0 names, 0 used elsewhere.
+- 369 lines, 12 KB. Declares 0 names, 0 used elsewhere.
 - **Used elsewhere:** nothing
-- **Uses names from 38 files:** `files/outbox.js` (5), `chat/chat.js` (4), `core/tabs-week.js` (4), `core/data.js` (3), `core/site-moved.js` (3), `core/state.js` (3), `clients/portal.js` (2), `core/now-bar.js` (2), `files/in-app-files.js` (2), `calculators/roofing.js` (1), `clients/job-story.js` (1), `clients/quick-enquiry.js` (1), `clients/sign-offs.js` (1), `clients/web-enquiries.js` (1), `core/ask-claude.js` (1), `core/back-button.js` (1), `core/dictation.js` (1), `core/helpers.js` (1), `core/live-feed.js` (1), `core/opening-screen.js` (1), `core/report-issue.js` (1), `core/sheet.js` (1), `core/spell-check.js` (1), `core/viewer.js` (1), `drawing/construction-details.js` (1), `drawing/paving.js` (1), `drawing/symbols-more.js` (1), `files/files.js` (1), `files/print.js` (1), `files/scale-ruler.js` (1), `owner/deleted-items.js` (1), `people/foreman.js` (1), `photos/photo-test.js` (1), `photos/photos.js` (1), `photos/select-zip.js` (1), `purchasing/suppliers.js` (1), `safety/expiry-dates.js` (1), `sites/maps-pins.js` (1)
+- **Uses names from 38 files:** `files/outbox.js` (5), `chat/chat.js` (4), `core/tabs-week.js` (4), `core/data.js` (3), `core/state.js` (3), `clients/portal.js` (2), `core/now-bar.js` (2), `core/site-moved.js` (2), `files/in-app-files.js` (2), `calculators/roofing.js` (1), `clients/job-story.js` (1), `clients/quick-enquiry.js` (1), `clients/sign-offs.js` (1), `clients/web-enquiries.js` (1), `core/ask-claude.js` (1), `core/back-button.js` (1), `core/dictation.js` (1), `core/helpers.js` (1), `core/live-feed.js` (1), `core/opening-screen.js` (1), `core/report-issue.js` (1), `core/sheet.js` (1), `core/spell-check.js` (1), `core/viewer.js` (1), `drawing/construction-details.js` (1), `drawing/paving.js` (1), `drawing/symbols-more.js` (1), `files/files.js` (1), `files/print.js` (1), `files/scale-ruler.js` (1), `owner/deleted-items.js` (1), `people/foreman.js` (1), `photos/photo-test.js` (1), `photos/photos.js` (1), `photos/select-zip.js` (1), `purchasing/suppliers.js` (1), `safety/expiry-dates.js` (1), `sites/maps-pins.js` (1)
 - **Used by 0 files**
 
 ### `core/company-names.js`
@@ -484,8 +484,8 @@ SHEET (forms)
 
 SITE MOVED: the old claude.ai copy sends everyone to the firm's own website
 
-- 33 lines, 2.2 KB. Declares 4 names, 3 used elsewhere.
-- **Used elsewhere:** `smvBlock` (2), `smvBanner` (1), `smvIsOld` (1)
+- 25 lines, 1.7 KB. Declares 3 names, 2 used elsewhere.
+- **Used elsewhere:** `smvBlock` (2), `smvIsOld` (1)
 - **Uses names from 2 files:** `core/helpers.js` (1), `core/state.js` (1)
 - **Used by 2 files**
 
