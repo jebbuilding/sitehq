@@ -16,6 +16,7 @@ import { meInfo, myDetails } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { planEntries } from "../planner/time-off.js";
 import { shrinkImage } from "./training.js";
+import { dstPatch } from "../sales/doc-style.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { siteLabel } from "../sites/job-details.js";
 import { RAMS_SIGN } from "../sites/plans-specs.js";
@@ -855,12 +856,19 @@ function viewRecord(rec, owner) {
 }
 let jsPdfP = null;
 function loadJsPdf() {
-  if (window.jspdf) return Promise.resolve();
+  /* the firm's PDF font (sales/doc-style.js) */
+  if (window.jspdf) {
+    dstPatch();
+    return Promise.resolve();
+  }
   if (jsPdfP) return jsPdfP;
   jsPdfP = new Promise((res, rej) => {
     const s = document.createElement("script");
     s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-    s.onload = res;
+    s.onload = () => {
+      dstPatch();
+      res();
+    };
     s.onerror = () => {
       jsPdfP = null;
       rej(new Error("load"));

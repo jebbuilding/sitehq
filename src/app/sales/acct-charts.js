@@ -1,9 +1,10 @@
 /* ================= ACCOUNTS CHARTS: where the money goes, and which jobs brought in the most and made the most ================= */
-import { esc, gbp } from "../core/helpers.js";
+import { esc, gbp, iso } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { AC_CATS } from "./acct-data.js";
+import { AC_CATS, acSums } from "./acct-data.js";
 import { jcData, jcSites } from "./job-costs.js";
+import { sdTaxYear } from "./sales-calc.js";
 import { siteLabel } from "../sites/job-details.js";
 export { acgHtml, acgWire };
 /* James (Nov 2026): "good to see some graphs or pie charts to see how the business is doing and what jobs have made
@@ -67,10 +68,75 @@ function acgJobs() {
       .join("")}</div>
   </div></section>`;
 }
+/* 📈 Profit each month: money in less money out for each of the last 12 months, as a line with a zero line; above
+   zero made money, below lost it. Each point says its month and figure. */
+function acgProfitLine() {
+  const now = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const m = iso(d).slice(0, 7);
+    const last = iso(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+    const s = acSums(m + "-01", last);
+    months.push({ m, d, p: s.profit, inc: s.inc, exp: s.exp });
+  }
+  if (!months.some((x) => x.inc || x.exp)) return "";
+  const W = 380,
+    H = 190,
+    L = 44,
+    R = 12,
+    T = 14,
+    B = 28;
+  const lo = Math.min(0, ...months.map((x) => x.p)),
+    hi = Math.max(0, ...months.map((x) => x.p));
+  const span = hi - lo || 1;
+  const X = (i) => L + (i * (W - L - R)) / (months.length - 1);
+  const Y = (v) => T + ((hi - v) * (H - T - B)) / span;
+  const pts = months.map((x, i) => `${X(i).toFixed(1)},${Y(x.p).toFixed(1)}`).join(" ");
+  const kf = (v) => (Math.abs(v) >= 1000 ? "£" + Math.round(v / 1000) + "k" : "£" + Math.round(v));
+  const best = months.reduce((a, x) => (x.p > a.p ? x : a), months[0]);
+  const mon = (x, y) =>
+    x.d.toLocaleDateString("en-GB", y ? { month: "long", year: "numeric" } : { month: "short" });
+  return `<section class="card acg-card"><div class="cardbody"><b>📈 Profit each month</b><div class="who">Money in less money out, the last 12 months. Best: ${esc(mon(best, 1))}, ${gbp(best.p)}.</div>
+    <svg class="acg-line" viewBox="0 0 ${W} ${H}" role="img" aria-label="Profit each month">
+      <line x1="${L}" x2="${W - R}" y1="${Y(hi).toFixed(1)}" y2="${Y(hi).toFixed(1)}" class="acg-grid"/><text x="${L - 6}" y="${(Y(hi) + 4).toFixed(1)}" class="acg-ax">${kf(hi)}</text>
+      ${lo < 0 ? `<line x1="${L}" x2="${W - R}" y1="${Y(lo).toFixed(1)}" y2="${Y(lo).toFixed(1)}" class="acg-grid"/><text x="${L - 6}" y="${(Y(lo) + 4).toFixed(1)}" class="acg-ax">${kf(lo)}</text>` : ""}
+      <line x1="${L}" x2="${W - R}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" class="acg-zero"/><text x="${L - 6}" y="${(Y(0) + 4).toFixed(1)}" class="acg-ax">£0</text>
+      <polyline points="${pts}" class="acg-pl acg-1"/>
+      ${months
+        .map(
+          (x, i) =>
+            `<g class="acg-pt"><circle cx="${X(i).toFixed(1)}" cy="${Y(x.p).toFixed(1)}" r="4.5" class="acg-dot acg-1${x.p < 0 ? " acg-neg" : ""}"/><circle cx="${X(i).toFixed(1)}" cy="${Y(x.p).toFixed(1)}" r="14" class="acg-hit"><title>${esc(mon(x, 1))}: ${x.p < 0 ? "loss " + gbp(-x.p) : "profit " + gbp(x.p)} (in ${gbp(x.inc)}, out ${gbp(x.exp)})</title></circle><text x="${X(i).toFixed(1)}" y="${H - 8}" class="acg-mx">${esc(mon(x))}</text></g>`,
+        )
+        .join("")}
+    </svg>
+  </div></section>`;
+}
+/* This year against last year: the tax year so far against the same dates a year before */
+function acgYoy() {
+  const today = iso(new Date());
+  const ty = sdTaxYear(today);
+  const a = acSums(ty + "-04-06", today);
+  const lastTo = String(+today.slice(0, 4) - 1) + today.slice(4);
+  const b = acSums(ty - 1 + "-04-06", lastTo);
+  if (!b.inc && !b.exp) return "";
+  const row = (lab, x, y, good) => {
+    const ch = y ? Math.round(((x - y) / Math.abs(y)) * 100) : null;
+    const up = x >= y;
+    const ok = good ? up : !up;
+    return `<div class="acg-yr"><span>${esc(lab)}</span><b>${gbp(x)}</b><span class="who">${gbp(y)}</span><span class="acg-ch ${ch == null || x === y ? "" : ok ? "acg-up" : "acg-down"}">${ch == null || x === y ? "–" : (up ? "▲ " : "▼ ") + Math.abs(ch) + "%"}</span></div>`;
+  };
+  return `<section class="card acg-card"><div class="cardbody"><b>📊 This year against last year</b><div class="who">From 6 April to today, against the same dates last tax year.</div>
+    <div class="acg-yr acg-yrh"><span></span><small>This year</small><small>Last year</small><small>Change</small></div>
+    ${row("Money in", a.inc, b.inc, true)}${row("Money out", a.exp, b.exp, false)}${row("Profit", a.profit, b.profit, true)}
+  </div></section>`;
+}
 function acgHtml(s) {
   const a = acgDonut(s),
-    b = acgJobs();
-  return a || b ? `<div class="acg-cols">${a}${b}</div>` : "";
+    b = acgJobs(),
+    c = acgProfitLine(),
+    d = acgYoy();
+  return a || b || c || d ? `<div class="acg-cols">${c}${d}${a}${b}</div>` : "";
 }
 function acgWire() {
   document.querySelectorAll("#main .acg-job").forEach(

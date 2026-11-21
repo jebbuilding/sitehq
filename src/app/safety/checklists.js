@@ -161,7 +161,8 @@ const ck = (c) =>
   });
 function defectsOf(c) {
   const k = KINDS[ck(c).kind] || KINDS.vehicle;
-  return k.items
+  /* every question it has had, so a question taken out later still counts on old checks (safety/check-items.js) */
+  return (k.all || k.items)
     .filter(([key]) => c.items && c.items[key] === "defect")
     .map(([, l]) => l.split(":")[0]);
 }

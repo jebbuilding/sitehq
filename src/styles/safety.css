@@ -70,3 +70,9 @@
 .cfm-ans .cfm-img{max-width:100%;max-height:320px;border-radius:10px;margin-top:4px}
 .cfm-ans .cfm-sigimg{max-width:260px;background:#fff;border:1px solid var(--line);border-radius:8px;margin-top:4px}
 .cfm-vh{margin:0}
+.cki-card .cki-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:50px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer;padding:6px 2px}
+.cki-card .cki-row span{display:flex;flex-direction:column}
+.cki-card .cki-row small{color:var(--muted)}
+#cki-list .cki-item{display:flex;align-items:center;gap:6px;padding:4px 0}
+#cki-list .cki-item .cki-l{flex:1;min-height:44px}
+#cki-list .cki-item .iconbtn{min-width:44px;min-height:44px}

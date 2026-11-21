@@ -355,3 +355,20 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .acg-card .acg-jv{display:flex;flex-direction:column;align-items:flex-end;font-size:14px}
 .acg-card .acg-jv small{color:var(--muted)}
 .acg-card .acg-jv .acg-loss{color:var(--danger)}
+.acg-card .acg-line{width:100%;height:auto;margin-top:8px}
+.acg-card .acg-grid{stroke:var(--line);stroke-width:1}
+.acg-card .acg-zero{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.acg-card .acg-ax{font-size:11px;fill:var(--muted);text-anchor:end}
+.acg-card .acg-mx{font-size:11px;fill:var(--muted);text-anchor:middle}
+.acg-card .acg-pl{fill:none;stroke:var(--c);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.acg-card .acg-dot{fill:var(--c);stroke:var(--surface);stroke-width:2}
+.acg-card .acg-dot.acg-neg{fill:var(--danger)}
+.acg-card .acg-hit{fill:transparent;cursor:default}
+.acg-card .acg-pt:hover .acg-dot{r:6}
+.acg-card .acg-yr{display:grid;grid-template-columns:1.2fr 1fr 1fr 70px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.acg-card .acg-yrh{border-top:0;padding-bottom:0}
+.acg-card .acg-yrh small{color:var(--muted)}
+.acg-card .acg-ch{text-align:right;font-weight:700}
+.acg-card .acg-up{color:var(--ok,#2e7d32)}
+.acg-card .acg-down{color:var(--danger)}
+.dst-card select{min-height:44px}

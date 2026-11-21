@@ -100,7 +100,10 @@ async function sdPdf(d) {
   const red = () => doc.setTextColor(...brand);
   const logo = await sdImgData(lhLogoId());
   /* the signature from My signature (estimate settings), else the one on the owner's own record */
-  const sig = await sdImgData(set.sigId || (S.myProfile && S.myProfile.sigId) || "");
+  /* no signature when the firm says so (Setup › 📄 Document style) */
+  const sig = set.noSig
+    ? null
+    : await sdImgData(set.sigId || (S.myProfile && S.myProfile.sigId) || "");
   /* who wrote it: the name on this estimate or invoice, else the owner's */
   const byName = d.byName || co.owner;
   const terms = d.terms != null ? d.terms : est ? set.terms : set.invTerms;

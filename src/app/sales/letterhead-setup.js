@@ -9,7 +9,7 @@ import { lhbOpen, lhbTermsOpen } from "./lh-builder.js";
 import { sdSet } from "./sales-calc.js";
 import { sdHeadLines, sdImgData, sdPdf } from "./sales-pdf.js";
 import { sdQuickLetterhead, sdSaveSet, sdSettings } from "./sales-settings.js";
-export { lhCard, lhFinish, lhFrame, lhLogoId, lhPics, lhPutBot, lhPutTop, lhWire };
+export { lhCard, lhFinish, lhFrame, lhLogoId, lhPics, lhPutBot, lhPutTop, lhSample, lhWire };
 /* The letterhead is kept with the estimate and invoice settings (todos/salesset). Two ways in:
    - a PDF, photo or scan of the letterhead (the exact look): its top (logo, address, line) and bottom (line, foot
      lines) are found on the page and kept as two pictures, lhTop { id, h } and lhBot { id, y, h } (mm on A4), drawn

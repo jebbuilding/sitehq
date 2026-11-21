@@ -134,6 +134,8 @@ function sdEdit(d0) {
     if (d.closing == null) d.closing = set.closing;
     if (d.signoff == null) d.signoff = set.signoff;
     if (!d.inclHead) d.inclHead = set.inclHead;
+    /* the firm's usual way (Setup › 📄 Document style), else worked out from the estimate */
+    if (!d.bd && set.bdDefault && !d.from) d.bd = set.bdDefault;
     if (!d.bd)
       d.bd = (d.lines || []).some((l) => l && l.h && (l.w || sdPricedHead(l)))
         ? "sections"
