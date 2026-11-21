@@ -9,6 +9,7 @@ import { brfCardHtml, brfWire } from "./briefing.js";
 import { coData } from "./company-details.js";
 import { jbView } from "./jobs-desk.js";
 import { mnuSecHidden, mnuSecRenamed, mnuTabHidden } from "./menus.js";
+import { startPreview } from "./owner.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
@@ -303,7 +304,8 @@ function nlGo(otab) {
 
 /* called on every render: the body class, the header switch and the bar */
 function nlApply() {
-  const on = nlOn();
+  /* 🙋 Me (James as himself) uses the trades' look instead (owner/trade-look.js) */
+  const on = nlOn() && !S.preview;
   if (on && !nlLanded) S.otab = "today";
   nlLanded = true;
   document.body.classList.toggle("nl-on", on);
@@ -341,6 +343,22 @@ function nlApply() {
     }
     srb.hidden = false;
   } else if (srb) srb.hidden = true;
+  /* 🙋 Me: James's own page, like a trade's – his timesheet, day work, sign-in, forms and photos as himself. A button
+     by Search, not another section, so the side menu doesn't grow (James, Nov 2026: "to many tabs on the main bar") */
+  let meb = $("me-btn");
+  if (ownerMode() && head && on) {
+    if (!meb) {
+      meb = document.createElement("button");
+      meb.type = "button";
+      meb.id = "me-btn";
+      meb.className = "pillbtn nl-tog";
+      meb.textContent = "🙋 Me";
+      meb.setAttribute("aria-label", "My page – fill everything in as myself, like the trades");
+      head.insertBefore(meb, srb);
+      meb.onclick = () => startPreview();
+    }
+    meb.hidden = false;
+  } else if (meb) meb.hidden = true;
   let bar = $("nlbar");
   nlCrumb(on);
   if (!on) {

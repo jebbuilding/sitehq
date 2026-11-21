@@ -114,7 +114,7 @@ const EMP_TABS = [
   ["details", "🪪 My details"],
 ];
 const OWN_TABS = [
-  ["me", "📝 My forms"],
+  ["me", "🙋 My page"],
   ["planner", "📅 Calendar"],
   ["todo", "✅ My to-do"],
   ["time", "⏱️ Timesheets"],
@@ -601,7 +601,7 @@ function render() {
         brochures: "Brochures",
         foreman: "Foreman",
       }[t] || "My timesheet";
-    $("who").textContent = S.myProfile.name + (S.preview ? " · preview" : "");
+    $("who").textContent = S.myProfile.name + (S.preview ? " · my page" : "");
     (
       ({
         home: tlHome,
@@ -689,7 +689,7 @@ function render() {
     if (S.preview) {
       $("main").insertAdjacentHTML(
         "afterbegin",
-        `<div class="notice me-bar"><span><b>My forms.</b> You're filling in forms as yourself. Anything you save is recorded under your name and shows in your team views.</span><button class="btn primary backbtn" id="endprev" type="button">‹ Back to team view</button></div>`,
+        `<div class="notice me-bar"><span><b>🙋 My page.</b> You're filling in as yourself, like the trades. Anything you save is recorded under your name and shows in the office pages.</span><button class="btn primary backbtn" id="endprev" type="button">‹ Back to the office</button></div>`,
       );
       $("endprev").onclick = () => {
         S.preview = false;

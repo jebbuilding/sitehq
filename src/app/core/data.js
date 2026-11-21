@@ -7,6 +7,7 @@ import { myColl } from "./sheet.js";
 import { S, ownerMode } from "./state.js";
 import { render } from "./tabs-week.js";
 import { sphotoPut, sphotoWanted } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
 import { allTeam } from "../owner/owner.js";
 export { mapDocs, startEmployee, startOwner };
 const mapDocs = (snap) => snap.docs.map((d) => Object.assign({}, d.data(), { id: d.id }));
@@ -14,7 +15,12 @@ function startEmployee() {
   S.db.doc("sheets/" + S.me).onSnapshot(
     (s) => {
       if (S.client) return;
-      S.myProfile = s.exists ? s.data() : null;
+      const d = s.exists ? s.data() : null;
+      /* 🙋 My page before the account holder has put his own details in: his name from Company details, never "Who are you?" */
+      S.myProfile =
+        S.owner && !(d && d.name)
+          ? Object.assign({}, d || {}, { name: coData().owner || bossFirst() || "Me" })
+          : d;
       render();
     },
     () => {},

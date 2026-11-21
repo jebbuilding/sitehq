@@ -1,11 +1,11 @@
 /* ================= TRADES' LOOK: the trades' app in the new look – a Today page, five buttons along the bottom and everything else under More ================= */
 import { bossFirst } from "../core/company-names.js";
 import { $, addDays, esc, iso, shortDay, store } from "../core/helpers.js";
-import { S, ownerMode } from "../core/state.js";
+import { S } from "../core/state.js";
 import { curTab, empTabs, render } from "../core/tabs-week.js";
 import { openFile } from "../files/in-app-files.js";
 import { coData } from "./company-details.js";
-import { NL_BY, coTileOf, nlBrandHtml } from "./today.js";
+import { NL_BY, coTileOf, nlBrandHtml, nlOn } from "./today.js";
 import { tsiCardHtml, tsiWire } from "./trade-signin.js";
 import { amForeman } from "../people/foreman.js";
 import { qrsTradeScan } from "../planner/qr-stickers.js";
@@ -45,7 +45,9 @@ const TL_GROUPS = [
 const TL_MORE_HIDE = ["checks", "signin"];
 let tlLanded = false;
 const tlOn = () => {
-  if (S.owner || ownerMode() || S.client) return false;
+  if (S.client) return false;
+  /* 🙋 Me: James as himself, in the new look, gets the trades' look */
+  if (S.owner) return !!S.preview && nlOn();
   if (!navigator.webdriver) return true;
   return !!store.get("jeb.tradelook", false);
 };
@@ -54,7 +56,7 @@ const TL_HIDE = ["time"];
 const tlTabs = () =>
   (amForeman() ? [["foreman", "🦺 Foreman"]] : [])
     .concat(empTabs())
-    .filter(([k]) => !TL_HIDE.includes(k))
+    .filter(([k]) => S.owner || !TL_HIDE.includes(k))
     .concat([["brochures", "📖 Brochures"]]);
 const tlLabel = (k) =>
   ((tlTabs().find((x) => x[0] === k) || [0, k])[1] || "").replace(/^\S+\s/, "");
@@ -65,6 +67,12 @@ function tlBar() {
   return TL_BAR.filter(([k]) => k === "home" || k === "more" || have.has(k));
 }
 function tlGo(k) {
+  if (k === "__office") {
+    S.preview = false;
+    render();
+    window.scrollTo(0, 0);
+    return;
+  }
   if (k === "checks") S.f.rcat = "";
   if (k === "policies") S.f.polf = "";
   S.tab = k;
@@ -80,7 +88,7 @@ function tlApply() {
     if (bar) bar.hidden = true;
     return;
   }
-  if (!tlLanded || TL_HIDE.includes(S.tab)) {
+  if (!tlLanded || (!S.owner && TL_HIDE.includes(S.tab))) {
     tlLanded = true;
     S.tab = "home";
   }
@@ -95,7 +103,8 @@ function tlApply() {
   }
   bar.hidden = false;
   const hd = document.querySelector("header.top>div");
-  const items = tlBar();
+  /* 🙋 Me: a way back to the office at the end of the bar */
+  const items = tlBar().concat(S.owner ? [["__office", "Office", "🏢"]] : []);
   const inBar = new Set(items.map((x) => x[0]));
   const badge = S.badgeNow || {};
   const t = curTab();
@@ -166,6 +175,8 @@ function tlHome() {
       ? ["__scan", "🚐 Do a check", "Opens the camera – point it at the van or machine's sticker"]
       : null,
     ["__inc", "🚑 Report an accident", "Or a near miss – straight away, from the site"],
+    S.owner && have.has("time") ? ["time", "⏱️ My timesheet", "Your hours this week"] : null,
+    S.owner && have.has("mydw") ? ["mydw", "🧱 My day work", "Chargeable hours"] : null,
     have.has("photos") ? ["photos", "📷 Take a photo", "Progress, a problem or a drawing"] : null,
     have.has("jobs")
       ? ["jobs", "📋 Forms", badge.jobs ? `${badge.jobs} to do` : "Jobs, snags and to-dos"]
