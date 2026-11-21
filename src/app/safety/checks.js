@@ -32,7 +32,7 @@ function checkCard(c0, owner, who) {
         ? '<span class="tag day">Defects</span>'
         : '<span class="tag ok">All OK</span>';
   return `<div class="entry chk" ${owner ? "" : `role="button" tabindex="0"`} data-c="${esc(c.id)}" data-w="${esc(who || "")}"><div class="main">
-    <div class="job"><span class="tag">${K.name}</span>${st}${c.fixed ? '<span class="tag ok">Fixed</span>' : ""}${esc(c.asset || "Not named")}${owner ? ` <span class="who">· ${esc(nameOf(who) + roleShort(who))}</span>` : ""}</div>
+    <div class="job"><span class="tag">${esc(K.name)}</span>${st}${c.fixed ? '<span class="tag ok">Fixed</span>' : ""}${esc(c.asset || "Not named")}${owner ? ` <span class="who">· ${esc(nameOf(who) + roleShort(who))}</span>` : ""}</div>
     <div class="sub">${shortDay(c.date)}${c.reading ? ` · ${K.reading || "Reading"} ${esc(c.reading)}` : ""}${d.length ? ` · ${esc(d.join(", "))}` : ""}${c.photos && c.photos.length ? ` · ${c.photos.length} photo${c.photos.length === 1 ? "" : "s"}` : ""}</div>
     ${c.notes ? `<div class="sub">${esc(c.notes)}</div>` : ""}</div>
     ${owner && hasProblem(c) ? `<label class="inl"><input type="checkbox" class="fix" ${c.fixed ? "checked" : ""}>Fixed</label>` : ""}</div>`;
@@ -46,7 +46,7 @@ function openCheck(kind, c0, presetAsset) {
   checkVals = Object.assign({}, (c && c.items) || {});
   const last = presetAsset || lastOf(S.mine.checks.map(ck), (x) => x.kind === kind, "asset");
   openSheet(
-    `<h3 id="sheettitle">${K.name} ${K.inspect ? "inspection" : "check"}</h3>
+    `<h3 id="sheettitle">${esc(K.name)} ${K.inspect ? "inspection" : "check"}</h3>
     <div class="grid2"><label for="c-date">Date<input id="c-date" type="date" required value="${esc(c ? c.date : iso(new Date()))}"></label>
     ${K.reading ? `<label for="c-read">${K.reading}<input id="c-read" type="number" inputmode="decimal" min="0" step="any" placeholder="${kind === "digger" ? "e.g. 2450" : "Odometer"}" value="${esc(c ? c.reading : "")}"></label>` : "<span></span>"}</div>
     ${pickField("c-asset", K.asset || (kind === "vehicle" ? "Vehicle" : kind === "digger" ? "Digger" : kind === "trailer" ? "Trailer" : "Machine"), [...new Set(equipOf(kind).concat(K.sites ? siteNames() : []))], c ? c.asset : last, K.ph)}

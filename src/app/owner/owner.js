@@ -749,7 +749,7 @@ async function downloadCsv() {
 function checkDetail(c0) {
   const c = ck(c0),
     K = KINDS[c.kind] || KINDS.vehicle;
-  openViewer(`<h3 style="font-family:var(--f-display);margin:0 0 4px">${K.name} check · ${esc(c.asset)}</h3>
+  openViewer(`<h3 style="font-family:var(--f-display);margin:0 0 4px">${esc(K.name)} check · ${esc(c.asset)}</h3>
     <div class="who">${esc(nameOf(c0.who))} · ${shortDay(c.date)}${c.reading ? ` · ${K.reading} ${esc(c.reading)}` : ""} · ${c.safe === false ? "<b style='color:var(--danger)'>Not safe to use</b>" : "Safe to use"}</div>
     <div style="margin-top:10px">${(K.all || K.items)
       .filter(([k]) => K.items.some((x) => x[0] === k) || (c.items && c.items[k]))

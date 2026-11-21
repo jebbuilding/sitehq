@@ -271,7 +271,7 @@ function renderTabs() {
   $("tabs").innerHTML = tabs
     .map(
       ([k, l]) =>
-        `<button type="button" class="tab" role="tab" data-t="${k}" aria-selected="${k === t || (k === "jobs" && t === "signoffs")}">${TAB_SVG[k] || ""}${l}${badge[k] ? `<span class="badge">${badge[k]}</span>` : ""}${nb[k] ? `<span class="badge newb" title="New since you last looked">${badge[k] ? "+" : ""}${nb[k]} new</span>` : ""}</button>`,
+        `<button type="button" class="tab" role="tab" data-t="${k}" aria-selected="${k === t || (k === "jobs" && t === "signoffs")}">${TAB_SVG[k] || ""}${esc(l)}${badge[k] ? `<span class="badge">${badge[k]}</span>` : ""}${nb[k] ? `<span class="badge newb" title="New since you last looked">${badge[k] ? "+" : ""}${nb[k]} new</span>` : ""}</button>`,
     )
     .join("");
   if (S.preview)
