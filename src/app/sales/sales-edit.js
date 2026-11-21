@@ -7,6 +7,7 @@ import { closeViewer, openViewer } from "../core/viewer.js";
 import { coData } from "../owner/company-details.js";
 import { edcHtml, edcWire } from "./est-docs.js";
 import { efMount } from "./est-files.js";
+import { epvOpen } from "./est-preview.js";
 import { jfFor, jfOpen } from "./job-file.js";
 import {
   SD_IK,
@@ -238,6 +239,7 @@ function sdEdit(d0) {
     <div class="sd-edacts">
       <button type="button" class="btn primary" id="sd-save">Save</button>
       <button type="button" class="btn" id="sd-mail">📧 Email</button>
+      <button type="button" class="btn" id="sd-prev">👁 Preview</button>
       <button type="button" class="btn" id="sd-pdf">📄 PDF</button>
       <button type="button" class="btn" id="sd-jf">📁 Job file${(() => {
         const j = jfFor(d);
@@ -667,6 +669,8 @@ function sdEdit(d0) {
       })
     : () => {};
   $("sd-close").onclick = done;
+  /* 👁 Preview: what is on the screen now, as it will print – nothing saved (sales/est-preview.js) */
+  $("sd-prev").onclick = () => epvOpen(Object.assign({}, d, cur || {}, read()));
   $("sd-pdf").onclick = async () => {
     const r = await save(null, true);
     if (r) await sdSavePdf(r);
