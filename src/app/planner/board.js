@@ -830,7 +830,7 @@ function pbHeader(owner, mode) {
         ["month", "Month"],
       ];
   return `<div class="pb-top">${mode !== "day" && mode !== "where" && mode !== "hol" ? `<button type="button" class="iconbtn" id="pb-prev" aria-label="Previous week">‹</button><b class="pb-lab">${esc(lab)}</b><button type="button" class="iconbtn" id="pb-next" aria-label="Next week">›</button>${pbPlanWeek() !== iso(monday(new Date())) ? `<button type="button" class="pillbtn" id="pb-today">Today</button>` : ""}` : `<b class="pb-lab"></b>`}
-    </div><div class="pb-top pb-top2"><div class="seg pb-seg" id="pb-mode">${views.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div><button type="button" class="iconbtn" id="pb-menu" aria-label="More" title="More">⋯</button></div>`;
+    </div>${owner && mode !== "hol" ? pbJobPick() : ""}<div class="pb-top pb-top2"><div class="seg pb-seg" id="pb-mode">${views.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div><button type="button" class="iconbtn" id="pb-menu" aria-label="More" title="More">⋯</button></div>`;
 }
 function pbWireHeader(owner) {
   const go = (w) => {
@@ -861,6 +861,25 @@ function pbWireHeader(owner) {
         }),
     );
   $("pb-menu").onclick = (e) => pbMenu(e.currentTarget, owner);
+  if ($("pb-job"))
+    $("pb-job").onchange = (e) => {
+      S.f.psite = e.target.value;
+      S.f.pmjobs = [];
+      render();
+    };
+}
+/* 🏗 Jobs: all, or one – always in sight at the top of the planner (James, Nov 2026) */
+function pbJobPick() {
+  const entries = planEntries();
+  const opts = [...new Set(siteNames().concat(entries.map((p) => p.site).filter(liveSite)))].sort();
+  const cur = S.f.psite || "";
+  if (cur && !opts.includes(cur)) opts.unshift(cur);
+  return `<label class="pb-jobl" for="pb-job">🏗 Jobs<select id="pb-job"><option value="">All jobs</option>${opts
+    .map(
+      (x) =>
+        `<option value="${esc(x)}"${x === cur ? " selected" : ""}>${esc(x.startsWith("job:") ? x.slice(4) : siteFull(x))}</option>`,
+    )
+    .join("")}</select></label>`;
 }
 function plannerView() {
   const owner = ownerMode();

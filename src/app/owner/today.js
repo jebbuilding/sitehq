@@ -68,7 +68,8 @@ const NL_SECTIONS = [
     "People",
     ["people", "firms", "selfemp", "inductions", "wages", "time", "training", "chat"],
   ],
-  ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers"]],
+  /* 🙋 My page is the Me button at the top now, not in Paperwork (James, Nov 2026) */
+  ["paper", "Paperwork", ["jobs", "hs", "policies", "checks", "suppliers"]],
   /* Accounts: the money pages, their own area (James, Nov 2026) */
   /* The order James set (21 Nov 2026): Today, Calendar, Jobs, People, Papers, Estimating, Accounts, Setup. Estimating
      holds the estimates (the Estimates & invoices page opened on Estimates) and the estimating tool; the invoices are
@@ -125,7 +126,7 @@ const NL_GROUPS = {
     ["Invoices and CIS", ["sales", "invoices", "cis"], true],
   ],
   paper: [
-    ["Health & safety", ["hs", "checks", "jobs", "me"]],
+    ["Health & safety", ["hs", "checks", "jobs"]],
     ["Company and suppliers", ["policies", "suppliers"]],
   ],
 };
@@ -421,6 +422,13 @@ function nlApply() {
         }
         const s = b.dataset.s,
           tabs = (NL_SECTIONS.find((x) => x[0] === s) || [])[2] || [];
+        /* 📅 Calendar opens on every job, not one left picked from before (James, Nov 2026: "in calendar it only
+           shows one job i want to see all or one a choose") */
+        if (s === "cal") {
+          S.f.psite = "";
+          S.f.pmjobs = [];
+          S.f.pmshow = "all";
+        }
         if (s === "today") nlGo("today");
         else if (tabs.length === 1) nlOpenTab(tabs[0]);
         else nlGo("sec-" + s);

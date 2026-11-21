@@ -218,3 +218,5 @@
 .pmf-clashes .pmf-w{display:block;color:var(--danger);font-weight:600}
 .pmf-list{display:flex;flex-direction:column;gap:2px;margin:8px 0}
 .mcell.pmf-c,.mcell.pmf-cbad{position:relative}
+.pb-jobl{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;margin:6px 0;font-weight:600;width:100%;text-align:left}
+.pb-jobl select{min-height:44px;flex:1;max-width:420px}

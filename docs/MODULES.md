@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 283 files, 5379 KB, 127329 lines.
-- 2699 names declared at the top level (the shared scope); 1378 of them are used by a file other than the one that declares them.
+- 283 files, 5380 KB, 127356 lines.
+- 2700 names declared at the top level (the shared scope); 1378 of them are used by a file other than the one that declares them.
 - 2978 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 240 files, 12 files depend on each other in a loop (directly or through other files); the other 31 files are outside any loop.
@@ -1204,7 +1204,7 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 639 lines, 26 KB. Declares 26 names, 12 used elsewhere.
+- 647 lines, 26 KB. Declares 26 names, 12 used elsewhere.
 - **Used elsewhere:** `nlGo` (5), `nlOpenTab` (5), `coTileOf` (3), `NL_BY` (2), `nlBrandHtml` (2), `nlOn` (2), `nlSectionView` (2), `NL_SECTIONS` (1), `NL_SUBS` (1), `nlApply` (1), `nlName` (1), `todayView` (1)
 - **Uses names from 23 files:** `owner/today-desk.js` (5), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/menus.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `timesheets/overtime.js` (2), `clients/address-book.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/owner.js` (1), `owner/search.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 15 files**
@@ -1456,7 +1456,7 @@ PHOTO MULTI-SELECT + DOWNLOAD AS ZIP
 
 PLANNER v2: full-screen board (people × days), job timeline, tidy menu, day sheet for trades
 
-- 1815 lines, 75 KB. Declares 33 names, 17 used elsewhere.
+- 1834 lines, 76 KB. Declares 34 names, 17 used elsewhere.
 - **Used elsewhere:** `openPlanEditor` (8), `keyDatesFor` (5), `keyTimeline` (3), `pbPending` (2), `answerLeave` (1), `leaveCard` (1), `openKeyDates` (1), `openLeave` (1), `openPlanView` (1), `pbEntryDays` (1), `pbPlanWeek` (1), `pbSiteOf` (1), `pbSiteShort` (1), `pbStageName` (1), `plannerView` (1), `siteHue` (1), `wireLeave` (1)
 - **Uses names from 36 files:** `core/helpers.js` (10), `planner/time-off.js` (9), `core/sheet.js` (6), `core/state.js` (6), `planner/planner-extras.js` (6), `owner/owner.js` (5), `planner/month-filter.js` (5), `planner/views.js` (5), `planner/diary.js` (4), `planner/holidays.js` (3), `core/fields.js` (2), `core/viewer.js` (2), `files/files.js` (2), `files/outbox.js` (2), `planner/holiday-tab.js` (2), `planner/plant-care.js` (2), `sites/job-details.js` (2), `chat/chat.js` (1), `clients/address-book.js` (1), `clients/clients.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/company-names.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `owner/today.js` (1), `people/profile-photos.js` (1), `photos/photos.js` (1), `planner/course-booking.js` (1), `planner/weather-plan.js` (1), `safety/training.js` (1), `sites/job-sheets.js` (1), `sites/project-pages.js` (1), `sites/roll-call.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 17 files**
