@@ -68,6 +68,7 @@ import { empInvoices } from "../purchasing/invoices.js";
 import { isInv, materialsView, receiptsView } from "../purchasing/materials-receipts.js";
 import { SAMPLES } from "../purchasing/samples.js";
 import { suppliersView } from "../purchasing/suppliers.js";
+import { ckiApply } from "../safety/check-items.js";
 import { hasProblem } from "../safety/checklists.js";
 import { cfmCardHtml, cfmWire } from "../safety/custom-forms.js";
 import { myVehIns } from "../safety/expiry-dates.js";
@@ -337,6 +338,8 @@ function render() {
   if (S.moved) return smvBlock();
   /* the firm's own menu names and order (owner/menus.js) */
   mnuApply();
+  /* the firm's own questions on the built-in checks (safety/check-items.js) */
+  ckiApply();
   const m0 = $("main");
   if (m0) {
     const keep =

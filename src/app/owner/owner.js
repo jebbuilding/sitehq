@@ -43,9 +43,11 @@ import { kitView } from "../planner/kit-out.js";
 import { eqmView } from "../planner/plant-care.js";
 import { invCard, wireInvoices } from "../purchasing/invoices.js";
 import { isInv } from "../purchasing/materials-receipts.js";
+import { ckiCardHtml, ckiWire } from "../safety/check-items.js";
 import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
 import { cfbView } from "../safety/form-builder.js";
+import { dstCardHtml, dstWire } from "../sales/doc-style.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
 import { tmsCardHtml, tmsWire } from "../sales/terms-setup.js";
 import { siteFull, siteHeadHtml, siteLabel, siteNameSheet } from "../sites/job-details.js";
@@ -749,7 +751,8 @@ function checkDetail(c0) {
     K = KINDS[c.kind] || KINDS.vehicle;
   openViewer(`<h3 style="font-family:var(--f-display);margin:0 0 4px">${K.name} check · ${esc(c.asset)}</h3>
     <div class="who">${esc(nameOf(c0.who))} · ${shortDay(c.date)}${c.reading ? ` · ${K.reading} ${esc(c.reading)}` : ""} · ${c.safe === false ? "<b style='color:var(--danger)'>Not safe to use</b>" : "Safe to use"}</div>
-    <div style="margin-top:10px">${K.items
+    <div style="margin-top:10px">${(K.all || K.items)
+      .filter(([k]) => K.items.some((x) => x[0] === k) || (c.items && c.items[k]))
       .map(([k, l]) => {
         const v = c.items && c.items[k];
         return `<div class="citem"><span>${esc(l)}</span><span class="tag ${v === "defect" ? "bad" : v === "ok" ? "ok" : ""}">${v === "defect" ? "Defect" : v === "ok" ? "OK" : v === "na" ? "N/A" : "–"}</span></div>`;
@@ -935,6 +938,8 @@ function ownerSetup() {
   }
   if (S.f.stab === "forms") {
     cfbView(stSeg);
+    $("main").insertAdjacentHTML("beforeend", ckiCardHtml());
+    ckiWire();
     stWire();
     return;
   }
@@ -964,6 +969,7 @@ function ownerSetup() {
     ${companyCard()}
     ${lhCard()}
     ${tmsCardHtml()}
+    ${dstCardHtml()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
     <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button></div>
@@ -988,6 +994,7 @@ function ownerSetup() {
   wireCompany();
   lhWire();
   tmsWire();
+  dstWire();
   qaSetupWire();
   $("main")
     .querySelectorAll("#tp-seg button")

@@ -131,7 +131,7 @@ function openCheckHistory() {
       ];
       list.forEach((c) => {
         const K = KINDS[c.kind] || KINDS.vehicle;
-        const na = K.items
+        const na = (K.all || K.items)
           .filter(([k]) => c.items && c.items[k] === "na")
           .map(([, l]) => l.split(":")[0]);
         rows.push([
