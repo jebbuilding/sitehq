@@ -19,7 +19,9 @@ export {
   sdLines,
   sdNextNumber,
   sdNo,
+  sdOptions,
   sdPlain,
+  sdPlan,
   sdPricedHead,
   sdR2,
   sdSales,
@@ -134,8 +136,41 @@ function sdAmt(l) {
 }
 /* a section's own price (a heading with an amount) counts like a line */
 const sdPricedHead = (l) => !!(l && l.h && l.a !== "" && l.a != null && +l.a !== 0);
-const sdLines = (d) =>
-  (d.lines || []).filter((l) => l && (l.h ? sdPricedHead(l) : l.d || sdAmt(l)));
+/* the lines that count in the total: an optional section (and the lines under it) is shown on its own, not added
+   (James, Nov 2026: "a good way to break down a job for a client") */
+const sdLines = (d) => {
+  let opt = false;
+  return (d.lines || []).filter((l) => {
+    if (!l) return false;
+    if (l.h) opt = !!l.opt;
+    if (opt) return false;
+    return l.h ? sdPricedHead(l) : l.d || sdAmt(l);
+  });
+};
+/* the optional extras: each optional section with what it adds, before and with VAT */
+function sdOptions(d) {
+  return sdGroups(d)
+    .filter((g) => g.opt)
+    .map((g) => {
+      const c = sdCalc(
+        Object.assign({}, d, { lines: [Object.assign({}, g.head, { opt: 0 })].concat(g.lines) }),
+      );
+      return { h: g.h, w: g.w, lines: g.lines, net: c.net, vat: c.vat, gross: c.gross };
+    });
+}
+/* the payment plan: each stage with its share of the total (the last takes any pennies left over) */
+function sdPlan(d) {
+  const plan = (d.plan || []).filter((p) => p && (p.l || +p.p));
+  if (!plan.length) return [];
+  const c = sdCalc(d);
+  const base = c.gross || c.net;
+  let left = base;
+  return plan.map((p, i) => {
+    const amt = i === plan.length - 1 ? sdR2(left) : sdR2((base * (+p.p || 0)) / 100);
+    left = sdR2(left - amt);
+    return { l: p.l || "Stage " + (i + 1), p: +p.p || 0, amt };
+  });
+}
 /* a line on its own, without the section bits (when copied onto an invoice) */
 const sdPlain = (l) => {
   const o = Object.assign({}, l);
@@ -150,7 +185,14 @@ function sdGroups(d) {
   (d.lines || []).forEach((l) => {
     if (!l) return;
     if (l.h) {
-      g = { h: l.d || "", w: l.w || "", head: l, lines: [], sub: sdPricedHead(l) ? sdAmt(l) : 0 };
+      g = {
+        h: l.d || "",
+        w: l.w || "",
+        head: l,
+        opt: !!l.opt,
+        lines: [],
+        sub: sdPricedHead(l) ? sdAmt(l) : 0,
+      };
       out.push(g);
       return;
     }

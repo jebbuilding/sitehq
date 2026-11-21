@@ -1,7 +1,8 @@
 /* ================= TRADES' SIGN IN BY LOCATION: on Today and Sites, the phone finds the site you're at and signs you in with one tap ================= */
-import { $, esc, iso, store } from "../core/helpers.js";
-import { S } from "../core/state.js";
+import { $, esc, iso, store, toast } from "../core/helpers.js";
+import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
+import { indFor, myInd, openInduction } from "../safety/site-inductions.js";
 import { siteHeadHtml, siteLabel } from "../sites/job-details.js";
 import { SIGNIN, signOnly } from "../sites/sign-in-book.js";
 import { otmAsk } from "../timesheets/overtime.js";
@@ -53,7 +54,21 @@ const tsiDone = () =>
   (S.mine.entries || [])
     .filter((e) => !e.open && e.type === "hours" && e.date === iso(new Date()) && e.checkIn)
     .pop();
-const tsiIn = (site) => (tsiTs() ? checkInAt(site) : SIGNIN.signIn(site));
+/* signing in at a site for the first time: its site induction first, then signed in (James, Nov 2026: "everytime
+   someone starts at a new job by geo position in signin make them take the induction") */
+const tsiIn0 = (site) => (tsiTs() ? checkInAt(site) : SIGNIN.signIn(site));
+const tsiIn = async (site) => {
+  const ind = !ownerMode() && indFor(site);
+  if (ind && !myInd(ind)) {
+    toast("First time at " + siteLabel(site) + " – do the site induction, then you're signed in");
+    openInduction(ind, false, 0, async () => {
+      await tsiIn0(site);
+      tsiRefresh();
+    });
+    return;
+  }
+  return tsiIn0(site);
+};
 function tsiLocate(force) {
   if (tsiAsking) return;
   if (!force && tsiPos && Date.now() - tsiPos.at < 5 * 60e3) return;

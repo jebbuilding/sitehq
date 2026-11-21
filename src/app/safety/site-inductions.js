@@ -15,6 +15,7 @@ import { isendOpen } from "../people/induction-send.js";
 import { meInfo, myDetails } from "../people/personal-details.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { planEntries } from "../planner/time-off.js";
+import { istDef, istItems } from "./ind-template.js";
 import { shrinkImage } from "./training.js";
 import { dstPatch } from "../sales/doc-style.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
@@ -25,6 +26,7 @@ import { QRSITE } from "../sites/qr-sign-in.js";
 import { myName } from "../survey/door-window-survey.js";
 export {
   IND_DETAILS,
+  IND_ITEMS,
   empIndTodo,
   indFor,
   indSectionWithId,
@@ -372,7 +374,7 @@ function openIndEditor(site) {
             k === "rules" ||
             k === "pc" ||
             k === "manager"
-          ? def
+          ? istDef(k, def)
           : "";
       if (k === "firstaider" || k === "manager")
         return pplPickHtml(
@@ -387,7 +389,7 @@ function openIndEditor(site) {
     }).join("")}
     <div class="card" style="padding:10px 12px;margin:4px 0"><div class="flabel" style="margin:0">📄 Site rules</div><div class="who">Upload your site rules (PDF or photos). Everyone doing the induction has to open them and tick that they will follow them.</div>
       <div id="id-rules"></div><label for="id-rfile">Add site rules<input id="id-rfile" type="file" accept="application/pdf,image/*,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple></label></div>
-    <label for="id-items">Points they tick (one per line)<textarea id="id-items" style="min-height:260px" maxlength="6000">${esc((ind ? ind.items : IND_ITEMS).join("\n"))}</textarea></label>
+    <label for="id-items">Points they tick (one per line)<textarea id="id-items" style="min-height:260px" maxlength="6000">${esc((ind ? ind.items : istItems()).join("\n"))}</textarea></label>
     ${ind ? `<label class="inl" style="font-size:14px;color:var(--ink);font-weight:500;white-space:normal"><input type="checkbox" id="id-redo"> Ask everyone to do it again (use this if something important has changed)</label>` : ""}
     <div class="who">Check the site manager's details and A&E before you save. The defaults are only a starting point.</div>
     ${formFoot(false, ind ? "Save changes" : "Save induction")}`,
@@ -510,7 +512,8 @@ const VIS_ROLES = [
   "Building control / inspector",
   "Other",
 ];
-function openInduction(ind, onDevice, count) {
+/* then: run once it is signed (signing in at a new site goes on afterwards – owner/trade-signin.js) */
+function openInduction(ind, onDevice, count, then) {
   setFormType("induction");
   setEditing(null);
   count = count || 0;
@@ -677,6 +680,7 @@ function openInduction(ind, onDevice, count) {
             : "Induction signed",
         );
         render();
+        if (then) then();
       } catch (e) {
         showErr(`Couldn't save. Ask ${bossFirst()} to check you're an Editor on this page.`);
         $("f-save").disabled = false;

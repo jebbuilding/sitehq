@@ -23,6 +23,7 @@ import {
 } from "./personal-documents.js";
 import { openPromptSender, remindersPanel, wireReminders } from "./reminders.js";
 import { SUBAG } from "./subcontractor-agreement.js";
+import { tmpOpen } from "./team-map.js";
 import { loadImage } from "../photos/photos.js";
 import { holTeamHtml, holTeamWire } from "../planner/holidays.js";
 import { sdSigCard, sdWireSig } from "../sales/sig-setup.js";
@@ -167,7 +168,7 @@ function peopleView() {
   const missing = rows.filter((r) => !r.off && !r.me && !detailsDone(r.d));
   $("main").innerHTML =
     `<div class="actions"><button class="btn primary" id="pp-add" type="button">+ Add a trade not on the app</button><button class="btn pr-send" type="button">Send a reminder</button>${missing.length ? `<button class="btn" id="pp-askdet" type="button">Ask everyone missing details</button>` : ""}</div>${remindersPanel()}
-    <div class="actions"><button class="btn" id="pp-ec" type="button">Download emergency contacts (CSV)</button><button class="btn" id="pp-all" type="button">Download all details (CSV)</button></div>
+    <div class="actions"><button class="btn" id="pp-map" type="button">🗺️ Map of where everyone lives</button><button class="btn" id="pp-ec" type="button">Download emergency contacts (CSV)</button><button class="btn" id="pp-all" type="button">Download all details (CSV)</button></div>
     ${missing.length ? `<div class="notice warn"><b>Not filled in yet:</b> ${missing.map((r) => esc(nameOf(r.id))).join(", ")}. They'll be asked next time they open the app.</div>` : ""}
     <div class="seg" id="pp-rf">${[
       ["", "Everyone"],
@@ -288,6 +289,7 @@ function peopleView() {
         if (await personPhotoSet(inp.dataset.w, f)) render();
       };
     });
+  if ($("pp-map")) $("pp-map").onclick = tmpOpen;
   $("pp-add").onclick = () => openDetails({ off: true });
   $("main")
     .querySelectorAll(".pp-edit")

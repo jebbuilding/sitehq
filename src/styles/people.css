@@ -52,3 +52,5 @@
 .im-t .im-c.need.im-send,.im-t .im-c.sent{cursor:pointer;min-height:44px}
 .im-t .im-c.sent{background:var(--soft);color:var(--ink)}
 .im-t .im-sendl{display:block;margin:4px auto 0;font-size:12px;min-height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.tmp-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+.tmp-dot.tmp-emp{background:#1d7a4c}.tmp-dot.tmp-job{background:#7F191D}.tmp-dot.tmp-mer{background:#6250d6}

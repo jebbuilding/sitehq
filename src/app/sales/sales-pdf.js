@@ -15,6 +15,8 @@ import {
   sdIk,
   sdIsPf,
   sdNo,
+  sdOptions,
+  sdPlan,
   sdPricedHead,
   sdSet,
   sdSigned,
@@ -260,7 +262,8 @@ async function sdPdf(d) {
     para("Summary of Estimated Costs", { st: "bold", u: 1, gap: 4.6 });
     /* the costs: the total only (like James's own), each heading's total, or every line under its heading */
     const bd = d.bd || (d.from ? "total" : "all");
-    const groups = sdGroups(d);
+    /* optional sections are printed on their own after the total, not in it */
+    const groups = sdGroups(d).filter((g) => !g.opt);
     const costLine = (txt, amt, o) => {
       o = o || {};
       doc.setFont("helvetica", o.bold ? "bold" : "normal");
@@ -314,6 +317,33 @@ async function sdPdf(d) {
       para(`Reverse charge: the ${gbp(c.rcVat)} VAT is paid by you to HMRC, not to us.`, {
         sz: 9.5,
       });
+    /* optional extras: each with its work and what it adds (James, Nov 2026: "a good way to break down a job") */
+    const opts = sdOptions(d);
+    if (opts.length) {
+      y += 3;
+      need(20);
+      para("Optional extras (not in the total above)", { st: "bold", u: 1, gap: 3.6 });
+      opts.forEach((x) => {
+        need(14);
+        costLine(x.h || "Optional extra", null, { bold: 1, gap: 0.8 });
+        const items = listOf(x.w).concat(x.lines.map((l) => l.d).filter(Boolean));
+        if (items.length) list(items, { bullet: 1, lh: 5, gap: 1 });
+        costLine(
+          "Adds " + gbp(x.net) + (x.vat ? " +VAT (" + gbp(x.gross) + " Inc VAT)" : ""),
+          null,
+          { ind: 5, gap: 2.4 },
+        );
+      });
+    }
+    /* how they'll pay: deposit and stages, each with its £ */
+    const plan = sdPlan(d);
+    if (plan.length) {
+      y += 3;
+      need(12 + plan.length * 6);
+      para("How you'll pay", { st: "bold", u: 1, gap: 3.6 });
+      plan.forEach((x) => costLine(x.l + (x.p ? " (" + x.p + "%)" : ""), x.amt, { gap: 1.4 }));
+      if (c.vat) para("Amounts include VAT.", { sz: 9.5, gap: 2 });
+    }
     y += 6;
     if (d.dur) para("Estimated project duration " + d.dur, { st: "bold", gap: 2.4 });
     para(`Estimate is valid for ${+d.validDays || +set.validDays || 30} Days`, {
