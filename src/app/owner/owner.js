@@ -1,5 +1,5 @@
 /* ================= OWNER ================= */
-import { bossName } from "../core/company-names.js";
+import { bossFirst, bossName } from "../core/company-names.js";
 import { startEmployee } from "../core/data.js";
 import { askOwnerPin } from "../core/dictation.js";
 import { lastOf, pickField, pickVal } from "../core/fields.js";
@@ -27,11 +27,12 @@ import { isSketch, ownerDrawing } from "../drawing/trade-drawings.js";
 import { blobUrl, saveAsset } from "../files/files.js";
 import { newId } from "../files/outbox.js";
 import { backupCard, wireBackup } from "./backup.js";
-import { companyCard, wireCompany } from "./company-details.js";
+import { coData, companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
 import { mnuView } from "./menus.js";
 import { openMonthly } from "./reports.js";
 import { qaSetupCard, qaSetupWire } from "./today-desk.js";
+import { tlOn } from "./trade-look.js";
 import { wuOpen } from "./week-wrap.js";
 import { acView } from "../people/access.js";
 import { pvView } from "../people/portal-access.js";
@@ -668,12 +669,15 @@ function openStopFor(id, e) {
 }
 function startPreview() {
   S.preview = true;
+  /* 🙋 My page before his own details are in: his name from Company details, so he is never asked "Who are you?" */
+  if (!S.myProfile || !S.myProfile.name)
+    S.myProfile = Object.assign({}, S.myProfile, { name: coData().owner || bossFirst() || "Me" });
   if (!S.employeeStarted) {
     S.employeeStarted = true;
     startEmployee();
   }
   /* My forms opens on My timesheet, not on whichever trades' page was used last (James, Nov 2026: it went to Chat) */
-  S.tab = empTabs().some((t) => t[0] === "time") ? "time" : empTabs()[0][0];
+  S.tab = tlOn() ? "home" : empTabs().some((t) => t[0] === "time") ? "time" : empTabs()[0][0];
   render();
 }
 async function downloadCsv() {

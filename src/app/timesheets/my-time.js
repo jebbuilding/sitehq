@@ -17,7 +17,7 @@ function mytCardHtml() {
     j = sumH(mine, (e) => e.type === "job");
   const open = (S.mine.entries || []).find((e) => e.open);
   return `<details class="card myt-card" data-id="__myt"${S.f.mytShut ? "" : " open"}><summary><div class="nm">🙋 My own time<small>Your own timesheet and day work this week</small></div><div class="figs"><span><b>${hrs(h)}</b> h worked</span><span><b>${hrs(j)}</b> h day work</span></div></summary>
-    <div class="cardbody"><div class="actions myt-acts"><button type="button" class="btn primary" id="myt-h">+ My timesheet day</button><button type="button" class="btn hv" id="myt-j">🧱 + My day work</button><button type="button" class="btn" id="myt-ci">${open ? "⏱ Check out (fill in forms as me)" : "⏱ Check in (fill in forms as me)"}</button></div>
+    <div class="cardbody"><div class="actions myt-acts"><button type="button" class="btn primary" id="myt-h">+ My timesheet day</button><button type="button" class="btn hv" id="myt-j">🧱 + My day work</button><button type="button" class="btn" id="myt-ci">${open ? "🙋 My page – check out" : "🙋 My page – check in, forms, photos"}</button></div>
     ${
       mine.length
         ? `<div class="myt-list">${mine
