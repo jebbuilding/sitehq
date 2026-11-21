@@ -9,6 +9,7 @@ import { ukDate } from "../safety/rams-maker.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { AC_CATS, acCatKind, acCatName, acCfg, acSaveCfg, acSums } from "./acct-data.js";
 import { AX_KINDS, axRows } from "./acct-export.js";
+import { cisBillCalc } from "./cis-bill.js";
 import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import { sdCalc, sdCounts, sdR2, sdSales, sdTaxYear } from "./sales-calc.js";
 import { sdImgData } from "./sales-pdf.js";
@@ -29,7 +30,14 @@ const VT_ENDS = [
 ];
 const vtCfg = () => {
   const c = acCfg();
-  return { ends: c.vatEnds || "3", scheme: c.vatScheme || "standard" };
+  return {
+    ends: c.vatEnds || "3",
+    scheme: c.vatScheme || "standard",
+    /* Flat Rate Scheme: the % for the trade (14.5% labour-only building, 9.5% general building, 16.5% limited cost
+       trader), less 1% in the first year */
+    frs: c.vatFrs == null ? 14.5 : +c.vatFrs,
+    frsYear1: !!c.vatFrsYear1,
+  };
 };
 /* the quarters (newest first) up to the one we're in */
 function vtQuarters(n) {
@@ -67,7 +75,9 @@ const vtName = (q) =>
 const vtFiled = (q) => (S.vatReturns || []).find((r) => r.to === q.to && r.from === q.from) || null;
 /* the nine boxes for a quarter, with what is in each */
 function vtBoxes(from, to) {
-  const cash = vtCfg().scheme === "cash";
+  const cfg = vtCfg();
+  const cash = cfg.scheme === "cash" || cfg.scheme === "flatcash";
+  const flat = cfg.scheme === "flat" || cfg.scheme === "flatcash";
   const inR = (d) => !!d && d >= from && d <= to;
   const sales = [];
   let b1 = 0,
@@ -113,18 +123,43 @@ function vtBoxes(from, to) {
     costs.push({ d: "", what: acCatName(k), net: sdR2(-v), vat: 0 });
   });
   const r2 = sdR2;
+  /* reverse charge: VAT on CIS subbies' bills that we pay to HMRC ourselves goes in box 1 and back in box 4 (HMRC:
+     "VAT domestic reverse charge for building and construction services") */
+  let rcV = 0;
+  (S.cisMonths || []).forEach((m) =>
+    (m.extra || []).forEach((x) => {
+      const d = x.status && x.status !== "paid" ? "" : cash ? x.paidOn || x.date : x.date;
+      if (!inR(d) || !x.lines) return;
+      const c = cisBillCalc(x);
+      if (c.rc) {
+        rcV += c.rc;
+        costs.push({
+          d,
+          what: `Reverse charge VAT: ${x.inv ? "bill " + x.inv : "subbie's bill"}`,
+          net: c.net,
+          vat: c.rc,
+        });
+      }
+    }),
+  );
+  /* Flat Rate Scheme: box 1 is the flat % of all takings including VAT; box 4 only VAT on capital items over £2,000
+     (put in by hand) and reverse charge; box 6 is the takings including VAT */
+  const pct = Math.max(0, cfg.frs - (cfg.frsYear1 ? 1 : 0));
+  const gross6 = sales.reduce((a, x) => a + x.net + x.vat, 0);
+  const v1 = flat ? (gross6 * pct) / 100 : b1;
+  const v4 = flat ? 0 : s.vatIn;
   const B = {
-    1: r2(b1),
+    1: r2(v1 + rcV),
     2: 0,
-    3: r2(b1),
-    4: r2(s.vatIn),
-    5: r2(b1 - s.vatIn),
-    6: Math.round(b6),
+    3: r2(v1 + rcV),
+    4: r2(v4 + rcV),
+    5: r2(v1 - v4),
+    6: Math.round(flat ? gross6 : b6),
     7: Math.round(b7),
     8: 0,
     9: 0,
   };
-  return { B, sales, costs, unsorted: s.unsorted };
+  return { B, sales, costs, unsorted: s.unsorted, flat, pct, rcV: r2(rcV) };
 }
 const VT_BOX = {
   1: "VAT due on sales and other outputs",
@@ -151,7 +186,7 @@ function vtView(tabs) {
   const open = S.f.vtbox || "";
   $("main").innerHTML = `<div class="ac-page">${tabs}
     <div class="seg vt-qs" id="vt-qs">${qs.map((x, i) => `<button type="button" data-i="${i}" aria-pressed="${i === qi}">${esc(vtName(x))}${vtFiled(x) ? " ✓" : ""}</button>`).join("")}</div>
-    <div class="who">${esc(ukDate(q.from))} to ${esc(ukDate(q.to))} · ${cfg.scheme === "cash" ? "cash scheme (money received and paid)" : "standard scheme (invoice dates)"} · due by <b>${esc(ukDate(q.due))}</b>${q.to >= iso(new Date()) ? " · this quarter isn't over yet" : ""}</div>
+    <div class="who">${esc(ukDate(q.from))} to ${esc(ukDate(q.to))} · ${/^flat/.test(cfg.scheme) ? `Flat Rate Scheme ${esc(String(Math.max(0, cfg.frs - (cfg.frsYear1 ? 1 : 0))))}% of takings${cfg.scheme === "flatcash" ? " received" : ""}` : cfg.scheme === "cash" ? "cash scheme (money received and paid)" : "standard scheme (invoice dates)"} · due by <b>${esc(ukDate(q.due))}</b>${q.to >= iso(new Date()) ? " · this quarter isn't over yet" : ""}</div>
     ${filed ? `<div class="notice">✓ Filed on ${esc(ukDate(filed.filedOn))}${filed.ref ? " · reference " + esc(filed.ref) : ""}. These are the figures as they were sent.</div>` : X.unsorted ? `<div class="notice warn">${X.unsorted} bank payment${X.unsorted === 1 ? "" : "s"} not sorted yet – sort them on the Bank tab so the costs and VAT are right.</div>` : ""}
     <section class="card"><div class="cardbody vt-boxes">${[1, 2, 3, 4, 5, 6, 7, 8, 9]
       .map(
@@ -249,11 +284,25 @@ function vtView(tabs) {
     openSheet(
       `<h3 id="sheettitle">⚙ VAT quarters and scheme</h3>
       <label for="vt-ends">My VAT quarters end in<select id="vt-ends">${VT_ENDS.map(([k, l]) => `<option value="${k}"${k === cfg.ends ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
-      <label for="vt-sch">VAT scheme<select id="vt-sch"><option value="standard"${cfg.scheme === "standard" ? " selected" : ""}>Standard – by the date on each invoice</option><option value="cash"${cfg.scheme === "cash" ? " selected" : ""}>Cash accounting – when you're paid</option></select></label>
-      <div class="who">Your VAT certificate or HMRC account shows which months your quarters end.</div>${formFoot(false, "Save")}`,
+      <label for="vt-sch">VAT scheme<select id="vt-sch"><option value="standard"${cfg.scheme === "standard" ? " selected" : ""}>Standard – by the date on each invoice</option><option value="flat"${cfg.scheme === "flat" ? " selected" : ""}>Flat Rate Scheme – a set % of takings</option><option value="flatcash"${cfg.scheme === "flatcash" ? " selected" : ""}>Flat Rate Scheme, on money received</option><option value="cash"${cfg.scheme === "cash" ? " selected" : ""}>Cash accounting – when you're paid</option></select></label>
+      <div class="vt-frs"><label for="vt-frs">Flat rate % (Flat Rate Scheme only)<select id="vt-frs">${[
+        [14.5, "14.5% – labour-only building (materials under 10% of takings)"],
+        [9.5, "9.5% – general building or construction"],
+        [16.5, "16.5% – limited cost trader (spends under 2% on goods)"],
+      ]
+        .map(([v, l]) => `<option value="${v}"${+cfg.frs === v ? " selected" : ""}>${l}</option>`)
+        .join(
+          "",
+        )}</select></label><label class="inl"><input type="checkbox" id="vt-frs1"${cfg.frsYear1 ? " checked" : ""}> First year VAT registered (1% off)</label></div>
+      <div class="who">Your VAT certificate or HMRC account shows which months your quarters end and which scheme you're on.</div>${formFoot(false, "Save")}`,
       async () => {
         try {
-          await acSaveCfg({ vatEnds: $("vt-ends").value, vatScheme: $("vt-sch").value });
+          await acSaveCfg({
+            vatEnds: $("vt-ends").value,
+            vatScheme: $("vt-sch").value,
+            vatFrs: +$("vt-frs").value,
+            vatFrsYear1: $("vt-frs1").checked,
+          });
           closeForm();
           S.f.vtq = 0;
           render();

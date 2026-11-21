@@ -18,7 +18,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2200);await p.keyboard.press('Escape');
  await p.click('#nl-tog');await p.waitForTimeout(300);
  await p.evaluate(()=>{const S=window.__S;S.otab='setup';S.f.stab='setup';window.render()});await p.waitForTimeout(500);
- ok(await p.isVisible('#lhb-make')&&await p.isVisible('#lhb-terms'),'Setup › My letterhead offers ✨ Make one and ✨ Make my terms');
+ ok(await p.isVisible('#lhb-make')&&await p.isVisible('#tms-make'),'Setup › My letterhead offers ✨ Make one and ✨ Make my terms');
  await p.click('#lhb-make');await p.waitForTimeout(500);
  await p.fill('#lhb-name','Example Builders Ltd');await p.fill('#lhb-tag','Extensions · Lofts');await p.fill('#lhb-phone','01395 000000');await p.fill('#lhb-cono','12345678');
  const inked=await p.evaluate(()=>{const cv=document.getElementById('lhb-top');const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let n=0;for(let i=0;i<d.length;i+=16)if(d[i]<200)n++;return n});
@@ -31,7 +31,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  const ss=await p.evaluate(()=>window.__st['todos/salesset']||{});
  ok(ss.lhTop&&ss.lhTop.id&&ss.lhTop.h===38&&ss.lhBot&&ss.lhBot.id&&ss.lhMade,'saved as the letterhead\'s top and foot');
  await p.evaluate(()=>window.render());await p.waitForTimeout(400);
- await p.click('#lhb-terms');await p.waitForTimeout(400);
+ await p.click('#tms-make');await p.waitForTimeout(400);
  await p.fill('#lht-dep','15');await p.fill('#lht-days','14');await p.fill('#lht-ins','£5,000,000');
  await p.click('#f-save');await p.waitForTimeout(800);
  const t=await p.evaluate(()=>window.__st['todos/salesset']||{});

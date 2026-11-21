@@ -80,9 +80,17 @@ const cisTeamDet = (w) => (S.team && S.team[w] && S.team[w].details) || {};
 function cisSubList() {
   const cfg = cisCfg();
   const app = teamIds()
-    .filter((w) => cisTeamDet(w).empType === "cis" || (cfg.subs[w] || {}).cis === true)
+    .filter((w) => {
+      const d = cisTeamDet(w);
+      return (
+        d.empType === "cis" ||
+        (cfg.subs[w] || {}).cis === true ||
+        (!!d.cisStatus && d.cisStatus !== "no" && (cfg.subs[w] || {}).cis !== false)
+      );
+    })
     .map((w) => {
       const d = cisTeamDet(w);
+      /* what the trade put in My details › CIS; anything the office saved for them wins */
       return Object.assign(
         {
           id: w,
@@ -91,7 +99,14 @@ function cisSubList() {
           email: d.email || "",
           phone: d.phone || d.mobile || "",
           nino: d.ni || d.nino || "",
-          type: d.empType === "company" ? "company" : "sole",
+          type: d.cisBiz || (d.empType === "company" ? "company" : "sole"),
+          trading: d.cisName || d.tradingName || "",
+          crn: d.companyNo || "",
+          putr: d.cisPutr || "",
+          vatNo: d.vatNo || "",
+          plExpiry: d.plExpiry || "",
+          said: d.cisStatus || "",
+          rate: d.cisStatus === "gross" ? "0" : d.cisStatus === "none" ? "30" : undefined,
         },
         cfg.subs[w] || {},
         { app: true },
@@ -241,7 +256,7 @@ function cisWarn(s) {
 function cisView() {
   const tab = S.f.cisv || "month";
   const tabs = `<div class="seg cis-tabs" id="cis-tabs">${[
-    ["month", "This month"],
+    ["month", "Month"],
     ["subs", "Subcontractors"],
     ["year", "Year"],
   ]
@@ -266,10 +281,19 @@ function cisView() {
 /* ---------- this month ---------- */
 function cisMonthView(tabs) {
   const today = iso(new Date());
-  /* default: the month just ended (the one to file now) until its return is filed */
+  /* opens on the current tax month, any other picked from the list (James, Nov 2026: "cis statements … by month. so
+     the current month is there when you open and you can choose other months"); last month's return is a tap away
+     until it is filed */
   const curM = cisMonthOf(today);
   const prevM = cisMonthOf(iso(addDays(parse(cisRange(curM)[0]), -1)));
-  const key = S.f.cism || (cisRec(prevM).filedAt ? curM : prevM);
+  const key = S.f.cism || curM;
+  const pick = Array.from({ length: 36 }, (_, i) => {
+    const d = parse(curM + "-05");
+    d.setMonth(d.getMonth() - i);
+    return iso(d).slice(0, 7);
+  });
+  if (!pick.includes(key)) pick.push(key);
+  const ty = sdTaxYear(cisRange(key)[1]);
   const [from, to] = cisRange(key);
   const rec = cisRec(key);
   const pays = cisPayments(key);
@@ -289,7 +313,8 @@ function cisMonthView(tabs) {
       0,
     );
   $("main").innerHTML = `<div class="cis-page">${tabs}
-    <div class="cis-nav"><button type="button" class="iconbtn" id="cis-prev" aria-label="Month before">‹</button><b>Tax month ${esc(cisLab(key))}</b><button type="button" class="iconbtn" id="cis-next" aria-label="Month after">›</button></div>
+    <div class="cis-nav"><button type="button" class="iconbtn" id="cis-prev" aria-label="Month before">‹</button><select id="cis-mpick" class="cis-mpick" aria-label="Choose the tax month">${pick.map((m) => `<option value="${m}"${m === key ? " selected" : ""}>${esc(cisLab(m))}${m === curM ? " (this month)" : ""}</option>`).join("")}</select><button type="button" class="iconbtn" id="cis-next" aria-label="Month after">›</button></div>
+    ${key === curM && !cisRec(prevM).filedAt && cisPayments(prevM).length ? `<div class="notice warn cis-last">Last month's return (${esc(cisLab(prevM))}) isn't marked as filed yet – due by ${esc(shortDay(prevM + "-19"))}. <button type="button" class="pillbtn" id="cis-last">Open last month</button></div>` : ""}
     <div class="notice ${rec.filedAt ? "ok" : late ? "bad" : ""} cis-due">${
       rec.filedAt
         ? `✓ Return filed ${esc(shortDay(rec.filedAt))}${rec.payRef ? " · ref " + esc(rec.payRef) : ""}.${rec.hmrcPaid ? ` Tax of ${gbp(rec.hmrcPaid.amt)} paid to HMRC ${esc(shortDay(rec.hmrcPaid.date))}.` : ` Pay HMRC ${gbp(sum("ded"))} by ${esc(shortDay(payBy))}.`}`
@@ -325,6 +350,10 @@ function cisMonthView(tabs) {
       </div>
       <div class="who">Sign in with your Government Gateway, choose the return for the month ending ${esc(shortDay(to))}, and type in the figures above. HMRC asks you to confirm the workers are self-employed and verified. <a href="${CIS_GUIDE}" target="_blank" rel="noopener">HMRC's guide</a></div>
     </div></section>
+    <section class="card cis-stmts"><div class="cardbody"><b>📄 CIS statements</b><div class="who">For each subcontractor: this month's statement, or the whole tax year (6 April ${ty} – 5 April ${ty + 1}).</div>
+      ${tots.length ? tots.map((t) => `<div class="cis-srow" data-w="${esc(t.who)}"><span><b>${esc(cisSub(t.who).name)}</b><small>${gbp(t.gross)} paid · ${gbp(t.ded)} tax</small></span><button type="button" class="pillbtn cis-sm">📄 This month</button><button type="button" class="pillbtn cis-sy">📅 Whole year</button></div>`).join("") : '<div class="who">Nobody paid in this month.</div>'}
+      <div class="cis-acts">${tots.length ? '<button type="button" class="btn" id="cis-stm2">📄 Everyone – this month</button>' : ""}<button type="button" class="btn" id="cis-yall">📅 Everyone – whole year</button></div>
+    </div></section>
     <div class="flabel">Payments in this month</div>
     ${
       pays.length
@@ -350,6 +379,51 @@ function cisMonthView(tabs) {
     d.setMonth(d.getMonth() + n);
     S.f.cism = iso(d).slice(0, 7);
     render();
+  };
+  $("cis-mpick").onchange = (e) => {
+    S.f.cism = e.target.value;
+    render();
+  };
+  if ($("cis-last"))
+    $("cis-last").onclick = () => {
+      S.f.cism = prevM;
+      render();
+    };
+  /* the statements, one subbie or everyone, this month or the tax year */
+  const pdfOut = async (fn, make) => {
+    toast("Making the statement…");
+    try {
+      await S.dl.save({ filename: fn, data: await make() });
+    } catch (e) {
+      toast("Couldn't make the statement. Check your connection.");
+    }
+  };
+  const yearIds = () =>
+    cisSubList()
+      .filter((s) => cisYearTotals(ty, s.id).some((m) => m.gross > 0))
+      .map((s) => s.id);
+  document.querySelectorAll("#main .cis-srow").forEach((r) => {
+    const w = r.dataset.w,
+      nm = cisSub(w).name;
+    r.querySelector(".cis-sm").onclick = () =>
+      pdfOut(`CIS statement ${nm} ${cisLab(key)}.pdf`, () =>
+        cisStmtPdf(
+          key,
+          tots.filter((t) => t.who === w),
+        ),
+      );
+    r.querySelector(".cis-sy").onclick = () =>
+      pdfOut(`CIS yearly statement ${nm} ${ty}-${String(ty + 1).slice(2)}.pdf`, () =>
+        cisYearPdf(ty, [w]),
+      );
+  });
+  if ($("cis-stm2"))
+    $("cis-stm2").onclick = () =>
+      pdfOut(`CIS statements ${cisLab(key)}.pdf`, () => cisStmtPdf(key, tots));
+  $("cis-yall").onclick = () => {
+    const ids = yearIds();
+    if (!ids.length) return toast("Nobody paid under CIS in that tax year yet");
+    pdfOut(`CIS yearly statements ${ty}-${String(ty + 1).slice(2)}.pdf`, () => cisYearPdf(ty, ids));
   };
   $("cis-prev").onclick = () => go(-1);
   $("cis-next").onclick = () => go(1);
@@ -545,7 +619,41 @@ function cisAddPayment(key, x0, idx) {
 function cisSubsView(tabs) {
   const cfg = cisCfg();
   const subs = cisSubList();
+  /* new CIS trades to verify with HMRC: their details ready to copy, then the verification number put in */
+  const toV = subs.filter((s) => !s.verifiedOn);
+  const said = {
+    reg: "registered (20%)",
+    gross: "gross payment status (0%)",
+    none: "not registered (30%)",
+    unsure: "not sure",
+  };
+  const vLines = (s) =>
+    [
+      ["Business", CIS_TYPES[s.type] || "Sole trader"],
+      ["Name as HMRC has it", s.trading || s.name],
+      ["UTR", s.utr],
+      s.type === "company" ? ["Company number", s.crn] : ["NI number", s.nino],
+      s.type === "partnership" ? ["Partnership UTR", s.putr] : null,
+    ].filter(Boolean);
+  const vCard = toV.length
+    ? `<section class="card cis-verify"><div class="cardbody"><b>✅ To verify with HMRC (${toV.length})</b><div class="who">Check each one on HMRC's CIS online service before you pay them, then put in the verification number and rate HMRC gives you.</div>${toV
+        .map(
+          (s) =>
+            `<div class="cis-vrow" data-id="${esc(s.id)}"><div class="cis-vnm"><b>${esc(s.name)}</b>${s.said ? `<small>They say: ${esc(said[s.said] || s.said)}</small>` : ""}<div class="cis-vdet">${vLines(
+              s,
+            )
+              .map(
+                ([k, v]) =>
+                  `<span><small>${esc(k)}</small>${v ? esc(v) : '<em class="cis-miss">missing</em>'}</span>`,
+              )
+              .join(
+                "",
+              )}</div></div><button type="button" class="pillbtn cis-vcopy">📋 Copy details</button><button type="button" class="btn primary cis-vdone">Put in verification</button></div>`,
+        )
+        .join("")}</div></section>`
+    : "";
   $("main").innerHTML = `<div class="cis-page">${tabs}
+    ${vCard}
     <div class="sd-acts"><button type="button" class="btn primary" id="cis-newsub">+ Add a subcontractor</button><a class="btn" href="${CIS_HMRC}" target="_blank" rel="noopener">Verify with HMRC</a></div>
     ${
       subs.length
@@ -612,6 +720,22 @@ function cisSubsView(tabs) {
         }
       }),
   );
+  document.querySelectorAll("#main .cis-vrow").forEach((r) => {
+    const sub = cisSub(r.dataset.id);
+    r.querySelector(".cis-vdone").onclick = () => cisEditSub(sub);
+    r.querySelector(".cis-vcopy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(
+          vLines(sub)
+            .map(([k, v]) => k + ": " + (v || ""))
+            .join("\n"),
+        );
+        toast("Copied – paste them into HMRC");
+      } catch (e) {
+        toast("Couldn't copy on this device");
+      }
+    };
+  });
   document
     .querySelectorAll("#main .cis-edsub")
     .forEach((b) => (b.onclick = () => cisEditSub(cisSub(b.dataset.id))));

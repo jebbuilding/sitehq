@@ -38,6 +38,7 @@ import {
 import { sdEmail } from "./sales-email.js";
 import { sdSavePdf } from "./sales-pdf.js";
 import { sdAskSign, sdEstSign, sdReceipt } from "./sales-sign.js";
+import { tmsPick, tmsSets } from "./terms-setup.js";
 export { sdEdit, sdPayment, sdToInvoice };
 /* Each line: what it's for, then its amount in £ (or, with "Price by quantity", qty × unit × rate worked out into
    the amount), its VAT (standard, reduced, zero, reverse charge, exempt, no VAT) and whether it's labour, materials
@@ -121,6 +122,10 @@ function sdEdit(d0) {
   /* each one starts with the standard terms and the name of who wrote it, and keeps its own copy to change
      (James, Nov 2026: "set terms that automatically start with them and then i can adjust each one") */
   if (d.terms == null) d.terms = est ? set.terms || "" : set.invTerms || "";
+  /* which set of terms (Setup › 📜 My terms and conditions): the standard one unless picked */
+  const tms = est ? tmsSets() : { sets: [], def: "" };
+  if (est && d.termsSet == null) d.termsSet = tms.def;
+  const tsetNow = () => (est ? tmsPick($("sd-tset") ? $("sd-tset").value : d.termsSet) : null);
   if (d.byName == null) d.byName = coData().owner || (S.myProfile && S.myProfile.name) || "";
   if (est) {
     /* everything the estimate says, from its own record (a brought-in Word estimate keeps its own), else the usual */
@@ -233,7 +238,7 @@ function sdEdit(d0) {
     }
     <label for="sd-notes">Notes on the ${est ? "estimate" : "invoice"} (optional)<textarea id="sd-notes" rows="2" maxlength="2000">${esc(d.notes || "")}</textarea></label>
     <label for="sd-by">Written by (your name under your signature)<input id="sd-by" maxlength="80" value="${esc(d.byName || "")}"></label>
-    <details class="sd-tdet"><summary>📜 Terms on this ${est ? "estimate" : "invoice"}<span class="who"> – your standard terms, change them for this one if you need to</span></summary>${est && set.termsPdfId ? `<div class="seg sd-tuse" id="sd-tuse" role="group"><button type="button" data-v="pdf" aria-pressed="${d.termsUse !== "typed"}">📄 My terms PDF, as uploaded</button><button type="button" data-v="typed" aria-pressed="${d.termsUse === "typed"}">✏️ The typed terms below</button></div>` : ""}<textarea id="sd-terms" rows="10" maxlength="80000">${esc(d.terms || "")}</textarea><button type="button" class="linkbtn" id="sd-tstd">↺ Put back my standard terms</button></details>
+    <details class="sd-tdet"><summary>📜 Terms on this ${est ? "estimate" : "invoice"}<span class="who"> – your standard terms, change them for this one if you need to</span></summary>${tms.sets.length > 1 ? `<label for="sd-tset">Which terms<select id="sd-tset">${tms.sets.map((t) => `<option value="${esc(t.id)}"${t.id === (tmsPick(d.termsSet) || {}).id ? " selected" : ""}>${esc(t.name || "Terms")}${t.id === tms.def ? " (standard)" : ""}</option>`).join("")}</select></label>` : ""}${est && tms.sets.some((t) => t.pdfId) ? `<div class="seg sd-tuse" id="sd-tuse" role="group"${(tmsPick(d.termsSet) || {}).pdfId ? "" : " hidden"}><button type="button" data-v="pdf" aria-pressed="${d.termsUse !== "typed"}">📄 My terms PDF, as uploaded</button><button type="button" data-v="typed" aria-pressed="${d.termsUse === "typed"}">✏️ The typed terms below</button></div>` : ""}<textarea id="sd-terms" rows="10" maxlength="80000">${esc(d.terms || "")}</textarea><button type="button" class="linkbtn" id="sd-tstd">↺ Put back my standard terms</button></details>
     <div class="sd-tot" id="sd-tot"></div>
     ${!est && (d.payments || []).length ? `<div class="flabel">Payments</div>${d.payments.map((p, i) => `<div class="drow"><span>${esc(shortDay(p.date))}${p.note ? " · " + esc(p.note) : ""}</span><span>${gbp(p.amt)} <button type="button" class="pillbtn sd-rcpt" data-i="${i}">🧾 ${p.receiptAt ? "Receipt sent" : "Send a receipt"}</button> <button type="button" class="linkdanger sd-pdel" data-i="${i}">Remove</button></span></div>`).join("")}` : ""}
     <div class="sd-edacts">
@@ -297,6 +302,7 @@ function sdEdit(d0) {
       site: $("sd-site").value.trim(),
       notes: $("sd-notes").value.trim(),
       terms: $("sd-terms").value,
+      termsSet: $("sd-tset") ? $("sd-tset").value : d.termsSet || "",
       termsUse: $("sd-tuse")
         ? ($("sd-tuse").querySelector('[aria-pressed="true"]') || { dataset: {} }).dataset.v ||
           "pdf"
@@ -630,8 +636,15 @@ function sdEdit(d0) {
       );
   if ($("sd-tstd"))
     $("sd-tstd").onclick = () => {
-      $("sd-terms").value = est ? set.terms || "" : set.invTerms || "";
+      $("sd-terms").value = est ? (tsetNow() || {}).text || set.terms || "" : set.invTerms || "";
       toast("Your standard terms are back – Save to keep them");
+    };
+  /* another set of terms: its typed words in the box, its PDF used if it has one */
+  if ($("sd-tset"))
+    $("sd-tset").onchange = () => {
+      const t = tsetNow() || {};
+      $("sd-terms").value = t.text || "";
+      if ($("sd-tuse")) $("sd-tuse").hidden = !t.pdfId;
     };
   document.querySelectorAll(".sd-vpdf").forEach(
     (b) =>

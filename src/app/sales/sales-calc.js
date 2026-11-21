@@ -39,13 +39,32 @@ export {
    Older records have lines { q, r, v (VAT %), lab } and a whole-invoice drc (reverse charge) flag: still read.
    Settings: one record todos/salesset (kind "salesset"): numbers, payment days, letterhead, wording, terms, bank. */
 /* VAT codes: rate, whether the customer pays it to HMRC (reverse charge), and the words on the PDF */
+/* every VAT rate a builder meets (HMRC VAT Notice 708 and 708/6; James, Nov 2026: "there are quite a lot of different
+   rates for vat so make sure we have them all"). The keys are kept on saved lines – add new ones, never rename. nb: a
+   cost that counts in box 7 although no VAT is on it (a supplier who isn't VAT registered). */
 const SD_VATC = {
   S20: { r: 20, l: "20% Standard", p: "20%" },
-  R5: { r: 5, l: "5% Reduced (e.g. converting to homes, empty homes)", p: "5%" },
-  Z0: { r: 0, l: "0% Zero rated (e.g. new-build homes, energy-saving, disabled access)", p: "0%" },
+  R5: {
+    r: 5,
+    l: "5% Reduced (converting a building into homes, homes empty 2+ years, changing the number of homes)",
+    p: "5%",
+  },
+  ESM0: {
+    r: 0,
+    l: "0% Energy-saving materials in homes (insulation, solar, heat pumps, batteries – until 31 Mar 2027)",
+    p: "0% ESM",
+  },
+  ESM5: { r: 5, l: "5% Energy-saving materials in homes (from 1 April 2027)", p: "5% ESM" },
+  MOB5: { r: 5, l: "5% Mobility aids fitted in the home of someone over 60", p: "5%" },
+  Z0: {
+    r: 0,
+    l: "0% Zero rated (new-build homes, disabled adaptations, charity and housing association buildings)",
+    p: "0%",
+  },
   RC20: { r: 20, rc: 1, l: "Reverse charge 20% (CIS: the contractor pays the VAT)", p: "RC 20%" },
   RC5: { r: 5, rc: 1, l: "Reverse charge 5% (CIS: the contractor pays the VAT)", p: "RC 5%" },
   EX: { r: 0, l: "Exempt", p: "Exempt" },
+  NR: { r: 0, nb: 1, l: "No VAT – the supplier isn't VAT registered", p: "No VAT" },
   NV: { r: 0, l: "No VAT (outside the scope)", p: "No VAT" },
 };
 const SD_KINDS = { lab: "Labour", mat: "Materials", oth: "Other" };

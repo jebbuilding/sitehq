@@ -104,9 +104,15 @@ const NL_TAB_AS = {
   money: { sales: ["📑 Invoices", "inv"] },
 };
 const nlTabAs = (sec, t) => (NL_TAB_AS[sec] || {})[t] || [];
+/* the order of the rows in a group, where it mixes pages and sub-pages (James, 21 Nov 2026: "clients should be
+   clients, address book, leads, samples, client portal, what clients see") */
+const NL_ROW_ORDER = {
+  jobs: { Clients: ["clients", "addrbook", "leads", "samples", "portal", "portalset"] },
+};
 const NL_GROUPS = {
   jobs: [
-    ["Jobs and sites", ["projects", "signin", "hs", "planner", "daywork", "photos", "draw"]],
+    /* in the order James set (21 Nov 2026) */
+    ["Jobs and sites", ["projects", "signin", "daywork", "planner", "photos", "hs", "draw"]],
     ["Clients", ["clients", "leads", "portal", "samples"]],
     ["Vans, tools and plant", ["calc"]],
   ],
@@ -598,6 +604,20 @@ function nlSectionView(k, pre) {
       )
       .join("")}</div>
     ${k === "setup" ? `<div class="notice" style="margin-top:14px">This is the new look. <button type="button" class="pillbtn" id="nl-old">Go back to the old look</button></div>` : ""}</div>`;
+  /* rows in the order James set, pages and sub-pages mixed (NL_ROW_ORDER) */
+  $("main")
+    .querySelectorAll(".nl-grp")
+    .forEach((g) => {
+      const o = (NL_ROW_ORDER[sec[0]] || {})[(g.querySelector("h2") || {}).textContent];
+      if (!o) return;
+      const rk = (b) => {
+        const i = o.indexOf(b.dataset.t || b.dataset.s);
+        return i < 0 ? 99 : i;
+      };
+      [...g.querySelectorAll(".nl-row2")]
+        .sort((x, y) => rk(x) - rk(y))
+        .forEach((b) => g.appendChild(b));
+    });
   $("main")
     .querySelectorAll(".nl-go, .nl-banner")
     .forEach(
