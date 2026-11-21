@@ -7,7 +7,7 @@ export { EST_LINK, estView };
 const EST_LINK = "https://claude.ai/artifact/9f6KEUV4ZWW2dwTLR7o2Be";
 function estView() {
   $("main").innerHTML = `<div class="empty" style="text-align:left">
-    <strong>📐 Estimating</strong>
+    <strong>📐 Estimator</strong>
     Your Job Pack Estimator will go here. It hasn't been brought in yet; it will be when you say.
     <br><br>Until then it stays where it is now:
     <div class="actions" style="margin-top:12px"><a class="btn primary" href="${EST_LINK}" target="_blank" rel="noopener">Open the Job Pack Estimator</a></div>

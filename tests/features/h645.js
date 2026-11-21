@@ -30,6 +30,9 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  await p.click('.nl-b[data-s="money"]');await p.waitForTimeout(400);await p.click('#main .nl-go[data-t="sales"]');await p.waitForTimeout(500);
  ok(await p.isHidden('#sd-tabs')&&await p.locator('#main .sd-filebtn',{hasText:'Word estimate'}).count()===0,'from Accounts: just the invoices, no Estimates tab');
  ok((await p.innerText('#h1')).trim()==='Invoices','from Accounts the title says Invoices ('+(await p.innerText('#h1')).trim()+')');
+ ok(await p.getAttribute('.nl-b[data-s="money"]','aria-current')==='page'&&/Accounts/.test(await p.innerText('#nl-crumb .nl-cback')),'Invoices stays in Accounts: the menu and ‹ back go to Accounts, not Estimating');
+ await p.click('#nl-crumb .nl-cback');await p.waitForTimeout(400);
+ ok(await p.evaluate(()=>window.__S.otab==='sec-money'),'‹ Accounts goes back to Accounts');
  await p.screenshot({path:'h645-inv.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h645: ${bad} failed`:'h645: all passed');await b.close();process.exit(bad?1:0);

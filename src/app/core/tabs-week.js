@@ -143,7 +143,7 @@ const OWN_TABS = [
   ["inductions", "🦺 Site inductions"],
   ["costs", "📊 Business costings"],
   ["sales", "💰 Estimates & invoices"],
-  ["estim", "📐 Estimating"],
+  ["estim", "📐 Estimator"],
   ["cis", "🏗️ CIS returns"],
   ["accounts", "📒 Accounts"],
   ["calc", "🧮 Calculator"],
@@ -461,7 +461,7 @@ function render() {
                                                               : t === "todo"
                                                                 ? "To do"
                                                                 : t === "estim"
-                                                                  ? "Estimating"
+                                                                  ? "Estimator"
                                                                   : t === "calc"
                                                                     ? "Calculator"
                                                                     : "Team";

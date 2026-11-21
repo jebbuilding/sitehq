@@ -33,7 +33,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const order=await p.$$eval('.nl-b',b=>b.map(x=>x.dataset.s));
  ok(order.join()==='today,cal,jobs,people,paper,estim,money,setup','the side menu is in the order James set ('+order.join()+')');
  await p.click('.nl-b[data-s=estim]');await p.waitForTimeout(400);
- ok(/Estimates/.test(await p.innerText('.nl-go[data-t=sales]'))&&!!(await p.$('.nl-go[data-t=estim]')),'Estimating has 💰 Estimates and the estimating tool');
+ ok(/Estimates/.test(await p.innerText('.nl-go[data-t=sales]'))&&/Estimator/.test(await p.innerText('.nl-go[data-t=estim]')),'Estimating has 💰 Estimates and 📐 Estimator');
  await p.click('.nl-go[data-t=sales]');await p.waitForTimeout(400);
  ok(await p.locator('#sd-tabs [data-v=est][aria-pressed=true]').count()===1,'💰 Estimates opens on the estimates');
  await p.click('.nl-b[data-s=money]');await p.waitForTimeout(400);
@@ -43,7 +43,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.nl-b[data-s=estim]');await p.waitForTimeout(400);
  await p.screenshot({path:'h445-sales-sec.png'});
  await p.click('.nl-go[data-t=estim]');await p.waitForTimeout(400);
- ok(/Estimating/.test(await p.innerText('#h1'))&&/hasn't been brought in yet/.test(await p.innerText('#main')),'it says the estimator goes here, not brought in yet');
+ ok(/Estimator/.test(await p.innerText('#h1'))&&/hasn't been brought in yet/.test(await p.innerText('#main')),'it says the estimator goes here, not brought in yet');
  ok(/claude\.ai\/artifact\//.test(await p.getAttribute('#main a.btn','href')||''),'with a button to open the estimator where it is now');
  await p.click('.nl-b[data-s=today]');await p.waitForTimeout(400);
  /* the notebook from a new client */

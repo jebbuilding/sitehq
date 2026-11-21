@@ -297,6 +297,10 @@ let nlLanded = false;
 function nlSecOf(t) {
   if (t === "today") return "today";
   if (/^sec-/.test(t)) return t.slice(4);
+  /* a page in two sections (Estimates & invoices: Estimating and Accounts) belongs to the one it was opened from
+     (James, Nov 2026: "in invoices the estimating takes me to the estimating tab not invoicing") */
+  const from = NL_SECTIONS.find((x) => x[0] === S.f.nlFrom && x[2].includes(t));
+  if (from) return from[0];
   const s = NL_SECTIONS.find((x) => x[2].includes(t));
   return s ? s[0] : "";
 }
@@ -443,7 +447,7 @@ function nlCrumb(on) {
   if (on && S.preview) return nlCrumbForms();
   const t = S.otab || "";
   const sec =
-    on && t !== "today" && !/^sec-/.test(t) ? NL_SECTIONS.find((x) => x[2].includes(t)) : null;
+    on && t !== "today" && !/^sec-/.test(t) ? NL_SECTIONS.find((x) => x[0] === nlSecOf(t)) : null;
   if (!sec || sec[2].length < 2) {
     if (cr) cr.hidden = true;
     return;
@@ -469,7 +473,16 @@ function nlCrumb(on) {
       .join("") +
     "</div>";
   cr.querySelector(".nl-cback").onclick = () => nlGo("sec-" + sec[0]);
-  cr.querySelectorAll(".nl-cp").forEach((b) => (b.onclick = () => nlOpenTab(b.dataset.t)));
+  cr.querySelectorAll(".nl-cp").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const v = nlTabAs(sec[0], b.dataset.t)[1];
+        if (v) S.f.sv = v;
+        S.f.svLock = v || "";
+        S.f.nlFrom = sec[0];
+        nlOpenTab(b.dataset.t);
+      }),
+  );
   const curB = cr.querySelector(".nl-cp[aria-current]");
   if (curB) {
     const row = cr.querySelector(".nl-cpages");
@@ -634,6 +647,7 @@ function nlSectionView(k, pre) {
           const v = nlTabAs(sec[0], x.dataset.t)[1];
           if (v) S.f.sv = v;
           S.f.svLock = v || "";
+          S.f.nlFrom = sec[0];
           nlOpenTab(x.dataset.t);
         }),
     );

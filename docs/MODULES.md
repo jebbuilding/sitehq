@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 283 files, 5382 KB, 127385 lines.
+- 283 files, 5382 KB, 127399 lines.
 - 2702 names declared at the top level (the shared scope); 1379 of them are used by a file other than the one that declares them.
 - 2978 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
@@ -1204,7 +1204,7 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 648 lines, 26 KB. Declares 26 names, 12 used elsewhere.
+- 662 lines, 27 KB. Declares 26 names, 12 used elsewhere.
 - **Used elsewhere:** `nlGo` (5), `nlOpenTab` (5), `coTileOf` (3), `NL_BY` (2), `nlBrandHtml` (2), `nlOn` (2), `nlSectionView` (2), `NL_SECTIONS` (1), `NL_SUBS` (1), `nlApply` (1), `nlName` (1), `todayView` (1)
 - **Uses names from 23 files:** `owner/today-desk.js` (5), `owner/menus.js` (4), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `timesheets/overtime.js` (2), `clients/address-book.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/owner.js` (1), `owner/search.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 15 files**
