@@ -9,6 +9,7 @@ import {
   histHtml,
   wireHist,
 } from "./address-book.js";
+import { cmyHtml, cmyWire } from "./client-money.js";
 import { CL_STAGES, clStage, openClientForm, saveClient } from "./clients.js";
 import { clDocsHtml, wireClDocs } from "./documents.js";
 import { clGdprHtml, wireClGdpr } from "./gdpr-consent.js";
@@ -436,6 +437,7 @@ function viewClient(c) {
     ${c.lat != null ? `<div class="mmwrap">${miniMap(c.lat, c.lon, { addr, label: c.name, cid: c.id })}</div>` : ""}
     <div class="clpin">${c.lat != null ? `📍 <b>Pin saved</b> <span class="who">${(+c.lat).toFixed(5)}, ${(+c.lon).toFixed(5)}${(c.pins || []).length > 1 ? " · " + c.pins.length + " pins" : ""}</span> <button type="button" class="linkbtn maplink" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">Open / send</button>` : `<span class="who">No pin on the property yet.</span>`} <button type="button" class="pillbtn" id="cv-pin">📍 ${c.lat != null ? "Add another pin" : "Drop a pin"}</button></div>
     <div class="flabel" style="margin-top:12px">🔨 Jobs${CJOBS.jobsOf(c).length ? " (" + CJOBS.jobsOf(c).length + ")" : ""}</div>${CJOBS.rowJobs(c).replace('<div class="abjobs">', '<div class="abjobs cvjobs">')}<div class="actions"><button type="button" class="btn" id="cv-more">＋ Another job</button><button type="button" class="btn" id="cv-morefull">📝 Another job – full details</button></div>
+    ${cmyHtml(c)}
     ${c.stage === "contact" ? `<div class="notice" style="margin-top:12px">📒 In your address book – no job on at the moment. Tap <b>📝 New enquiry</b> when they ask for something.</div>` : ""}
     ${c.desc ? `<div class="flabel" style="margin-top:12px">What they want</div><div class="talkbody pnotes">${esc(c.desc)}</div>` : ""}
     ${
@@ -478,6 +480,7 @@ ${clMediaHtml(c)}
     const d = $("cv-delete");
     if (d) d.onclick = () => deleteClientFlow(c);
   }, 0);
+  cmyWire(c);
   $("cv-stage").onchange = async (e) => {
     const s = e.target.value;
     try {
