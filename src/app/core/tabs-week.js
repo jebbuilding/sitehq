@@ -482,6 +482,7 @@ function render() {
         cis: cisView,
         accounts: accountsView,
         "sec-jobs": () => nlSectionView("jobs"),
+        "sec-estim": () => nlSectionView("estim"),
         "sec-people": () => nlSectionView("people"),
         "sec-paper": () => nlSectionView("paper"),
         "sec-money": () => nlSectionView("money"),

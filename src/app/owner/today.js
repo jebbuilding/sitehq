@@ -63,8 +63,6 @@ const NL_SECTIONS = [
       "calc",
     ],
   ],
-  /* Estimates & invoices: right under Jobs & clients so they are easy to find (James, Nov 2026); still in Accounts too */
-  ["sales", "Estimates & invoices", ["sales"]],
   [
     "people",
     "People",
@@ -72,9 +70,11 @@ const NL_SECTIONS = [
   ],
   ["paper", "Paperwork", ["jobs", "me", "hs", "policies", "checks", "suppliers"]],
   /* Accounts: the money pages, their own area (James, Nov 2026) */
+  /* The order James set (21 Nov 2026): Today, Calendar, Jobs, People, Papers, Estimating, Accounts, Setup. Estimating
+     holds the estimates (the Estimates & invoices page opened on Estimates) and the estimating tool; the invoices are
+     in Accounts (the same page opened on Invoices) – see NL_TAB_AS */
+  ["estim", "Estimating", ["sales", "estim"]],
   ["money", "Accounts", ["accounts", "sales", "invoices", "cis", "costs", "wages"]],
-  /* Estimating: its own area, apart from the money pages (James, Nov 2026) */
-  ["estim", "Estimating", ["estim"]],
   ["setup", "Setup", ["setup"]],
 ];
 const NL_ICON = {
@@ -98,6 +98,12 @@ const NL_ICON = {
 /* Orders and Materials are off James's menus (11 Nov 2026): trades' materials requests still reach him from
    Today ("Materials asked for"); price requests come back under Estimating once the Job Pack Estimator is in */
 /* each section's page: groups of tabs, as in the layout pictures (a third item true = only James sees it) */
+/* a page shown under another name in one section, opened on one part: [label, S.f.sv] */
+const NL_TAB_AS = {
+  estim: { sales: ["💰 Estimates", "est"] },
+  money: { sales: ["📑 Invoices", "inv"] },
+};
+const nlTabAs = (sec, t) => (NL_TAB_AS[sec] || {})[t] || [];
 const NL_GROUPS = {
   jobs: [
     ["Jobs and sites", ["projects", "signin", "hs", "planner", "daywork", "photos", "draw"]],
@@ -383,7 +389,7 @@ function nlApply() {
     NL_SECTIONS.filter((x) => !mnuSecHidden(x[0]))
       .map(([k, name, tabs]) => {
         const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
-        return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${mnuSecRenamed(k) ? esc(name) : k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "sales" ? "Invoices" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
+        return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${mnuSecRenamed(k) ? esc(name) : k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
       })
       .join("") +
     `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>` +
@@ -581,7 +587,7 @@ function nlSectionView(k, pre) {
           `<section class="nl-grp"><div class="nl-grph"><h2>${esc(t)}</h2>${priv ? '<span class="nl-only">🔒 Only you</span>' : ""}</div>${tabs
             .map(
               (x) =>
-                `<button type="button" class="nl-row2 nl-go" data-t="${x}"><span class="nl-rl">${esc(nlTabLabel(x))}</span>${badge[x] ? `<span class="nl-new">${badge[x]} new</span>` : ""}<span class="nl-chev" aria-hidden="true">›</span></button>`,
+                `<button type="button" class="nl-row2 nl-go" data-t="${x}"><span class="nl-rl">${esc(nlTabAs(sec[0], x)[0] || nlTabLabel(x))}</span>${badge[x] ? `<span class="nl-new">${badge[x]} new</span>` : ""}<span class="nl-chev" aria-hidden="true">›</span></button>`,
             )
             .join("")}${NL_SUBS.filter((s) => s[2] === sec[0] && s[3] === t)
             .map(
@@ -594,7 +600,14 @@ function nlSectionView(k, pre) {
     ${k === "setup" ? `<div class="notice" style="margin-top:14px">This is the new look. <button type="button" class="pillbtn" id="nl-old">Go back to the old look</button></div>` : ""}</div>`;
   $("main")
     .querySelectorAll(".nl-go, .nl-banner")
-    .forEach((x) => (x.onclick = () => nlOpenTab(x.dataset.t)));
+    .forEach(
+      (x) =>
+        (x.onclick = () => {
+          const v = nlTabAs(sec[0], x.dataset.t)[1];
+          if (v) S.f.sv = v;
+          nlOpenTab(x.dataset.t);
+        }),
+    );
   $("main")
     .querySelectorAll(".nl-sub")
     .forEach((x) => (x.onclick = () => (NL_SUBS.find((s) => s[0] === x.dataset.s) || [])[5]()));
