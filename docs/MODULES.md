@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 273 files, 5296 KB, 125499 lines.
+- 273 files, 5296 KB, 125505 lines.
 - 2626 names declared at the top level (the shared scope); 1336 of them are used by a file other than the one that declares them.
-- 2889 file-to-file dependencies (file A uses at least one name from file B).
+- 2890 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 231 files, 12 files depend on each other in a loop (directly or through other files); the other 30 files are outside any loop.
 
@@ -33,7 +33,7 @@ The de facto shared API: names used by the most files.
 | `shortDay` | `core/helpers.js` | 86 files |
 | `siteLabel` | `sites/job-details.js` | 77 files |
 | `ownerMode` | `core/state.js` | 73 files |
-| `coData` | `owner/company-details.js` | 59 files |
+| `coData` | `owner/company-details.js` | 60 files |
 | `gbp` | `core/helpers.js` | 58 files |
 | `uploadFile` | `files/files.js` | 55 files |
 | `bossFirst` | `core/company-names.js` | 53 files |
@@ -403,9 +403,9 @@ COMPANY NAMES: the company's and account holder's names, from the company detail
 
 DATA
 
-- 120 lines, 3.4 KB. Declares 5 names, 3 used elsewhere.
+- 126 lines, 3.8 KB. Declares 5 names, 3 used elsewhere.
 - **Used elsewhere:** `mapDocs` (10), `startEmployee` (3), `startOwner` (1)
-- **Uses names from 9 files:** `core/live-feed.js` (2), `core/state.js` (2), `files/outbox.js` (2), `chat/chat.js` (1), `core/company-names.js` (1), `core/helpers.js` (1), `core/sheet.js` (1), `core/tabs-week.js` (1), `owner/owner.js` (1)
+- **Uses names from 10 files:** `core/live-feed.js` (2), `core/state.js` (2), `files/outbox.js` (2), `chat/chat.js` (1), `core/company-names.js` (1), `core/helpers.js` (1), `core/sheet.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `owner/owner.js` (1)
 - **Used by 12 files**
 
 ### `core/dictation.js`
@@ -1079,9 +1079,9 @@ CLIENTS' LOOK: the client's portal in the new look – Home, Photos, Documents, 
 COMPANY DETAILS card (Policies & insurance, seen by everyone)
 
 - 287 lines, 15 KB. Declares 4 names, 3 used elsewhere.
-- **Used elsewhere:** `coData` (59), `companyCard` (3), `wireCompany` (2)
+- **Used elsewhere:** `coData` (60), `companyCard` (3), `wireCompany` (2)
 - **Uses names from 16 files:** `photos/photos.js` (7), `core/helpers.js` (4), `core/sheet.js` (4), `files/files.js` (3), `core/company-names.js` (2), `core/state.js` (2), `core/tabs-week.js` (1), `owner/deleted-items.js` (1), `owner/deletion-record.js` (1), `owner/pin.js` (1), `purchasing/brochures.js` (1), `purchasing/samples.js` (1), `safety/expiry-dates.js` (1), `safety/training.js` (1), `safety/waste-transfer-note.js` (1), `sites/qr-sign-in.js` (1)
-- **Used by 60 files**
+- **Used by 61 files**
 
 ### `owner/delete-client-site.js`
 
