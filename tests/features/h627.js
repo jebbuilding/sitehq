@@ -43,7 +43,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  /* the section page uses the page names and hides the hidden page */
  let sec='';for(const s of after.map(x=>x.split(':')[0])){await p.click(`.nl-b[data-s="${s}"]`);await p.waitForTimeout(400);if(await p.locator('#main .nl-go[data-t="sales"]').count()){sec=await p.innerText('#main');break}}
  ok(/Quotes and bills/.test(sec),'the section page shows the renamed page');
- ok(!/Estimating/.test(sec),'the hidden page is not on the section page');
+ ok(await p.locator('#main .nl-go[data-t="estim"]').count()===0,'the hidden page is not on the section page');
  await p.screenshot({path:'h627-section.png'});
  ok(await p.evaluate(()=>{const b=document.querySelector('#tabs [data-t="sales"],#tabs button[data-tab="sales"]');return !b||/Quotes and bills/.test(b.textContent)}),'the tab row uses the new name too');
  /* back to standard */

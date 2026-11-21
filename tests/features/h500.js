@@ -22,7 +22,7 @@ async function open(b,vp){const ctx=await b.newContext({viewport:vp,deviceScaleF
  const p=await open(b,{width:390,height:844});
  ok(await p.evaluate(()=>getComputedStyle(document.getElementById('tabs')).display==='none'),'no wall of buttons at the top');
  const bar=await p.evaluate(()=>[...document.querySelectorAll('#tlbar .tl-b')].map(x=>x.textContent.replace(/\d+/g,'').trim()));
- ok(JSON.stringify(bar)==='["🏠Today","🗓️Planner","🏗️Sites","📷Photos","☰More"]','along the bottom: Today, Planner, Sites, Photos, More – no Time ('+bar.join(' ')+')');
+ ok(JSON.stringify(bar)==='["🏠Today","📅Calendar","🏗️Sites","📷Photos","☰More"]','along the bottom: Today, Calendar, Sites, Photos, More – no Time ('+bar.join(' ')+')');
  const bb=await p.evaluate(()=>{const r=document.getElementById('tlbar').getBoundingClientRect();return [r.bottom,innerHeight]});
  ok(Math.abs(bb[0]-bb[1])<2,'the bar sits at the bottom of the phone');
  const m=await p.innerText('#main');

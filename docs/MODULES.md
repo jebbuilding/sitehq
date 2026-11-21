@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 283 files, 5380 KB, 127356 lines.
-- 2700 names declared at the top level (the shared scope); 1378 of them are used by a file other than the one that declares them.
+- 283 files, 5381 KB, 127381 lines.
+- 2702 names declared at the top level (the shared scope); 1379 of them are used by a file other than the one that declares them.
 - 2978 file-to-file dependencies (file A uses at least one name from file B).
 - 24 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 240 files, 12 files depend on each other in a loop (directly or through other files); the other 31 files are outside any loop.
@@ -736,7 +736,7 @@ PAVING DRAW: patio and drive materials drawn at real size, paths round a buildin
 
 paving & driveways: an area drawn corner by corner, filled with the material at real size
 
-- 13661 lines, 520 KB. Declares 9 names, 5 used elsewhere.
+- 13668 lines, 520 KB. Declares 9 names, 5 used elsewhere.
 - **Used elsewhere:** `pdfShow` (9), `openNotePage` (8), `initPaving` (1), `NP_SCX` (1), `setNpScx` (1)
 - **Uses names from 54 files:** `drawing/construction-details.js` (16), `drawing/beam-sheet.js` (9), `drawing/room-sketch.js` (9), `drawing/section-buildups.js` (8), `drawing/stair-builder.js` (8), `drawing/walls.js` (7), `drawing/steel-parts.js` (6), `drawing/wall-buildups.js` (6), `core/helpers.js` (5), `drawing/drawing-layers.js` (5), `drawing/plan-geometry.js` (5), `drawing/cupboard-maker.js` (4), `drawing/retaining-wall.js` (4), `drawing/section-steel.js` (4), `drawing/symbols-more.js` (4), `drawing/timber.js` (4), `core/fields.js` (3), `core/state.js` (3), `drawing/cupboard-3d.js` (3), `drawing/cupboard-shapes.js` (3), `drawing/hatch.js` (3), `drawing/notebook.js` (3), `drawing/paving-draw.js` (3), `drawing/stair-3d.js` (3), `files/files.js` (3), `survey/door-window-survey.js` (3), `drawing/bend-lines.js` (2), `drawing/components.js` (2), `drawing/cupboard-alcove.js` (2), `drawing/smart-pen.js` (2), `drawing/standard-sizes.js` (2), `drawing/symbols-annotation.js` (2), `drawing/symbols-design.js` (2), `photos/photos.js` (2), `sales/sales-calc.js` (2), `chat/contacts.js` (1), `clients/stages-planner.js` (1), `drawing/cupboard-pack.js` (1), `drawing/dxf-export.js` (1), `drawing/dxf-import.js` (1), `drawing/find-rooms.js` (1), `drawing/finger-tap.js` (1), `drawing/house-render.js` (1), `drawing/join-rooms.js` (1), `drawing/undo-list.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `files/print.js` (1), `owner/company-details.js` (1), `purchasing/price-order.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `sales/letterhead-setup.js` (1), `sites/summary.js` (1)
 - **Used by 17 files**
@@ -1132,8 +1132,8 @@ PLANNING LEADS (owner only): moved in from the Devon Planning Leads page
 
 MENUS: each firm names, orders and hides its own menu sections and pages
 
-- 159 lines, 7.9 KB. Declares 10 names, 5 used elsewhere.
-- **Used elsewhere:** `mnuApply` (1), `mnuSecHidden` (1), `mnuSecRenamed` (1), `mnuTabHidden` (1), `mnuView` (1)
+- 161 lines, 8.1 KB. Declares 11 names, 6 used elsewhere.
+- **Used elsewhere:** `mnuApply` (1), `mnuSecHidden` (1), `mnuSecRenamed` (1), `mnuTabHidden` (1), `mnuTabRenamed` (1), `mnuView` (1)
 - **Uses names from 5 files:** `core/helpers.js` (3), `core/tabs-week.js` (3), `core/state.js` (1), `owner/today.js` (1), `owner/trade-look.js` (1)
 - **Used by 3 files**
 
@@ -1204,9 +1204,9 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 647 lines, 26 KB. Declares 26 names, 12 used elsewhere.
+- 648 lines, 26 KB. Declares 26 names, 12 used elsewhere.
 - **Used elsewhere:** `nlGo` (5), `nlOpenTab` (5), `coTileOf` (3), `NL_BY` (2), `nlBrandHtml` (2), `nlOn` (2), `nlSectionView` (2), `NL_SECTIONS` (1), `NL_SUBS` (1), `nlApply` (1), `nlName` (1), `todayView` (1)
-- **Uses names from 23 files:** `owner/today-desk.js` (5), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/menus.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `timesheets/overtime.js` (2), `clients/address-book.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/owner.js` (1), `owner/search.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
+- **Uses names from 23 files:** `owner/today-desk.js` (5), `owner/menus.js` (4), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `timesheets/overtime.js` (2), `clients/address-book.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/owner.js` (1), `owner/search.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1)
 - **Used by 15 files**
 
 ### `owner/todo-lists.js`
@@ -2140,7 +2140,7 @@ SALES PDF: estimates as a letter on the letterhead, invoices with totals, VAT an
 
 SALES SETTINGS: letterhead, logo, signature, VAT, wording, terms and bank – and bringing them in from Word
 
-- 358 lines, 18 KB. Declares 8 names, 7 used elsewhere.
+- 359 lines, 18 KB. Declares 8 names, 7 used elsewhere.
 - **Used elsewhere:** `sdSaveSet` (5), `sdLetterheadAsk` (3), `sdSettings` (2), `sdImportWord` (1), `sdQuickLetterhead` (1), `sdSetupCard` (1), `sdWireSetup` (1)
 - **Uses names from 9 files:** `sales/sales-calc.js` (6), `core/helpers.js` (5), `core/sheet.js` (4), `files/files.js` (2), `sales/sales-docx.js` (2), `core/state.js` (1), `core/tabs-week.js` (1), `owner/company-details.js` (1), `sales/sales-email.js` (1)
 - **Used by 9 files**
@@ -2158,7 +2158,7 @@ SALES SIGN-OFF AND RECEIPTS: the client accepts an estimate; a receipt for every
 
 ESTIMATES & INVOICES (owner): money in – an overview like an accounts package, estimates and invoices to clients
 
-- 225 lines, 11 KB. Declares 1 names, 1 used elsewhere.
+- 239 lines, 12 KB. Declares 2 names, 1 used elsewhere.
 - **Used elsewhere:** `salesView` (1)
 - **Uses names from 8 files:** `sales/sales-calc.js` (10), `core/helpers.js` (7), `sales/sales-settings.js` (4), `core/state.js` (1), `core/tabs-week.js` (1), `sales/sales-edit.js` (1), `sales/sales-sign.js` (1), `sales/variations.js` (1)
 - **Used by 1 files**

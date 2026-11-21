@@ -42,6 +42,21 @@ jobs:
       - run: npm test
       - run: cd apps-script && node mock_test.js
 
+  features:
+    # Every feature test in tests/features/ (scripts/test-features.mjs), so a change that breaks an older feature
+    # shows up here rather than on site. Part of the run a promotion to production needs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npx playwright install chromium
+      - run: timeout 180 npx playwright install-deps chromium || echo "::warning::could not install Chromium's system packages (apt unavailable); using what the runner image has"
+      - run: npm run vendor
+      - run: node scripts/build.mjs
+      - run: npm run test:features
+
   infra:
     # No AWS access: `cdk synth` for dev and prod with the placeholder settings, the assertion
     # tests on the templates, and a lint of these workflow files.

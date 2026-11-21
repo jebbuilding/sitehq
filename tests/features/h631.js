@@ -32,7 +32,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/Flat Rate Scheme 14\.5%/.test(await p.innerText('#main')),'the page says it is on the Flat Rate Scheme at 14.5%');
  /* the rates in the list */
  await p.evaluate(()=>{const v=document.getElementById('sheet');window.__S.otab='sales';window.render()});await p.waitForTimeout(400);
- await p.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>/Letterhead, terms/.test(x.textContent));b&&b.click()});await p.waitForTimeout(500);
+ await p.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>/Wording, numbers, VAT/.test(x.textContent));b&&b.click()});await p.waitForTimeout(500);
  const vc=await p.$$eval('#ss-vc option',o=>o.map(x=>x.value));console.log(vc.join());
  ok(['S20','R5','ESM0','ESM5','MOB5','Z0','RC20','RC5','EX','NR','NV'].every(k=>vc.includes(k)),'all the VAT rates are in the list');
  }catch(e){console.log('FAIL',e.message);bad++;}

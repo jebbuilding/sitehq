@@ -15,7 +15,7 @@
 .np-send{background:#2f5fb3;color:#fff;border-color:#2f5fb3}
 .np-finebox{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);width:min(360px,94%);background:rgba(31,26,26,.96);color:#fff;border-radius:12px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.45);z-index:4;display:grid;gap:6px}
 .nfrow{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.nfrow b{flex:1}.nfx{background:none;border:0;color:#fff;font-size:18px;cursor:pointer}
-.nfstep{height:36px;background:#362e2e;color:#fff;border:1px solid #4a3f40;border-radius:8px;width:auto;padding:0 4px}.nfu{font-size:11px;color:#ddd}.nfset{height:36px;padding:0 12px}.nfhint{color:#cbbebe;font-size:11px}
+.nfstep{height:36px;background:#362e2e;color:#fff;border:1px solid #4a3f40;border-radius:8px;width:auto;padding:0 4px}.nfu{font-size:12px;color:#ddd}.nfset{height:36px;padding:0 12px}.nfhint{color:#cbbebe;font-size:12px}
 .np-finebox .seg.nfseg{display:flex;gap:4px}.np-finebox .nfseg button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand)}.np-finebox{grid-template-columns:minmax(0,1fr)}.nfturn .nfb{min-width:0;flex:1 1 auto;padding:0 4px;font-size:13px}.nfstep{max-width:100%}.np-finebox{max-height:62vh;overflow:auto}.nfb{touch-action:none;user-select:none;-webkit-user-select:none}
 .np-view[hidden]{display:none!important}
 .np-bar .np-libbtn{flex:2 0 150px;max-width:240px;height:42px;background:#362e2e;color:#fff;border:1px solid #4a3f40;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;text-align:left;padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.np-bar .np-libbtn.on{border:2px solid #e11d2a;background:#4a2a2b}
@@ -233,7 +233,7 @@ body>.dimask.cb3-sg{z-index:320}
 /* drawing › zoom-in detail */
 .zd .zd-sc{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 .zd .zd-sc .btn{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 12px}
-.zd .zd-sc .btn small{font-size:11px;opacity:.8;font-weight:500}
+.zd .zd-sc .btn small{font-size:12px;opacity:.8;font-weight:500}
 
 /* drawing › build-ups */
 .bud .bud-row2{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:6px 0}

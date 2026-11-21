@@ -6,12 +6,14 @@ let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed);
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
-const HOOK='  let lenObj = null;',LOUPE='return !!(window.matchMedia && window.matchMedia("(pointer:coarse)").matches);';
+const HOOK='  function lbApply() {',LOUPE='return !!(window.matchMedia && window.matchMedia("(pointer:coarse)").matches);';
 let page_src=fs.readFileSync('timesheets.html','utf8');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 ok(page_src.split(HOOK).length===2&&page_src.split(LOUPE).length===2,'test hooks found once');
-page_src=page_src.replace(HOOK,HOOK+'window.__np=()=>doc;window.__mm=(u)=>realMm(u);window.__xf=()=>[s,ox,oy,dpr];window.__pg=()=>pg;').replace(LOUPE,'return true;');
+page_src=page_src.replace(HOOK,'window.__np=()=>doc;window.__mm=(u)=>realMm(u);window.__xf=()=>[s,ox,oy,dpr];window.__pg=()=>pg;'+HOOK).replace(LOUPE,'return true;');
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1300,height:950}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
+/* the drawing's size bars open small (Nov 2026): open one before typing into it */
+ const _f=p.fill.bind(p),_c=p.click.bind(p);const exp=async(sel)=>{if(typeof sel!=="string"||!/nob-|nlb-/.test(sel)||/-sum/.test(sel))return;await p.evaluate(()=>document.querySelectorAll(".nob-small .nob-sum:not([hidden]), .nlb-small .nlb-sum:not([hidden])").forEach(b=>b.click()));await p.waitForTimeout(80)};p.fill=async(q,...a)=>{await exp(q);return _f(q,...a)};p.click=async(q,...a)=>{await exp(q);return _c(q,...a)};const _s=p.selectOption.bind(p),_v=p.isVisible.bind(p);p.selectOption=async(q,...a)=>{await exp(q);return _s(q,...a)};p.isVisible=async(q,...a)=>{await exp(q);return _v(q,...a)};
  await ctx.route(/^https?:\/\//,r=>r.abort());
  const lastToast=()=>p.evaluate(()=>{const t=[...document.querySelectorAll('.toast')];return t.length?t[t.length-1].textContent:''});
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');

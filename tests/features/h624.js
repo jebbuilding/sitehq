@@ -1,4 +1,4 @@
-// Terms as uploaded (a made-up two-page terms PDF). Letterhead, terms & bank takes a terms PDF; an estimate's PDF then
+// Terms as uploaded (a made-up two-page terms PDF). Wording, numbers, VAT & bank takes a terms PDF; an estimate's PDF then
 // ends with those pages exactly as they are (2 more pages); choosing ✏️ The typed terms on one estimate uses the typed
 // terms instead. Writes h624*.pdf.
 const fs=require('fs');const {chromium}=require('playwright');

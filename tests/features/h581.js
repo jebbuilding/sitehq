@@ -21,7 +21,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/id="cl-cam"/.test(page_src)&&(page_src.match(/id="cm-cam"/g)||[]).length===1,'the client page\'s camera picker has its own name');
  await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  /* a survey for Sue Jones with W1, side hung, hinge right */
- const W1=await p.evaluate(()=>{const D=window.__DWS;const o=D._blank('window');o.ref='W1';o.name='Side hung, hinge right';o.loc='Kitchen';window.__S.winSurveys=[{id:'ws1',kind:'winsurvey',clientId:'c1',items:[o],updated:1}];return D.sizeOf(o).W;});
+ const W1=await p.evaluate(()=>{const D=window.__DWS;const o=D._blank('window');o.ref='W1';o.name='Side hung, hinge right';o.loc='Kitchen';const rec={kind:'winsurvey',clientId:'c1',items:[o],updated:1};window.__S.winSurveys=[Object.assign({id:'ws1'},rec)];window.__S.db.doc('todos/ws1').set(JSON.parse(JSON.stringify(rec)));return D.sizeOf(o).W;});
  await p.evaluate(()=>{window.openNotePage({title:'',size:'A4',orient:'land',pro:true,site:'4 Rolle Road, Exmouth'})});await p.waitForTimeout(1200);
  await p.evaluate(()=>{const u=window.__np.u;const W=(a,b2)=>({t:'shape',k:'cavity',a,b:b2,c:'#111111',w:3,th:u(300)});const x0=150,y0=250,L=u(6000),D=u(3000);
   window.__np.set([W([x0,y0],[x0+L,y0]),W([x0+L,y0],[x0+L,y0+D]),W([x0+L,y0+D],[x0,y0+D]),W([x0,y0+D],[x0,y0]),{t:'shape',k:'window',a:[x0+u(1000),y0-u(150)],b:[x0+u(2000),y0+u(150)],c:'#111111',w:3},
@@ -29,10 +29,11 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const wi=await p.evaluate(()=>window.__np.get().findIndex(o=>o.k==='window'));
  await p.evaluate((i)=>window.__np.pick(i),wi);await p.waitForTimeout(300);
  ok(await p.isVisible('.nfsvrow'),'a window on Sue\'s job offers her survey\'s openings');
- await p.selectOption('.nfsv','W1');await p.waitForTimeout(300);
+ await p.waitForSelector('.nfsv option[value="W1"]',{state:'attached',timeout:6000});await p.waitForTimeout(300);await p.selectOption('.nfsv','W1');await p.waitForTimeout(1200);
+ await p.waitForFunction((i)=>{const o=window.__np.get()[i];return o&&o.mark==='W1'},wi,{timeout:6000}).catch(()=>{});
  const w=await p.evaluate((i)=>window.__np.get()[i],wi);
  const wmm=await p.evaluate((w)=>window.__np.mm(Math.max(Math.abs(w.b[0]-w.a[0]),Math.abs(w.b[1]-w.a[1]))),w);
- ok(w.mark==='W1'&&w.wo==='sr','it becomes W1, side hung, hinge right');
+ok(w.mark==='W1'&&w.wo==='sr','it becomes W1, side hung, hinge right');
  ok(Math.abs(wmm-W1)<2,'its width is the survey\'s frame width ('+Math.round(wmm)+' / '+W1+' mm)');
  await p.click('.nfx');await p.waitForTimeout(200);
  /* the wrap-up email */

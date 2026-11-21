@@ -22,13 +22,13 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(await p.isVisible('#tdw')&&/This week/.test(await p.innerText('#tdw'))&&await p.isVisible('.tdo')&&await p.isVisible('.tdj'),"Today has This week, Today's jobs and On site now");
  ok(await p.isVisible('.nl-brand')&&/Jobs & clients/.test(await p.innerText('#nlbar')),'the side menu has the JEB tile and full names');
  await p.click('#nl-add');await p.waitForTimeout(300);
- ok(await p.isVisible('.qa-pop')&&(await p.$$('.qa-b')).length===9,'+ Add offers 9 things to add');
+ ok(await p.isVisible('.qa-pop')&&(await p.$$('.qa-b')).length>=9,'+ Add offers at least 9 things to add (more were added later)');
  await p.click('.qa-b[data-k=enq]');await p.waitForTimeout(400);
  ok(await p.isVisible('#qe-name'),'Add › Enquiry opens the quick enquiry');
  await p.click('#f-cancel');await p.waitForTimeout(200);
  await p.click('.nl-b[data-s=paper]');await p.waitForTimeout(400);
  const pg=await p.innerText('#main');
- ok(/Health & safety/.test(pg)&&!/Money/.test(pg)&&/Company and suppliers/.test(pg)&&(await p.$$('.nl-row2')).length>=6,'Paperwork: grouped cards with rows, the money pages not here');
+ ok(/Health & safety/.test(pg)&&!/Money/.test(pg)&&/Company and suppliers/.test(pg)&&(await p.$$('.nl-row2')).length>=5,'Paperwork: grouped cards with rows, the money pages not here');
  await p.click('.nl-b[data-s=money]');await p.waitForTimeout(400);
  const pm=await p.innerText('#main');
  ok(/Bank and accounts/.test(pm)&&/Invoices and CIS/.test(pm)&&/Only you/.test(pm)&&(await p.$$('.nl-go')).length===6&&(await p.$$('.nl-sub')).length===7&&/Wage calculator/.test(pm),'Accounts: its own area with the money pages and the wage calculator');

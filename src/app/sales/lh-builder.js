@@ -16,7 +16,7 @@ export { lhbOpen, lhbTermsOpen };
    a coloured band), seen as it's made. Saving draws it as the letterhead's top and foot pictures (lhTop / lhBot), so
    every PDF uses it exactly like a brought-in one. ✨ Make my terms: a few answers (deposit, how stage payments work,
    days to pay, how long a quote stands, guarantee, insurance) fill in plain-English starting terms for estimates and
-   invoices, put in Letterhead, terms & bank to change as they like. A starting point only – the page says to have them
+   invoices, put in Wording, numbers, VAT & bank to change as they like. A starting point only – the page says to have them
    checked. */
 const LHB = { style: "left", logo: null };
 const LHB_PX = 8; /* pixels per mm */
@@ -318,7 +318,7 @@ function lhbTermsOpen() {
           termsMade: true,
         });
         closeForm();
-        toast("Terms written – change them any time in Letterhead, terms & bank");
+        toast("Terms written – change them any time in Setup › 📜 My terms and conditions");
         render();
       } catch (e) {
         showErr("Couldn't save. Check your connection.");

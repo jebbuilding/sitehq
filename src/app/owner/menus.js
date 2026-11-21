@@ -4,7 +4,7 @@ import { S } from "../core/state.js";
 import { EMP_TABS, OWN_TABS, render } from "../core/tabs-week.js";
 import { NL_SECTIONS } from "./today.js";
 import { TL_BAR } from "./trade-look.js";
-export { mnuApply, mnuSecHidden, mnuSecRenamed, mnuTabHidden, mnuView };
+export { mnuApply, mnuSecHidden, mnuSecRenamed, mnuTabHidden, mnuTabRenamed, mnuView };
 /* James (Nov 2026): "is every part of the app customizable for another company if not lets make it that way" – he
    chose menus and tab names first. Setup › 🧭 Menus: the side menu's sections (rename, ↑ ↓ to reorder, hide – Today
    stays first and Setup can't be hidden) and every page's name, for the office and for the trades (rename, hide from
@@ -67,6 +67,8 @@ function mnuApply() {
 }
 const mnuSecHidden = (k) => k !== "today" && k !== "setup" && mnuCfg().secHide.includes(k);
 /* a section the firm has named: its short label is its own name too */
+/* a page the firm has named itself: its own name wins over a section's own label for it */
+const mnuTabRenamed = (k) => !!(mnuCfg().tab[k] || "").trim();
 const mnuSecRenamed = (k) => !!(mnuCfg().sec[k] || "").trim();
 const mnuTabHidden = (k) => k !== "setup" && mnuCfg().tabHide.includes(k);
 async function mnuSave(m) {

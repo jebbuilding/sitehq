@@ -26,7 +26,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 h1{font-family:var(--f-display);font-weight:600;font-size:clamp(24px,6vw,30px);margin:2px 0 0;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);text-wrap:balance}
 table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
 th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
 label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--muted)}
 input,select,textarea{font-size:16px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;color:var(--ink)}
 textarea{min-height:64px;resize:vertical}

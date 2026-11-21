@@ -23,10 +23,23 @@ export { salesView };
    30 days, money invoiced and paid over 6 months, this tax year's totals (VAT, CIS taken off), then the list.
    Estimates: drafts, sent, accepted and the win rate. Each opens full screen to edit, make the PDF on the
    letterhead, mark sent, record a payment, or turn an estimate into an invoice (all, a deposit or a stage). */
+/* opened from Estimating only the estimate tabs show, from Accounts only Invoices (James, Nov 2026: "in estimating the
+   invoice tab is in there"); opened any other way, all of them */
+function sdLockTabs() {
+  const L = S.f.svLock,
+    v = S.f.sv || "inv";
+  const grp = L === "est" ? ["est", "var"] : L === "inv" ? ["inv"] : null;
+  if (!grp || !grp.includes(v) || !$("sd-tabs")) return;
+  $("sd-tabs")
+    .querySelectorAll("button")
+    .forEach((b) => (b.style.display = grp.includes(b.dataset.v) ? "" : "none"));
+  if (grp.length === 1) $("sd-tabs").style.display = "none";
+}
 function salesView() {
   if (S.f.sv === "var") {
     const tabs = `<div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="false">Invoices</button><button type="button" data-v="est" aria-pressed="false">Estimates</button><button type="button" data-v="var" aria-pressed="true">📝 Variations</button></div>`;
     vrView(tabs);
+    sdLockTabs();
     $("sd-tabs")
       .querySelectorAll("button")
       .forEach(
@@ -158,7 +171,7 @@ function salesView() {
       ];
   $("main").innerHTML = `<div class="sd-page">
     <div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="${!est}">Invoices</button><button type="button" data-v="est" aria-pressed="${est}">Estimates</button><button type="button" data-v="var" aria-pressed="false">📝 Variations</button></div>
-    <div class="sd-acts"><button type="button" class="btn primary" id="sd-new">+ New ${est ? "estimate" : "invoice"}</button>${est ? "" : `<button type="button" class="btn" id="sd-newpf">+ New pro forma</button>`}${est ? `<span class="btn sd-filebtn">📄 Bring in a Word estimate<input type="file" class="sd-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Bring in a Word estimate"></span>` : ""}<button type="button" class="btn" id="sd-set">⚙️ Letterhead, terms & bank</button></div>
+    <div class="sd-acts"><button type="button" class="btn primary" id="sd-new">+ New ${est ? "estimate" : "invoice"}</button>${est ? "" : `<button type="button" class="btn" id="sd-newpf">+ New pro forma</button>`}${est ? `<span class="btn sd-filebtn">📄 Bring in a Word estimate<input type="file" class="sd-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Bring in a Word estimate"></span>` : ""}<button type="button" class="btn" id="sd-set">⚙️ Wording, numbers, VAT & bank</button></div>
     ${sdSetupCard()}
     <div class="sd-boxes">${tiles}</div>
     ${extra}
@@ -175,6 +188,7 @@ function salesView() {
         : `<div class="empty"><strong>${list0.length ? "Nothing here" : est ? "No estimates yet" : "No invoices yet"}</strong>${list0.length ? "Try another filter." : est ? "Tap + New estimate, or bring in one you wrote in Word." : "Tap + New invoice, or turn an accepted estimate into one."}</div>`
     }
   </div>`;
+  sdLockTabs();
   $("sd-tabs")
     .querySelectorAll("button")
     .forEach(

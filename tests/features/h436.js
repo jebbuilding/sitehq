@@ -19,7 +19,10 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.tab[data-t=time]').catch(()=>{});await p.clock.runFor(400);
  await p.evaluate(()=>{const i=document.querySelector('#ci-site input, #ci-site select, input#ci-site, select#ci-site');if(i){i.value='12 Marine Way, Exmouth';i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));}});
  await p.click('.ci-in');await p.clock.runFor(600);
- ok(/paid from 08:00/.test(await lastToast()),'checked in at 06:45, paid from 08:00: '+await lastToast());
+ /* first time on this site its induction opens straight after (Nov 2026): look at every message, then close it */
+ const toasts=await p.evaluate(()=>[...document.querySelectorAll('.toast')].map(t=>t.textContent).join(' | '));
+ ok(/paid from 08:00/.test(toasts),'checked in at 06:45, paid from 08:00: '+toasts);
+ if(await p.isVisible('#f-cancel')){await p.click('#f-cancel');await p.clock.runFor(300);}
  /* 17:30: check out */
  await p.clock.setFixedTime(new Date('2026-11-10T17:30:00'));await p.clock.runFor(200);
  await p.click('.ci-out');await p.clock.runFor(400);

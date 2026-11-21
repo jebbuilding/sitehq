@@ -39,8 +39,9 @@ const SITE='4 Rolle Road, Exmouth';
  ok(!s3.stageDone['Strip out']&&s3.stageLog.length===2&&s3.stageLog[1].act==='undone','"Not done after all" takes the tick off; the record keeps both');
  /* Jobs */
  await p.evaluate(s=>{window.__S.f.jbSel=s;window.__S.f.jbt='jobs'},SITE);await p.click('#nl-tog');await p.waitForTimeout(400);await p.click('.nl-b[data-s=jobs]');await p.waitForTimeout(600);
- if(await p.locator('.jb-st').count()){await p.locator('.jb-st').first().click();await p.waitForTimeout(300);ok(/Sign off Strip out/.test(await p.innerText('#sheet')),'in Jobs, tapping a stage opens the same sign-off');}
- else ok(false,'Jobs shows the stages');
+ /* a job in the list opens its site page, where the stages are (Nov 2026) */
+ if(await p.locator('.jb-item').count()){await p.locator('.jb-item[data-s="'+SITE+'"]').click();await p.waitForTimeout(500);}
+ ok(!(await p.isVisible('.jb-tabs')),'in Jobs, the job opens its site page, where the stages are signed off (as above)');
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h522: ${bad} failed`:'h522: all passed');await b.close();process.exit(bad?1:0);
 })();

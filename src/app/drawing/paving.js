@@ -10742,9 +10742,12 @@ async function openNotePage(opts) {
           /* windows and doors: pick which opening in the client's survey this is */
           const sv = isOpening(o) ? surveyItems() : [];
           fb.querySelector(".nfsvrow").hidden = !sv.length;
-          if (sv.length)
-            fb.querySelector(".nfsv").innerHTML =
-              `<option value="">Choose W1, D1… from the survey</option>` +
+          /* only rebuilt when the list changes: rebuilding it on every redraw lost a choice being made (and on an
+             iPad closes the list while it is open) – app audit, Nov 2026 */
+          const svEl = fb.querySelector(".nfsv");
+          const svHtml = !sv.length
+            ? ""
+            : `<option value="">Choose W1, D1… from the survey</option>` +
               sv
                 .map((x) => {
                   let z = "";
@@ -10755,6 +10758,10 @@ async function openNotePage(opts) {
                   return `<option value="${esc(x.ref)}"${x.ref === o.mark ? " selected" : ""}>${esc([x.ref, x.name, z, x.loc].filter(Boolean).join(" · "))}</option>`;
                 })
                 .join("");
+          if (svHtml && svEl.dataset.h !== svHtml && document.activeElement !== svEl) {
+            svEl.innerHTML = svHtml;
+            svEl.dataset.h = svHtml;
+          }
         }
         if (o.t === "shape" && o.k === "window")
           fb.querySelectorAll(".nfwo button").forEach((b) =>

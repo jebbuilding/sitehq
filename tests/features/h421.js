@@ -28,6 +28,9 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.keyboard.press('l');
  await p.mouse.move(X(200),Y(200));await p.mouse.down();await p.mouse.move(X(260),Y(200));await p.mouse.move(X(300),Y(200));await p.mouse.up();await p.waitForTimeout(150);
  ok(await p.isVisible('.np .np-lenbar'),'after drawing a line, Length and Angle can be typed');
+ /* the bar opens small: tap its summary to type (Nov 2026) */
+ const big=async()=>{if(await p.isVisible('.np .nlb-sum'))await p.click('.np .nlb-sum');await p.waitForTimeout(100)};
+ await big();
  await p.fill('.np .nlb-l','4000');await p.fill('.np .nlb-a','0');await p.click('.np .nlb-next');await p.waitForTimeout(100);
  await p.fill('.np .nlb-l','3000');await p.fill('.np .nlb-a','270');await p.click('.np .nlb-next');await p.waitForTimeout(100);
  await p.fill('.np .nlb-l','4000');await p.fill('.np .nlb-a','180');await p.click('.np .nlb-lenbar button[type=submit], .np .np-lenbar button[type=submit]');await p.waitForTimeout(150);

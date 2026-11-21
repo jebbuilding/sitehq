@@ -8,7 +8,7 @@ import { ACS } from "./account-setup.js";
 import { brfCardHtml, brfWire } from "./briefing.js";
 import { coData } from "./company-details.js";
 import { jbView } from "./jobs-desk.js";
-import { mnuSecHidden, mnuSecRenamed, mnuTabHidden } from "./menus.js";
+import { mnuSecHidden, mnuSecRenamed, mnuTabHidden, mnuTabRenamed } from "./menus.js";
 import { startPreview } from "./owner.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
@@ -601,7 +601,7 @@ function nlSectionView(k, pre) {
           `<section class="nl-grp"><div class="nl-grph"><h2>${esc(t)}</h2>${priv ? '<span class="nl-only">🔒 Only you</span>' : ""}</div>${tabs
             .map(
               (x) =>
-                `<button type="button" class="nl-row2 nl-go" data-t="${x}"><span class="nl-rl">${esc(nlTabAs(sec[0], x)[0] || nlTabLabel(x))}</span>${badge[x] ? `<span class="nl-new">${badge[x]} new</span>` : ""}<span class="nl-chev" aria-hidden="true">›</span></button>`,
+                `<button type="button" class="nl-row2 nl-go" data-t="${x}"><span class="nl-rl">${esc((!mnuTabRenamed(x) && nlTabAs(sec[0], x)[0]) || nlTabLabel(x))}</span>${badge[x] ? `<span class="nl-new">${badge[x]} new</span>` : ""}<span class="nl-chev" aria-hidden="true">›</span></button>`,
             )
             .join("")}${NL_SUBS.filter((s) => s[2] === sec[0] && s[3] === t)
             .map(
@@ -633,6 +633,7 @@ function nlSectionView(k, pre) {
         (x.onclick = () => {
           const v = nlTabAs(sec[0], x.dataset.t)[1];
           if (v) S.f.sv = v;
+          S.f.svLock = v || "";
           nlOpenTab(x.dataset.t);
         }),
     );

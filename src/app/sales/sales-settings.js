@@ -41,9 +41,9 @@ function sdSettings() {
   const pick = (cls, label) =>
     `<span class="btn sd-filebtn">${label}<input type="file" class="${cls}" accept="image/png,image/jpeg" aria-label="${label}"></span>`;
   openSheet(
-    `<h3 id="sheettitle">⚙️ Letterhead, terms & bank</h3>
-    <div class="flabel">Letterhead</div>
-    <div class="sd-acts"><span class="btn sd-filebtn">📄 Bring in my Word letterhead<input type="file" class="ss-lhfile" accept=".docx" aria-label="Bring in my Word letterhead"></span></div>
+    `<h3 id="sheettitle">⚙️ Wording, numbers, VAT & bank</h3>
+    <div class="notice">📄 Your letterhead and 📜 terms are in <b>⚙️ Setup</b> (My letterhead, My terms and conditions).</div>
+    <div class="flabel">Logo, signature and the words at the top</div>
     <div class="sd-imgrow"><div><b>Logo</b><div id="ss-logo">${img(s.logoId || ((S.settings || {}).company || {}).logoId, "logo")}</div>${pick("ss-logofile", "Change logo")}</div>
     <div><b>Your signature</b><div id="ss-sig">${img(s.sigId, "signature")}</div>${pick("ss-sigfile", "Add signature")}</div></div>
     <label for="ss-head">Top right of each page (one line each; a blank line leaves a gap)<textarea id="ss-head" rows="8" maxlength="600" placeholder="Leave empty to use Setup › My company details">${esc(s.head)}</textarea></label>
@@ -147,26 +147,27 @@ function sdSettings() {
   upImg("ss-logofile", "logoId", "ss-logo", "logo");
   upImg("ss-sigfile", "sigId", "ss-sig", "signature");
   const lf = document.querySelector(".ss-lhfile");
-  lf.onchange = async () => {
-    const f = lf.files[0];
-    lf.value = "";
-    if (!f) return;
-    try {
-      const r = await sdReadDocxAll(f);
-      const lh = r.letterhead;
-      if (lh.head) $("ss-head").value = lh.head;
-      if (lh.tagline) $("ss-tag").value = lh.tagline;
-      if (lh.vat) $("ss-vno").value = lh.vat;
-      if (r.logo) {
-        const id = await sdUploadImg(r.logo, "logo." + (r.logo.type.split("/")[1] || "png"));
-        await sdSaveSet({ logoId: id });
-        $("ss-logo").innerHTML = `<img src="${esc(blobUrl(id))}" alt="logo" class="sd-img">`;
+  if (lf)
+    lf.onchange = async () => {
+      const f = lf.files[0];
+      lf.value = "";
+      if (!f) return;
+      try {
+        const r = await sdReadDocxAll(f);
+        const lh = r.letterhead;
+        if (lh.head) $("ss-head").value = lh.head;
+        if (lh.tagline) $("ss-tag").value = lh.tagline;
+        if (lh.vat) $("ss-vno").value = lh.vat;
+        if (r.logo) {
+          const id = await sdUploadImg(r.logo, "logo." + (r.logo.type.split("/")[1] || "png"));
+          await sdSaveSet({ logoId: id });
+          $("ss-logo").innerHTML = `<img src="${esc(blobUrl(id))}" alt="logo" class="sd-img">`;
+        }
+        toast("Letterhead brought in – check it and Save");
+      } catch (e) {
+        toast("Couldn't read that file. Is it a Word (.docx) file?");
       }
-      toast("Letterhead brought in – check it and Save");
-    } catch (e) {
-      toast("Couldn't read that file. Is it a Word (.docx) file?");
-    }
-  };
+    };
 }
 
 /* ---------- bring in a Word estimate ---------- */
@@ -202,7 +203,7 @@ async function sdImportWord(file) {
     ${p.intro || p.closing ? box("si-words", !(S.salesSet || {}).wordsFrom, "Use its wording (opening, note, closing, sign-off) as my standard wording") : ""}
     ${lh.head || r.logo ? box("si-lh", !(S.salesSet || {}).head && !(S.salesSet || {}).logoId, "Use its letterhead (logo, address lines, foot line) as my letterhead") : ""}
     ${sig ? box("si-sig", !(S.salesSet || {}).sigId, "Use the signature in it as my signature") : ""}
-    ${lh.vat ? `<div class="who">Its VAT number is ${esc(lh.vat)}. Your VAT number is set in ⚙️ Letterhead, terms & bank.</div>` : ""}
+    ${lh.vat ? `<div class="who">Its VAT number is ${esc(lh.vat)}. Your VAT number is set in ⚙️ Wording, numbers, VAT & bank.</div>` : ""}
     ${formFoot(false, "Bring it in")}`,
     async () => {
       $("f-save").disabled = true;

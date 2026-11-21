@@ -36,7 +36,7 @@ const XL=require('../xlsxpkg/package/xlsx.js');
  const dl=await p.evaluate(()=>(window.__dl||[]).map(r=>[r.filename,r.data.size]));
  ok(dl.length===n0+1&&dl[dl.length-1][0]==='Letterhead sample.pdf'&&dl[dl.length-1][1]>2000,'a sample page on it: '+JSON.stringify(dl[dl.length-1]));
  await p.click('#lh-edit');await p.waitForTimeout(300);
- ok(/Letterhead, terms & bank/.test(await p.innerText('#sheettitle')),'Change the lines or logo opens the letterhead settings');
+ ok(/Wording, numbers, VAT & bank/.test(await p.innerText('#sheettitle')),'Change the lines or logo opens the letterhead settings');
  await p.click('#f-cancel');await p.waitForTimeout(200);
  /* an invoice PDF now goes straight through */
  await p.evaluate(()=>document.querySelector('.tab[data-t=sales]').click());await p.waitForTimeout(300);

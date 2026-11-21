@@ -48,7 +48,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  ok(await p.isVisible('#main .myt-card'),'Day work starts with 🙋 My own time too');
  /* check in like the trades */
  await p.click('#myt-ci');await p.waitForTimeout(600);
- ok(await p.evaluate(()=>window.__S.preview&&window.__S.tab==='time'),'⏱ Check in opens his own Time page, like the trades');
+ ok(await p.evaluate(()=>window.__S.preview&&['time','home'].includes(window.__S.tab)),'⏱ Check in opens his own page (My page, Nov 2026), like the trades');
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h613: ${bad} failed`:'h613: all passed');await b.close();process.exit(bad?1:0);
 })();

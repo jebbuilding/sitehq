@@ -217,7 +217,7 @@ function sdEdit(d0) {
     <div class="flabel">${est ? "Summary of costs" : "What it's for"}</div>
     ${
       set.vatReg === false
-        ? `<div class="who">You're set as not VAT registered, so no VAT is added. Change it in ⚙️ Letterhead, terms & bank.</div>`
+        ? `<div class="who">You're set as not VAT registered, so no VAT is added. Change it in ⚙️ Wording, numbers, VAT & bank.</div>`
         : `<div class="grid2 sd-vatbar"><label for="sd-inc">The amounts I type are<select id="sd-inc"><option value="">Before VAT (VAT added on top)</option><option value="1"${d.inc ? " selected" : ""}>Including VAT</option></select></label>
       <label for="sd-vall">Set every line's VAT to<select id="sd-vall"><option value="">Choose…</option>${Object.entries(
         SD_VATC,

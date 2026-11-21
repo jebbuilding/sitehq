@@ -16,7 +16,8 @@
     "test": "bash scripts/test.sh",
     "test:backend": "node scripts/test-backend.mjs",
     "test:feature": "cd tests && node",
-    "test:infra": "([ -d infra/node_modules ] || npm ci --prefix infra) && npm run check --prefix infra"
+    "test:infra": "([ -d infra/node_modules ] || npm ci --prefix infra) && npm run check --prefix infra",
+    "test:features": "node scripts/test-features.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudformation": "^3.1163.0",

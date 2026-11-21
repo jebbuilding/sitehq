@@ -7,12 +7,14 @@ let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed);
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
-const HOOK='  let lenObj = null;';
+const HOOK='  function lbApply() {';
 let page_src=fs.readFileSync('timesheets.html','utf8');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 ok(page_src.split(HOOK).length===2,'test hook found once');
-page_src=page_src.replace(HOOK,HOOK+'window.__np=()=>doc;window.__mm=(u)=>realMm(u);window.__xf=()=>[s,ox,oy];');
+page_src=page_src.replace(HOOK,'window.__np=()=>doc;window.__mm=(u)=>realMm(u);window.__xf=()=>[s,ox,oy];'+HOOK);
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1300,height:950}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
+/* the drawing's size bars open small (Nov 2026): open one before typing into it */
+ const _f=p.fill.bind(p),_c=p.click.bind(p);const exp=async(sel)=>{if(typeof sel!=="string"||!/nob-|nlb-/.test(sel)||/-sum/.test(sel))return;await p.evaluate(()=>document.querySelectorAll(".nob-small .nob-sum:not([hidden]), .nlb-small .nlb-sum:not([hidden])").forEach(b=>b.click()));await p.waitForTimeout(80)};p.fill=async(q,...a)=>{await exp(q);return _f(q,...a)};p.click=async(q,...a)=>{await exp(q);return _c(q,...a)};const _s=p.selectOption.bind(p),_v=p.isVisible.bind(p);p.selectOption=async(q,...a)=>{await exp(q);return _s(q,...a)};p.isVisible=async(q,...a)=>{await exp(q);return _v(q,...a)};
  await ctx.route(/^https?:\/\//,r=>r.abort());
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  await p.evaluate(()=>document.querySelector('.tab[data-t=draw]').click());await p.waitForTimeout(400);await p.click('#dw-new');await p.waitForTimeout(800);
@@ -23,7 +25,7 @@ page_src=page_src.replace(HOOK,HOOK+'window.__np=()=>doc;window.__mm=(u)=>realMm
  await p.keyboard.press('Escape');
  await shape('door');await p.mouse.click(X(400),Y(302));await p.waitForTimeout(400);
  ok(await p.isVisible('.np-opbar'),'placing a door shows the door width bar');
- ok(await p.isVisible('.np-opbar .nob-p'),'with the distance from the wall end');
+ await exp('.np-opbar .nob-p');ok(await p.isVisible('.np-opbar .nob-p'),'with the distance from the wall end');
  await p.fill('.np-opbar .nob-w','838');await p.fill('.np-opbar .nob-p','1000');await p.click('.np-opbar button[type=submit]');await p.waitForTimeout(300);
  const st=await p.evaluate(()=>{const d=window.__np();const w=d.objs.find(o=>o.k==='wall'),dr=d.objs.find(o=>o.k==='door');const L=Math.hypot(dr.b[0]-dr.a[0],dr.b[1]-dr.a[1]);const t0=Math.min(dr.a[0],dr.b[0])-Math.min(w.a[0],w.b[0]);return {w:Math.round(window.__mm(L)),from:Math.round(window.__mm(t0)),y:[dr.a[1],dr.b[1],w.a[1]]}});
  ok(Math.abs(st.w-838)<=1&&Math.abs(st.from-1000)<=1&&Math.abs(st.y[0]-st.y[2])<1,'the door is 838 wide, 1000 from the wall end, in the wall ('+JSON.stringify(st)+')');

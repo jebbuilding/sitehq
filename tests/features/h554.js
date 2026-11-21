@@ -22,6 +22,8 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.check('#jb-hide');await p.waitForTimeout(600);
  const site=await p.evaluate(()=>window.__st['sites/s2']);
  ok(site&&site.hold===true&&site.holdAt>0,'ticking it saves hold on the site');
+ /* back to the jobs list (a job opens its site page) */
+ await p.click('.nl-b[data-s=jobs]');await p.waitForTimeout(500);
  const it=await p.innerText('.jb-item[data-s="4 Rolle Road, Exmouth"]');
  ok(/Hidden for now/.test(it)&&await p.locator('.jb-item.jb-held').count()===1,'the job stays in the owner\'s list, greyed, "Hidden for now"');
  const stored=await p.evaluate(()=>JSON.stringify(window.__st));
@@ -35,6 +37,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(!t.docs.includes('Rolle Road drawing'),'and its documents');
  ok(!t.opts.some(x=>/Rolle Road/.test(x)),'and it isn\'t in their job lists ('+t.opts.join(' | ')+')');
  /* untick */
+ await p.click('.jb-item[data-s="4 Rolle Road, Exmouth"]');await p.waitForTimeout(500);
  await p.uncheck('#jb-hide');await p.waitForTimeout(600);
  ok((await p.evaluate(()=>window.__st['sites/s2'])).hold===false&&await p.locator('.jb-item.jb-held').count()===0,'unticking shows it to everyone again');
  await trade(await p.evaluate(()=>JSON.stringify(window.__st)));await p2.waitForTimeout(2200);await p2.evaluate(async()=>{await window.__S.db.doc('sites/s2').update({hold:false})});await p2.waitForTimeout(600);
