@@ -126,6 +126,7 @@ function vtBoxes(from, to) {
   /* reverse charge: VAT on CIS subbies' bills that we pay to HMRC ourselves goes in box 1 and back in box 4 (HMRC:
      "VAT domestic reverse charge for building and construction services") */
   let rcV = 0;
+  const rcList = [];
   (S.cisMonths || []).forEach((m) =>
     (m.extra || []).forEach((x) => {
       const d = x.status && x.status !== "paid" ? "" : cash ? x.paidOn || x.date : x.date;
@@ -133,7 +134,7 @@ function vtBoxes(from, to) {
       const c = cisBillCalc(x);
       if (c.rc) {
         rcV += c.rc;
-        costs.push({
+        rcList.push({
           d,
           what: `Reverse charge VAT: ${x.inv ? "bill " + x.inv : "subbie's bill"}`,
           net: c.net,
@@ -142,6 +143,19 @@ function vtBoxes(from, to) {
       }
     }),
   );
+  /* and the same for subbies' bills in Accounts booked at a reverse charge rate */
+  (S.acRcpts || []).forEach((r) => {
+    const m = /^rc(20|5)$/.exec(r.rate || "");
+    if (!m || r.type === "credit" || !inR(r.date)) return;
+    const v = sdR2(((+r.total || 0) * +m[1]) / 100);
+    rcV += v;
+    rcList.push({
+      d: r.date,
+      what: `Reverse charge VAT: ${r.supplier || "bill"}${r.ref ? " " + r.ref : ""}`,
+      net: +r.total || 0,
+      vat: v,
+    });
+  });
   /* Flat Rate Scheme: box 1 is the flat % of all takings including VAT; box 4 only VAT on capital items over £2,000
      (put in by hand) and reverse charge; box 6 is the takings including VAT */
   const pct = Math.max(0, cfg.frs - (cfg.frsYear1 ? 1 : 0));
@@ -159,7 +173,7 @@ function vtBoxes(from, to) {
     8: 0,
     9: 0,
   };
-  return { B, sales, costs, unsorted: s.unsorted, flat, pct, rcV: r2(rcV) };
+  return { B, sales, costs, unsorted: s.unsorted, flat, pct, rcV: r2(rcV), rc: rcList };
 }
 const VT_BOX = {
   1: "VAT due on sales and other outputs",
@@ -194,7 +208,16 @@ function vtView(tabs) {
           `<button type="button" class="vt-box${n === 5 ? " vt-net" : ""}" data-n="${n}" aria-expanded="${open === String(n)}"><span class="vt-n">Box ${n}</span><span class="vt-l">${esc(VT_BOX[n])}</span><b>${n >= 6 ? "£" + (+B[n]).toLocaleString("en-GB") : gbp(B[n])}</b></button>${
             open === String(n) && !filed
               ? `<div class="vt-det">${
-                  (n === 1 || n === 6 ? X.sales : n === 7 ? X.costs : [])
+                  (n === 1
+                    ? X.sales.concat(X.rc || [])
+                    : n === 6
+                      ? X.sales
+                      : n === 4
+                        ? X.rc || []
+                        : n === 7
+                          ? X.costs
+                          : []
+                  )
                     .map(
                       (r) =>
                         `<div class="drow"><span>${r.d ? esc(ukDate(r.d)) + " · " : ""}${esc(r.what)}</span><span>${gbp(n === 1 ? r.vat : r.net)}</span></div>`,

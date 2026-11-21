@@ -15,6 +15,7 @@ import {
   acUpdateTx,
 } from "./acct-data.js";
 import { acReceipts } from "./acct-receipts.js";
+import { cisPayAfter } from "./cis-returns.js";
 import { sdCalc, sdR2, sdSales, sdStatus } from "./sales-calc.js";
 export {
   acBulkSheet,
@@ -444,8 +445,9 @@ function acFindSheet(t, onMatch) {
             id: v.id,
             who: v.who,
             title: `${nameOf(v.who)} · invoice ${v.number || ""}`,
-            sub: `${v.date ? shortDay(v.date) + " · " : ""}${gbp(+v.amount || 0)}`,
-            amt: +v.amount || 0,
+            sub: `${v.date ? shortDay(v.date) + " · " : ""}${gbp(+v.amount || 0)}${cisPayAfter(v.who, v.amount, v.vat, v.mat) !== (+v.amount || 0) ? " · " + gbp(cisPayAfter(v.who, v.amount, v.vat, v.mat)) + " after CIS tax" : ""}`,
+            /* a CIS subbie is paid the invoice less the CIS tax */
+            amt: cisPayAfter(v.who, v.amount, v.vat, v.mat),
             words: `${nameOf(v.who)} ${v.number || ""} ${v.site || ""}`,
           }),
         );
@@ -456,8 +458,8 @@ function acFindSheet(t, onMatch) {
             k: "rcpt",
             id: r.id,
             title: `🧾 ${r.supplier || "Receipt"}${r.ref ? " · " + r.ref : ""}`,
-            sub: `${r.date ? shortDay(r.date) + " · " : ""}${gbp(+r.total || 0)}`,
-            amt: +r.total || 0,
+            sub: `${r.date ? shortDay(r.date) + " · " : ""}${gbp(+r.total || 0)}${r.cisWho ? " · " + gbp(cisPayAfter(r.cisWho, r.total, r.vat, r.cisMat)) + " after CIS tax" : ""}`,
+            amt: r.cisWho ? cisPayAfter(r.cisWho, r.total, r.vat, r.cisMat) : +r.total || 0,
             words: `${r.supplier || ""} ${r.ref || ""} ${r.desc || ""}`,
           }),
         );

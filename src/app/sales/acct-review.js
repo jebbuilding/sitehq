@@ -15,6 +15,7 @@ import {
   acSaveRcpt,
   acTradeRcptsHtml,
 } from "./acct-receipts.js";
+import { cisSubList } from "./cis-returns.js";
 import { rcsNoticeHtml, rcsWire } from "./receipt-smarts.js";
 import { sdR2 } from "./sales-calc.js";
 import { siteFull } from "../sites/job-details.js";
@@ -34,7 +35,12 @@ const ACV_RATES = [
   ["20", "20% VAT"],
   ["5", "5% VAT"],
   ["0", "0% (zero-rated)"],
-  ["none", "No VAT"],
+  /* a CIS subbie's bill under the reverse charge: no VAT on it, we account for it (box 1 and box 4) */
+  ["rc20", "Reverse charge 20% (CIS subbie – no VAT on the bill)"],
+  ["rc5", "Reverse charge 5% (CIS subbie – no VAT on the bill)"],
+  ["ex", "Exempt (e.g. insurance, some training)"],
+  ["nr", "No VAT – supplier isn't VAT registered"],
+  ["none", "No VAT (outside the scope, e.g. wages, fines)"],
   ["mix", "Mixed / typed in"],
 ];
 const ACV_PAID = {
@@ -264,6 +270,14 @@ function acvFormHtml(r0, shown) {
       <div class="actions"><button type="button" class="btn" id="rr-ladd">+ Add a line</button></div>
       <div class="who" id="rr-left"></div>
     </div>
+    <div class="flabel">CIS</div>
+    <label for="rr-cis">CIS subcontractor (if this is a subbie's bill)<select id="rr-cis"><option value="">Not a CIS bill</option>${cisSubList()
+      .map(
+        (s) =>
+          `<option value="${esc(s.id)}"${s.id === r.cisWho ? " selected" : ""}>${esc(s.name)}${s.trading && s.trading !== s.name ? " (" + esc(s.trading) + ")" : ""}</option>`,
+      )
+      .join("")}</select></label>
+    <label for="rr-cm"${r.cisWho ? "" : " hidden"} id="rr-cmw">Materials in it £ (no CIS tax on materials)<input id="rr-cm" type="number" inputmode="decimal" step="0.01" value="${esc(r.cisMat || "")}"></label>
     <label for="rr-x">What for<input id="rr-x" maxlength="120" value="${esc(r.desc || "")}" placeholder="e.g. Timber and screws"></label>
     <div class="who" id="rr-m">${r.type === "credit" ? "A credit note takes the money off your costs." : r.paid === "cash" || r.paid === "own" ? "Paid " + (r.paid === "cash" ? "in cash" : "with your own money") + " – counted as a cost by itself." : linked ? `✓ Matched to the bank payment on ${esc(shortDay(linked.date))}: ${esc(linked.desc)}` : m ? `Will be matched to the bank payment on ${esc(shortDay(m.date))}: ${esc(m.desc)} (${gbp(-m.amt)})` : "No bank payment for this amount yet – it'll be matched when the statement comes in."}</div>
     <div class="actions"><button type="button" class="linkdanger" id="rr-del">Delete this receipt</button></div>
@@ -295,9 +309,16 @@ function acvRead() {
     cat: multi ? (lines[0] || {}).cat || "oexp" : $("rr-c").value,
     site: multi ? "" : $("rr-site").value,
     desc: $("rr-x").value.trim(),
+    /* a CIS subbie's bill: it goes on the CIS month it is paid in (sales/cis-returns.js) */
+    cisWho: $("rr-cis").value,
+    cisMat: $("rr-cis").value ? sdR2($("rr-cm").value) || 0 : 0,
   };
 }
 function acvWire(r, shown) {
+  if ($("rr-cis"))
+    $("rr-cis").onchange = () => {
+      $("rr-cmw").hidden = !$("rr-cis").value;
+    };
   const im = document.querySelector("#main .acv-view img");
   const tf = () => im && (im.style.transform = `rotate(${ACV.rot}deg) scale(${ACV.zoom})`);
   const tool = (id, fn) => $(id) && ($(id).onclick = () => (fn(), tf()));

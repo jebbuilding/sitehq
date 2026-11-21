@@ -4,6 +4,7 @@ import { allTeam, nameOf } from "../owner/owner.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { acAllTx, acUpdateTx } from "./acct-data.js";
 import { acLockedRec } from "./acct-reconcile.js";
+import { cisPayAfter } from "./cis-returns.js";
 export { atpLinked, atpMatchBank, atpWaiting };
 /* James, Nov 2026: "Trade invoices paid should automatically go into accounts". A trade's invoice marked paid counts
    as a Subcontractors cost on the day it was paid, straight away. When the bank statement comes in, the payment out
@@ -38,7 +39,9 @@ function atpFind(v, all, used) {
       (!t.cat || t.cat === "subs" || t.cat === "wages") &&
       t.date >= lo &&
       t.date <= hi &&
-      Math.abs(Math.abs(t.amt) - +v.amount) < 0.015 &&
+      /* the invoice total, or for a CIS subbie the total less the CIS tax */
+      (Math.abs(Math.abs(t.amt) - +v.amount) < 0.015 ||
+        Math.abs(Math.abs(t.amt) - cisPayAfter(v.who, v.amount, v.vat, v.mat)) < 0.015) &&
       !used.has(t.rec + "|" + t.id),
   );
 }
