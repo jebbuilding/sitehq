@@ -464,7 +464,7 @@ function nlCrumb(on) {
       .filter((x) => x === t || !mnuTabHidden(x))
       .map(
         (x) =>
-          `<button type="button" class="nl-cp" data-t="${x}"${x === t ? ' aria-current="page"' : ""}>${esc(nlTabLabel(x))}${badge[x] ? ` <span class="nl-new">${badge[x]}</span>` : ""}</button>`,
+          `<button type="button" class="nl-cp" data-t="${x}"${x === t ? ' aria-current="page"' : ""}>${esc((!mnuTabRenamed(x) && nlTabAs(sec[0], x)[0]) || nlTabLabel(x))}${badge[x] ? ` <span class="nl-new">${badge[x]}</span>` : ""}</button>`,
       )
       .join("") +
     "</div>";

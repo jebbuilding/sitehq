@@ -1,7 +1,7 @@
 // Estimates and invoices in their own sections (made-up): from Estimating, 💰 Estimates shows only the estimate tabs (no
 // Invoices); from Accounts, 📑 Invoices shows no Estimates tab; the settings button is ⚙️ Wording, numbers, VAT & bank and
 const fs=require('fs');const {chromium}=require('playwright');
-// points to Setup for the letterhead and terms.
+// points to Setup for the letterhead and terms. The title says Estimates or Invoices to match.
 let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed);
@@ -19,6 +19,8 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  await p.click('#nl-tog');await p.waitForTimeout(300);
  await p.click('.nl-b[data-s="estim"]');await p.waitForTimeout(400);await p.click('#main .nl-go[data-t="sales"]');await p.waitForTimeout(500);
  const vis=async()=>p.$$eval('#sd-tabs button',b=>b.filter(x=>x.offsetParent).map(x=>x.dataset.v));
+ ok((await p.innerText('#h1')).trim()==='Estimates','the title says Estimates, not invoices ('+(await p.innerText('#h1')).trim()+')');
+ ok(!/invoices/i.test(await p.innerText('#nl-crumb').catch(()=>'')),'and the row of pages says Estimates too');
  let v=await vis();ok(v.join()==='est,var','from Estimating: only Estimates and Variations ('+v.join()+')');
  ok(await p.locator('#main .sd-filebtn',{hasText:'Word estimate'}).count()===1,'Bring in a Word estimate is with the estimates');
  ok(/Wording, numbers, VAT & bank/.test(await p.innerText('#sd-set')),'the settings button is ⚙️ Wording, numbers, VAT & bank');
@@ -27,6 +29,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  await p.click('#f-cancel');await p.waitForTimeout(200);
  await p.click('.nl-b[data-s="money"]');await p.waitForTimeout(400);await p.click('#main .nl-go[data-t="sales"]');await p.waitForTimeout(500);
  ok(await p.isHidden('#sd-tabs')&&await p.locator('#main .sd-filebtn',{hasText:'Word estimate'}).count()===0,'from Accounts: just the invoices, no Estimates tab');
+ ok((await p.innerText('#h1')).trim()==='Invoices','from Accounts the title says Invoices ('+(await p.innerText('#h1')).trim()+')');
  await p.screenshot({path:'h645-inv.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h645: ${bad} failed`:'h645: all passed');await b.close();process.exit(bad?1:0);

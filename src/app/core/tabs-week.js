@@ -407,7 +407,11 @@ function render() {
             : t === "costs"
               ? "Business costings"
               : t === "sales"
-                ? "Estimates & invoices"
+                ? S.f.svLock === "est" && ["est", "var"].includes(S.f.sv)
+                  ? "Estimates"
+                  : S.f.svLock === "inv" && (S.f.sv || "inv") === "inv"
+                    ? "Invoices"
+                    : "Estimates & invoices"
                 : t === "cis"
                   ? "CIS returns"
                   : t === "accounts"
