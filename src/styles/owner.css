@@ -279,3 +279,7 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .ldk.ldhot{background:#dc2626}
 .ldk.ldsaved{background:#d97706}
 .ldk.ldsent{background:#16a34a}
+.mnu-card .mnu-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.mnu-card .mnu-row .iconbtn{min-width:44px;min-height:44px}
+.mnu-card .mnu-row input[type=text],.mnu-card .mnu-row .mnu-sn,.mnu-card .mnu-row .mnu-tn,.mnu-card .mnu-row .mnu-en{flex:1 1 200px;min-height:44px}
+.mnu-card .mnu-std{flex:0 0 200px;font-size:14px;color:var(--muted)}

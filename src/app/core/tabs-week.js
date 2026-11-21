@@ -18,6 +18,7 @@ import { flushOutbox, outboxBanner } from "../files/outbox.js";
 import { nfCounts, nfMarkSeenSoon } from "../owner/alerts.js";
 import { costsView } from "../owner/biz-costs.js";
 import { LEADS } from "../owner/leads.js";
+import { mnuApply } from "../owner/menus.js";
 import {
   allTeam,
   ownerInvoices,
@@ -334,6 +335,8 @@ function renderWeek() {
 function render() {
   /* the old claude.ai copy for a trade or client: only the moved screen (core/site-moved.js) */
   if (S.moved) return smvBlock();
+  /* the firm's own menu names and order (owner/menus.js) */
+  mnuApply();
   const m0 = $("main");
   if (m0) {
     const keep =
