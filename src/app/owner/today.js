@@ -8,6 +8,7 @@ import { ACS } from "./account-setup.js";
 import { brfCardHtml, brfWire } from "./briefing.js";
 import { coData } from "./company-details.js";
 import { jbView } from "./jobs-desk.js";
+import { mnuSecHidden, mnuSecRenamed, mnuTabHidden } from "./menus.js";
 import { searchOpen } from "./search.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
@@ -22,6 +23,7 @@ import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
 import { otmCardHtml, otmCardWire } from "../timesheets/overtime.js";
 export {
   NL_BY,
+  NL_SECTIONS,
   NL_SUBS,
   coTileOf,
   nlApply,
@@ -360,10 +362,12 @@ function nlApply() {
   const tile = coTileOf(coName);
   bar.innerHTML =
     nlBrandHtml(coName) +
-    NL_SECTIONS.map(([k, name, tabs]) => {
-      const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
-      return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "sales" ? "Invoices" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
-    }).join("") +
+    NL_SECTIONS.filter((x) => !mnuSecHidden(x[0]))
+      .map(([k, name, tabs]) => {
+        const n = k === "today" ? 0 : tabs.reduce((s, t) => s + (badge[t] || 0), 0);
+        return `<button type="button" class="nl-b" data-s="${k}"${k === cur ? ' aria-current="page"' : ""}><span class="nl-ic">${NL_ICON[k]}${n ? `<span class="nl-dot">${n}</span>` : ""}</span><span class="nl-l nl-ls">${mnuSecRenamed(k) ? esc(name) : k === "jobs" ? "Jobs" : k === "estim" ? "Estimate" : k === "sales" ? "Invoices" : k === "paper" ? "Papers" : name}</span><span class="nl-l nl-lw">${esc(name)}</span></button>`;
+      })
+      .join("") +
     `<button type="button" class="nl-add" id="nl-add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nl-lw">Add</span></button>` +
     NL_BY;
   $("nl-add").onclick = qaOpen;
@@ -419,6 +423,7 @@ function nlCrumb(on) {
   cr.innerHTML =
     `<button type="button" class="nl-cback" data-s="${sec[0]}">‹ ${esc(sec[1])}</button><div class="nl-cpages">` +
     sec[2]
+      .filter((x) => x === t || !mnuTabHidden(x))
       .map(
         (x) =>
           `<button type="button" class="nl-cp" data-t="${x}"${x === t ? ' aria-current="page"' : ""}>${esc(nlTabLabel(x))}${badge[x] ? ` <span class="nl-new">${badge[x]}</span>` : ""}</button>`,
@@ -537,10 +542,15 @@ function nlSectionView(k, pre) {
   const badge = S.badgeNow || {};
   const groups = (NL_GROUPS[sec[0]] || [[sec[1], sec[2]]]).map(([t, tabs, priv]) => [
     t,
-    tabs.filter((x) => sec[2].includes(x)),
+    tabs.filter((x) => sec[2].includes(x) && !mnuTabHidden(x)),
     priv,
   ]);
-  const left = sec[2].filter((t) => !groups.some((g) => g[1].includes(t)));
+  const left = sec[2].filter(
+    (t) =>
+      !mnuTabHidden(t) &&
+      !groups.some((g) => g[1].includes(t)) &&
+      !(NL_GROUPS[sec[0]] || []).some((g) => g[1].includes(t)),
+  );
   if (left.length) groups.push(["More", left]);
   const waiting = NL_NEEDS.filter(([t]) => sec[2].includes(t) && badge[t] > 0);
   const nWait = waiting.reduce((a, [t]) => a + badge[t], 0);

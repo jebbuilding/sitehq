@@ -29,6 +29,7 @@ import { newId } from "../files/outbox.js";
 import { backupCard, wireBackup } from "./backup.js";
 import { companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
+import { mnuView } from "./menus.js";
 import { openMonthly } from "./reports.js";
 import { qaSetupCard, qaSetupWire } from "./today-desk.js";
 import { wuOpen } from "./week-wrap.js";
@@ -905,7 +906,7 @@ function ownerInvoices() {
   wireInvoices(list, true);
 }
 function ownerSetup() {
-  const stSeg = `<div class="seg st-tabs" id="st-tabs"><button type="button" data-v="setup" aria-pressed="${S.f.stab !== "access" && S.f.stab !== "portal" && S.f.stab !== "forms"}">⚙️ Setup</button><button type="button" data-v="access" aria-pressed="${S.f.stab === "access"}">👥 People &amp; access</button><button type="button" data-v="portal" aria-pressed="${S.f.stab === "portal"}">🏡 Client portal</button><button type="button" data-v="forms" aria-pressed="${S.f.stab === "forms"}">📝 Your forms</button></div>`;
+  const stSeg = `<div class="seg st-tabs" id="st-tabs"><button type="button" data-v="setup" aria-pressed="${S.f.stab !== "access" && S.f.stab !== "portal" && S.f.stab !== "forms" && S.f.stab !== "menus"}">⚙️ Setup</button><button type="button" data-v="access" aria-pressed="${S.f.stab === "access"}">👥 People &amp; access</button><button type="button" data-v="portal" aria-pressed="${S.f.stab === "portal"}">🏡 Client portal</button><button type="button" data-v="forms" aria-pressed="${S.f.stab === "forms"}">📝 Your forms</button><button type="button" data-v="menus" aria-pressed="${S.f.stab === "menus"}">🧭 Menus</button></div>`;
   const stWire = () =>
     $("st-tabs")
       .querySelectorAll("button")
@@ -919,6 +920,11 @@ function ownerSetup() {
       );
   if (S.f.stab === "access") {
     acView(stSeg);
+    stWire();
+    return;
+  }
+  if (S.f.stab === "menus") {
+    mnuView(stSeg);
     stWire();
     return;
   }

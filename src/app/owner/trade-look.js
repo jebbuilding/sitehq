@@ -15,7 +15,7 @@ import { openIncident } from "../safety/accidents.js";
 import { KINDS } from "../safety/checklists.js";
 import { jobNameOf, siteLabel } from "../sites/job-details.js";
 import { signOnly } from "../sites/sign-in-book.js";
-export { tlApply, tlBrochures, tlHome, tlMore, tlOn };
+export { TL_BAR, tlApply, tlBrochures, tlHome, tlMore, tlOn };
 /* The trades get the same look as James (body.nl-on, the styles in owner.css): no wall of buttons at the top, but a bar
    along the bottom on a phone (a side menu on an iPad or computer) with 🏠 Today, 🗓️ Planner, 🏗️ Sites, 📷 Photos and
    ☰ More. The trades have no timesheets (James, Nov 2026): no Time page (Day work is in More),
