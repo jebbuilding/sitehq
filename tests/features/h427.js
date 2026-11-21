@@ -128,6 +128,11 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  await p.click('#sd-close');await p.waitForTimeout(300);
  /* CIS return */
  await p.click('#tabs .tab[data-t=cis]');await p.waitForTimeout(400);
+ /* opens on this tax month; the month just ended is picked from the list */
+ const nowKey=(()=>{const d=new Date(T.getFullYear(),T.getMonth()+(T.getDate()>=6?1:0),5);return isoD(d).slice(0,7)})();
+ ok(await p.inputValue('#cis-mpick')===nowKey,'CIS opens on this tax month ('+nowKey+')');
+ ok(await p.locator('#cis-mpick option').count()>=12,'and any other month can be picked from the list');
+ await p.selectOption('#cis-mpick',isoD(end).slice(0,7));await p.waitForTimeout(400);
  main=await p.innerText('#main');
  ok(/Sam Test/.test(main)&&/Invoice 0040/.test(main),"the CIS worker's paid invoice is in the tax month");
  /* the page catches up when you leave the box, as everywhere in the app */
@@ -136,6 +141,9 @@ const savePdf=async(p,name)=>{const b64=await p.evaluate(async()=>{const r=windo
  ok(/1234567890/.test(ret)&&/£1,000\.00\s+£300\.00\s+£140\.00/.test(ret),'return: £1,000 paid (no VAT), £300 materials, £140 tax (20% of £700)');
  ok(/You pay them £1,060\.00/.test(await p.innerText('.cis-pays')),'you pay them £1,060');
  ok(await p.getAttribute('#cis-hmrc','href')==='https://www.gov.uk/use-construction-industry-scheme-online','link to HMRC CIS online');
+ ok(await p.locator('.cis-srow .cis-sm').count()>=1&&await p.locator('.cis-srow .cis-sy').count()>=1,'each subbie has 📄 This month and 📅 Whole year statements');
+ await p.click('.cis-srow .cis-sy');await p.waitForTimeout(2500);
+ ok(await p.evaluate(()=>(window.__dl||[]).some(r=>/CIS yearly statement Sam Test/.test(r.filename))),'📅 Whole year makes a yearly statement for that subbie');
  await p.click('#cis-stm');await p.waitForTimeout(2500);
  dl=await p.evaluate(()=>(window.__dl||[]).map(r=>[r.filename,r.data.size]));
  ok(/CIS statements/.test(dl[dl.length-1][0]),'payment and deduction statements PDF');

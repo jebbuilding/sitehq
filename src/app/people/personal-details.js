@@ -49,6 +49,18 @@ const DET_SECTIONS = [
       ["dayRate", "Day rate £ (optional)", 0],
     ],
   ],
+  /* CIS: a trade says they are paid under CIS and gives what HMRC needs to verify them (James, Nov 2026: "a way to add
+     the trades in when they say they come under cis and then take all the details … and what cis status they are");
+     the office sees them in CIS › Subcontractors › To verify with HMRC */
+  [
+    "CIS – only if you're paid under the Construction Industry Scheme",
+    [
+      ["cisStatus", "Your CIS status with HMRC", 0, "cisstat"],
+      ["cisBiz", "How you're set up with HMRC", 0, "cisbiz"],
+      ["cisName", "Your name or business name exactly as HMRC has it", 0],
+      ["cisPutr", "Partnership UTR (partnerships only – your own UTR goes above)", 0],
+    ],
+  ],
   [
     "Next of kin (emergency contact)",
     [
@@ -71,6 +83,22 @@ const DET_SECTIONS = [
     ],
   ],
 ];
+/* drop-down choices for detail fields */
+const DT_PICKS = {
+  cisstat: {
+    reg: "Registered for CIS – 20% taken off",
+    gross: "Gross payment status – nothing taken off",
+    none: "Not registered – 30% taken off",
+    unsure: "Not sure",
+    no: "I'm not paid under CIS",
+  },
+  cisbiz: {
+    sole: "Sole trader",
+    partnership: "Partnership",
+    company: "Limited company",
+    trust: "Trust",
+  },
+};
 const myDetails = () => (S.myProfile && S.myProfile.details) || S.detailsLocal || null;
 /* everything we know about the person using the app, for filling in forms automatically */
 const meInfo = () => {
@@ -119,6 +147,12 @@ function detField([k, l, req, type], d, noReq) {
       EMP_TYPES,
     )
       .map(([a, b]) => `<option value="${a}" ${d[k] === a ? "selected" : ""}>${b}</option>`)
+      .join("")}</select></label>`;
+  if (DT_PICKS[type])
+    return `<label for="dt-${k}">${esc(l)}<select id="dt-${k}"><option value="">Choose…</option>${Object.entries(
+      DT_PICKS[type],
+    )
+      .map(([a, b]) => `<option value="${a}" ${d[k] === a ? "selected" : ""}>${esc(b)}</option>`)
       .join("")}</select></label>`;
   if (type === "yesno")
     return `<label for="dt-${k}">${esc(l)}<select id="dt-${k}"><option value="">Choose…</option><option ${d[k] === "Yes" ? "selected" : ""}>Yes</option><option ${d[k] === "No" ? "selected" : ""}>No</option></select></label>`;

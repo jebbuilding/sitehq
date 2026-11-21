@@ -21,6 +21,7 @@ import {
   sdVc,
 } from "./sales-calc.js";
 import { sdLetterheadAsk } from "./sales-settings.js";
+import { tmsPick } from "./terms-setup.js";
 export { sdHeadLines, sdImgData, sdLongDate, sdPdf, sdSavePdf };
 /* Set out like James's own Word estimate: the logo top left and the company's address and contacts top right in the
    brand colour, a full-width line under them; at the foot a line, the job and reference in grey, the trades line,
@@ -105,7 +106,9 @@ async function sdPdf(d) {
   const terms = d.terms != null ? d.terms : est ? set.terms : set.invTerms;
   /* the terms as James uploaded them (a PDF), page for page, unless this estimate uses typed terms (James, Nov 2026:
      "why does it change it and not keep it as what is uploaded") */
-  const termsPdfId = est && set.termsPdfId && d.termsUse !== "typed" ? set.termsPdfId : "";
+  /* the set of terms this estimate uses (Setup › 📜 My terms and conditions); invoices carry no terms PDF */
+  const tset = est ? tmsPick(d.termsSet) : null;
+  const termsPdfId = tset && tset.pdfId && d.termsUse !== "typed" ? tset.pdfId : "";
   const headLines = sdHeadLines();
   const pics = await lhPics();
   if (pics && pics.bot) BOT = Math.min(BOT, pics.bot.y - 12);
@@ -383,15 +386,18 @@ async function sdPdf(d) {
       doc.line(M, y - 5, R, y - 5);
     };
     if (terms && !termsPdfId)
-      sdTermsPages(Object.assign({}, set, { terms }), {
-        head: newPage,
-        para,
-        list,
-        rule,
-        at: () => y,
-        set: (v) => (y = v),
-        M,
-      });
+      sdTermsPages(
+        Object.assign({}, set, { terms }, tset && tset.title ? { termsTitle: tset.title } : {}),
+        {
+          head: newPage,
+          para,
+          list,
+          rule,
+          at: () => y,
+          set: (v) => (y = v),
+          M,
+        },
+      );
   } else {
     /* invoice: set out like the estimate letter – address, number, dates, Re:, the costs, totals, how to pay, sign-off */
     const pf = sdIsPf(d);

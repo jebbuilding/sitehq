@@ -47,6 +47,7 @@ import { KINDS, ck } from "../safety/checklists.js";
 import { EQ_DATES, dueSoonCard, eqWarn, openEqDates } from "../safety/expiry-dates.js";
 import { cfbView } from "../safety/form-builder.js";
 import { lhCard, lhWire } from "../sales/letterhead-setup.js";
+import { tmsCardHtml, tmsWire } from "../sales/terms-setup.js";
 import { siteFull, siteHeadHtml, siteLabel, siteNameSheet } from "../sites/job-details.js";
 import { openRollCall } from "../sites/roll-call.js";
 import { awCardHtml, awWire } from "../timesheets/all-weeks.js";
@@ -962,6 +963,7 @@ function ownerSetup() {
     <div class="flabel" style="margin-top:6px">My company details</div><div class="who" style="margin-bottom:6px">Shown to everyone at the top of Policies &amp; insurance.</div>
     ${companyCard()}
     ${lhCard()}
+    ${tmsCardHtml()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
     <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button></div>
@@ -985,6 +987,7 @@ function ownerSetup() {
   wireBackup();
   wireCompany();
   lhWire();
+  tmsWire();
   qaSetupWire();
   $("main")
     .querySelectorAll("#tp-seg button")
