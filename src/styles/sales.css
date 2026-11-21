@@ -309,3 +309,9 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .jpr-g .jpr-row.jpr-off>b{text-decoration:line-through}
 .jpr-g .jpr-use{flex:0 0 auto;width:36px;height:36px;min-width:44px;min-height:44px;border:2px solid var(--line);border-radius:50%;background:var(--surface);color:var(--accent);font:inherit;font-weight:700;cursor:pointer}
 .jpr-g .jpr-use[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+.epv-mask{z-index:120}
+.epv-box.dimbox{max-width:min(96vw,900px);width:96vw;max-height:94vh;display:flex;flex-direction:column}
+.epv-box .epv-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.epv-box .epv-pages{flex:1;overflow:auto;background:var(--soft);border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:12px;min-height:200px}
+.epv-box .epv-page{width:100%;max-width:820px;height:auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+.epv-box .epv-frame{width:100%;height:65vh;border:0;background:#fff}
