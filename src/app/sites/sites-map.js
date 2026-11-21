@@ -6,11 +6,20 @@ import { S, isArchivedSite } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { siteRec } from "../photos/photos.js";
 import { goSite } from "./go-site.js";
+import {
+  SMP,
+  smRings,
+  smRingsOn,
+  smpBarHtml,
+  smpCardHtml,
+  smpOverlay,
+  smpWire,
+} from "./map-people.js";
 import { gmapDir, pcGeo, pcOf } from "./maps-pins.js";
 import { projectSites } from "./project-pages.js";
 import { siteClient } from "./summary.js";
 import { ukMap } from "./uk-map-data.js";
-export { smOpen, smOpenWith };
+export { smOpen, smOpenWith, smWorld };
 /* OpenStreetMap tiles drawn by hand (no map library): drag to move, + / − or pinch / the wheel to zoom. A pin for each
    site – live jobs red, finished (archived) grey – and each enquiry with a location blue. A site's place is its own
    pin, else its client's, else its postcode (looked up once with postcodes.io and remembered for this visit). Tap a
@@ -192,6 +201,7 @@ function smOpen() {
       )
       .join("")}</div>
     <div class="sm-key"><span><i class="sm-dot live"></i> Live job</span><span><i class="sm-dot done"></i> Finished</span><span><i class="sm-dot enq"></i> Enquiry</span></div>
+    ${smpBarHtml()}
     <div class="sm-map" id="sm-map" role="application" aria-label="Map of your sites. Drag to move, use + and − to zoom."><div class="sm-tiles"></div><div class="sm-back"></div><div class="sm-pins"></div>
       <div class="sm-zoom"><button type="button" class="iconbtn" id="sm-in" aria-label="Zoom in">+</button><button type="button" class="iconbtn" id="sm-out" aria-label="Zoom out">−</button><button type="button" class="iconbtn" id="sm-fit" aria-label="Show all">⤢</button></div>
       <span class="sm-attr">© OpenStreetMap</span><div class="sm-card" id="sm-card" hidden></div></div>
@@ -214,6 +224,11 @@ function smOpen() {
   $("sm-out").onclick = () => smZoom(-1);
   $("sm-fit").onclick = smFit;
   smWire();
+  /* 🧭 who's nearest and ⭕ rings (sites/map-people.js) */
+  smpWire(
+    (fit) => (fit ? smFit() : smDraw()),
+    () => SM.pts,
+  );
   smFit();
   /* look up the postcodes of sites with no pin, then show them */
   (async () => {
@@ -236,7 +251,7 @@ const smShown = () => {
 };
 /* zoom and centre to show every pin */
 function smFit() {
-  const pts = smShown();
+  const pts = smShown().concat(!SM.cfg && SMP.ll ? [{ lat: SMP.ll[0], lon: SMP.ll[1] }] : []);
   const W = SM.el.clientWidth || 600,
     H = SM.el.clientHeight || 420;
   if (!pts.length) {
@@ -310,13 +325,20 @@ function smDraw() {
   if (home) {
     const [hx, hy] = smWorld(home[0], home[1], z);
     const mpp = (156543.03 * Math.cos((home[0] * Math.PI) / 180)) / n;
-    [5, 10, 20].forEach((mi) => {
+    (smRingsOn() ? smRings() : []).forEach((mi) => {
       const r = (mi * 1609.34) / mpp;
       if (r < 12 || r > 4000) return;
       bk += `<span class="sm-ring" style="left:${Math.round(hx - x0 - r)}px;top:${Math.round(hy - y0 - r)}px;width:${Math.round(2 * r)}px;height:${Math.round(2 * r)}px"><i>${mi} mi</i></span>`;
     });
     bk += `<span class="sm-home" style="left:${Math.round(hx - x0)}px;top:${Math.round(hy - y0)}px" title="Your base">🏠</span>`;
   }
+  if (!SM.cfg)
+    bk += smpOverlay(
+      x0,
+      y0,
+      z,
+      SM.pts.find((p) => p.name === SM.sel),
+    );
   if (SM.noTiles) bk = smBase(x0, y0, W, H, z) + bk;
   if (SM.noTiles && !bk.includes("sm-land"))
     smTowns().forEach((tw) => {
@@ -369,7 +391,7 @@ function smCard(p) {
   }
   c.innerHTML = `<button type="button" class="iconbtn sm-x" aria-label="Close">✕</button><b>${esc(p.name)}</b>
     <div class="who">${p.st === "live" ? "Live job" : p.st === "done" ? "Finished" : "Enquiry"}${p.client && p.client !== p.name ? " · " + esc(p.client) : ""}${p.work ? " · " + esc(p.work) : ""}</div>
-    <div class="actions">${p.k === "site" ? `<button type="button" class="btn primary" id="sm-go">Open the site</button>` : `<button type="button" class="btn primary" id="sm-cl">Open the enquiry</button>`}<a class="btn" href="${esc(gmapDir(p.lat + "," + p.lon))}" target="_blank" rel="noopener">🚗 Directions</a></div>`;
+    <div class="actions">${p.k === "site" ? `<button type="button" class="btn primary" id="sm-go">Open the site</button>` : `<button type="button" class="btn primary" id="sm-cl">Open the enquiry</button>`}<a class="btn" href="${esc(gmapDir(p.lat + "," + p.lon))}" target="_blank" rel="noopener">🚗 Directions</a></div>${smpCardHtml(p)}`;
   c.querySelector(".sm-x").onclick = () => {
     c.hidden = true;
     SM.sel = "";

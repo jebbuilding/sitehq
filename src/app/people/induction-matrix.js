@@ -4,6 +4,7 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { allTeam, nameOf, teamIds } from "../owner/owner.js";
 import { isendBarHtml, isendOpen, isendWaiting, isendWire } from "./induction-send.js";
+import { istCardHtml, istWire } from "../safety/ind-template.js";
 import { viewRecord } from "../safety/site-inductions.js";
 import { siteFull, siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
@@ -93,7 +94,7 @@ function inductionsView() {
               ? `<button type="button" class="im-c need im-send" data-p="${esc(p.id)}" data-ind="${esc(ind.id)}">Needed<small>📤 Send</small></button>`
               : `<span class="im-c need">Needed</span>`
             : `<span class="im-c"></span>`;
-  $("main").innerHTML = `<div class="im-page">${isendBarHtml()}
+  $("main").innerHTML = `<div class="im-page">${istCardHtml()}${isendBarHtml()}
     <div class="im-boxes">
       <div class="im-box ok"><small>Inducted</small><b>${n("ok")}</b><span>person-sites</span></div>
       <div class="im-box${n("need") ? " bad" : ""}"><small>Worked there, not inducted</small><b>${n("need")}</b><span>to sort</span></div>
@@ -115,6 +116,7 @@ function inductionsView() {
     <div class="who">✓ signed (tap to see the record) · Old: the induction has changed since they signed · Needed: they've worked on the site but not signed (tap to send it) · Sent: sent to them, not signed yet.</div>
   </div>`;
   isendWire();
+  istWire();
   document
     .querySelectorAll("#main .im-send")
     .forEach((b) => (b.onclick = () => isendOpen(b.dataset.ind, [b.dataset.p])));

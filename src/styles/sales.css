@@ -372,3 +372,13 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .acg-card .acg-up{color:var(--ok,#2e7d32)}
 .acg-card .acg-down{color:var(--danger)}
 .dst-card select{min-height:44px}
+.spn-det{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:12px}
+.spn-det .spn-pre{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.spn-det .spn-pre .pillbtn{min-height:44px}
+.spn-det .spn-row{display:flex;align-items:center;gap:6px;padding:4px 0}
+.spn-det .spn-row .spn-l{flex:1;min-height:44px}
+.spn-det .spn-row .spn-pl{display:flex;align-items:center;gap:4px;width:110px}
+.spn-det .spn-row .spn-pc{min-height:44px;width:80px}
+.spn-det .spn-row .iconbtn{min-width:44px;min-height:44px}
+.spn-det .spn-bad{color:var(--danger)}
+.sd-hoptl{margin:6px 0}

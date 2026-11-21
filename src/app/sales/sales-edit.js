@@ -9,6 +9,7 @@ import { edcHtml, edcWire } from "./est-docs.js";
 import { efMount } from "./est-files.js";
 import { epvOpen } from "./est-preview.js";
 import { jfFor, jfOpen } from "./job-file.js";
+import { spnHtml, spnRead, spnWire } from "./pay-plan.js";
 import {
   SD_IK,
   SD_KINDS,
@@ -24,7 +25,9 @@ import {
   sdLines,
   sdNextNumber,
   sdNo,
+  sdOptions,
   sdPlain,
+  sdPlan,
   sdPricedHead,
   sdR2,
   sdSales,
@@ -67,6 +70,7 @@ function sdLineRow(l, i, set) {
     <div class="sd-lhd"><b>Section</b>${SD_MOVE("section", i)}</div>
     <input class="sd-lhx" maxlength="160" value="${esc(l.d || "")}" placeholder="e.g. Alterations + structural works – Ground floor only" aria-label="Section title">
     <textarea class="sd-hw" rows="4" maxlength="6000" placeholder="The work in this section, one per line (printed as bullet points)" aria-label="Work in this section">${esc(l.w || "")}</textarea>
+    <label class="inl sd-hoptl"><input type="checkbox" class="sd-hopt"${l.opt ? " checked" : ""}> Optional extra – shown on its own with its price, not in the total</label>
     <div class="sd-lrow">
       <label class="sd-lf sd-lamt">Price for this section £<input class="sd-ha" type="number" inputmode="decimal" step="0.01" value="${esc(l.a != null && l.a !== "" ? l.a : "")}" placeholder="or add priced lines under it"></label>
       <label class="sd-lf"${set.vatReg === false ? " hidden" : ""}>VAT<select class="sd-hv">${Object.entries(
@@ -231,6 +235,7 @@ function sdEdit(d0) {
     <label for="sd-excl">Works excluded (one per line)<textarea id="sd-excl" rows="6" maxlength="8000">${esc(d.excl || "")}</textarea></label>
     <label for="sd-bd">On the estimate, show<select id="sd-bd"><option value="total"${d.bd === "total" ? " selected" : ""}>The total only</option><option value="head"${d.bd === "head" ? " selected" : ""}>Each heading's total, then the total</option><option value="all"${d.bd === "all" ? " selected" : ""}>Every line and heading, then the total</option><option value="sections"${d.bd === "sections" ? " selected" : ""}>Like my Word estimate: each section with its work and its total</option></select></label>
     <label for="sd-dur">Estimated project duration (optional)<input id="sd-dur" maxlength="40" value="${esc(d.dur || "")}" placeholder="e.g. 7 weeks"></label>
+    ${est ? spnHtml(d) : ""}
     <label for="sd-ih">Heading for works included<input id="sd-ih" maxlength="120" value="${esc(d.inclHead || "")}"></label>
     <label for="sd-cn">Note under the total (in italics)<textarea id="sd-cn" rows="2" maxlength="1500">${esc(d.costNote || "")}</textarea></label>
     <label for="sd-cw">Closing words<textarea id="sd-cw" rows="5" maxlength="6000">${esc(d.closing || "")}</textarea></label>
@@ -271,6 +276,7 @@ function sdEdit(d0) {
         a: num(r.querySelector(".sd-ha").value),
         vc: r.querySelector(".sd-hv").value,
         k: "lab",
+        opt: r.querySelector(".sd-hopt") && r.querySelector(".sd-hopt").checked ? 1 : 0,
       };
     const qm = !r.querySelector(".sd-lqf").hidden;
     const o = {
@@ -322,6 +328,7 @@ function sdEdit(d0) {
         excl: $("sd-excl").value,
         bd: $("sd-bd").value,
         dur: $("sd-dur").value.trim(),
+        plan: est ? spnRead() : d.plan || [],
         inclHead: $("sd-ih").value.trim(),
         costNote: $("sd-cn").value,
         closing: $("sd-cw").value,
@@ -372,6 +379,12 @@ function sdEdit(d0) {
         else rows.push([`${v.l.split(" (")[0]} on ${gbp(c.byRate[k].net)}`, "£0.00"]);
       });
     rows.push(["Total with VAT", gbp(c.gross), 1]);
+    /* optional extras, not in the total */
+    sdOptions(o).forEach((x) =>
+      rows.push([`Optional: ${x.h || "extra"} (not in the total)`, "+" + gbp(x.gross || x.net)]),
+    );
+    /* how they'll pay */
+    sdPlan(o).forEach((x) => rows.push([`${x.l}${x.p ? " (" + x.p + "%)" : ""}`, gbp(x.amt)]));
     if (c.cis) rows.push([`Less CIS ${o.cis}% on labour of ${gbp(c.lab)}`, "-" + gbp(c.cis)]);
     if (c.ret) rows.push([`Less retention ${o.ret}%`, "-" + gbp(c.ret)]);
     if (c.paid) rows.push(["Paid so far", "-" + gbp(c.paid)]);
@@ -626,6 +639,8 @@ function sdEdit(d0) {
     if (await save()) done();
   };
   edcWire(d);
+  /* 📅 How you'll pay (sales/pay-plan.js) */
+  spnWire(totals);
   if ($("sd-tuse"))
     $("sd-tuse")
       .querySelectorAll("button")

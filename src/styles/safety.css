@@ -76,3 +76,8 @@
 #cki-list .cki-item{display:flex;align-items:center;gap:6px;padding:4px 0}
 #cki-list .cki-item .cki-l{flex:1;min-height:44px}
 #cki-list .cki-item .iconbtn{min-width:44px;min-height:44px}
+.ist-card .ist-sites{margin-top:8px}
+.ist-card .ist-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.ist-card .ist-row span{display:flex;flex-direction:column}
+.ist-card .ist-row small{color:var(--muted)}
+.ist-card .ist-row .pillbtn{min-height:44px}
