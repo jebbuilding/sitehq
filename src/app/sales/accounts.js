@@ -6,6 +6,7 @@ import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { isInv } from "../purchasing/materials-receipts.js";
+import { acgHtml, acgWire } from "./acct-charts.js";
 import {
   AC_CATS,
   acAllTx,
@@ -24,6 +25,7 @@ import {
 } from "./acct-data.js";
 import { adView } from "./acct-due.js";
 import { acExportSheet } from "./acct-export.js";
+import { ahcCardHtml, ahcWire } from "./acct-health.js";
 import { acLinkRcpt, acMatchWaiting, acReceipts } from "./acct-receipts.js";
 import {
   acBulkSheet,
@@ -170,6 +172,7 @@ function acOverView(tabs) {
   ];
   $("main").innerHTML = `<div class="ac-page">${tabs}
     <div class="seg ac-per" id="ac-per">${periods.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${(S.f.acp || "ty") === k}">${l}</button>`).join("")}</div>
+    ${ahcCardHtml()}
     <div class="who">${esc(lab)}. From your bank statements; VAT on costs taken out where you've added it.</div>
     <div class="sd-boxes">
       <div class="sd-box ok"><small>Money in</small><b>${gbp(s.inc)}</b><span>sales and other income</span></div>
@@ -189,6 +192,7 @@ function acOverView(tabs) {
             `<div class="sd-mon" title="${esc(m)}: in ${gbp(mIn[i])}, out ${gbp(mOut[i])}"><div class="sd-pair"><i class="ac-bi" style="height:${Math.round((mIn[i] / top) * 100)}%"></i><i class="ac-bo" style="height:${Math.round((mOut[i] / top) * 100)}%"></i></div><small>${esc(parse(m + "-01").toLocaleDateString("en-GB", { month: "short" }))}</small></div>`,
         )
         .join("")}</div></div></div>
+    ${acgHtml(s)}
     <div class="ac-cols">
       <section class="card"><div class="cardbody"><b>Profit and loss</b>
         <div class="flabel">Money in</div>${pl(catRows("in"), 1)}${unsortedIn ? `<div class="drow ac-uns"><span>Not sorted yet</span><span>${gbp(unsortedIn)}</span></div>` : ""}
@@ -214,6 +218,8 @@ function acOverView(tabs) {
       </div>
     </div>
   </div>`;
+  ahcWire();
+  acgWire();
   $("ac-per")
     .querySelectorAll("button")
     .forEach(

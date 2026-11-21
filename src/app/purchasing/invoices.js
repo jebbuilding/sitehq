@@ -8,7 +8,9 @@ import { render } from "../core/tabs-week.js";
 import { blobUrl, isImg, uploadErr } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId, submitJob } from "../files/outbox.js";
+import { coData } from "../owner/company-details.js";
 import { nameOf } from "../owner/owner.js";
+import { myDetails } from "../people/personal-details.js";
 import { isInv } from "./materials-receipts.js";
 import { shrinkImage } from "../safety/training.js";
 import { siteLabel } from "../sites/job-details.js";
@@ -167,6 +169,17 @@ function invDetail(v, owner, who) {
     );
   };
 }
+/* a trade paid under CIS (My details › CIS, or set as CIS): the materials and the VAT in the invoice, and the reverse
+   charge reminder when they are VAT registered (HMRC: the invoice must say the reverse charge applies and show no VAT) */
+function invCisHtml() {
+  const d = myDetails() || {};
+  const cis = d.empType === "cis" || (!!d.cisStatus && d.cisStatus !== "no");
+  if (!cis) return "";
+  return `<div class="flabel">CIS</div>
+    <div class="grid2"><label for="i-mat">Materials in it £ (no CIS tax on materials)<input id="i-mat" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></label>
+    <label for="i-vat">VAT on it £<input id="i-vat" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></label></div>
+    ${d.vatNo ? `<div class="notice">You're VAT registered, so work for ${esc(coData().name || bossFirst())} is under the <b>reverse charge</b>: don't add VAT, and put this on your invoice: <b>“Reverse charge: VAT Act 1994 Section 55A applies”</b>. Leave VAT on it at 0.</div>` : ""}`;
+}
 function empInvoices() {
   const list = S.mine.invoices.filter(isInv).sort((a, b) => b.sentAt - a.sentAt);
   $("main").innerHTML =
@@ -195,6 +208,7 @@ function openInvoice() {
     <label for="i-to">Work to (optional)<input id="i-to" type="date" value="${iso(addDays(mon, -1))}"></label></div>
     ${pickField("i-site", "Site (optional)", siteNames(), "", "e.g. 12 High Street", false)}
     <label for="i-amt">Invoice total £ (optional)<input id="i-amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 850.00"></label>
+    ${invCisHtml()}
     <label for="i-file">Invoice file (PDF or photo)<input id="i-file" type="file" accept="application/pdf,image/*,.doc,.docx,.rtf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required></label>
     <label for="i-notes">Notes (optional)<textarea id="i-notes" maxlength="300"></textarea></label>
     ${formFoot(false, "Send invoice")}`,
@@ -233,6 +247,12 @@ async function saveInvoice() {
     notes: $("i-notes").value.trim(),
     status: "sent",
   };
+  /* under CIS: the materials and VAT in it, so the CIS return fills in by itself (sales/cis-returns.js) */
+  if ($("i-mat")) {
+    data.mat = $("i-mat").value ? Math.round(+$("i-mat").value * 100) / 100 : 0;
+    data.vat = $("i-vat").value ? Math.round(+$("i-vat").value * 100) / 100 : 0;
+    data.cis = true;
+  }
   if (!data.number) {
     showErr("Add the invoice number.");
     return;

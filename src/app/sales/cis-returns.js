@@ -11,6 +11,7 @@ import { EMP_TYPES } from "../people/employment-types.js";
 import { BRGB } from "../photos/photos.js";
 import { isInv } from "../purchasing/materials-receipts.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { acAllTx } from "./acct-data.js";
 import { cisBill } from "./cis-bill.js";
 import { lhLogoId, lhPics, lhPutTop } from "./letterhead-setup.js";
 import { sdCalc, sdR2, sdSales, sdSet, sdTaxYear } from "./sales-calc.js";
@@ -20,6 +21,7 @@ export {
   cisDown,
   cisLab,
   cisMonthOf,
+  cisPayAfter,
   cisPayments,
   cisRange,
   cisRateOf,
@@ -128,6 +130,14 @@ const cisRateOf = (id) => {
   const r = String(s.rate == null ? "20" : s.rate);
   return r === "0" || r === "30" ? r : "20";
 };
+/* what actually leaves the bank for a CIS subbie's invoice or bill: the total less the CIS tax on the labour (no VAT,
+   no materials), so the bank payment can be matched to it */
+function cisPayAfter(who, total, vat, mat) {
+  const amt = +total || 0;
+  if (!who || !cisSubList().some((s) => s.id === who)) return amt;
+  const lab = Math.max(0, amt - (+vat || 0) - (+mat || 0));
+  return sdR2(amt - cisDown((lab * +cisRateOf(who)) / 100));
+}
 /* the month's payments: [{ k, who, date, label, inv, amt, vat, mat, gross, labour, ded, paid, skip }] */
 function cisPayments(key) {
   const [from, to] = cisRange(key);
@@ -152,11 +162,36 @@ function cisPayments(key) {
         inv: v.number || "",
         label: "Invoice " + (v.number || "") + (v.site ? " · " + v.site : ""),
         amt,
-        vat: +o.vat || 0,
-        mat: +o.mat || 0,
+        /* the trade's own figures when they sent it (purchasing/invoices.js), unless the office changed them */
+        vat: o.vat != null ? +o.vat || 0 : +v.vat || 0,
+        mat: o.mat != null ? +o.mat || 0 : +v.mat || 0,
         skip: !!o.skip,
       });
     });
+  /* subbies' bills snapped or uploaded in Accounts and marked as theirs, once paid (James, Nov 2026: "connect trade
+     invoices or other invoices that come under cis and then the cis starts filling out") */
+  (S.acRcpts || []).forEach((r) => {
+    if (!r.cisWho || r.type === "credit") return;
+    const tx = r.tx ? acAllTx().find((t) => t.rec + "|" + t.id === r.tx) : null;
+    if (r.paid === "acct" && !tx) return;
+    const di = (tx && tx.date) || r.date;
+    if (!di || di < from || di > to) return;
+    const k = "r|" + r.id;
+    const o = (rec.pays || {})[k] || {};
+    out.push({
+      k,
+      who: r.cisWho,
+      date: di,
+      inv: r.ref || "",
+      label: ["Bill" + (r.ref ? " " + r.ref : ""), r.supplier || "", "from Accounts"]
+        .filter(Boolean)
+        .join(" · "),
+      amt: +r.total || 0,
+      vat: o.vat != null ? +o.vat : +r.vat || 0,
+      mat: o.mat != null ? +o.mat : +r.cisMat || 0,
+      skip: !!o.skip,
+    });
+  });
   (rec.extra || []).forEach((x, i) => {
     /* added by hand: a bill (lines) or the older labour + materials (+ VAT); a bill not paid yet isn't on the return */
     const lab = +x.lab || 0,
