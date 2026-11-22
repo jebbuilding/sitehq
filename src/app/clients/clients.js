@@ -252,6 +252,7 @@ function openClientForm(c, mode) {
     if (c.work || c.desc || c.quote) {
       archived = {
         jobName: c.jobName || "",
+        clientType: c.clientType || "",
         work: c.work || "",
         desc: c.desc || "",
         budget: c.budget || "",
@@ -316,6 +317,15 @@ function openClientForm(c, mode) {
     <div id="cf-enqsec" class="cfsec" ${conOnly ? "hidden" : ""}>
     ${conOnly ? "" : `<div class="flabel" style="margin-top:6px">📝 The enquiry</div>`}
     <label for="cf-jn">Job name (optional – what you'll call the job)<input id="cf-jn" maxlength="60" placeholder="e.g. Jones garden room" value="${esc(fresh ? "" : c.jobName || "")}"></label>
+    <div class="flabel">Domestic or commercial?</div><div class="seg" id="cf-ctype" role="group" aria-label="Domestic or commercial">${[
+      ["domestic", "🏠 Domestic"],
+      ["commercial", "🏢 Commercial"],
+    ]
+      .map(
+        ([k, l]) =>
+          `<button type="button" data-v="${k}" aria-pressed="${(fresh ? "" : c.clientType || "") === k}">${l}</button>`,
+      )
+      .join("")}</div>
     <label for="cf-work">Type of work<select id="cf-work"><option value="">Choose…</option>${CL_WORK.map((w) => `<option ${w === c.work ? "selected" : ""}>${w}</option>`).join("")}</select></label>
     <label for="cf-desc">What they want done<textarea id="cf-desc" maxlength="3000" style="min-height:100px" placeholder="e.g. Single-storey rear extension, about 4 m × 5 m, open-plan kitchen, roof lights">${esc(c.desc || "")}</textarea></label>
     <div class="grid2"><label for="cf-budget">Budget (if they said)<input id="cf-budget" maxlength="60" value="${esc(c.budget || "")}" placeholder="e.g. £40–50k"></label><label for="cf-time">When they want it done<input id="cf-time" maxlength="80" value="${esc(c.timescale || "")}" placeholder="e.g. Spring 2027"></label></div>
@@ -380,6 +390,10 @@ function openClientForm(c, mode) {
         address: $("cf-addr").value.trim(),
         postcode: $("cf-pc").value.trim().toUpperCase(),
         jobName: $("cf-jn") ? $("cf-jn").value.trim().replace(/\s+/g, " ") : c.jobName || "",
+        clientType: $("cf-ctype")
+          ? ($("cf-ctype").querySelector('[aria-pressed="true"]') || { dataset: {} }).dataset.v ||
+            ""
+          : c.clientType || "",
         work: $("cf-work").value,
         desc: $("cf-desc").value.trim(),
         budget: $("cf-budget").value.trim(),
@@ -587,6 +601,18 @@ function openClientForm(c, mode) {
     },
     null,
   );
+  $("cf-ctype")
+    .querySelectorAll("button")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          const on = b.getAttribute("aria-pressed") !== "true";
+          $("cf-ctype")
+            .querySelectorAll("button")
+            .forEach((x) => x.setAttribute("aria-pressed", "false"));
+          b.setAttribute("aria-pressed", String(on));
+        }),
+    );
   if (visOn) vdWire($("cf-vdiary"), "cf-vd", "cf-vt", "cf-vlen");
   if ($("cf-ws"))
     $("cf-ws").onclick = () => {

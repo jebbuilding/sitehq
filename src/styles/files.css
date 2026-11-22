@@ -32,3 +32,4 @@
 
 /* files › measuring plans on an iPad: the buttons big enough for a finger */
 @media (pointer:coarse){.fvm-strip .pillbtn{min-height:44px;padding:8px 12px;font-size:14px}.fvm-strip select{min-height:44px}}
+#markup.dof-over{z-index:40}

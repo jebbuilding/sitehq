@@ -15,10 +15,10 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const day=await p.evaluate(()=>{const d=new Date();d.setDate(d.getDate()+3);return d.toISOString().slice(0,10)});
  await p.evaluate(()=>{const S=window.__S;S.otab='clients';S.f.clf='all';window.render()});await p.waitForTimeout(400);
  await p.click('#cl-enq');await p.waitForTimeout(400);await p.click('#ne-new');await p.waitForTimeout(600);
- ok(await p.isVisible('#cf-jn'),'📝 New enquiry has Job name');
+ ok(await p.isVisible('#cf-jn')&&await p.locator('#cf-ctype button').count()===2,'📝 New enquiry has Job name, and Domestic or commercial');
  ok(await p.isVisible('#cf-vd')&&await p.isVisible('#cf-vt')&&await p.isVisible('#cf-vlen'),'📝 New enquiry has 📅 Book a visit: date, time and how long');
  await p.fill('#cf-main .cfm-f','Tom');await p.fill('#cf-main .cfm-l','Baker').catch(()=>{});
- await p.fill('#cf-addr','9 Mill Lane, Exmouth');await p.fill('#cf-phone','07700 900123');await p.fill('#cf-jn','Baker  garden room');
+ await p.fill('#cf-addr','9 Mill Lane, Exmouth');await p.fill('#cf-phone','07700 900123');await p.fill('#cf-jn','Baker  garden room');await p.click('#cf-ctype button[data-v=commercial]');await p.locator('#cf-jn').scrollIntoViewIfNeeded();await p.screenshot({path:'h648-type.png'});
  await p.fill('#cf-vd',day);await p.fill('#cf-vt','14:00');await p.selectOption('#cf-vlen','90');await p.waitForTimeout(400);
  ok(/\S/.test(await p.innerText('#cf-vdiary')),'it shows the diary for that day, like Quick enquiry');
  await p.uncheck('#cf-vics');
@@ -27,6 +27,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const st=await p.evaluate(()=>window.__st);
  const cl=Object.entries(st).find(([k,v])=>v&&v.visit&&/Tom/.test(v.name||''));
  ok(cl&&cl[1].visit&&cl[1].visit.date===day&&cl[1].visit.time==='14:00'&&cl[1].visit.end==='15:30','the client has the visit booked ('+JSON.stringify(cl&&cl[1].visit)+')');
+ ok(cl&&cl[1].clientType==='commercial','🏢 Commercial is saved');
  ok(cl&&cl[1].jobName==='Baker garden room','the job name is saved (Baker garden room)');
  ok(cl&&cl[1].follow===day&&(cl[1].notes||[]).some(n=>/Visit booked/.test(n.text)),'follow-up on the visit day, and a note');
  const pl=Object.entries(st).find(([k,v])=>/^plan(private)?\//.test(k)&&/^Visit: .*Tom/.test(v.title||''));

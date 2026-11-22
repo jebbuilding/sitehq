@@ -2059,7 +2059,7 @@ function cdmMaker(site0) {
       site,
       clientId: c ? c.id : "",
       client: c ? c.name : "",
-      clientType: "domestic",
+      clientType: (c && c.clientType) || "domestic",
       project: site.split(",")[0],
       address: (c && clAddr(c)) || site,
       desc: job.scope || job.work || (c && (c.desc || c.work)) || sr.project || "",

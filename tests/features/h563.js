@@ -11,7 +11,7 @@ const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n 
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 (async()=>{const b=await chromium.launch();
  for(const dev of ['desk','ipad']){
- const ctx=await b.newContext(dev==='ipad'?{...devices['iPad Pro 11']}:{viewport:{width:1180,height:820}});ctx.setDefaultTimeout(8000);
+ const ctx=await b.newContext(dev==='ipad'?{...devices['iPad Pro 11']}:{viewport:{width:1180,height:1000}});ctx.setDefaultTimeout(8000);
  await ctx.route(/^https?:\/\//,r=>r.abort());const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');
  await p.evaluate(()=>{window.openNotePage({title:'',size:'A4',orient:'port',pro:true})});await p.waitForTimeout(1200);
