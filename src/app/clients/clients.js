@@ -297,6 +297,20 @@ function openClientForm(c, mode) {
     ${enqOnly ? `<div class="cf-sum"><button type="button" class="btn" id="cf-showcon" aria-expanded="false">✎ Edit / add details</button></div>` : ""}
     ${enqOnly ? `<div class="who" style="margin-bottom:6px">👤 ${esc([c.name, c.phone || c.email, [String(c.address || "").replace(/\s*\n\s*/g, ", "), c.postcode].filter(Boolean).join(" ")].filter(Boolean).join(" · "))}</div>` : ""}
     ${conOnly && !ed ? `<div class="who" style="margin-bottom:6px">Just their contact details for your address book. Add an enquiry whenever they ask for a job – from their page, tap <b>📝 New enquiry</b>.</div>` : ""}
+    <div id="cf-top" class="cfsec cf-top" ${conOnly ? "hidden" : ""}>
+    <!-- the job first: its name, the type of work, domestic or commercial (James, Nov 2026) -->
+    <label for="cf-jn">Job / site name (what you'll call it)<input id="cf-jn" maxlength="60" placeholder="e.g. Jones garden room" value="${esc(fresh ? "" : c.jobName || "")}"></label>
+    <label for="cf-work">Type of work<select id="cf-work"><option value="">Choose…</option>${CL_WORK.map((w) => `<option ${w === c.work ? "selected" : ""}>${w}</option>`).join("")}</select></label>
+    <div class="flabel">Domestic or commercial?</div><div class="seg" id="cf-ctype" role="group" aria-label="Domestic or commercial">${[
+      ["domestic", "🏠 Domestic"],
+      ["commercial", "🏢 Commercial"],
+    ]
+      .map(
+        ([k, l]) =>
+          `<button type="button" data-v="${k}" aria-pressed="${(fresh ? "" : c.clientType || "") === k}">${l}</button>`,
+      )
+      .join("")}</div>
+    </div>
     <div id="cf-consec" class="cfsec" ${enqOnly ? "hidden" : ""}>
     <div class="flabel" style="margin-top:4px">Main contact</div>
     <datalist id="nm-titles">${NM_TITLES.filter((t) => t !== "Mr and Mrs")
@@ -328,17 +342,6 @@ function openClientForm(c, mode) {
     </div>
     <div id="cf-enqsec" class="cfsec" ${conOnly ? "hidden" : ""}>
     ${conOnly ? "" : `<div class="flabel" style="margin-top:6px">📝 The enquiry</div>`}
-    <label for="cf-jn">Job name (optional – what you'll call the job)<input id="cf-jn" maxlength="60" placeholder="e.g. Jones garden room" value="${esc(fresh ? "" : c.jobName || "")}"></label>
-    <div class="flabel">Domestic or commercial?</div><div class="seg" id="cf-ctype" role="group" aria-label="Domestic or commercial">${[
-      ["domestic", "🏠 Domestic"],
-      ["commercial", "🏢 Commercial"],
-    ]
-      .map(
-        ([k, l]) =>
-          `<button type="button" data-v="${k}" aria-pressed="${(fresh ? "" : c.clientType || "") === k}">${l}</button>`,
-      )
-      .join("")}</div>
-    <label for="cf-work">Type of work<select id="cf-work"><option value="">Choose…</option>${CL_WORK.map((w) => `<option ${w === c.work ? "selected" : ""}>${w}</option>`).join("")}</select></label>
     <label for="cf-desc">What they want done<textarea id="cf-desc" maxlength="3000" style="min-height:100px" placeholder="e.g. Single-storey rear extension, about 4 m × 5 m, open-plan kitchen, roof lights">${esc(c.desc || "")}</textarea></label>
     <div class="grid2"><label for="cf-budget">Budget (if they said)<input id="cf-budget" maxlength="60" value="${esc(c.budget || "")}" placeholder="e.g. £40–50k"></label><label for="cf-time">When they want it done<input id="cf-time" maxlength="80" value="${esc(c.timescale || "")}" placeholder="e.g. Spring 2027"></label></div>
     <div class="grid2"><label for="cf-src">How they found you<select id="cf-src">${srcpOptions(c.source || "")}</select></label>

@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 295 files, 5533 KB, 130793 lines.
+- 295 files, 5534 KB, 130809 lines.
 - 2765 names declared at the top level (the shared scope); 1414 of them are used by a file other than the one that declares them.
 - 3119 file-to-file dependencies (file A uses at least one name from file B).
 - 25 statements run while the page loads, all in `core/boot.js`.
@@ -198,7 +198,7 @@ ADDRESS BOOK JOBS: every enquiry / job a client has had, and one page per job wi
 CLIENTS ADDRESS BOOK + JOB HISTORY
 
 - 535 lines, 23 KB. Declares 14 names, 10 used elsewhere.
-- **Used elsewhere:** `clientSites` (18), `clContactsHtml` (3), `clMainHtml` (3), `clInvHtml` (2), `clShowBook` (2), `clConCard` (1), `clientsView` (1), `clShowToSee` (1), `histHtml` (1), `wireHist` (1)
+- **Used elsewhere:** `clientSites` (18), `clContactsHtml` (3), `clMainHtml` (3), `clInvHtml` (2), `clShowBook` (2), `clShowToSee` (2), `clConCard` (1), `clientsView` (1), `histHtml` (1), `wireHist` (1)
 - **Uses names from 19 files:** `core/helpers.js` (9), `clients/clients.js` (8), `core/sheet.js` (5), `clients/quick-enquiry.js` (2), `clients/web-enquiries.js` (2), `files/files.js` (2), `sites/job-sheets.js` (2), `clients/address-book-jobs.js` (1), `clients/address-import.js` (1), `clients/more-jobs.js` (1), `clients/stages-planner.js` (1), `core/state.js` (1), `core/tabs-week.js` (1), `files/outbox.js` (1), `owner/owner.js` (1), `sites/go-site.js` (1), `sites/job-details.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 22 files**
 
@@ -233,7 +233,7 @@ CLIENT MONEY: every estimate, variation and invoice for a client, on their page,
 
 CLIENTS (owner only, stored in the private todos collection as kind:"client")
 
-- 843 lines, 37 KB. Declares 16 names, 12 used elsewhere.
+- 846 lines, 38 KB. Declares 16 names, 12 used elsewhere.
 - **Used elsewhere:** `saveClient` (19), `clStage` (13), `clAddNote` (5), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `newEnquiryFor` (2), `nmSortKey` (2), `CL_SOURCE` (1), `clInitials` (1), `nmParts` (1)
 - **Uses names from 21 files:** `core/sheet.js` (5), `photos/photos.js` (5), `clients/quick-enquiry.js` (4), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `clients/source-pick.js` (2), `files/outbox.js` (2), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/property-info.js` (1), `clients/record-pdf.js` (1), `clients/visit-diary.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 28 files**
@@ -305,7 +305,7 @@ PROPERTY INFO: a client's services and access – stop cock, meters, fuse boards
 
 quick enquiry: a few details + the visit time, into the planner, with a reminder an hour before
 
-- 700 lines, 32 KB. Declares 10 names, 7 used elsewhere.
+- 703 lines, 32 KB. Declares 10 names, 7 used elsewhere.
 - **Used elsewhere:** `viewClient` (23), `quickEnquiry` (3), `VISIT_REMIND_MIN` (2), `cfVisitBook` (1), `cfVisitRead` (1), `initQuickEnquiry` (1), `visitToPhone` (1)
 - **Uses names from 39 files:** `core/helpers.js` (8), `clients/address-book.js` (6), `clients/stages-planner.js` (6), `clients/clients.js` (4), `core/sheet.js` (4), `core/state.js` (4), `files/files.js` (4), `clients/portal.js` (3), `sites/job-details.js` (3), `clients/client-money.js` (2), `clients/documents.js` (2), `clients/gdpr-consent.js` (2), `clients/sketches.js` (2), `core/viewer.js` (2), `owner/deleted-items.js` (2), `sites/maps-pins.js` (2), `chat/chat.js` (1), `clients/address-book-jobs.js` (1), `clients/more-jobs.js` (1), `clients/property-info.js` (1), `clients/record-pdf.js` (1), `clients/reviews.js` (1), `clients/visit-diary.js` (1), `clients/web-enquiries.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `owner/delete-client-site.js` (1), `planner/board.js` (1), `planner/diary.js` (1), `planner/plan-remind.js` (1), `planner/views.js` (1), `purchasing/samples.js` (1), `safety/training.js` (1), `sales/job-file.js` (1), `sales/job-pricing.js` (1), `sites/go-site.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 26 files**
@@ -1268,9 +1268,9 @@ TODAY DESK: This week, Today's jobs, On site now, and the + Add sheet
 
 NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens
 
-- 710 lines, 28 KB. Declares 26 names, 12 used elsewhere.
+- 720 lines, 28 KB. Declares 26 names, 12 used elsewhere.
 - **Used elsewhere:** `nlGo` (6), `nlOpenTab` (5), `coTileOf` (3), `NL_BY` (2), `nlBrandHtml` (2), `nlOn` (2), `nlSectionView` (2), `NL_SECTIONS` (1), `NL_SUBS` (1), `nlApply` (1), `nlName` (1), `todayView` (1)
-- **Uses names from 26 files:** `owner/today-desk.js` (5), `owner/menus.js` (4), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `timesheets/overtime.js` (2), `clients/address-book.js` (1), `clients/reviews.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/owner.js` (1), `owner/search.js` (1), `owner/social-posts.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1), `safety/tip-run.js` (1)
+- **Uses names from 26 files:** `owner/today-desk.js` (5), `owner/menus.js` (4), `owner/week-wrap.js` (4), `core/helpers.js` (3), `core/tabs-week.js` (3), `owner/today-cards.js` (3), `clients/address-book.js` (2), `clients/web-enquiries.js` (2), `core/state.js` (2), `owner/briefing.js` (2), `planner/weather-plan.js` (2), `sales/job-budget.js` (2), `sites/roll-call.js` (2), `timesheets/chase-hours.js` (2), `timesheets/overtime.js` (2), `clients/reviews.js` (1), `owner/account-setup.js` (1), `owner/company-details.js` (1), `owner/jobs-desk.js` (1), `owner/owner.js` (1), `owner/search.js` (1), `owner/social-posts.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `safety/expiry-dates.js` (1), `safety/tip-run.js` (1)
 - **Used by 16 files**
 
 ### `owner/todo-lists.js`

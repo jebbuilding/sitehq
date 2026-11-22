@@ -168,3 +168,6 @@
 .cf-sum{display:flex;justify-content:flex-end;margin:-4px 0 4px}
 .srcp-add{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:-4px}
 .srcp-add input{flex:1 1 180px;min-width:0}
+/* the client page's Call / Text / Email / Map / Message buttons: two to a row on a phone, so none go off the edge (James, Nov 2026) */
+@media (max-width:600px){.cv-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cv-acts>*{width:100%;min-width:0;justify-content:center;text-align:center;white-space:normal;box-sizing:border-box}}
+.cv-acts .maplink{border:1px solid var(--line);background:var(--surface);border-radius:12px;min-height:44px;color:var(--ink)}

@@ -1,5 +1,5 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
-import { clShowBook } from "../clients/address-book.js";
+import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { REVIEWS } from "../clients/reviews.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
@@ -630,7 +630,17 @@ function todayView() {
   $("nl-roll").onclick = () => (rows.length ? openRollCall() : nlOpenTab("signin"));
   $("main")
     .querySelectorAll(".nl-tile")
-    .forEach((x) => (x.onclick = () => nlOpenTab(x.dataset.t)));
+    .forEach(
+      (x) =>
+        (x.onclick = () => {
+          nlOpenTab(x.dataset.t);
+          /* New enquiries opens Clients on the new enquiries (Job to see), not Active site (James, Nov 2026) */
+          if (x.dataset.t === "clients") {
+            clShowToSee();
+            render();
+          }
+        }),
+    );
 }
 
 /* a section page: one big button per tab in it, with its count */

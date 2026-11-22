@@ -428,9 +428,10 @@ function viewClient(c) {
         openFile(c.frontPhoto, "Front of " + (c.name || "property") + ".jpg", "image/jpeg");
   }, 0);
   openViewer(`<span class="tag">${esc(clStage(c.stage))}</span><h3 style="font-family:var(--f-display);font-size:24px;margin:6px 0 8px;color:var(--accent);text-transform:uppercase">${esc(c.name)}</h3>
+    <div class="actions cv-topedit"><button class="btn" id="cv-edit2" type="button">✎ Edit client details</button></div>
     ${!c.frontPhoto ? `<div class="fhaddrow"><span class="who">🏠 Photo of the front of the house</span><label class="btn primary fhpickbtn">📷 Take photo<input type="file" class="cv-fhin" accept="image/*" capture="environment"></label><label class="btn fhpickbtn">🖼 Choose<input type="file" class="cv-fhin" id="cv-fhadd" accept="image/*"></label></div>` : ""}
     ${c.frontPhoto ? `<button type="button" class="fhhero" id="cv-fh"><img src="${blobUrl(c.frontPhoto)}" alt="Front of the property">${addr ? `<span>📍 ${esc(addr)}</span>` : ""}</button>` : ""}
-    <div class="actions">${tel ? `<a class="btn primary" href="tel:${esc(tel)}" style="text-decoration:none">📞 Call</a><a class="btn" href="sms:${esc(tel)}" style="text-decoration:none;color:var(--ink)">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}" style="text-decoration:none;color:var(--ink)">✉ Email</a>` : ""}${addr || c.lat != null ? `<button class="btn maplink" type="button" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Map</button>` : ""}<button class="btn" id="cv-msg" type="button">💬 Message in app</button></div>
+    <div class="actions cv-acts">${tel ? `<a class="btn primary" href="tel:${esc(tel)}" style="text-decoration:none">📞 Call</a><a class="btn" href="sms:${esc(tel)}" style="text-decoration:none;color:var(--ink)">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}" style="text-decoration:none;color:var(--ink)">✉ Email</a>` : ""}${addr || c.lat != null ? `<button class="btn maplink" type="button" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Map</button>` : ""}<button class="btn" id="cv-msg" type="button">💬 Message in app</button></div>
     <div class="actions">${c.site ? `<button class="btn primary" id="cv-gosite" type="button">🏗️ Open the site</button>` : `<button class="btn primary" id="cv-site" type="button">🏗️ Make it a site</button><span class="who">Moves them to Active site</span>`}</div>
     ${clDetailsBox(c)}
     ${c.visit && c.visit.date >= iso(new Date()) ? `<div class="notice" style="margin-top:10px">📅 Visit booked <b>${esc(shortDay(c.visit.date))} ${esc(c.visit.time || "")}</b> · reminder ${VISIT_REMIND_MIN / 60} hour before <button type="button" class="linkbtn" id="cv-ics">📲 Add to phone calendar</button></div>` : ""}
@@ -550,6 +551,8 @@ ${clMediaHtml(c)}
     closeViewer();
     openClientForm(c, "enquiry");
   };
+  /* the same Edit at the top of the page too (James, Nov 2026) */
+  $("cv-edit2").onclick = $("cv-edit").onclick;
   PROP.wireView();
   if ($("cv-full"))
     $("cv-full").onclick = () => {
