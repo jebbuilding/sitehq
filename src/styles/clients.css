@@ -166,3 +166,5 @@
 .rv-page .rv-f{flex-wrap:wrap;gap:6px;margin:6px 0}
 .rv-pt{padding:14px;display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .cf-sum{display:flex;justify-content:flex-end;margin:-4px 0 4px}
+.srcp-add{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:-4px}
+.srcp-add input{flex:1 1 180px;min-width:0}

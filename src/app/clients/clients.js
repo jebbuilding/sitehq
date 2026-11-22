@@ -5,6 +5,7 @@ import { ptCl } from "./portal.js";
 import { PROP } from "./property-info.js";
 import { VISIT_REMIND_MIN, cfVisitBook, cfVisitRead, viewClient } from "./quick-enquiry.js";
 import { clientPdf } from "./record-pdf.js";
+import { srcpOptions, srcpWire } from "./source-pick.js";
 import { vdWire } from "./visit-diary.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
@@ -340,7 +341,7 @@ function openClientForm(c, mode) {
     <label for="cf-work">Type of work<select id="cf-work"><option value="">Choose…</option>${CL_WORK.map((w) => `<option ${w === c.work ? "selected" : ""}>${w}</option>`).join("")}</select></label>
     <label for="cf-desc">What they want done<textarea id="cf-desc" maxlength="3000" style="min-height:100px" placeholder="e.g. Single-storey rear extension, about 4 m × 5 m, open-plan kitchen, roof lights">${esc(c.desc || "")}</textarea></label>
     <div class="grid2"><label for="cf-budget">Budget (if they said)<input id="cf-budget" maxlength="60" value="${esc(c.budget || "")}" placeholder="e.g. £40–50k"></label><label for="cf-time">When they want it done<input id="cf-time" maxlength="80" value="${esc(c.timescale || "")}" placeholder="e.g. Spring 2027"></label></div>
-    <div class="grid2"><label for="cf-src">How they found you<select id="cf-src"><option value="">Choose…</option>${CL_SOURCE.map((w) => `<option ${w === c.source ? "selected" : ""}>${w}</option>`).join("")}</select></label>
+    <div class="grid2"><label for="cf-src">How they found you<select id="cf-src">${srcpOptions(c.source || "")}</select></label>
       <label for="cf-plan">Planning / drawings<select id="cf-plan">${["", "Not needed", "Not started", "Drawings being done", "Applied", "Approved", "Building regs approved"].map((w) => `<option ${w === (c.planning || "") ? "selected" : ""}>${w || "Don't know yet"}</option>`).join("")}</select></label></div>
     <div class="grid2"><label for="cf-stage">Stage<select id="cf-stage">${CL_STAGES.map(([k, l]) => `<option value="${k}" ${k === c.stage ? "selected" : ""}>${l}</option>`).join("")}</select></label><label for="cf-quote">Estimate £ (optional)<input id="cf-quote" inputmode="decimal" maxlength="12" value="${esc(c.quote || "")}"></label></div>
     <label for="cf-follow">Follow up on (optional)<input id="cf-follow" type="date" value="${esc(c.follow || "")}"></label>
@@ -411,7 +412,7 @@ function openClientForm(c, mode) {
         desc: $("cf-desc").value.trim(),
         budget: $("cf-budget").value.trim(),
         timescale: $("cf-time").value.trim(),
-        source: $("cf-src").value,
+        source: $("cf-src").value === "__add" ? c.source || "" : $("cf-src").value,
         planning: $("cf-plan").value === "Don't know yet" ? "" : $("cf-plan").value,
         stage: $("cf-stage").value,
         quote: $("cf-quote")
@@ -808,6 +809,7 @@ function openClientForm(c, mode) {
   (c.contacts || []).forEach(addCon);
   $("cf-addc").onclick = () => addCon().querySelector(".cc-n").focus();
   if ($("cf-showcon")) $("cf-showcon").onclick = () => cfShowCon($("cf-consec").hidden);
+  srcpWire("cf-src");
   PROP.wire();
   $("cf-invdiff").onchange = (e) => {
     $("cf-invbox").hidden = !e.target.checked;

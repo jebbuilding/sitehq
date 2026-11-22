@@ -1,7 +1,8 @@
 /* ================= MORE JOBS: a client with more than one job on the go – each with its own stage, estimate and site ================= */
 import { clientSites } from "./address-book.js";
-import { CL_SOURCE, CL_STAGES, CL_WORK, clStage, saveClient } from "./clients.js";
+import { CL_STAGES, CL_WORK, clStage, saveClient } from "./clients.js";
 import { viewClient } from "./quick-enquiry.js";
+import { srcpOptions, srcpWire } from "./source-pick.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, siteNames } from "../core/state.js";
@@ -42,7 +43,7 @@ function mjEdit(c, j0, full) {
     <div class="grid2"><label for="mj-quote">Estimate £ (optional)<input id="mj-quote" inputmode="decimal" value="${esc(j.quote || "")}" placeholder="e.g. 4500"></label></div>
     <div class="grid2"><label for="mj-budget">Their budget (optional)<input id="mj-budget" maxlength="40" value="${esc(j.budget || "")}"></label>
     <label for="mj-when">Wanted by (optional)<input id="mj-when" maxlength="40" value="${esc(j.timescale || "")}" placeholder="e.g. spring"></label></div>
-    <div class="grid2"><label for="mj-src">How they found you<select id="mj-src"><option value="">Choose…</option>${CL_SOURCE.map((w) => `<option${w === j.source ? " selected" : ""}>${esc(w)}</option>`).join("")}</select></label>
+    <div class="grid2"><label for="mj-src">How they found you<select id="mj-src">${srcpOptions(j.source || "")}</select></label>
     <label for="mj-plan">Planning / drawings<select id="mj-plan">${["", "Not needed", "Not started", "Drawings being done", "Applied", "Approved", "Building regs approved"].map((w) => `<option value="${esc(w)}"${w === (j.planning || "") ? " selected" : ""}>${esc(w || "Don't know yet")}</option>`).join("")}</select></label></div>
     <label for="mj-follow">Follow up on (optional)<input id="mj-follow" type="date" value="${esc(j.follow || "")}"></label>
     ${j0 ? "" : `<label for="mj-note">First note (optional)<textarea id="mj-note" maxlength="1000" placeholder="e.g. Rang Tuesday, wants a price before Christmas"></textarea></label>`}
@@ -84,7 +85,7 @@ function mjEdit(c, j0, full) {
         quote: $("mj-quote").value.replace(/[£,\s]/g, ""),
         budget: $("mj-budget").value.trim(),
         timescale: $("mj-when").value.trim(),
-        source: $("mj-src").value,
+        source: $("mj-src").value === "__add" ? j.source || "" : $("mj-src").value,
         planning: $("mj-plan").value,
         follow: $("mj-follow").value,
         site,
@@ -138,6 +139,7 @@ function mjEdit(c, j0, full) {
     },
     "mj-work",
   );
+  srcpWire("mj-src");
   if ($("mj-full"))
     $("mj-full").onclick = () => {
       $("mj-more").hidden = false;
