@@ -81,3 +81,7 @@
 .ist-card .ist-row span{display:flex;flex-direction:column}
 .ist-card .ist-row small{color:var(--muted)}
 .ist-card .ist-row .pillbtn{min-height:44px}
+/* hired-in equipment check (safety/hire-check.js) */
+.hic-box{display:flex;flex-direction:column;gap:8px}
+.hic-box .seg{flex-wrap:wrap}
+.hic-vid{width:100%;max-height:40vh;border-radius:10px;background:#000;margin-top:6px}

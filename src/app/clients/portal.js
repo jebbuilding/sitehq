@@ -27,6 +27,7 @@ import {
   wirePdOwner,
 } from "./portal-calendar.js";
 import { viewClient } from "./quick-enquiry.js";
+import { REVIEWS } from "./reviews.js";
 import { clAddr } from "./stages-planner.js";
 import {
   cuDraw,
@@ -368,6 +369,7 @@ function renderClient() {
     : `<div class="seg ptabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
   if (tab === "home") {
     html += `<div class="card pthero"><div class="who">Hello ${esc((C.name || "").split(" ")[0])}</div><b style="font-size:20px">${esc(C.project || C.site || "Your project")}</b></div>
+      ${REVIEWS.portalHtml(C)}
       ${
         C.site
           ? (() => {
@@ -515,6 +517,7 @@ function renderClient() {
           render();
         }),
     );
+  if (tab === "home") REVIEWS.wirePortal(C);
   if ($("pt-seen"))
     $("pt-seen").onclick = () => {
       if (S.client._preview) {

@@ -36,7 +36,7 @@ import {
 } from "./plans-specs.js";
 import { same } from "./project-pages.js";
 import { openJob } from "../survey/door-window-survey.js";
-export { empSitesView, folderIcon, loadSitePhotos, openDoc, plansView0, typeFor };
+export { empSitesView, folderIcon, loadSitePhotos, openDoc, plansView0, sitePhotosFor, typeFor };
 function sitePhotosFor(site) {
   if (!S.sph || !S.sph.loaded) return null;
   const own = ownerMode(),

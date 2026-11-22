@@ -6,6 +6,7 @@ import { openViewer } from "../core/viewer.js";
 import { newId } from "../files/outbox.js";
 import { nameOf } from "../owner/owner.js";
 import { kitScan, kitView } from "./kit-out.js";
+import { prmSelect } from "./plan-remind.js";
 import { qrsOwnerOpen, qrsPrint } from "./qr-stickers.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo, openEqDates } from "../safety/expiry-dates.js";
@@ -121,6 +122,7 @@ function eqmBook(eq, k) {
     <div class="who">Due ${esc(ukDate((eq.dates || {})[k]))}. It goes on the planner${eq.assignee ? ` and ${esc(nameOf(eq.assignee))} can see it` : ""}.</div>
     <div class="grid2"><label for="eqm-date">Booked for<input id="eqm-date" type="date" value="${esc(bk.date || "")}"></label><label for="eqm-time">Time (optional)<input id="eqm-time" type="time" value="${esc(bk.time || "")}"></label></div>
     <label for="eqm-where">Where (garage or who's coming)<input id="eqm-where" maxlength="80" value="${esc(bk.where || (eq.info || {}).garage || "")}" placeholder="e.g. Town Motors"></label>
+    ${prmSelect("eqm-rem", bk.remind != null ? bk.remind : 60)}
     <label for="eqm-note">Note (optional)<input id="eqm-note" maxlength="120" value="${esc(bk.note || "")}" placeholder="e.g. Drop off 8am, courtesy van"></label>
     ${formFoot(!!bk.date, bk.date ? "Save the booking" : "Book it in")}`,
     async () => {
@@ -128,7 +130,8 @@ function eqmBook(eq, k) {
       if (!date) return showErr("Pick the date it's booked for");
       const where = $("eqm-where").value.trim(),
         time = $("eqm-time").value,
-        note = $("eqm-note").value.trim();
+        note = $("eqm-note").value.trim(),
+        remind = +$("eqm-rem").value || 0;
       const planId = bk.planId || "eqb-" + eq.id + "-" + k;
       try {
         await S.db.doc("plan/" + planId).set({
@@ -139,13 +142,17 @@ function eqmBook(eq, k) {
           people: eq.assignee ? [eq.assignee] : [],
           vis: "all",
           notes: [time ? "At " + time : "", note].filter(Boolean).join(". "),
+          time,
+          remind,
           eqId: eq.id,
           eqKey: k,
           created: Date.now(),
           updated: Date.now(),
         });
         await eqmSave(eq, {
-          booked: Object.assign({}, eq.booked || {}, { [k]: { date, time, where, note, planId } }),
+          booked: Object.assign({}, eq.booked || {}, {
+            [k]: { date, time, where, note, planId, remind },
+          }),
         });
         closeForm();
         toast("Booked in and on the planner");

@@ -17,6 +17,7 @@ import { mjEdit } from "./more-jobs.js";
 import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
 import { PROP } from "./property-info.js";
 import { clientPdf } from "./record-pdf.js";
+import { REVIEWS } from "./reviews.js";
 import { clMediaHtml, wireClMedia } from "./sketches.js";
 import {
   clAddPlan,
@@ -40,6 +41,8 @@ import { deleteClientFlow } from "../owner/delete-client-site.js";
 import { BIN_DAYS, binDelete } from "../owner/deleted-items.js";
 import { openPlanEditor } from "../planner/board.js";
 import { toHM } from "../planner/diary.js";
+import { prmStart } from "../planner/plan-remind.js";
+import { openPlanDetail } from "../planner/views.js";
 import { SAMPLES } from "../purchasing/samples.js";
 import { shrinkImage } from "../safety/training.js";
 import { jfOpenClient } from "../sales/job-file.js";
@@ -49,7 +52,15 @@ import { editSiteJob, siteLabel, syncSiteJobs } from "../sites/job-details.js";
 import { dropPin, miniMap } from "../sites/maps-pins.js";
 import { same } from "../sites/project-pages.js";
 import { DWS } from "../survey/door-window-survey.js";
-export { VISIT_REMIND_MIN, cfVisitBook, cfVisitRead, initQuickEnquiry, quickEnquiry, viewClient };
+export {
+  VISIT_REMIND_MIN,
+  cfVisitBook,
+  cfVisitRead,
+  initQuickEnquiry,
+  quickEnquiry,
+  viewClient,
+  visitToPhone,
+};
 const VISIT_REMIND_MIN = 60;
 function icsFor(o) {
   const p = (n) => String(n).padStart(2, "0");
@@ -97,7 +108,8 @@ function icsFor(o) {
     .join("\r\n");
 }
 async function visitToPhone(o) {
-  const fn = ("Visit - " + (o.who || "client")).replace(/[^\w\s&-]/g, "").trim() + ".ics";
+  const fn =
+    (o.fname || "Visit - " + (o.who || "client")).replace(/[^\w\s&-]/g, "").trim() + ".ics";
   const blob = new Blob([icsFor(o)], { type: "text/calendar" });
   if (S.dl) {
     try {
@@ -218,18 +230,20 @@ function quickEnquiry(pre = {}) {
   vdWire($("qe-diary"), "qe-d", "qe-t", "qe-len");
 }
 /* while the app is open, pop up a reminder an hour before any planner entry that asks for one */
+/* (any entry with a reminder: James gets all of them, a trade the ones they're named on – planner/plan-remind.js) */
 function visitWatch() {
-  if (!ownerMode()) return;
+  if (S.client || !S.me) return;
+  const own = ownerMode();
   const now = Date.now();
-  const all = (RAW.planPrivate || [])
+  const all = (own ? RAW.planPrivate || [] : [])
     .concat(RAW.plan || [])
-    .filter((p) => p.remind && p.from && p.time);
+    .filter((p) => p.remind && p.from && (own || (p.people || []).includes(S.me)));
   for (const p of all) {
-    const st = new Date(p.from + "T" + p.time).getTime();
+    const st = prmStart(p);
     if (isNaN(st)) continue;
     const at = st - p.remind * 60000;
     if (now < at || now > st + 15 * 60000) continue;
-    const key = "jeb.visitrem." + p.id + "." + p.from + p.time;
+    const key = "jeb.visitrem." + p.id + "." + p.from + (p.time || "") + "." + p.remind;
     let seen = false;
     try {
       seen = !!localStorage.getItem(key);
@@ -239,19 +253,29 @@ function visitWatch() {
     try {
       localStorage.setItem(key, "1");
     } catch (e) {}
-    const c = (S.clients || []).find((x) => x.id === p.clientId);
+    const c = own ? (S.clients || []).find((x) => x.id === p.clientId) : null;
     const mins = Math.max(0, Math.round((st - now) / 60000));
+    const when = !mins
+      ? "Now"
+      : mins >= 720
+        ? "Tomorrow"
+        : mins >= 90
+          ? "In about " + Math.round(mins / 60) + " hours"
+          : mins >= 50
+            ? "In about an hour"
+            : "In " + mins + " minutes";
+    const addr = c ? clAddr(c) : p.site || "";
     try {
       if ("Notification" in window && Notification.permission === "granted")
         new Notification("SiteHQ: " + p.title, {
-          body: `${mins ? "In " + (mins >= 60 ? Math.round(mins / 6) / 10 + " hours" : mins + " minutes") : "Now"} at ${p.time}${c ? " · " + clAddr(c) : ""}`,
+          body: `${when}${p.time ? " at " + p.time : ""}${addr ? " · " + addr : ""}`,
         });
     } catch (e) {}
     const d = document.createElement("div");
     d.className = "dimask";
     d.style.zIndex = "130";
-    d.innerHTML = `<div class="dimbox" role="alertdialog" aria-label="Visit reminder"><b>⏰ ${esc(p.title)}</b><div style="margin:6px 0">${mins ? `In about ${mins >= 60 ? "an hour" : mins + " minutes"}, at <b>${esc(p.time)}</b>` : `Now, at <b>${esc(p.time)}</b>`}</div>${c ? `<div class="who">${esc(clAddr(c))}${c.phone ? " · " + esc(c.phone) : ""}</div>` : ""}
-      <div class="dimbtns" style="flex-wrap:wrap">${c && clAddr(c) ? `<button type="button" class="btn maplink" data-addr="${esc(clAddr(c))}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Directions</button>` : ""}${c && c.phone ? `<a class="btn" href="tel:${esc(String(c.phone).replace(/\s+/g, ""))}" style="text-decoration:none;color:var(--ink)">📞 Call</a>` : ""}${c ? `<button type="button" class="btn vr-open">Open client</button>` : ""}<button type="button" class="btn primary vr-x">OK</button></div></div>`;
+    d.innerHTML = `<div class="dimbox" role="alertdialog" aria-label="Reminder"><b>⏰ ${esc(p.title)}</b><div style="margin:6px 0">${esc(when)}${p.time ? `, at <b>${esc(p.time)}</b>` : mins >= 720 ? " (" + esc(shortDay(p.from)) + ")" : ""}</div>${addr ? `<div class="who">${esc(addr)}${c && c.phone ? " · " + esc(c.phone) : ""}</div>` : ""}
+      <div class="dimbtns" style="flex-wrap:wrap">${addr ? `<button type="button" class="btn maplink" data-addr="${esc(addr)}" data-label="${esc(c ? c.name : p.title)}" ${c ? `data-client="${esc(c.id)}"` : ""}>📍 Directions</button>` : ""}${c && c.phone ? `<a class="btn" href="tel:${esc(String(c.phone).replace(/s+/g, ""))}" style="text-decoration:none;color:var(--ink)">📞 Call</a>` : ""}${c ? `<button type="button" class="btn vr-open">Open client</button>` : `<button type="button" class="btn vr-see">Open it</button>`}<button type="button" class="btn primary vr-x">OK</button></div></div>`;
     document.body.appendChild(d);
     d.querySelector(".vr-x").onclick = () => d.remove();
     const o = d.querySelector(".vr-open");
@@ -259,6 +283,12 @@ function visitWatch() {
       o.onclick = () => {
         d.remove();
         viewClient(c);
+      };
+    const o2 = d.querySelector(".vr-see");
+    if (o2)
+      o2.onclick = () => {
+        d.remove();
+        openPlanDetail(p);
       };
     break;
   }
@@ -456,7 +486,7 @@ function viewClient(c) {
         ${histHtml(c)}
     ${ptClientBlock(c)}
 ${clMediaHtml(c)}
-    ${DWS.clientHtml(c)}${SAMPLES.clientHtml(c)}
+    ${DWS.clientHtml(c)}${SAMPLES.clientHtml(c)}${REVIEWS.clientHtml(c)}
     <div class="flabel" style="margin-top:12px">Notes and calls</div>
     <div style="display:flex;gap:8px"><textarea id="cv-note" maxlength="1000" placeholder="e.g. Visited, measured up. Sending quote Friday." style="flex:1;min-height:48px"></textarea><button type="button" class="btn primary" id="cv-addnote">Add</button></div>
     <div class="clnotes">${
@@ -554,6 +584,7 @@ ${clMediaHtml(c)}
   if ($("cv-morefull")) $("cv-morefull").onclick = () => mjEdit(c, null, true);
   DWS.wireClient(c);
   SAMPLES.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
+  REVIEWS.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
   $("cv-visit").onclick = () => {
     closeViewer();
     openPlanEditor(null, iso(addDays(new Date(), 1)), {

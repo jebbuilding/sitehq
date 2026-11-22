@@ -22,7 +22,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  const js=await rows('Jobs and sites');
  ok(js.join()==='projects,signin,daywork,planner,photos,hs,draw','Jobs and sites: '+js.join());
  const cl=await rows('Clients');
- ok(cl.join()==='clients,addrbook,leads,samples,portal,portalset','Clients: '+cl.join());
+ ok(cl.join()==='clients,addrbook,leads,samples,reviews,social,portal,portalset','Clients: '+cl.join());
  await p.screenshot({path:'h630-more.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h630: ${bad} failed`:'h630: all passed');await b.close();process.exit(bad?1:0);

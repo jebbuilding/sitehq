@@ -23,6 +23,7 @@ const REP_ICON = {
   scaffold: "🏗️",
   excavation: "🕳️",
   ladder: "🪜",
+  hire: "🔧",
   incidents: "⚠️",
 };
 function reportCats() {

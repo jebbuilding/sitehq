@@ -18,8 +18,9 @@ import { render } from "../core/tabs-week.js";
 import { blobUrl, uploadErr } from "../files/files.js";
 import { newId, submitJob } from "../files/outbox.js";
 import { nameOf, roleShort } from "../owner/owner.js";
-import { exifDate, readExif, stampPhoto } from "../photos/photos.js";
+import { VID_MAX, exifDate, readExif, stampPhoto, vidExt } from "../photos/photos.js";
 import { KINDS, ck, defectsOf, hasProblem } from "./checklists.js";
+import { hicFields, hicMore, hicRead, hicSub, hicTag, hicVideo, hicWire } from "./hire-check.js";
 export { checkCard, openCheck };
 function checkCard(c0, owner, who) {
   const c = ck(c0),
@@ -32,9 +33,9 @@ function checkCard(c0, owner, who) {
         ? '<span class="tag day">Defects</span>'
         : '<span class="tag ok">All OK</span>';
   return `<div class="entry chk" ${owner ? "" : `role="button" tabindex="0"`} data-c="${esc(c.id)}" data-w="${esc(who || "")}"><div class="main">
-    <div class="job"><span class="tag">${esc(K.name)}</span>${st}${c.fixed ? '<span class="tag ok">Fixed</span>' : ""}${esc(c.asset || "Not named")}${owner ? ` <span class="who">· ${esc(nameOf(who) + roleShort(who))}</span>` : ""}</div>
+    <div class="job"><span class="tag">${esc(K.name)}</span>${c.kind === "hire" ? hicTag(c) : ""}${st}${c.fixed ? '<span class="tag ok">Fixed</span>' : ""}${esc(c.asset || "Not named")}${owner ? ` <span class="who">· ${esc(nameOf(who) + roleShort(who))}</span>` : ""}</div>
     <div class="sub">${shortDay(c.date)}${c.reading ? ` · ${K.reading || "Reading"} ${esc(c.reading)}` : ""}${d.length ? ` · ${esc(d.join(", "))}` : ""}${c.photos && c.photos.length ? ` · ${c.photos.length} photo${c.photos.length === 1 ? "" : "s"}` : ""}</div>
-    ${c.notes ? `<div class="sub">${esc(c.notes)}</div>` : ""}</div>
+    ${c.kind === "hire" && hicSub(c) ? `<div class="sub">${hicSub(c)}</div>` : ""}${c.notes ? `<div class="sub">${esc(c.notes)}</div>` : ""}</div>
     ${owner && hasProblem(c) ? `<label class="inl"><input type="checkbox" class="fix" ${c.fixed ? "checked" : ""}>Fixed</label>` : ""}</div>`;
 }
 let checkVals = {};
@@ -50,6 +51,7 @@ function openCheck(kind, c0, presetAsset) {
     <div class="grid2"><label for="c-date">Date<input id="c-date" type="date" required value="${esc(c ? c.date : iso(new Date()))}"></label>
     ${K.reading ? `<label for="c-read">${K.reading}<input id="c-read" type="number" inputmode="decimal" min="0" step="any" placeholder="${kind === "digger" ? "e.g. 2450" : "Odometer"}" value="${esc(c ? c.reading : "")}"></label>` : "<span></span>"}</div>
     ${pickField("c-asset", K.asset || (kind === "vehicle" ? "Vehicle" : kind === "digger" ? "Digger" : kind === "trailer" ? "Trailer" : "Machine"), [...new Set(equipOf(kind).concat(K.sites ? siteNames() : []))], c ? c.asset : last, K.ph)}
+    ${K.hire ? hicFields(c) : ""}
     <div class="checkhead"><span class="flabel" style="margin:0">Checks</span><button type="button" class="pillbtn" id="c-allok">Mark the rest OK</button></div>
     <div id="c-items">${K.items
       .map(
@@ -57,9 +59,10 @@ function openCheck(kind, c0, presetAsset) {
       <span class="seg" data-k="${k}"><button type="button" data-v="ok">OK</button><button type="button" data-v="defect">Defect</button><button type="button" data-v="na">N/A</button></span></div>`,
       )
       .join("")}</div>
-    <label for="c-notes">Defects or damage (describe anything marked Defect)<textarea id="c-notes" maxlength="500">${esc(c ? c.notes : "")}</textarea></label>
+    <label for="c-notes">${K.hire ? "Damage or faults – describe every mark, dent or fault you can see" : "Defects or damage (describe anything marked Defect)"}<textarea id="c-notes" maxlength="${K.hire ? 1500 : 500}">${esc(c ? c.notes : "")}</textarea></label>
     ${c && c.photos && c.photos.length ? `<div><div class="flabel">Photos already added</div><div class="thumbs">${c.photos.map((id) => `<img src="${blobUrl(id)}" alt="Defect photo">`).join("")}</div></div>` : ""}
-    <label for="c-photos">Photos of the defect (optional)<input id="c-photos" type="file" accept="image/*" multiple></label>
+    <label for="c-photos">${K.hire ? "📷 Photos all round – front, back, both sides and close-ups of any damage" : "Photos of the defect (optional)"}<input id="c-photos" type="file" accept="image/*" multiple></label>
+    ${K.hire ? hicMore(c) : ""}
     <div><div class="flabel">Is it safe to use?</div>
       <div class="seg" id="c-safe"><button type="button" data-v="yes" aria-pressed="${c ? c.safe !== false : true}">Yes</button><button type="button" data-v="no" aria-pressed="${c ? c.safe === false : false}">No, don't use it</button></div></div>
     ${formFoot(!!c, "Submit check")}`,
@@ -103,6 +106,7 @@ function openCheck(kind, c0, presetAsset) {
             .forEach((x) => x.setAttribute("aria-pressed", String(x === b)))),
     );
   paint();
+  if (K.hire) hicWire(c);
   armDelete(() => myDoc("checks", editing.id).delete());
 }
 async function saveCheck(kind) {
@@ -119,6 +123,7 @@ async function saveCheck(kind) {
     updated: Date.now(),
     fixed: false,
   };
+  if (K.hire) Object.assign(data, hicRead());
   if (kind === "vehicle")
     data.asset = data.asset.toUpperCase().startsWith(data.asset.slice(0, 1).toUpperCase())
       ? data.asset
@@ -136,6 +141,21 @@ async function saveCheck(kind) {
     return;
   }
   const pics = [...($("c-photos").files || [])];
+  const vid = K.hire ? hicVideo() : null;
+  if (K.hire && !pics.length && !((editing && editing.photos) || []).length) {
+    showErr("Take photos all round it – they show what state it was in.");
+    return;
+  }
+  if (K.hire && data.preDamage === "yes" && !data.notes) {
+    showErr("Say what damage was already on it, so the hire firm can't charge for it.");
+    return;
+  }
+  if (vid && vid.size > VID_MAX) {
+    showErr(
+      `That video is too big (${(vid.size / 1048576).toFixed(0)} MB). Keep it to about 20 seconds.`,
+    );
+    return;
+  }
   if (pics.length && !S.assets) {
     showErr(
       `You don't have permission to upload photos. Ask ${bossFirst()} to make you an Editor on this page.`,
@@ -152,7 +172,11 @@ async function saveCheck(kind) {
       try {
         files.push({
           blob: await stampPhoto(f, {
-            site: data.asset + " – " + K.name.toLowerCase() + " defect",
+            site: K.hire
+              ? data.asset +
+                " – hire check, " +
+                (data.stage === "after" ? "after use" : "before use")
+              : data.asset + " – " + K.name.toLowerCase() + " defect",
             takenAt,
             lat: ex.lat ?? null,
             lon: ex.lon ?? null,
@@ -171,6 +195,8 @@ async function saveCheck(kind) {
       }
     }
     data.photos = (editing && editing.photos) || [];
+    if (K.hire) data.video = (editing && editing.video) || "";
+    if (vid) files.push({ blob: vid, name: "hire-check." + vidExt(vid.type), field: "video" });
     const r = await submitJob({
       coll: "checks",
       docId: editing ? editing.id : newId(),

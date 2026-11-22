@@ -153,6 +153,29 @@ const KINDS = {
       ["top", "Sticks up 1 m above the landing, or something to hold on to"],
     ],
   },
+  /* hired-in equipment, checked when it arrives (before use) and again before it goes back (after use), with photos
+     all round and a short video, so any damage that was already on it is on record (James, Nov 2026) – the extra
+     fields are in safety/hire-check.js */
+  hire: {
+    name: "Hired-in equipment",
+    plural: "Hired-in equipment",
+    hire: true,
+    reading: null,
+    asset: "What it is",
+    ph: "e.g. 3 t dumper, Wacker plate, tower scaffold",
+    items: [
+      ["paper", "Matches the hire paperwork (make, model, serial or fleet no.)"],
+      ["body", "Bodywork, panels and frame: no dents, cracks or marks"],
+      ["guards", "Guards, covers and safety devices fitted"],
+      ["cables", "Cables, plugs, hoses and leads: no cuts or damage"],
+      ["wheels", "Tyres, wheels or tracks in good condition"],
+      ["controls", "Controls, stop button and dead-man's handle work"],
+      ["leaks", "No oil, fuel or hydraulic leaks"],
+      ["tag", "Test or inspection tag in date (PAT, LOLER, thorough exam)"],
+      ["manual", "Instructions or safety sheet came with it"],
+      ["clean", "Clean (and cleaned before it goes back)"],
+    ],
+  },
 };
 const ck = (c) =>
   Object.assign({ kind: "vehicle" }, c, {

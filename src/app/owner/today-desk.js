@@ -4,6 +4,7 @@ import { quickEnquiry } from "../clients/quick-enquiry.js";
 import { $, addDays, esc, hrs, iso, parse, toast } from "../core/helpers.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { allTeam, nameOf, teamIds } from "./owner.js";
+import { QNOTE } from "./quick-notes.js";
 import { nlGo, nlOpenTab } from "./today.js";
 import { openPhoto } from "../photos/photos.js";
 import { openPlanEditor } from "../planner/board.js";
@@ -202,6 +203,8 @@ function tdDeskWire() {
    none saved = QA_DEFAULT) – James, Nov 2026 */
 const QA_ITEMS = [
   ["photo", "📷", "Photo"],
+  /* 📝 Quick note: speak or type, Claude tidies it (owner/quick-notes.js) */
+  ["note", "🗒️", "Quick note"],
   ["enq", "⚡", "Quick enquiry"],
   /* the full enquiry: an existing client or a new one (James, Nov 2026: "in + Add include new enquiry") */
   ["newenq", "📝", "New enquiry"],
@@ -217,6 +220,7 @@ const QA_ITEMS = [
 ];
 const QA_DEFAULT = [
   "photo",
+  "note",
   "newenq",
   "enq",
   "rcpt",
@@ -231,7 +235,10 @@ const qaKeys = () => {
   const k = (S.settings || {}).qaItems;
   if (!Array.isArray(k)) return QA_DEFAULT;
   /* a list saved before 📝 New enquiry was a choice gets it too, until + Add is saved again in Setup */
-  return k.includes("newenq") || (S.settings || {}).qaItemsV >= 2 ? k : ["newenq"].concat(k);
+  const v = (S.settings || {}).qaItemsV || 0;
+  const out = k.includes("newenq") || v >= 2 ? k : ["newenq"].concat(k);
+  /* and 🗒️ Quick note, added Nov 2026 */
+  return out.includes("note") || v >= 3 ? out : ["note"].concat(out);
 };
 /* Setup: tick what goes in + Add */
 function qaSetupCard() {
@@ -250,19 +257,19 @@ function qaSetupWire() {
     }
     $("qa-save").disabled = true;
     try {
-      await S.db.doc("settings/app").update({ qaItems: keys, qaItemsV: 2 });
+      await S.db.doc("settings/app").update({ qaItems: keys, qaItemsV: 3 });
     } catch (e) {
       try {
         await S.db
           .doc("settings/app")
-          .set(Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 2 }));
+          .set(Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 3 }));
       } catch (x) {
         toast("Couldn't save. Check your connection.");
         $("qa-save").disabled = false;
         return;
       }
     }
-    S.settings = Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 2 });
+    S.settings = Object.assign({}, S.settings, { qaItems: keys, qaItemsV: 3 });
     toast("+ Add saved");
     $("qa-save").disabled = false;
   };
@@ -290,6 +297,7 @@ function qaOpen() {
         d.remove();
         const k = b.dataset.k;
         if (k === "photo") openPhoto();
+        else if (k === "note") QNOTE.open();
         else if (k === "enq") quickEnquiry();
         else if (k === "newenq") newEnquiryFor();
         else if (k === "hours") pickPersonFor("hours");

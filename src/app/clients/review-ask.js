@@ -1,5 +1,7 @@
 /* ================= REVIEW REQUESTS: when a job is finished, thank the client and ask for a Google review ================= */
 import { saveClient } from "./clients.js";
+import { ptCl, ptOf } from "./portal.js";
+import { REVIEWS } from "./reviews.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet } from "../core/sheet.js";
 import { S } from "../core/state.js";
@@ -15,7 +17,7 @@ function rqText(c, url) {
       .trim()
       .split(/\s+/)[0] || "there";
   const work = c.work || c.project || "job";
-  return `Hi ${first},\n\nThank you for choosing ${co.name} for your ${String(work).toLowerCase()}. It was a pleasure working with you.\n\nIf you're happy with the work, we'd be really grateful if you could leave us a quick Google review – it makes a big difference to a small firm:\n${url || co.reviewUrl || ""}\n\nThanks again,\n${co.owner || ""}`;
+  return `Hi ${first},\n\nThank you for choosing ${co.name} for your ${String(work).toLowerCase()}. It was a pleasure working with you.\n\nIf you're happy with the work, we'd be really grateful if you could leave us a quick Google review – it makes a big difference to a small firm:\n${url || co.reviewUrl || ""}${co.webReviewUrl ? `\n\nOr on our website:\n${co.webReviewUrl}` : ""}\n\nThanks again,\n${co.owner || ""}`;
 }
 function rqAsk(c) {
   if (!c) return;
@@ -25,7 +27,7 @@ function rqAsk(c) {
     `<h3 id="sheettitle">⭐ Thank ${esc(c.name)} and ask for a review</h3>
     ${has ? "" : `<label for="rq-url">Your Google review link<input id="rq-url" maxlength="300" placeholder="e.g. https://g.page/r/…/review"></label><div class="who">In Google, open your business profile and tap <b>Ask for reviews</b> to get the link. It's kept in Company details for next time.</div>`}
     <label for="rq-msg">The message</label><textarea id="rq-msg" rows="9">${esc(rqText(c))}</textarea>
-    <div class="actions rq-acts">${c.phone ? `<button type="button" class="btn primary" data-v="wa">WhatsApp</button><button type="button" class="btn" data-v="sms">💬 Text</button>` : ""}${c.email ? `<button type="button" class="btn${c.phone ? "" : " primary"}" data-v="mail">✉ Email</button>` : ""}<button type="button" class="btn" data-v="copy">📋 Copy</button></div>
+    <div class="actions rq-acts">${c.phone ? `<button type="button" class="btn primary" data-v="wa">WhatsApp</button><button type="button" class="btn" data-v="sms">💬 Text</button>` : ""}${c.email ? `<button type="button" class="btn${c.phone ? "" : " primary"}" data-v="mail">✉ Email</button>` : ""}<button type="button" class="btn" data-v="copy">📋 Copy</button>${ptOf(ptCl(c)) ? `<button type="button" class="btn" data-v="portal">🏡 Ask in their portal</button>` : ""}</div>
     ${formFoot(false, "Done")}`,
     async () => {
       closeForm();
@@ -51,6 +53,15 @@ function rqAsk(c) {
           await saveClient(Object.assign({}, c, { reviewAskedAt: Date.now() }));
         } catch (e) {}
         const v = b.dataset.v;
+        if (v === "portal") {
+          try {
+            await REVIEWS.askInPortal(c);
+            toast("It's on the front page of their portal now");
+          } catch (e) {
+            toast("Couldn't send. Check your connection.");
+          }
+          return;
+        }
         if (v === "copy") {
           try {
             await navigator.clipboard.writeText(msg);

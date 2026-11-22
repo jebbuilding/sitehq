@@ -41,6 +41,7 @@ const CO_FIELDS = [
   ["firstAid", "First aider(s)", "e.g. Sam (first aid at work, until 2027)"],
   ["website", "Website", ""],
   ["reviewUrl", "Google review link", "e.g. https://g.page/r/…/review"],
+  ["webReviewUrl", "Website review link", "e.g. https://www.yourfirm.co.uk/reviews"],
   ["companyNo", "Company number", ""],
   ["vatNo", "VAT number", ""],
   ["plInsurer", "Public liability insurer", ""],

@@ -1,5 +1,6 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
 import { clShowBook } from "../clients/address-book.js";
+import { REVIEWS } from "../clients/reviews.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
@@ -11,6 +12,7 @@ import { jbView } from "./jobs-desk.js";
 import { mnuSecHidden, mnuSecRenamed, mnuTabHidden, mnuTabRenamed } from "./menus.js";
 import { startPreview } from "./owner.js";
 import { searchOpen } from "./search.js";
+import { SOCIAL } from "./social-posts.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
 import { pcTodayCard, pcTodayWire, wuTodayCard, wuTodayWire } from "./week-wrap.js";
@@ -108,7 +110,18 @@ const nlTabAs = (sec, t) => (NL_TAB_AS[sec] || {})[t] || [];
 /* the order of the rows in a group, where it mixes pages and sub-pages (James, 21 Nov 2026: "clients should be
    clients, address book, leads, samples, client portal, what clients see") */
 const NL_ROW_ORDER = {
-  jobs: { Clients: ["clients", "addrbook", "leads", "samples", "portal", "portalset"] },
+  jobs: {
+    Clients: [
+      "clients",
+      "addrbook",
+      "leads",
+      "samples",
+      "reviews",
+      "social",
+      "portal",
+      "portalset",
+    ],
+  },
 };
 const NL_GROUPS = {
   jobs: [
@@ -206,6 +219,14 @@ const NL_SUBS = [
     () => kitView(),
   ],
   [
+    "hirechk",
+    "🔧 Hired-in equipment checks",
+    "jobs",
+    "Vans, tools and plant",
+    "hire hired plant damage before after photos video",
+    () => nlSub("checks", { rcat: "hire" }),
+  ],
+  [
     "addrbook",
     "📒 Address book",
     "jobs",
@@ -215,6 +236,22 @@ const NL_SUBS = [
       clShowBook(true);
       nlGo("clients");
     },
+  ],
+  [
+    "reviews",
+    "⭐ Reviews",
+    "jobs",
+    "Clients",
+    "google website feedback stars testimonial",
+    () => REVIEWS.view(),
+  ],
+  [
+    "social",
+    "📣 Social media posts",
+    "jobs",
+    "Clients",
+    "facebook instagram linkedin post marketing advert",
+    () => SOCIAL.view(),
   ],
   [
     "portalset",

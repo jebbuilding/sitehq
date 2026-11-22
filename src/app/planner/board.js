@@ -36,6 +36,7 @@ import { diaryHtml, diaryRows, dyGroupName, wireDiary } from "./diary.js";
 import { htHtml, htWire } from "./holiday-tab.js";
 import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
 import { pmfBarHtml, pmfClash, pmfClashHtml, pmfFilter, pmfWire } from "./month-filter.js";
+import { prmSelect } from "./plan-remind.js";
 import {
   plClashHtml,
   plClashes,
@@ -1613,6 +1614,7 @@ function openPlanEditor(p, date, copy) {
       .join("")}</div></div>
     <div class="grid2"><label for="pe-from">From<input id="pe-from" type="date" required value="${esc(p ? p.from : date)}"></label><label for="pe-to">To<input id="pe-to" type="date" required value="${esc(p ? p.to || p.from : copy ? date : date)}"></label></div>
     <div class="grid2"><label for="pe-time">Start time (optional)<input id="pe-time" type="time" value="${esc(src ? src.time || "" : "")}"></label><label for="pe-etime">End time (optional)<input id="pe-etime" type="time" value="${esc(src ? src.endTime || "" : "")}"></label></div>
+    <div class="grid2">${prmSelect("pe-remind", src ? src.remind || 0 : 60)}<div class="who" style="align-self:end">Pops up while the app is open (for you and the people on it). With no start time it counts from 8am.</div></div>
     ${pickField("pe-site", "Site (optional)", siteNames(), src ? src.site || "" : "", "e.g. 12 High Street", false)}
     <label for="pe-job">Job sheet (optional)<select id="pe-job"><option value="">Not linked to a job sheet</option>${S.jobs
       .filter((j) => j.status !== "closed" || (src && src.jobId === j.id))
@@ -1652,6 +1654,7 @@ function openPlanEditor(p, date, copy) {
         endTime: $("pe-etime").value,
         contact: $("pe-contact").value.trim(),
         phone: $("pe-phone").value.trim(),
+        remind: +$("pe-remind").value || 0,
       };
       const rep = $("pe-rep") ? $("pe-rep").value : "",
         until = $("pe-until") ? $("pe-until").value : "";

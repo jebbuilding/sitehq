@@ -152,3 +152,16 @@
 .cmy-card .cmy-w small{color:var(--muted)}
 .cmy-card .cmy-a{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .cmy-card .cmy-a small{color:var(--muted)}
+/* ⭐ Reviews (clients/reviews.js) */
+.rv-row{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.rv-row .rv-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rv-stars{color:#e0a800;letter-spacing:1px;font-size:17px}
+.rv-row .rv-text{white-space:pre-wrap}
+.rv-row .rv-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rv-pick{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.rv-pick button[data-v]:not(.pillbtn){min-width:44px;min-height:44px;font-size:28px;line-height:1;border:0;background:none;color:var(--line);cursor:pointer;padding:0}
+.rv-pick button[aria-pressed="true"]:not(.pillbtn){color:#e0a800}
+.rv-page .rv-sum{display:flex;gap:14px;align-items:center;margin:8px 0}
+.rv-page .rv-big{font-size:40px;font-weight:700;color:var(--accent)}
+.rv-page .rv-f{flex-wrap:wrap;gap:6px;margin:6px 0}
+.rv-pt{padding:14px;display:flex;flex-direction:column;gap:8px;margin-top:10px}
