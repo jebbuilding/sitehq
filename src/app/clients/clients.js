@@ -231,6 +231,16 @@ function newEnquiryFor() {
   };
   $("f-save").hidden = true;
 }
+/* New enquiry for someone already known: show or hide their details (name, phone, address, keys…) in the same form */
+function cfShowCon(on) {
+  const sec = $("cf-consec"),
+    b = $("cf-showcon");
+  if (!sec || !b) return;
+  sec.hidden = !on;
+  b.setAttribute("aria-expanded", String(on));
+  b.textContent = on ? "▲ Hide their details" : "✎ Edit / add details";
+  if (on) sec.scrollIntoView({ block: "start", behavior: "smooth" });
+}
 function openClientForm(c, mode) {
   const ed = !!(c && c.id);
   mode = mode || "full";
@@ -283,6 +293,7 @@ function openClientForm(c, mode) {
   const visOn = !conOnly && (!ed || fresh);
   openSheet(
     `<h3 id="sheettitle">${conOnly ? (ed ? "Edit client details" : "New client – details") : enqOnly ? (fresh ? "New enquiry" : "Edit enquiry") + (c.name ? " – " + esc(c.name) : "") : ed ? "Edit client" : "New enquiry"}</h3>
+    ${enqOnly ? `<div class="cf-sum"><button type="button" class="btn" id="cf-showcon" aria-expanded="false">✎ Edit / add details</button></div>` : ""}
     ${enqOnly ? `<div class="who" style="margin-bottom:6px">👤 ${esc([c.name, c.phone || c.email, [String(c.address || "").replace(/\s*\n\s*/g, ", "), c.postcode].filter(Boolean).join(" ")].filter(Boolean).join(" · "))}</div>` : ""}
     ${conOnly && !ed ? `<div class="who" style="margin-bottom:6px">Just their contact details for your address book. Add an enquiry whenever they ask for a job – from their page, tap <b>📝 New enquiry</b>.</div>` : ""}
     <div id="cf-consec" class="cfsec" ${enqOnly ? "hidden" : ""}>
@@ -352,10 +363,12 @@ function openClientForm(c, mode) {
       };
       const name = nmJoin(mp);
       if (!mp.first && !mp.last) {
+        cfShowCon(true);
         showErr("Add the client's first name or surname.");
         return;
       }
       if (!$("cf-phone").value.trim() && !$("cf-email").value.trim()) {
+        cfShowCon(true);
         showErr("Add a phone number or email so you can get back to them.");
         return;
       }
@@ -794,6 +807,7 @@ function openClientForm(c, mode) {
   };
   (c.contacts || []).forEach(addCon);
   $("cf-addc").onclick = () => addCon().querySelector(".cc-n").focus();
+  if ($("cf-showcon")) $("cf-showcon").onclick = () => cfShowCon($("cf-consec").hidden);
   PROP.wire();
   $("cf-invdiff").onchange = (e) => {
     $("cf-invbox").hidden = !e.target.checked;

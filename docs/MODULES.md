@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 294 files, 5529 KB, 130694 lines.
-- 2761 names declared at the top level (the shared scope); 1412 of them are used by a file other than the one that declares them.
+- 294 files, 5530 KB, 130708 lines.
+- 2762 names declared at the top level (the shared scope); 1412 of them are used by a file other than the one that declares them.
 - 3114 file-to-file dependencies (file A uses at least one name from file B).
 - 25 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 251 files, 12 files depend on each other in a loop (directly or through other files); the other 31 files are outside any loop.
@@ -233,7 +233,7 @@ CLIENT MONEY: every estimate, variation and invoice for a client, on their page,
 
 CLIENTS (owner only, stored in the private todos collection as kind:"client")
 
-- 827 lines, 37 KB. Declares 15 names, 12 used elsewhere.
+- 841 lines, 37 KB. Declares 16 names, 12 used elsewhere.
 - **Used elsewhere:** `saveClient` (19), `clStage` (13), `clAddNote` (5), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `newEnquiryFor` (2), `nmSortKey` (2), `CL_SOURCE` (1), `clInitials` (1), `nmParts` (1)
 - **Uses names from 20 files:** `core/sheet.js` (5), `photos/photos.js` (5), `clients/quick-enquiry.js` (4), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `files/outbox.js` (2), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/property-info.js` (1), `clients/record-pdf.js` (1), `clients/visit-diary.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 27 files**

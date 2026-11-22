@@ -165,3 +165,4 @@
 .rv-page .rv-big{font-size:40px;font-weight:700;color:var(--accent)}
 .rv-page .rv-f{flex-wrap:wrap;gap:6px;margin:6px 0}
 .rv-pt{padding:14px;display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.cf-sum{display:flex;justify-content:flex-end;margin:-4px 0 4px}
