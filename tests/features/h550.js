@@ -36,7 +36,9 @@ const SITE='4 Rolle Road, Exmouth';
  const waits=await p.locator('.pg-tbl tbody tr').nth(n-1).locator('.pg-after option:checked').innerText();
  const lastName=await p.evaluate(()=>{const rows=[...document.querySelectorAll('.pg-tbl tbody tr')];return rows.length});
  ok(/finishes/.test(waits),'a stage added at the end waits for the stage that finishes last ('+waits+')');
- await p.locator('.pg-tbl tbody tr').nth(2).locator('.pg-par').click();await p.waitForTimeout(600);
+ await p.locator('.pg-tbl tbody tr').nth(2).locator('.pg-par').click();
+ /* wait for the redraw (a busy test machine can take longer than a fixed pause) */
+ for(let t=0;t<40;t++){await p.waitForTimeout(150);if(await p.locator('.pg-tbl tbody tr').nth(2).locator('.pg-par[aria-pressed=true]').count()===0){d=await dates();if(from(d[2])!==from(d[1]))break;}}
  d=await dates();
  ok(from(d[2])!==from(d[1])&&await p.locator('.pg-tbl tbody tr').nth(2).locator('.pg-par[aria-pressed=true]').count()===0,'tapping it again puts stage 3 back to following stage 2');
  }catch(e){console.log('FAIL',e.message);bad++;}
