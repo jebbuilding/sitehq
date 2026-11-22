@@ -1,6 +1,7 @@
 /* ================= CHAT ================= */
 import { openCallSheet } from "./calls.js";
 import { contactsHtml, wireChatSearch, wireContactButtons, wireContacts } from "./contacts.js";
+import { vmMsgHtml } from "./video-meet.js";
 import { ptChatMembers } from "../clients/portal-calendar.js";
 import { ptChatId, ptOf } from "../clients/portal.js";
 import { clAddr } from "../clients/stages-planner.js";
@@ -797,7 +798,7 @@ function renderMsgs() {
       ${!mine && c.kind !== "dm" ? `<div class="mname">${esc(m.byName || personName(m.by))}</div>` : ""}${m.fromChat ? `<div class="fromchat">Copied from ${esc(m.fromChat)}</div>` : ""}
       ${m.site && !hiddenText ? `<div class="mtag">${esc(m.jobTitle ? m.jobTitle + " · " + siteLabel(m.site) : siteLabel(m.site))}</div>` : ""}
       ${(m.photo || m.photoLocal) && !hiddenText ? `<img class="mimg" src="${m.photoLocal || blobUrl(m.photo)}" alt="Photo" data-id="${esc(m.photo || "")}">` : ""}${(m.video || m.videoLocal) && !hiddenText && m.voice ? `<div class="maud">🎤 ${audTag(m.videoLocal || blobUrl(m.video))}</div>` : (m.video || m.videoLocal) && !hiddenText ? `<video class="mimg mvid" src="${m.videoLocal || blobUrl(m.video)}" controls playsinline preload="metadata"></video>` : ""}
-      ${hiddenText ? '<div class="mtext"><i>This message was deleted</i></div>' : m.loc ? `<button type="button" class="maplink msgloc" data-addr="${esc(m.loc.addr || "")}" ${m.loc.lat != null ? `data-lat="${m.loc.lat}" data-lon="${m.loc.lon}"` : ""} data-label="${esc(m.loc.label || "")}">📍 <b>${esc(m.loc.label || "Location")}</b><span>${esc(m.loc.addr && m.loc.addr !== m.loc.label ? m.loc.addr : m.loc.lat != null ? (+m.loc.lat).toFixed(5) + ", " + (+m.loc.lon).toFixed(5) : "")}</span><span class="who">Tap to open in maps</span></button>` : m.text ? `<div class="mtext">${esc(m.text)}</div>` : ""}
+      ${hiddenText ? '<div class="mtext"><i>This message was deleted</i></div>' : m.loc ? `<button type="button" class="maplink msgloc" data-addr="${esc(m.loc.addr || "")}" ${m.loc.lat != null ? `data-lat="${m.loc.lat}" data-lon="${m.loc.lon}"` : ""} data-label="${esc(m.loc.label || "")}">📍 <b>${esc(m.loc.label || "Location")}</b><span>${esc(m.loc.addr && m.loc.addr !== m.loc.label ? m.loc.addr : m.loc.lat != null ? (+m.loc.lat).toFixed(5) + ", " + (+m.loc.lon).toFixed(5) : "")}</span><span class="who">Tap to open in maps</span></button>` : m.text ? `<div class="mtext">${esc(m.text)}</div>` : ""}${!hiddenText ? vmMsgHtml(m) : ""}
       ${m.deleted && owner ? '<div class="mdel">Deleted by the sender. Only you can see this.</div>' : ""}
       <div class="mtime">${new Date(m.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}${m.pending ? " · sending…" : ""}</div>
       ${CH.sel === m.id && canDel ? `<div class="mact"><button type="button" class="pillbtn m-del">${owner && (m.deleted || !mine) ? "Delete for everyone" : "Delete"}</button></div>` : ""}

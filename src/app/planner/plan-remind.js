@@ -34,7 +34,9 @@ function prmPhone(p) {
     end: p.endTime || "",
     title: p.title,
     location: p.site || "",
-    notes: p.notes || "",
+    notes: [p.notes || "", p.meet ? "Teams video call: " + p.meet : ""]
+      .filter(Boolean)
+      .join("\n\n"),
     remind: +p.remind || 60,
     fname: p.title,
   });

@@ -1,5 +1,6 @@
 /* ================= PLANNER: more detail, list view, day view, import ================= */
 import { chatPeople } from "../chat/chat.js";
+import { vmMsgHtml } from "../chat/video-meet.js";
 import { bossFirst } from "../core/company-names.js";
 import {
   $,
@@ -136,7 +137,7 @@ function openPlanDetail(p) {
         : ""
     }
     ${(p.files || []).length ? `<div class="flabel" style="margin-top:12px">Attached</div><div class="filerow">${p.files.map((f, i) => `<button type="button" class="pillbtn pf-open" data-i="${i}">📎 ${esc(f.name || "File " + (i + 1))}</button>`).join("")}</div>` : ""}
-    <div class="actions" style="margin-top:14px">${tel ? `<a class="btn" href="tel:${esc(tel)}" style="text-decoration:none;color:var(--ink)">📞 Call ${esc(p.contact || "contact")}</a>` : ""}${p.jobId && S.jobs.find((j) => j.id === p.jobId) ? `<button type="button" class="btn" id="pd-job">Open job sheet</button>` : ""}<button type="button" class="btn" id="pd-ics">📲 Add to my phone calendar</button>
+    <div class="actions" style="margin-top:14px">${tel ? `<a class="btn" href="tel:${esc(tel)}" style="text-decoration:none;color:var(--ink)">📞 Call ${esc(p.contact || "contact")}</a>` : ""}${p.jobId && S.jobs.find((j) => j.id === p.jobId) ? `<button type="button" class="btn" id="pd-job">Open job sheet</button>` : ""}${vmMsgHtml(p)}<button type="button" class="btn" id="pd-ics">📲 Add to my phone calendar</button>
       ${owner ? `<button type="button" class="btn primary" id="pd-edit">Edit</button><button type="button" class="btn" id="pd-dup">Copy to another date</button>` : ""}</div>`);
   $("viewer")
     .querySelectorAll(".pf-open")

@@ -19,7 +19,8 @@
    WebSocket. The server then sends "this path changed" – never the data – and the adapter reads it again. So what
    is shown always comes from a read, and the order messages arrive in cannot matter. After one of this page's own
    writes the affected listeners are re-read straight away, without waiting for the message.
-   Only here, not on claude.ai: use("people") – the owner inviting someone (an account and a welcome email).
+   Only here, not on claude.ai: use("people") – the owner inviting someone (an account and a welcome email) – and
+   use("social") – the owner's linked social media accounts (the server routes for it are still to be written).
    Not provided: use("sample") (Ask Claude) resolves null. */
 (function () {
   "use strict";
@@ -404,6 +405,20 @@
     invite: (request) => http("POST", "/people", request).catch((e) => { throw fail(e.status === 0 ? "unavailable" : e.code, e.message); }),
   };
 
+  /* ---------- social media accounts (owner only; docs/specs/social-linking.md – the server side is still to do) ----------
+     status() → { facebook: { linked, name }, instagram, linkedin, google }; connect(platform) → { url } of the provider's
+     sign-in page (the server's callback keeps the tokens and comes back to the app); disconnect(platform);
+     post({ platforms, texts, photos, at }) → { results: { platform: { ok, id, url, code, message } } } or { scheduled };
+     cancel(id). The sign-ins stay on the server. Rejects with { code, message }. */
+  const socialFail = (e) => { throw fail(e.status === 0 ? "unavailable" : e.status === 404 ? "not_available" : e.code, e.message); };
+  const social = {
+    status: () => http("GET", "/social").catch(socialFail),
+    connect: (platform) => http("POST", "/social/" + encodeURIComponent(platform) + "/connect", { back: W.location.href }).catch(socialFail),
+    disconnect: (platform) => http("DELETE", "/social/" + encodeURIComponent(platform)).catch(socialFail),
+    post: (request) => http("POST", "/social/posts", request).catch(socialFail),
+    cancel: (id) => http("DELETE", "/social/posts/" + encodeURIComponent(id)).catch(socialFail),
+  };
+
   W.claude = {
     async use(name) {
       const me = await session;
@@ -413,6 +428,7 @@
       if (name === "assets") return me.canUpload ? assets : null;
       if (name === "downloads") return downloads;
       if (name === "people") return me.isOwner ? people : null;
+      if (name === "social") return me.isOwner ? social : null;
       return null;
     },
   };

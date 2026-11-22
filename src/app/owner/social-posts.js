@@ -22,7 +22,11 @@ export { SOCIAL };
    Facebook / Instagram app on the iPad (the phone's own share sheet), or 📋 Copy. Each post is kept in todos
    { kind:"socialpost", about, title, texts {platform: text}, photos [assetIds], site, reviewId, status draft|posted,
    postedAt, created }, so he can see what went out and when. 💡 Ideas asks Claude for posts from recent work. Posting
-   straight to the accounts needs them linked on our own hosting (on the hosting list). */
+   straight to the accounts: 🔗 Linked accounts (James, Nov 2026: "can that be made to be able to link to the different
+   social media"). On our own hosting window.claude.use("social") (owner only) links each account and posts now or
+   at a set time – the server keeps the sign-ins, never the app or the database (docs/specs/social-linking.md, for
+   Jasper). Where it isn't there (claude.ai, or not set up yet) the page says so and 📤 Share is used. The firm's own
+   page addresses are kept in settings/app.socialPages { platform: url }; 📤 Share opens them. */
 const SOCIAL = (() => {
   const PLACES = [
     ["facebook", "Facebook", "https://www.facebook.com/"],
@@ -40,6 +44,95 @@ const SOCIAL = (() => {
     ["own", "✍️ My own words"],
   ];
   const placeName = (k) => (PLACES.find((x) => x[0] === k) || [0, k])[1];
+  /* the linked accounts (our own hosting only) */
+  let svc = null;
+  let linked = {};
+  async function refreshLinked() {
+    svc = null;
+    linked = {};
+    try {
+      svc = await window.claude.use("social");
+    } catch (e) {}
+    if (svc)
+      try {
+        linked = (await svc.status()) || {};
+      } catch (e) {
+        /* the server hasn't got it set up yet: as if it weren't there */
+        svc = null;
+        linked = {};
+      }
+    return linked;
+  }
+  const isLinked = (k) => !!(svc && linked[k] && linked[k].linked);
+  const pages = () => (S.settings || {}).socialPages || {};
+  const failTxt = (e) =>
+    e && e.code === "not_linked"
+      ? "That account isn't linked any more – link it again in 🔗 Linked accounts"
+      : e && e.message
+        ? String(e.message).slice(0, 160)
+        : "Couldn't post it. Check your signal and try again.";
+  /* 🔗 Linked accounts: link or unlink each one, and each page's address */
+  async function links() {
+    await refreshLinked();
+    const pg = pages();
+    openSheet(
+      `<h3 id="sheettitle">🔗 Linked accounts</h3>
+      ${svc ? '<div class="who">Link each account once. Then a post goes straight from here, now or at a time you pick.</div>' : '<div class="notice">Linking works on the hosted site (sitehq.jevul.com) once it has been set up there. Until then, 📤 Share sends a post through the Facebook or Instagram app on this iPad.</div>'}
+      <div class="sp-links">${PLACES.map(([k, l]) => {
+        const st = linked[k] || {};
+        return `<div class="sp-link"><div class="sp-lw"><b>${esc(l)}</b><span class="who">${st.linked ? "✅ Linked" + (st.name ? " as " + esc(st.name) : "") : "Not linked yet"}</span>${svc ? `<button type="button" class="btn${st.linked ? "" : " primary"} sp-lk" data-k="${k}" data-on="${st.linked ? 1 : 0}">${st.linked ? "Unlink" : "Link"}</button>` : ""}</div>
+          <label for="sp-pg-${k}">Your ${esc(l)} page's web address (optional)<input id="sp-pg-${k}" class="sp-pg" data-k="${k}" maxlength="300" value="${esc(pg[k] || "")}" placeholder="https://…"></label></div>`;
+      }).join("")}</div>
+      ${formFoot(false, "Save")}`,
+      async () => {
+        const socialPages = {};
+        let bad = "";
+        document.querySelectorAll(".sp-pg").forEach((i) => {
+          const v = i.value.trim();
+          if (v && !/^https?:\/\//i.test(v)) bad = placeName(i.dataset.k);
+          if (v) socialPages[i.dataset.k] = v;
+        });
+        if (bad) {
+          showErr("The " + bad + " address should start with https://");
+          return;
+        }
+        try {
+          await S.db.doc("settings/app").update({ socialPages });
+          S.settings = Object.assign({}, S.settings, { socialPages });
+          closeForm();
+          toast("Saved");
+        } catch (e) {
+          showErr("Couldn't save. Check your connection.");
+        }
+      },
+    );
+    document.querySelectorAll(".sp-lk").forEach(
+      (b) =>
+        (b.onclick = async () => {
+          const k = b.dataset.k;
+          b.disabled = true;
+          try {
+            if (b.dataset.on === "1") {
+              await svc.disconnect(k);
+              toast(placeName(k) + " unlinked");
+              closeForm();
+              links();
+            } else {
+              /* the server gives the page where he signs in to that account and says yes; it comes back to the app after */
+              const r = await svc.connect(k);
+              if (r && r.url) window.location.assign(r.url);
+              else {
+                closeForm();
+                links();
+              }
+            }
+          } catch (e) {
+            toast(failTxt(e));
+            b.disabled = false;
+          }
+        }),
+    );
+  }
   const posts = () =>
     (S.socialPosts || [])
       .slice()
@@ -134,12 +227,30 @@ Reply with JSON only: {${pl.map((k) => `"${k}":"post text"`).join(",")}}`,
         texts[t.dataset.k] = t.value;
       });
     const drawShare = () => {
-      $("sp-share").innerHTML = places
-        .map(
-          (k) =>
-            `<button type="button" class="btn sp-go" data-k="${k}">📤 Share to ${esc(placeName(k))}</button><button type="button" class="pillbtn sp-cp" data-k="${k}">📋 Copy</button>`,
-        )
-        .join("");
+      const on = places.filter(isLinked);
+      $("sp-share").innerHTML =
+        places
+          .map((k) =>
+            isLinked(k)
+              ? `<button type="button" class="btn primary sp-now" data-k="${k}">🚀 Post to ${esc(placeName(k))} now</button><button type="button" class="pillbtn sp-cp" data-k="${k}">📋 Copy</button>`
+              : `<button type="button" class="btn sp-go" data-k="${k}">📤 Share to ${esc(placeName(k))}</button><button type="button" class="pillbtn sp-cp" data-k="${k}">📋 Copy</button>`,
+          )
+          .join("") +
+        (on.length
+          ? `<div class="sp-sched"><label for="sp-when">🕒 Or post later (${esc(on.map(placeName).join(", "))})<input id="sp-when" type="datetime-local"></label><button type="button" class="btn" id="sp-later">Schedule it</button></div>`
+          : "");
+      $("sp-share")
+        .querySelectorAll(".sp-now")
+        .forEach((b) => (b.onclick = () => postVia([b.dataset.k], 0, b)));
+      if ($("sp-later"))
+        $("sp-later").onclick = () => {
+          const at = new Date($("sp-when").value).getTime();
+          if (!at || at < Date.now() + 60000) {
+            toast("Pick a time from now on");
+            return;
+          }
+          postVia(on, at, $("sp-later"));
+        };
       $("sp-share")
         .querySelectorAll(".sp-cp")
         .forEach(
@@ -177,6 +288,9 @@ Reply with JSON only: {${pl.map((k) => `"${k}":"post text"`).join(",")}}`,
     };
     drawThumbs();
     drawShare();
+    refreshLinked().then(() => {
+      if ($("sp-share")) drawShare();
+    });
     $("sp-about")
       .querySelectorAll("button")
       .forEach(
@@ -289,7 +403,7 @@ Reply with JSON only: {${pl.map((k) => `"${k}":"post text"`).join(",")}}`,
       b.disabled = false;
       b.textContent = "✨ Write it again";
     };
-    async function save(status) {
+    async function save(status, extra) {
       keepTexts();
       const old = (S.socialPosts || []).find((x) => x.id === id) || {};
       const rec = {
@@ -304,18 +418,76 @@ Reply with JSON only: {${pl.map((k) => `"${k}":"post text"`).join(",")}}`,
         places,
         photos,
         reviewId: pre.reviewId || old.reviewId || "",
-        status: status === "posted" || old.status === "posted" ? "posted" : "draft",
+        status:
+          status === "posted" || old.status === "posted"
+            ? "posted"
+            : status === "scheduled" || old.status === "scheduled"
+              ? "scheduled"
+              : "draft",
         postedTo:
           status === "posted"
             ? [...new Set((old.postedTo || []).concat(pre._to || []))]
             : old.postedTo || [],
         postedAt: status === "posted" ? Date.now() : old.postedAt || 0,
         created: old.created || Date.now(),
+        postIds: old.postIds || {},
+        scheduledAt: old.scheduledAt || 0,
+        scheduleId: old.scheduleId || "",
       };
+      if (extra)
+        Object.assign(rec, extra, { postIds: Object.assign({}, rec.postIds, extra.postIds || {}) });
       await S.db.doc("todos/" + id).set(rec);
       S.socialPosts = (S.socialPosts || [])
         .filter((x) => x.id !== id)
         .concat([Object.assign({ id }, rec)]);
+    }
+    /* straight to the linked accounts, now (at = 0) or later */
+    async function postVia(ks, at, btn) {
+      keepTexts();
+      if (ks.some((k) => !String(texts[k] || "").trim())) {
+        toast("Write the post first");
+        return;
+      }
+      const was = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = at ? "Scheduling…" : "Posting…";
+      try {
+        const r =
+          (await svc.post({
+            platforms: ks,
+            texts: Object.fromEntries(ks.map((k) => [k, texts[k]])),
+            photos,
+            at: at || 0,
+          })) || {};
+        if (at) {
+          await save("scheduled", { scheduledAt: at, scheduleId: r.scheduled || "" });
+          toast("Scheduled for " + stamp(at));
+          closeForm();
+          view();
+          return;
+        }
+        const res = r.results || {};
+        const okK = ks.filter((k) => res[k] && res[k].ok);
+        const bad = ks.filter((k) => !(res[k] && res[k].ok));
+        if (okK.length) {
+          pre._to = okK;
+          await save("posted", {
+            postIds: Object.fromEntries(
+              okK.map((k) => [k, { id: res[k].id || "", url: res[k].url || "" }]),
+            ),
+          });
+        }
+        toast(
+          (okK.length ? "Posted to " + okK.map(placeName).join(", ") : "") +
+            (bad.length
+              ? (okK.length ? " · " : "") + placeName(bad[0]) + ": " + failTxt(res[bad[0]] || {})
+              : ""),
+        );
+      } catch (e) {
+        toast(failTxt(e));
+      }
+      btn.disabled = false;
+      btn.textContent = was;
     }
     async function share(k) {
       keepTexts();
@@ -355,7 +527,7 @@ Reply with JSON only: {${pl.map((k) => `"${k}":"post text"`).join(",")}}`,
       if (!done) {
         const p = PLACES.find((x) => x[0] === k);
         const a = document.createElement("a");
-        a.href = p[2];
+        a.href = pages()[k] || p[2];
         a.target = "_blank";
         a.rel = "noopener";
         document.body.appendChild(a);
@@ -458,12 +630,12 @@ Reply with JSON only: {"ideas":[{"about":"job|progress|review|tip|offer|hiring",
     ).length;
     openViewer(`<div class="sp-page"><div class="vhead"><b>📣 Social media posts</b></div>
       <div class="who">Claude writes the post from a job, a review or your own words; you check it, then share it with the photos to Facebook, Instagram, LinkedIn or your Google profile.</div>
-      <div class="actions"><button type="button" class="btn primary" id="sp-new">✨ Make a post</button><button type="button" class="btn" id="sp-ideas">💡 Ideas for posts</button></div>
+      <div class="actions"><button type="button" class="btn primary" id="sp-new">✨ Make a post</button><button type="button" class="btn" id="sp-ideas">💡 Ideas for posts</button><button type="button" class="btn" id="sp-links">🔗 Linked accounts</button></div>
       <div class="who">${thisMonth} posted this month · ${L.filter((p) => p.status !== "posted").length} draft${L.filter((p) => p.status !== "posted").length === 1 ? "" : "s"}</div>
       ${
         L.map((p) => {
           const t = (p.texts || {})[(p.places || [])[0]] || p.detail || "";
-          return `<button type="button" class="sp-row" data-id="${esc(p.id)}">${(p.photos || [])[0] ? `<img src="${blobUrl(p.photos[0])}" alt="">` : '<span class="sp-noph">📣</span>'}<span class="sp-rw"><b>${esc(p.title || "Post")}</b><span class="who">${p.status === "posted" ? "✅ Posted " + esc(stamp(p.postedAt)) + " · " + esc((p.postedTo || p.places || []).map(placeName).join(", ")) : "📝 Draft · " + esc((p.places || []).map(placeName).join(", "))}</span><span class="sp-snip">${esc(String(t).slice(0, 140))}</span></span></button>`;
+          return `<button type="button" class="sp-row" data-id="${esc(p.id)}">${(p.photos || [])[0] ? `<img src="${blobUrl(p.photos[0])}" alt="">` : '<span class="sp-noph">📣</span>'}<span class="sp-rw"><b>${esc(p.title || "Post")}</b><span class="who">${p.status === "posted" ? "✅ Posted " + esc(stamp(p.postedAt)) + " · " + esc((p.postedTo || p.places || []).map(placeName).join(", ")) : p.status === "scheduled" ? "🕒 Scheduled for " + esc(stamp(p.scheduledAt)) + " · " + esc((p.places || []).map(placeName).join(", ")) : "📝 Draft · " + esc((p.places || []).map(placeName).join(", "))}</span><span class="sp-snip">${esc(String(t).slice(0, 140))}</span></span></button>`;
         }).join("") ||
         '<div class="empty"><strong>No posts yet</strong>Tap ✨ Make a post. Finished jobs and good reviews make the best ones.</div>'
       }</div>`);
@@ -472,6 +644,10 @@ Reply with JSON only: {"ideas":[{"about":"job|progress|review|tip|offer|hiring",
       compose();
     };
     $("sp-ideas").onclick = ideas;
+    $("sp-links").onclick = () => {
+      closeViewer();
+      links();
+    };
     document.querySelectorAll(".sp-row").forEach(
       (b) =>
         (b.onclick = () => {
@@ -482,5 +658,5 @@ Reply with JSON only: {"ideas":[{"about":"job|progress|review|tip|offer|hiring",
         }),
     );
   }
-  return { view, compose, fromReview };
+  return { view, compose, fromReview, links };
 })();

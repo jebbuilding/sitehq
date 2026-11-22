@@ -1,5 +1,6 @@
 /* ================= CALLS FROM CHAT ================= */
 import { CH } from "./chat.js";
+import { vmCallHtml, vmWireCall } from "./video-meet.js";
 import { bossFirst, bossName } from "../core/company-names.js";
 import { esc } from "../core/helpers.js";
 import { openSheet } from "../core/sheet.js";
@@ -39,6 +40,7 @@ function openCallSheet() {
   openSheet(
     `<h3 id="sheettitle">Call</h3>
     <div class="who">Calls use your phone, so they work like a normal call. Video opens WhatsApp${apple ? " or FaceTime" : ""}: tap the camera icon there to start the video call.</div>
+    ${vmCallHtml()}
     ${
       list
         .map(
@@ -57,4 +59,5 @@ function openCallSheet() {
     () => {},
     null,
   );
+  vmWireCall(c);
 }
