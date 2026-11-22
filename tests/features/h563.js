@@ -19,11 +19,11 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const box=()=>p.evaluate(()=>{const o=window.__np.o();return {x:o.x,y:o.y,w:o.w,h:o.h}});
  const scr=async(cx,cy)=>p.evaluate(([cx,cy])=>{const o=window.__np.o(),v=window.__np.v();return [v.r.left+v.ox+(o.x+o.w*cx)*v.s,v.r.top+v.oy+(o.y+o.h*cy)*v.s]},[cx,cy]);
  const cdp=dev==='ipad'?await ctx.newCDPSession(p):null;
- const drag=async([x,y],dx,dy)=>{if(cdp){const t=(type,a,b2)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x:a,y:b2}]});await t('touchStart',x,y);for(let i=1;i<=10;i++){await t('touchMove',x+dx*i/10,y+dy*i/10);await p.waitForTimeout(15);}await t('touchEnd');}else{await p.mouse.move(x,y);await p.mouse.down();for(let i=1;i<=10;i++)await p.mouse.move(x+dx*i/10,y+dy*i/10);await p.mouse.up();}await p.waitForTimeout(400);};
- const b0=await box();
+ const drag=async([x,y],dx,dy)=>{if(cdp){const t=(type,a,b2)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x:a,y:b2}]});await t('touchStart',x,y);for(let i=1;i<=10;i++){await t('touchMove',x+dx*i/10,y+dy*i/10);await p.waitForTimeout(15);}await t('touchEnd');}else{await p.mouse.move(x,y);await p.mouse.down();for(let i=1;i<=10;i++){await p.mouse.move(x+dx*i/10,y+dy*i/10);await p.waitForTimeout(15);}await p.mouse.up();}await p.waitForTimeout(400);};
+ const b0=await box();const at0=await scr(1,1);const under=await p.evaluate(([x,y])=>{const e=document.elementFromPoint(x,y);return e?(e.tagName+'.'+String(e.className).split(' ')[0]):'nothing'},at0);
  await drag(await scr(1,1),-120,-120);
  const b1=await box();
- ok(b1.w<b0.w-20&&Math.abs(b1.x-b0.x)<0.5&&Math.abs(b1.w/b1.h-b0.w/b0.h)<0.01,dev+': dragging the bottom-right corner makes it smaller, same shape ('+Math.round(b0.w)+' → '+Math.round(b1.w)+')');
+ ok(b1.w<b0.w-20&&Math.abs(b1.x-b0.x)<0.5&&Math.abs(b1.w/b1.h-b0.w/b0.h)<0.01,dev+': dragging the bottom-right corner makes it smaller, same shape ('+Math.round(b0.w)+' → '+Math.round(b1.w)+(b1.w<b0.w-20?'':'; corner at '+at0.map(Math.round)+' on '+under)+')');
  await drag(await scr(0,0),40,40);
  const b2=await box();
  ok(b2.w<b1.w-20&&Math.abs(b2.x+b2.w-(b1.x+b1.w))<0.5&&Math.abs(b2.y+b2.h-(b1.y+b1.h))<0.5,dev+': dragging the top-left corner makes it smaller, the opposite corner stays ('+Math.round(b1.w)+' → '+Math.round(b2.w)+')');

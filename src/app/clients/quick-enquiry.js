@@ -49,7 +49,7 @@ import { editSiteJob, siteLabel, syncSiteJobs } from "../sites/job-details.js";
 import { dropPin, miniMap } from "../sites/maps-pins.js";
 import { same } from "../sites/project-pages.js";
 import { DWS } from "../survey/door-window-survey.js";
-export { VISIT_REMIND_MIN, initQuickEnquiry, quickEnquiry, viewClient };
+export { VISIT_REMIND_MIN, cfVisitBook, cfVisitRead, initQuickEnquiry, quickEnquiry, viewClient };
 const VISIT_REMIND_MIN = 60;
 function icsFor(o) {
   const p = (n) => String(n).padStart(2, "0");
@@ -623,4 +623,47 @@ function initQuickEnquiry() {
         visitWatch();
       } catch (e) {}
     }, 30000);
+}
+/* 📝 New enquiry can book the visit too (James, Nov 2026: "in new enquiry i need to add visit date like you have in
+   quick enquiry"): the same date, time, how long, diary check and phone-calendar tick; saved the same way – on the
+   client (visit, follow-up date, a note) and in the planner with a reminder an hour before. */
+function cfVisitRead(d) {
+  const date = $("cf-vd").value,
+    t = $("cf-vt").value;
+  if (!date || !t) return null;
+  const [h, m] = t.split(":").map(Number);
+  const end = toHM(Math.min(23 * 60 + 59, h * 60 + m + (+$("cf-vlen").value || 60)));
+  d.visit = { date, time: t, end };
+  if (!d.follow) d.follow = date;
+  (d.notes = (d.notes || []).slice()).push({
+    text: `Visit booked ${shortDay(date)} ${t}.`,
+    at: Date.now(),
+    auto: true,
+  });
+  return { date, time: t, end, ics: $("cf-vics").checked };
+}
+async function cfVisitBook(rec, v) {
+  const work = String(rec.work || rec.desc || "")
+    .split("\n")[0]
+    .slice(0, 60);
+  await clAddPlan(rec, {
+    title: "Visit: " + rec.name + (work ? " (" + work + ")" : ""),
+    type: "meeting",
+    from: v.date,
+    time: v.time,
+    endTime: v.end,
+    remind: VISIT_REMIND_MIN,
+    notes: [clAddr(rec), rec.phone, rec.work || rec.desc].filter(Boolean).join("\n"),
+  });
+  if (v.ics)
+    visitToPhone({
+      uid: rec.id,
+      date: v.date,
+      time: v.time,
+      end: v.end,
+      title: "Visit: " + rec.name,
+      location: clAddr(rec),
+      notes: [rec.phone && "Tel " + rec.phone, rec.work || rec.desc].filter(Boolean).join("\n"),
+      who: rec.name,
+    });
 }

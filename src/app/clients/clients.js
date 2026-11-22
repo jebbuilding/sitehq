@@ -3,8 +3,9 @@ import { initials } from "../chat/chat.js";
 import { docPicker } from "./documents.js";
 import { ptCl } from "./portal.js";
 import { PROP } from "./property-info.js";
-import { viewClient } from "./quick-enquiry.js";
+import { VISIT_REMIND_MIN, cfVisitBook, cfVisitRead, viewClient } from "./quick-enquiry.js";
 import { clientPdf } from "./record-pdf.js";
+import { vdWire } from "./visit-diary.js";
 import { $, esc, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, applyGone, ownerMode } from "../core/state.js";
@@ -250,6 +251,7 @@ function openClientForm(c, mode) {
     fresh = true;
     if (c.work || c.desc || c.quote) {
       archived = {
+        jobName: c.jobName || "",
         work: c.work || "",
         desc: c.desc || "",
         budget: c.budget || "",
@@ -276,6 +278,8 @@ function openClientForm(c, mode) {
   }
   const conOnly = mode === "contact",
     enqOnly = mode === "enquiry";
+  /* a new enquiry can book the visit straight away, like ⚡ Quick enquiry (James, Nov 2026) */
+  const visOn = !conOnly && (!ed || fresh);
   openSheet(
     `<h3 id="sheettitle">${conOnly ? (ed ? "Edit client details" : "New client – details") : enqOnly ? (fresh ? "New enquiry" : "Edit enquiry") + (c.name ? " – " + esc(c.name) : "") : ed ? "Edit client" : "New enquiry"}</h3>
     ${enqOnly ? `<div class="who" style="margin-bottom:6px">👤 ${esc([c.name, c.phone || c.email, [String(c.address || "").replace(/\s*\n\s*/g, ", "), c.postcode].filter(Boolean).join(" ")].filter(Boolean).join(" · "))}</div>` : ""}
@@ -311,6 +315,7 @@ function openClientForm(c, mode) {
     </div>
     <div id="cf-enqsec" class="cfsec" ${conOnly ? "hidden" : ""}>
     ${conOnly ? "" : `<div class="flabel" style="margin-top:6px">📝 The enquiry</div>`}
+    <label for="cf-jn">Job name (optional – what you'll call the job)<input id="cf-jn" maxlength="60" placeholder="e.g. Jones garden room" value="${esc(fresh ? "" : c.jobName || "")}"></label>
     <label for="cf-work">Type of work<select id="cf-work"><option value="">Choose…</option>${CL_WORK.map((w) => `<option ${w === c.work ? "selected" : ""}>${w}</option>`).join("")}</select></label>
     <label for="cf-desc">What they want done<textarea id="cf-desc" maxlength="3000" style="min-height:100px" placeholder="e.g. Single-storey rear extension, about 4 m × 5 m, open-plan kitchen, roof lights">${esc(c.desc || "")}</textarea></label>
     <div class="grid2"><label for="cf-budget">Budget (if they said)<input id="cf-budget" maxlength="60" value="${esc(c.budget || "")}" placeholder="e.g. £40–50k"></label><label for="cf-time">When they want it done<input id="cf-time" maxlength="80" value="${esc(c.timescale || "")}" placeholder="e.g. Spring 2027"></label></div>
@@ -318,6 +323,7 @@ function openClientForm(c, mode) {
       <label for="cf-plan">Planning / drawings<select id="cf-plan">${["", "Not needed", "Not started", "Drawings being done", "Applied", "Approved", "Building regs approved"].map((w) => `<option ${w === (c.planning || "") ? "selected" : ""}>${w || "Don't know yet"}</option>`).join("")}</select></label></div>
     <div class="grid2"><label for="cf-stage">Stage<select id="cf-stage">${CL_STAGES.map(([k, l]) => `<option value="${k}" ${k === c.stage ? "selected" : ""}>${l}</option>`).join("")}</select></label><label for="cf-quote">Estimate £ (optional)<input id="cf-quote" inputmode="decimal" maxlength="12" value="${esc(c.quote || "")}"></label></div>
     <label for="cf-follow">Follow up on (optional)<input id="cf-follow" type="date" value="${esc(c.follow || "")}"></label>
+    ${visOn ? `<div class="flabel" style="margin-top:4px">📅 Book a visit (optional)</div><div class="grid2"><label for="cf-vd">Visit date<input id="cf-vd" type="date"></label><label for="cf-vt">Time<input id="cf-vt" type="time" value="10:00"></label></div><label for="cf-vlen">How long<select id="cf-vlen"><option value="30">30 minutes</option><option value="60" selected>1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label><div class="vd-box" id="cf-vdiary" aria-live="polite"></div><label class="tick"><input type="checkbox" id="cf-vics" checked> <span>Also add it to my phone's calendar (reminds me ${VISIT_REMIND_MIN / 60} hour before, even when SiteHQ is closed)</span></label>` : ""}
     ${ed && !enqOnly ? "" : `<label for="cf-note">${enqOnly ? "Note (optional)" : "First note (optional)"}<textarea id="cf-note" maxlength="1000" placeholder="e.g. Rang Tuesday, wants a visit after 4pm"></textarea></label>`}
     </div>
     <div class="cfmedia"><div class="flabel">Photos &amp; sketches${ed && (c.media || []).length ? ` (${c.media.length} already saved)` : ""}</div>
@@ -373,6 +379,7 @@ function openClientForm(c, mode) {
         email: $("cf-email").value.trim(),
         address: $("cf-addr").value.trim(),
         postcode: $("cf-pc").value.trim().toUpperCase(),
+        jobName: $("cf-jn") ? $("cf-jn").value.trim().replace(/\s+/g, " ") : c.jobName || "",
         work: $("cf-work").value,
         desc: $("cf-desc").value.trim(),
         budget: $("cf-budget").value.trim(),
@@ -444,6 +451,11 @@ function openClientForm(c, mode) {
           at: Date.now(),
           auto: true,
         });
+      const vis = visOn && $("cf-vd").value ? cfVisitRead(d) : null;
+      if (visOn && $("cf-vd").value && !vis) {
+        showErr("Pick the visit time.");
+        return;
+      }
       $("f-save").disabled = true;
       if (fh.blob) {
         try {
@@ -550,6 +562,7 @@ function openClientForm(c, mode) {
         }
         const rec = await saveClient(d);
         syncSiteJobs();
+        if (vis) await cfVisitBook(rec, vis);
         closeForm();
         toast(
           (ed ? "Saved" : "Client added") +
@@ -574,6 +587,7 @@ function openClientForm(c, mode) {
     },
     null,
   );
+  if (visOn) vdWire($("cf-vdiary"), "cf-vd", "cf-vt", "cf-vlen");
   if ($("cf-ws"))
     $("cf-ws").onclick = () => {
       goWs = true;

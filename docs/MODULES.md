@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 285 files, 5394 KB, 127637 lines.
-- 2714 names declared at the top level (the shared scope); 1383 of them are used by a file other than the one that declares them.
-- 2999 file-to-file dependencies (file A uses at least one name from file B).
+- 285 files, 5398 KB, 127694 lines.
+- 2716 names declared at the top level (the shared scope); 1385 of them are used by a file other than the one that declares them.
+- 3000 file-to-file dependencies (file A uses at least one name from file B).
 - 25 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 242 files, 12 files depend on each other in a loop (directly or through other files); the other 31 files are outside any loop.
 
@@ -224,9 +224,9 @@ CLIENT MONEY: every estimate, variation and invoice for a client, on their page,
 
 CLIENTS (owner only, stored in the private todos collection as kind:"client")
 
-- 787 lines, 34 KB. Declares 15 names, 12 used elsewhere.
+- 801 lines, 36 KB. Declares 15 names, 12 used elsewhere.
 - **Used elsewhere:** `saveClient` (19), `clStage` (13), `clAddNote` (4), `openClientForm` (4), `clList` (3), `CL_STAGES` (2), `CL_WORK` (2), `newEnquiryFor` (2), `nmSortKey` (2), `CL_SOURCE` (1), `clInitials` (1), `nmParts` (1)
-- **Uses names from 19 files:** `core/sheet.js` (5), `photos/photos.js` (5), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `files/outbox.js` (2), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/property-info.js` (1), `clients/quick-enquiry.js` (1), `clients/record-pdf.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
+- **Uses names from 20 files:** `core/sheet.js` (5), `photos/photos.js` (5), `clients/quick-enquiry.js` (4), `core/helpers.js` (3), `core/state.js` (3), `files/files.js` (3), `sites/maps-pins.js` (3), `files/outbox.js` (2), `chat/chat.js` (1), `clients/documents.js` (1), `clients/portal.js` (1), `clients/property-info.js` (1), `clients/record-pdf.js` (1), `clients/visit-diary.js` (1), `core/tabs-week.js` (1), `drawing/paving.js` (1), `safety/training.js` (1), `sites/job-details.js` (1), `sites/storage.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 26 files**
 
 ### `clients/documents.js`
@@ -296,8 +296,8 @@ PROPERTY INFO: a client's services and access – stop cock, meters, fuse boards
 
 quick enquiry: a few details + the visit time, into the planner, with a reminder an hour before
 
-- 626 lines, 29 KB. Declares 8 names, 4 used elsewhere.
-- **Used elsewhere:** `viewClient` (22), `quickEnquiry` (3), `initQuickEnquiry` (1), `VISIT_REMIND_MIN` (1)
+- 669 lines, 31 KB. Declares 10 names, 6 used elsewhere.
+- **Used elsewhere:** `viewClient` (22), `quickEnquiry` (3), `VISIT_REMIND_MIN` (2), `cfVisitBook` (1), `cfVisitRead` (1), `initQuickEnquiry` (1)
 - **Uses names from 36 files:** `core/helpers.js` (8), `clients/address-book.js` (6), `clients/stages-planner.js` (6), `clients/clients.js` (4), `core/sheet.js` (4), `core/state.js` (4), `files/files.js` (4), `clients/portal.js` (3), `sites/job-details.js` (3), `clients/client-money.js` (2), `clients/documents.js` (2), `clients/gdpr-consent.js` (2), `clients/sketches.js` (2), `core/viewer.js` (2), `owner/deleted-items.js` (2), `sites/maps-pins.js` (2), `chat/chat.js` (1), `clients/address-book-jobs.js` (1), `clients/more-jobs.js` (1), `clients/property-info.js` (1), `clients/record-pdf.js` (1), `clients/visit-diary.js` (1), `clients/web-enquiries.js` (1), `core/tabs-week.js` (1), `files/in-app-files.js` (1), `files/outbox.js` (1), `owner/delete-client-site.js` (1), `planner/board.js` (1), `planner/diary.js` (1), `purchasing/samples.js` (1), `safety/training.js` (1), `sales/job-file.js` (1), `sales/job-pricing.js` (1), `sites/go-site.js` (1), `sites/project-pages.js` (1), `survey/door-window-survey.js` (1)
 - **Used by 24 files**
 
@@ -360,9 +360,9 @@ CLIENT UPLOADS (photos & documents from the client to James), stored in chunks i
 VISIT DIARY: what's already in the diary on the day a visit is being booked
 
 - 65 lines, 3.0 KB. Declares 3 names, 1 used elsewhere.
-- **Used elsewhere:** `vdWire` (1)
+- **Used elsewhere:** `vdWire` (2)
 - **Uses names from 5 files:** `core/helpers.js` (7), `planner/time-off.js` (2), `core/state.js` (1), `owner/owner.js` (1), `planner/diary.js` (1)
-- **Used by 1 files**
+- **Used by 2 files**
 
 ### `clients/web-enquiries.js`
 
