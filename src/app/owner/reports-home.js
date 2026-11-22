@@ -10,6 +10,7 @@ import { incidentsBlock, wireIncidents } from "../safety/accidents.js";
 import { KINDS, ck, hasProblem } from "../safety/checklists.js";
 import { checkCard, openCheck } from "../safety/checks.js";
 import { raAll, raBlock, wireRa } from "../safety/rams.js";
+import { TIPRUN } from "../safety/tip-run.js";
 export { empChecks, ownerChecks };
 const REP_ICON = {
   ra: "📋",
@@ -100,6 +101,10 @@ function reportsHome(owner) {
       .map(tile)
       .join("")}</div>
     <div class="flabel" style="margin-top:6px">Safety</div><div class="folders">${tile(cats.find((c) => c[0] === "ra"))}${tile(cats.find((c) => c[0] === "incidents"))}</div>
+    <div class="flabel" style="margin-top:6px">Waste</div><div class="folders"><button type="button" class="folder" id="rep-tip"><span class="ricon" aria-hidden="true">🚛</span><span class="fname">Tip runs</span><span class="who">${(() => {
+      const n = TIPRUN.all().filter((r) => r.status !== "tipped").length;
+      return n ? n + " without a ticket yet" : "Waste to the tip";
+    })()}</span></button></div>
     ${owner ? `<div class="actions" style="margin-top:8px"><button class="btn" id="chkdl" type="button">Download check history</button></div>` : ""}`;
   $("main")
     .querySelectorAll(".rcat")
@@ -112,6 +117,7 @@ function reportsHome(owner) {
     );
   if ($("chkdl")) $("chkdl").onclick = openCheckHistory;
   if ($("rep-scan")) $("rep-scan").onclick = qrsTradeScan;
+  if ($("rep-tip")) $("rep-tip").onclick = () => TIPRUN.view();
 }
 const repBack = () =>
   `<div class="actions"><button class="btn" id="rep-back" type="button">‹ All reports</button></div>`;

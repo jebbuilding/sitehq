@@ -70,7 +70,8 @@ function acRoleTabs(role) {
 }
 /* for the trades' app: is this tab allowed for me? */
 function acTabAllowed(key) {
-  if (ownerMode() || AC_ALWAYS.has(key) || key === "foreman") return true;
+  /* James's own 🙋 Me page (the trades' app as him) has everything – a role's ticks are for the people in it */
+  if (ownerMode() || S.owner || AC_ALWAYS.has(key) || key === "foreman") return true;
   const tabs = acRoleTabs(acRoleOf(S.me));
   return !tabs || tabs.includes(key);
 }

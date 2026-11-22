@@ -16,6 +16,7 @@ import { BIN_DAYS } from "../owner/deleted-items.js";
 import { auditFirst } from "../owner/deletion-record.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "./site-inductions.js";
+import { TIPRUN } from "./tip-run.js";
 export { WTN };
 const WTN = (() => {
   const q = (id) => document.getElementById("wt-" + id);
@@ -282,6 +283,8 @@ const WTN = (() => {
         ]
       : [
           ["us", coData().name || "Us"],
+          /* the tip or transfer station taking it: its company, address and permit, as on the government form (WMC2A) */
+          ["site", "Tip / transfer site"],
           ["supplier", "Skip / waste company"],
           ["other", "Someone else"],
         ];
@@ -307,6 +310,16 @@ const WTN = (() => {
     const ck = (f, lab) =>
       `<label class="ck"><input type="checkbox" id="wt-${k}-is-${f}" ${p.is[f] ? "checked" : ""} ${d}>${lab}</label>`;
     return `<div class="seg" role="group" aria-label="Who">${roles.map(([v, l]) => `<button type="button" data-role="${v}" data-party="${k}" aria-pressed="${p.role === v}" ${d}>${esc(l)}</button>`).join("")}</div>
+   ${
+     p.role === "site"
+       ? `<label class="wf">Tip / transfer site<select id="wt-${k}-ws" ${d}><option value="">– pick a site (Setup › Company › ♻️ Waste transfer sites) –</option>${wsites()
+           .map(
+             (w) =>
+               `<option value="${esc(w.id)}" ${w.id === p.siteId ? "selected" : ""}>${esc(w.name)} · ${esc(w.company || "")}${w.permitNo ? " · permit " + esc(w.permitNo) : ""}</option>`,
+           )
+           .join("")}</select></label>`
+       : ""
+   }
    ${p.role === "client" ? `<label class="wf">Client<select id="wt-${k}-cl" ${d}>${clOpts}</select></label>` : p.role === "supplier" ? `<label class="wf">Supplier<select id="wt-${k}-sup" ${d}>${supOpts}</select></label>` : ""}
    ${isB ? `<label class="ck"><input type="checkbox" id="wt-B-hier" ${p.hier ? "checked" : ""} ${d}>By signing in Section D the transferor confirms the waste hierarchy has been applied (Regulation 12, Waste (England and Wales) Regulations 2011)</label>` : ""}
    <div class="row"><label class="wf">${isB ? "B1" : "C1"} Full name<input id="wt-${k}-name" value="${esc(p.name)}" ${d}></label><label class="wf">Company name<input id="wt-${k}-company" value="${esc(p.company)}" ${d} placeholder="leave blank for a householder"></label><label class="wf" style="grid-column:1/-1">Address<input id="wt-${k}-addr" value="${esc(p.addr)}" ${d}></label><label class="wf">Postcode<input id="wt-${k}-postcode" value="${esc(p.postcode)}" ${d}></label>
@@ -348,6 +361,7 @@ const WTN = (() => {
    <label class="wf">Notes (not on the form)<textarea id="wt-notes" rows="2" ${d}>${esc(R.notes)}</textarea></label>
    <h5>Signatures</h5><div class="row" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">${sigHtml("B", "Transferor's signature", R.B)}${sigHtml("C", "Transferee's signature", R.C)}</div>
    ${R.pdf ? `<div class="ok">📄 PDF made ${esc(stamp(R.pdf.at))}${R.sent.length ? ` · sent ${R.sent.map((s) => esc(s.to) + " (" + esc(stamp(s.at)) + ")").join(", ")}` : ""}</div>` : ""}
+   ${TIPRUN.wtnHtml(R)}
    <div class="actions"><button type="button" class="btn" id="wt-save">💾 Save</button><span class="who" id="wt-sv" style="align-self:center"></span><button type="button" class="btn primary" id="wt-pdf">📄 Make the PDF</button><button type="button" class="btn" id="wt-send" ${R.pdf ? "" : "disabled"}>📤 Send</button>${L ? `<button type="button" class="btn" id="wt-unlock">🔓 Unlock to change</button>` : ""}<button type="button" class="btn delbtn" id="wt-del" style="margin-left:auto">🗑 Delete</button></div>
   </div>`);
     wire();
@@ -404,7 +418,8 @@ const WTN = (() => {
           if (R[k].role === role) return;
           const keep = k === "B" ? { council: R.B.council, hier: R.B.hier } : {};
           R[k] = Object.assign(party(role), keep);
-          if (k === "B" && role !== "us") R.B.is.producer = true;
+          /* whoever hands it over is ticked as the producer – for waste from his own building work that is the firm itself (James, Nov 2026); it can still be unticked */
+          if (k === "B") R.B.is.producer = true;
           dirty();
           draw();
         }),
@@ -444,6 +459,18 @@ const WTN = (() => {
           }
         };
     });
+    const cws = q("C-ws");
+    if (cws)
+      cws.onchange = () => {
+        const w = wsites().find((x) => x.id === cws.value);
+        if (!w) return;
+        read();
+        fillFromSite(R.C, w);
+        R.D.siteId = w.id;
+        R.D.siteName = w.name;
+        dirty();
+        draw();
+      };
     q("D-site").onchange = () => {
       read();
       const w = wsites().find((x) => x.id === q("D-site").value);
@@ -452,6 +479,11 @@ const WTN = (() => {
         R.D.addr = w.addr || "";
         R.D.postcode = w.postcode || "";
         R.D.siteName = w.name;
+        if (R.B.role === "us" && R.C.role !== "us") fillFromSite(R.C, w);
+        else if (R.B.role === "us" && R.C.role === "us") {
+          R.C = party("site");
+          fillFromSite(R.C, w);
+        }
       }
       dirty();
       draw();
@@ -541,6 +573,7 @@ const WTN = (() => {
         draw();
       };
     });
+    TIPRUN.wtnWire(R, () => persist());
     q("pdf").onclick = async () => {
       read();
       if (!R.A.lines.some((l) => l.desc)) {
@@ -1302,5 +1335,5 @@ const WTN = (() => {
     const b = document.getElementById("wt-new");
     if (b) b.onclick = () => open(null);
   }
-  return { open, jobsHtml, wireJobs, recs, sitesView };
+  return { open, jobsHtml, wireJobs, recs, sitesView, EWC };
 })();

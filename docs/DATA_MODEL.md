@@ -28,6 +28,7 @@ Profile: `name`, `joined`, `role` (`employed`/`sub`/…), `details` {fullName, a
 
 Subcollections (`TR_COLLS`): 
 - `entries` – timesheet/day-work entries (an hours entry from checking in keeps `actualIn` / `actualOut`; overtime asked for is `ot`: { early, late (minutes), why, status asked | ok | no } – approving moves `start` / `finish` to the actual times)
+- `signoffs` type `tiprun` – a 🚛 tip run (safety/tip-run.js): one load to a tip or transfer station – `date`, `time`, `site` (the job), `vehicle`, `driver`, `lines` [{ `code` (EWC), `desc`, `haz`, `est`, `unit` }], `cont`, `toId`/`toName`/`toAddr`/`toPermit` (from settings/app.wasteSites), `carrierNo`/`carrierKind`/`carrierTier`, `status` (`onway`/`tipped`), `weight`, `wunit`, `actual` (weighbridge or estimated), `ticket` (asset), `wtid` (waste tracking ID), `tippedDate`/`tippedTime`. The firm's carrier details are `company.wasteCarrier`, `wasteTier`, `wasteExpiry` and `wastePermit` in settings/app.
 - `checks` – reports (vehicle checks, accidents, near misses, inspections…); a hired-in equipment check (`kind: "hire"`, safety/hire-check.js) also has `stage` (`before`/`after` use), `hireCo`, `hireRef`, `site`, `meter`, `preDamage` (`none`/`yes`) and `video` (asset id)
 - `photos` – photos, drawings/sketches (`kind:"sketch"`, `signSheet` for go-ahead sheets)
 - `invoices` – invoices, receipts, materials (by `kind`)

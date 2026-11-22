@@ -20,6 +20,7 @@ import { kitView } from "../planner/kit-out.js";
 import { eqmView } from "../planner/plant-care.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
+import { TIPRUN } from "../safety/tip-run.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
 import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
@@ -217,6 +218,14 @@ const NL_SUBS = [
     "Vans, tools and plant",
     "book out back in qr sticker equipment",
     () => kitView(),
+  ],
+  [
+    "tipruns",
+    "🚛 Tip runs (waste to the tip)",
+    "jobs",
+    "Vans, tools and plant",
+    "waste tip transfer station skip weighbridge ticket tracking carrier permit",
+    () => TIPRUN.view(),
   ],
   [
     "hirechk",
@@ -597,6 +606,7 @@ function todayView() {
     ${otmCardHtml()}${chsCardHtml()}${pcTodayCard()}
     ${wuTodayCard()}
     ${wpCard()}
+    ${TIPRUN.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -613,6 +623,7 @@ function todayView() {
   chsWire();
   otmCardWire();
   wuTodayWire();
+  TIPRUN.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();
