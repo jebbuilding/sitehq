@@ -26,10 +26,10 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.np-finebox .nfmin');await p.waitForTimeout(200);
  const small=(await p.locator('.np-finebox').boundingBox()).height;
  ok(small<70&&!(await p.isVisible('.np-finebox .nfcolrow')),'– folds it to its title bar ('+Math.round(small)+' px)');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/props-small.png'});
+ await p.screenshot({path:'props-small.png'});
  await p.click('.np-finebox .nfmin');await p.waitForTimeout(200);
  ok(await p.isVisible('.np-finebox .nfcolrow'),'▢ opens it out again');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/props-moved.png'});
+ await p.screenshot({path:'props-moved.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h587: ${bad} failed`:'h587: all passed');await b.close();process.exit(bad?1:0);
 })();

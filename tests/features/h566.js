@@ -35,7 +35,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(o.length===1&&o[0].t==='room'&&o[0].p.length===4&&o[0].name==='Kitchen','two rooms become one room ('+(o[0]&&o[0].name)+', '+(o[0]&&o[0].p.length)+' corners)');
  await p.evaluate(()=>window.__np.set([{t:'rect',a:[100,100],b:[400,300],c:'#111',w:3},{t:'rect',a:[400,150],b:[500,250],c:'#111',w:3}]));
  await rub(400,200);await p.mouse.move(10,10);
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-join.png'});
+ await p.screenshot({path:'np-join.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h566: ${bad} failed`:'h566: all passed');await b.close();process.exit(bad?1:0);
 })();

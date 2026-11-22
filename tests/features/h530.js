@@ -12,7 +12,7 @@ src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];wi
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 const page_src=fs.readFileSync('timesheets.html','utf8');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 const csv=['Date,Type,Description,Paid out,Paid in,Balance',
  `${uk(D(0))},FPO,SAM TEST 0042,850.00,,4150.00`,
  `${uk(D(0))},DD,VAN FINANCE LTD,300.00,,3850.00`].join('\r\n');

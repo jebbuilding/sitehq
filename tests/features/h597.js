@@ -9,7 +9,7 @@ src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];wi
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 const page_src=fs.readFileSync('timesheets.html','utf8').replace('async function openNotePage(','window.openNotePage=openNotePage;async function openNotePage(')
  .replace('  function eraseAt(p) {','  window.__np={get:()=>doc.objs,set:(a)=>{setObjs(a);draw();},sc:(v)=>{doc.scale=v;draw();},u:(mm)=>toUnits(mm),lib:()=>[NPSU_LIB,npsuLayers],join:(o)=>NPSU_JOIN.get(o)||null,fd:(o)=>NPSU_FOUND.get(o)||null,up:(o)=>NPSU_UPST.get(o)||null,spec:()=>npsuSpec(doc.objs),pick:(i)=>{sel=i;draw();fineOpen();},desel:()=>{sel=null;draw();},scr:(x,y)=>{const r=cv.getBoundingClientRect();return [r.left+ox+x*s,r.top+oy+y*s];}};\n  function eraseAt(p) {');
-const SP='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const SP='';
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1180,height:1000},deviceScaleFactor:2});ctx.setDefaultTimeout(8000);
  await ctx.route(/^https?:\/\//,r=>r.abort());const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});

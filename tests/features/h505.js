@@ -10,7 +10,7 @@ const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n 
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 ok(page_src.split(DD).length===2,'details hook found');
 function mk(mode){let src=src0.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;'+seed+'store["todos/c1"].portalUid="u9";');if(mode==='client')src=src.replace("id:async()=>${owner?'\"owner\"':'\"emp1\"'}",'id:async()=>"u9"');eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));return global.fake(mode==='owner');}
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 async function open(b,mode,vp,keys){const html='<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"></head><body>'+mk(mode)+page_src.replace(DD,'function detailsDone(d){return true}')+'</body></html>';
  const ctx=await b.newContext({viewport:vp,deviceScaleFactor:2});ctx.setDefaultTimeout(8000);
  await ctx.addInitScript(k=>{try{for(const x of k)localStorage.setItem(x,'true');localStorage.setItem('jeb.instLater','true')}catch(e){}},keys);

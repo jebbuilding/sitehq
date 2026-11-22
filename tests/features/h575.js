@@ -48,7 +48,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.shcard .sh-keep[data-k="'+se+'"]');await p.waitForTimeout(500);
  ok(!(await p.evaluate(()=>[...document.querySelectorAll('.shcard .shrow')].some(r=>/Somewhere Else/.test(r.innerText)))),'Leave it hides "Somewhere Else"');
  await p.evaluate(()=>document.querySelector('.shcard')&&document.querySelector('.shcard').scrollIntoView());
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/ts-stray.png'});
+ await p.screenshot({path:'ts-stray.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h575: ${bad} failed`:'h575: all passed');await b.close();process.exit(bad?1:0);
 })();

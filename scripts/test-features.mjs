@@ -29,7 +29,8 @@ const run = (f) =>
       const lines = out.trim().split("\n");
       const last = lines[lines.length - 1] || "";
       const fails = lines.filter((l) => /❌|^FAIL/.test(l)).slice(0, 3);
-      res({ f, ok: /all passed|ALL OK/i.test(last), last, fails });
+      const err = (lines.find((l) => /^\s*\w*Error\b|^\s*at .*features[\\/]h\d+\.js:\d+/.test(l)) || "").trim();
+      res({ f, ok: /all passed|ALL OK/i.test(last), last, fails, err: err.slice(0, 300) });
     });
   });
 
@@ -46,6 +47,25 @@ await Promise.all(
   }),
 );
 console.log();
+/* a test that failed while others ran alongside gets one more go on its own: the UI tests wait fixed times, and on a
+   busy machine (GitHub's, or several at once) a click can time out. A real fault fails again; one that only passed
+   the second time is still listed ("passed on its own"), so a test that keeps needing it can be made sturdier. */
+const flaky = [];
+for (const r of results.filter((x) => !x.ok && !KNOWN[x.f])) {
+  const again = await run(r.f);
+  if (again.ok) {
+    r.ok = true;
+    flaky.push(r);
+  } else Object.assign(r, again);
+}
+flaky.forEach((r) =>
+  console.log(`  passed on its own: ${r.f} (first time: ${(r.fails[0] || r.last).slice(0, 150)})`),
+);
+if (process.env.GITHUB_ACTIONS && flaky.length)
+  console.log(
+    `::warning title=${flaky.length} feature test(s) passed only on their own::` +
+      flaky.map((r) => r.f).join(", "),
+  );
 const bad = results.filter((r) => !r.ok && !KNOWN[r.f]);
 const known = results.filter((r) => !r.ok && KNOWN[r.f]);
 known.forEach((r) => console.log(`  known: ${r.f} – ${KNOWN[r.f]}`));
@@ -53,12 +73,18 @@ bad
   .sort((a, b) => a.f.localeCompare(b.f))
   .forEach((r) => {
     console.log(`  ❌ ${r.f}: ${(r.fails[0] || r.last).slice(0, 200)}`);
-    /* on GitHub, also as an annotation: those show on the run's page even to someone not signed in (the logs don't) */
-    if (process.env.GITHUB_ACTIONS) {
-      const msg = [...r.fails, r.last].join(" / ").replace(/[\r\n%]/g, " ").slice(0, 400);
-      console.log(`::error title=${r.f}::${msg}`);
-    }
   });
+/* on GitHub, also as one annotation listing them all: annotations show on the run's page even to someone not signed
+   in (the logs don't), but only 10 per step – so one, with each test's failing lines (or the error if it crashed) */
+if (process.env.GITHUB_ACTIONS && bad.length)
+  console.log(
+    `::error title=${bad.length} feature test(s) failed::` +
+      bad
+        .map((r) => `${r.f}: ${[...r.fails, r.err, r.last].filter(Boolean).join(" / ")}`)
+        .map((s) => s.replace(/%/g, "%25").replace(/[\r\n]/g, " "))
+        .join("%0A")
+        .slice(0, 30000),
+  );
 console.log(
   `features: ${results.length - bad.length - known.length} passed, ${bad.length} failed, ${known.length} known`,
 );

@@ -43,7 +43,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const w=await p.evaluate((i)=>window.__np.get()[i],wi);
  ok(w.wo==='sl'&&w.os,'it is side hung, hinge left, and knows its outside');
  await p.click('.nfx');await p.evaluate(()=>window.__np.pick(null));await p.waitForTimeout(300);
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-rooms.png'});
+ await p.screenshot({path:'np-rooms.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h578: ${bad} failed`:'h578: all passed');await b.close();process.exit(bad?1:0);
 })();

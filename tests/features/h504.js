@@ -13,7 +13,7 @@ const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n 
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 ok(page_src.split(DD).length===2,'details hook found');
 const html='<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"></head><body>'+fake(false)+page_src.replace(DD,'function detailsDone(d){return true}')+'</body></html>';
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 async function open(b,geo){const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,geolocation:geo,permissions:['geolocation']});ctx.setDefaultTimeout(8000);
  await ctx.addInitScript(()=>{try{localStorage.setItem('jeb.tradelook','true');localStorage.setItem('jeb.instLater','true')}catch(e){}});
  await ctx.route(/^https?:\/\//,r=>r.request().url().startsWith('https://sitehq.test/')?r.fulfill({status:200,contentType:'text/html; charset=utf-8',body:html}):r.abort());

@@ -12,7 +12,7 @@ let page_src=fs.readFileSync('timesheets.html','utf8').replace('const blobUrl = 
 if(page_src.split('function openClientForm(c, mode) {').length!==2)throw new Error('openClientForm');
 page_src=page_src.replace('function openClientForm(c, mode) {','window.openClientForm=openClientForm;function openClientForm(c, mode) {').replace('function viewClient(c) {','window.viewClient=viewClient;function viewClient(c) {');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1024,height:1300},deviceScaleFactor:2});ctx.setDefaultTimeout(8000);await ctx.route(/^https?:\/\//,r=>r.abort());
  const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');

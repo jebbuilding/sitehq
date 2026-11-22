@@ -28,7 +28,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.dimbox [type=submit]');await p.waitForTimeout(200);
  o=await p.evaluate(()=>window.__np.get().find(x=>x.t==='dim'));
  ok(/mm/.test(o.s||'')||o.auto,'the size is kept ('+(o.s||'')+')');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-dimpull.png'});
+ await p.screenshot({path:'np-dimpull.png'});
  /* one left on the line */
  await drag(200,450,400,450);
  await p.click('.np-chainok');await p.waitForTimeout(200);

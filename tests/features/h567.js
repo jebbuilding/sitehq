@@ -50,7 +50,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.selectOption('.nfst-t','brick');await p.waitForTimeout(200);
  ok((await p.evaluate(()=>window.__np.get()[3])).ct==='brick','post 3 is a brick pier');
  await p.click('.nfx');await p.evaluate(()=>window.__np.pick(null));await p.waitForTimeout(300);
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-steel.png',clip:{x:190,y:320,width:420,height:220}});
+ await p.screenshot({path:'np-steel.png',clip:{x:190,y:320,width:420,height:220}});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h567: ${bad} failed`:'h567: all passed');await b.close();process.exit(bad?1:0);
 })();

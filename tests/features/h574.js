@@ -33,7 +33,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(await p.isHidden('#wsx-ticks')&&!(await p.isChecked('#wsx-list .ws-tick[data-i="0"]')),'Untick clears them and hides the bar');
  await p.check('#wsx-list .ws-tick[data-i="1"]');
  await p.evaluate(()=>document.querySelector('#wsx-count').closest('section').scrollIntoView({block:'start'}));
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/ws-tick.png'});
+ await p.screenshot({path:'ws-tick.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h574: ${bad} failed`:'h574: all passed');await b.close();process.exit(bad?1:0);
 })();

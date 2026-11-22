@@ -51,7 +51,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.evaluate(()=>window.__np.pick(window.__np.get().length-1));await p.waitForTimeout(300);
  const fbb=await p.locator('.np-finebox').boundingBox();
  ok(fbb&&fbb.x>=0&&fbb.x+fbb.width<=W+0.5,way+': Properties fits across the screen');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/ipad-'+way+'.png'});
+ await p.screenshot({path:'ipad-'+way+'.png'});
  }catch(e){console.log('FAIL',way,e.message);bad++;}
  await ctx.close();}
  console.log(bad?`h572: ${bad} failed`:'h572: all passed');await b.close();process.exit(bad?1:0);

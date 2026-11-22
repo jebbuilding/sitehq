@@ -60,7 +60,7 @@ const R=(x)=>Math.round(x);
  o=await p.evaluate(()=>window.__np.get());
  const cut=o.find(x=>!x.bend&&Math.abs(x.a[0]-x.b[0])>1&&Math.abs(x.a[1]-x.b[1])>1);
  ok(o.length===3&&cut,'Cut: a straight splay across the corner');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-easy1.png'});
+ await p.screenshot({path:'np-easy1.png'});
  /* a box just drawn: Width × Depth */
  await clear();await p.click('.np-gt[data-gt=easy]');await p.click('.np-t[data-t=rect]');
  S2=await scr([[200,200],[400,320]]);await p.mouse.move(S2[0][0],S2[0][1]);await p.mouse.down();await p.mouse.move(S2[1][0],S2[1][1],{steps:5});await p.mouse.up();await p.waitForTimeout(300);
@@ -96,7 +96,7 @@ const R=(x)=>Math.round(x);
  /* running total */
  await p.evaluate(()=>window.__np.set([{t:'room',p:[[100,100],[300,100],[300,250],[100,250]],name:'Kitchen',c:'#1e3a8a',w:2}]));await p.waitForTimeout(700);
  ok(await p.isVisible('.np-livq')&&/Floor [\d.]+ m²/.test(await p.innerText('.np-livq')),'the status bar shows the floor area so far ('+await p.innerText('.np-livq')+')');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-easy2.png'});
+ await p.screenshot({path:'np-easy2.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h568: ${bad} failed`:'h568: all passed');await b.close();process.exit(bad?1:0);
 })();

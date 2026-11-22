@@ -8,7 +8,7 @@ src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];wi
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null').replace('function render() {','window.render=render;function render() {');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 const CSV='\uFEFFFirst Name,Last Name,E-mail Address,Mobile Phone,Home Street,Home City,Home Postal Code\r\n'+
  'Test,Person,test.person@example.com,07700 900333,"1 Test Street, Flat 2",Exmouth,ex8 1aa\r\n'+
  'Sue,Jones,sue@example.com,07700900111,4 Rolle Road,Exmouth,EX8 2AB\r\n'+

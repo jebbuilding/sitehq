@@ -34,7 +34,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(await p.evaluate(()=>window.__np.get().some(o=>o.t==='text'&&o.s==='Match existing bricks')),'the note added by hand is kept');
  ok(await p.evaluate(()=>window.__np.pages().length)===n0,'no extra pages made');
  ok(/up to date with the plan/.test(await p.evaluate(()=>[...document.querySelectorAll('.toast,#toast,[role=status]')].map(x=>x.textContent).join(' '))),'it says it was brought up to date');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-elev.png'});
+ await p.screenshot({path:'np-elev.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h570: ${bad} failed`:'h570: all passed');await b.close();process.exit(bad?1:0);
 })();

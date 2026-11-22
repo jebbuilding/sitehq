@@ -31,6 +31,7 @@ import { nlOn } from "../owner/today.js";
 import { avatarHtml } from "../people/profile-photos.js";
 import { siteRec } from "../photos/photos.js";
 import { crsOpen } from "./course-booking.js";
+import { dbrSettings } from "./day-brief.js";
 import { diaryHtml, diaryRows, dyGroupName, wireDiary } from "./diary.js";
 import { htHtml, htWire } from "./holiday-tab.js";
 import { holCardHtml, holOwnerHtml, holWire } from "./holidays.js";
@@ -187,6 +188,7 @@ function pbMenu(anchor, owner) {
         ["list", "📋 List view"],
         ["year", "🗓 Year view"],
         ["taken", "📊 Time off taken this year"],
+        ["brief", "🌙 Evening &amp; morning message"],
       ]
     : [
         ["leave", "🌴 Ask for time off"],
@@ -224,6 +226,7 @@ function pbMenu(anchor, owner) {
         else if (k === "course") crsOpen();
         else if (k === "req") pbRequests();
         else if (k === "imp") openPlanImport();
+        else if (k === "brief") dbrSettings();
         else if (k === "find") pbFind();
         else if (k === "list") {
           S.f.pmode = "list";

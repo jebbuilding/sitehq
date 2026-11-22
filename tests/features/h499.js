@@ -9,7 +9,7 @@ const extra='store["equipment/k1"]={kind:"machine",name:"Test Breaker"};store["e
 let src=src0.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;'+seed+extra);
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null').replace('function render() {','window.render=render;function render() {');
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 const lib=(u)=>u.includes('qrcode-generator')?'qrlib/package/qrcode.js':u.includes('jspdf')?'jspdfpkg/package/dist/jspdf.umd.min.js':null;
 /* the text on page 1 of a PDF with where it sits, in mm from the top-left */

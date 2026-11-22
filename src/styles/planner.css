@@ -220,3 +220,9 @@
 .mcell.pmf-c,.mcell.pmf-cbad{position:relative}
 .pb-jobl{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;margin:6px 0;font-weight:600;width:100%;text-align:left}
 .pb-jobl select{min-height:44px;flex:1;max-width:420px}
+.dbr-box{width:min(420px,100%)}
+.dbr-job{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.dbr-t{font-weight:700;min-width:64px;font-size:15px}
+.dbr-w{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.dbr-w b{font-size:16px}.dbr-w small{font-size:14px;color:var(--ink);opacity:.8}.dbr-n{white-space:pre-wrap}
+.dbr-dir{align-self:flex-start;margin-top:4px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none}

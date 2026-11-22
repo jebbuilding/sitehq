@@ -34,7 +34,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/203×133×25 UB, grade S355, cut length 3350 mm/.test(ord)&&/4 Rolle Road/.test(ord),'the order has size, grade, cut length and the site');
  await p.check('.bm-tick[data-k=calcs]');await p.waitForTimeout(150);
  ok(/Engineer's calcs approved/.test(await p.innerText('.bm-stage')),'ticking calcs approved shows where it has got to');
- await p.evaluate(()=>document.querySelector('.bmsheet .bm-ticks').scrollIntoView({block:'center'}));await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/beam-sheet.png'});await p.evaluate(()=>document.querySelector('.bmsheet .bm-sec').scrollIntoView({block:'start'}));await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/beam-sheet-top.png'});
+ await p.evaluate(()=>document.querySelector('.bmsheet .bm-ticks').scrollIntoView({block:'center'}));await p.screenshot({path:'beam-sheet.png'});await p.evaluate(()=>document.querySelector('.bmsheet .bm-sec').scrollIntoView({block:'start'}));await p.screenshot({path:'beam-sheet-top.png'});
  await p.click('.bmsheet [type=submit]');await p.waitForTimeout(300);
  const o=await p.evaluate(()=>window.__np.get()[0]);
  ok(o.sec==='203×133×25 UB'&&o.bearA===150&&o.bearB===200&&o.fire==='board'&&o.ord.grade==='S355'&&o.bc.calcs>0,'Save keeps it all on the beam');
@@ -52,7 +52,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.bm-detail');await p.waitForTimeout(500);
  const pages=await p.evaluate(()=>window.__np.pages().map(x=>x.name));
  ok(pages.length===n0+1&&/B1 detail/.test(pages[pages.length-1]),'📐 Draw the beam detail makes a new page ('+pages[pages.length-1]+')');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/beam-detail.png'});
+ await p.screenshot({path:'beam-detail.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h588: ${bad} failed`:'h588: all passed');await b.close();process.exit(bad?1:0);
 })();

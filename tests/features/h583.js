@@ -19,7 +19,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const done=await p.locator('.dimask .dimbtns [type=submit]').boundingBox();
  ok(box.y>=0&&box.y+box.height<=H+1,what+': the Details box fits on the screen');
  ok(done&&done.y>=0&&done.y+done.height<=H+1,what+': its Done button is on screen ('+Math.round(done.y)+' of '+H+')');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/details-'+W+'.png'});
+ await p.screenshot({path:'details-'+W+'.png'});
  await p.click('.dimask .dimbtns [type=submit]');await p.waitForTimeout(300);
  ok(!(await p.isVisible('.dimask .dimbox')),what+': Done closes it');
  }catch(e){console.log('FAIL',what,e.message);bad++;}

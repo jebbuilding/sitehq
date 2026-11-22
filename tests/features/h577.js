@@ -49,7 +49,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(q.sym['Walls to knock down (m)']>0,'and lists the wall to knock down ('+q.sym['Walls to knock down (m)']+' m)');
  const eb=await p.evaluate(()=>{const B2=window.__np.eb();return B2?B2.W.length:0;});
  ok(eb===6,'the elevations leave the knocked-down wall out ('+eb+' walls)');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-exprop.png'});
+ await p.screenshot({path:'np-exprop.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h577: ${bad} failed`:'h577: all passed');await b.close();process.exit(bad?1:0);
 })();

@@ -16,7 +16,7 @@ page_src=page_src.replace(SN,'window.__sn=()=>siteNames();'+SN);
 const DD='function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}';
 ok(page_src.split(DD).length===2,'details hook found once');
 const trade_src=page_src.replace(DD,'function detailsDone(d){return true}');
-const SEEDSET='people:[{id:"emp1",name:"Sam Test"}],allowDm:false}';
+const SEEDSET='people:[{id:"emp1",name:"Sam Test"}],allowDm:false';
 ok(src0.split(SEEDSET).length===2,'seed settings found once');
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1100,height:1000}});ctx.setDefaultTimeout(8000);await ctx.route(/^https?:\/\//,r=>r.abort());
  const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
@@ -56,7 +56,7 @@ ok(src0.split(SEEDSET).length===2,'seed settings found once');
  await p.uncheck('.pa-tab[data-r=sub][data-k=receipts]');await p.click('#pa-save');await p.waitForTimeout(600);
  const acc2=await p.evaluate(()=>window.__st['settings/app'].access);
  /* Sam's own app */
- const fakeTrade=mkFake(src0.replace(SEEDSET,SEEDSET.replace('allowDm:false}','allowDm:false,access:'+JSON.stringify(acc2)+'}')));
+ const fakeTrade=mkFake(src0.replace(SEEDSET,SEEDSET+',access:'+JSON.stringify(acc2)));
  const t=await ctx.newPage();t.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  await t.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fakeTrade(false)+trade_src+'</body></html>');await t.waitForTimeout(2000);await t.keyboard.press('Escape');
  const tabs=await t.$$eval('#tabs .tab',x=>x.map(t=>t.dataset.t));

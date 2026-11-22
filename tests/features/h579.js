@@ -33,7 +33,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('#wu-open');await p.waitForTimeout(400);
  const secs=await p.evaluate(()=>[...document.querySelectorAll('.wu .wu-sec .wu-h b')].map(x=>x.textContent));
  ok(secs.length===7&&secs.some(s=>/Hours this week/.test(s))&&secs.some(s=>/Invoices overdue/.test(s))&&secs.some(s=>/Off in the next two weeks/.test(s)),'the week wrap-up shows its seven parts ('+secs.length+')');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/wrapup.png'});
+ await p.screenshot({path:'wrapup.png'});
  /* labour running ahead */
  const b2=await p.evaluate(()=>window.jbBudget({cp:false,price:10000,j:{done:30},est:null,items:[{kind:'lab',cost:2000,hours:66,costRate:30}],cost:2000,invoiced:0,site:'x'}));
  ok(b2&&b2.lvl==='warn'&&/Labour is running ahead/.test(b2.msg),'labour well ahead of progress warns ('+(b2&&b2.msg)+')');

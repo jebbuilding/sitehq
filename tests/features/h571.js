@@ -41,7 +41,7 @@ const near=(a,b)=>Math.abs(a-b)<0.01;
  o=await p.evaluate(()=>window.__np.get());
  ok(o[0].b[1]<195&&Math.abs(o[1].a[0]-o[0].b[0])<0.01&&Math.abs(o[1].a[1]-o[0].b[1])<0.01,"dragging a corner moves the end of the wall joined there too");
  await room();await drag(350,200,350,120);
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-push.png'});
+ await p.screenshot({path:'np-push.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h571: ${bad} failed`:'h571: all passed');await b.close();process.exit(bad?1:0);
 })();

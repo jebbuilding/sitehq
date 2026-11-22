@@ -12,7 +12,7 @@ let page_src=fs.readFileSync('timesheets.html','utf8');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 ok(page_src.split(HOOK).length===2,'test hook found once');
 page_src=page_src.replace(HOOK,HOOK+'window.__np=()=>doc;');
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1300,height:950}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  await ctx.route(/^https?:\/\//,r=>{if(r.request().url().includes('three'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('threepkg/package/build/three.min.js','utf8')});r.abort()});
  try{await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.waitForTimeout(2000);await p.keyboard.press('Escape');

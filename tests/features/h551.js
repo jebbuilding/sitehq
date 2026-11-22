@@ -16,7 +16,7 @@ let page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  d
 page_src=page_src.replace('async function getFileBlob(','window.__gfb=1;async function getFileBlob(');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 const SITE='4 Rolle Road, Exmouth';
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1024,height:1100}});ctx.setDefaultTimeout(8000);
  await ctx.route(/^https?:\/\//,r=>{if(r.request().url().includes('jspdf'))return r.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync('jspdfpkg/package/dist/jspdf.umd.min.js','utf8')});r.abort()});
  const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});

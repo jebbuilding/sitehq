@@ -10,7 +10,7 @@ src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];wi
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null').replace('function render() {','window.render=render;function render() {');
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
-const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+const OUT='';
 const SITE='4 Rolle Road, Exmouth';
 (async()=>{const b=await chromium.launch();
  const ps=page_src.replace('function detailsDone(d) {\n  return !!(d && d.confirmedAt);\n}','function detailsDone(d){return true}');
@@ -22,5 +22,5 @@ const SITE='4 Rolle Road, Exmouth';
  await p.evaluate(()=>{const o=document.getElementById('ohq');if(o)o.hidden=true;window.__S.tab='chat';window.render()});await p.waitForTimeout(800);
  await p.click('text=Whole team');const opened='clicked';await p.waitForTimeout(800);
  const r=await p.evaluate(()=>{const f=(id)=>{const e=document.getElementById(id);if(!e)return null;const r=e.getBoundingClientRect();return [Math.round(r.left),Math.round(r.right)]};return {vw:innerWidth,win:!document.getElementById('chatwin').hidden,comp:f('composer'),text:f('cm-text'),send:f('cm-send'),pin:f('cm-pin')}});
- ok(r.win&&r.text[0]>=0&&r.send[1]<=w&&r.text[1]-r.text[0]>=200&&r.pin[0]>=0,w+'px phone: the typing box and Send are on screen, the box is wide enough to see ('+JSON.stringify(r)+')');await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/chat-'+w+'.png'});await ctx.close();}
+ ok(r.win&&r.text[0]>=0&&r.send[1]<=w&&r.text[1]-r.text[0]>=200&&r.pin[0]>=0,w+'px phone: the typing box and Send are on screen, the box is wide enough to see ('+JSON.stringify(r)+')');await p.screenshot({path:'chat-'+w+'.png'});await ctx.close();}
  console.log(bad?'h529: '+bad+' failed':'h529: all passed');await b.close();process.exit(bad?1:0)})();

@@ -32,7 +32,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const b3=await box();ok(Math.abs(b3.w-b2.w*0.8)<0.5,dev+': Smaller makes it a fifth smaller');
  await p.click('.np-sb[data-a=bigger]');await p.waitForTimeout(300);
  const b4=await box();ok(Math.abs(b4.w-b3.w*1.25)<0.5,dev+': Bigger makes it a quarter bigger');
- if(dev==='ipad')await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-resize.png'});
+ if(dev==='ipad')await p.screenshot({path:'np-resize.png'});
  }catch(e){console.log('FAIL',dev,e.message);bad++;}
  await ctx.close();}
  console.log(bad?`h563: ${bad} failed`:'h563: all passed');await b.close();process.exit(bad?1:0);

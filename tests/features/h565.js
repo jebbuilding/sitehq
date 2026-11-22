@@ -37,7 +37,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.fill('.nftxrow .nftx','Kitchen\nBack wall\nRemove units');await p.click('.nftxrow [type=submit]');await p.waitForTimeout(300);
  o=await p.evaluate(()=>{const a=window.__npObjs();return a[a.length-1]});
  ok(o.s.split('\n').length===3,'the words can be changed, with a third line');
- await p.screenshot({path:'C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/np-text.png'});
+ await p.screenshot({path:'np-text.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h565: ${bad} failed`:'h565: all passed');await b.close();process.exit(bad?1:0);
 })();

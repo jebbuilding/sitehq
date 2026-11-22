@@ -12,7 +12,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
  const lastToast=()=>p.evaluate(()=>{const t=[...document.querySelectorAll('.toast')];return t.length?t[t.length-1].textContent:''});
  try{
- const OUT='C:/Users/User/AppData/Local/Temp/claude/0ed65cd00fdfb1af/120f37e9-4146-4eb8-8b83-81c031ff52be/scratchpad/';
+ const OUT='';
  /* Sam signs in at 07:55 – paid from 08:00 */
  await p.clock.install({time:new Date('2026-11-10T07:55:00')});
  const fake=mk();
