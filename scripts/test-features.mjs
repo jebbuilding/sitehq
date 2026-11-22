@@ -51,7 +51,14 @@ const known = results.filter((r) => !r.ok && KNOWN[r.f]);
 known.forEach((r) => console.log(`  known: ${r.f} – ${KNOWN[r.f]}`));
 bad
   .sort((a, b) => a.f.localeCompare(b.f))
-  .forEach((r) => console.log(`  ❌ ${r.f}: ${(r.fails[0] || r.last).slice(0, 200)}`));
+  .forEach((r) => {
+    console.log(`  ❌ ${r.f}: ${(r.fails[0] || r.last).slice(0, 200)}`);
+    /* on GitHub, also as an annotation: those show on the run's page even to someone not signed in (the logs don't) */
+    if (process.env.GITHUB_ACTIONS) {
+      const msg = [...r.fails, r.last].join(" / ").replace(/[\r\n%]/g, " ").slice(0, 400);
+      console.log(`::error title=${r.f}::${msg}`);
+    }
+  });
 console.log(
   `features: ${results.length - bad.length - known.length} passed, ${bad.length} failed, ${known.length} known`,
 );
