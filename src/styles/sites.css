@@ -203,3 +203,15 @@
 .smp-near .pillbtn{min-height:44px}
 .sm-pin.emp path{background:#1d7a4c;fill:#1d7a4c}
 .sm-pin.mer path{background:#6250d6;fill:#6250d6}
+/* job photos: filters and what the client sees (sites/job-photos.js) */
+.jph-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:6px 0}
+.jph-bar label{flex:1 1 140px;max-width:220px}
+.jph-cl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 10px}
+.ph.jph-on{position:relative}
+.ph .jph-eye,.jph-pk .jph-eye{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;padding:2px 7px;font-size:14px;line-height:1.4}
+.jph-pickgrid .jph-pk{position:relative;padding:0;border:3px solid transparent;border-radius:10px;background:none;cursor:pointer;overflow:hidden;min-height:44px;color:var(--ink);text-align:left}
+.jph-pickgrid .jph-pk img{width:100%;aspect-ratio:1;object-fit:cover;display:block;opacity:.45}
+.jph-pickgrid .jph-pk .jph-eye{display:none}
+.jph-pickgrid .jph-pk[aria-pressed="true"]{border-color:var(--accent)}
+.jph-pickgrid .jph-pk[aria-pressed="true"] img{opacity:1}
+.jph-pickgrid .jph-pk[aria-pressed="true"] .jph-eye{display:block}

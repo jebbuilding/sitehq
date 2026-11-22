@@ -39,6 +39,7 @@ import {
   wireSiteSum,
 } from "./job-details.js";
 import { jkOpen } from "./job-pack.js";
+import { jphActive, jphBar, jphGrid, jphWire } from "./job-photos.js";
 import { jobCard } from "./job-sheets.js";
 import { dropPin } from "./maps-pins.js";
 import { RAMS_SIGN, docPath, docPickBar, docRow, wireDocs } from "./plans-specs.js";
@@ -202,18 +203,21 @@ function ownerProjects() {
     const pf = S.f.pfold;
     P.photos = `<div class="day"><div class="dayh"><span>Photos by stage</span><span class="sum">${photos.length}</span></div>
     <div class="actions"><button type="button" class="pillbtn" id="pj-addfold">+ Add folder</button><button type="button" class="pillbtn" id="pj-editfold">Edit folders</button></div>
+    ${jphBar(site)}
     ${
-      pf
-        ? (() => {
-            const ps = cnt(pf);
-            return `<div class="crumbs"><button type="button" class="pillbtn" id="pj-foldback">‹ All stages</button><b>${esc(pf)}</b><span class="who">${ps.length} photo${ps.length === 1 ? "" : "s"}</span></div>${ps.length ? `<div class="phgrid">${(showAll ? ps : ps.slice(0, 24)).map((p) => photoTile(p, true, p.who)).join("")}</div>${ps.length > 24 ? `<button type="button" class="pillbtn" id="pj-allph">${showAll ? "Show fewer" : "Show all " + ps.length + " photos"}</button>` : ""}` : '<div class="nothing">No photos in this folder for this period.</div>'}`;
-          })()
-        : `<div class="folders">${tiles
-            .map((f) => {
-              const ps = cnt(f);
-              return `<button type="button" class="folder pfold ${ps.length ? "" : "emptyf"}" data-f="${esc(f)}">${ps.length ? `<img src="${blobUrl(ps[0].assetId)}" alt="" class="fthumb" loading="lazy">` : folderIcon()}<span class="fname">${esc(f)}</span><span class="fmeta">${ps.length} photo${ps.length === 1 ? "" : "s"}</span></button>`;
-            })
-            .join("")}</div>`
+      jphActive(site)
+        ? jphGrid(site, inRange)
+        : pf
+          ? (() => {
+              const ps = cnt(pf);
+              return `<div class="crumbs"><button type="button" class="pillbtn" id="pj-foldback">‹ All stages</button><b>${esc(pf)}</b><span class="who">${ps.length} photo${ps.length === 1 ? "" : "s"}</span></div>${ps.length ? `<div class="phgrid">${(showAll ? ps : ps.slice(0, 24)).map((p) => photoTile(p, true, p.who)).join("")}</div>${ps.length > 24 ? `<button type="button" class="pillbtn" id="pj-allph">${showAll ? "Show fewer" : "Show all " + ps.length + " photos"}</button>` : ""}` : '<div class="nothing">No photos in this folder for this period.</div>'}`;
+            })()
+          : `<div class="folders">${tiles
+              .map((f) => {
+                const ps = cnt(f);
+                return `<button type="button" class="folder pfold ${ps.length ? "" : "emptyf"}" data-f="${esc(f)}">${ps.length ? `<img src="${blobUrl(ps[0].assetId)}" alt="" class="fthumb" loading="lazy">` : folderIcon()}<span class="fname">${esc(f)}</span><span class="fmeta">${ps.length} photo${ps.length === 1 ? "" : "s"}</span></button>`;
+              })
+              .join("")}</div>`
     }</div>`;
   }
   P.chat = `<div class="day"><div class="dayh"><span>Chat messages about this site</span></div><div class="actions"><button type="button" class="btn primary" id="pj-chat">Open the site chat</button></div><div id="pj-msgs"><button type="button" class="pillbtn" id="pj-loadmsgs">Show messages tagged with this site</button></div></div>`;
@@ -526,6 +530,7 @@ function ownerProjects() {
         }),
     );
   if ($("pj-addfold")) $("pj-addfold").onclick = () => openAddFolder(site);
+  if ($("jph-from") || $("jph-pick") || $("jph-save")) jphWire(site, inRange);
   if ($("pj-editfold")) $("pj-editfold").onclick = () => openEditFolders(site);
   if ($("pj-foldback"))
     $("pj-foldback").onclick = () => {
@@ -552,7 +557,9 @@ function ownerProjects() {
     .forEach(
       (b) =>
         (b.onclick = () => {
-          const p = photos.find((x) => x.id === b.dataset.p && x.who === b.dataset.w);
+          const p =
+            photos.find((x) => x.id === b.dataset.p && x.who === b.dataset.w) ||
+            allTeam("photos").find((x) => x.id === b.dataset.p && x.who === b.dataset.w);
           if (p) photoViewer(p, true, p.who);
         }),
     );
