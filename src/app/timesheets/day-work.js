@@ -12,7 +12,7 @@ import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { auditFirst } from "../owner/deletion-record.js";
-import { nameOf, teamIds, teamPlusMe } from "../owner/owner.js";
+import { crewIds, nameOf, teamIds, teamPlusMe } from "../owner/owner.js";
 import { EMP_TYPES } from "../people/employment-types.js";
 import { myDetails, openDetails } from "../people/personal-details.js";
 import { avatarHtml } from "../people/profile-photos.js";
@@ -460,7 +460,7 @@ function dayworkView() {
 }
 function dwEditRates() {
   const r = S.dwRates || {};
-  const ids = teamIds();
+  const ids = crewIds();
   openSheet(
     `<h3 id="sheettitle">🧱 Day work rates</h3><div class="who">Only you can see these. Used to work out the £ on day work sheets.</div>
     <label for="dr-def">Standard hourly rate £<input id="dr-def" inputmode="decimal" value="${esc(r.def || "")}" placeholder="e.g. 35"></label>

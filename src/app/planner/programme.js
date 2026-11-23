@@ -58,8 +58,14 @@ const PG_PRESETS = {
 };
 /* the timer for redrawing the programme table after a change (below, where the table is wired up) */
 let pgRedrawT = 0;
+/* changes not saved yet (a stage removed, added, days changed…), by programme id. Kept apart from S.programmes, which
+   is rebuilt from the database whenever anything in todos changes – keeping them there meant a removed stage came
+   back a few seconds later (James, Nov 2026). Cleared by Save, Undo changes or deleting the programme. */
+const pgDrafts = {};
 const pgId = (site) => "prog-" + sdiSlug(site);
 const pgRec = (site) => (S.programmes || []).find((p) => p.id === pgId(site)) || null;
+/* what the table shows: the unsaved changes if there are any, else the saved programme */
+const pgCur = (site) => (pgRec(site) && pgDrafts[pgId(site)]) || pgRec(site);
 const pgIsWork = (d) => d.getDay() !== 0 && d.getDay() !== 6;
 /* the first working day on or after a date */
 function pgOnWork(ds) {
@@ -104,7 +110,7 @@ function pgCalc(pr) {
   return out;
 }
 function pgHtml(site) {
-  const pr = pgRec(site);
+  const pr = pgCur(site);
   if (!pr)
     return `<div class="card pg-empty"><b>📊 No programme for this job yet</b><div class="who">List the stages in order, how long each takes and what it can't start until. The dates work themselves out and move when something slips; they go on the planner, and the client can see them.</div>
       <label for="pg-start">Start date<input id="pg-start" type="date" value="${esc(pgOnWork(iso(new Date())))}"></label>
@@ -129,7 +135,8 @@ function pgHtml(site) {
   const pos = (d) => (Math.round((parse(d) - parse(lo)) / 864e5) / span) * 100;
   const late = (s) => (s.base ? pgWorkBetween(s.base.to, dt[s.id].to) : 0);
   const c = siteClient(site);
-  return `<div class="pg"><div class="pg-top"><label for="pg-start">Job starts<input id="pg-start" type="date" value="${esc(pr.start || "")}"></label><span class="who">Finishes <b>${esc(shortDay(hi))}</b> · ${pgWorkBetween(lo, hi) + 1} working days${st.some(late) ? ` · <span class="pg-late">${Math.max(...st.map(late))} days later than first planned</span>` : ""}</span></div>
+  const unsaved = !!pgDrafts[pgId(site)];
+  return `<div class="pg">${unsaved ? `<div class="pg-unsaved" role="status"><b>Changes not saved yet</b><span class="who">Tap Save to keep them and move the planner.</span><span class="actions"><button type="button" class="btn primary" id="pg-save2">💾 Save</button><button type="button" class="btn" id="pg-undo">Undo changes</button></span></div>` : ""}<div class="pg-top"><label for="pg-start">Job starts<input id="pg-start" type="date" value="${esc(pr.start || "")}"></label><span class="who">Finishes <b>${esc(shortDay(hi))}</b> · ${pgWorkBetween(lo, hi) + 1} working days${st.some(late) ? ` · <span class="pg-late">${Math.max(...st.map(late))} days later than first planned</span>` : ""}</span></div>
     <div class="tablewrap"><table class="pg-tbl"><thead><tr><th>#</th><th>Stage</th><th>Days</th><th>Can't start until</th><th>Delay</th><th>Dates</th><th>Done</th><th>Client sees</th><th></th></tr></thead><tbody>${st
       .map((s, i) => {
         const d = dt[s.id];
@@ -196,6 +203,7 @@ async function pgSave(site, pr, quiet) {
   await S.db.doc("todos/" + pgId(site)).set(rec);
   const r2 = Object.assign({ id: pgId(site) }, rec);
   S.programmes = (S.programmes || []).filter((x) => x.id !== r2.id).concat([r2]);
+  delete pgDrafts[r2.id];
   /* the planner: one entry a stage, moved when the dates move; gone stages taken off */
   const keep = new Set();
   for (const s of pr.stages) {
@@ -318,9 +326,9 @@ function pgWire(site) {
   if (!pr) return;
   if (pr.simple) pgSimpleWire(site);
   const redo = (fn) => {
-    const p2 = pgRead(pgRec(site));
+    const p2 = pgRead(pgCur(site));
     fn(p2);
-    S.programmes = (S.programmes || []).filter((x) => x.id !== p2.id).concat([p2]);
+    pgDrafts[pgId(site)] = p2;
     render();
   };
   if ($("pg-add"))
@@ -386,7 +394,7 @@ function pgWire(site) {
     (b) =>
       (b.onclick = () => {
         const i = +b.closest("tr").dataset.i;
-        const p = pgRead(pgRec(site));
+        const p = pgRead(pgCur(site));
         const s = p.stages[i];
         if (s.done) {
           redo((q) => {
@@ -425,14 +433,22 @@ function pgWire(site) {
         );
       }),
   );
-  if ($("pg-save"))
-    $("pg-save").onclick = async () => {
-      try {
-        await pgSave(site, pgRead(pgRec(site)));
-        render();
-      } catch (e) {
-        toast("Couldn't save – check your connection");
-      }
+  ["pg-save", "pg-save2"].forEach((id) => {
+    if ($(id))
+      $(id).onclick = async () => {
+        try {
+          await pgSave(site, pgRead(pgCur(site)));
+          render();
+        } catch (e) {
+          toast("Couldn't save – check your connection");
+        }
+      };
+  });
+  if ($("pg-undo"))
+    $("pg-undo").onclick = () => {
+      delete pgDrafts[pgId(site)];
+      toast("Changes undone");
+      render();
     };
   if ($("pg-del"))
     $("pg-del").onclick = async (e) => {
@@ -447,6 +463,7 @@ function pgWire(site) {
           await S.db.doc("plan/" + p.id).delete();
         await S.db.doc("todos/" + pgId(site)).delete();
         S.programmes = (S.programmes || []).filter((x) => x.id !== pgId(site));
+        delete pgDrafts[pgId(site)];
         const c = siteClient(site);
         if (c && c.portalUid) await S.db.doc("portal/" + c.portalUid).update({ programme: null });
         toast("Programme deleted");

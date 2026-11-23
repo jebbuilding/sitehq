@@ -1,6 +1,17 @@
 /* ================= SITE SIGN-IN BOOK: timesheet check-ins fill it automatically; other-company / agency people sign in and out here instead ================= */
 import { lastOf, pickField, pickVal, wirePicks } from "../core/fields.js";
-import { $, esc, iso, pad, shortDay, stamp, toast } from "../core/helpers.js";
+import {
+  $,
+  calcHours,
+  esc,
+  iso,
+  lunchBreak,
+  pad,
+  shortDay,
+  stamp,
+  toMin,
+  toast,
+} from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, ownerMode, siteNames } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -17,7 +28,9 @@ import { empTypeOf, siteFull, siteLabel } from "./job-details.js";
 import { QRSITE } from "./qr-sign-in.js";
 import { openRollCall } from "./roll-call.js";
 import { myName } from "../survey/door-window-survey.js";
+import { CRS_EARLY_MIN } from "../timesheets/check-reasons.js";
 import { checkIn, checkOut, openEntry } from "../timesheets/time.js";
+import { dayFor } from "../timesheets/working-day.js";
 export { SIGNIN, signOnly };
 const signOnly = (id) => {
   if (id === S.me && !ownerMode()) return !!(S.myProfile && S.myProfile.signInOnly);
@@ -37,9 +50,51 @@ const SIGNIN = (() => {
       .replace(/\s+/g, " ")
       .trim();
   const sinsOf = (id) => (id === S.me ? S.mine.signins || [] : (S.data.signins || {})[id] || []);
-  /* the plain sign-in book (no timesheet check-in) for sign-in-only people, and for every trade in the new look,
-   where the trades don't see timesheets (James, Nov 2026) */
-  const siPlain = () => signOnly(S.me) || tlOn();
+  /* the plain sign-in book (no timesheet check-in) only for sign-in-only people. In the new look the trades don't see
+   timesheets, but signing in still checks them in on their timesheet behind the scenes – it was only the sign-in book,
+   so a trade showed on site with no hours (James, Nov 2026: "Kahn is on site but it's not recording his timesheets") */
+  const siPlain = () => signOnly(S.me);
+  /* in the new look the words don't mention timesheets */
+  const siTs = (a, b) => (tlOn() ? a : b);
+  /* a plain sign-in by someone who isn't sign-in-only (made before the fix above, or by James for them): signing out
+     writes the day's hours on their timesheet, as checking out would – unless they already have hours there that day */
+  async function siHours(x, who, out) {
+    if (x.guest || !x.in || !out || signOnly(who) || (who === S.me && ownerMode())) return;
+    const ents = (who === S.me ? S.mine.entries : (S.data.entries || {})[who]) || [];
+    if (ents.some((e) => e.type === "hours" && e.date === x.date)) return;
+    const D = dayFor(who);
+    const start = toMin(x.in) < toMin(D.s) ? D.s : x.in;
+    const finish = toMin(out) >= toMin(D.e) - CRS_EARLY_MIN ? D.e : out;
+    if (toMin(finish) <= toMin(start)) return;
+    const br = lunchBreak(start, finish, D);
+    const id = newId(),
+      now = Date.now();
+    const data = {
+      type: "hours",
+      date: x.date,
+      job: x.site,
+      start,
+      actualIn: x.in,
+      finish,
+      actualOut: out,
+      breakMin: br,
+      hours: Math.round(calcHours(start, finish, br) * 100) / 100,
+      open: false,
+      checkIn: true,
+      fromSignIn: x.id || "",
+      notes: "",
+      approved: false,
+      created: now,
+      updated: now,
+    };
+    if (who === S.me) {
+      S.mine.entries = (S.mine.entries || []).concat([Object.assign({ id }, data)]);
+      await submitJob({ coll: "entries", docId: id, data });
+    } else {
+      await S.db.doc("sheets/" + who + "/entries/" + id).set(data);
+      S.data.entries[who] = ents.concat([Object.assign({ id }, data)]);
+    }
+  }
   /* every sign-in row for a date: from timesheets (automatic) and from the sign-in tab */
   function rows(date) {
     const out = [];
@@ -170,6 +225,9 @@ const SIGNIN = (() => {
       );
       render();
       const r = await submitJob({ coll: "signins", docId: x.id, data });
+      try {
+        await siHours(x, who, t);
+      } catch (e) {}
       toast(
         (x.guest ? gName(x) + " " : "") +
           (r === "queued" ? "Signed out (sends when you have signal)" : "Signed out at " + t),
@@ -179,6 +237,9 @@ const SIGNIN = (() => {
       S.data.signins[who] = (S.data.signins[who] || []).map((y) =>
         y.id === x.id ? Object.assign({ id: x.id }, data) : y,
       );
+      try {
+        await siHours(x, who, t);
+      } catch (e) {}
       toast(nameOf(who) + " signed out at " + t);
     }
   }
@@ -276,13 +337,13 @@ const SIGNIN = (() => {
     const last =
       ((S.mine.signins || []).slice().sort((a, b) => (b.inAt || 0) - (a.inAt || 0))[0] || {})
         .site || lastOf(S.mine.entries || [], () => true, "job");
-    let h = `<div class="who" style="margin-bottom:8px">${siPlain() ? "Sign in when you arrive on site and sign out when you leave. This is the site's sign-in book, used for fire roll calls and health &amp; safety." : "Your timesheet check-in and check-out fill in the site sign-in book for you."}</div>`;
+    let h = `<div class="who" style="margin-bottom:8px">${siPlain() ? "Sign in when you arrive on site and sign out when you leave. This is the site's sign-in book, used for fire roll calls and health &amp; safety." : siTs("Sign in when you arrive on site and sign out when you leave. It records your hours and the site's sign-in book (fire roll calls and health &amp; safety).", "Your timesheet check-in and check-out fill in the site sign-in book for you.")}</div>`;
     if (openS)
       h += `<div class="checkin"><b>✅ Signed in at ${esc(siteLabel(openS.site))}</b><div class="who">Since ${esc(openS.in)} today</div><button class="btn danger big" type="button" id="si-out">Sign out now</button></div>`;
     else if (openT)
-      h += `<div class="checkin"><b>✅ Signed in at ${esc(siteLabel(openT.job))}</b><div class="who">Since ${esc(openT.actualIn || openT.start)} today, from your timesheet check-in</div><button class="btn danger big" type="button" id="si-tout">Check out (signs you out too)</button></div>`;
+      h += `<div class="checkin"><b>✅ Signed in at ${esc(siteLabel(openT.job))}</b><div class="who">Since ${esc(openT.actualIn || openT.start)} today${siTs("", ", from your timesheet check-in")}</div><button class="btn danger big" type="button" id="si-tout">${siTs("Sign out now", "Check out (signs you out too)")}</button></div>`;
     else
-      h += `<div class="checkin"><b>📍 Sign in to site</b>${pickField("ci-site", "Site", siteNames(), last, "e.g. 12 High Street")}<button class="btn primary big" type="button" id="si-in">${siPlain() ? "Sign in now" : "Check in now (timesheet + sign-in)"}</button></div>`;
+      h += `<div class="checkin"><b>📍 Sign in to site</b>${pickField("ci-site", "Site", siteNames(), last, "e.g. 12 High Street")}<button class="btn primary big" type="button" id="si-in">${siPlain() ? "Sign in now" : siTs("Sign in now", "Check in now (timesheet + sign-in)")}</button></div>`;
     const hist = (
       siPlain()
         ? []
@@ -311,7 +372,7 @@ const SIGNIN = (() => {
       )
       .sort((a, b) => (b.d + b.in).localeCompare(a.d + a.in))
       .slice(0, 20);
-    h += `<div class="day" style="margin-top:12px"><div class="dayh"><span>Your recent sign-ins</span><span class="who">tap ✎ to change a time</span></div>${hist.map((x) => `<div class="citem"><span><b>${esc(shortDay(x.d))}</b> · ${esc(siteLabel(x.site) || "")}<br><span class="who">${x.src === "t" ? "from your timesheet" : "signed in"}</span></span><span class="otime" style="display:flex;gap:6px;align-items:center">in <b>${esc(x.in || "")}</b>${x.open ? ' <span class="tag ok">On site</span>' : x.out ? ` · out <b>${esc(x.out)}</b>` : ""}<button type="button" class="iconbtn si-ed" data-src="${x.src}" data-id="${esc(x.id)}" aria-label="Change">✎</button></span></div>`).join("") || '<div class="nothing">Nothing yet.</div>'}</div>`;
+    h += `<div class="day" style="margin-top:12px"><div class="dayh"><span>Your recent sign-ins</span><span class="who">tap ✎ to change a time</span></div>${hist.map((x) => `<div class="citem"><span><b>${esc(shortDay(x.d))}</b> · ${esc(siteLabel(x.site) || "")}<br><span class="who">${x.src === "t" ? siTs("signed in", "from your timesheet") : "signed in"}</span></span><span class="otime" style="display:flex;gap:6px;align-items:center">in <b>${esc(x.in || "")}</b>${x.open ? ' <span class="tag ok">On site</span>' : x.out ? ` · out <b>${esc(x.out)}</b>` : ""}<button type="button" class="iconbtn si-ed" data-src="${x.src}" data-id="${esc(x.id)}" aria-label="Change">✎</button></span></div>`).join("") || '<div class="nothing">Nothing yet.</div>'}</div>`;
     $("main").innerHTML = h;
     wirePicks($("main"));
     if ($("si-in"))

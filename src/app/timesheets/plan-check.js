@@ -2,7 +2,7 @@
 import { addDays, esc, iso, parse, shortDay, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf } from "../owner/owner.js";
 import { onDay } from "../planner/time-off.js";
 import { siteLabel } from "../sites/job-details.js";
 import { same } from "../sites/project-pages.js";
@@ -30,7 +30,8 @@ function pcList(from, to) {
   const today = iso(new Date());
   const ok = new Set((S.settings || {}).pcOk || []);
   const out = [];
-  const team = new Set(teamIds());
+  /* James too, when he is booked on a job (James, Nov 2026: "am i being picked up on things like weekly wrap up") */
+  const team = new Set(crewIds());
   for (let d = from; d <= to && d < today; d = iso(addDays(parse(d), 1))) {
     const wd = parse(d).getDay();
     if (wd === 0 || wd === 6) continue;

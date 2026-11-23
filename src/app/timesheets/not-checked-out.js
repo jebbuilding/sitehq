@@ -2,7 +2,7 @@
 import { esc, iso, monday, parse } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { nameOf, openStopFor, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf, openStopFor, sheetOf } from "../owner/owner.js";
 import { siteLabel } from "../sites/job-details.js";
 export { ncoCardHtml, ncoNothingHtml, ncoWire };
 /* James (Nov 2026): "timesheets dont seem to show details and hours of trades within the app" / "doesnt seem to work
@@ -15,8 +15,8 @@ export { ncoCardHtml, ncoNothingHtml, ncoWire };
 function ncoList() {
   const today = iso(new Date());
   const out = [];
-  teamIds().forEach((id) =>
-    (S.data.entries[id] || [])
+  crewIds().forEach((id) =>
+    sheetOf("entries", id)
       .filter((e) => e.open && e.type === "hours" && e.date && e.date < today)
       .forEach((e) => out.push({ id, e })),
   );
@@ -40,7 +40,7 @@ function ncoWire() {
   document.querySelectorAll(".nco-fin").forEach(
     (b) =>
       (b.onclick = () => {
-        const e = (S.data.entries[b.dataset.w] || []).find((x) => x.id === b.dataset.e);
+        const e = sheetOf("entries", b.dataset.w).find((x) => x.id === b.dataset.e);
         if (e) openStopFor(b.dataset.w, e);
       }),
   );
@@ -54,7 +54,7 @@ function ncoWire() {
 }
 /* the last day someone put a timesheet in (any week), for "Nothing logged this week" */
 function ncoLast(id) {
-  const ds = (S.data.entries[id] || [])
+  const ds = sheetOf("entries", id)
     .filter((e) => !e.forName && e.date)
     .map((e) => e.date)
     .sort();

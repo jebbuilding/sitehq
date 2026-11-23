@@ -3,7 +3,7 @@ import { addDays, esc, gbp, hrs, iso, monday, parse, shortDay, toast } from "../
 import { S } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { coData } from "./company-details.js";
-import { nameOf, teamIds } from "./owner.js";
+import { crewIds, nameOf } from "./owner.js";
 import { nlOpenTab } from "./today.js";
 import { dueSoonItems } from "../safety/expiry-dates.js";
 import { jbProblems } from "../sales/job-budget.js";
@@ -23,7 +23,7 @@ function wuData() {
   const ents = (id) => (id === S.me ? S.mine.entries : S.data.entries[id]) || [];
   const since = iso(addDays(new Date(), -28));
   /* people who put timesheets in: any in the last four weeks */
-  const people = teamIds().filter((id) =>
+  const people = crewIds().filter((id) =>
     ents(id).some((e) => e.type === "hours" && e.date >= since),
   );
   const hoursBy = people

@@ -55,6 +55,7 @@ import { arcWhy, siteArchive, siteRestore, storageHtml, wireStorage } from "./st
 import { siteTiles } from "./tiles.js";
 import { folderIcon, openDoc } from "./trade-sites.js";
 import { openJob } from "../survey/door-window-survey.js";
+import { nstIs } from "../timesheets/non-site-time.js";
 import { sumH } from "../timesheets/time.js";
 export { ownerProjects, projectSites, same };
 function projectSites() {
@@ -62,7 +63,9 @@ function projectSites() {
   ["entries", "photos", "invoices"].forEach((c) =>
     allTeam(c).forEach((x) => {
       const n = c === "entries" ? x.job : x.site;
-      if (n) set.add(n);
+      /* time that isn't on a site (Office / paperwork, Pricing & quoting, Not a site yet…) stays on the timesheet
+         and doesn't make a site (James, Nov 2026) */
+      if (n && !nstIs(n)) set.add(n);
     }),
   );
   S.docs.forEach((d) => {

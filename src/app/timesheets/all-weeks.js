@@ -3,7 +3,7 @@ import { esc, hrs, iso, monday, parse } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer, openViewer } from "../core/viewer.js";
-import { nameOf, teamIds } from "../owner/owner.js";
+import { crewIds, nameOf } from "../owner/owner.js";
 export { awCardHtml, awWire };
 /* James (Nov 2026): "in time sheets is not showing team hours or any other hours nor does it show hours for each trade
    and I should be able to see each trades full time sheets". Timesheets only showed the chosen week, so a week with
@@ -34,7 +34,8 @@ const awWkLabel = (k) =>
   "w/c " +
   parse(k).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 function awCardHtml() {
-  const ids = teamIds();
+  /* James too, like everyone else (James, Nov 2026: "in timesheet recent weeks I should be within that too") */
+  const ids = crewIds();
   if (!ids.length) return "";
   const cur = iso(S.week);
   const wks = [];

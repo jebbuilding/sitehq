@@ -226,3 +226,5 @@
 .dbr-w{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .dbr-w b{font-size:16px}.dbr-w small{font-size:14px;color:var(--ink);opacity:.8}.dbr-n{white-space:pre-wrap}
 .dbr-dir{align-self:flex-start;margin-top:4px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none}
+.pg-unsaved{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:10px 12px;border:2px solid var(--accent);border-radius:12px;background:var(--soft);position:sticky;top:0;z-index:2}
+.pg-unsaved .actions{margin:0}

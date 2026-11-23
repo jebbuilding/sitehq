@@ -108,9 +108,12 @@ function jbWireTabs() {
         }
         if (v === "planner") return nlOpenTab("planner");
         if (v === "hs") return nlOpenTab("hs");
+        /* opening the Clients tab puts it on Active site, so pick the enquiries after (James, Nov 2026: it showed
+           Active sites) */
         if (v === "enq") {
+          nlOpenTab("clients");
           clShowToSee();
-          return nlOpenTab("clients");
+          return render();
         }
         S.f.jbt = v;
         render();
