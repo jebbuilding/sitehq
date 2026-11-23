@@ -1,20 +1,46 @@
 /* ================= DRAW ON A FILE: ✏️ Draw on it in the document viewer – draw, arrows, boxes, measure and text on any drawing or document page ================= */
+import { saveClient } from "../clients/clients.js";
+import { viewClient } from "../clients/quick-enquiry.js";
 import { bossFirst } from "../core/company-names.js";
 import { $, esc, iso, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
-import { ownerMode, siteNames } from "../core/state.js";
+import { S, ownerMode, siteNames } from "../core/state.js";
+import { closeViewer } from "../core/viewer.js";
+import { openNotePage } from "../drawing/paving.js";
 import { uploadErr, uploadFile } from "./files.js";
 import { FV, closeFile, fvHostAt, getFileBlob } from "./in-app-files.js";
 import { newId, submitJob } from "./outbox.js";
 import { SENDTO } from "./send-to.js";
 import { openMarkup } from "../photos/mark-up.js";
 import { siteLabel } from "../sites/job-details.js";
-export { dofStart };
+export { dofForClient, dofHasClient, dofPage, dofStart };
 /* James (Nov 2026): "in all drawings and documents do quick draw or text on it like in photos". Every drawing and
    document opens in the same viewer, so it has ✏️ Draw on it: the page you're looking at (or the picture) opens in
    the photo mark-up tools. The original stays exactly as uploaded – the drawn-on page is saved as a new picture:
    for the account holder it goes into 📤 Send to… (send it to trades or clients and/or keep it on the job's
-   documents); a trade picks the site and it goes in with their photos, so the office sees it. */
+   documents); a trade picks the site and it goes in with their photos, so the office sees it.
+   Opened from a client's page (their documents or an enquiry's drawings – James, Nov 2026: "the document that I load or
+   the photos can I quick draw, text or measure of it … can any of those be included into the sketch tab"), the
+   drawn-on copy goes into that client's 📷 Photos & sketches instead, and 📝 Put on a sketch page places the page on a
+   drawing page (pen, text, measurements, scale) saved there too. */
+/* which client the open file belongs to: set just before it's opened from their page */
+let dofCl = null;
+function dofForClient(c, assetId) {
+  dofCl = c && assetId ? { id: c.id, assetId } : null;
+}
+const dofClient = () =>
+  dofCl && FV.id === dofCl.assetId
+    ? (S.clients || []).find((x) => x.id === dofCl.id) || null
+    : null;
+/* add a picture or page to the client's 📷 Photos & sketches */
+async function dofToClient(c, item) {
+  const cur = (S.clients || []).find((x) => x.id === c.id) || c;
+  return await saveClient(
+    Object.assign({}, cur, {
+      media: (cur.media || []).concat([Object.assign({ at: Date.now() }, item)]),
+    }),
+  );
+}
 function dofPageNo() {
   if (!FV.pdf) return 1;
   const b = $("fv-body").getBoundingClientRect();
@@ -58,10 +84,70 @@ async function dofStart() {
   $("markup").classList.add("dof-over");
   openMarkup(src, (out) => dofSave(out, title), "✏️ " + title, { done: "Next" });
 }
+const dofHasClient = () => ownerMode() && !!dofClient();
+/* 📝 Put on a sketch page: the page you're looking at, on a drawing page of the client's */
+async function dofPage() {
+  const cl = dofClient();
+  if (!cl || !FV.id || (!FV.pdf && !$("fv-img"))) return;
+  const pageNo = dofPageNo();
+  const base = String(FV.name || "Document").replace(/\.[^.]+$/, "");
+  const title = base + (FV.pdf && FV.pdf.numPages > 1 ? " – page " + pageNo : "");
+  const from = FV.id;
+  let a;
+  try {
+    toast("Putting it on a page…");
+    const src = await dofSource(pageNo);
+    a = await uploadFile(src, title + ".jpg");
+  } catch (e) {
+    toast(uploadErr(e));
+    return;
+  }
+  closeFile();
+  closeViewer();
+  openNotePage({
+    title,
+    size: "A4",
+    orient: "land",
+    pro: true,
+    addPhoto: a.id,
+    onSave: async (r) => {
+      try {
+        const rec = await dofToClient(cl, {
+          id: r.preview,
+          src: r.src,
+          kind: "page",
+          note: r.title || title,
+          from,
+        });
+        toast("Page saved in " + cl.name + "'s photos & sketches");
+        viewClient(rec);
+      } catch (e) {
+        toast("Couldn't save the page");
+      }
+    },
+  });
+}
 async function dofSave(blob, title) {
   const name = title + " (marked up).jpg";
   /* the viewer sits above pop-up sheets, and the marked-up copy is what's wanted now */
+  const cl = ownerMode() ? dofClient() : null;
   closeFile();
+  if (cl) {
+    try {
+      const a = await uploadFile(blob, name);
+      const rec = await dofToClient(cl, {
+        id: a.id,
+        kind: "photo",
+        marked: true,
+        note: title + " (marked up)",
+      });
+      toast("Saved in " + cl.name + "'s photos & sketches");
+      viewClient(rec);
+    } catch (e) {
+      toast(uploadErr(e));
+    }
+    return;
+  }
   if (ownerMode()) {
     let a;
     try {

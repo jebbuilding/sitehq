@@ -6,6 +6,7 @@ import { $, esc, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { closeViewer } from "../core/viewer.js";
+import { dofForClient } from "../files/draw-on-file.js";
 import { blobUrl, saveAsset, uploadErr, uploadFile } from "../files/files.js";
 import { loadPdfJs, openFile } from "../files/in-app-files.js";
 import { shrinkImage } from "../safety/training.js";
@@ -74,7 +75,10 @@ function wireClDocs(c) {
     (b) =>
       (b.onclick = () => {
         const d = ds()[+b.dataset.i];
-        if (d) openFile(d.assetId, d.name, d.type);
+        if (d) {
+          dofForClient(c, d.assetId);
+          openFile(d.assetId, d.name, d.type);
+        }
       }),
   );
   box.querySelectorAll(".cd-dl").forEach(

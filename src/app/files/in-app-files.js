@@ -4,7 +4,7 @@ import { $, esc, toast } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { CUT } from "./cut-outs.js";
-import { dofStart } from "./draw-on-file.js";
+import { dofHasClient, dofPage, dofStart } from "./draw-on-file.js";
 import { assetBlob, isWord, loadMammoth, saveAsset } from "./files.js";
 import { printAsset } from "./print.js";
 import {
@@ -145,6 +145,7 @@ async function openFile(id, name, type) {
   if ($("fv-send")) $("fv-send").hidden = !ownerMode();
   if ($("fv-cut")) $("fv-cut").hidden = !ownerMode();
   if ($("fv-draw")) $("fv-draw").hidden = true;
+  if ($("fv-page")) $("fv-page").hidden = true;
   FV.blobType = "";
   fvMsg(
     "Opening…",
@@ -226,6 +227,7 @@ async function openFile(id, name, type) {
     $("fv-body").innerHTML =
       `<div class="fvimgwrap"><span class="fvimgbox"><img id="fv-img" src="${FV.url}" alt="${esc(FV.name)}"></span></div>`;
     if ($("fv-draw")) $("fv-draw").hidden = false;
+    if ($("fv-page")) $("fv-page").hidden = !dofHasClient();
     applyZoom();
     return;
   }
@@ -245,6 +247,7 @@ async function openFile(id, name, type) {
       if (gen !== FV.gen) return;
       const n = FV.pdf.numPages;
       if ($("fv-draw")) $("fv-draw").hidden = false;
+      if ($("fv-page")) $("fv-page").hidden = !dofHasClient();
       const first = (await FV.pdf.getPage(1)).getViewport({ scale: 1 });
       $("fv-body").innerHTML =
         `<div class="fvpages" id="fv-pages">${Array.from({ length: n }, (_, i) => `<div class="fvpage" data-p="${i + 1}"><canvas class="fvbase"></canvas><canvas class="fvdet" hidden></canvas><span class="fvnum">${i + 1} / ${n}</span></div>`).join("")}</div>`;
@@ -641,6 +644,7 @@ function initInAppFiles() {
   };
   if ($("fv-cut")) $("fv-cut").onclick = () => CUT.start();
   if ($("fv-draw")) $("fv-draw").onclick = () => dofStart();
+  if ($("fv-page")) $("fv-page").onclick = () => dofPage();
   if ($("fv-print"))
     $("fv-print").onclick = () => {
       if (FV.id) printAsset(FV.id, FV.name);

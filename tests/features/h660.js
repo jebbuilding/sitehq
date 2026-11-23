@@ -26,6 +26,12 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('text=Bob Lee');await p.waitForTimeout(700);
  const pos=await p.evaluate(()=>{const a=document.getElementById('cv-edit2'),b=document.getElementById('cv-edit'),h=document.querySelector('#viewer h3');return a&&b&&h?[Math.round(a.getBoundingClientRect().top-h.getBoundingClientRect().bottom),Math.round(b.getBoundingClientRect().top)]:null});
  ok(pos&&pos[0]<80&&pos[1]>pos[0],'the client page has ✎ Edit client details just under the name (and still at the bottom)');
+ ok(await p.isVisible('#cv-enq2')&&/Edit enquiry/.test(await p.innerText('#cv-enq2')),'and ✎ Edit enquiry at the top too');
+ await p.click('#cv-enq2');await p.waitForTimeout(600);
+ ok(/Edit enquiry/.test(await p.innerText('#sheettitle')),'the top ✎ Edit enquiry opens the enquiry');
+ await p.click('#f-cancel');await p.waitForTimeout(300);
+ await p.click('.cl-tab[data-v=jobs]').catch(()=>{});await p.evaluate(()=>{const S=window.__S;S.f.clf='all';window.render()});await p.waitForTimeout(300);
+ await p.click('text=Bob Lee');await p.waitForTimeout(700);
  await p.click('#cv-edit2');await p.waitForTimeout(600);
  ok(/Edit client details/.test(await p.innerText('#sheettitle'))&&await p.inputValue('#cf-phone')==='07700900222','the top one opens Edit client details');
  }catch(e){console.log('FAIL',e.message);bad++;}
