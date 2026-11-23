@@ -37,6 +37,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.evaluate(()=>{const b=[...document.querySelectorAll('.wsov button')].find(x=>/Done/.test(x.textContent));b&&b.click();});await p.waitForTimeout(500);
  /* the survey from the new client form */
  await p.evaluate(()=>document.querySelector('#tabs .tab[data-t=clients]').click());await p.waitForTimeout(500);
+ await p.click('.cl-tab[data-v=book]');await p.waitForTimeout(400);
  await p.click('#cl-new');await p.waitForTimeout(500);
  ok(await p.isVisible('#cf-ws'),'new client form has 🪟 Door & window survey');
  await p.click('#cf-ws');await p.waitForTimeout(600);

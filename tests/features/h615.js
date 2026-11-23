@@ -60,7 +60,7 @@ const page=async(ctx,owner,old)=>{const p=await ctx.newPage();p.on('pageerror',e
  ok(await t.evaluate(d=>document.getElementById('f-date')&&document.getElementById('f-date').value===d,lastDay),'and opens the timesheet on that day');
  await t.close();
  /* 3. close the week: emp1 is a CIS subcontractor with two days and some day work this week */
- const mon=await p.evaluate(()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)-7);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')});
+ const mon=await p.evaluate(()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)-14);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')});
  await p.evaluate(async([site,mon])=>{const S=window.__S;const st=window.__st['sheets/emp1']||{};
    await S.db.doc('sheets/emp1').update({details:Object.assign({},st.details||{},{empType:'cis'})});
    const d2=new Date(mon+'T12:00');d2.setDate(d2.getDate()+1);const tue=d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');

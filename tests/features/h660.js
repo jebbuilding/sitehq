@@ -17,6 +17,10 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  const st=await p.evaluate(()=>[window.__S.otab,window.__S.f.clf]);
  ok(st[0]==='clients'&&st[1]==='see','it opens Clients on Job to see ('+st.join(', ')+')');
  ok(/Bob Lee/.test(await p.innerText('#main')),'showing the new enquiry (Bob Lee)');
+ ok(!(await p.isVisible('#cl-new'))&&await p.isVisible('#cl-enq'),'Clients has 📝 New enquiry but not the details-only button');
+ await p.click('.cl-tab[data-v=book]');await p.waitForTimeout(400);
+ ok(await p.isVisible('#cl-new')&&/Add to address book/.test(await p.innerText('#cl-new')),'the 📒 Address book has ＋ Add to address book (no job)');
+ await p.click('.cl-tab[data-v=jobs]');await p.waitForTimeout(300);
  /* the client page: ✎ Edit client details at the top as well as the bottom */
  await p.evaluate(()=>{const S=window.__S;S.f.clf='all';window.render()});await p.waitForTimeout(300);
  await p.click('text=Bob Lee');await p.waitForTimeout(700);

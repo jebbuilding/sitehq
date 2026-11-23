@@ -13,6 +13,7 @@ import { cmyHtml, cmyWire } from "./client-money.js";
 import { CL_STAGES, clStage, openClientForm, saveClient } from "./clients.js";
 import { clDocsHtml, wireClDocs } from "./documents.js";
 import { clGdprHtml, wireClGdpr } from "./gdpr-consent.js";
+import { jtHtml, jtRead, jtWire } from "./job-top.js";
 import { mjEdit } from "./more-jobs.js";
 import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
 import { PROP } from "./property-info.js";
@@ -135,11 +136,11 @@ function quickEnquiry(pre = {}) {
   openSheet(
     `<h3 id="sheettitle">⚡ Quick enquiry</h3><div class="who">Just the basics and when you're going to see them. It goes in your planner with a reminder ${VISIT_REMIND_MIN / 60} hour before. Fill in the full client form when you're there.</div>
     ${pre.web ? `<div class="notice">🌐 From your website – check it, then book the visit.</div>` : ""}
+    ${jtHtml("qe", { jobName: pre.jobName || "", work: pre.work || "", clientType: pre.clientType || "" })}
     <label for="qe-name">Name<input id="qe-name" required maxlength="80" autocomplete="off" placeholder="e.g. Mrs Sarah Jones" value="${esc(pre.name || "")}"></label>
     <div class="grid2"><label for="qe-phone">Phone<input id="qe-phone" type="tel" maxlength="40" placeholder="07…" value="${esc(pre.phone || "")}"></label><label for="qe-pc">Postcode<input id="qe-pc" maxlength="10" autocapitalize="characters" value="${esc(((pre.address || "").match(/[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i) || [""])[0].toUpperCase())}"></label></div>
     ${pre.email ? `<label for="qe-email">Email<input id="qe-email" type="email" maxlength="120" value="${esc(pre.email)}"></label>` : ""}
     <label for="qe-addr">Address<input id="qe-addr" maxlength="200" placeholder="e.g. 14 Church Lane, Topsham" value="${esc(pre.address || "")}"></label>
-    <label for="qe-jn">Job name (optional – what you'll call the job)<input id="qe-jn" maxlength="60" placeholder="e.g. Jones garden room" value="${esc(pre.jobName || "")}"></label>
     <label for="qe-what">What it's about (the short description that goes with the job)<textarea id="qe-what" maxlength="600" style="min-height:64px" placeholder="e.g. Wants a quote for a garden room, saw the van">${esc(pre.what || "")}</textarea></label>
     <div class="grid2"><label for="qe-d">Visit date<input id="qe-d" type="date" value="${tm}" required></label><label for="qe-t">Time<input id="qe-t" type="time" value="10:00" required></label></div>
     <label for="qe-len">How long<select id="qe-len"><option value="30">30 minutes</option><option value="60" selected>1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
@@ -171,7 +172,9 @@ function quickEnquiry(pre = {}) {
           address: v("qe-addr"),
           postcode: v("qe-pc").toUpperCase(),
           desc: v("qe-what"),
-          jobName: v("qe-jn").replace(/\s+/g, " "),
+          jobName: jtRead("qe").jobName,
+          work: jtRead("qe").work,
+          clientType: jtRead("qe").clientType,
           stage: "enquiry",
           source: pre.source || "",
           email: $("qe-email") ? v("qe-email") : "",
@@ -228,6 +231,7 @@ function quickEnquiry(pre = {}) {
     "qe-name",
   );
   vdWire($("qe-diary"), "qe-d", "qe-t", "qe-len");
+  jtWire("qe");
 }
 /* while the app is open, pop up a reminder an hour before any planner entry that asks for one */
 /* (any entry with a reminder: James gets all of them, a trade the ones they're named on – planner/plan-remind.js) */

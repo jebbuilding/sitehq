@@ -1,6 +1,7 @@
 /* ================= MORE JOBS: a client with more than one job on the go – each with its own stage, estimate and site ================= */
 import { clientSites } from "./address-book.js";
 import { CL_STAGES, CL_WORK, clStage, saveClient } from "./clients.js";
+import { jtHtml, jtRead, jtWire } from "./job-top.js";
 import { viewClient } from "./quick-enquiry.js";
 import { srcpOptions, srcpWire } from "./source-pick.js";
 import { $, esc, toast } from "../core/helpers.js";
@@ -31,7 +32,7 @@ function mjEdit(c, j0, full) {
   openSheet(
     `<h3 id="sheettitle">🔨 ${j0 ? esc(j.work || "Job") : "Another job for " + esc(c.name)}</h3>
     <div class="who">${j0 ? "" : "Their other jobs stay as they are. This one has its own stage, estimate and site."}</div>
-    <label for="mj-work">What's the job?<input id="mj-work" list="mj-wl" maxlength="80" value="${esc(j.work || "")}" placeholder="e.g. Garden wall"><datalist id="mj-wl">${CL_WORK.map((w) => `<option value="${esc(w)}">`).join("")}</datalist></label>
+    ${jtHtml("mj", { jobName: j.jobName || "", clientType: j.clientType || "" }, { workHtml: `<label for="mj-work">Type of work<input id="mj-work" list="mj-wl" maxlength="80" value="${esc(j.work || "")}" placeholder="e.g. Garden wall"><datalist id="mj-wl">${CL_WORK.map((w) => `<option value="${esc(w)}">`).join("")}</datalist></label>` })}
     <div class="grid2"><label for="mj-stage">Stage<select id="mj-stage">${mjStages()
       .map(([k, l]) => `<option value="${k}"${k === j.stage ? " selected" : ""}>${esc(l)}</option>`)
       .join("")}</select></label>
@@ -80,6 +81,8 @@ function mjEdit(c, j0, full) {
       const rec = Object.assign({}, j, {
         id: j.id || "mj-" + newId(),
         work,
+        jobName: jtRead("mj").jobName,
+        clientType: jtRead("mj").clientType,
         desc: $("mj-desc").value.trim(),
         stage: $("mj-stage").value,
         quote: $("mj-quote").value.replace(/[£,\s]/g, ""),
@@ -140,6 +143,7 @@ function mjEdit(c, j0, full) {
     "mj-work",
   );
   srcpWire("mj-src");
+  jtWire("mj");
   if ($("mj-full"))
     $("mj-full").onclick = () => {
       $("mj-more").hidden = false;

@@ -369,7 +369,7 @@ function clientsView() {
       ? [...new Set(shown.map((c) => (String(c.name || "?").trim()[0] || "#").toUpperCase()))]
       : [];
   $("main").innerHTML =
-    `<div class="abtop"><button class="btn primary" id="cl-enq" type="button">📝 New enquiry</button><button class="btn" id="cl-new" type="button">📒 + New client (details only)</button><button class="btn hv" id="cl-quick" type="button">⚡ Quick enquiry</button>${webBtnHtml()}<input id="cl-q" type="search" placeholder="Search name, phone, address, job…" value="${esc(S.f.clq || "")}" aria-label="Search clients">
+    `<div class="abtop"><button class="btn primary" id="cl-enq" type="button">📝 New enquiry</button>${f === "book" ? `<button class="btn" id="cl-new" type="button">📒 ＋ Add to address book (no job)</button>` : ""}<button class="btn hv" id="cl-quick" type="button">⚡ Quick enquiry</button>${webBtnHtml()}<input id="cl-q" type="search" placeholder="Search name, phone, address, job…" value="${esc(S.f.clq || "")}" aria-label="Search clients">
       <select id="cl-s" aria-label="Sort"><option value="az" ${sort === "az" ? "selected" : ""}>A–Z</option><option value="recent" ${sort === "recent" ? "selected" : ""}>Most recent</option></select></div>
     <div class="clper"><span class="who">Added in</span><select id="cl-y" aria-label="Year"><option value="">All years</option>${years.map((y) => `<option value="${y}" ${String(y) === String(cy) ? "selected" : ""}>${y}</option>`).join("")}</select>
       <select id="cl-m" aria-label="Month"><option value="">All months</option>${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => `<option value="${i + 1}" ${String(i + 1) === String(cm) ? "selected" : ""}>${m}</option>`).join("")}</select>
@@ -391,7 +391,8 @@ function clientsView() {
     <div class="ablist${book ? " bklist" : ""}">${shown.map(book ? bookRow : card).join("") || `<div class="empty"><strong>${all.length ? "Nobody matches" : "No clients yet"}</strong>${all.length ? "Try a different search or filter." : "Tap “New client” when someone gets in touch."}</div>`}</div>
     <div class="actions" style="margin-top:12px"><button class="btn" id="cl-csv" type="button">Download address book (CSV)</button><label class="btn fhpickbtn">📥 Upload an address book (CSV)<input type="file" id="cl-imp" accept=".csv,text/csv,text/plain" aria-label="Upload an address book CSV"></label></div>
     <div class="who">Only you can see clients.</div>`;
-  $("cl-new").onclick = () => openClientForm(null, "contact");
+  /* only on the 📒 Address book list – on Clients it was mistaken for New enquiry (James, Nov 2026) */
+  if ($("cl-new")) $("cl-new").onclick = () => openClientForm(null, "contact");
   $("cl-enq").onclick = () => newEnquiryFor();
   if ($("cl-quick")) $("cl-quick").onclick = () => quickEnquiry();
   if ($("cl-web")) $("cl-web").onclick = () => webView();

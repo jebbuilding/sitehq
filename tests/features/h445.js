@@ -48,6 +48,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.click('.nl-b[data-s=today]');await p.waitForTimeout(400);
  /* the notebook from a new client */
  await p.evaluate(()=>document.querySelector('#tabs .tab[data-t=clients]').click());await p.waitForTimeout(500);
+ await p.click('.cl-tab[data-v=book]');await p.waitForTimeout(400);
  await p.click('#cl-new');await p.waitForTimeout(500);
  await p.fill('#cf-main .cfm-f','Alex');await p.fill('#cf-main .cfm-l','Testperson');
  await p.click('#cf-sk');await p.waitForTimeout(900);
