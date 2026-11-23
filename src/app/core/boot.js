@@ -208,6 +208,7 @@ initOpening();
         S.winSurveys = all.filter((t) => t.kind === "winsurvey");
         S.wsDesigns = all.filter((t) => t.kind === "wsdesign");
         S.wtns = all.filter((t) => t.kind === "wtn");
+        S.glassOrders = all.filter((t) => t.kind === "glassorder");
         S.clips = all.filter((t) => t.kind === "clip");
         S.brochures = all.filter((t) => t.kind === "brochure");
         S.samples = all.filter((t) => t.kind === "sample");

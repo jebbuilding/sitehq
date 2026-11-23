@@ -44,6 +44,7 @@ Subcollections (`TR_COLLS`):
 | `maker` | manufacturer/supplier details (key matches built-in list or `mk-…`), `vis`/`people` |
 | `brochure` | brochure file for a maker (`maker`, `assetId`) |
 | `winsurvey` | door & window survey (`job`, `items[]` openings, `clientId`, `site`, `lastPdf`) |
+| `glassorder` | glass order for the glass supplier (`ref` GO-001…, `clientId`, `site`, `supName`, `supEmail`, `needBy`, `deliver`, `items[]` each `type` unit/rail/colour/splash/mirror/pane/shelf/other with `qty`, `w`, `h` mm, `shape` and that type's fields, `status` draft/sent, `sent[]`) |
 | `wsdesign` | a design read from a hand drawing |
 | `wtn` | waste transfer note (sections A–D, signatures, lock) |
 | `clip` | cut-out image (`assetId`, `from`, `page`, optional `client`) |

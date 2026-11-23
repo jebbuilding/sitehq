@@ -36,3 +36,12 @@
 .wsticks{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
 .wsticks[hidden]{display:none}
 .wsticks #wsx-tickn{font-weight:700;margin-right:auto}
+.glo-item{padding:10px 12px;margin:8px 0}
+.glo-ih{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.glo-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.glo-g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 10px}
+.glo-add{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.glo-add .btn{min-height:44px}
+.glo-area{margin-top:4px}
+.glo-list{display:flex;flex-direction:column;gap:6px;padding:8px 0}
+.glo-row{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}

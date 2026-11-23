@@ -56,6 +56,7 @@ import { same } from "../sites/project-pages.js";
 import { sqMap } from "../sites/snag-quick.js";
 import { siteClient } from "../sites/summary.js";
 import { typeFor } from "../sites/trade-sites.js";
+import { GLO } from "./glass-order.js";
 export { DWS, jobDraft, jobsView, myName, openJob, openJobEditor, renderJobDetail, siteFilePicker };
 const DWS = (() => {
   const g = (id) => document.getElementById("wsx-" + id);
@@ -4957,7 +4958,7 @@ function jobsView() {
     (a, b) =>
       (a.due || "9999").localeCompare(b.due || "9999") || (b.created || 0) - (a.created || 0),
   );
-  let html = `${owner ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div>` : ""}
+  let html = `${owner ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div>` : ""}
     <div class="seg" id="jf">${[
       ["open", "Open"],
       ["closed", "Signed off"],
@@ -4970,10 +4971,11 @@ function jobsView() {
   html += list.length
     ? `<div class="day">${list.map((j) => jobCard(j, owner)).join("")}</div>`
     : `<div class="empty"><strong>${f === "open" ? "No open jobs" : "Nothing here"}</strong>${owner ? "Create a job sheet or snag list, choose who it's for, and add the tasks." : `Job sheets and snag lists ${bossFirst()} gives you will appear here.`}</div>`;
-  if (owner) html += DWS.jobsHtml() + WTN.jobsHtml();
+  if (owner) html += DWS.jobsHtml() + GLO.jobsHtml() + WTN.jobsHtml();
   $("main").innerHTML = html;
   if (owner) {
     DWS.wireJobs();
+    GLO.wireJobs();
     WTN.wireJobs();
   }
   if ($("newJob")) $("newJob").onclick = () => openJobEditor("job", null);
