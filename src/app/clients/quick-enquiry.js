@@ -60,6 +60,7 @@ export {
   initQuickEnquiry,
   quickEnquiry,
   viewClient,
+  viewClientAs,
   visitToPhone,
 };
 const VISIT_REMIND_MIN = 60;
@@ -308,7 +309,22 @@ function clDetailsBox(c) {
     <div class="cldet-row"><span class="who">Email</span>${c.email ? `<a href="mailto:${esc(c.email)}" class="cldet-mail">✉ ${esc(c.email)}</a>` : '<span class="who">Not added</span>'}</div>
     <div class="cldet-row"><span class="who">Address</span>${lines.length ? `<span class="cldet-addr">${lines.map(esc).join("<br>")}</span>` : '<span class="who">Not added</span>'}</div></div>`;
 }
+/* James (Nov 2026): the Address book and Job to see brought up the same page. Opened from the 📒 Address book it shows
+   the person – their details, address, keys, invoice address and the work done for them; opened from a job list (Job to
+   see, Job to cost…) it shows the job – what they want, the stage, visit, photos, documents, estimate – with their
+   name, phone and address at the top. Their jobs (with ＋ Another job) and what they owe show on both. Each has a
+   button to the other; opened from anywhere else it shows everything.
+   Parts are hidden, not left out, so every button on the page still works. */
+let cvMode = { id: "", m: "" };
+function viewClientAs(c, m) {
+  cvMode = { id: (c && c.id) || "", m: m || "" };
+  viewClient(c);
+}
 function viewClient(c) {
+  const vm = cvMode.id && c && cvMode.id === c.id ? cvMode.m : "";
+  const J = vm === "person" ? " hidden" : "",
+    P = vm === "job" ? " hidden" : "";
+  const newEnq = ["contact", "done", "lost"].includes(c.stage);
   const tel = (c.phone || "").replace(/\s+/g, "");
   const addr = [c.address, c.postcode].filter(Boolean).join(", ");
   const rows = [
@@ -432,19 +448,20 @@ function viewClient(c) {
         openFile(c.frontPhoto, "Front of " + (c.name || "property") + ".jpg", "image/jpeg");
   }, 0);
   openViewer(`<span class="tag">${esc(clStage(c.stage))}</span><h3 style="font-family:var(--f-display);font-size:24px;margin:6px 0 8px;color:var(--accent);text-transform:uppercase">${esc(c.name)}</h3>
-    <div class="actions cv-topedit"><button class="btn" id="cv-edit2" type="button">✎ Edit client details</button><button class="btn" id="cv-enq2" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button></div>
+    <div class="actions cv-topedit"><button class="btn" id="cv-edit2" type="button"${vm === "job" ? " hidden" : ""}>✎ Edit client details</button><button class="btn" id="cv-enq2" type="button"${vm === "person" && !newEnq ? " hidden" : ""}>${newEnq ? "📝 New enquiry" : "✎ Edit enquiry"}</button>${vm === "job" ? `<button class="btn" id="cv-toper" type="button">👤 Client details &amp; past work</button>` : ""}${vm === "person" && !newEnq ? `<button class="btn primary" id="cv-tojob" type="button">🔨 Open their current job</button>` : ""}</div>
     ${!c.frontPhoto ? `<div class="fhaddrow"><span class="who">🏠 Photo of the front of the house</span><label class="btn primary fhpickbtn">📷 Take photo<input type="file" class="cv-fhin" accept="image/*" capture="environment"></label><label class="btn fhpickbtn">🖼 Choose<input type="file" class="cv-fhin" id="cv-fhadd" accept="image/*"></label></div>` : ""}
     ${c.frontPhoto ? `<button type="button" class="fhhero" id="cv-fh"><img src="${blobUrl(c.frontPhoto)}" alt="Front of the property">${addr ? `<span>📍 ${esc(addr)}</span>` : ""}</button>` : ""}
     <div class="actions cv-acts">${tel ? `<a class="btn primary" href="tel:${esc(tel)}" style="text-decoration:none">📞 Call</a><a class="btn" href="sms:${esc(tel)}" style="text-decoration:none;color:var(--ink)">💬 Text</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}" style="text-decoration:none;color:var(--ink)">✉ Email</a>` : ""}${addr || c.lat != null ? `<button class="btn maplink" type="button" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">📍 Map</button>` : ""}<button class="btn" id="cv-msg" type="button">💬 Message in app</button></div>
-    <div class="actions">${c.site ? `<button class="btn primary" id="cv-gosite" type="button">🏗️ Open the site</button>` : `<button class="btn primary" id="cv-site" type="button">🏗️ Make it a site</button><span class="who">Moves them to Active site</span>`}</div>
+    <div class="cvp-j"${J}><div class="actions">${c.site ? `<button class="btn primary" id="cv-gosite" type="button">🏗️ Open the site</button>` : `<button class="btn primary" id="cv-site" type="button">🏗️ Make it a site</button><span class="who">Moves them to Active site</span>`}</div></div>
     ${clDetailsBox(c)}
+    <div class="cvp-j"${J}>
     ${c.visit && c.visit.date >= iso(new Date()) ? `<div class="notice" style="margin-top:10px">📅 Visit booked <b>${esc(shortDay(c.visit.date))} ${esc(c.visit.time || "")}</b> · reminder ${VISIT_REMIND_MIN / 60} hour before <button type="button" class="linkbtn" id="cv-ics">📲 Add to phone calendar</button></div>` : ""}
     ${c.quick ? `<div class="notice warn" style="margin-top:10px">⚡ Quick enquiry: only the basics so far. <button type="button" class="btn primary" id="cv-full" style="margin-left:6px">Fill in the full form</button></div>` : ""}
     ${clStepsHtml(c)}
     <div class="flabel" style="margin-top:12px">🔨 This job</div>
     <label for="cv-stage" style="max-width:320px">Stage<select id="cv-stage">${CL_STAGES.map(([k, l]) => `<option value="${k}" ${k === c.stage ? "selected" : ""}>${l}</option>`).join("")}</select></label>
     <div class="details" style="margin-top:10px">${rows.map(([l, v]) => `<div class="drow"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join("")}</div>
-    ${clMainHtml(c)}${clContactsHtml(c)}${
+    </div><div class="cvp-p"${P}>${clMainHtml(c)}${clContactsHtml(c)}${
       c.keyLoc || c.keyCode || c.alarmLoc || c.alarmCode
         ? `<div class="card" style="margin-top:10px;padding:10px 12px"><b>🔑 Keys &amp; alarm</b> <span class="who">only you see this</span><div class="details" style="margin-top:6px">${[
             ["House key", c.keyLoc, c.keyCode, "Key safe code"],
@@ -458,8 +475,8 @@ function viewClient(c) {
             .join("")}</div></div>`
         : ""
     }${PROP.viewHtml(c)}${clInvHtml(c)}
-    ${clGdprHtml(c)}
-    ${
+    ${clGdprHtml(c)}</div>
+    <div class="cvp-j"${J}>${
       clientSites(c).length
         ? `<div class="actions" style="margin-top:8px">${clientSites(c)
             .map(
@@ -468,14 +485,14 @@ function viewClient(c) {
             )
             .join("")}</div>`
         : `<div class="who" style="margin-top:8px">When this job is accepted it becomes a site, and you choose who sees each part of the details.</div>`
-    }
+    }</div>
     ${c.lat != null ? `<div class="mmwrap">${miniMap(c.lat, c.lon, { addr, label: c.name, cid: c.id })}</div>` : ""}
     <div class="clpin">${c.lat != null ? `📍 <b>Pin saved</b> <span class="who">${(+c.lat).toFixed(5)}, ${(+c.lon).toFixed(5)}${(c.pins || []).length > 1 ? " · " + c.pins.length + " pins" : ""}</span> <button type="button" class="linkbtn maplink" data-addr="${esc(addr)}" data-label="${esc(c.name)}" data-client="${esc(c.id)}">Open / send</button>` : `<span class="who">No pin on the property yet.</span>`} <button type="button" class="pillbtn" id="cv-pin">📍 ${c.lat != null ? "Add another pin" : "Drop a pin"}</button></div>
-    <div class="flabel" style="margin-top:12px">🔨 Jobs${CJOBS.jobsOf(c).length ? " (" + CJOBS.jobsOf(c).length + ")" : ""}</div>${CJOBS.rowJobs(c).replace('<div class="abjobs">', '<div class="abjobs cvjobs">')}<div class="actions"><button type="button" class="btn" id="cv-more">＋ Another job</button><button type="button" class="btn" id="cv-morefull">📝 Another job – full details</button></div>
+    <div class="cvp-both"><div class="flabel" style="margin-top:12px">🔨 Jobs${CJOBS.jobsOf(c).length ? " (" + CJOBS.jobsOf(c).length + ")" : ""}</div>${CJOBS.rowJobs(c).replace('<div class="abjobs">', '<div class="abjobs cvjobs">')}<div class="actions"><button type="button" class="btn" id="cv-more">＋ Another job</button><button type="button" class="btn" id="cv-morefull">📝 Another job – full details</button></div>
     ${cmyHtml(c)}
-    ${c.stage === "contact" ? `<div class="notice" style="margin-top:12px">📒 In your address book – no job on at the moment. Tap <b>📝 New enquiry</b> when they ask for something.</div>` : ""}
-    ${c.desc ? `<div class="flabel" style="margin-top:12px">What they want</div><div class="talkbody pnotes">${esc(c.desc)}</div>` : ""}
-    ${
+    ${c.stage === "contact" ? `<div class="notice" style="margin-top:12px">📒 In your address book – no job on at the moment. Tap <b>📝 New enquiry</b> when they ask for something.</div>` : ""}</div>
+    <div class="cvp-j"${J}>${c.desc ? `<div class="flabel" style="margin-top:12px">What they want</div><div class="talkbody pnotes">${esc(c.desc)}</div>` : ""}</div>
+    <div class="cvp-p"${P}>${
       (c.pastJobs || []).length
         ? `<details class="pmdet" style="margin-top:10px"><summary>Earlier enquiries / jobs (${c.pastJobs.length})</summary>${c.pastJobs
             .slice()
@@ -486,12 +503,12 @@ function viewClient(c) {
             )
             .join("")}</details>`
         : ""
-    }
-        ${clPlanListHtml(c)}
-        ${histHtml(c)}
-    ${ptClientBlock(c)}
+    }</div>
+        <div class="cvp-j"${J}>${clPlanListHtml(c)}</div>
+        <div class="cvp-p"${P}>${histHtml(c)}</div>
+    <div class="cvp-j"${J}>${ptClientBlock(c)}
 ${clMediaHtml(c)}
-    ${DWS.clientHtml(c)}${SAMPLES.clientHtml(c)}${REVIEWS.clientHtml(c)}
+    ${DWS.clientHtml(c)}${SAMPLES.clientHtml(c)}${REVIEWS.clientHtml(c)}</div>
     <div class="flabel" style="margin-top:12px">Notes and calls</div>
     <div style="display:flex;gap:8px"><textarea id="cv-note" maxlength="1000" placeholder="e.g. Visited, measured up. Sending quote Friday." style="flex:1;min-height:48px"></textarea><button type="button" class="btn primary" id="cv-addnote">Add</button></div>
     <div class="clnotes">${
@@ -504,13 +521,13 @@ ${clMediaHtml(c)}
         )
         .join("") || '<div class="nothing">No notes yet.</div>'
     }</div>
-    <div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-price" type="button">💷 Price this job</button><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
+    <div class="cvp-j"${J}><div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-price" type="button">💷 Price this job</button><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
       const j = (S.jobFiles || []).find((x) => x.clientId === c.id);
       return j && (j.items || []).length ? " (" + j.items.length + ")" : "";
     })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button></div>
     ${clDocsHtml(c)}
     ${(c.recordPdfs || []).length ? `<div class="card" style="margin-top:12px;padding:10px 12px"><b>📄 Client PDFs saved to this job</b>${c.recordPdfs.map((r, i) => `<div class="attrow"><button type="button" class="incrow cv-rpo" data-i="${i}"><span class="attic" aria-hidden="true">📄</span><span><b>${esc(r.name)}</b><br><span class="who">${esc(stamp(r.at))}${r.pages ? " · " + r.pages + " page" + (r.pages === 1 ? "" : "s") : ""}</span></span></button><button type="button" class="iconbtn cv-rpd" data-i="${i}" aria-label="Download" title="Download">⬇</button><button type="button" class="iconbtn cv-rpx" data-i="${i}" aria-label="Delete" title="Delete" style="color:var(--danger)">🗑</button></div>`).join("")}</div>` : ""}
-    <div class="actions" style="margin-top:18px;justify-content:flex-end"><button class="btn delbtn" id="cv-delete" type="button">🗑 Delete client</button></div>`);
+    </div><div class="cvp-p"${P}><div class="actions" style="margin-top:18px;justify-content:flex-end"><button class="btn delbtn" id="cv-delete" type="button">🗑 Delete client</button></div></div>`);
   setTimeout(() => {
     const d = $("cv-delete");
     if (d) d.onclick = () => deleteClientFlow(c);
@@ -558,6 +575,8 @@ ${clMediaHtml(c)}
   /* the same Edit at the top of the page too (James, Nov 2026) */
   $("cv-edit2").onclick = $("cv-edit").onclick;
   $("cv-enq2").onclick = $("cv-enq").onclick;
+  if ($("cv-toper")) $("cv-toper").onclick = () => viewClientAs(c, "person");
+  if ($("cv-tojob")) $("cv-tojob").onclick = () => viewClientAs(c, "job");
   PROP.wireView();
   if ($("cv-full"))
     $("cv-full").onclick = () => {

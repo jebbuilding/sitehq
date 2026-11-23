@@ -12,7 +12,7 @@ import {
   saveClient,
 } from "./clients.js";
 import { mjHas } from "./more-jobs.js";
-import { quickEnquiry, viewClient } from "./quick-enquiry.js";
+import { quickEnquiry, viewClient, viewClientAs } from "./quick-enquiry.js";
 import { clNextPlan } from "./stages-planner.js";
 import { webBtnHtml, webView } from "./web-enquiries.js";
 import { $, esc, gbp, hrs, iso, parse, shortDay, store, toast } from "../core/helpers.js";
@@ -457,7 +457,8 @@ function clientsView() {
       (b) =>
         (b.onclick = () => {
           const c = all.find((x) => x.id === b.dataset.c);
-          if (c) viewClient(c);
+          /* the address book shows the person, the job lists the job (clients/quick-enquiry.js) */
+          if (c) viewClientAs(c, S.f.clf === "book" ? "person" : "job");
         }),
     );
   $("main")

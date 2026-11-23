@@ -172,3 +172,4 @@
 @media (max-width:600px){.cv-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cv-acts>*{width:100%;min-width:0;justify-content:center;text-align:center;white-space:normal;box-sizing:border-box}}
 .cv-acts .maplink{border:1px solid var(--line);background:var(--surface);border-radius:12px;min-height:44px;color:var(--ink)}
 .jt-top{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+.cvp-j[hidden],.cvp-p[hidden]{display:none!important}
