@@ -235,6 +235,7 @@ const WTN = (() => {
         "exemptDetails",
         "carrierNo",
         "carrierKind",
+        "email",
       ].forEach((f) => {
         const el = q(k + "-" + f);
         if (el) p[f] = el.value.trim();
@@ -323,6 +324,7 @@ const WTN = (() => {
    ${p.role === "client" ? `<label class="wf">Client<select id="wt-${k}-cl" ${d}>${clOpts}</select></label>` : p.role === "supplier" ? `<label class="wf">Supplier<select id="wt-${k}-sup" ${d}>${supOpts}</select></label>` : ""}
    ${isB ? `<label class="ck"><input type="checkbox" id="wt-B-hier" ${p.hier ? "checked" : ""} ${d}>By signing in Section D the transferor confirms the waste hierarchy has been applied (Regulation 12, Waste (England and Wales) Regulations 2011)</label>` : ""}
    <div class="row"><label class="wf">${isB ? "B1" : "C1"} Full name<input id="wt-${k}-name" value="${esc(p.name)}" ${d}></label><label class="wf">Company name<input id="wt-${k}-company" value="${esc(p.company)}" ${d} placeholder="leave blank for a householder"></label><label class="wf" style="grid-column:1/-1">Address<input id="wt-${k}-addr" value="${esc(p.addr)}" ${d}></label><label class="wf">Postcode<input id="wt-${k}-postcode" value="${esc(p.postcode)}" ${d}></label>
+   ${p.role === "us" ? "" : `<label class="wf wt-email">Email – to send them their copy (not printed on the note)<input id="wt-${k}-email" type="email" value="${esc(p.email || partyEmail(p))}" ${d} placeholder="e.g. name@example.com"></label>`}
    ${isB ? `<label class="wf">SIC code (2007)<input id="wt-B-sic" value="${esc(p.sic)}" ${d} placeholder="blank for a householder"></label><label class="wf">B2 Unitary authority / council<input id="wt-B-council" list="wt-councils" value="${esc(p.council)}" ${d} placeholder="e.g. your district council"><datalist id="wt-councils">${[...new Set((S.wtns || []).map((n) => (n.B || {}).council).filter(Boolean))].map((x) => `<option value="${esc(x)}">`).join("")}</datalist></label>` : `<label class="ck" style="align-self:end"><input type="checkbox" id="wt-C-isLA" ${p.isLA ? "checked" : ""} ${d}>C2 The local authority?</label>`}</div>
    <h5>${isB ? "B3" : "C3"} Are you…</h5><div class="row" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
    ${isB ? ck("producer", "The producer of the waste?") + ck("importer", "The importer of the waste?") + ck("la", "The local authority?") : ""}
@@ -373,6 +375,7 @@ const WTN = (() => {
     p.addr = (c.address || "").split("\n").join(", ");
     p.postcode = c.postcode || "";
     p.clientId = c.id;
+    p.email = c.email || "";
     p.sic = "";
     if (!R.D.addr) {
       R.D.addr = p.addr;
@@ -387,6 +390,7 @@ const WTN = (() => {
     p.addr = m ? ad.slice(0, m.index).replace(/[,\s]+$/, "") : ad;
     p.postcode = m ? m[1].toUpperCase() : "";
     p.supId = s.id;
+    p.email = s.email || "";
     if (s.wasteCarrier) {
       p.is.carrier = true;
       p.carrierNo = s.wasteCarrier;
@@ -1005,7 +1009,9 @@ const WTN = (() => {
       btn.textContent = lab;
     }
   }
+  /* the email typed on the note first (James, Nov 2026: the person he collects from needs it emailed), then the record's */
   function partyEmail(p) {
+    if (p.role !== "us" && p.email) return p.email;
     if (p.role === "client") {
       const c = (S.clients || []).find((x) => x.id === p.clientId);
       return (c && c.email) || "";
@@ -1056,6 +1062,7 @@ const WTN = (() => {
     d.innerHTML = `<div class="dimbox"><b>📤 Send ${esc(R.ref)}</b><div class="who">${who.length ? "Send a copy to " + who.map((w) => "<b>" + esc(w.name) + "</b>" + (w.email ? " (" + esc(w.email) + ")" : " – no email on record")).join(" and ") : "Both parties are you."}</div><div class="actions" style="flex-direction:column;align-items:stretch;margin-top:8px">
     ${canShare ? `<button type="button" class="btn primary" data-how="share">📎 Share the PDF (WhatsApp, Mail, Teams…)</button>` : ""}
     ${who.map((w) => `<button type="button" class="btn ${canShare ? "" : "primary"}" data-how="mail" data-to="${esc(w.email)}" data-name="${esc(w.name)}" ${w.email ? "" : "disabled"}>✉️ Email ${esc(w.name)}</button>`).join("")}
+    ${coData().wtnCopyTo ? `<button type="button" class="btn" data-how="mine">📥 Send my copy to ${esc(coData().wtnCopyTo)}</button>` : `<div class="who">Want your own copy emailed too? Add the address in Setup › Company details › "Send my copy of waste transfer notes to".</div>`}
     <button type="button" class="btn" data-how="app">👷 Send in SiteHQ (trade or client, saved on the job)</button>
     <button type="button" class="btn" data-how="anymail">✉️ Email someone else…</button>
     <button type="button" class="btn" data-how="dl">⬇ Download the PDF again</button><button type="button" class="btn" data-how="copy">📋 Copy the covering message</button></div>
@@ -1067,6 +1074,31 @@ const WTN = (() => {
       (b) =>
         (b.onclick = async () => {
           const how = b.dataset.how;
+          if (how === "mine") {
+            const to = coData().wtnCopyTo;
+            const mine = `Waste transfer note ${R.ref} – ${R.D.date || ""}\n\nHanded over by: ${R.B.company || R.B.name || ""}${R.B.email ? " (" + R.B.email + ")" : ""}\nTaken by: ${R.C.company || R.C.name || ""}\nWhere: ${[R.D.addr, R.D.postcode].filter(Boolean).join(", ")}\nWaste: ${R.A.lines.map((l) => (l.code || "") + " " + (l.desc || "")).join("; ")}${R.A.qty ? "\nHow much: " + R.A.qty : ""}${R.notes ? "\nNotes: " + R.notes : ""}\n\nThe PDF: ${R.pdf.name}`;
+            mark(to, "my copy");
+            if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+              try {
+                await navigator.share({
+                  title: "My copy: " + subject,
+                  text: `To: ${to}
+
+${mine}`,
+                  files: [file],
+                });
+                return;
+              } catch (e) {
+                if (e && e.name === "AbortError") return;
+              }
+            }
+            const a = document.createElement("a");
+            a.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent("My copy: " + subject)}&body=${encodeURIComponent(mine)}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            return;
+          }
           if (how === "share") {
             try {
               await navigator.share({ title: subject, text: body, files: [file] });

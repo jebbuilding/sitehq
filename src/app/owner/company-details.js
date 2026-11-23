@@ -43,6 +43,7 @@ const CO_FIELDS = [
   ["reviewUrl", "Google review link", "e.g. https://g.page/r/…/review"],
   ["webReviewUrl", "Website review link", "e.g. https://www.yourfirm.co.uk/reviews"],
   ["wasteCarrier", "Waste carrier registration number", "e.g. CBDU…"],
+  ["wtnCopyTo", "Send my copy of waste transfer notes to (email)", "e.g. office@yourfirm.co.uk"],
   ["wasteTier", "Waste carrier tier", "e.g. Upper tier"],
   ["wasteExpiry", "Waste carrier registration renewal date", "e.g. 2027-03-31"],
   [
