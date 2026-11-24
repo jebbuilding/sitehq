@@ -45,3 +45,25 @@
 .glo-area{margin-top:4px}
 .glo-list{display:flex;flex-direction:column;gap:6px;padding:8px 0}
 .glo-row{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.glo-shape{margin-top:6px}
+.glo-sub{font-weight:600;margin:10px 0 4px}
+.glo-hrow,.glo-crow{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr)) auto;gap:6px;align-items:end;margin:4px 0}
+.glo-crow{grid-template-columns:auto minmax(0,1.4fr) repeat(4,minmax(0,1fr)) auto}
+.glo-hrow>b,.glo-crow>b{padding-bottom:12px}
+.glo-hrow .linkdanger,.glo-crow .linkdanger{min-width:44px;min-height:44px}
+.glo-add2{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.glo-draw{margin:8px 0;border:1px dashed var(--line);border-radius:12px;background:var(--surface);padding:4px}
+.glo-svg{display:block;width:100%;max-width:420px;height:auto;margin:0 auto}
+.glo-svg .glo-glass{fill:var(--soft);stroke:var(--ink);stroke-width:1.5}
+.glo-svg .glo-hole{fill:var(--surface);stroke:var(--accent);stroke-width:1.5}
+.glo-svg .glo-num{fill:var(--accent);font-size:10px;font-weight:700;text-anchor:middle}
+.glo-svg .glo-dim{fill:var(--ink);font-size:10px;text-anchor:middle;opacity:.75}
+.glo-warn{margin:6px 0;padding:8px 10px;border-radius:10px;border:1px solid var(--danger);color:var(--ink)}
+@media (max-width:600px){.glo-hrow,.glo-crow{grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;padding:6px 10px 10px}.glo-hrow>b,.glo-crow>b{grid-column:1;grid-row:1;padding:0;align-self:center}.glo-hrow .linkdanger,.glo-crow .linkdanger{grid-column:2;grid-row:1;justify-self:end}.glo-crow label:first-of-type{grid-column:1 / -1}}
+.glo-svg .glo-zero{fill:var(--accent)}
+.glo-from{max-width:360px}
+.glo-ext{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0}
+.glo-ext label{display:flex;align-items:center;gap:6px;min-height:44px;font-weight:500}
+@media (min-width:601px){.glo-hrow{grid-template-columns:auto repeat(4,minmax(0,1fr)) auto}}
+.glo-svg .glo-dl{stroke:var(--accent);stroke-width:.8;stroke-dasharray:3 2}
+.glo-svg .glo-dt{fill:var(--accent);font-size:8px;text-anchor:middle}

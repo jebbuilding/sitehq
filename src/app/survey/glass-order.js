@@ -1,4 +1,5 @@
 /* ================= GLASS ORDER: sealed units, toughened handrail panels, coloured glass, splashbacks, mirrors… → an order for the glass supplier ================= */
+import { ptAskSign } from "../clients/portal.js";
 import { bossName } from "../core/company-names.js";
 import { pickField, pickVal, wirePicks } from "../core/fields.js";
 import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
@@ -13,6 +14,7 @@ import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { siteFull, siteLabel } from "../sites/job-details.js";
+import { GLS, GLS_PATTERNS } from "./glass-shapes.js";
 export { GLO };
 /* James (Nov 2026): "in door and windows a glass form for sealed units, toughened panels for handrails, coloured glass,
    splashbacks and any others". From Job sheets (beside 🪟 Door & window survey) or a client's job page: 🪟 Glass order.
@@ -23,6 +25,35 @@ export { GLO };
    Owner only; stored in todos/{id} (kind "glassorder"). */
 const GLO = (() => {
   const T = (l) => [l, null];
+  /* edge finishes (James, Nov 2026: "arrised and rounded edges"): arrised = the sharp edge sanded off, safe to handle
+     but not for show; flat polished = square and shiny; rounded = pencil polished; bevelled = a sloped polished band */
+  const EDGES = {
+    show: ["Flat polished", "Rounded (pencil polished)", "Arrised (sanded safe)", "Bevelled"],
+    hidden: [
+      "Arrised (sanded safe)",
+      "Flat polished",
+      "Rounded (pencil polished)",
+      "Bevelled",
+      "Not needed",
+    ],
+  };
+  /* the layer that holds laminated glass together */
+  const INTER = [
+    "Not laminated",
+    "Clear PVB",
+    "Acoustic PVB",
+    "White / opaque PVB",
+    "SentryGlas (structural, for balustrades)",
+  ];
+  const TINT = [
+    "Clear",
+    "Low-iron (extra clear)",
+    "Satin / acid etched",
+    "Bronze tint",
+    "Grey tint",
+    "Blue tint",
+    "Green tint",
+  ];
   const TYPES = {
     unit: {
       l: "Sealed unit (double / triple glazed)",
@@ -38,9 +69,11 @@ const GLO = (() => {
             "4mm toughened",
             "6mm toughened",
             "6.4mm laminated",
+            "6.8mm acoustic laminated",
             "4mm obscure",
             "4mm obscure toughened",
             "4mm self-cleaning",
+            "4mm solar control",
           ],
         ],
         [
@@ -52,18 +85,25 @@ const GLO = (() => {
             "4mm clear",
             "4mm toughened",
             "6.4mm laminated",
+            "6.4mm laminated Low-E",
+            "6.8mm acoustic laminated",
             "4mm obscure",
             "4mm obscure toughened",
           ],
         ],
-        ["pat", ...T("Obscure pattern (if any)")],
+        ["pat", "Obscure / special glass", GLS_PATTERNS],
         [
           "spc",
           "Spacer bar",
           ["Black warm edge", "Grey warm edge", "White", "Silver aluminium", "Brown"],
         ],
         ["gas", "Filled with", ["Argon", "Air", "Krypton"]],
-        ["geo", ...T("Georgian bars (e.g. 2 across, 1 down, 18mm white)")],
+        ["geo", ...T("Georgian bars / leads (e.g. 2 across, 1 down, 18mm white)")],
+        [
+          "mrk",
+          "Safety mark (kitemark) on toughened / laminated panes",
+          ["Bottom corner", "Top corner", "Not needed"],
+        ],
       ],
     },
     rail: {
@@ -77,13 +117,15 @@ const GLO = (() => {
             "10mm toughened",
             "12mm toughened",
             "15mm toughened",
+            "11.5mm toughened laminated",
             "13.5mm toughened laminated",
             "17.5mm toughened laminated",
             "21.5mm toughened laminated",
           ],
         ],
-        ["fin", "Finish", ["Clear", "Low-iron (extra clear)", "Obscure / satin", "Tinted"]],
-        ["edg", "Edges", ["Polished all round", "Polished, corners radiused", "Ground (arrissed)"]],
+        ["int", "Interlayer (if laminated)", INTER],
+        ["fin", "Finish", TINT],
+        ["edg", "Edges", EDGES.show],
         [
           "fix",
           "Fixing",
@@ -94,7 +136,6 @@ const GLO = (() => {
             "Top rail cap only",
           ],
         ],
-        ["hol", ...T("Holes – how many, what size and where")],
       ],
     },
     colour: {
@@ -102,9 +143,14 @@ const GLO = (() => {
       ic: "🎨",
       f: [
         ["col", ...T("Colour (name or RAL number)")],
-        ["thk", "Thickness", ["4mm", "6mm", "8mm", "10mm"]],
+        [
+          "thk",
+          "Thickness",
+          ["4mm", "6mm", "8mm", "10mm", "6.4mm laminated", "8.8mm laminated", "10.8mm laminated"],
+        ],
         ["tgh", "Toughened", ["Yes", "No"]],
-        ["edg", "Edges", ["Polished", "Ground (arrissed)", "Not needed"]],
+        ["int", "Interlayer (if laminated)", INTER],
+        ["edg", "Edges", EDGES.show],
       ],
     },
     splash: {
@@ -112,10 +158,13 @@ const GLO = (() => {
       ic: "🍳",
       f: [
         ["col", ...T("Colour (name or RAL number)")],
-        ["thk", "Glass", ["6mm toughened", "8mm toughened", "4mm toughened"]],
+        [
+          "thk",
+          "Glass",
+          ["6mm toughened", "8mm toughened", "4mm toughened", "6.4mm laminated", "8.8mm laminated"],
+        ],
         ["fin", "Glass type", ["Low-iron (true colours)", "Standard float"]],
-        ["cut", ...T("Cut-outs for sockets / switches – how many, size, where")],
-        ["edg", "Edges", ["Polished all round", "Polished, corners radiused"]],
+        ["edg", "Edges", EDGES.show],
         ["fix", "Fixing", ["Silicone / adhesive", "Screw holes with caps"]],
       ],
     },
@@ -123,10 +172,9 @@ const GLO = (() => {
       l: "Mirror",
       ic: "🪞",
       f: [
-        ["thk", "Thickness", ["4mm", "6mm"]],
+        ["thk", "Thickness", ["4mm", "6mm", "6.4mm laminated (safety)"]],
         ["saf", "Safety backing", ["Yes", "No"]],
-        ["edg", "Edges", ["Polished", "Bevelled", "Ground (arrissed)"]],
-        ["hol", ...T("Holes / cut-outs")],
+        ["edg", "Edges", EDGES.show],
       ],
     },
     pane: {
@@ -141,45 +189,109 @@ const GLO = (() => {
             "4mm toughened",
             "6mm toughened",
             "6.4mm laminated",
+            "8.8mm laminated",
+            "10.8mm laminated",
+            "6.8mm acoustic laminated",
             "4mm obscure",
             "6mm Georgian wired",
             "3mm horticultural",
           ],
         ],
-        ["pat", ...T("Obscure pattern (if any)")],
-        ["edg", "Edges", ["Not needed", "Ground (arrissed)", "Polished"]],
+        ["pat", "Obscure / special glass", GLS_PATTERNS],
+        ["fin", "Finish", TINT],
+        ["edg", "Edges", EDGES.hidden],
       ],
     },
     shelf: {
       l: "Shelf, table top or worktop",
       ic: "🗄️",
       f: [
-        ["thk", "Glass", ["6mm toughened", "8mm toughened", "10mm toughened", "12mm toughened"]],
+        [
+          "thk",
+          "Glass",
+          [
+            "6mm toughened",
+            "8mm toughened",
+            "10mm toughened",
+            "12mm toughened",
+            "8.8mm laminated",
+            "10.8mm laminated",
+            "8.8mm toughened laminated",
+          ],
+        ],
         ["fin", "Finish", ["Clear", "Low-iron", "Frosted", "Coloured (say in the notes)"]],
-        ["edg", "Edges", ["Polished", "Bevelled", "Corners radiused"]],
+        ["edg", "Edges", EDGES.show],
       ],
     },
     other: { l: "Something else", ic: "➕", f: [] },
   };
-  const SHAPES = ["Rectangle", "Shaped – template / drawing to follow", "Raked (sloping top)"];
+  /* ticks any piece can have (James, Nov 2026: "look to see what other options I might need") */
+  const EXTRAS = [
+    [
+      "heat",
+      "Heat soak tested",
+      "toughened glass – cuts the risk of it breaking on its own; for balustrades and overhead",
+    ],
+    ["lowiron", "Low-iron (extra clear)", ""],
+    ["mark", "Safety mark visible", "the kitemark in a corner"],
+    ["clean", "Self-cleaning coating", ""],
+    ["fire", "Fire-rated glass", ""],
+    ["film", "Protective film / careful packing", ""],
+  ];
+  /* sizes are the glass, or the opening for the supplier to take the fitting gap off */
+  const SIZEIS = ["Finished glass size", "Opening size – supplier to take off"];
+  /* about 2.5 kg per m² for each mm of glass; a sealed unit is its panes */
+  function kgOne(it) {
+    const mm = (s) => {
+      const m = String(s || "").match(/(\d+(?:\.\d+)?)\s*mm/);
+      return m ? +m[1] : 0;
+    };
+    let t;
+    if (it.type === "unit")
+      t = (mm(it.out) || 4) + (mm(it.inn) || 4) * (it.glz === "Triple" ? 2 : 1);
+    else t = mm(it.thk || it.typ) || 6;
+    return GLS.areaOne(it) * t * 2.5;
+  }
   const DELIVER = ["Deliver to site", "Deliver to our yard", "We'll collect"];
   const recs = () =>
     (S.glassOrders || []).slice().sort((a, b) => (b.updated || 0) - (a.updated || 0));
   const clientOf = (r) =>
     r && r.clientId ? (S.clients || []).find((c) => c.id === r.clientId) : null;
-  const area = (it) => ((+it.qty || 0) * (+it.w || 0) * (+it.h || 0)) / 1e6;
+  /* the real shape's area (survey/glass-shapes.js), times how many */
+  const area = (it) => (+it.qty || 0) * GLS.areaOne(it);
   const tot = (r) => (r.items || []).reduce((a, it) => a + area(it), 0);
   const nPieces = (r) => (r.items || []).reduce((a, it) => a + (+it.qty || 0), 0);
   /* what one piece is, in words: "24mm double sealed unit: 4mm toughened / 4mm Low-E (softcoat), black warm edge, argon" */
+  /* choices that mean "nothing special" aren't written on the order */
+  const QUIET = ["Clear", "Not laminated", "Finished glass size"];
   function specOf(it) {
     const t = TYPES[it.type] || TYPES.other;
     return t.f
-      .map(([k, l, o]) =>
-        it[k] ? (Array.isArray(o) ? "" : l.replace(/\s*[(–].*$/, "") + ": ") + it[k] : "",
-      )
+      .map(([k, l, o]) => {
+        if (!it[k] || QUIET.includes(it[k])) return "";
+        if (k === "pat") return "Obscure: " + it[k];
+        if (k === "int") return "Interlayer: " + it[k];
+        if (k === "mrk")
+          return it[k] === "Not needed" ? "No safety mark" : "Safety mark: " + it[k].toLowerCase();
+        /* a choice is enough on its own ("12mm toughened"), but a bare Yes / No / Not needed needs its question */
+        const yn = /^(Yes|No|Not needed)$/.test(it[k]);
+        if (Array.isArray(o) && !yn) return it[k];
+        return l.replace(/\s*[(–].*$/, "") + ": " + (yn ? it[k].toLowerCase() : it[k]);
+      })
       .filter(Boolean)
+      .concat(EXTRAS.filter(([k]) => it["ex_" + k]).map(([, l]) => l))
+      .concat(
+        it.sz && it.sz !== SIZEIS[0] ? ["Sizes are the opening – please take off for fitting"] : [],
+      )
+      .concat(GLS.words(it))
       .join(" · ");
   }
+  const kgTxt = (it) => {
+    const k = kgOne(it);
+    return k
+      ? `about ${k < 10 ? k.toFixed(1) : Math.round(k)} kg each${k > 50 ? " – a two-person lift" : ""}`
+      : "";
+  };
   const nextRef = () => {
     const n = recs().reduce(
       (m, r) => Math.max(m, +(String(r.ref || "").match(/(\d+)$/) || [0, 0])[1]),
@@ -189,26 +301,39 @@ const GLO = (() => {
   };
   function blankItem(type) {
     const t = TYPES[type] || TYPES.other;
-    const it = { type, qty: 1, w: "", h: "", shape: SHAPES[0], notes: "" };
+    const it = {
+      type,
+      qty: 1,
+      w: "",
+      h: "",
+      room: "",
+      sz: SIZEIS[0],
+      shape: "rect",
+      holes: [],
+      cuts: [],
+      notes: "",
+    };
     t.f.forEach(([k, , o]) => (it[k] = Array.isArray(o) ? o[0] : ""));
-    if (type === "unit") it.pat = "";
     return it;
   }
   /* ---- one piece of glass in the form ---- */
   function itemHtml(it, i) {
     const t = TYPES[it.type] || TYPES.other;
     const sel = (k, l, o) =>
-      `<label>${esc(l)}<select class="glo-f" data-k="${k}">${o.map((x) => `<option${x === it[k] ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>`;
+      `<label>${esc(l)}<select class="glo-f" data-k="${k}">${(it[k] && !o.includes(it[k]) ? o.concat([it[k]]) : o).map((x) => `<option${x === it[k] ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>`;
     const txt = (k, l) =>
       `<label>${esc(l)}<input class="glo-f" data-k="${k}" maxlength="200" value="${esc(it[k] || "")}"></label>`;
     const a = area(it);
     return `<div class="card glo-item" data-i="${i}"><div class="glo-ih"><b>${t.ic} ${i + 1}. ${esc(t.l)}</b><button type="button" class="linkdanger glo-x" aria-label="Remove piece ${i + 1}">✕ Remove</button></div>
+      <label>Room / position<input class="glo-f" data-k="room" maxlength="80" value="${esc(it.room || "")}" placeholder="e.g. Kitchen – behind the hob"></label>
       <div class="glo-g3"><label>How many<input class="glo-f" data-k="qty" type="number" inputmode="numeric" min="1" max="999" value="${esc(it.qty || 1)}"></label>
       <label>Width (mm)<input class="glo-f" data-k="w" type="number" inputmode="numeric" min="1" max="9999" value="${esc(it.w || "")}" placeholder="e.g. 900"></label>
       <label>Height (mm)<input class="glo-f" data-k="h" type="number" inputmode="numeric" min="1" max="9999" value="${esc(it.h || "")}" placeholder="e.g. 1100"></label></div>
-      <div class="glo-g2">${sel("shape", "Shape", SHAPES)}${t.f.map(([k, l, o]) => (Array.isArray(o) ? sel(k, l, o) : txt(k, l))).join("")}</div>
+      <div class="glo-g2">${sel("sz", "The sizes are", SIZEIS)}${t.f.map(([k, l, o]) => (Array.isArray(o) ? sel(k, l, o) : txt(k, l))).join("")}</div>
+      <div class="glo-ext">${EXTRAS.map(([k, l, h]) => `<label title="${esc(h)}"><input type="checkbox" class="glo-f" data-k="ex_${k}"${it["ex_" + k] ? " checked" : ""}> ${esc(l)}</label>`).join("")}</div>
+      ${GLS.formHtml(it)}
       <label>${it.type === "other" ? "What it is – glass, thickness, edges, anything else" : "Notes"}<textarea class="glo-f" data-k="notes" maxlength="600" style="min-height:44px">${esc(it.notes || "")}</textarea></label>
-      <div class="who glo-area">${a ? a.toFixed(2) + " m²" : "Put the sizes in to work out the area"}</div></div>`;
+      <div class="who glo-area">${a ? a.toFixed(2) + " m² · " + kgTxt(it) : "Put the sizes in to work out the area"}</div></div>`;
   }
   /* ---- the form ---- */
   function edit(rec, pre) {
@@ -235,13 +360,18 @@ const GLO = (() => {
       document.querySelectorAll(".glo-item").forEach((el) => {
         const it = r.items[+el.dataset.i];
         if (!it) return;
-        el.querySelectorAll(".glo-f").forEach((f) => (it[f.dataset.k] = f.value.trim()));
+        el.querySelectorAll(".glo-f").forEach(
+          (f) =>
+            (it[f.dataset.k] = f.type === "checkbox" ? (f.checked ? "yes" : "") : f.value.trim()),
+        );
+        GLS.readEl(el, it);
       });
       r.clientId = $("glo-cl").value;
       r.site = pickVal("glo-site");
       r.supId = $("glo-sup").value;
       r.supName = $("glo-supn").value.trim();
       r.supEmail = $("glo-supe").value.trim();
+      r.supSave = !!($("glo-supsave") && $("glo-supsave").checked);
       r.needBy = $("glo-need").value;
       r.deliver = $("glo-del").value;
       r.notes = $("glo-notes").value.trim();
@@ -271,6 +401,7 @@ const GLO = (() => {
           .join("")}</select></label>
         <label>Supplier name<input id="glo-supn" maxlength="100" value="${esc(r.supName || "")}" placeholder="e.g. Exeter Glass"></label>
         <label>Supplier email<input id="glo-supe" type="email" maxlength="120" value="${esc(r.supEmail || "")}" placeholder="orders@…"></label>
+        <label class="inl glo-supsave"${r.supId ? " hidden" : ""}><input type="checkbox" id="glo-supsave"${r.supSave ? " checked" : ""}> Save this supplier to my supplier list</label>
         <label>Needed by<input id="glo-need" type="date" value="${esc(r.needBy || "")}"></label>
         <label>Delivery<select id="glo-del">${DELIVER.map((d) => `<option${d === r.deliver ? " selected" : ""}>${d}</option>`).join("")}</select></label></div>
         <div class="flabel">The glass ${r.items.length ? `<span class="who">${nPieces(r)} piece${nPieces(r) === 1 ? "" : "s"} · ${tot(r).toFixed(2)} m²</span>` : ""}</div>
@@ -283,7 +414,7 @@ const GLO = (() => {
           )
           .join("")}</div>
         <label for="glo-notes">Notes for the supplier<textarea id="glo-notes" maxlength="1500" placeholder="e.g. All units kitemarked. Call before delivery.">${esc(r.notes || "")}</textarea></label>
-        <div class="actions"><button type="button" class="btn" id="glo-pdf">📄 PDF</button><button type="button" class="btn" id="glo-send">📧 Send to supplier</button></div>
+        <div class="actions"><button type="button" class="btn" id="glo-pdf">📄 PDF</button><button type="button" class="btn" id="glo-send">📧 Send to supplier</button><button type="button" class="btn" id="glo-sign">✍ Client sign-off</button></div>
         ${formFoot(ed, "Save")}`,
         async () => {
           read();
@@ -297,6 +428,7 @@ const GLO = (() => {
             return;
           }
           try {
+            await keepSupplier(r);
             await save(r);
             closeForm();
             toast("Glass order " + r.ref + " saved");
@@ -314,6 +446,8 @@ const GLO = (() => {
             $("glo-supn").value = s.name || "";
             $("glo-supe").value = s.email || "";
           }
+          const sv = document.querySelector(".glo-supsave");
+          if (sv) sv.hidden = !!s;
         };
       if ($("glo-cl"))
         $("glo-cl").onchange = () => {
@@ -347,27 +481,101 @@ const GLO = (() => {
             draw();
           }),
       );
-      document
-        .querySelectorAll(".glo-item [data-k=qty], .glo-item [data-k=w], .glo-item [data-k=h]")
-        .forEach(
+      /* a piece's drawing, warnings and area follow the typing; a new shape, hole or cut-out redraws the form there */
+      const live = (el) => {
+        const it = Object.assign({}, r.items[+el.dataset.i]);
+        el.querySelectorAll(".glo-f").forEach(
           (f) =>
-            (f.oninput = () => {
-              const el = f.closest(".glo-item");
-              const it = {
-                qty: el.querySelector("[data-k=qty]").value,
-                w: el.querySelector("[data-k=w]").value,
-                h: el.querySelector("[data-k=h]").value,
-              };
-              const a = area(it);
-              el.querySelector(".glo-area").textContent = a
-                ? a.toFixed(2) + " m²"
-                : "Put the sizes in to work out the area";
+            (it[f.dataset.k] = f.type === "checkbox" ? (f.checked ? "yes" : "") : f.value.trim()),
+        );
+        GLS.readEl(el, it);
+        GLS.refresh(el, it);
+        const a = area(it);
+        el.querySelector(".glo-area").textContent = a
+          ? a.toFixed(2) + " m² · " + kgTxt(it)
+          : "Put the sizes in to work out the area";
+      };
+      const again = (i, fn) => {
+        read();
+        fn(r.items[i]);
+        draw();
+        const el = document.querySelector(`.glo-item[data-i="${i}"]`);
+        if (el) el.scrollIntoView({ block: "start" });
+      };
+      document.querySelectorAll(".glo-item").forEach((el) => {
+        const i = +el.dataset.i;
+        el.querySelectorAll("input, select, textarea").forEach((f) => (f.oninput = () => live(el)));
+        const sh = el.querySelector(".glo-shsel");
+        if (sh) sh.onchange = () => again(i, () => {});
+        /* which corner, and centre or edge: the labels and the drawing change */
+        el.querySelectorAll(".glo-redraw").forEach((x) => (x.onchange = () => again(i, () => {})));
+        el.querySelector(".glo-hadd").onclick = () =>
+          again(i, (it) => (it.holes = (it.holes || []).concat([GLS.newHole()])));
+        el.querySelector(".glo-cadd").onclick = () =>
+          again(i, (it) => (it.cuts = (it.cuts || []).concat([GLS.newCut()])));
+        el.querySelectorAll(".glo-hx").forEach(
+          (b) =>
+            (b.onclick = () =>
+              again(i, (it) => it.holes.splice(+b.closest(".glo-hrow").dataset.j, 1))),
+        );
+        el.querySelectorAll(".glo-cx").forEach(
+          (b) =>
+            (b.onclick = () =>
+              again(i, (it) => it.cuts.splice(+b.closest(".glo-crow").dataset.j, 1))),
+        );
+        /* a socket or switch fills its usual size */
+        el.querySelectorAll(".glo-cv[data-v=k]").forEach(
+          (s) =>
+            (s.onchange = () => {
+              const z = GLS.cutSize(s.value);
+              const row = s.closest(".glo-crow");
+              if (z.w !== "") {
+                row.querySelector("[data-v=w]").value = z.w;
+                row.querySelector("[data-v=h]").value = z.h;
+              }
+              live(el);
             }),
         );
+      });
       $("glo-pdf").onclick = async () => {
         read();
         if (!r.items.length) return toast("Add a piece of glass first");
         await pdf(r, true);
+      };
+      $("glo-sign").onclick = async () => {
+        read();
+        if (!r.items.length) return toast("Add a piece of glass first");
+        const c = clientOf(r);
+        if (!c) return toast("Choose the client at the top first");
+        try {
+          await keepSupplier(r);
+          await save(r);
+        } catch (e) {}
+        const out = await pdf(r, false);
+        if (!out) return;
+        closeForm();
+        S.preAttach = [new File([out.blob], out.fn, { type: "application/pdf" })];
+        ptAskSign(c, null, "design", () => render(), r.site || c.site);
+        setTimeout(() => {
+          const set = (id, v) => {
+            const el = $(id);
+            if (el && !el.value) el.value = v;
+          };
+          set("pa-title", "Glass " + r.ref + (r.site ? " – " + siteLabel(r.site) : ""));
+          set(
+            "pa-det",
+            (r.items || [])
+              .map(
+                (it, i) =>
+                  `${i + 1}. ${it.room ? it.room + ": " : ""}${it.qty} x ${(TYPES[it.type] || TYPES.other).l}, ${it.w} x ${it.h} mm`,
+              )
+              .join("\n"),
+          );
+          set(
+            "pa-stmt",
+            "The glass sizes, shapes, holes, cut-outs and colours on this order are right, and the glass can be ordered.",
+          );
+        }, 80);
       };
       $("glo-send").onclick = async () => {
         read();
@@ -386,6 +594,32 @@ const GLO = (() => {
         });
     };
     draw();
+  }
+  /* a supplier typed in, kept in the supplier list when "Save this supplier" is ticked */
+  async function keepSupplier(r) {
+    const ok = r.supSave;
+    delete r.supSave;
+    if (!ok || r.supId || !r.supName) return;
+    const dup = (S.suppliers || []).find(
+      (x) => String(x.name || "").toLowerCase() === r.supName.toLowerCase(),
+    );
+    if (dup) {
+      r.supId = dup.id;
+      return;
+    }
+    const id = newId();
+    const d = {
+      kind: "supplier",
+      name: r.supName,
+      email: r.supEmail || "",
+      cat: "Glass",
+      created: Date.now(),
+      updated: Date.now(),
+    };
+    await S.db.doc("todos/" + id).set(d);
+    S.suppliers = (S.suppliers || []).concat([Object.assign({ id }, d)]);
+    r.supId = id;
+    toast(r.supName + " added to your suppliers");
   }
   async function save(r) {
     const id = r.id || newId();
@@ -502,18 +736,16 @@ const GLO = (() => {
       /* measured in the font each is written in, so long lines wrap inside the page */
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
-      const what = doc.splitTextToSize(clean(t.l), W - M - X.d);
+      const what = doc.splitTextToSize(clean(t.l + (it.room ? " – " + it.room : "")), W - M - X.d);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       const spec = doc.splitTextToSize(
-        clean(
-          [specOf(it), it.shape && it.shape !== SHAPES[0] ? it.shape : "", it.notes]
-            .filter(Boolean)
-            .join(" · "),
-        ),
+        clean([specOf(it), it.notes].filter(Boolean).join(" · ")),
         W - M - X.d,
       );
-      const h = 5 * what.length + 4.3 * spec.length + 4;
+      /* a drawing to scale under the words when it has a shape, holes or cut-outs */
+      const DH = GLS.hasDrawing(it) ? GLS.pdfHeight(it, Math.min(110, W - M - X.d), 46) + 2 : 0;
+      const h = 5 * what.length + 4.3 * spec.length + 4 + DH;
       if (y + h > bot) {
         doc.addPage();
         y = top;
@@ -533,6 +765,18 @@ const GLO = (() => {
       doc.setFontSize(8);
       doc.setTextColor(110, 110, 110);
       doc.text(clean(area(it).toFixed(2) + " m2"), X.s, y + 8);
+      if (kgOne(it))
+        doc.text(clean(kgTxt(it).replace(" – a two-person lift", " (2 people)")), X.s, y + 11.5);
+      if (DH)
+        GLS.pdfDraw(
+          doc,
+          it,
+          X.d,
+          y + 2 + 5 * what.length + 4.3 * spec.length,
+          Math.min(110, W - M - X.d),
+          DH - 2,
+          RED,
+        );
       y += h;
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.2);
@@ -543,7 +787,9 @@ const GLO = (() => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10.5);
     doc.text(
-      clean(`${nPieces(r)} piece${nPieces(r) === 1 ? "" : "s"} · ${tot(r).toFixed(2)} m2 in all`),
+      clean(
+        `${nPieces(r)} piece${nPieces(r) === 1 ? "" : "s"} · ${tot(r).toFixed(2)} m2 in all · about ${Math.round((r.items || []).reduce((a, it) => a + kgOne(it) * (+it.qty || 0), 0))} kg`,
+      ),
       M,
       y + 4,
     );
@@ -573,6 +819,28 @@ const GLO = (() => {
       M,
       y + 4,
     );
+    y += 12;
+    /* signed on paper too: the client agreeing the glass, and who ordered it */
+    need(30);
+    [
+      ["Approved by (client)", c ? c.name : ""],
+      ["Ordered by", co.name || ""],
+    ].forEach(([l, who]) => {
+      doc.setTextColor(17, 17, 17);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.text(clean(l), M, y);
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineWidth(0.3);
+      doc.line(M + 40, y, M + 120, y);
+      doc.line(M + 128, y, W - M, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(110, 110, 110);
+      doc.text(clean("Signature" + (who ? " – " + who : "")), M + 40, y + 3.5);
+      doc.text("Date", M + 128, y + 3.5);
+      y += 13;
+    });
     lhFinish(doc, LH);
     const fn =
       `Glass order ${r.ref} ${clean(siteLabel(r.site) || (c && c.name) || "")}`
@@ -589,11 +857,14 @@ const GLO = (() => {
   }
   /* ---- send it: share the PDF where the phone can, otherwise save it and open an email with the order written out ---- */
   async function send(r) {
+    try {
+      await keepSupplier(r);
+    } catch (e) {}
     const out = await pdf(r, false);
     if (!out) return;
     const lines = (r.items || []).map(
       (it, i) =>
-        `${i + 1}. ${it.qty} x ${(TYPES[it.type] || TYPES.other).l} – ${it.w} x ${it.h} mm${specOf(it) ? " – " + specOf(it) : ""}${it.notes ? " – " + it.notes : ""}`,
+        `${i + 1}. ${it.room ? it.room + ": " : ""}${it.qty} x ${(TYPES[it.type] || TYPES.other).l} – ${it.w} x ${it.h} mm${specOf(it) ? " – " + specOf(it) : ""}${it.notes ? " – " + it.notes : ""}`,
     );
     const body = `Hello${r.supName ? " " + r.supName : ""},\n\nPlease could you quote and supply the glass below (order ${r.ref}).\n\n${lines.join("\n")}\n\n${nPieces(r)} pieces, ${tot(r).toFixed(2)} m² in all.\nDelivery: ${r.deliver}${r.deliver === "Deliver to site" && r.site ? " – " + (siteFull(r.site) || r.site) : ""}\nNeeded by: ${r.needBy ? shortDay(r.needBy) : "as soon as you can"}${r.notes ? "\n\n" + r.notes : ""}\n\nThe order is attached as a PDF.\n\nThanks,\n${bossName()}\n${coData().name || ""}`;
     const subject = `Glass order ${r.ref}${r.site ? " – " + siteLabel(r.site) : ""}`;

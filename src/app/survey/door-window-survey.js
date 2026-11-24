@@ -57,6 +57,7 @@ import { sqMap } from "../sites/snag-quick.js";
 import { siteClient } from "../sites/summary.js";
 import { typeFor } from "../sites/trade-sites.js";
 import { GLO } from "./glass-order.js";
+import { GLS_PATTERNS } from "./glass-shapes.js";
 export { DWS, jobDraft, jobsView, myName, openJob, openJobEditor, renderJobDetail, siteFilePicker };
 const DWS = (() => {
   const g = (id) => document.getElementById("wsx-" + id);
@@ -1154,33 +1155,8 @@ const DWS = (() => {
     roof: ["Flashing kit", "Blackout blind", "Insulation collar", "Rain sensor", "Fly screen"],
   };
   EXTRAS.bay = EXTRAS.window;
-  const GLASS = [
-    "Clear",
-    "Pilkington Arctic",
-    "Pilkington Autumn",
-    "Pilkington Chantilly",
-    "Pilkington Charcoal Sticks",
-    "Pilkington Contora",
-    "Pilkington Cotswold",
-    "Pilkington Digital",
-    "Pilkington Everglade",
-    "Pilkington Flemish",
-    "Pilkington Florielle",
-    "Pilkington Mayflower",
-    "Pilkington Minster",
-    "Pilkington Oak",
-    "Pilkington Pelerine",
-    "Pilkington Reeded",
-    "Pilkington Satin",
-    "Pilkington Stippolyte",
-    "Pilkington Sycamore",
-    "Pilkington Taffeta",
-    "Pilkington Warwick",
-    "Satin / etched look",
-    "Solar control",
-    "Self-cleaning (Pilkington Activ)",
-    "Acoustic",
-  ];
+  /* the obscure / special glass list, shared with the glass order (survey/glass-shapes.js) */
+  const GLASS = GLS_PATTERNS;
   const GWHERE = [
     "All panes",
     "Lower panes only",

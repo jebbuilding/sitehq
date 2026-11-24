@@ -40,13 +40,13 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  /* a handrail panel */
  await p.click('.glo-new[data-t=rail]');await p.waitForTimeout(400);
  it=p.locator('.glo-item').nth(1);
- ok(await it.locator('[data-k=hol]').count()===1&&/12mm toughened/.test(await it.locator('[data-k=thk]').innerText()),'a handrail panel asks for the thickness, edges, fixing and holes');
+ ok(await it.locator('.glo-hadd').count()===1&&/12mm toughened/.test(await it.locator('[data-k=thk]').innerText()),'a handrail panel asks for the thickness, edges, fixing and holes');
  await it.locator('[data-k=w]').fill('1000');await it.locator('[data-k=h]').fill('850');await it.locator('[data-k=thk]').selectOption('12mm toughened');
  ok(await p.inputValue('.glo-item:nth-of-type(1) [data-k=w]')==='900','the sealed unit kept its sizes after adding another');
  /* a splashback */
  await p.click('.glo-new[data-t=splash]');await p.waitForTimeout(400);
  it=p.locator('.glo-item').nth(2);
- await it.locator('[data-k=w]').fill('1800');await it.locator('[data-k=h]').fill('600');await it.locator('[data-k=col]').fill('RAL 9010 white');await it.locator('[data-k=cut]').fill('2 double sockets, 300 from the left');
+ await it.locator('[data-k=w]').fill('1800');await it.locator('[data-k=h]').fill('600');await it.locator('[data-k=col]').fill('RAL 9010 white');
  await p.locator('.glo-item').nth(2).scrollIntoViewIfNeeded();await p.screenshot({path:'h668-form.png'});
  /* the PDF */
  await p.click('#glo-pdf');await p.waitForTimeout(3500);
