@@ -2,6 +2,7 @@
 import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { CBK } from "../clients/callbacks.js";
 import { NBR } from "../clients/neighbours.js";
+import { RFL } from "../clients/referrals.js";
 import { REVIEWS } from "../clients/reviews.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { WKU } from "../clients/weekly-update.js";
@@ -619,6 +620,7 @@ function todayView() {
     ${CBK.todayCard()}
     ${NBR.todayCard()}
     ${VNS.todayCard()}
+    ${RFL.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -641,6 +643,7 @@ function todayView() {
   CBK.wireToday();
   NBR.wireToday();
   VNS.wireToday();
+  RFL.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();

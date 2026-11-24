@@ -6,6 +6,7 @@ import { ptCl } from "./portal.js";
 import { PROP } from "./property-info.js";
 import { VISIT_REMIND_MIN, cfVisitBook, cfVisitRead, viewClient } from "./quick-enquiry.js";
 import { clientPdf } from "./record-pdf.js";
+import { RFL } from "./referrals.js";
 import { srcpOptions, srcpWire } from "./source-pick.js";
 import { vdWire } from "./visit-diary.js";
 import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
@@ -358,6 +359,7 @@ function openClientForm(c, mode) {
     <div class="grid2"><label for="cf-budget">Budget (if they said)<input id="cf-budget" maxlength="60" value="${esc(c.budget || "")}" placeholder="e.g. £40–50k"></label><label for="cf-time">When they want it done<input id="cf-time" maxlength="80" value="${esc(c.timescale || "")}" placeholder="e.g. Spring 2027"></label></div>
     <div class="grid2"><label for="cf-src">How they found you<select id="cf-src">${srcpOptions(c.source || "")}</select></label>
       <label for="cf-plan">Planning / drawings<select id="cf-plan">${["", "Not needed", "Not started", "Drawings being done", "Applied", "Approved", "Building regs approved"].map((w) => `<option ${w === (c.planning || "") ? "selected" : ""}>${w || "Don't know yet"}</option>`).join("")}</select></label></div>
+    ${RFL.formHtml(c)}
     <div class="grid2"><label for="cf-stage">Stage<select id="cf-stage">${CL_STAGES.map(([k, l]) => `<option value="${k}" ${k === c.stage ? "selected" : ""}>${l}</option>`).join("")}</select></label><label for="cf-quote">Estimate £ (optional)<input id="cf-quote" inputmode="decimal" maxlength="12" value="${esc(c.quote || "")}"></label></div>
     <label for="cf-follow">Follow up on (optional)<input id="cf-follow" type="date" value="${esc(c.follow || "")}"></label>
     ${
@@ -451,6 +453,7 @@ function openClientForm(c, mode) {
         budget: $("cf-budget").value.trim(),
         timescale: $("cf-time").value.trim(),
         source: $("cf-src").value === "__add" ? c.source || "" : $("cf-src").value,
+        refBy: RFL.formRead(c),
         planning: $("cf-plan").value === "Don't know yet" ? "" : $("cf-plan").value,
         stage: $("cf-stage").value,
         quote: $("cf-quote")
@@ -862,6 +865,7 @@ function openClientForm(c, mode) {
   $("cf-addc").onclick = () => addCon().querySelector(".cc-n").focus();
   if ($("cf-showcon")) $("cf-showcon").onclick = () => cfShowCon($("cf-consec").hidden);
   srcpWire("cf-src");
+  RFL.formWire();
   gdprFormWire(
     () => ($("cf-email") ? $("cf-email").value.trim() : ""),
     () => ($("gdf-name") ? $("gdf-name").value.trim() : ""),

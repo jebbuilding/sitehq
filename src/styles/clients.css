@@ -222,3 +222,10 @@
 .baf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .baf-ph{padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:none;display:flex;flex-direction:column}
 .baf-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.rfl-card{padding:10px 12px;margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.rfl-by{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rfl-ok{color:#2e7d32;font-weight:600}
+.rfl{display:flex;flex-direction:column;gap:10px}
+.rfl-row{padding:10px 12px}
+.rfl-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rfl-ask[hidden]{display:none}
