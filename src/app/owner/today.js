@@ -1,6 +1,7 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
 import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { CBK } from "../clients/callbacks.js";
+import { NBR } from "../clients/neighbours.js";
 import { REVIEWS } from "../clients/reviews.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { WKU } from "../clients/weekly-update.js";
@@ -615,6 +616,7 @@ function todayView() {
     ${WKU.todayCard()}
     ${LLD.todayCard()}
     ${CBK.todayCard()}
+    ${NBR.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -635,6 +637,7 @@ function todayView() {
   WKU.wireToday();
   LLD.wireToday();
   CBK.wireToday();
+  NBR.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();
