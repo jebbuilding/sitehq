@@ -27,6 +27,7 @@ import { TIPRUN } from "../safety/tip-run.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
 import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
+import { LWK } from "../timesheets/lone-work.js";
 import { otmCardHtml, otmCardWire } from "../timesheets/overtime.js";
 export {
   NL_BY,
@@ -604,6 +605,7 @@ function todayView() {
             .join("")}</div>`
         : '<div class="nl-card who">Nothing waiting for you. 👍</div>'
     }
+    ${LWK.todayCard()}
     ${tdwCard()}
     ${jbTodayCard()}
     ${otmCardHtml()}${chsCardHtml()}${pcTodayCard()}

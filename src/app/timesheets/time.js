@@ -56,6 +56,7 @@ import {
   crsTravelHtml,
 } from "./check-reasons.js";
 import { dwTradeSheet } from "./day-work.js";
+import { LWK } from "./lone-work.js";
 import { tsPaper, wireTsPaper } from "./monthly-sheet.js";
 import { nstClientId, nstGroups, nstIs } from "./non-site-time.js";
 import { otmAsk, otmLine, otmOffer } from "./overtime.js";
@@ -107,7 +108,7 @@ function clockOn(open, D) {
     const s = siteRec(open.job) || {};
     return `<div class="checkin on"><div class="cistate"><span class="cidot"></span>${nstIs(open.job) ? "Clocked in" : "On site"}</div><b class="cisite">${esc(siteLabel(open.job))}</b>${jobNameOf(open.job) ? `<div class="sub">📍 ${esc(open.job)}</div>` : ""}${s.project ? `<div class="sub">${esc(s.project)}</div>` : ""}
     <div class="citime">${open.actualIn && open.actualIn !== open.start ? `Arrived <b>${esc(open.actualIn)}</b> · paid from <b>${esc(open.start)}</b>` : `Checked in at <b>${esc(open.start)}</b>${toMin(open.start) > toMin(D.s) ? ` <span class="who">(start time ${esc(D.s)})</span>` : ""}`}</div>
-    ${crsTravelHtml(open)}<button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button><button class="btn ci-move" type="button" data-id="${esc(open.id)}">🚚 Stop here / move to another job</button>
+    ${crsTravelHtml(open)}${LWK.tradeHtml(open)}<button class="btn primary big ci-out" type="button" data-id="${esc(open.id)}">Check out</button><button class="btn ci-move" type="button" data-id="${esc(open.id)}">🚚 Stop here / move to another job</button>
     <button class="pillbtn ci-edit" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">Change my start time</button><button class="pillbtn ci-diff" type="button" data-id="${esc(open.id)}" style="align-self:flex-start">⏱ Started early or working through lunch?</button>
     <div class="who">Your paid day: ${esc(dayLine(D))}. Arrive early or leave late and you're paid from ${esc(D.s)} to ${esc(D.e)} – or ask for overtime when you check out. The lunch is taken off automatically. <button type="button" class="linkbtn ci-day">Change my usual day</button></div></div>`;
   }
@@ -301,6 +302,7 @@ function empTime() {
         }),
     );
   if ($("main").querySelector(".ci-in")) $("main").querySelector(".ci-in").onclick = checkIn;
+  LWK.wireTrade();
   chsTradeWire();
   $("main")
     .querySelectorAll(".ci-diff")

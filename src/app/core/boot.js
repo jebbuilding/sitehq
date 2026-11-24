@@ -40,6 +40,7 @@ import { scheduleSupSync } from "../purchasing/suppliers.js";
 import { initExpiryDates } from "../safety/expiry-dates.js";
 import { initMapsPins } from "../sites/maps-pins.js";
 import { initSdiWeather } from "../sites/site-diary.js";
+import { initLoneWork } from "../timesheets/lone-work.js";
 /* Everything that happens when the page loads, in this order. Each init wires up the part of the page that its
    file owns. This is the only file with statements that run at load (npm run check enforces that). */
 initTabsWeek();
@@ -53,6 +54,7 @@ initForeman();
 initQuickEnquiry();
 initSdiWeather();
 initCallbacks();
+initLoneWork();
 initSymbolsMore();
 initConstructionDetails();
 initPaving();
