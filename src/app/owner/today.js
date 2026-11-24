@@ -22,6 +22,7 @@ import { pcTodayCard, pcTodayWire, wuTodayCard, wuTodayWire } from "./week-wrap.
 import { kitView } from "../planner/kit-out.js";
 import { LLD } from "../planner/long-lead.js";
 import { eqmView } from "../planner/plant-care.js";
+import { VNS } from "../planner/van-stock.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { TIPRUN } from "../safety/tip-run.js";
@@ -617,6 +618,7 @@ function todayView() {
     ${LLD.todayCard()}
     ${CBK.todayCard()}
     ${NBR.todayCard()}
+    ${VNS.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -638,6 +640,7 @@ function todayView() {
   LLD.wireToday();
   CBK.wireToday();
   NBR.wireToday();
+  VNS.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();

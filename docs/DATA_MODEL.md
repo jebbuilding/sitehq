@@ -49,6 +49,7 @@ Subcollections (`TR_COLLS`):
 | `handover` | the client's handover pack, `ho-{client id}` (`clientId`, `site`, `items` { key: { st have/na, files[], note } }, `years`, `gtext` guarantee wording, `done` finished date, `sentAt`) |
 | `longlead` | a site's long-lead items, `ll-{site slug}` (`site`, `items` [{ id, what, weeks, stage (programme stage id), ordered (date) }]) |
 | *(portal)* `portal/{uid}/callbacks/{id}` | a problem the client reports after the job (`text`, `room`, `urg`, `photos[]`, `status` new/booked/fixed/done/reopened, `log[]`, `bookedFor`, `bookedWho`, `doneBy`); the booking is `plan/cbk-{id}` |
+| `vanstock` | a van's stock, `vs-{equipment id}` (`van`, `items` [{ id, what, have, want }]); a tool on a van is `out.van` on its `equipment` record (planner/van-stock.js) |
 | `glassorder` | glass order for the glass supplier (`ref` GO-001…, `clientId`, `site`, `supName`, `supEmail`, `needBy`, `deliver`, `items[]` each `type` unit/rail/colour/splash/mirror/pane/shelf/other with `qty`, `w`, `h` mm, `room`, `sz` glass or opening size, `shape` (+ `hs`/`side`/`px`/`rad`/`cc`/`corners`), `from` corner measured from, `holes[]` {d,x,y,cs}, `cuts[]` {k,w,h,x,y}, ticks `ex_heat`/`ex_lowiron`/`ex_mark`/`ex_clean`/`ex_fire`/`ex_film` and that type's fields, `status` draft/sent, `sent[]`) |
 | `wsdesign` | a design read from a hand drawing |
 | `wtn` | waste transfer note (sections A–D, signatures, lock) |

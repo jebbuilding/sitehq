@@ -219,6 +219,7 @@ initOpening();
         S.woodSamples = all.filter((t) => t.kind === "woodsample");
         S.handovers = all.filter((t) => t.kind === "handover");
         S.longLeads = all.filter((t) => t.kind === "longlead");
+        S.vanStocks = all.filter((t) => t.kind === "vanstock");
         S.clips = all.filter((t) => t.kind === "clip");
         S.brochures = all.filter((t) => t.kind === "brochure");
         S.samples = all.filter((t) => t.kind === "sample");

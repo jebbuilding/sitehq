@@ -7,6 +7,7 @@ import { loadScript } from "../files/in-app-files.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { crewIds, nameOf } from "../owner/owner.js";
 import { qrsOwnerOpen, qrsPrint } from "./qr-stickers.js";
+import { VNS } from "./van-stock.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo } from "../safety/expiry-dates.js";
 import { siteFull, siteLabel } from "../sites/job-details.js";
@@ -24,8 +25,14 @@ const kitAll = () =>
     .map((e) => obPending("equipment/" + e.id, e))
     .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 const kitWhere = (e) =>
-  e.out && (e.out.who || e.out.site)
-    ? [e.out.who ? nameOf(e.out.who) : "", e.out.site || ""].filter(Boolean).join(" · ")
+  e.out && (e.out.who || e.out.site || e.out.van)
+    ? [
+        e.out.van ? "🚐 On " + VNS.vanName(e.out.van) : "",
+        e.out.who ? nameOf(e.out.who) : "",
+        e.out.site || "",
+      ]
+        .filter(Boolean)
+        .join(" · ")
     : "In the yard";
 function kitDue(e) {
   const ds = (EQ_DATES[e.kind] || []).map(([k, l]) => [l, (e.dates || {})[k]]).filter(([, d]) => d);
@@ -78,7 +85,7 @@ function kitView(q) {
             ]
               .map((e) => {
                 const due = kitDue(e);
-                return `<div class="kit-row"><span><b>${esc(e.name)}</b> ${e.tag ? `<span class="tag">${esc(e.tag)}</span>` : ""}<br><span class="who">${esc((KINDS[e.kind] || {}).name || "")}${e.out && e.out.at ? " · out since " + esc(shortDay(iso(new Date(e.out.at)))) : ""}${due ? ` · <span class="kit-due">${esc(due)}</span>` : ""}</span></span><span class="kit-acts">${e.out && (e.out.who || e.out.site) ? `<button type="button" class="btn kit-in" data-id="${esc(e.id)}">↩ Back in</button><button type="button" class="btn kit-out" data-id="${esc(e.id)}">Move</button>` : `<button type="button" class="btn primary kit-out" data-id="${esc(e.id)}">Book out</button>`}</span></div>`;
+                return `<div class="kit-row"><span><b>${esc(e.name)}</b> ${e.tag ? `<span class="tag">${esc(e.tag)}</span>` : ""}<br><span class="who">${esc((KINDS[e.kind] || {}).name || "")}${e.out && e.out.at ? " · out since " + esc(shortDay(iso(new Date(e.out.at)))) : ""}${due ? ` · <span class="kit-due">${esc(due)}</span>` : ""}</span></span><span class="kit-acts">${e.out && (e.out.who || e.out.site || e.out.van) ? `<button type="button" class="btn kit-in" data-id="${esc(e.id)}">↩ Back in</button><button type="button" class="btn kit-out" data-id="${esc(e.id)}">Move</button>` : `<button type="button" class="btn primary kit-out" data-id="${esc(e.id)}">Book out</button>`}</span></div>`;
               })
               .join("")}`,
         )
