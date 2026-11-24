@@ -229,3 +229,13 @@
 .rfl-row{padding:10px 12px}
 .rfl-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .rfl-ask[hidden]{display:none}
+.key-card{padding:10px 12px;margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.key-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.key-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--line)}
+.key-row>span:first-child{flex:1;min-width:180px}
+.key-back{opacity:.6}
+.key-acts{display:flex;flex-wrap:wrap;gap:6px}
+.key-card .pillbtn,.key-list .pillbtn{min-height:44px}
+.key-card .linkbtn{min-height:44px;align-self:flex-start}
+.key-list{display:flex;flex-direction:column;gap:4px}
+.key-dlg{display:flex;flex-direction:column;gap:6px;max-width:480px}

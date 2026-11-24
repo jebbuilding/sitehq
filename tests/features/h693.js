@@ -1,0 +1,54 @@
+// Keys log (made-up client Sue Jones, made-up trade Sam Test): on Sue's page 🔑 Keys we hold → + Add a set (front and
+// back door, tag K-01, in the office). Give to… Sam; Back in the office; 🔑 All keys lists it; 5 days later with Sam,
+// Today warns; the job finished → Today says give them back; ↩ Given back (tap twice) – the history keeps every move.
+const fs=require('fs');const {chromium}=require('playwright');
+let src=fs.readFileSync('harness8src.js','utf8');
+const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
+src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed);
+eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
+const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null').replace('function render() {','window.render=render;window.__T=()=>({viewClient,KEY,closeViewer});function render() {');
+let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:430,height:900}});ctx.setDefaultTimeout(8000);const p=await ctx.newPage();p.on('pageerror',e=>{console.log('ERR',e.message);bad++;});
+ await ctx.route(/^https?:\/\//,r=>r.abort());
+ try{await p.clock.install({time:new Date('2026-11-24T10:00:00')});
+ await p.setContent('<!doctype html><html><head><meta charset=utf8></head><body>'+fake(true)+page_src+'</body></html>');await p.clock.runFor(2500);await p.keyboard.press('Escape');
+ await p.click('#nl-tog').catch(()=>{});await p.clock.runFor(300);
+ const sue=()=>p.evaluate(()=>window.__T().viewClient(window.__S.clients.find(c=>c.id==='c1')));
+ const rec=()=>p.evaluate(()=>window.__st['todos/c1'].keys||[]);
+ await sue();await p.clock.runFor(600);
+ ok(await p.isVisible('.key-card'),'Sue\'s page has 🔑 Keys we hold');
+ await p.click('.key-add');await p.clock.runFor(400);
+ ok(await p.inputValue('#key-tag')==='K-01','a new set gets the next tag, K-01');
+ await p.fill('#key-what','Front and back door');await p.click('#f-save');await p.clock.runFor(800);
+ let K=await rec();
+ ok(K.length===1&&K[0].where==='office'&&K[0].tag==='K-01','added: in the office');
+ await sue();await p.clock.runFor(500);
+ await p.click('.key-give');await p.clock.runFor(400);await p.selectOption('#key-to','emp1');await p.click('#f-save');await p.clock.runFor(800);
+ K=await rec();
+ ok(K[0].where==='emp1','Give to… Sam – Sam has them');
+ await sue();await p.clock.runFor(500);
+ ok(/With Sam Test/.test(await p.innerText('.key-card')),'her page says 👷 With Sam Test');
+ await p.screenshot({path:'h693-client.png'});
+ await p.click('.key-all');await p.clock.runFor(400);
+ ok(/K-01 Sue Jones/.test(await p.innerText('.key-list')),'🔑 All keys we hold lists it');
+ await p.evaluate(()=>window.__T().closeViewer());
+ await p.clock.setFixedTime(new Date('2026-11-29T10:00:00'));
+ await p.evaluate(()=>{window.__S.otab='today';window.render()});await p.waitForTimeout(400);
+ const kt=await p.innerText('.key-today').catch(()=>'none');console.log('   ',kt.replace(/s+/g,' '));ok(/with Sam Test for [4-5] days/.test(kt),'days later, still with Sam: Today says 🔑 Keys to sort');
+ await p.click('.key-go');await p.waitForTimeout(400);
+ await p.click('.key-list .key-off');await p.waitForTimeout(800);
+ K=await rec();
+ ok(K[0].where==='office','Back in the office');
+ await p.evaluate(()=>window.__T().closeViewer());
+ await p.evaluate(async()=>{await window.__S.db.doc('todos/c1').update({stage:'done'});const c=window.__S.clients.find(c=>c.id==='c1');c.stage='done';window.__S.otab='today';window.render()});await p.waitForTimeout(500);
+ ok(/finished – give them back/.test(await p.innerText('.key-today')),'the job\'s finished: Today says give them back');
+ await sue();await p.waitForTimeout(500);
+ await p.click('.key-ret');await p.waitForTimeout(200);await p.click('.key-ret');await p.waitForTimeout(800);
+ K=await rec();
+ ok(K[0].where==='back'&&K[0].log.length===4,'↩ Given back – and the history has all 4 moves');
+ await sue();await p.waitForTimeout(400);
+ await p.click('.key-hist');await p.waitForTimeout(300);
+ ok(/Given back to Sue Jones/.test(await p.innerText('.key-dlg'))&&/Given to Sam Test/.test(await p.innerText('.key-dlg')),'History shows every move');
+ }catch(e){console.log('FAIL',e.message);bad++;}
+ console.log(bad?`h693: ${bad} failed`:'h693: all passed');await b.close();process.exit(bad?1:0);
+})();

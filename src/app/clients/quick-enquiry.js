@@ -17,6 +17,7 @@ import { clDocsHtml, wireClDocs } from "./documents.js";
 import { clGdprHtml, wireClGdpr } from "./gdpr-consent.js";
 import { HOV } from "./handover.js";
 import { jtHtml, jtRead, jtWire } from "./job-top.js";
+import { KEY } from "./keys-log.js";
 import { mjEdit } from "./more-jobs.js";
 import { NBR } from "./neighbours.js";
 import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
@@ -515,7 +516,7 @@ function viewClient(c) {
         <div class="cvp-p"${P}>${histHtml(c)}</div>
     <div class="cvp-j"${J}>${ptClientBlock(c)}
 ${clMediaHtml(c)}
-    ${DWS.clientHtml(c)}${GLO.clientHtml(c)}${CBK.clientHtml(c)}${RFL.clientHtml(c)}${SAMPLES.clientHtml(c)}${REVIEWS.clientHtml(c)}</div>
+    ${DWS.clientHtml(c)}${GLO.clientHtml(c)}${CBK.clientHtml(c)}${RFL.clientHtml(c)}${KEY.clientHtml(c)}${SAMPLES.clientHtml(c)}${REVIEWS.clientHtml(c)}</div>
     <div class="flabel" style="margin-top:12px">Notes and calls</div>
     <div style="display:flex;gap:8px"><textarea id="cv-note" maxlength="1000" placeholder="e.g. Visited, measured up. Sending quote Friday." style="flex:1;min-height:48px"></textarea><button type="button" class="btn primary" id="cv-addnote">Add</button></div>
     <div class="clnotes">${
@@ -620,6 +621,10 @@ ${clMediaHtml(c)}
   GLO.wireClient(c);
   CBK.wireClient(c);
   RFL.wireClient();
+  KEY.wire(() => {
+    closeViewer();
+    viewClient((S.clients || []).find((x) => x.id === c.id) || c);
+  });
   SAMPLES.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
   REVIEWS.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
   $("cv-visit").onclick = () => {

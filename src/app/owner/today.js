@@ -1,6 +1,7 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
 import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { CBK } from "../clients/callbacks.js";
+import { KEY } from "../clients/keys-log.js";
 import { NBR } from "../clients/neighbours.js";
 import { RFL } from "../clients/referrals.js";
 import { REVIEWS } from "../clients/reviews.js";
@@ -621,6 +622,7 @@ function todayView() {
     ${NBR.todayCard()}
     ${VNS.todayCard()}
     ${RFL.todayCard()}
+    ${KEY.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -644,6 +646,7 @@ function todayView() {
   NBR.wireToday();
   VNS.wireToday();
   RFL.wireToday();
+  KEY.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();
