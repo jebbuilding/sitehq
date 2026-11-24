@@ -34,7 +34,7 @@ import { projectSites, same } from "./project-pages.js";
 import { rfiCode, rfiOver } from "./rfi.js";
 import { SIGNIN } from "./sign-in-book.js";
 import { sodFor, sodWhy } from "./signoff-due.js";
-export { initSdiWeather, sdiHtml, sdiSlug, sdiWire };
+export { initSdiWeather, sdiDay, sdiHtml, sdiSlug, sdiWire };
 /* James (Nov 2026): "in site diary it doesn't log the weather and other information you'd have automatically, that would
    help in case of an issue; also the pictures and other forms or sign-offs, to keep a record of anything done on that
    job that day". The weather is now saved for every live site each day by itself (initSdiWeather, at start-up and

@@ -3,9 +3,12 @@ import { addDays, gbp, iso, parse, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { newId } from "../files/outbox.js";
 export {
+  SD_ALLOW,
   SD_IK,
   SD_KINDS,
   SD_VATC,
+  sdAlTxt,
+  sdAllowNote,
   sdAmt,
   sdCalc,
   sdCounts,
@@ -403,3 +406,37 @@ async function sdSaveRec(d) {
 }
 /* money with the minus sign before the £ (-£3,000.00, not £-3,000.00) */
 const sdSigned = (n) => (+n < 0 ? "-" + gbp(-n) : gbp(n));
+/* allowances on an estimate line (James, Nov 2026: "provisional sums, PC sums and contingency on estimates"): l.al –
+   "" a fixed price; "ps" a provisional sum (work that can't be priced yet, e.g. below ground); "pc" a PC (prime cost)
+   sum (something the client chooses, e.g. kitchen units, tiles); "cont" a contingency (for the unforeseen, only charged
+   if used). They count in the totals like any line; the PDF says what each is and that they're adjusted to the real
+   cost on the final invoice. */
+const SD_ALLOW = {
+  ps: ["Provisional sum", "provisional sum – adjusted to the actual cost"],
+  pc: ["PC sum", "PC (prime cost) sum – adjusted to the actual cost of what you choose"],
+  cont: ["Contingency", "contingency – only charged if it's needed"],
+};
+const sdAlTxt = (l) => (l && SD_ALLOW[l.al] ? SD_ALLOW[l.al][1] : "");
+function sdAllowNote(d) {
+  const L = sdLines(d).filter((l) => SD_ALLOW[l.al]);
+  if (!L.length) return "";
+  const sum = (k) => sdR2(L.filter((l) => l.al === k).reduce((a, l) => a + sdAmt(l), 0));
+  const ps = sum("ps"),
+    pc = sum("pc"),
+    ct = sum("cont");
+  const bits = [];
+  if (ps) bits.push(gbp(ps) + " in provisional sums");
+  if (pc) bits.push(gbp(pc) + " in PC sums");
+  if (ct) bits.push(gbp(ct) + " contingency");
+  return (
+    "This estimate includes " +
+    bits.join(", ").replace(/, ([^,]*)$/, " and $1") +
+    " (before VAT). " +
+    (ps || pc
+      ? "Provisional and PC sums are allowances: the final invoice uses the actual cost, up or down. "
+      : "") +
+    (ct
+      ? "The contingency is only charged if it's needed, and you'll be told before it's used."
+      : "")
+  ).trim();
+}

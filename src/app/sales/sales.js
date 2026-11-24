@@ -2,6 +2,7 @@
 import { $, addDays, esc, gbp, iso, parse, shortDay } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
+import { QTW } from "./quote-watch.js";
 import {
   SD_IK,
   sdCalc,
@@ -173,6 +174,7 @@ function salesView() {
     <div class="seg sd-tabs" id="sd-tabs"><button type="button" data-v="inv" aria-pressed="${!est}">Invoices</button><button type="button" data-v="est" aria-pressed="${est}">Estimates</button><button type="button" data-v="var" aria-pressed="false">📝 Variations</button></div>
     <div class="sd-acts"><button type="button" class="btn primary" id="sd-new">+ New ${est ? "estimate" : "invoice"}</button>${est ? "" : `<button type="button" class="btn" id="sd-newpf">+ New pro forma</button>`}${est ? `<span class="btn sd-filebtn">📄 Bring in a Word estimate<input type="file" class="sd-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Bring in a Word estimate"></span>` : ""}<button type="button" class="btn" id="sd-set">⚙️ Wording, numbers, VAT & bank</button></div>
     ${sdSetupCard()}
+    ${est ? QTW.listNotice(list0) : ""}
     <div class="sd-boxes">${tiles}</div>
     ${extra}
     <div class="sd-filt"><div class="seg" id="sd-f">${filters.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${f === k}">${l}</button>`).join("")}</div><input id="sd-q" type="search" placeholder="Search number, client or job" value="${esc(S.f.sq || "")}" aria-label="Search"></div>
@@ -182,7 +184,7 @@ function salesView() {
             .map((d) => {
               const c = sdCalc(d),
                 st = sdStatus(d);
-              return `<button type="button" class="sd-row" data-id="${esc(d.id)}"><span class="sd-no">${esc(sdNo(d))}</span><span class="sd-who"><b>${esc(d.client || "No client yet")}</b><small>${esc([!est && sdIk(d) !== "oneoff" ? SD_IK[sdIk(d)] : "", d.title, d.site].filter(Boolean).join(" · "))}</small></span><span class="sd-dt"><small>${d.date ? esc(shortDay(d.date)) : ""}</small>${!est && st !== "draft" && st !== "paid" ? `<small class="${st === "overdue" ? "sd-late" : ""}">due ${esc(shortDay(sdDueDate(d)))}</small>` : ""}</span><span class="sd-amt"><b>${gbp(est ? c.net : st === "paid" || st === "draft" ? c.due : c.balance)}</b>${sdTag(d)}${!est && (d.payments || []).some((p) => !p.receiptAt) ? `<span class="tag bad sd-norc">🧾 Receipt not sent</span>` : ""}</span></button>`;
+              return `<button type="button" class="sd-row" data-id="${esc(d.id)}"><span class="sd-no">${esc(sdNo(d))}</span><span class="sd-who"><b>${esc(d.client || "No client yet")}</b><small>${esc([!est && sdIk(d) !== "oneoff" ? SD_IK[sdIk(d)] : "", d.title, d.site].filter(Boolean).join(" · "))}</small></span><span class="sd-dt"><small>${d.date ? esc(shortDay(d.date)) : ""}</small>${!est && st !== "draft" && st !== "paid" ? `<small class="${st === "overdue" ? "sd-late" : ""}">due ${esc(shortDay(sdDueDate(d)))}</small>` : ""}</span><span class="sd-amt"><b>${gbp(est ? c.net : st === "paid" || st === "draft" ? c.due : c.balance)}</b>${sdTag(d)}${est ? QTW.expiryTag(d) + QTW.riseTag(d) : ""}${!est && (d.payments || []).some((p) => !p.receiptAt) ? `<span class="tag bad sd-norc">🧾 Receipt not sent</span>` : ""}</span></button>`;
             })
             .join("")}</div>`
         : `<div class="empty"><strong>${list0.length ? "Nothing here" : est ? "No estimates yet" : "No invoices yet"}</strong>${list0.length ? "Try another filter." : est ? "Tap + New estimate, or bring in one you wrote in Word." : "Tap + New invoice, or turn an accepted estimate into one."}</div>`

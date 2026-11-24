@@ -10,7 +10,9 @@ import { efMount } from "./est-files.js";
 import { epvOpen } from "./est-preview.js";
 import { jfFor, jfOpen } from "./job-file.js";
 import { spnHtml, spnRead, spnWire } from "./pay-plan.js";
+import { QTW } from "./quote-watch.js";
 import {
+  SD_ALLOW,
   SD_IK,
   SD_KINDS,
   SD_VATC,
@@ -105,6 +107,11 @@ function sdLineRow(l, i, set) {
       <label class="sd-lf">Type<select class="sd-lk">${Object.entries(SD_KINDS)
         .map(([k, v]) => `<option value="${k}"${k === sdKind(l) ? " selected" : ""}>${v}</option>`)
         .join("")}</select></label>
+      <label class="sd-lf">Price is<select class="sd-lal"><option value="">Fixed</option>${Object.entries(
+        SD_ALLOW,
+      )
+        .map(([k, v]) => `<option value="${k}"${k === l.al ? " selected" : ""}>${v[0]}</option>`)
+        .join("")}</select></label>
       <span class="sd-ltot"></span>
     </div>
   </div>`;
@@ -157,6 +164,7 @@ function sdEdit(d0) {
     .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   openViewer(`<div class="sd-ed">
     <div class="sd-edtop"><h3 style="margin:0">${est ? "📝 Estimate " + esc(d.number) + ((+d.ver || 1) > 1 ? " · version " + d.ver + (d.firstNo && d.firstNo !== d.number ? " (first sent as " + esc(d.firstNo) + ")" : "") : "") : "🧾 " + esc(SD_IK[sdIk(d)]) + " " + esc(sdNo(d))}</h3>${d0.id ? sdTag(d) : ""}</div>
+    ${est ? QTW.editNotice(d) : ""}
     ${est && (d.versions || []).length ? `<div class="who sd-vers">Earlier versions: ${d.versions.map((v, i) => `<button type="button" class="pillbtn sd-vpdf" data-i="${i}">v${v.ver} · ${esc(shortDay(v.date || ""))} · ${gbp(v.net || 0)} 📄</button>`).join(" ")}</div>` : ""}
     ${
       !est
@@ -226,7 +234,7 @@ function sdEdit(d0) {
         .join("")}</select></label></div>`
     }
     <div id="sd-lines">${d.lines.map((l, i) => sdLineRow(l, i, set)).join("")}</div>
-    <div class="sd-acts"><button type="button" class="btn" id="sd-addl">+ Add a line</button><button type="button" class="btn" id="sd-addh">+ Add a section (job)</button></div>
+    <div class="sd-acts"><button type="button" class="btn" id="sd-addl">+ Add a line</button><button type="button" class="btn" id="sd-addh">+ Add a section (job)</button><button type="button" class="btn" id="sd-addc">+ Add a contingency</button></div>
     ${est ? `<section class="card esf-box" id="esf-box"></section>` : ""}
     ${
       est
@@ -284,6 +292,8 @@ function sdEdit(d0) {
       vc: r.querySelector(".sd-lv").value,
       k: r.querySelector(".sd-lk").value,
     };
+    if (r.querySelector(".sd-lal") && r.querySelector(".sd-lal").value)
+      o.al = r.querySelector(".sd-lal").value;
     if (qm) {
       const q = r.querySelector(".sd-lq").value,
         rt = r.querySelector(".sd-lr").value;
@@ -466,6 +476,38 @@ function sdEdit(d0) {
     totals();
     const all = document.querySelectorAll("#sd-lines .sd-ld");
     all[all.length - 1].focus();
+  };
+  /* a contingency line: a % of the lines so far (James, Nov 2026) */
+  $("sd-addc").onclick = () => {
+    const d = document.createElement("div");
+    d.className = "dimask";
+    d.innerHTML = `<form class="dimbox"><b>+ Add a contingency</b><div class="who">A sum for the unforeseen, only charged if it's needed. It's worked out from the lines so far.</div><label for="sd-cp">Percentage<input id="sd-cp" type="number" inputmode="decimal" min="1" max="50" step="0.5" value="5"></label><div class="dimbtns"><button type="button" class="btn sd-cx">Cancel</button><button type="submit" class="btn primary">Add</button></div></form>`;
+    document.body.appendChild(d);
+    d.querySelector(".sd-cx").onclick = () => d.remove();
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      const pc = +d.querySelector("#sd-cp").value || 0;
+      const cur = sdCalc(Object.assign({}, read(), {})).net;
+      d.remove();
+      if (!(pc > 0) || !(cur > 0)) return toast("Add the priced lines first");
+      const n = document.querySelectorAll("#sd-lines .sd-line").length;
+      $("sd-lines").insertAdjacentHTML(
+        "beforeend",
+        sdLineRow(
+          {
+            d: `Contingency (${pc}%) for unforeseen work`,
+            a: sdR2((cur * pc) / 100),
+            vc: set.vatReg === false ? "NV" : set.vc || "S20",
+            k: "oth",
+            al: "cont",
+          },
+          n,
+          set,
+        ),
+      );
+      wireLines();
+      totals();
+    };
   };
   $("sd-addh").onclick = () => {
     const n = document.querySelectorAll("#sd-lines .sd-line").length;

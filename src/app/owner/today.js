@@ -2,6 +2,7 @@
 import { clShowBook, clShowToSee } from "../clients/address-book.js";
 import { REVIEWS } from "../clients/reviews.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
+import { WKU } from "../clients/weekly-update.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, empTabs, render } from "../core/tabs-week.js";
@@ -607,6 +608,7 @@ function todayView() {
     ${wuTodayCard()}
     ${wpCard()}
     ${TIPRUN.todayCard()}
+    ${WKU.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -624,6 +626,7 @@ function todayView() {
   otmCardWire();
   wuTodayWire();
   TIPRUN.wireToday();
+  WKU.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();

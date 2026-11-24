@@ -213,6 +213,7 @@ initOpening();
         S.glassOrders = all.filter((t) => t.kind === "glassorder");
         S.glassColours = all.filter((t) => t.kind === "glasscolour");
         S.woodSamples = all.filter((t) => t.kind === "woodsample");
+        S.handovers = all.filter((t) => t.kind === "handover");
         S.clips = all.filter((t) => t.kind === "clip");
         S.brochures = all.filter((t) => t.kind === "brochure");
         S.samples = all.filter((t) => t.kind === "sample");

@@ -8,6 +8,8 @@ import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhLogoId, lhPics, lhPutBot, lhPutTop } from "./letterhead-setup.js";
 import {
   SD_VATC,
+  sdAlTxt,
+  sdAllowNote,
   sdAmt,
   sdCalc,
   sdDueDate,
@@ -290,7 +292,9 @@ async function sdPdf(d) {
         g.lines.forEach((l) => {
           const priced = l.q !== "" && l.q != null && l.r !== "" && l.r != null;
           costLine(
-            (l.d || "Item") + (priced ? ` (${+l.q}${l.u ? " " + l.u : ""} × ${gbp(l.r)})` : ""),
+            (l.d || "Item") +
+              (priced ? ` (${+l.q}${l.u ? " " + l.u : ""} × ${gbp(l.r)})` : "") +
+              (sdAlTxt(l) ? " – " + sdAlTxt(l) : ""),
             sdAmt(l),
             { ind: g.h ? 5 : 0 },
           );
@@ -397,6 +401,7 @@ async function sdPdf(d) {
       list(exc, { lh: 5, gap: 2.2 });
       y += 4;
     }
+    if (sdAllowNote(d)) paras(sdAllowNote(d), { gap: 4.4 });
     if (d.notes) paras(d.notes, { gap: 4.4 });
     paras(d.closing != null ? d.closing : set.closing, { gap: 5 });
     /* sign-off: e.g. "Yours sincerely," then "Kind Regards", the signature, the name */
@@ -476,6 +481,7 @@ async function sdPdf(d) {
       const vc = SD_VATC[sdVc(l, d)];
       const extra = [
         priced ? `${+l.q}${l.u ? " " + l.u : ""} × ${gbp(l.r)}` : "",
+        sdAlTxt(l),
         many && set.vatReg !== false ? "VAT " + vc.p : "",
       ]
         .filter(Boolean)
@@ -552,6 +558,7 @@ async function sdPdf(d) {
         { gap: 4 },
       );
     }
+    if (sdAllowNote(d)) paras(sdAllowNote(d), { gap: 4.4 });
     if (d.notes) paras(d.notes, { gap: 4.4 });
     if (set.invNote) paras(set.invNote, { gap: 4 });
     need(26);

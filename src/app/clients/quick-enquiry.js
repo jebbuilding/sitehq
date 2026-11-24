@@ -13,6 +13,7 @@ import { cmyHtml, cmyWire } from "./client-money.js";
 import { CL_STAGES, clStage, openClientForm, saveClient } from "./clients.js";
 import { clDocsHtml, wireClDocs } from "./documents.js";
 import { clGdprHtml, wireClGdpr } from "./gdpr-consent.js";
+import { HOV } from "./handover.js";
 import { jtHtml, jtRead, jtWire } from "./job-top.js";
 import { mjEdit } from "./more-jobs.js";
 import { ptCl, ptClientBlock, wirePtClientBlock } from "./portal.js";
@@ -30,6 +31,7 @@ import {
 } from "./stages-planner.js";
 import { vdWire } from "./visit-diary.js";
 import { webEnqFiled } from "./web-enquiries.js";
+import { WKU } from "./weekly-update.js";
 import { $, addDays, esc, gbp, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { RAW, S, ownerMode, siteNames } from "../core/state.js";
@@ -525,7 +527,7 @@ ${clMediaHtml(c)}
     <div class="cvp-j"${J}><div class="actions" style="margin-top:12px"><button class="btn primary" id="cv-price" type="button">💷 Price this job</button><button class="btn primary" id="cv-jf" type="button">📁 Job file${(() => {
       const j = (S.jobFiles || []).find((x) => x.clientId === c.id);
       return j && (j.items || []).length ? " (" + j.items.length + ")" : "";
-    })()}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button></div>
+    })()}</button><button class="btn" id="cv-wku" type="button">📰 Weekly update</button><button class="btn" id="cv-hov" type="button">📦 Handover pack${HOV.statusTxt(c) ? " · " + esc(HOV.statusTxt(c)) : ""}</button><button class="btn" id="cv-pdf" type="button">📄 Make PDF</button><button class="btn" id="cv-edit" type="button">✎ Edit client details</button><button class="btn ${["contact", "done", "lost"].includes(c.stage) ? "primary" : ""}" id="cv-enq" type="button">${["contact", "done", "lost"].includes(c.stage) ? "📝 New enquiry" : "✎ Edit enquiry"}</button><button class="btn" id="cv-visit" type="button">Book a visit in the planner</button></div>
     ${clDocsHtml(c)}
     ${(c.recordPdfs || []).length ? `<div class="card" style="margin-top:12px;padding:10px 12px"><b>📄 Client PDFs saved to this job</b>${c.recordPdfs.map((r, i) => `<div class="attrow"><button type="button" class="incrow cv-rpo" data-i="${i}"><span class="attic" aria-hidden="true">📄</span><span><b>${esc(r.name)}</b><br><span class="who">${esc(stamp(r.at))}${r.pages ? " · " + r.pages + " page" + (r.pages === 1 ? "" : "s") : ""}</span></span></button><button type="button" class="iconbtn cv-rpd" data-i="${i}" aria-label="Download" title="Download">⬇</button><button type="button" class="iconbtn cv-rpx" data-i="${i}" aria-label="Delete" title="Delete" style="color:var(--danger)">🗑</button></div>`).join("")}</div>` : ""}
     </div><div class="cvp-p"${P}><div class="actions" style="margin-top:18px;justify-content:flex-end"><button class="btn delbtn" id="cv-delete" type="button">🗑 Delete client</button></div></div>`);
@@ -639,6 +641,18 @@ ${clMediaHtml(c)}
   ["cv-vchg", "cv-vbook"].forEach((id) => {
     if ($(id)) $(id).onclick = () => $("cv-visit").onclick();
   });
+  /* everything for the end of the job (clients/handover.js) */
+  /* this week's update to the client (clients/weekly-update.js) */
+  if ($("cv-wku"))
+    $("cv-wku").onclick = () => {
+      closeViewer();
+      WKU.open(c);
+    };
+  if ($("cv-hov"))
+    $("cv-hov").onclick = () => {
+      closeViewer();
+      HOV.open(c);
+    };
   if ($("cv-site"))
     $("cv-site").onclick = async () => {
       const name = (

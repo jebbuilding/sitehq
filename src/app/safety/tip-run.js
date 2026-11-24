@@ -29,7 +29,8 @@ export { TIPRUN };
    asks for on one screen. Afterwards ✅ Tipped adds the weighbridge weight, a photo of the ticket and the waste
    tracking ID the site gives. Trades and James both make them: sheets/{uid}/signoffs/{id} { type:"tiprun", date,
    time, site, vehicle, driver, lines [{ code, desc, haz, est, unit }], cont, toId, toName, toPermit, carrierNo,
-   carrierKind, wtnId, status "onway"|"tipped", weight, wunit, actual, ticket (asset), wtid, tippedAt, notes }.
+   carrierKind, wtnId, status "onway"|"tipped", weight, wunit, actual, ticket (asset), wtid, fee (£ tip charge, onto the
+   job's costs), tippedAt, notes }.
    The firm's own registration and permit are in Company details (wasteCarrier, wasteTier, wasteExpiry, wastePermit)
    and Today warns before the permit is needed. ⬇ Spreadsheet lists the year's loads. */
 const TIPRUN = (() => {
@@ -416,6 +417,7 @@ const TIPRUN = (() => {
       `<h3 id="sheettitle">✅ Tipped</h3>
       <div class="grid2"><label for="tpr-wt">Weight<span class="tpr-w"><input id="tpr-wt" inputmode="decimal" value="${esc(r.weight || "")}" placeholder="from the ticket"><select id="tpr-wu">${UNITS.map((u) => `<option ${u === (r.wunit || "t") ? "selected" : ""}>${u}</option>`).join("")}</select></span></label>
       <label for="tpr-act">That weight is<select id="tpr-act"><option value="1" ${r.actual !== false ? "selected" : ""}>From the weighbridge</option><option value="0" ${r.actual === false ? "selected" : ""}>Estimated (no weighbridge)</option></select></label></div>
+      <label for="tpr-fee">Tip charge £ (before VAT, if paid at the tip – it goes on the job's costs)<input id="tpr-fee" inputmode="decimal" value="${esc(r.fee || "")}" placeholder="e.g. 85.00"></label>
       <label for="tpr-wtid">Waste tracking ID (if the site gives you one)<input id="tpr-wtid" maxlength="60" value="${esc(r.wtid || "")}" placeholder="from the ticket or the site"></label>
       ${r.ticket ? `<img class="tpr-tk" src="${blobUrl(r.ticket)}" alt="Weighbridge ticket">` : ""}
       <label for="tpr-tkin">📷 Photo of the weighbridge ticket${r.ticket ? " (to replace it)" : ""}<input id="tpr-tkin" type="file" accept="image/*"></label>
@@ -429,6 +431,7 @@ const TIPRUN = (() => {
           wunit: $("tpr-wu").value,
           actual: $("tpr-act").value === "1",
           wtid: $("tpr-wtid").value.trim(),
+          fee: +String($("tpr-fee").value).replace(/[£,\s]/g, "") || 0,
           tippedDate: $("tpr-td").value,
           tippedTime: $("tpr-tt").value,
           tippedAt: Date.now(),

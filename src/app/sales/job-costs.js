@@ -174,6 +174,38 @@ function jcData(site) {
       charge: sdR2(net * (1 + pct / 100)),
     });
   });
+  /* tip charges paid at the tip (James, Nov 2026: "costs land on the job by themselves") */
+  allTeam("signoffs")
+    .filter((x) => x.type === "tiprun" && same(x.site, site) && +x.fee > 0)
+    .forEach((x) => {
+      const pct = +j.matPct || 0;
+      items.push({
+        key: "t|" + x.who + "|" + x.id,
+        kind: "mat",
+        date: x.tippedDate || x.date,
+        desc:
+          "Tip run" +
+          (x.toName ? " – " + x.toName : "") +
+          (x.weight ? " (" + x.weight + " " + (x.wunit || "t") + ")" : ""),
+        cost: sdR2(+x.fee),
+        pct,
+        charge: sdR2(+x.fee * (1 + pct / 100)),
+      });
+    });
+  /* costs added by hand on the job: skip hire, van miles, plant hire, anything without a receipt */
+  (j.extras || []).forEach((x) => {
+    const pct = +j.matPct || 0;
+    items.push({
+      key: "x|" + x.id,
+      kind: x.kind === "sub" ? "sub" : "mat",
+      date: x.date,
+      desc: x.desc,
+      cost: sdR2(+x.cost || 0),
+      pct,
+      charge: sdR2((+x.cost || 0) * (1 + pct / 100)),
+      xid: x.id,
+    });
+  });
   items.forEach((it) => (it.inv = j.invoiced[it.key] || ""));
   items.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
   /* what the client's been invoiced, and the estimate */
@@ -360,7 +392,7 @@ function jcJobView(tabs, site) {
       ${d.cp ? `<div class="sd-box${d.notInv.length ? " bad" : " ok"}"><small>Not invoiced yet</small><b>${gbp(d.notInvCharge)}</b><span>${d.notInv.length} cost${d.notInv.length === 1 ? "" : "s"}</span></div>` : ""}
     </div>
     ${jbCard(d)}
-    <div class="actions">${d.cp && d.notInv.length ? `<button type="button" class="btn primary" id="jc-inv">🧾 Invoice what's not been charged (${gbp(d.notInvCharge)})</button>` : ""}<button type="button" class="btn" id="jc-xls">⬇ Spreadsheet</button><button type="button" class="btn" id="jc-rates">⚙️ Cost rates</button></div>
+    <div class="actions">${d.cp && d.notInv.length ? `<button type="button" class="btn primary" id="jc-inv">🧾 Invoice what's not been charged (${gbp(d.notInvCharge)})</button>` : ""}<button type="button" class="btn" id="jc-addx">＋ Add a cost</button><button type="button" class="btn" id="jc-xls">⬇ Spreadsheet</button><button type="button" class="btn" id="jc-rates">⚙️ Cost rates</button></div>
     <section class="card"><div class="cardbody"><b>Labour</b><div class="tablewrap"><table class="jc-tbl"><thead><tr><th>Who</th><th class="num">Hours</th><th class="num">Cost £/h</th><th class="num">Cost</th>${d.cp ? `<th class="num">Charge £/h</th><th class="num">Charge</th><th class="num">Not invoiced</th>` : ""}</tr></thead><tbody>${
       Object.values(labBy)
         .map(
@@ -406,6 +438,7 @@ function jcJobView(tabs, site) {
   };
   $("jc-rates").onclick = jcRates;
   $("jc-xls").onclick = () => jcXlsx(site);
+  if ($("jc-addx")) $("jc-addx").onclick = () => jcAddCost(site);
   if ($("jc-inv")) $("jc-inv").onclick = () => jcInvoice(site);
   document
     .querySelectorAll("#main .jc-rc")
@@ -754,4 +787,95 @@ async function jcXlsx(site) {
       toast("Couldn't save the file");
     }
   }
+}
+/* ＋ Add a cost: something without a receipt – skip hire, a day's van miles (miles × the rate a mile), plant hire, other.
+   Kept on the job (jc-….extras) and counted in its costs and live profit; the list shows them with ✕ to take one off. */
+const JC_XKINDS = [
+  ["skip", "🗑 Skip hire"],
+  ["miles", "🚐 Van miles"],
+  ["plant", "🚜 Plant hire"],
+  ["other", "📦 Other"],
+];
+function jcAddCost(site) {
+  const j = jcJob(site);
+  const rate = +jcSet().mileRate || 0.45;
+  const L = j.extras || [];
+  openSheet(
+    `<h3 id="sheettitle">＋ Add a cost to ${esc(siteLabel(site))}</h3>
+    <div class="who">For things without a receipt in the app. They count in the job's costs and its profit.</div>
+    <div class="seg" id="jcx-k">${JC_XKINDS.map(([k, l], i) => `<button type="button" data-v="${k}" aria-pressed="${i === 0}">${l}</button>`).join("")}</div>
+    <label for="jcx-d">What<input id="jcx-d" maxlength="120" placeholder="e.g. 8 yard skip, 2 weeks"></label>
+    <div class="grid2"><label for="jcx-date">Date<input id="jcx-date" type="date" value="${esc(iso(new Date()))}"></label>
+    <label for="jcx-c" id="jcx-cl">Cost £ (before VAT)<input id="jcx-c" inputmode="decimal" placeholder="e.g. 240"></label></div>
+    <div class="grid2" id="jcx-m" hidden><label for="jcx-mi">Miles<input id="jcx-mi" inputmode="decimal" placeholder="e.g. 36"></label><label for="jcx-r">£ a mile<input id="jcx-r" inputmode="decimal" value="${rate}"></label></div>
+    ${L.length ? `<div class="flabel">Added by hand</div>${L.map((x) => `<div class="drow jcx-row"><span>${esc(shortDay(x.date))} · ${esc(x.desc)}</span><span><b>${gbp(+x.cost || 0)}</b> <button type="button" class="linkdanger jcx-del" data-id="${esc(x.id)}" aria-label="Take off ${esc(x.desc)}">✕</button></span></div>`).join("")}` : ""}
+    ${formFoot(false, "Add the cost")}`,
+    async () => {
+      const k = document.querySelector("#jcx-k [aria-pressed=true]").dataset.v;
+      let cost = +String($("jcx-c").value).replace(/[£,\s]/g, "") || 0;
+      let desc = $("jcx-d").value.trim();
+      if (k === "miles") {
+        const mi = +$("jcx-mi").value || 0,
+          r = +$("jcx-r").value || 0;
+        cost = sdR2(mi * r);
+        desc = desc || "Van miles";
+        desc += " (" + mi + " miles at £" + r.toFixed(2) + ")";
+      }
+      if (!(cost > 0)) return showErr(k === "miles" ? "Put in the miles." : "Put in the cost.");
+      if (!desc)
+        desc = (JC_XKINDS.find((x) => x[0] === k) || ["", "Cost"])[1].replace(/^\S+\s/, "");
+      const x = {
+        id: newId(),
+        kind: "mat",
+        type: k,
+        date: $("jcx-date").value || iso(new Date()),
+        desc,
+        cost,
+      };
+      try {
+        await jcSave(Object.assign({}, j, { extras: L.concat([x]) }));
+        if (k === "miles" && +$("jcx-r").value && +$("jcx-r").value !== rate)
+          try {
+            await S.db
+              .doc("todos/jcset")
+              .set(Object.assign({ kind: "jcset" }, jcSet(), { mileRate: +$("jcx-r").value }));
+          } catch (e) {}
+        closeForm();
+        toast("Cost added to the job");
+        render();
+      } catch (e) {
+        showErr("Couldn't save. Check your connection.");
+      }
+    },
+    "jcx-d",
+  );
+  document.querySelectorAll("#jcx-k button").forEach(
+    (b) =>
+      (b.onclick = () => {
+        document
+          .querySelectorAll("#jcx-k button")
+          .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        const mi = b.dataset.v === "miles";
+        $("jcx-m").hidden = !mi;
+        $("jcx-cl").hidden = mi;
+      }),
+  );
+  document.querySelectorAll(".jcx-del").forEach(
+    (b) =>
+      (b.onclick = async () => {
+        if (b.dataset.armed !== "1") {
+          b.dataset.armed = "1";
+          b.textContent = "Sure?";
+          return;
+        }
+        try {
+          await jcSave(Object.assign({}, j, { extras: L.filter((x) => x.id !== b.dataset.id) }));
+          closeForm();
+          toast("Taken off");
+          render();
+        } catch (e) {
+          toast("Couldn't save");
+        }
+      }),
+  );
 }

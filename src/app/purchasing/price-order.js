@@ -55,7 +55,29 @@ const plSupName = (supId) => {
   return s ? s.name + (s.loc ? " " + s.loc : "") : "Merchant";
 };
 async function plSave(supId, items) {
-  const rec = { kind: "pricelist", sup: supId, items, updated: Date.now() };
+  /* prices that went up since the last list (sales/quote-watch.js warns estimates priced before) */
+  const old = plOf(supId);
+  const key = (x) =>
+    String(x.n || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  const was = new Map((old.items || []).map((x) => [key(x), +x.p || 0]));
+  const ups = items
+    .map((x) => {
+      const p0 = was.get(key(x)),
+        p1 = +x.p || 0;
+      return p0 > 0 && p1 > p0 * 1.005 ? ((p1 - p0) / p0) * 100 : null;
+    })
+    .filter((x) => x != null);
+  const rises = (old.rises || []).slice(-9);
+  if (ups.length)
+    rises.push({
+      at: Date.now(),
+      n: ups.length,
+      avg: Math.round((ups.reduce((a, x) => a + x, 0) / ups.length) * 10) / 10,
+    });
+  const rec = { kind: "pricelist", sup: supId, items, rises, updated: Date.now() };
   await S.db.doc("todos/pl-" + supId).set(rec);
 }
 /* ---------- Merchants › Price lists ---------- */
