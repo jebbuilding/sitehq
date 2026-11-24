@@ -189,3 +189,12 @@
 .wku-p{padding:0;border:3px solid transparent;border-radius:10px;overflow:hidden;background:none;min-height:44px;cursor:pointer;opacity:.55}
 .wku-p[aria-pressed="true"]{border-color:var(--accent);opacity:1}
 .wku-p img{display:block;width:100%;height:80px;object-fit:cover}
+.cbk-list{display:flex;flex-direction:column;gap:8px}
+.cbk-it{padding:10px 12px}
+.cbk-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.cbk-ph{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.cbk-ph img{width:72px;height:72px;object-fit:cover;border-radius:8px}
+.cbk-pt .cbk-ptit{padding:8px 0;border-top:1px solid var(--line)}
+.cbk-up{position:relative;overflow:hidden;align-self:flex-start}
+.cbk-up input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.cbk-pt{padding:14px 16px;display:flex;flex-direction:column;gap:6px}

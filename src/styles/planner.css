@@ -232,3 +232,13 @@
 .sth-hint.sth-over,.sth-tbl .sth-over{color:var(--danger);opacity:1;font-weight:600}
 .sth-tbl .sth-under{color:var(--accent)}
 .sth-tbl td.num,.sth-tbl th{white-space:nowrap}
+.lld{margin-top:12px}
+.lld-row{display:grid;grid-template-columns:minmax(0,2fr) 90px minmax(0,2fr) minmax(0,1.6fr) auto;gap:8px;align-items:end;padding:8px 0;border-top:1px solid var(--line)}
+.lld-ob{align-self:center;font-weight:600}
+.lld-late{color:var(--danger)}
+.lld-soon{color:var(--accent)}
+.lld-acts{display:flex;gap:6px;align-items:center}
+.lld-acts .linkdanger{min-width:44px;min-height:44px}
+.lld-add{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.lld-add .pillbtn{min-height:44px}
+@media (max-width:700px){.lld-row{grid-template-columns:1fr 1fr}.lld-row .lld-w{grid-column:1 / -1}.lld-ob{grid-column:1 / -1}}

@@ -1,6 +1,7 @@
 /* ================= BOOT: get the platform (database, user, files, downloads), work out who is signed in, start the app ================= */
 import { initRoofing } from "../calculators/roofing.js";
 import { CH, initChat, renderChatHead, syncSettings } from "../chat/chat.js";
+import { initCallbacks } from "../clients/callbacks.js";
 import { initJobStory } from "../clients/job-story.js";
 import { startClient, startPortalOwner } from "../clients/portal.js";
 import { initQuickEnquiry } from "../clients/quick-enquiry.js";
@@ -51,6 +52,7 @@ initExpiryDates();
 initForeman();
 initQuickEnquiry();
 initSdiWeather();
+initCallbacks();
 initSymbolsMore();
 initConstructionDetails();
 initPaving();
@@ -214,6 +216,7 @@ initOpening();
         S.glassColours = all.filter((t) => t.kind === "glasscolour");
         S.woodSamples = all.filter((t) => t.kind === "woodsample");
         S.handovers = all.filter((t) => t.kind === "handover");
+        S.longLeads = all.filter((t) => t.kind === "longlead");
         S.clips = all.filter((t) => t.kind === "clip");
         S.brochures = all.filter((t) => t.kind === "brochure");
         S.samples = all.filter((t) => t.kind === "sample");

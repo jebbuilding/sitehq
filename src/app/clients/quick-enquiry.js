@@ -9,6 +9,7 @@ import {
   histHtml,
   wireHist,
 } from "./address-book.js";
+import { CBK } from "./callbacks.js";
 import { cmyHtml, cmyWire } from "./client-money.js";
 import { CL_STAGES, clStage, openClientForm, saveClient } from "./clients.js";
 import { clDocsHtml, wireClDocs } from "./documents.js";
@@ -511,7 +512,7 @@ function viewClient(c) {
         <div class="cvp-p"${P}>${histHtml(c)}</div>
     <div class="cvp-j"${J}>${ptClientBlock(c)}
 ${clMediaHtml(c)}
-    ${DWS.clientHtml(c)}${GLO.clientHtml(c)}${SAMPLES.clientHtml(c)}${REVIEWS.clientHtml(c)}</div>
+    ${DWS.clientHtml(c)}${GLO.clientHtml(c)}${CBK.clientHtml(c)}${SAMPLES.clientHtml(c)}${REVIEWS.clientHtml(c)}</div>
     <div class="flabel" style="margin-top:12px">Notes and calls</div>
     <div style="display:flex;gap:8px"><textarea id="cv-note" maxlength="1000" placeholder="e.g. Visited, measured up. Sending quote Friday." style="flex:1;min-height:48px"></textarea><button type="button" class="btn primary" id="cv-addnote">Add</button></div>
     <div class="clnotes">${
@@ -614,6 +615,7 @@ ${clMediaHtml(c)}
   if ($("cv-morefull")) $("cv-morefull").onclick = () => mjEdit(c, null, true);
   DWS.wireClient(c);
   GLO.wireClient(c);
+  CBK.wireClient(c);
   SAMPLES.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
   REVIEWS.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
   $("cv-visit").onclick = () => {

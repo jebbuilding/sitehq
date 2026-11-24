@@ -1,5 +1,6 @@
 /* ================= NEW LOOK (owner): Today home screen, five sections, bottom bar on phones / side menu on big screens ================= */
 import { clShowBook, clShowToSee } from "../clients/address-book.js";
+import { CBK } from "../clients/callbacks.js";
 import { REVIEWS } from "../clients/reviews.js";
 import { webEnqNew, webView } from "../clients/web-enquiries.js";
 import { WKU } from "../clients/weekly-update.js";
@@ -18,6 +19,7 @@ import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
 import { pcTodayCard, pcTodayWire, wuTodayCard, wuTodayWire } from "./week-wrap.js";
 import { kitView } from "../planner/kit-out.js";
+import { LLD } from "../planner/long-lead.js";
 import { eqmView } from "../planner/plant-care.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
@@ -609,6 +611,8 @@ function todayView() {
     ${wpCard()}
     ${TIPRUN.todayCard()}
     ${WKU.todayCard()}
+    ${LLD.todayCard()}
+    ${CBK.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -627,6 +631,8 @@ function todayView() {
   wuTodayWire();
   TIPRUN.wireToday();
   WKU.wireToday();
+  LLD.wireToday();
+  CBK.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();

@@ -1,6 +1,7 @@
 /* ================= CLIENT PORTAL ================= */
 import { openChat, openClientChat, unread, visibleChats } from "../chat/chat.js";
 import { clContactsHtml, clInvHtml, clMainHtml, clientSites } from "./address-book.js";
+import { CBK } from "./callbacks.js";
 import {
   csClientHtml,
   csClientStart,
@@ -370,6 +371,7 @@ function renderClient() {
   if (tab === "home") {
     html += `<div class="card pthero"><div class="who">Hello ${esc((C.name || "").split(" ")[0])}</div><b style="font-size:20px">${esc(C.project || C.site || "Your project")}</b></div>
       ${REVIEWS.portalHtml(C)}
+      ${CBK.portalHtml(C)}
       ${
         C.site
           ? (() => {
@@ -517,7 +519,10 @@ function renderClient() {
           render();
         }),
     );
-  if (tab === "home") REVIEWS.wirePortal(C);
+  if (tab === "home") {
+    REVIEWS.wirePortal(C);
+    CBK.wirePortal(C);
+  }
   if ($("pt-seen"))
     $("pt-seen").onclick = () => {
       if (S.client._preview) {
