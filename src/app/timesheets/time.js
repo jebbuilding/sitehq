@@ -187,9 +187,13 @@ async function checkInAt(site, extra = {}) {
 async function checkOut(e, extra = {}) {
   const D = dayFor(S.me);
   const actual = nowHM();
-  /* within 30 minutes of the usual finish (either side) it stops at the finish; earlier is an early finish, asked
-     about first (timesheets/check-reasons.js) – James, Nov 2026 */
-  const finish = toMin(actual) >= toMin(D.e) - CRS_EARLY_MIN ? D.e : actual;
+  /* out at or after the usual finish: it stops at the finish. Any earlier is an early finish, asked about first
+     (timesheets/check-reasons.js) – James, Nov 2026: "reason every time" */
+  const finish = extra.stopAt
+    ? extra.stopAt
+    : toMin(actual) >= toMin(D.e) - CRS_EARLY_MIN
+      ? D.e
+      : actual;
   const br = lunchBreak(e.start, finish, D);
   const data = Object.assign(
     {},

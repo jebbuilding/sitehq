@@ -1,5 +1,5 @@
 // 🪵 Woods on Forms (made-up sample): the common timbers and sheet materials grouped with a colour guide and their
-// usual uses; search; tapping one shows it big with 📋 Copy; 📷 Add a sample photo keeps a photo of real wood.
+// usual uses; search; tapping one shows it big with 📋 Copy; 📷 Add a wood sample with several photos (captions), the wood, finish, traits and notes; ✎ Edit it.
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
@@ -28,12 +28,35 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  await p.locator('.wds-sw',{hasText:'Siberian larch'}).click();await p.waitForTimeout(400);
  ok(/Siberian larch/.test(await p.innerText('.glc-big'))&&await p.isVisible('.wds-cp'),'tapping one shows it big with 📋 Copy');
  await p.click('.wds-more');await p.waitForTimeout(400);
- const png=await p.evaluate(()=>{const c=document.createElement('canvas');c.width=80;c.height=60;const g=c.getContext('2d');g.fillStyle='#a0703c';g.fillRect(0,0,80,60);return c.toDataURL('image/png').split(',')[1]});
- await p.setInputFiles('.wds-file',{name:'oak.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});await p.waitForTimeout(500);
- await p.fill('#wds-nm','Oak, light oak stain');await p.fill('#wds-nt','2 coats hardwax oil');
+ const mk=(col)=>p.evaluate((col)=>{const c=document.createElement('canvas');c.width=80;c.height=60;const g=c.getContext('2d');g.fillStyle=col;g.fillRect(0,0,80,60);return c.toDataURL('image/png').split(',')[1]},col);
+ const img=async(n,col)=>({name:n,mimeType:'image/png',buffer:Buffer.from(await mk(col),'base64')});
+ await p.click('.wds-new');await p.waitForTimeout(400);
+ await p.setInputFiles('.wds-file',[await img('oak1.png','#a0703c'),await img('oak2.png','#c49a6c')]);await p.waitForTimeout(500);
+ ok(await p.locator('.wds-ph').count()===2,'📷 Add a wood sample: two photos at once');
+ await p.locator('.wds-cap').nth(0).fill('Raw');await p.locator('.wds-cap').nth(1).fill('Oiled');
+ await p.fill('#wds-nm','Oak, light oak stain');await p.fill('#wds-wd','European oak');await p.fill('#wds-fi','2 coats hardwax oil');
+ await p.selectOption('#wds-t-hard','Hard');await p.selectOption('#wds-t-out','Durable outdoors');
+ await p.fill('#wds-nt','Tight straight grain, few knots. Goes darker in sunlight.');
+ await p.screenshot({path:'h676-edit.png'});
  await p.click('form.dimbox button[type=submit]');await p.waitForTimeout(1500);
- const sm=Object.values(await p.evaluate(()=>window.__st)).find(v=>v&&v.kind==='woodsample');
- ok(sm&&sm.name==='Oak, light oak stain'&&sm.assetId&&await p.locator('.wds-sp').count()===1,'📷 Add a sample photo keeps it, at the top under My wood samples');
+ let sm=Object.entries(await p.evaluate(()=>window.__st)).find(([k,v])=>v&&v.kind==='woodsample');
+ ok(sm&&sm[1].name==='Oak, light oak stain'&&sm[1].photos.length===2&&sm[1].photos[1].cap==='Oiled'&&sm[1].traits.hard==='Hard'&&sm[1].wood==='European oak'&&await p.locator('.wds-sp').count()===1,'saved with both photos (with captions), the wood, finish, traits and notes');
+ ok(/📷 2/.test(await p.innerText('.wds-sp')),'the sample shows it has 2 photos');
+ await p.click('.wds-sp');await p.waitForTimeout(400);
+ const big=await p.innerText('.wds-big');
+ ok(await p.locator('.wds-th').count()===2&&/European oak/.test(big)&&/Durable outdoors/.test(big)&&/darker in sunlight/.test(big)&&/Raw/.test(big),'tapping it shows the photos, the traits and the notes');
+ await p.click('.wds-th[data-i="1"]');await p.waitForTimeout(200);
+ ok(/Oiled/.test(await p.innerText('.wds-big')),'tap the second photo to see it (Oiled)');
+ await p.screenshot({path:'h676-sample.png'});
+ await p.click('.wds-ed');await p.waitForTimeout(400);
+ ok(await p.inputValue('#wds-fi')==='2 coats hardwax oil'&&await p.locator('.wds-ph').count()===2,'✎ Edit opens it filled in');
+ await p.setInputFiles('.wds-file',[await img('oak3.png','#6b4a2e')]);await p.waitForTimeout(400);
+ await p.locator('.wds-phx').nth(0).click();await p.waitForTimeout(300);
+ await p.fill('#wds-fi','Osmo 3032 satin');
+ await p.click('form.dimbox button[type=submit]');await p.waitForTimeout(1500);
+ sm=Object.entries(await p.evaluate(()=>window.__st)).find(([k,v])=>v&&v.kind==='woodsample');
+ ok(sm[1].photos.length===2&&sm[1].photos[0].cap==='Oiled'&&sm[1].finish==='Osmo 3032 satin'&&Object.values(await p.evaluate(()=>window.__st)).filter(v=>v&&v.kind==='woodsample').length===1,'edited: a photo added, one taken out, the finish changed – still one sample');
+ ok(/Osmo 3032 satin/.test(await p.innerText('.wds-big')),'and it shows the changes');
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h676: ${bad} failed`:'h676: all passed');await b.close();process.exit(bad?1:0);
 })();

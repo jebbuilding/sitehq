@@ -1,5 +1,5 @@
 // James's check-in rules, end to end (made-up people and sites; usual day 08:00–16:30).
-// In before 08:00 → paid from 08:00. Out within 30 min of 16:30 (either side) → paid to 16:30. Out earlier → must say
+// In before 08:00 → paid from 08:00. Out at or after 16:30 → paid to 16:30. Out any earlier (even 16:20) → must say
 // why, paid to when they left. Started early / finished late → they say so and why; James sees ⏱ Extra hours to
 // approve on Today and Timesheets, and paying it moves their hours. Moving job: this job stops, the next starts, or
 // they're in transit until they tap ✅ I've arrived. Writes h616*.png.
@@ -34,11 +34,11 @@ const pad=n=>String(n).padStart(2,'0');const today=`${now.getFullYear()}-${pad(n
  await checkIn(7,45);await shut();
  let E=(await mine()).find(e=>e.open);
  ok(E&&E.start==='08:00'&&E.actualIn==='07:45','in at 07:45 → paid from 08:00 ('+(E&&E.start)+')');
- await checkOut(16,10);
+ await checkOut(16,35);
  let txt=await sheetTxt();
- ok(!/Checking out before/.test(txt),'out at 16:10 (within 30 min) isn\'t treated as an early finish');
+ ok(!/Checking out before/.test(txt),'out at 16:35 isn\'t treated as an early finish');
  E=(await mine())[0];
- ok(E&&E.finish==='16:30'&&E.actualOut==='16:10','out at 16:10 → paid to 16:30 ('+(E&&E.finish)+')');
+ ok(E&&E.finish==='16:30'&&E.actualOut==='16:35','out at 16:35 → paid to 16:30 ('+(E&&E.finish)+')');
  ok(/Different hours today/.test(txt)&&await t.isChecked('#otm-e'),'arriving 15 min early, they\'re asked if they started early');
  await t.fill('#otm-why','Unloading the block delivery');await t.click('#f-save');await t.waitForTimeout(700);await shut();
  E=(await mine())[0];
@@ -49,12 +49,18 @@ const pad=n=>String(n).padStart(2,'0');const today=`${now.getFullYear()}-${pad(n
  ok(E&&E.finish==='16:30'&&/Different hours today/.test(txt)&&await t.isChecked('#otm-l'),'out at 17:40 → paid to 16:30, and asked if they finished late');
  await shut();
  /* early finish */
- await clear();await checkIn(8,0);await shut();await checkOut(15,0);
+ await clear();await checkIn(8,0);await shut();await checkOut(16,20);
  txt=await sheetTxt();
- ok(/Checking out before/.test(txt),'out at 15:00 asks why they\'re finishing early');
+ ok(/Checking out before/.test(txt),'out at 16:20 (just 10 minutes early) asks why they\'re finishing early');
  await t.click('#crs-early button[data-v="Finishing early for the day"]');await t.click('#f-save');await t.waitForTimeout(800);await shut();
  E=(await mine()).find(e=>e.earlyWhy);
- ok(E&&!E.open&&E.finish==='15:00'&&E.earlyWhy==='Finishing early for the day','their hours stop at 15:00, with the reason');
+ ok(E&&!E.open&&E.finish==='16:20'&&E.earlyWhy==='Finishing early for the day','their hours stop at 16:20, with the reason');
+ /* stopped at lunch, left at 13:20: asked what time they stopped (13:00 offered), paid to 13:00 */
+ await clear();await checkIn(8,0);await shut();await checkOut(13,20);
+ ok(/What time did you stop working/.test(await sheetTxt())&&await t.inputValue('#crs-stop')==='13:00','out at 13:20 in the lunch break: asked what time they stopped working (13:00 filled in)');
+ await t.click('#crs-early button[data-v="Finishing early for the day"]');await t.click('#f-save');await t.waitForTimeout(800);await shut();
+ E=(await mine()).find(e=>e.earlyWhy&&e.actualOut==='13:20');
+ ok(E&&E.finish==='13:00'&&E.actualOut==='13:20'&&E.hours===5,'paid to 13:00 (5 hours – lunch not taken), and it keeps that they left at 13:20 ('+(E&&E.finish)+', '+(E&&E.hours)+')');
  /* moving job: start at another, then transit */
  await clear();await checkIn(8,0);await shut();
  await t.clock.setFixedTime(at(10,30));await t.evaluate(()=>window.render());await t.click('.ci-move');await t.waitForTimeout(400);

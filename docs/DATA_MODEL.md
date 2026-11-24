@@ -45,7 +45,7 @@ Subcollections (`TR_COLLS`):
 | `brochure` | brochure file for a maker (`maker`, `assetId`) |
 | `winsurvey` | door & window survey (`job`, `items[]` openings, `clientId`, `site`, `lastPdf`) |
 | `glasscolour` | a photo of real coloured glass for the glass order's colour picker (`name`, `note`, `assetId`) |
-| `woodsample` | a photo of real timber for 🪵 Woods on Forms (`name`, `note`, `assetId`) |
+| `woodsample` | a photo of real timber for 🪵 Woods on Forms (`name`, `wood`, `finish`, `supplier`, `price`, `traits` { hard, out, stab, stain }, `note`, `photos` [{ `assetId`, `cap` }], `assetId` = the first photo) |
 | `handover` | the client's handover pack, `ho-{client id}` (`clientId`, `site`, `items` { key: { st have/na, files[], note } }, `years`, `gtext` guarantee wording, `done` finished date, `sentAt`) |
 | `longlead` | a site's long-lead items, `ll-{site slug}` (`site`, `items` [{ id, what, weeks, stage (programme stage id), ordered (date) }]) |
 | *(portal)* `portal/{uid}/callbacks/{id}` | a problem the client reports after the job (`text`, `room`, `urg`, `photos[]`, `status` new/booked/fixed/done/reopened, `log[]`, `bookedFor`, `bookedWho`, `doneBy`); the booking is `plan/cbk-{id}` |

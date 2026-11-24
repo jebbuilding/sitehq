@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 313 files, 5794 KB, 136890 lines.
-- 2822 names declared at the top level (the shared scope); 1456 of them are used by a file other than the one that declares them.
+- 313 files, 5802 KB, 137039 lines.
+- 2823 names declared at the top level (the shared scope); 1456 of them are used by a file other than the one that declares them.
 - 3301 file-to-file dependencies (file A uses at least one name from file B).
 - 28 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 268 files, 12 files depend on each other in a loop (directly or through other files); the other 33 files are outside any loop.
@@ -2738,7 +2738,7 @@ SURVEY TRACK: a door & window survey's progress – sent, followed up, client's 
 
 WOOD SAMPLES: common timbers and sheet materials, and photos of real wood samples to choose from
 
-- 235 lines, 13 KB. Declares 4 names, 1 used elsewhere.
+- 361 lines, 19 KB. Declares 4 names, 1 used elsewhere.
 - **Used elsewhere:** `WDS` (1)
 - **Uses names from 7 files:** `files/files.js` (3), `core/helpers.js` (2), `core/state.js` (1), `files/outbox.js` (1), `owner/deleted-items.js` (1), `safety/training.js` (1), `survey/glass-colours.js` (1)
 - **Used by 1 files**
@@ -2765,7 +2765,7 @@ CHASE HOURS: missing timesheets found the next morning, reminders in one tap, an
 
 CHECK REASONS: late in, early out, and moving to another job during the day
 
-- 173 lines, 7.3 KB. Declares 16 names, 9 used elsewhere.
+- 192 lines, 8.6 KB. Declares 17 names, 9 used elsewhere.
 - **Used elsewhere:** `CRS_EARLY_MIN` (2), `crsLine` (2), `crsArrived` (1), `crsEarlyAsk` (1), `crsIsEarly` (1), `crsIsLate` (1), `crsLateAsk` (1), `crsMove` (1), `crsTravelHtml` (1)
 - **Uses names from 9 files:** `core/helpers.js` (6), `core/sheet.js` (4), `core/fields.js` (3), `core/state.js` (2), `timesheets/time.js` (2), `core/tabs-week.js` (1), `files/outbox.js` (1), `sites/job-details.js` (1), `timesheets/non-site-time.js` (1)
 - **Used by 3 files**
@@ -2900,7 +2900,7 @@ STRAY HOURS: time booked to a name that isn't one of the jobs
 
 EMPLOYEE: TIME
 
-- 640 lines, 25 KB. Declares 13 names, 8 used elsewhere.
+- 644 lines, 25 KB. Declares 13 names, 8 used elsewhere.
 - **Used elsewhere:** `sumH` (12), `openEntry` (8), `checkOut` (3), `typeTag` (3), `checkInAt` (2), `checkIn` (1), `empTime` (1), `entrySub` (1)
 - **Uses names from 24 files:** `core/helpers.js` (14), `core/sheet.js` (12), `timesheets/check-reasons.js` (9), `core/state.js` (4), `safety/site-inductions.js` (4), `core/fields.js` (3), `files/files.js` (3), `files/outbox.js` (3), `timesheets/non-site-time.js` (3), `timesheets/overtime.js` (3), `core/company-names.js` (2), `people/foreman.js` (2), `photos/photos.js` (2), `sites/job-details.js` (2), `timesheets/chase-hours.js` (2), `timesheets/monthly-sheet.js` (2), `timesheets/working-day.js` (2), `core/tabs-week.js` (1), `owner/owner.js` (1), `safety/expiry-dates.js` (1), `safety/training.js` (1), `survey/door-window-survey.js` (1), `timesheets/day-work.js` (1), `timesheets/lone-work.js` (1)
 - **Used by 19 files**

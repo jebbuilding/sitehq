@@ -36,8 +36,9 @@ function crsIsLate(D) {
   if (S.mine.entries.some((e) => e.date === today && e.type === "hours")) return false;
   return toMin(nowHM()) > toMin(D.s) + crsLateMin;
 }
-/* leaving more than 30 minutes before the usual finish is an early finish; within 30 it counts as the finish */
-const CRS_EARLY_MIN = 30;
+/* leaving any time before the usual finish is an early finish – they say why and are paid to when they left; at or
+   after the finish it stops at the finish (James, Nov 2026: "reason every time" – there used to be 30 minutes leeway) */
+const CRS_EARLY_MIN = 0;
 const crsIsEarly = (D) => toMin(nowHM()) < toMin(D.e) - CRS_EARLY_MIN;
 function crsSeg(id, opts) {
   return `<div class="seg crs-seg" id="${id}" role="group">${opts.map((o, i) => `<button type="button" data-v="${esc(o)}" aria-pressed="${i === 0}">${esc(o)}</button>`).join("")}</div>`;
@@ -81,19 +82,37 @@ function crsLateAsk(site, D, go) {
   crsWireSeg("crs-late");
 }
 /* checking out before the usual finish: why? (or moving to another job) */
+/* when they stopped working, if it wasn't just now: leaving in the unpaid lunch means work stopped when lunch began
+   (out at 13:20 with lunch at 13:00 → 13:00) */
+function crsStopDefault(D) {
+  const n = toMin(nowHM()),
+    la = toMin(D.la || "13:00"),
+    lm = D.lm != null ? +D.lm : 30;
+  return lm && n > la && n < la + lm ? D.la || "13:00" : nowHM();
+}
+/* James (Nov 2026): finishing early, they're paid to the time they say they stopped working, not when they tapped
+   out – e.g. stopped at 13:00, tidied up and left at 13:20: paid to 13:00. Both are kept (finish and actualOut). */
 function crsEarlyAsk(e, D, go) {
   openSheet(
     `<h3 id="sheettitle">Checking out before ${esc(D.e)}</h3>
-    <div class="who">${esc(siteLabel(e.job))} · it's ${esc(nowHM())}. You're paid to now.</div>
+    <div class="who">${esc(siteLabel(e.job))} · it's ${esc(nowHM())}. Your usual finish is ${esc(D.e)}.</div>
+    <label for="crs-stop">What time did you stop working?<input id="crs-stop" type="time" required value="${esc(crsStopDefault(D))}"></label>
+    <div class="who">You're paid up to the time you stopped working.</div>
     <button type="button" class="btn crs-tomove">🚚 I'm going to another job instead</button>
     <div class="flabel">Why are you finishing early?</div>${crsSeg("crs-early", CRS_EARLY)}
     <label for="crs-en">Anything to add (optional)<input id="crs-en" maxlength="200"></label>
     ${formFoot(false, "Check out now")}`,
     () => {
       const why = crsWhy("crs-early", "crs-en");
+      const stop = $("crs-stop").value;
+      if (!stop) return showErr("Put the time you stopped working.");
+      if (toMin(stop) > toMin(nowHM()))
+        return showErr("That's later than now – put the time you stopped.");
+      if (e.start && toMin(stop) <= toMin(e.start))
+        return showErr("That's before you started (" + e.start + ").");
       if (!why) return showErr("Say why you're finishing early.");
       closeForm();
-      go({ earlyWhy: why });
+      go({ earlyWhy: why, stopAt: stop });
     },
     null,
   );
