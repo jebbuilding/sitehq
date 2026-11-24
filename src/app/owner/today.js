@@ -29,6 +29,7 @@ import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
 import { TIPRUN } from "../safety/tip-run.js";
 import { jbTodayCard, jbTodayWire } from "../sales/job-budget.js";
+import { JRV } from "../sales/job-review.js";
 import { onSiteNow, openRollCall } from "../sites/roll-call.js";
 import { chsCardHtml, chsWire } from "../timesheets/chase-hours.js";
 import { LWK } from "../timesheets/lone-work.js";
@@ -623,6 +624,7 @@ function todayView() {
     ${VNS.todayCard()}
     ${RFL.todayCard()}
     ${KEY.todayCard()}
+    ${JRV.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
       <div class="nl-colR">${tdoCard()}${dueSoonCard("all")}</div>
@@ -647,6 +649,7 @@ function todayView() {
   VNS.wireToday();
   RFL.wireToday();
   KEY.wireToday();
+  JRV.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
   const rows = onSiteNow();
