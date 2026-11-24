@@ -1493,7 +1493,9 @@ function ptAskSign(c, x0, preKind, after, site0) {
             sharedAt: Date.now(),
           });
         }
-        await ptSrc(c).addSign(newId(), {
+        /* its id goes to after(): a survey sent to approve keeps it, to pick up the answer (survey/survey-track.js) */
+        const signId = newId();
+        await ptSrc(c).addSign(signId, {
           kind,
           title,
           details: $("pa-det").value.trim(),
@@ -1515,7 +1517,7 @@ function ptAskSign(c, x0, preKind, after, site0) {
             ? "Sent to " + c.name + " to sign"
             : "Ready for " + c.name + " to sign when they join",
         );
-        if (after) setTimeout(after, src.linked ? 400 : 100);
+        if (after) setTimeout(() => after(signId), src.linked ? 400 : 100);
         else setTimeout(() => ptManager(ptCl(c)), src.linked ? 400 : 100);
       } catch (e) {
         showErr(uploadErr(e));

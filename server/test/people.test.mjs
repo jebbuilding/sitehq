@@ -181,3 +181,61 @@ test("the unusable password meets the pool's policy", () => {
     assert.ok(p.length >= 20 && /[A-Z]/.test(p) && /[a-z]/.test(p) && /\d/.test(p) && /[^A-Za-z0-9]/.test(p), p);
   }
 });
+
+test("someone deleted from the app can be added again: the same account, a fresh profile", async () => {
+  const { call, store, mailer } = await setup();
+  const first = await call("dev:owner", "/api/people", SAM2);
+  const id = first.body.id;
+  // still on the team: refused
+  const busy = await call("dev:owner", "/api/people", { ...SAM2, name: "Sam Again" });
+  assert.equal(busy.status, 409);
+  assert.equal(busy.body.error.code, "already_exists");
+  // deleted from the app (Delete for good takes the profile away)
+  await store.delete("sheets", id);
+  const back = await call("dev:owner", "/api/people", { ...SAM2, name: "Sam Two" });
+  assert.equal(back.status, 200, JSON.stringify(back.body));
+  assert.equal(back.body.id, id, "the same account, so their kept records are theirs again");
+  assert.equal(back.body.back, true);
+  assert.equal((await store.get("sheets", id)).name, "Sam Two");
+  assert.equal(mailer.sent.length, 2, "the invite is emailed again");
+  // marked as left: added again too, and no longer marked
+  await store.update("sheets", id, { left: true, leftAt: 5 });
+  const back2 = await call("dev:owner", "/api/people", SAM2);
+  assert.equal(back2.status, 200);
+  const prof = await store.get("sheets", id);
+  assert.equal(prof.left, undefined);
+  assert.equal(prof.details.trade, "Plasterer");
+});
+
+test("an address that is the owner's or a client's is never taken over", async () => {
+  const people = { "boss@example.test": { sub: "owner", groups: ["owner"] }, "client@example.test": { sub: "u9", groups: ["client"] } };
+  const users = { ...SEED_USERS };
+  const { createLocalDirectory: mk } = await import("../auth/local-directory.mjs");
+  const { call, store } = await setup({ directory: mk({ users, people }) });
+  for (const email of ["boss@example.test", "client@example.test"]) {
+    const r = await call("dev:owner", "/api/people", { ...SAM2, email });
+    assert.equal(r.status, 409, email);
+  }
+  assert.equal(await store.get("sheets", "u9"), null);
+});
+
+test("production account-maker: finding the account an address already has", async () => {
+  const sent = [];
+  const client = { async send(cmd) {
+    const name = cmd.constructor.name;
+    sent.push([name, cmd.input]);
+    if (name === "AdminGetUserCommand") {
+      if (cmd.input.Username === "nobody@example.test") throw Object.assign(new Error("no"), { name: "UserNotFoundException" });
+      return { Username: cmd.input.Username, UserAttributes: [{ Name: "sub", Value: "sub-123" }] };
+    }
+    if (name === "AdminListGroupsForUserCommand") return { Groups: [{ GroupName: "trade" }] };
+    throw new Error("unexpected " + name);
+  } };
+  const d = createCognitoDirectory({ userPoolId: "pool-1", client });
+  assert.deepEqual(await d.find("kahn@example.test"), { id: "sub-123", groups: ["trade"] });
+  assert.equal(await d.find("nobody@example.test"), null);
+  assert.deepEqual(sent.slice(0, 2).map(([n, i]) => [n, i.UserPoolId, i.Username]), [
+    ["AdminGetUserCommand", "pool-1", "kahn@example.test"],
+    ["AdminListGroupsForUserCommand", "pool-1", "kahn@example.test"],
+  ]);
+});

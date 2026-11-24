@@ -456,7 +456,7 @@ function viewClient(c) {
     <div class="cvp-j"${J}><div class="actions">${c.site ? `<button class="btn primary" id="cv-gosite" type="button">🏗️ Open the site</button>` : `<button class="btn primary" id="cv-site" type="button">🏗️ Make it a site</button><span class="who">Moves them to Active site</span>`}</div></div>
     ${clDetailsBox(c)}
     <div class="cvp-j"${J}>
-    ${c.visit && c.visit.date >= iso(new Date()) ? `<div class="notice" style="margin-top:10px">📅 Visit booked <b>${esc(shortDay(c.visit.date))} ${esc(c.visit.time || "")}</b> · reminder ${VISIT_REMIND_MIN / 60} hour before <button type="button" class="linkbtn" id="cv-ics">📲 Add to phone calendar</button></div>` : ""}
+    ${c.visit && c.visit.date >= iso(new Date()) ? `<div class="notice" style="margin-top:10px">📅 Visit booked <b>${esc(shortDay(c.visit.date))} ${esc(c.visit.time || "")}</b> · reminder ${VISIT_REMIND_MIN / 60} hour before <button type="button" class="linkbtn" id="cv-ics">📲 Add to phone calendar</button> <button type="button" class="linkbtn" id="cv-vchg">✎ Change</button></div>` : c.stage === "enquiry" ? `<div class="actions" style="margin-top:10px"><button type="button" class="btn primary" id="cv-vbook">📅 Book the visit to see the job</button></div>` : ""}
     ${c.quick ? `<div class="notice warn" style="margin-top:10px">⚡ Quick enquiry: only the basics so far. <button type="button" class="btn primary" id="cv-full" style="margin-left:6px">Fill in the full form</button></div>` : ""}
     ${clStepsHtml(c)}
     <div class="flabel" style="margin-top:12px">🔨 This job</div>
@@ -616,6 +616,15 @@ ${clMediaHtml(c)}
   REVIEWS.wireClient(c, () => viewClient((S.clients || []).find((x) => x.id === c.id) || c));
   $("cv-visit").onclick = () => {
     closeViewer();
+    if (!["contact", "done", "lost"].includes(c.stage)) {
+      openClientForm(c, "enquiry");
+      setTimeout(() => {
+        const h = $("cf-vhead");
+        if (h) h.scrollIntoView({ block: "start" });
+        if ($("cf-vd")) $("cf-vd").focus();
+      }, 250);
+      return;
+    }
     openPlanEditor(null, iso(addDays(new Date(), 1)), {
       title: "Site visit: " + c.name,
       type: "meeting",
@@ -626,6 +635,10 @@ ${clMediaHtml(c)}
       vis: "me",
     });
   };
+  /* the visit notice: change it, or book one (the same visit box as Edit enquiry) */
+  ["cv-vchg", "cv-vbook"].forEach((id) => {
+    if ($(id)) $(id).onclick = () => $("cv-visit").onclick();
+  });
   if ($("cv-site"))
     $("cv-site").onclick = async () => {
       const name = (
@@ -706,15 +719,30 @@ async function cfVisitBook(rec, v) {
   const work = String(rec.work || rec.desc || "")
     .split("\n")[0]
     .slice(0, 60);
-  await clAddPlan(rec, {
-    title: "Visit: " + rec.name + (work ? " (" + work + ")" : ""),
-    type: "meeting",
-    from: v.date,
-    time: v.time,
-    endTime: v.end,
-    remind: VISIT_REMIND_MIN,
-    notes: [clAddr(rec), rec.phone, rec.work || rec.desc].filter(Boolean).join("\n"),
-  });
+  const today = iso(new Date());
+  const old = (S.planPrivate || []).find(
+    (p) => p.clientId === rec.id && /^Visit: /.test(p.title || "") && (p.from || "") >= today,
+  );
+  if (old) {
+    await S.db.doc("planprivate/" + old.id).update({
+      title: "Visit: " + rec.name + (work ? " (" + work + ")" : ""),
+      from: v.date,
+      to: v.date,
+      time: v.time,
+      endTime: v.end,
+      remind: VISIT_REMIND_MIN,
+      updated: Date.now(),
+    });
+  } else
+    await clAddPlan(rec, {
+      title: "Visit: " + rec.name + (work ? " (" + work + ")" : ""),
+      type: "meeting",
+      from: v.date,
+      time: v.time,
+      endTime: v.end,
+      remind: VISIT_REMIND_MIN,
+      notes: [clAddr(rec), rec.phone, rec.work || rec.desc].filter(Boolean).join("\n"),
+    });
   if (v.ics)
     visitToPhone({
       uid: rec.id,

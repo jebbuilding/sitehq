@@ -17,6 +17,11 @@ export function createLocalDirectory({ users, people }) {
       if (people) people[email] = { sub: id, groups: [role] };
       return { id };
     },
+    async find(email) {
+      if (people && Object.hasOwn(people, email)) return { id: people[email].sub, groups: [...people[email].groups] };
+      const hit = Object.entries(users).find(([, u]) => u.email === email);
+      return hit ? { id: hit[0], groups: [hit[1].role] } : null;
+    },
     async remove(email) {
       for (const [id, u] of Object.entries(users)) if (u.email === email) delete users[id];
       if (people) delete people[email];

@@ -2,6 +2,7 @@
 //
 //   create({ email, role }) → { id }   the account, in the one group that is its role; id is Cognito's `sub`
 //   remove(email)                      deletes it again (used when the rest of an invite fails)
+//   find(email) → { id, groups } | null the account an address already has (re-adding someone deleted from the app)
 //
 // Cognito sends nothing itself (MessageAction SUPPRESS): the welcome email is ours (core/people.mjs). An account
 // an administrator creates starts in FORCE_CHANGE_PASSWORD, a state built for temporary passwords; it is given a
@@ -13,6 +14,8 @@ import {
   AdminAddUserToGroupCommand,
   AdminCreateUserCommand,
   AdminDeleteUserCommand,
+  AdminGetUserCommand,
+  AdminListGroupsForUserCommand,
   AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
@@ -55,5 +58,17 @@ export function createCognitoDirectory({ userPoolId, client = new CognitoIdentit
       return { id };
     },
     remove,
+    async find(email) {
+      let u;
+      try {
+        u = await client.send(new AdminGetUserCommand({ UserPoolId: userPoolId, Username: email }));
+      } catch (e) {
+        if (e && e.name === "UserNotFoundException") return null;
+        throw e;
+      }
+      const id = ((u.UserAttributes || []).find((a) => a.Name === "sub") || {}).Value || u.Username;
+      const g = await client.send(new AdminListGroupsForUserCommand({ UserPoolId: userPoolId, Username: email }));
+      return { id, groups: (g.Groups || []).map((x) => x.GroupName) };
+    },
   };
 }

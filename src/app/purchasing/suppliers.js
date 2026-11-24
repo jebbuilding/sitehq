@@ -10,13 +10,14 @@ import { newId } from "../files/outbox.js";
 import { noBin } from "../owner/deleted-items.js";
 import { nameOf, teamIds } from "../owner/owner.js";
 import { makersView, wireMakers } from "./makers.js";
+import { MCSV } from "./merchants-csv.js";
 import { mkCopies, syncMakers, tradeMakersHtml, whoSeesDlg } from "./merchants.js";
 import { pordView } from "./orders.js";
 import { plView } from "./price-order.js";
 import { supSendSheet } from "./sup-send.js";
 import { acSupKey, acSupSpent } from "../sales/acct-suppliers.js";
 import { syncSiteJobs } from "../sites/job-details.js";
-export { openSupplier, scheduleSupSync, supMaster, suppliersView };
+export { SUP_CATS, openSupplier, scheduleSupSync, supMaster, suppliersView, syncSuppliers };
 const SUP_CATS = [
   "Builders merchant",
   "Timber",
@@ -317,7 +318,7 @@ function suppliersView() {
   );
   $("main").innerHTML = `${
     owner
-      ? `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="true">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button></div><div class="actions"><button class="btn primary" id="sup-add" type="button">+ Add a merchant</button><button class="btn hv" id="mer-who" type="button">👥 Choose who sees what</button></div>
+      ? `<div class="seg" style="margin-bottom:8px"><button type="button" class="mer-t" data-v="mer" aria-pressed="true">🏪 Merchants</button><button type="button" class="mer-t" data-v="makers" aria-pressed="false">🏭 Suppliers &amp; brochures</button><button type="button" class="mer-t" data-v="prices" aria-pressed="false">💷 Price lists</button></div><div class="actions"><button class="btn primary" id="sup-add" type="button">+ Add a merchant</button><button class="btn hv" id="mer-who" type="button">👥 Choose who sees what</button></div>${MCSV.barHtml()}
       <div class="notice">For each merchant choose who can see it: everyone, only certain trades, or just you. Trades only ever receive the suppliers you've chosen for them.</div>`
       : ""
   }
@@ -334,6 +335,7 @@ function suppliersView() {
     ${!list.length ? `<div class="empty"><strong>No merchants yet</strong>${owner ? "Add your merchants, hire companies and the like, with your account details." : `${bossFirst()} hasn't shared any merchants with you yet.`}</div>` : !shown.length ? '<div class="nothing">No merchants match that search.</div>' : ""}`;
   if ($("sup-add")) $("sup-add").onclick = () => openSupplier(null);
   if ($("mer-who")) $("mer-who").onclick = () => whoSeesDlg();
+  MCSV.wire();
   $("main")
     .querySelectorAll(".mer-t")
     .forEach(

@@ -502,7 +502,7 @@ test("IAM: each function has its own role, no managed policies, no wildcards, on
     assert.equal(http.filter((s) => actions([s]).some((a) => a.startsWith("kms:"))).length, 1);
     const userMgmt = http.filter((s) => actions([s]).some((a) => a.startsWith("cognito-idp:")));
     assert.equal(userMgmt.length, 1);
-    assert.deepEqual(actions(userMgmt).sort(), ["cognito-idp:AdminAddUserToGroup", "cognito-idp:AdminCreateUser", "cognito-idp:AdminDeleteUser", "cognito-idp:AdminSetUserPassword"]);
+    assert.deepEqual(actions(userMgmt).sort(), ["cognito-idp:AdminAddUserToGroup", "cognito-idp:AdminCreateUser", "cognito-idp:AdminDeleteUser", "cognito-idp:AdminGetUser", "cognito-idp:AdminListGroupsForUser", "cognito-idp:AdminSetUserPassword"]);
     assert.match(JSON.stringify(userMgmt[0].Resource), /UserPool/);
     const mail = http.filter((s) => actions([s]).some((a) => a.startsWith("ses:")));
     assert.equal(mail.length, 1);

@@ -403,13 +403,16 @@ export class SiteHqStack extends Stack {
     httpRole.addToPolicy(
       new iam.PolicyStatement({
         // the owner inviting someone: make the account, put it in its role's group, confirm it,
-        // and remove it again if the rest of the invite fails. Nothing else in the pool.
+        // and remove it again if the rest of the invite fails; look up an address that already has
+        // an account (someone deleted from the app and added again). Nothing else in the pool.
         sid: "InvitePeople",
         actions: [
           "cognito-idp:AdminCreateUser",
           "cognito-idp:AdminAddUserToGroup",
           "cognito-idp:AdminSetUserPassword",
           "cognito-idp:AdminDeleteUser",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminListGroupsForUser",
         ],
         resources: [userPool.userPoolArn],
       }),

@@ -58,6 +58,7 @@ import { siteClient } from "../sites/summary.js";
 import { typeFor } from "../sites/trade-sites.js";
 import { GLO } from "./glass-order.js";
 import { GLS_PATTERNS } from "./glass-shapes.js";
+import { WST } from "./survey-track.js";
 export { DWS, jobDraft, jobsView, myName, openJob, openJobEditor, renderJobDetail, siteFilePicker };
 const DWS = (() => {
   const g = (id) => document.getElementById("wsx-" + id);
@@ -1733,6 +1734,9 @@ const DWS = (() => {
       hw = C.hw || C.frame,
       e = `stroke="${C.frame}" stroke-width=".4"`;
     if (!C.sc || W < 10 || H < 10) return "";
+    /* the drawings are from the outside looking in: a window's handle is on the inside, so only doors and sliding
+       doors show theirs (James, Nov 2026: "it shows the handles on windows but it's from the outside, so only doors") */
+    if (!["SL", "SR", "DL", "DR"].includes(op)) return "";
     const pw = Math.max(1.4, Math.min(sw * 0.6, 32 * sc)),
       ph = Math.max(4, Math.min(H * 0.18, 150 * sc)),
       lw = Math.max(3, Math.min(W * 0.28, 115 * sc)),
@@ -3025,6 +3029,7 @@ const DWS = (() => {
     <div class="wsrow"><label class="wf">Choose a client<select id="wsx-j-pick"></select></label><label class="wf">Site<select id="wsx-j-site"></select></label></div>
     <div class="wsrow"><label class="wf">Client<input id="wsx-j-client"></label><label class="wf">Address / deliver to<input id="wsx-j-addr"></label><label class="wf">Surveyed by<input id="wsx-j-by"></label><label class="wf">Date<input id="wsx-j-date" type="date"></label><label class="wf">Supplier<input id="wsx-j-sup" list="wsx-sups" placeholder="Window company"><datalist id="wsx-sups"></datalist></label><label class="wf">Our ref<input id="wsx-j-ref"></label></div>
     <div class="who" id="wsx-j-link"></div></section>
+   <section class="wspanel wst-panel" id="wsx-track"></section>
    <div class="wsgrid">
     <section class="wspanel" aria-label="Opening">
      <h2><span id="wsx-ed-title">W1</span><span class="wsseg" id="wsx-kind"><button type="button" data-v="window">Window</button><button type="button" data-v="door">Door</button><button type="button" data-v="bay">Bay &amp; bow</button><button type="button" data-v="garage">Garage</button><button type="button" data-v="roof">Roof</button></span></h2>
@@ -3147,6 +3152,26 @@ const DWS = (() => {
     load(0);
     if (!rec) g("gal").open = true;
     if (!rec) dirty();
+    trackPanel();
+    /* the client's answer, if it came while the survey was shut */
+    WST.check(R).then((ch) => {
+      if (ch) {
+        save();
+        trackPanel();
+      }
+    });
+  }
+  /* 📋 Progress (survey/survey-track.js) */
+  function trackPanel() {
+    const box = g("track");
+    if (!box || !R) return;
+    box.innerHTML = WST.panelHtml(R);
+    const sv = async () => {
+      readJob();
+      R.items = items;
+      await persist(R);
+    };
+    WST.wire(R, sv, () => WST.askClient(R, sv, close, persist));
   }
   function wire() {
     g("close").onclick = close;
@@ -4366,7 +4391,7 @@ const DWS = (() => {
       y += Math.ceil(meta.length / 2) * 5 + 2;
       const tq = its.reduce((s, o) => s + (+o.qty || 1), 0);
       T(
-        `${its.length} item${its.length === 1 ? "" : "s"} · ${tq} frame${tq === 1 ? "" : "s"} · overall frame sizes in mm, drawings show the outside face`,
+        `${its.length} item${its.length === 1 ? "" : "s"} · ${tq} frame${tq === 1 ? "" : "s"} · overall frame sizes in mm`,
         M,
         y,
         8,
@@ -4374,6 +4399,16 @@ const DWS = (() => {
         GR,
       );
       y += 4;
+      /* how to read the drawings (James, Nov 2026) */
+      T(
+        "The drawings are viewed from the outside looking in. The arrows show the direction each window or door opens.",
+        M,
+        y,
+        8.5,
+        "bold",
+        BR,
+      );
+      y += 4.5;
       const need = (h) => {
         if (y + h > 282) {
           doc.addPage();
@@ -4805,9 +4840,21 @@ const DWS = (() => {
   /* ---- lists: on a client, and on their own ---- */
   function rowHtml(r, showClient) {
     const n = (r.items || []).length;
-    return `<div class="wsrec"><button type="button" class="ws-open" data-id="${esc(r.id)}"><b>🪟 ${esc(r.title || "Door & window survey")}</b><br><span class="who">${n} opening${n === 1 ? "" : "s"}${showClient ? (r.clientId ? " · linked to a client" : " · no client") : ""} · ${esc(stamp(r.updated || r.created))}</span></button><button type="button" class="iconbtn ws-pdf" data-id="${esc(r.id)}" aria-label="Make PDF" title="Make PDF">📄</button>${r.lastPdf ? `<button type="button" class="iconbtn ws-send" data-id="${esc(r.id)}" aria-label="Send the PDF" title="Send the PDF">📤</button>` : ""}<button type="button" class="iconbtn ws-del" data-id="${esc(r.id)}" aria-label="Delete survey" title="Delete" style="color:var(--danger)">🗑</button></div>`;
+    return `<div class="wsrec"><button type="button" class="ws-open" data-id="${esc(r.id)}"><b>🪟 ${esc(r.title || "Door & window survey")}</b>${WST.tagHtml(r)}<br><span class="who">${n} opening${n === 1 ? "" : "s"}${showClient ? (r.clientId ? " · linked to a client" : " · no client") : ""} · ${esc(stamp(r.updated || r.created))}</span></button><button type="button" class="iconbtn ws-pdf" data-id="${esc(r.id)}" aria-label="Make PDF" title="Make PDF">📄</button>${r.lastPdf ? `<button type="button" class="iconbtn ws-send" data-id="${esc(r.id)}" aria-label="Send the PDF" title="Send the PDF">📤</button>` : ""}<button type="button" class="iconbtn ws-del" data-id="${esc(r.id)}" aria-label="Delete survey" title="Delete" style="color:var(--danger)">🗑</button></div>`;
   }
   function wireRows(root, o) {
+    /* a client's answer to a survey sent to approve: written on it, and the list redrawn */
+    (S.winSurveys || [])
+      .filter((r) => r.signReq && !r.signReq.done)
+      .forEach((r) =>
+        WST.check(r).then(async (ch) => {
+          if (!ch) return;
+          try {
+            await persist(r);
+          } catch (e) {}
+          if (!document.getElementById("wsx-root")) render();
+        }),
+      );
     root.querySelectorAll(".ws-open").forEach(
       (b) =>
         (b.onclick = () => {

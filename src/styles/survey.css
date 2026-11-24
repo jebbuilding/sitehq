@@ -67,3 +67,9 @@
 @media (min-width:601px){.glo-hrow{grid-template-columns:auto repeat(4,minmax(0,1fr)) auto}}
 .glo-svg .glo-dl{stroke:var(--accent);stroke-width:.8;stroke-dasharray:3 2}
 .glo-svg .glo-dt{fill:var(--accent);font-size:8px;text-anchor:middle}
+.wst-list{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.wst-row{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.wst-note{flex-basis:100%;white-space:pre-wrap}
+.wst-steps{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.wst-steps .pillbtn{min-height:44px}
+.wst-fol{max-width:220px}

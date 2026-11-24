@@ -10,14 +10,14 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { closeViewer } from "../core/viewer.js";
 import { uploadErr, uploadFile } from "../files/files.js";
-import { openFile } from "../files/in-app-files.js";
+import { getFileBlob, openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { auditFirst } from "../owner/deletion-record.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf, sigPad } from "../safety/site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
-export { clGdprHtml, wireClGdpr };
+export { clGdprHtml, gdprAfterSave, gdprFormHtml, gdprFormRead, gdprFormWire, wireClGdpr };
 const GDPR_TXT =
   "I have read and accept the privacy (GDPR) policy, and I agree to my details being kept and used to carry out my job.";
 function gdprPolicy() {
@@ -38,7 +38,7 @@ function clGdprHtml(c) {
   return `<div class="card gdprcard" id="cv-gdpr"><div class="checkhead"><b>🔒 Privacy / GDPR</b>${g && g.status === "signed" ? '<span class="tag ok">✓ Accepted</span>' : req ? '<span class="tag day">Sent to sign</span>' : '<span class="tag bad">Not signed</span>'}</div>
     ${
       pol
-        ? `<button type="button" class="linkbtn" id="gd-view">📄 ${esc(pol.title || "Privacy policy")}</button>`
+        ? `<button type="button" class="linkbtn" id="gd-view">📄 ${esc(pol.title || "Privacy policy")}</button> <button type="button" class="linkbtn" id="gd-mail">✉ Email it to them</button>`
         : `<div class="who">No privacy policy found. Add it in <b>Policies &amp; insurance</b> with "GDPR" or "Privacy" in the name${(S.policies || []).some((d) => d.assetId) ? ", or pick one below" : ""}.</div>
       ${
         (S.policies || []).some((d) => d.assetId)
@@ -73,6 +73,8 @@ function wireClGdpr(c) {
         pol.fileName || (pol.title || "Privacy policy") + ".pdf",
         pol.contentType || "application/pdf",
       );
+  const gm = $("gd-mail");
+  if (gm && pol) gm.onclick = () => gdprEmail(c.email || "", c.name || "");
   const gp = $("gd-gopol");
   if (gp)
     gp.onclick = () => {
@@ -444,4 +446,111 @@ async function gdprPdfBlob(c) {
         .replace(/[^\w\s-]/g, "")
         .trim() + ".pdf",
   };
+}
+
+/* ---- in the New enquiry form (James, Nov 2026: "in new enquiry I need where the client signs to say they're happy to
+   hold their information under GDPR, a tab to open the GDPR document and send it to them over email; this signature
+   stays in the client's information and I can't change it"). The policy can be read and emailed from the form; the
+   tick, name and signature are saved on the client as a signed, locked consent (saveClient keeps a signed one as it
+   was; signing again needs the PIN, from the client page). ---- */
+let gdprFormPad = null;
+function gdprFormHtml(c) {
+  const g = c && c.gdpr;
+  const pol = gdprPolicy();
+  if (g && g.status === "signed")
+    return `<div class="card gdprcard gdf-box"><div class="checkhead"><b>🔒 Privacy (GDPR)</b><span class="tag ok">✓ Signed · locked</span></div><div class="who">Signed by <b>${esc(g.name || c.name || "")}</b> on ${esc(stamp(g.at))} ${g.method === "portal" ? "in their portal" : "in person"}. It can't be changed here.</div></div>`;
+  return `<div class="card gdprcard gdf-box"><div class="checkhead"><b>🔒 Privacy (GDPR)</b><span class="tag bad">Not signed</span></div>
+    <div class="who">Ask them to read the privacy policy and sign below, to say they're happy for you to keep their details. Once signed it's locked to them.</div>
+    ${pol ? `<div class="actions"><button type="button" class="btn" id="gdf-view">📄 Read the ${esc(pol.title || "privacy policy")}</button><button type="button" class="btn" id="gdf-mail">✉ Email it to them</button></div>` : `<div class="notice warn">No privacy policy added yet – add it in Policies &amp; insurance with "GDPR" or "Privacy" in the name, so they can read it.</div>`}
+    <label class="inl ptconfirm"><input type="checkbox" id="gdf-ok"> ${esc(GDPR_TXT)}</label>
+    <label for="gdf-name">Their full name<input id="gdf-name" maxlength="80" value="${esc((c && c.name) || "")}" placeholder="as they sign"></label>
+    <div><div class="checkhead"><span class="flabel" style="margin:0">Sign with your finger</span><button type="button" class="pillbtn" id="gdf-clear">Clear</button></div><canvas id="gdf-sig" class="sigpad" aria-label="Signature box"></canvas></div>
+    <div class="who">Not signing now? Leave it – you can get it signed from their page later, or send it to their portal.</div></div>`;
+}
+/* emailFn / nameFn give the email and name typed in the form so far */
+function gdprFormWire(emailFn, nameFn) {
+  gdprFormPad = null;
+  const pol = gdprPolicy();
+  const cv = $("gdf-sig");
+  if (cv) {
+    gdprFormPad = sigPad(cv);
+    $("gdf-clear").onclick = () => gdprFormPad.clear();
+  }
+  if ($("gdf-view") && pol)
+    $("gdf-view").onclick = () =>
+      openFile(
+        pol.assetId,
+        pol.fileName || (pol.title || "Privacy policy") + ".pdf",
+        pol.contentType || "application/pdf",
+      );
+  if ($("gdf-mail")) $("gdf-mail").onclick = () => gdprEmail(emailFn() || "", nameFn() || "");
+}
+/* what the form says: null when they haven't started signing, { err } when half done, else the signed record */
+function gdprFormRead(fallbackName) {
+  if (!$("gdf-sig") || !gdprFormPad) return null;
+  const ok = $("gdf-ok").checked,
+    drawn = gdprFormPad.drawn;
+  if (!ok && !drawn) return null;
+  if (!ok)
+    return {
+      err: "Privacy (GDPR): tick the box to say they accept the policy, or clear the signature.",
+    };
+  if (!drawn) return { err: "Privacy (GDPR): ask them to sign in the box." };
+  const name = $("gdf-name").value.trim() || fallbackName || "";
+  if (!name) return { err: "Privacy (GDPR): add their full name." };
+  const pol = gdprPolicy();
+  return {
+    gdpr: {
+      status: "signed",
+      at: Date.now(),
+      name,
+      sig: gdprFormPad.data(),
+      method: "in person",
+      policy: pol ? pol.title || "Privacy policy" : "",
+      device: navigator.userAgent.slice(0, 160),
+    },
+  };
+}
+/* after an enquiry with a new signature is saved: the signed copy goes into their portal, as when signed on its own */
+function gdprAfterSave(rec) {
+  if (rec && rec.gdpr && rec.gdpr.status === "signed") gdprToPortal(rec, true);
+}
+/* the privacy policy to the client: shared as the file where the phone can (Mail, Outlook…), otherwise saved and an
+   email opened to them */
+async function gdprEmail(email, name) {
+  const pol = gdprPolicy();
+  if (!pol) {
+    toast("Add your privacy policy in Policies & insurance first");
+    return;
+  }
+  const co = coData();
+  const subject = "Our privacy policy" + (co.name ? " – " + co.name : "");
+  const body = `Hello${name ? " " + String(name).split(" ")[0] : ""},\n\nAttached is our privacy (GDPR) policy, explaining how we keep and use your details.\n\nThanks,\n${co.name || ""}`;
+  const fn = pol.fileName || (pol.title || "Privacy policy") + ".pdf";
+  let blob = null;
+  try {
+    blob = await getFileBlob(pol.assetId);
+  } catch (e) {}
+  if (blob) {
+    try {
+      const file = new File([blob], fn, {
+        type: pol.contentType || blob.type || "application/pdf",
+      });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: subject, text: body });
+        toast("Privacy policy sent");
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+    }
+    try {
+      await S.dl.save({ filename: fn, data: blob });
+    } catch (e) {}
+  }
+  const a = document.createElement("a");
+  a.href = `mailto:${encodeURIComponent(email || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }

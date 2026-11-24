@@ -200,20 +200,25 @@ const GLS = (() => {
   const fromT = (it) => /^Top/.test(it.from || "");
   const sideLR = (it) => (fromR(it) ? "right" : "left");
   const sideTB = (it) => (fromT(it) ? "top" : "bottom");
-  const TO = ["Centre of each cut-out", "Nearest edge of each cut-out"];
-  const toEdge = (it) => /edge/.test(it.to || "");
-  /* a cut-out's centre from the bottom left, whichever way it was measured */
-  function cutAt(it, c) {
-    const w = n(c.w) || 0,
-      h = n(c.h) || 0;
-    let x = n(c.x),
-      y = n(c.y);
-    if (toEdge(it)) {
+  /* each hole and each cut-out is measured to its centre or to its nearest edge (James, Nov 2026: "add both" – holes
+     too, and each one on its own). Orders saved before kept one choice for all the cut-outs on a piece (it.to). */
+  const TO = ["Centre", "Nearest edge"];
+  const onEdge = (it, f, isCut) =>
+    f.to ? f.to === "Nearest edge" : isCut && /edge/.test(it.to || "");
+  /* a hole's or cut-out's centre from the bottom left, whichever way it was measured */
+  function featAt(it, f, isCut) {
+    const w = isCut ? n(f.w) || 0 : n(f.d) || 0,
+      h = isCut ? n(f.h) || 0 : n(f.d) || 0;
+    let x = n(f.x),
+      y = n(f.y);
+    if (onEdge(it, f, isCut)) {
       if (x != null) x += w / 2;
       if (y != null) y += h / 2;
     }
     return at(it, x, y);
   }
+  const holeAt = (it, h) => featAt(it, h, false);
+  const cutAt = (it, c) => featAt(it, c, true);
   /* the measurements to draw: from the 0 edges to each hole's centre and each cut-out's centre or nearest edge,
      with the number typed – as lines in bottom-left mm */
   function dims(it) {
@@ -222,23 +227,19 @@ const GLS = (() => {
     const rx = fromR(it) ? W : 0,
       ry = fromT(it) ? H : 0;
     const out = [];
-    holes(it).forEach((h) => {
-      const [x, y] = at(it, n(h.x), n(h.y));
+    const each = (f, isCut) => {
+      const w = isCut ? n(f.w) || 0 : n(f.d) || 0,
+        h = isCut ? n(f.h) || 0 : n(f.d) || 0;
+      const [x, y] = featAt(it, f, isCut);
       if (x == null || y == null) return;
-      out.push({ x1: rx, y1: y, x2: x, y2: y, t: h.x, v: false });
-      out.push({ x1: x, y1: ry, x2: x, y2: y, t: h.y, v: true });
-    });
-    cuts(it).forEach((c) => {
-      const w = n(c.w) || 0,
-        h = n(c.h) || 0;
-      const [x, y] = cutAt(it, c);
-      if (x == null || y == null) return;
-      const e = toEdge(it);
+      const e = onEdge(it, f, isCut);
       const tx = e ? x + (fromR(it) ? w / 2 : -w / 2) : x,
         ty = e ? y + (fromT(it) ? h / 2 : -h / 2) : y;
-      out.push({ x1: rx, y1: y, x2: tx, y2: y, t: c.x, v: false });
-      out.push({ x1: x, y1: ry, x2: x, y2: ty, t: c.y, v: true });
-    });
+      out.push({ x1: rx, y1: y, x2: tx, y2: y, t: f.x, v: false });
+      out.push({ x1: x, y1: ry, x2: x, y2: ty, t: f.y, v: true });
+    };
+    holes(it).forEach((h) => each(h, false));
+    cuts(it).forEach((c) => each(c, true));
     return out.filter((d) => Math.hypot(d.x2 - d.x1, d.y2 - d.y1) > 0);
   }
   /* a position as typed (from the chosen corner) → from the bottom left, which the drawing and checks use */
@@ -288,7 +289,7 @@ const GLS = (() => {
     ];
     holes(it).forEach((h, i) => {
       const d = n(h.d),
-        [x, y] = at(it, n(h.x), n(h.y));
+        [x, y] = holeAt(it, h);
       const nm = "Hole " + (i + 1);
       if (d == null || x == null || y == null)
         return out.push(nm + ": put in how wide it is and where its centre is.");
@@ -307,7 +308,7 @@ const GLS = (() => {
         out.push(`${nm} is more than a third of the glass width – check it can be made.`);
       holes(it).forEach((h2, j) => {
         if (j <= i) return;
-        const [x2, y2] = at(it, n(h2.x), n(h2.y));
+        const [x2, y2] = holeAt(it, h2);
         const g = Math.hypot(x - x2, y - y2) - (d + (n(h2.d) || 0)) / 2;
         if (!isNaN(g) && g < 2 * t)
           out.push(
@@ -376,12 +377,12 @@ const GLS = (() => {
     else if (k === "template") out.push("Odd shape – template / drawing to follow");
     holes(it).forEach((h, i) =>
       out.push(
-        `Hole ${i + 1}: ${h.d || "?"}mm across${h.cs === "Countersunk" ? ", countersunk" : ""}, centre ${h.x || "?"}mm from the ${sideLR(it)} edge, ${h.y || "?"}mm from the ${sideTB(it)} edge`,
+        `Hole ${i + 1}: ${h.d || "?"}mm across${h.cs === "Countersunk" ? ", countersunk" : ""}, ${onEdge(it, h, false) ? "its nearest edge" : "centre"} ${h.x || "?"}mm from the ${sideLR(it)} edge, ${h.y || "?"}mm from the ${sideTB(it)} edge`,
       ),
     );
     cuts(it).forEach((c, i) =>
       out.push(
-        `Cut-out ${i + 1}: ${cutName(c.k).toLowerCase()} ${c.w || "?"} x ${c.h || "?"}mm, ${toEdge(it) ? "its nearest edge" : "centre"} ${c.x || "?"}mm from the ${sideLR(it)} edge, ${c.y || "?"}mm from the ${sideTB(it)} edge`,
+        `Cut-out ${i + 1}: ${cutName(c.k).toLowerCase()} ${c.w || "?"} x ${c.h || "?"}mm, ${onEdge(it, c, true) ? "its nearest edge" : "centre"} ${c.x || "?"}mm from the ${sideLR(it)} edge, ${c.y || "?"}mm from the ${sideTB(it)} edge`,
       ),
     );
     return out;
@@ -412,7 +413,7 @@ const GLS = (() => {
     });
     holes(it).forEach((h, i) => {
       const d = n(h.d),
-        [x, y] = at(it, n(h.x), n(h.y));
+        [x, y] = holeAt(it, h);
       if ([d, x, y].some((v) => v == null)) return;
       g += `<circle cx="${X(x)}" cy="${Y(y)}" r="${Math.max(2, (d / 2) * s).toFixed(1)}" class="glo-hole"/><text x="${X(x)}" y="${(+Y(y) - Math.max(2, (d / 2) * s) - 3).toFixed(1)}" class="glo-num">H${i + 1}</text>`;
     });
@@ -446,16 +447,19 @@ const GLS = (() => {
       `<label>${l}<input class="${cls}" data-v="${key}" type="number" inputmode="numeric" min="0" max="9999" value="${esc(v == null ? "" : v)}" placeholder="${ph || ""}"></label>`;
     const LR = "From " + sideLR(it) + " edge",
       TB = "From " + sideTB(it) + " edge";
+    const toSel = (cls, f, isCut) =>
+      `<label>Measured to its<select class="${cls} glo-redraw" data-v="to">${TO.map((o) => `<option${o === (onEdge(it, f, isCut) ? "Nearest edge" : "Centre") ? " selected" : ""}>${o}</option>`).join("")}</select></label>`;
+    const ph = (f, isCut) => (onEdge(it, f, isCut) ? "to its edge" : "to centre");
     const hl = holes(it)
       .map(
         (h, i) =>
-          `<div class="glo-hrow" data-j="${i}"><b>H${i + 1}</b>${num("glo-hv", "d", h.d, "Across (mm)", "e.g. 12")}${num("glo-hv", "x", h.x, LR, "to centre")}${num("glo-hv", "y", h.y, TB, "to centre")}<label>Hole<select class="glo-hv" data-v="cs">${["Plain", "Countersunk"].map((o) => `<option${o === (h.cs || "Plain") ? " selected" : ""}>${o}</option>`).join("")}</select></label><button type="button" class="linkdanger glo-hx" aria-label="Remove hole ${i + 1}">✕</button></div>`,
+          `<div class="glo-hrow" data-j="${i}"><b>H${i + 1}</b>${num("glo-hv", "d", h.d, "Across (mm)", "e.g. 12")}${toSel("glo-hv", h, false)}${num("glo-hv", "x", h.x, LR, ph(h, false))}${num("glo-hv", "y", h.y, TB, ph(h, false))}<label>Hole<select class="glo-hv" data-v="cs">${["Plain", "Countersunk"].map((o) => `<option${o === (h.cs || "Plain") ? " selected" : ""}>${o}</option>`).join("")}</select></label><button type="button" class="linkdanger glo-hx" aria-label="Remove hole ${i + 1}">✕</button></div>`,
       )
       .join("");
     const cl = cuts(it)
       .map(
         (c, i) =>
-          `<div class="glo-crow" data-j="${i}"><b>C${i + 1}</b><label>What<select class="glo-cv" data-v="k">${CUTS.map(([ck, cn]) => `<option value="${ck}"${ck === c.k ? " selected" : ""}>${esc(cn)}</option>`).join("")}</select></label>${num("glo-cv", "w", c.w, "Width (mm)")}${num("glo-cv", "h", c.h, "Height (mm)")}${num("glo-cv", "x", c.x, LR, toEdge(it) ? "to its edge" : "to centre")}${num("glo-cv", "y", c.y, TB, toEdge(it) ? "to its edge" : "to centre")}<button type="button" class="linkdanger glo-cx" aria-label="Remove cut-out ${i + 1}">✕</button></div>`,
+          `<div class="glo-crow" data-j="${i}"><b>C${i + 1}</b><label>What<select class="glo-cv" data-v="k">${CUTS.map(([ck, cn]) => `<option value="${ck}"${ck === c.k ? " selected" : ""}>${esc(cn)}</option>`).join("")}</select></label>${num("glo-cv", "w", c.w, "Width (mm)")}${num("glo-cv", "h", c.h, "Height (mm)")}${toSel("glo-cv", c, true)}${num("glo-cv", "x", c.x, LR, ph(c, true))}${num("glo-cv", "y", c.y, TB, ph(c, true))}<button type="button" class="linkdanger glo-cx" aria-label="Remove cut-out ${i + 1}">✕</button></div>`,
       )
       .join("");
     const w = checks(it);
@@ -469,7 +473,7 @@ const GLS = (() => {
       <div class="glo-sub">🔩 Holes ${hl ? "" : '<span class="who">none</span>'}</div>${hl}
       <div class="glo-sub">🔌 Cut-outs for sockets, switches… ${cl ? "" : '<span class="who">none</span>'}</div>${cl}
       <div class="glo-add2"><button type="button" class="btn glo-hadd">＋ Add a hole</button><button type="button" class="btn glo-cadd">＋ Add a socket / switch cut-out</button></div>
-      ${holes(it).length || cuts(it).length ? `<label class="glo-from">Measure the holes and cut-outs from the<select class="glo-f glo-fromsel glo-redraw" data-k="from">${FROM.map((o) => `<option${o === (it.from || FROM[0]) ? " selected" : ""}>${o}</option>`).join("")}</select></label>${cuts(it).length ? `<label class="glo-from">Cut-outs are measured to the<select class="glo-f glo-redraw" data-k="to">${TO.map((o) => `<option${o === (it.to || TO[0]) ? " selected" : ""}>${o}</option>`).join("")}</select></label>` : ""}<div class="who">Measure from the <b>${sideLR(it)} edge</b> and the <b>${sideTB(it)} edge</b> of the glass (the 0 on the drawing) to the <b>centre</b> of each hole${cuts(it).length ? ` and the <b>${toEdge(it) ? "nearest edge" : "centre"}</b> of each cut-out` : ""}. The drawing shows each measurement. For a socket or switch, the cut-out is the size of the back box – take the faceplate off to measure.</div>` : ""}
+      ${holes(it).length || cuts(it).length ? `<label class="glo-from">Measure the holes and cut-outs from the<select class="glo-f glo-fromsel glo-redraw" data-k="from">${FROM.map((o) => `<option${o === (it.from || FROM[0]) ? " selected" : ""}>${o}</option>`).join("")}</select></label><div class="who">Measure from the <b>${sideLR(it)} edge</b> and the <b>${sideTB(it)} edge</b> of the glass (the 0 on the drawing) to the <b>centre</b> or the <b>nearest edge</b> of each hole and cut-out – choose on each one. The drawing shows each measurement. For a socket or switch, the cut-out is the size of the back box – take the faceplate off to measure.</div>` : ""}
       <div class="glo-draw">${svg(it)}</div>
       <div class="glo-warn"${w.length ? "" : " hidden"}>${w.map((x) => `<div>⚠️ ${esc(x)}</div>`).join("")}${w.length ? '<div class="who">The usual rules for toughened glass – check with your supplier.</div>' : ""}</div></div>`;
   }
@@ -501,8 +505,8 @@ const GLS = (() => {
           : "");
     }
   }
-  const newHole = () => ({ d: "", x: "", y: "", cs: "Plain" });
-  const newCut = () => ({ k: "s1", w: 75, h: 75, x: "", y: "" });
+  const newHole = () => ({ d: "", x: "", y: "", cs: "Plain", to: "Centre" });
+  const newCut = () => ({ k: "s1", w: 75, h: 75, x: "", y: "", to: "Centre" });
   const cutSize = (k) => {
     const c = CUTS.find((x) => x[0] === k);
     return c ? { w: c[2], h: c[3] } : { w: "", h: "" };
@@ -541,7 +545,7 @@ const GLS = (() => {
     });
     holes(it).forEach((h, i) => {
       const d = n(h.d),
-        [x, y] = at(it, n(h.x), n(h.y));
+        [x, y] = holeAt(it, h);
       if ([d, x, y].some((v) => v == null)) return;
       const r = Math.max(0.6, (d / 2) * s);
       doc.circle(X(x), Y(y), r);

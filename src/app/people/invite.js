@@ -63,9 +63,13 @@ async function invitePerson(out, rec, role, roleCompany) {
     } catch (e) {}
   closeForm();
   toast(
-    r && r.emailed
-      ? "Invite emailed to " + out.email
-      : "They're set up, but the email didn't send. Send them the app's link yourself.",
+    r && r.back
+      ? (out.fullName || "They") +
+          " is back on the app – their records are linked up again" +
+          (r.emailed ? ", and the invite is emailed" : "")
+      : r && r.emailed
+        ? "Invite emailed to " + out.email
+        : "They're set up, but the email didn't send. Send them the app's link yourself.",
   );
   render();
   return true;

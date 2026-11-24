@@ -2,8 +2,14 @@
 // their profile where the app looks for it (sheets/<id>) and emails them how to sign in.
 //
 // Two things it needs from outside, so that it runs the same in production, locally and in tests:
-//   directory  { create({ email, role }) → { id }, remove(email) }        auth/cognito-admin.mjs, auth/local-directory.mjs
+//   directory  { create({ email, role }) → { id }, remove(email), find(email) → { id, groups } | null }
+//              auth/cognito-admin.mjs, auth/local-directory.mjs
 //              create throws an error with code "exists" when the address already has an account.
+//
+// Someone deleted from the app (their profile sheets/<id> gone, or marked as left) still has their sign-in account.
+// Inviting the same address again uses that account – the same person, so their kept records link up again – and
+// sets their profile up afresh (James, Nov 2026: "I deleted Kahn, tried to re-add him but it says his email is still
+// on record"). An address that is on the team now, or is a client's or the owner's, is still refused.
 //   mailer     { send({ to, subject, text, html }) }                    mail/ses.mjs, mail/outbox.mjs
 //
 // Order: account, then profile, then email. If the profile cannot be stored the account is removed again, so a
@@ -72,18 +78,27 @@ export function createPeople({ store, directory, mailer, appUrl, changed, checkD
     if (!INVITE_ROLES.has(role)) throw invalid("role must be trade");
     const extra = body.profile === undefined ? {} : checkDoc(body.profile);
 
-    let id;
+    let id, back = false, old = null;
     try {
       ({ id } = await directory.create({ email, role }));
     } catch (e) {
-      if (e && e.code === "exists") throw new ApiError(409, "already_exists", "That email address already has an account");
-      throw e;
+      if (!(e && e.code === "exists")) throw e;
+      const had = directory.find ? await directory.find(email) : null;
+      old = had ? await store.get("sheets", had.id) : null;
+      if (!had || !had.groups.includes(role) || had.groups.includes("owner") || (old && !old.left))
+        throw new ApiError(409, "already_exists", "That email address already has an account");
+      id = had.id;
+      back = true;
     }
     const path = "sheets/" + id;
     try {
-      await store.set("sheets", id, checkDoc({ ...extra, name, invitedAt: Date.now(), invitedBy: caller.id }));
+      const prof = { ...(back && old ? old : {}), ...extra, name, invitedAt: Date.now(), invitedBy: caller.id };
+      delete prof.left;
+      delete prof.leftAt;
+      await store.set("sheets", id, checkDoc(prof));
     } catch (e) {
-      try { await directory.remove(email); } catch (e2) { console.error("people: could not remove the account after a failed profile write:", e2 && e2.name); }
+      if (!back)
+        try { await directory.remove(email); } catch (e2) { console.error("people: could not remove the account after a failed profile write:", e2 && e2.name); }
       throw e;
     }
     // Told to every page, the inviting one included: it did not write this document through the database, so the
@@ -97,6 +112,6 @@ export function createPeople({ store, directory, mailer, appUrl, changed, checkD
       emailed = false;
       console.error("people: welcome email not sent:", e && e.name); // the name only: messages can quote the address
     }
-    return { id, emailed };
+    return back ? { id, emailed, back: true } : { id, emailed };
   };
 }

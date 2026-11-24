@@ -1,13 +1,14 @@
 /* ================= CLIENTS (owner only, stored in the private todos collection as kind:"client") ================= */
 import { initials } from "../chat/chat.js";
 import { docPicker } from "./documents.js";
+import { gdprAfterSave, gdprFormHtml, gdprFormRead, gdprFormWire } from "./gdpr-consent.js";
 import { ptCl } from "./portal.js";
 import { PROP } from "./property-info.js";
 import { VISIT_REMIND_MIN, cfVisitBook, cfVisitRead, viewClient } from "./quick-enquiry.js";
 import { clientPdf } from "./record-pdf.js";
 import { srcpOptions, srcpWire } from "./source-pick.js";
 import { vdWire } from "./visit-diary.js";
-import { $, esc, toast } from "../core/helpers.js";
+import { $, esc, iso, shortDay, toast } from "../core/helpers.js";
 import { armDelete, closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, applyGone, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
@@ -242,6 +243,12 @@ function cfShowCon(on) {
   b.textContent = on ? "▲ Hide their details" : "✎ Edit / add details";
   if (on) sec.scrollIntoView({ block: "start", behavior: "smooth" });
 }
+const toMinCl = (t) => {
+  const [h, m] = String(t || "0:0")
+    .split(":")
+    .map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
 function openClientForm(c, mode) {
   const ed = !!(c && c.id);
   mode = mode || "full";
@@ -291,7 +298,12 @@ function openClientForm(c, mode) {
   const conOnly = mode === "contact",
     enqOnly = mode === "enquiry";
   /* a new enquiry can book the visit straight away, like ⚡ Quick enquiry (James, Nov 2026) */
-  const visOn = !conOnly && (!ed || fresh);
+  /* the visit to see the job is part of every enquiry, new or being edited (James, Nov 2026: "in jobs to see in the
+     details I need to put a date and time I am seeing the job, that ties to the planner and Outlook and reminds me an
+     hour before"); a booked one shows, and changing it moves it */
+  const visOn = !conOnly;
+  const v0 = !fresh && c.visit && c.visit.date >= iso(new Date()) ? c.visit : null;
+  const v0len = v0 && v0.end && v0.time ? Math.max(30, toMinCl(v0.end) - toMinCl(v0.time)) : 60;
   openSheet(
     `<h3 id="sheettitle">${conOnly ? (ed ? "Edit client details" : "New client – details") : enqOnly ? (fresh ? "New enquiry" : "Edit enquiry") + (c.name ? " – " + esc(c.name) : "") : ed ? "Edit client" : "New enquiry"}</h3>
     ${enqOnly ? `<div class="cf-sum"><button type="button" class="btn" id="cf-showcon" aria-expanded="false">✎ Edit / add details</button></div>` : ""}
@@ -348,9 +360,26 @@ function openClientForm(c, mode) {
       <label for="cf-plan">Planning / drawings<select id="cf-plan">${["", "Not needed", "Not started", "Drawings being done", "Applied", "Approved", "Building regs approved"].map((w) => `<option ${w === (c.planning || "") ? "selected" : ""}>${w || "Don't know yet"}</option>`).join("")}</select></label></div>
     <div class="grid2"><label for="cf-stage">Stage<select id="cf-stage">${CL_STAGES.map(([k, l]) => `<option value="${k}" ${k === c.stage ? "selected" : ""}>${l}</option>`).join("")}</select></label><label for="cf-quote">Estimate £ (optional)<input id="cf-quote" inputmode="decimal" maxlength="12" value="${esc(c.quote || "")}"></label></div>
     <label for="cf-follow">Follow up on (optional)<input id="cf-follow" type="date" value="${esc(c.follow || "")}"></label>
-    ${visOn ? `<div class="flabel" style="margin-top:4px">📅 Book a visit (optional)</div><div class="grid2"><label for="cf-vd">Visit date<input id="cf-vd" type="date"></label><label for="cf-vt">Time<input id="cf-vt" type="time" value="10:00"></label></div><label for="cf-vlen">How long<select id="cf-vlen"><option value="30">30 minutes</option><option value="60" selected>1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label><div class="vd-box" id="cf-vdiary" aria-live="polite"></div><label class="tick"><input type="checkbox" id="cf-vics" checked> <span>Also add it to my phone's calendar (reminds me ${VISIT_REMIND_MIN / 60} hour before, even when SiteHQ is closed)</span></label>` : ""}
+    ${
+      visOn
+        ? `<div class="flabel" style="margin-top:4px" id="cf-vhead">📅 Visit to see the job ${v0 ? `<span class="tag day">Booked ${esc(shortDay(v0.date))} ${esc(v0.time || "")}</span>` : "(optional)"}</div><div class="grid2"><label for="cf-vd">Visit date<input id="cf-vd" type="date" value="${esc(v0 ? v0.date : "")}"></label><label for="cf-vt">Time<input id="cf-vt" type="time" value="${esc(v0 ? v0.time || "10:00" : "10:00")}"></label></div><label for="cf-vlen">How long<select id="cf-vlen">${[
+            [30, "30 minutes"],
+            [60, "1 hour"],
+            [90, "1½ hours"],
+            [120, "2 hours"],
+          ]
+            .map(
+              ([m, l]) =>
+                `<option value="${m}"${m === (v0 ? [30, 60, 90, 120].reduce((a, b) => (Math.abs(b - v0len) < Math.abs(a - v0len) ? b : a)) : 60) ? " selected" : ""}>${l}</option>`,
+            )
+            .join(
+              "",
+            )}</select></label><div class="vd-box" id="cf-vdiary" aria-live="polite"></div><label class="tick"><input type="checkbox" id="cf-vics" checked> <span>Also add it to my phone's calendar (reminds me ${VISIT_REMIND_MIN / 60} hour before, even when SiteHQ is closed)</span></label>`
+        : ""
+    }
     ${ed && !enqOnly ? "" : `<label for="cf-note">${enqOnly ? "Note (optional)" : "First note (optional)"}<textarea id="cf-note" maxlength="1000" placeholder="e.g. Rang Tuesday, wants a visit after 4pm"></textarea></label>`}
     </div>
+    ${gdprFormHtml(c)}
     <div class="cfmedia"><div class="flabel">Photos &amp; sketches${ed && (c.media || []).length ? ` (${c.media.length} already saved)` : ""}</div>
       <label for="cf-ph">Photos and videos (you can pick several)<input id="cf-ph" type="file" accept="image/*,video/*" multiple></label><button type="button" class="linkbtn" style="align-self:flex-start" onclick="window.__photoTest&&window.__photoTest()">📷 Camera not opening? Test it here</button>
       <div class="actions" style="margin:0"><button type="button" class="btn hv" id="cf-sk">📝 Add a notebook page</button><button type="button" class="btn vrec" id="cf-voice">🎤 Voice note</button>${ownerMode() ? `<button type="button" class="btn hv" id="cf-ws">🪟 Door &amp; window survey</button>` : ""}</div>${ownerMode() ? `<div class="who">🪟 Door &amp; window survey saves ${ed ? "the client" : "the new client"} first, then opens a survey linked to them.</div>` : ""}
@@ -358,6 +387,12 @@ function openClientForm(c, mode) {
     <div class="flabel" style="margin-top:8px">📄 Documents</div><div class="who">Plans, quotes, letters or photos of paperwork. Tick the ones you want added to the client PDF.</div><div id="cf-docs"></div>
     ${formFoot(ed && !enqOnly, enqOnly ? (fresh ? "Save enquiry" : "Save") : conOnly && !ed ? "Add to address book" : ed ? "Save" : "Add client")}`,
     async () => {
+      /* a half-done privacy signature stops the save (clients/gdpr-consent.js) */
+      const gsig = gdprFormRead();
+      if (gsig && gsig.err) {
+        showErr(gsig.err);
+        return;
+      }
       const wantWs = goWs;
       goWs = false;
       const mp = {
@@ -482,8 +517,14 @@ function openClientForm(c, mode) {
           at: Date.now(),
           auto: true,
         });
-      const vis = visOn && $("cf-vd").value ? cfVisitRead(d) : null;
-      if (visOn && $("cf-vd").value && !vis) {
+      /* only a new or changed visit is booked (an unchanged one stays as it is) */
+      const vSame =
+        v0 &&
+        v0.date === $("cf-vd").value &&
+        v0.time === $("cf-vt").value &&
+        v0len === +$("cf-vlen").value;
+      const vis = visOn && $("cf-vd").value && !vSame ? cfVisitRead(d) : null;
+      if (visOn && $("cf-vd").value && !vis && !vSame) {
         showErr("Pick the visit time.");
         return;
       }
@@ -591,8 +632,16 @@ function openClientForm(c, mode) {
           }
           d.docs = nd;
         }
+        if (gsig && gsig.gdpr && !(d.gdpr && d.gdpr.status === "signed")) {
+          if (!gsig.gdpr.name) gsig.gdpr.name = d.name || "";
+          d.gdpr = gsig.gdpr;
+          d.notes = (d.notes || []).concat([
+            { text: "Signed the privacy (GDPR) policy in person", at: Date.now(), auto: true },
+          ]);
+        }
         const rec = await saveClient(d);
         syncSiteJobs();
+        if (gsig && gsig.gdpr) gdprAfterSave(rec);
         if (vis) await cfVisitBook(rec, vis);
         closeForm();
         toast(
@@ -813,6 +862,10 @@ function openClientForm(c, mode) {
   $("cf-addc").onclick = () => addCon().querySelector(".cc-n").focus();
   if ($("cf-showcon")) $("cf-showcon").onclick = () => cfShowCon($("cf-consec").hidden);
   srcpWire("cf-src");
+  gdprFormWire(
+    () => ($("cf-email") ? $("cf-email").value.trim() : ""),
+    () => ($("gdf-name") ? $("gdf-name").value.trim() : ""),
+  );
   PROP.wire();
   $("cf-invdiff").onchange = (e) => {
     $("cf-invbox").hidden = !e.target.checked;
