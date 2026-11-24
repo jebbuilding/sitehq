@@ -38,6 +38,7 @@ import { initDayBrief } from "../planner/day-brief.js";
 import { scheduleSupSync } from "../purchasing/suppliers.js";
 import { initExpiryDates } from "../safety/expiry-dates.js";
 import { initMapsPins } from "../sites/maps-pins.js";
+import { initSdiWeather } from "../sites/site-diary.js";
 /* Everything that happens when the page loads, in this order. Each init wires up the part of the page that its
    file owns. This is the only file with statements that run at load (npm run check enforces that). */
 initTabsWeek();
@@ -49,6 +50,7 @@ initInAppFiles();
 initExpiryDates();
 initForeman();
 initQuickEnquiry();
+initSdiWeather();
 initSymbolsMore();
 initConstructionDetails();
 initPaving();
@@ -209,6 +211,8 @@ initOpening();
         S.wsDesigns = all.filter((t) => t.kind === "wsdesign");
         S.wtns = all.filter((t) => t.kind === "wtn");
         S.glassOrders = all.filter((t) => t.kind === "glassorder");
+        S.glassColours = all.filter((t) => t.kind === "glasscolour");
+        S.woodSamples = all.filter((t) => t.kind === "woodsample");
         S.clips = all.filter((t) => t.kind === "clip");
         S.brochures = all.filter((t) => t.kind === "brochure");
         S.samples = all.filter((t) => t.kind === "sample");

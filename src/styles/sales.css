@@ -382,3 +382,8 @@ button.sd-jobrow,button.jf-sale{cursor:pointer}
 .spn-det .spn-row .iconbtn{min-width:44px;min-height:44px}
 .spn-det .spn-bad{color:var(--danger)}
 .sd-hoptl{margin:6px 0}
+.dqt-box{max-width:560px;width:calc(100vw - 32px);max-height:86vh;overflow:auto}
+.dqt-list{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.dqt-l{display:flex;align-items:center;gap:8px;min-height:44px;font-weight:500}
+.dqt-l span{flex:1}
+.dqt-h{max-width:180px}

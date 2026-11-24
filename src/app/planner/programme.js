@@ -4,9 +4,10 @@ import { closeForm, formFoot, openSheet } from "../core/sheet.js";
 import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { newId } from "../files/outbox.js";
+import { STH } from "./stage-history.js";
 import { sdiSlug } from "../sites/site-diary.js";
 import { siteClient } from "../sites/summary.js";
-export { pgCalc, pgClientHtml, pgHtml, pgRec, pgWire };
+export { pgCalc, pgClientHtml, pgHtml, pgRec, pgWire, pgWorkBetween };
 /* On a site's 📊 Programme tab James lists the stages (or starts from a typical extension, loft or kitchen), each with
    how many working days it takes, what it can't start until (an earlier stage finishing, or the same day as one), and
    any delay days. The dates work themselves out from the start date, Monday to Friday. When a stage runs over (its
@@ -142,7 +143,7 @@ function pgHtml(site) {
         const d = dt[s.id];
         const lt = late(s);
         return `<tr data-i="${i}"${s.done ? ' class="pg-done"' : ""}><td>${i + 1}</td>
-        <td><input class="pg-name" maxlength="80" value="${esc(s.name || "")}" aria-label="Stage ${i + 1}"></td>
+        <td><input class="pg-name" maxlength="80" value="${esc(s.name || "")}" aria-label="Stage ${i + 1}">${s.done ? "" : STH.hintHtml(s.name, s.days, site)}</td>
         <td><input class="pg-days" type="number" inputmode="numeric" min="1" max="200" value="${esc(s.days || 1)}" aria-label="Working days for stage ${i + 1}"></td>
         <td><select class="pg-after" aria-label="Stage ${i + 1} can't start until"><option value="">The job starts</option>${st
           .slice(0, i)
@@ -170,7 +171,7 @@ function pgHtml(site) {
       })
       .join("")}</div>
     <label class="inl"><input type="checkbox" id="pg-client"${pr.toClient ? " checked" : ""}${c && c.portalUid ? "" : " disabled"}> ${c ? `${esc(c.name)} can see the programme in their portal` : "No client linked to this site"}${c && !c.portalUid ? " (once they join the portal)" : ""} – only the stages ticked "Client sees"; untick one to keep it to you and the trades</label>
-    <div class="actions"><button type="button" class="btn primary" id="pg-save">Save and put on the planner</button><button type="button" class="linkdanger" id="pg-del">Delete the programme</button></div>
+    <div class="actions"><button type="button" class="btn primary" id="pg-save">Save and put on the planner</button><button type="button" class="btn" id="pg-hist">📈 How long stages really take</button><button type="button" class="linkdanger" id="pg-del">Delete the programme</button></div>
     <div class="who">Change a stage's days, what it waits for, or add delay days – the dates after it move. Tap Done when a stage finishes; if it finished late, put the real date and everything after it moves.</div></div>`;
 }
 /* read the table back into the record (keeping ids, done and first-planned dates) */
@@ -450,6 +451,8 @@ function pgWire(site) {
       toast("Changes undone");
       render();
     };
+  /* how long each kind of stage really took on past jobs (planner/stage-history.js) */
+  if ($("pg-hist")) $("pg-hist").onclick = () => STH.report();
   if ($("pg-del"))
     $("pg-del").onclick = async (e) => {
       const b = e.currentTarget;

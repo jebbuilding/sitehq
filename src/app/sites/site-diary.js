@@ -13,7 +13,7 @@ import {
   toast,
 } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
-import { S } from "../core/state.js";
+import { S, isArchivedSite } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
@@ -30,11 +30,28 @@ import { sdImgData } from "../sales/sales-pdf.js";
 import { siteFull, siteLabel } from "./job-details.js";
 import { jkImg } from "./job-pack.js";
 import { taskDone } from "./job-sheets.js";
-import { same } from "./project-pages.js";
+import { projectSites, same } from "./project-pages.js";
 import { rfiCode, rfiOver } from "./rfi.js";
 import { SIGNIN } from "./sign-in-book.js";
 import { sodFor, sodWhy } from "./signoff-due.js";
-export { sdiHtml, sdiSlug, sdiWire };
+export { initSdiWeather, sdiHtml, sdiSlug, sdiWire };
+/* James (Nov 2026): "in site diary it doesn't log the weather and other information you'd have automatically, that would
+   help in case of an issue; also the pictures and other forms or sign-offs, to keep a record of anything done on that
+   job that day". The weather is now saved for every live site each day by itself (initSdiWeather, at start-up and
+   every few hours: the day's forecast into that day's diary record, todos/sdi-…, kept even after the forecast moves
+   on), and each day lists the forms, checks and sign-offs done on the site – accident reports, risk assessments,
+   inductions, tip runs, waste transfer notes, hire checks, custom forms, issues – alongside the people, photos and work. */
+const SDI_FORM = {
+  incident: "⚠️ Accident / incident report",
+  ra: "📋 Risk assessment",
+  induction: "🦺 Site induction",
+  tiprun: "🚛 Tip run",
+  issue: "🛠 Issue reported",
+  cform: "📝 Form",
+  talk: "🗣 Toolbox talk",
+  cert: "📜 Certificate",
+  record: "📄 Record",
+};
 /* Each day on a site is put together from what's already in the app: who signed in and out (timesheets, the
    sign-in book and visitors), the weather (the forecast for that day, saved with the day once James adds a note,
    or the weather noted on the photos), the photos taken, the work and hours logged, job sheet tasks ticked and
@@ -140,6 +157,24 @@ function sdiDay(site, date) {
             ? "answered"
             : "raised",
     }));
+  /* forms, checks and sign-offs done on this site that day */
+  const dayOf = (x) => x.date || (x.created ? iso(new Date(x.created)) : "");
+  const forms = allTeam("signoffs")
+    .concat(allTeam("checks").map((x) => Object.assign({ type: "check" }, x)))
+    .filter((x) => x.site && same(String(x.site).split(" – ")[0], site) && dayOf(x) === date)
+    .map((x) => ({
+      what:
+        x.type === "check"
+          ? "🔍 " + (x.hire ? "Hire check" : "Check") + (x.asset ? ": " + x.asset : "")
+          : (SDI_FORM[x.type] || "📄 " + (x.type || "Form")) +
+            (x.title ? ": " + x.title : x.kind && x.type === "incident" ? ": " + x.kind : ""),
+      who: x.who,
+    }))
+    .concat(
+      (S.wtns || [])
+        .filter((n) => n.D && same(n.D.site || n.site || "", site) && n.D.date === date)
+        .map((n) => ({ what: "♻️ Waste transfer note " + (n.ref || ""), who: "" })),
+    );
   const wxPh = [...new Set(photos.map((p) => p.weather).filter(Boolean))][0] || "";
   const weather = (rec && rec.weather) || sdiWx(site, date) || wxPh;
   return {
@@ -153,8 +188,10 @@ function sdiDay(site, date) {
     kd,
     due,
     rfis,
+    forms,
     weather,
     any: !!(
+      forms.length ||
       due.length ||
       rfis.length ||
       (rec && rec.note) ||
@@ -210,6 +247,7 @@ function sdiHtml(site) {
     ${sec("📅 Key dates", li(D.kd.map((p) => esc(p.title))))}
     ${sec("🚚 Booked or due", li(D.due.map((p) => `${esc(p.title)}${planTimeTxt(p) ? ` <span class="who">${esc(planTimeTxt(p))}</span>` : ""}`)))}
     ${sec("❓ RFIs", li(D.rfis.map((x) => `${esc(rfiCode(x.r))} ${esc(x.r.subject || "")} <span class="who">${x.what}${/raised/.test(x.what) && x.r.to ? " – to " + esc(x.r.to) : x.r.answerBy ? " by " + esc(x.r.answerBy) : ""}</span>`)))}
+    ${sec("📋 Forms, checks and sign-offs", li(D.forms.map((f) => `${esc(f.what)}${f.who ? ` <span class="who">${esc(nameOf(f.who))}</span>` : ""}`)))}
     ${D.photos.length ? `<div class="sdi-sec"><b>📷 Photos (${D.photos.length})</b><div class="phgrid">${D.photos.map((p) => photoTile(p, true, p.who)).join("")}</div></div>` : ""}
     ${!D.any ? `<div class="nothing">Nothing recorded on this day yet.</div>` : ""}
     <label for="sdi-note">Your note for the day</label><textarea id="sdi-note" rows="4" placeholder="e.g. Steel delivered late, 2 hours lost. Building control passed the foundations.">${esc(D.note)}</textarea>
@@ -407,6 +445,10 @@ async function sdiPdf(site, days, withPhotos) {
       y += 1;
     };
     block(
+      "Forms, checks and sign-offs",
+      D.forms.map((f) => f.what.replace(/^\S+\s/, "") + (f.who ? " – " + nameOf(f.who) : "")),
+    );
+    block(
       "On site",
       D.people.map((r) => `${sdiWho(r)}  ${r.in || ""}${r.out ? "–" + r.out : ""}`),
     );
@@ -473,4 +515,39 @@ async function sdiPdf(site, days, withPhotos) {
     );
   }
   return doc.output("blob");
+}
+/* the day's weather written into each live site's diary by itself (owner only): today, and yesterday if the forecast
+   still has it and it wasn't kept – once a day is kept it isn't changed */
+async function sdiKeepWeather() {
+  if (!S.owner || !S.db) return;
+  const today = iso(new Date());
+  const days = [iso(addDays(new Date(), -1)), today];
+  for (const site of projectSites()) {
+    if (isArchivedSite(site)) continue;
+    for (const date of days) {
+      const old = sdiRec(site, date);
+      if (old && old.weather) continue;
+      const w = sdiWx(site, date);
+      if (!w) continue;
+      const rec = Object.assign({}, old || {}, {
+        kind: "sitediary",
+        site,
+        date,
+        note: (old && old.note) || "",
+        weather: w,
+        weatherAt: Date.now(),
+        updated: Date.now(),
+      });
+      delete rec.id;
+      try {
+        await S.db.doc("todos/" + sdiId(site, date)).set(rec);
+        const r2 = Object.assign({ id: sdiId(site, date) }, rec);
+        S.siteDiary = (S.siteDiary || []).filter((x) => x.id !== r2.id).concat([r2]);
+      } catch (e) {}
+    }
+  }
+}
+function initSdiWeather() {
+  setTimeout(sdiKeepWeather, 20000);
+  setInterval(sdiKeepWeather, 3 * 3600 * 1000);
 }

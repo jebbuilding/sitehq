@@ -14,6 +14,7 @@ import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 import { siteFull, siteLabel } from "../sites/job-details.js";
+import { GLC } from "./glass-colours.js";
 import { GLS, GLS_PATTERNS } from "./glass-shapes.js";
 export { GLO };
 /* James (Nov 2026): "in door and windows a glass form for sealed units, toughened panels for handrails, coloured glass,
@@ -321,8 +322,11 @@ const GLO = (() => {
     const t = TYPES[it.type] || TYPES.other;
     const sel = (k, l, o) =>
       `<label>${esc(l)}<select class="glo-f" data-k="${k}">${(it[k] && !o.includes(it[k]) ? o.concat([it[k]]) : o).map((x) => `<option${x === it[k] ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>`;
+    /* the colour box has the RAL chart and the sample photos (survey/glass-colours.js) */
     const txt = (k, l) =>
-      `<label>${esc(l)}<input class="glo-f" data-k="${k}" maxlength="200" value="${esc(it[k] || "")}"></label>`;
+      k === "col"
+        ? GLC.fieldHtml(it, l)
+        : `<label>${esc(l)}<input class="glo-f" data-k="${k}" maxlength="200" value="${esc(it[k] || "")}"></label>`;
     const a = area(it);
     return `<div class="card glo-item" data-i="${i}"><div class="glo-ih"><b>${t.ic} ${i + 1}. ${esc(t.l)}</b><button type="button" class="linkdanger glo-x" aria-label="Remove piece ${i + 1}">✕ Remove</button></div>
       <label>Room / position<input class="glo-f" data-k="room" maxlength="80" value="${esc(it.room || "")}" placeholder="e.g. Kitchen – behind the hob"></label>
@@ -509,6 +513,24 @@ const GLO = (() => {
         if (sh) sh.onchange = () => again(i, () => {});
         /* which corner, and centre or edge: the labels and the drawing change */
         el.querySelectorAll(".glo-redraw").forEach((x) => (x.onchange = () => again(i, () => {})));
+        /* 🎨 Choose colour, and a typed colour updating its little square */
+        const setCol = (v) => {
+          el.querySelector("[data-k=col]").value = v.col;
+          el.querySelector("[data-k=colHex]").value = v.colHex || "";
+          el.querySelector("[data-k=colPhoto]").value = v.colPhoto || "";
+          el.querySelector(".glc-chipw").innerHTML = GLC.chipHtml(v);
+          live(el);
+        };
+        const co = el.querySelector(".glc-open");
+        if (co) co.onclick = () => GLC.pick(setCol);
+        const ct = el.querySelector("[data-k=col]");
+        if (ct)
+          ct.oninput = () => {
+            el.querySelector("[data-k=colHex]").value = "";
+            el.querySelector("[data-k=colPhoto]").value = "";
+            el.querySelector(".glc-chipw").innerHTML = GLC.chipHtml({ col: ct.value });
+            live(el);
+          };
         el.querySelector(".glo-hadd").onclick = () =>
           again(i, (it) => (it.holes = (it.holes || []).concat([GLS.newHole()])));
         el.querySelector(".glo-cadd").onclick = () =>
@@ -731,6 +753,10 @@ const GLO = (() => {
       y += 9;
     };
     headRow();
+    /* each piece's colour as a square, or the photo of the real glass */
+    const COL = {};
+    for (let i = 0; i < (r.items || []).length; i++)
+      if ((r.items[i] || {}).col) COL[i] = await GLC.forPdf(r.items[i]);
     (r.items || []).forEach((it, i) => {
       const t = TYPES[it.type] || TYPES.other;
       /* measured in the font each is written in, so long lines wrap inside the page */
@@ -745,7 +771,7 @@ const GLO = (() => {
       );
       /* a drawing to scale under the words when it has a shape, holes or cut-outs */
       const DH = GLS.hasDrawing(it) ? GLS.pdfHeight(it, Math.min(110, W - M - X.d), 46) + 2 : 0;
-      const h = 5 * what.length + 4.3 * spec.length + 4 + DH;
+      const h = Math.max(5 * what.length + 4.3 * spec.length + 4 + DH, COL[i] ? 30 : 0);
       if (y + h > bot) {
         doc.addPage();
         y = top;
@@ -767,6 +793,21 @@ const GLO = (() => {
       doc.text(clean(area(it).toFixed(2) + " m2"), X.s, y + 8);
       if (kgOne(it))
         doc.text(clean(kgTxt(it).replace(" – a two-person lift", " (2 people)")), X.s, y + 11.5);
+      if (COL[i] && COL[i].img)
+        try {
+          doc.addImage(COL[i].img, "JPEG", X.s, y + 14, 18, 13);
+        } catch (e) {}
+      else if (COL[i] && COL[i].hex) {
+        const hx = COL[i].hex.replace("#", "");
+        doc.setFillColor(
+          parseInt(hx.slice(0, 2), 16),
+          parseInt(hx.slice(2, 4), 16),
+          parseInt(hx.slice(4, 6), 16),
+        );
+        doc.setDrawColor(120, 120, 120);
+        doc.setLineWidth(0.2);
+        doc.rect(X.s, y + 14, 18, 11, "FD");
+      }
       if (DH)
         GLS.pdfDraw(
           doc,

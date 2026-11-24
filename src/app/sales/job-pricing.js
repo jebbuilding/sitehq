@@ -8,6 +8,7 @@ import { uploadAnyFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
 import { shrinkImage } from "../safety/training.js";
+import { DQT } from "./drawing-qty.js";
 import { edcHtml, edcWire } from "./est-docs.js";
 import { EST_LINK } from "./estimating.js";
 import { jfOpenClient, jfSave } from "./job-file.js";
@@ -225,7 +226,7 @@ function jprEdit(c, j, it, k, after, cmp) {
     <label for="jp-what">What it's for<input id="jp-what" maxlength="160" value="${esc((it && (it.note || "")) || (cmp && cmp.note) || "")}" placeholder="e.g. Blocks, sand and cement for the walls"></label>
     <div class="flabel">The prices (before VAT): how many × the rate, a line for each thing</div>
     <div class="jp-lines" id="jp-lines"></div>
-    <div class="jp-ltot"><button type="button" class="pillbtn" id="jp-addl">+ Add a line</button><span>Total <b id="jp-tot">£0.00</b></span></div>
+    <div class="jp-ltot"><button type="button" class="pillbtn" id="jp-addl">+ Add a line</button><button type="button" class="pillbtn" id="jp-fromdw">📐 From a drawing</button><span>Total <b id="jp-tot">£0.00</b></span></div>
     <datalist id="jp-units">${JPR_UNITS.map((u) => `<option value="${u}">`).join("")}</datalist>
     <div class="flabel">The quote (optional)</div><label class="btn jp-fb">📄 ${it && it.assetId ? "Change the quote" : "Add the quote (PDF or photo)"}<input type="file" id="jp-file" class="fpick" accept="application/pdf,image/*" data-cam="1"></label><span class="who" id="jp-fn"></span>
     ${formFoot(!!it, it ? "Save" : "Add")}`,
@@ -328,6 +329,14 @@ function jprEdit(c, j, it, k, after, cmp) {
       );
     sum();
   };
+  /* quantities off a saved drawing (sales/drawing-qty.js): the empty starting line goes */
+  $("jp-fromdw").onclick = () =>
+    DQT.pick((ls) => {
+      rows = jpLines()
+        .filter((l) => l.d || l.r)
+        .concat(ls);
+      draw();
+    });
   $("jp-addl").onclick = () => {
     rows = jpLines().concat([{ d: "", q: 1, u: "", r: "" }]);
     draw();

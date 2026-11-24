@@ -3,6 +3,7 @@ import { ptAskSign, ptCl, ptOf } from "../clients/portal.js";
 import { addDays, esc, iso, shortDay, stamp, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { getFileBlob } from "../files/in-app-files.js";
+import { dlgEsc } from "./glass-colours.js";
 export { WST };
 /* James (Nov 2026): "when it's sent to the client I need a record of when it was sent, follow up, accepted or rejected,
    ordered, fitted, completed; also a way for the client to send back details of any adjustments or changes". Each
@@ -75,6 +76,7 @@ const WST = (() => {
           d.style.zIndex = "130";
           d.innerHTML = `<form class="dimbox"><b>${esc(label(k))}</b><label for="wst-on">When<input type="date" id="wst-on" value="${esc(iso(new Date()))}"></label><label for="wst-nt">Note (optional)<input id="wst-nt" maxlength="300" placeholder="${k === "changes" ? "what they want changed" : k === "ordered" ? "e.g. order no., delivery date" : ""}"></label><div class="dimbtns"><button type="button" class="btn wst-x">Cancel</button><button type="submit" class="btn primary">Add</button></div></form>`;
           document.body.appendChild(d);
+          dlgEsc(d);
           d.querySelector(".wst-x").onclick = () => d.remove();
           d.querySelector("form").onsubmit = async (e) => {
             e.preventDefault();

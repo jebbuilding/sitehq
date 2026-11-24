@@ -20,16 +20,46 @@ import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
 export { clGdprHtml, gdprAfterSave, gdprFormHtml, gdprFormRead, gdprFormWire, wireClGdpr };
 const GDPR_TXT =
   "I have read and accept the privacy (GDPR) policy, and I agree to my details being kept and used to carry out my job.";
+/* the policy clients read and sign: the one James chose (settings/app.gdprPolicyId), otherwise the NEWEST whose name
+   says GDPR, privacy or data protection (James, Nov 2026: "the data protection policy that opens isn't what I
+   uploaded" – an older privacy notice was being found first) */
 function gdprPolicy() {
   const ps = (S.policies || []).filter((d) => d.assetId);
   const pick = (S.settings || {}).gdprPolicyId;
+  const when = (d) => d.updated || d.uploaded || d.created || 0;
   return (
     ps.find((d) => d.id === pick) ||
-    ps.find((d) =>
-      /gdpr|privacy|data protection/i.test((d.title || "") + " " + (d.fileName || "")),
-    ) ||
+    ps
+      .filter((d) =>
+        /gdpr|privacy|data protection/i.test((d.title || "") + " " + (d.fileName || "")),
+      )
+      .sort((a, b) => when(b) - when(a))[0] ||
     null
   );
+}
+/* "Policy used: [the list]" – choose which of Policies & insurance is the privacy policy */
+function gdprPickHtml(id) {
+  const ps = (S.policies || []).filter((d) => d.assetId);
+  if (!ps.length) return "";
+  const cur = gdprPolicy();
+  return `<label class="gdpr-pick">Policy used<select id="${id}">${cur ? "" : '<option value="">Pick your privacy policy…</option>'}${ps
+    .map(
+      (d) =>
+        `<option value="${esc(d.id)}"${cur && cur.id === d.id ? " selected" : ""}>${esc(d.title || d.fileName || "Document")}</option>`,
+    )
+    .join("")}</select></label>`;
+}
+async function gdprPickSave(v) {
+  if (!v) return false;
+  try {
+    await S.db.doc("settings/app").update({ gdprPolicyId: v });
+    S.settings = Object.assign({}, S.settings, { gdprPolicyId: v });
+    toast("Privacy policy set");
+    return true;
+  } catch (e) {
+    toast("Couldn't save");
+    return false;
+  }
 }
 function clGdprHtml(c) {
   const g = c.gdpr,
@@ -38,7 +68,7 @@ function clGdprHtml(c) {
   return `<div class="card gdprcard" id="cv-gdpr"><div class="checkhead"><b>🔒 Privacy / GDPR</b>${g && g.status === "signed" ? '<span class="tag ok">✓ Accepted</span>' : req ? '<span class="tag day">Sent to sign</span>' : '<span class="tag bad">Not signed</span>'}</div>
     ${
       pol
-        ? `<button type="button" class="linkbtn" id="gd-view">📄 ${esc(pol.title || "Privacy policy")}</button> <button type="button" class="linkbtn" id="gd-mail">✉ Email it to them</button>`
+        ? `<button type="button" class="linkbtn" id="gd-view">📄 ${esc(pol.title || "Privacy policy")}</button> <button type="button" class="linkbtn" id="gd-mail">✉ Email it to them</button>${gdprPickHtml("gd-pick")}`
         : `<div class="who">No privacy policy found. Add it in <b>Policies &amp; insurance</b> with "GDPR" or "Privacy" in the name${(S.policies || []).some((d) => d.assetId) ? ", or pick one below" : ""}.</div>
       ${
         (S.policies || []).some((d) => d.assetId)
@@ -86,15 +116,7 @@ function wireClGdpr(c) {
   const pk = $("gd-pick");
   if (pk)
     pk.onchange = async () => {
-      if (!pk.value) return;
-      try {
-        await S.db.doc("settings/app").update({ gdprPolicyId: pk.value });
-        S.settings = Object.assign({}, S.settings, { gdprPolicyId: pk.value });
-        toast("Privacy policy set");
-        viewClient(ptCl(c));
-      } catch (e) {
-        toast("Couldn't save");
-      }
+      if (await gdprPickSave(pk.value)) viewClient(ptCl(c));
     };
   const sg = $("gd-sign");
   if (sg) sg.onclick = () => gdprSignNow(c);
@@ -461,6 +483,7 @@ function gdprFormHtml(c) {
     return `<div class="card gdprcard gdf-box"><div class="checkhead"><b>🔒 Privacy (GDPR)</b><span class="tag ok">✓ Signed · locked</span></div><div class="who">Signed by <b>${esc(g.name || c.name || "")}</b> on ${esc(stamp(g.at))} ${g.method === "portal" ? "in their portal" : "in person"}. It can't be changed here.</div></div>`;
   return `<div class="card gdprcard gdf-box"><div class="checkhead"><b>🔒 Privacy (GDPR)</b><span class="tag bad">Not signed</span></div>
     <div class="who">Ask them to read the privacy policy and sign below, to say they're happy for you to keep their details. Once signed it's locked to them.</div>
+    ${gdprPickHtml("gdf-pick")}
     ${pol ? `<div class="actions"><button type="button" class="btn" id="gdf-view">📄 Read the ${esc(pol.title || "privacy policy")}</button><button type="button" class="btn" id="gdf-mail">✉ Email it to them</button></div>` : `<div class="notice warn">No privacy policy added yet – add it in Policies &amp; insurance with "GDPR" or "Privacy" in the name, so they can read it.</div>`}
     <label class="inl ptconfirm"><input type="checkbox" id="gdf-ok"> ${esc(GDPR_TXT)}</label>
     <label for="gdf-name">Their full name<input id="gdf-name" maxlength="80" value="${esc((c && c.name) || "")}" placeholder="as they sign"></label>
@@ -477,12 +500,21 @@ function gdprFormWire(emailFn, nameFn) {
     $("gdf-clear").onclick = () => gdprFormPad.clear();
   }
   if ($("gdf-view") && pol)
-    $("gdf-view").onclick = () =>
+    $("gdf-view").onclick = () => {
+      const p = gdprPolicy() || pol;
       openFile(
-        pol.assetId,
-        pol.fileName || (pol.title || "Privacy policy") + ".pdf",
-        pol.contentType || "application/pdf",
+        p.assetId,
+        p.fileName || (p.title || "Privacy policy") + ".pdf",
+        p.contentType || "application/pdf",
       );
+    };
+  if ($("gdf-pick"))
+    $("gdf-pick").onchange = async () => {
+      if ((await gdprPickSave($("gdf-pick").value)) && $("gdf-view")) {
+        const p = gdprPolicy();
+        if (p) $("gdf-view").textContent = "📄 Read the " + (p.title || "privacy policy");
+      }
+    };
   if ($("gdf-mail")) $("gdf-mail").onclick = () => gdprEmail(emailFn() || "", nameFn() || "");
 }
 /* what the form says: null when they haven't started signing, { err } when half done, else the signed record */

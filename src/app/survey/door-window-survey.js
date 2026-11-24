@@ -56,9 +56,11 @@ import { same } from "../sites/project-pages.js";
 import { sqMap } from "../sites/snag-quick.js";
 import { siteClient } from "../sites/summary.js";
 import { typeFor } from "../sites/trade-sites.js";
+import { GLC } from "./glass-colours.js";
 import { GLO } from "./glass-order.js";
 import { GLS_PATTERNS } from "./glass-shapes.js";
 import { WST } from "./survey-track.js";
+import { WDS } from "./wood-samples.js";
 export { DWS, jobDraft, jobsView, myName, openJob, openJobEditor, renderJobDetail, siteFilePicker };
 const DWS = (() => {
   const g = (id) => document.getElementById("wsx-" + id);
@@ -4981,7 +4983,7 @@ function jobsView() {
     (a, b) =>
       (a.due || "9999").localeCompare(b.due || "9999") || (b.created || 0) - (a.created || 0),
   );
-  let html = `${owner ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div>` : ""}
+  let html = `${owner ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ral-chart" type="button">🎨 RAL colours</button><button class="btn" id="wood-lib" type="button">🪵 Woods</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div>` : ""}
     <div class="seg" id="jf">${[
       ["open", "Open"],
       ["closed", "Signed off"],
@@ -4999,6 +5001,9 @@ function jobsView() {
   if (owner) {
     DWS.wireJobs();
     GLO.wireJobs();
+    /* the RAL chart and the glass samples, for anything (survey/glass-colours.js) */
+    if ($("ral-chart")) $("ral-chart").onclick = () => GLC.pick(GLC.show, true);
+    if ($("wood-lib")) $("wood-lib").onclick = () => WDS.open();
     WTN.wireJobs();
   }
   if ($("newJob")) $("newJob").onclick = () => openJobEditor("job", null);
