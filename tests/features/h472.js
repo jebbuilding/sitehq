@@ -30,7 +30,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/Sunny, 12°C/.test(t),'the weather (from the photo)');
  ok(/Photos \(1\)/.test(t)&&await p.locator('.sdi .ph').count()===1,'the photo taken that day');
  ok(await p.locator('#sdi-note').count()===1&&/Speak/.test(t),'a note box you can speak into');
- await p.fill('#sdi-note','Building control passed the joists. Steel late by 2 hours.');await p.click('#sdi-save');await p.waitForTimeout(500);
+ await p.fill('#sdi-note','Building control passed the joists. Steel late by 2 hours.');await p.locator('#sdi-note').blur();await p.waitForTimeout(800);
  const rec=await p.evaluate(()=>Object.entries(window.__st).filter(([k,v])=>/^todos\/sdi-/.test(k)).map(([k,v])=>[k,v.note,v.date]));console.log(JSON.stringify(rec));
  ok(rec.length===1&&/Building control passed/.test(rec[0][1]),'the note is saved for the day');
  /* the day before: nothing */

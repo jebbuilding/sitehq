@@ -34,7 +34,7 @@ page_src=page_src.replace('function searchOpen(q0) {','window.__so=(q)=>searchOp
  await p.evaluate(()=>{document.querySelector('.viewer-x, #viewer-close, .vclose')&&document.querySelector('.viewer-x, #viewer-close, .vclose').click()});
  await p.evaluate(s=>{window.__S.otab='projects';window.__S.f.proj=s;window.__S.f.projList=false;window.__S.f.pjtab='overview';window.render()},SITE);await p.waitForTimeout(500);
  await p.click('.pjtile[data-t=diary]');await p.waitForTimeout(400);
- await p.fill('#sdi-note','Test note: no signal on site today.');await p.click('#sdi-save');await p.waitForTimeout(600);
+ await p.fill('#sdi-note','Test note: no signal on site today.');await p.locator('#sdi-note').blur();await p.waitForTimeout(900);
  ok(!(await p.evaluate(()=>Object.keys(window.__st).some(k=>/^todos\/sdi-/.test(k)))),'the diary note isn\'t sent yet either');
  await p.evaluate(()=>window.render());await p.waitForTimeout(300);
  const m=await p.innerText('#main');

@@ -1,21 +1,10 @@
 /* ================= SITE DIARY: a daily diary for each site that writes itself, plus James's own note ================= */
 import { bossName } from "../core/company-names.js";
-import {
-  $,
-  addDays,
-  dayLabel,
-  esc,
-  hrs,
-  iso,
-  monday,
-  parse,
-  shortDay,
-  toast,
-} from "../core/helpers.js";
+import { $, addDays, dayLabel, esc, hrs, iso, monday, parse, shortDay } from "../core/helpers.js";
 import { closeForm, formFoot, openSheet, showErr } from "../core/sheet.js";
 import { S, isArchivedSite } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
-import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
+import { obPending, saveOrKeep } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { allTeam, nameOf } from "../owner/owner.js";
 import { BRGB, photoTile, photoViewer } from "../photos/photos.js";
@@ -251,7 +240,8 @@ function sdiHtml(site) {
     ${D.photos.length ? `<div class="sdi-sec"><b>📷 Photos (${D.photos.length})</b><div class="phgrid">${D.photos.map((p) => photoTile(p, true, p.who)).join("")}</div></div>` : ""}
     ${!D.any ? `<div class="nothing">Nothing recorded on this day yet.</div>` : ""}
     <label for="sdi-note">Your note for the day</label><textarea id="sdi-note" rows="4" placeholder="e.g. Steel delivered late, 2 hours lost. Building control passed the foundations.">${esc(D.note)}</textarea>
-    <div class="actions"><button type="button" class="btn primary" id="sdi-save">Save note</button><button type="button" class="btn" id="sdi-pdf">📄 Diary as a PDF</button></div></div>`;
+    <div class="who sdi-st" id="sdi-st">${D.note ? "✓ Saved" : "The diary above fills itself in. Your note saves by itself as you type."}</div>
+    <div class="actions"><button type="button" class="btn" id="sdi-pdf">📄 Diary as a PDF</button></div></div>`;
 }
 function sdiWire(site) {
   const today = iso(new Date());
@@ -266,33 +256,50 @@ function sdiWire(site) {
       go(iso(addDays(parse(cur), 1)) > today ? today : iso(addDays(parse(cur), 1)));
   if ($("sdi-today")) $("sdi-today").onclick = () => go(today);
   document.querySelectorAll(".sdi-wd").forEach((b) => (b.onclick = () => go(b.dataset.d)));
-  if ($("sdi-save"))
-    $("sdi-save").onclick = async () => {
-      const note = $("sdi-note").value.trim();
-      const old = sdiRec(site, cur);
-      const rec = {
-        kind: "sitediary",
-        site,
-        date: cur,
-        note,
-        weather: (old && old.weather) || sdiWx(site, cur) || "",
-        byName: bossName(),
-        updated: Date.now(),
-      };
-      try {
-        const r = await saveOrKeep("todos/" + sdiId(site, cur), "set", rec, "Diary note");
-        const r2 = Object.assign({ id: sdiId(site, cur) }, rec);
-        const i = (S.siteDiary || []).findIndex((x) => x.id === r2.id);
-        if (i >= 0) S.siteDiary[i] = r2;
-        else S.siteDiary = (S.siteDiary || []).concat([r2]);
-        if (r === "queued") {
-          sentToast(r, "Diary note");
-          render();
-        } else toast("Diary note saved");
-      } catch (e) {
-        toast("Couldn't save – check your connection");
-      }
+  /* the note saves itself a moment after typing stops, and when you leave the box (James, Nov 2026: "does it save
+     itself, as it says Save site diary") */
+  let sdiT = null;
+  const sdiSave = async () => {
+    clearTimeout(sdiT);
+    if (!$("sdi-note")) return;
+    const note = $("sdi-note").value.trim();
+    const was = sdiRec(site, cur);
+    if (note === ((was && was.note) || "")) return;
+    if ($("sdi-st")) $("sdi-st").textContent = "Saving…";
+    const old = sdiRec(site, cur);
+    const rec = {
+      kind: "sitediary",
+      site,
+      date: cur,
+      note,
+      weather: (old && old.weather) || sdiWx(site, cur) || "",
+      byName: bossName(),
+      updated: Date.now(),
     };
+    try {
+      const r = await saveOrKeep("todos/" + sdiId(site, cur), "set", rec, "Diary note");
+      const r2 = Object.assign({ id: sdiId(site, cur) }, rec);
+      const i = (S.siteDiary || []).findIndex((x) => x.id === r2.id);
+      if (i >= 0) S.siteDiary[i] = r2;
+      else S.siteDiary = (S.siteDiary || []).concat([r2]);
+      if ($("sdi-st"))
+        $("sdi-st").textContent =
+          r === "queued"
+            ? "✓ Kept on this device – it'll send when you have signal"
+            : "✓ Saved " +
+              new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    } catch (e) {
+      if ($("sdi-st")) $("sdi-st").textContent = "Couldn't save – check your connection";
+    }
+  };
+  if ($("sdi-note")) {
+    $("sdi-note").addEventListener("input", () => {
+      clearTimeout(sdiT);
+      if ($("sdi-st")) $("sdi-st").textContent = "…";
+      sdiT = setTimeout(sdiSave, 1500);
+    });
+    $("sdi-note").addEventListener("blur", sdiSave);
+  }
   if ($("sdi-pdf")) $("sdi-pdf").onclick = () => sdiPdfAsk(site, cur);
   const D = sdiDay(site, cur);
   document.querySelectorAll(".sdi .ph").forEach(
