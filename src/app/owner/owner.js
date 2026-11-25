@@ -16,6 +16,7 @@ import {
   nowHM,
   parse,
   shortDay,
+  stamp,
   toMin,
   toast,
 } from "../core/helpers.js";
@@ -759,6 +760,7 @@ function checkDetail(c0) {
       })
       .join("")}</div>
     ${c.notes ? `<p><b>Notes:</b> ${esc(c.notes)}</p>` : ""}
+    ${c0.sig ? `<div class="flabel">✍️ Signed by ${esc(c0.sigName || nameOf(c0.who))}${c0.sigAt ? " · " + esc(stamp(c0.sigAt)) : ""}</div><img class="ck-sigimg" src="${esc(c0.sig)}" alt="Signature">` : ""}
     ${c0.who && c0.who !== S.me ? `<div class="actions"><button type="button" class="pillbtn" id="cd-redo">Ask ${esc(nameOf(c0.who))} to redo this check</button></div>` : ""}
     ${c.photos && c.photos.length ? `<div class="flabel" style="margin-top:10px">Defect photos</div>${c.photos.map((id, i) => `<img src="${blobUrl(id)}" alt="Defect photo" style="width:100%;border-radius:8px;margin-bottom:6px"><button type="button" class="pillbtn cd-save" data-id="${esc(id)}" style="margin-bottom:12px">Save photo ${i + 1}</button>`).join("")}` : ""}`);
   if ($("cd-redo"))
@@ -956,7 +958,7 @@ function ownerSetup() {
     ph,
   ) => `<details class="card" data-id="__${key}" ${S.open.has("__" + key) || !names.length ? "open" : ""}><summary><div class="nm">${title}<small>${names.length ? names.length + " in the list" : help}</small></div></summary>
     <div class="cardbody"><form class="addform" data-k="${key}" style="display:flex;gap:8px;flex-wrap:wrap"><input id="add-${key}" maxlength="100" placeholder="${esc(ph)}" aria-label="Add to ${esc(title)}" style="flex:1;min-width:200px"><button class="btn primary" type="submit">Add</button></form>
-    ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${key === "sites" ? siteHeadHtml(x.name) : esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">${x.jobName ? "Details" : "✎ Name & details"}</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : "Driver & checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
+    ${names.length ? `<div>${names.map((x) => `<div class="citem"><span>${key === "sites" ? siteHeadHtml(x.name) : esc(x.name)}${key === "sites" && (x.project || (x.plots || []).length) ? `<br><span class="who">${[x.project, (x.plots || []).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>` : ""}</span><span style="display:flex;gap:6px;flex:none">${key === "sites" ? `<button type="button" class="pillbtn editsite" data-id="${esc(x.id)}">${x.jobName ? "Details" : "✎ Name & details"}</button><button type="button" class="pillbtn editfold" data-n="${esc(x.name)}">Photo folders</button>` : `<button type="button" class="pillbtn editsched" data-id="${esc(x.id)}">${x.assignee && x.freq && x.freq !== "none" ? esc(nameOf(x.assignee)) + " · " + (x.freq === "weekly" ? "weekly " + DOW[+(x.dueDay ?? 1)].slice(0, 3) : "daily") : key === "vehicle" || key === "trailer" ? "Driver & checks" : "Checks"}</button>${(EQ_DATES[key] || []).length ? `<button type="button" class="pillbtn eqdates" data-id="${esc(x.id)}">${(x.dates && Object.keys(x.dates).length) || (x.info && Object.keys(x.info).length) || (x.files || []).length ? "Details ✓" : "Details"}${eqWarn(x)}</button>` : ""}`}<button type="button" class="linkdanger delitem" data-k="${key}" data-id="${esc(x.id)}">Remove</button></span></div>`).join("")}</div>` : '<div class="nothing">Nothing added yet.</div>'}</div></details>`;
   $("main").innerHTML =
     `${stSeg}<div class="card"><div class="cardbody" style="border:0"><b>Working day</b>
       <div class="grid2"><label for="wd-s">Paid start<input id="wd-s" type="time" value="${esc(WS())}"></label><label for="wd-e">Paid finish<input id="wd-e" type="time" value="${esc(WE())}"></label></div>
@@ -1080,14 +1082,14 @@ function ownerSetup() {
           const K = KINDS[eq.kind];
           openSheet(
             `<h3 id="sheettitle">${esc(eq.name)}</h3><div class="who">${esc(K.name)}</div>
-      <label for="es-who">${eq.kind === "vehicle" || eq.kind === "trailer" ? "Who drives or tows it?" : "Who uses it?"}<select id="es-who"><option value="">Nobody set</option>${teamIds()
+      <label for="es-who">${eq.kind === "vehicle" || eq.kind === "trailer" ? "Who drives or tows it?" : K.inspect ? "Who inspects it?" : "Who uses it?"}<select id="es-who"><option value="">Nobody set</option>${teamIds()
         .concat([S.me])
         .map(
           (id) =>
             `<option value="${esc(id)}" ${eq.assignee === id ? "selected" : ""}>${esc(nameOf(id))}</option>`,
         )
         .join("")}</select></label>
-      <div><div class="flabel">How often must they check it?</div><div class="seg" id="es-freq">${[
+      <div><div class="flabel">${K.inspect ? "How often must it be inspected?" : "How often must they check it?"}</div><div class="seg" id="es-freq">${[
         ["none", "No schedule"],
         ["weekly", "Weekly"],
         ["daily", "Daily (Mon–Fri)"],
@@ -1099,6 +1101,8 @@ function ownerSetup() {
         .join("")}</div></div>
       <label for="es-day" id="es-dayl">Weekly check due on<select id="es-day">${[1, 2, 3, 4, 5, 6, 0].map((d) => `<option value="${d}" ${+(eq.dueDay ?? 1) === d ? "selected" : ""}>${DOW[d]}</option>`).join("")}</select></label>
       <div class="who">They get a pop-up and a reminder each time they open the app, from the due day until the check is done. The app can't send notifications to a phone that's closed.</div>
+      <div class="flabel">✅ What's checked</div><div class="who">Untick anything that doesn't apply to this ${esc(K.name.toLowerCase())}. To change the questions for every one, go to Setup › Your forms › Built-in checks.</div>
+      <div class="ck-items">${K.items.map(([k, l]) => `<label class="tick"><input type="checkbox" class="es-it" data-k="${esc(k)}" ${(eq.off || []).includes(k) ? "" : "checked"}> <span>${esc(l)}</span></label>`).join("")}</div>
       ${formFoot(false, "Save")}`,
             async () => {
               const freq = $("es-freq").querySelector('[aria-pressed="true"]').dataset.v,
@@ -1107,10 +1111,18 @@ function ownerSetup() {
                 showErr("Choose who needs to do the check.");
                 return;
               }
+              /* the questions that don't apply to this one (James, Nov 2026: "there's no check boxes for the check") */
+              const off = [...document.querySelectorAll(".es-it")]
+                .filter((x) => !x.checked)
+                .map((x) => x.dataset.k);
+              if (off.length && off.length === K.items.length) {
+                showErr("Leave at least one thing ticked to check.");
+                return;
+              }
               try {
                 await S.db
                   .doc("equipment/" + eq.id)
-                  .update({ assignee: who, freq, dueDay: +$("es-day").value });
+                  .update({ assignee: who, freq, dueDay: +$("es-day").value, off });
                 closeForm();
                 toast("Saved");
                 render();

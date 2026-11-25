@@ -21,6 +21,7 @@ import { nameOf, roleShort } from "../owner/owner.js";
 import { VID_MAX, exifDate, readExif, stampPhoto, vidExt } from "../photos/photos.js";
 import { KINDS, ck, defectsOf, hasProblem } from "./checklists.js";
 import { hicFields, hicMore, hicRead, hicSub, hicTag, hicVideo, hicWire } from "./hire-check.js";
+import { sigPad } from "./site-inductions.js";
 export { checkCard, openCheck };
 function checkCard(c0, owner, who) {
   const c = ck(c0),
@@ -39,6 +40,26 @@ function checkCard(c0, owner, who) {
     ${owner && hasProblem(c) ? `<label class="inl"><input type="checkbox" class="fix" ${c.fixed ? "checked" : ""}>Fixed</label>` : ""}</div>`;
 }
 let checkVals = {};
+let ckSig = null;
+/* the questions for this one: the kind's, less any James has unticked on it in Setup (equipment off: [keys]) */
+function ckItemsFor(kind, asset) {
+  const K = KINDS[kind];
+  const a = String(asset || "")
+    .trim()
+    .toLowerCase();
+  const eq = (S.equipment || []).find(
+    (e) => e.kind === kind && (e.name || "").trim().toLowerCase() === a,
+  );
+  const off = (eq && eq.off) || [];
+  return K.items.filter(([k]) => !off.includes(k));
+}
+const ckItemsHtml = (list) =>
+  list
+    .map(
+      ([k, l]) => `<div class="citem"><span>${esc(l)}</span>
+      <span class="seg" data-k="${k}"><button type="button" data-v="ok">OK</button><button type="button" data-v="defect">Defect</button><button type="button" data-v="na">N/A</button></span></div>`,
+    )
+    .join("");
 function openCheck(kind, c0, presetAsset) {
   const c = c0 ? ck(c0) : null,
     K = KINDS[kind];
@@ -53,16 +74,13 @@ function openCheck(kind, c0, presetAsset) {
     ${pickField("c-asset", K.asset || (kind === "vehicle" ? "Vehicle" : kind === "digger" ? "Digger" : kind === "trailer" ? "Trailer" : "Machine"), [...new Set(equipOf(kind).concat(K.sites ? siteNames() : []))], c ? c.asset : last, K.ph)}
     ${K.hire ? hicFields(c) : ""}
     <div class="checkhead"><span class="flabel" style="margin:0">Checks</span><button type="button" class="pillbtn" id="c-allok">Mark the rest OK</button></div>
-    <div id="c-items">${K.items
-      .map(
-        ([k, l]) => `<div class="citem"><span>${esc(l)}</span>
-      <span class="seg" data-k="${k}"><button type="button" data-v="ok">OK</button><button type="button" data-v="defect">Defect</button><button type="button" data-v="na">N/A</button></span></div>`,
-      )
-      .join("")}</div>
+    <div id="c-items">${ckItemsHtml(ckItemsFor(kind, c ? c.asset : last))}</div>
     <label for="c-notes">${K.hire ? "Damage or faults – describe every mark, dent or fault you can see" : "Defects or damage (describe anything marked Defect)"}<textarea id="c-notes" maxlength="${K.hire ? 1500 : 500}">${esc(c ? c.notes : "")}</textarea></label>
     ${c && c.photos && c.photos.length ? `<div><div class="flabel">Photos already added</div><div class="thumbs">${c.photos.map((id) => `<img src="${blobUrl(id)}" alt="Defect photo">`).join("")}</div></div>` : ""}
     <label for="c-photos">${K.hire ? "📷 Photos all round – front, back, both sides and close-ups of any damage" : "Photos of the defect (optional)"}<input id="c-photos" type="file" accept="image/*" multiple></label>
     ${K.hire ? hicMore(c) : ""}
+    <label for="c-signame">Checked by<input id="c-signame" maxlength="80" value="${esc(c && c.sigName ? c.sigName : nameOf(S.me))}"></label>
+    <div><div class="checkhead"><span class="flabel" style="margin:0">✍️ Sign with your finger</span><button type="button" class="pillbtn" id="c-sigclr">Clear</button></div>${c && c.sig ? `<div class="who">Signed before – sign again only to change it.</div><img class="ck-sigimg" src="${esc(c.sig)}" alt="Signature">` : ""}<canvas id="c-sig" class="sigpad" aria-label="Signature box"></canvas></div>
     <div><div class="flabel">Is it safe to use?</div>
       <div class="seg" id="c-safe"><button type="button" data-v="yes" aria-pressed="${c ? c.safe !== false : true}">Yes</button><button type="button" data-v="no" aria-pressed="${c ? c.safe === false : false}">No, don't use it</button></div></div>
     ${formFoot(!!c, "Submit check")}`,
@@ -90,8 +108,28 @@ function openCheck(kind, c0, presetAsset) {
           }),
       ),
     );
+  /* a different scaffold or van may have different questions ticked */
+  const assetEl = $("c-asset");
+  if (assetEl)
+    assetEl.addEventListener("change", () => {
+      $("c-items").innerHTML = ckItemsHtml(ckItemsFor(kind, pickVal("c-asset")));
+      $("form")
+        .querySelectorAll("#c-items .seg")
+        .forEach((sg) =>
+          sg.querySelectorAll("button").forEach(
+            (b) =>
+              (b.onclick = () => {
+                checkVals[sg.dataset.k] = b.dataset.v;
+                paint();
+              }),
+          ),
+        );
+      paint();
+    });
+  ckSig = sigPad($("c-sig"));
+  $("c-sigclr").onclick = () => ckSig.clear();
   $("c-allok").onclick = () => {
-    K.items.forEach(([k]) => {
+    ckItemsFor(kind, pickVal("c-asset")).forEach(([k]) => {
       if (!checkVals[k]) checkVals[k] = "ok";
     });
     paint();
@@ -111,13 +149,14 @@ function openCheck(kind, c0, presetAsset) {
 }
 async function saveCheck(kind) {
   const K = KINDS[kind];
-  const missing = K.items.filter(([k]) => !checkVals[k]);
+  const list = ckItemsFor(kind, pickVal("c-asset"));
+  const missing = list.filter(([k]) => !checkVals[k]);
   const data = {
     kind,
     date: $("c-date").value,
     asset: pickVal("c-asset"),
     reading: K.reading ? $("c-read").value : "",
-    items: Object.assign({}, checkVals),
+    items: Object.fromEntries(list.filter(([k]) => checkVals[k]).map(([k]) => [k, checkVals[k]])),
     notes: $("c-notes").value.trim(),
     safe: $("c-safe").querySelector('[aria-pressed="true"]').dataset.v === "yes",
     updated: Date.now(),
@@ -136,6 +175,18 @@ async function saveCheck(kind) {
     showErr("Mark every item OK, Defect or N/A (" + missing.length + " left).");
     return;
   }
+  /* signed by the person doing it (James, Nov 2026) */
+  data.sigName = $("c-signame").value.trim();
+  if (!data.sigName) {
+    showErr("Put the name of who did the check.");
+    return;
+  }
+  if (!(ckSig && ckSig.drawn) && !(editing && editing.sig)) {
+    showErr("Sign it with your finger to say you did the check.");
+    return;
+  }
+  data.sig = ckSig && ckSig.drawn ? ckSig.data() : editing.sig;
+  data.sigAt = ckSig && ckSig.drawn ? Date.now() : editing.sigAt || Date.now();
   if (defectsOf(data).length && !data.notes) {
     showErr(`Describe the defect so ${bossFirst()} knows what to fix.`);
     return;

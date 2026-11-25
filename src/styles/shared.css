@@ -480,5 +480,8 @@ body:has(.fvbody.measuring) #issbtn{display:none}
 .pillbtn,.seg button,.linkdanger{min-height:44px}
 select{min-height:44px}
 .linkbtn{padding-top:12px;padding-bottom:12px}
+.ck-items{display:flex;flex-direction:column;gap:2px}
+.ck-items .tick{min-height:44px;align-items:center}
+.ck-sigimg{display:block;max-width:280px;width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;margin:4px 0}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 @media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}

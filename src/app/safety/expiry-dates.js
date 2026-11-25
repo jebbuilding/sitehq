@@ -379,6 +379,9 @@ function openEqDates(eq) {
   let files = (eq.files || []).slice(),
     log = (eq.log || []).slice();
   const veh = eq.kind === "vehicle";
+  /* James (Nov 2026): a scaffold, excavation or ladder has no reading, cost or garage – only inspections and changes */
+  const K = KINDS[eq.kind] || {};
+  const insp = !!K.inspect;
   const fileRows = () =>
     files.length
       ? files
@@ -405,11 +408,11 @@ function openEqDates(eq) {
     ${groups.map(([g, fs]) => `<div class="flabel">${esc(g)}</div><div class="grid2">${fs.map(([k, l, ph]) => `<label for="ei-${k}">${esc(l)}${k === "notes" ? `<textarea id="ei-${k}" maxlength="600">${esc(info[k] || "")}</textarea>` : `<input id="ei-${k}" maxlength="120" value="${esc(info[k] || "")}" placeholder="${esc(ph || "")}" ${/phone|Phone/.test(k) ? 'type="tel"' : ""}>`}</label>`).join("")}</div>`).join("")}
     <div class="flabel">📎 Documents</div><div id="ef-list">${fileRows()}</div>
     <div class="grid2" style="align-items:end"><label for="ef-kind">Type<select id="ef-kind">${FT.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select></label><label for="ef-file">File (PDF or photo)<input id="ef-file" type="file" accept="application/pdf,image/*"></label></div><div class="who" id="ef-prog"></div>
-    <div class="flabel">🔧 Service, repairs &amp; MOT history</div><div id="el-list">${logRows()}</div>
+    <div class="flabel">${veh ? "🔧 Service, repairs &amp; MOT history" : insp ? "📋 Inspections, changes &amp; repairs" : "🔧 Service &amp; repairs history"}</div><div id="el-list">${logRows()}</div>
     <div class="grid2"><label for="el-date">Date<input id="el-date" type="date" value="${iso(new Date())}"></label><label for="el-what">What was done<input id="el-what" maxlength="120" placeholder="e.g. Full service, 2 front tyres, MOT pass"></label></div>
-    <div class="grid2"><label for="el-miles">${veh ? "Mileage" : "Hours / reading"}<input id="el-miles" inputmode="numeric" maxlength="12"></label><label for="el-cost">Cost £ (optional)<input id="el-cost" inputmode="decimal" maxlength="12"></label></div>
-    <div class="grid2"><label for="el-by">Garage / who did it<input id="el-by" maxlength="80"></label><div style="display:flex;align-items:end"><button type="button" class="btn" id="el-add">+ Add to history</button></div></div>
-    <div class="flabel">👷 What ${eq.assignee ? esc(nameOf(eq.assignee)) : "the driver / user"} can see</div><div class="who">Shown on their Reports tab when this ${veh ? "vehicle" : "machine"} is set to them. Untick anything you'd rather keep to yourself.</div>
+    <div class="grid2">${veh || K.reading ? `<label for="el-miles">${veh ? "Mileage" : esc(K.reading)}<input id="el-miles" inputmode="numeric" maxlength="12"></label>` : ""}${insp ? "" : `<label for="el-cost">Cost £ (optional)<input id="el-cost" inputmode="decimal" maxlength="12"></label>`}</div>
+    <div class="grid2"><label for="el-by">${veh ? "Garage / who did it" : "Who did it"}<input id="el-by" maxlength="80"></label><div style="display:flex;align-items:end"><button type="button" class="btn" id="el-add">+ Add to history</button></div></div>
+    <div class="flabel">👷 What ${eq.assignee ? esc(nameOf(eq.assignee)) : veh ? "the driver" : insp ? "the person who inspects it" : "the person who uses it"} can see</div><div class="who">Shown on their Reports tab when this ${esc((K.name || "item").toLowerCase())} is set to them. Untick anything you'd rather keep to yourself.</div>
     <div class="eqshow">${(ds.length ? [["dates", "📅 Due dates"]] : [])
       .concat(
         groups.map(([g]) => ["g:" + g, g]),
@@ -526,25 +529,29 @@ function openEqDates(eq) {
       id: newId(),
       date: $("el-date").value,
       what,
-      miles: $("el-miles").value.trim(),
-      cost: $("el-cost")
-        .value.trim()
-        .replace(/[£,\s]/g, ""),
+      miles: $("el-miles") ? $("el-miles").value.trim() : "",
+      cost: ($("el-cost") ? $("el-cost").value : "").trim().replace(/[£,\s]/g, ""),
       by: $("el-by").value.trim(),
     });
-    if (veh && $("el-miles").value.trim() && $("ei-mileage") && !$("ei-mileage").value)
+    if (
+      veh &&
+      $("el-miles") &&
+      $("el-miles").value.trim() &&
+      $("ei-mileage") &&
+      !$("ei-mileage").value
+    )
       $("ei-mileage").value = $("el-miles").value.trim();
     if (/service/i.test(what) && $("ei-lastService"))
       $("ei-lastService").value =
         ukDate($("el-date").value) +
-        ($("el-miles").value.trim() ? " at " + $("el-miles").value.trim() : "");
+        ($("el-miles") && $("el-miles").value.trim() ? " at " + $("el-miles").value.trim() : "");
     if (/\bmot\b/i.test(what) && /pass/i.test(what) && $("ed-mot")) {
       const d = new Date($("el-date").value);
       d.setFullYear(d.getFullYear() + 1);
       d.setDate(d.getDate() - 1);
       $("ed-mot").value = iso(d);
     }
-    ["el-what", "el-miles", "el-cost", "el-by"].forEach((id) => ($(id).value = ""));
+    ["el-what", "el-miles", "el-cost", "el-by"].forEach((id) => $(id) && ($(id).value = ""));
     $("el-list").innerHTML = logRows();
     wire();
     toast("Added. Tap Save to keep it.");

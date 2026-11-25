@@ -64,7 +64,7 @@ window.claude={use:async n=>ns[n]||null};
   await ctx2.setOffline(true);
   await p.click('.tab[data-t="time"]');await p.click('#addH');await p.waitForTimeout(100);await p.click('#f-save');await p.waitForTimeout(300);
   await p.click('.tab[data-t="checks"]');await p.click('.actions [data-k="vehicle"]');await p.click('#c-allok');
-  await p.click('#c-items .seg[data-k="wipers"] [data-v="defect"]');await p.fill('#c-notes','Wiper split');await p.setInputFiles('#c-photos','fixtures/test.jpg');await p.click('#f-save');await p.waitForTimeout(1200);
+  await p.click('#c-items .seg[data-k="wipers"] [data-v="defect"]');await p.fill('#c-notes','Wiper split');await p.setInputFiles('#c-photos','fixtures/test.jpg');await p.locator('#c-sig').scrollIntoViewIfNeeded();await p.waitForTimeout(100);{const bb=await p.locator('#c-sig').boundingBox();await p.mouse.move(bb.x+20,bb.y+20);await p.mouse.down();await p.mouse.move(bb.x+120,bb.y+60);await p.mouse.move(bb.x+200,bb.y+30);await p.mouse.up();}await p.click('#f-save');await p.waitForTimeout(1200);
   console.log('OFFLINE',(await p.innerText('#main')).replace(/\s+/g,' ').slice(0,300));
   await p.screenshot({path:'e-offline.png'});
   await ctx2.setOffline(false);await p.waitForTimeout(1500);

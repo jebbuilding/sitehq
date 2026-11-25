@@ -36,6 +36,8 @@ import { keyDatesFor, keyTimeline, openPlanEditor, openPlanView } from "../plann
 import { planEntries } from "../planner/time-off.js";
 import { makersAll } from "../purchasing/makers.js";
 import { MAT_ST, matCount } from "../purchasing/materials-receipts.js";
+import { KINDS } from "../safety/checklists.js";
+import { openCheck } from "../safety/checks.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { WTN } from "../safety/waste-transfer-note.js";
@@ -4983,7 +4985,19 @@ function jobsView() {
     (a, b) =>
       (a.due || "9999").localeCompare(b.due || "9999") || (b.created || 0) - (a.created || 0),
   );
-  let html = `${owner ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ral-chart" type="button">🎨 RAL colours</button><button class="btn" id="glass-lib" type="button">🟦 Glass samples</button><button class="btn" id="wood-lib" type="button">🪵 Woods</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div>` : ""}
+  let html = `${
+    owner
+      ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ral-chart" type="button">🎨 RAL colours</button><button class="btn" id="glass-lib" type="button">🟦 Glass samples</button><button class="btn" id="wood-lib" type="button">🪵 Woods</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div><div class="flabel">✅ Checks &amp; inspections</div><div class="actions">${Object.entries(
+          KINDS,
+        )
+          .filter(([, K]) => (K.items || []).length)
+          .map(
+            ([k, K]) =>
+              `<button class="btn ckf-go" data-k="${esc(k)}" type="button">${esc(K.name)} ${K.inspect ? "inspection" : "check"}</button>`,
+          )
+          .join("")}</div>`
+      : ""
+  }
     <div class="seg" id="jf">${[
       ["open", "Open"],
       ["closed", "Signed off"],
@@ -5004,6 +5018,8 @@ function jobsView() {
     /* the RAL chart and the glass samples, for anything (survey/glass-colours.js) */
     if ($("ral-chart")) $("ral-chart").onclick = () => GLC.pick(GLC.show, true);
     if ($("glass-lib")) $("glass-lib").onclick = () => GLC.library();
+    /* the checks and inspections, on Forms too (James, Nov 2026: "they are not coming up in forms") */
+    document.querySelectorAll(".ckf-go").forEach((x) => (x.onclick = () => openCheck(x.dataset.k)));
     if ($("wood-lib")) $("wood-lib").onclick = () => WDS.open();
     WTN.wireJobs();
   }

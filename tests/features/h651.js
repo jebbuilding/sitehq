@@ -73,6 +73,7 @@ const soon=(m)=>{const d=new Date(Date.now()+m*60000);const p=n=>String(n).padSt
  await t.fill('#c-asset','3 t dumper').catch(async()=>{await t.selectOption('#c-asset',{label:'Other…'}).catch(()=>{})});
  await t.fill('#hic-co','Exe Hire');await t.fill('#hic-ref','H-5521');
  await t.click('#c-allok');await t.click('#hic-pre button[data-v=yes]');
+ await t.locator('#c-sig').scrollIntoViewIfNeeded();await t.waitForTimeout(100);{const bb=await t.locator('#c-sig').boundingBox();await t.mouse.move(bb.x+20,bb.y+20);await t.mouse.down();await t.mouse.move(bb.x+120,bb.y+60);await t.mouse.up();}
  await t.click('#f-save');await t.waitForTimeout(400);
  ok(/photos all round/i.test(await t.innerText('#f-err')),'it won\'t save without photos');
  await t.setInputFiles('#c-photos','fixtures/test.jpg');
