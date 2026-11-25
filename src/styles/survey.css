@@ -112,3 +112,18 @@
 .wds-addph{width:120px;min-height:90px;position:relative;overflow:hidden}
 .wds-addph input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .wds-edq{display:block;width:100%;min-height:44px;margin-top:4px}
+.glc-n{font-size:12px;opacity:.8}
+.glc-edq{display:block;width:100%;min-height:44px;margin-top:4px}
+.glc-thumbs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+.glc-th{width:56px;height:56px;padding:0;border:2px solid var(--line);border-radius:8px;overflow:hidden;background:none}
+.glc-th[aria-pressed=true]{border-color:var(--accent)}
+.glc-th img{width:100%;height:100%;object-fit:cover;display:block}
+.glc-sbig .glc-bigimg{height:260px}
+.glc-facts{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;margin:6px 0}
+.glc-notes{white-space:pre-wrap;text-align:left;margin:6px 0}
+.glc-form{display:flex;flex-direction:column;gap:10px;max-width:560px;max-height:90vh;overflow:auto}
+.glc-phs{display:flex;flex-wrap:wrap;gap:8px}
+.glc-ph{display:flex;flex-direction:column;gap:4px;width:120px;position:relative}
+.glc-ph img{width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.glc-ph .glc-phx{position:absolute;top:2px;right:2px;min-width:44px;min-height:44px;background:var(--surface);border-radius:50%}
+.glc-addph{width:120px;min-height:90px}

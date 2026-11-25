@@ -4983,7 +4983,7 @@ function jobsView() {
     (a, b) =>
       (a.due || "9999").localeCompare(b.due || "9999") || (b.created || 0) - (a.created || 0),
   );
-  let html = `${owner ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ral-chart" type="button">🎨 RAL colours</button><button class="btn" id="wood-lib" type="button">🪵 Woods</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div>` : ""}
+  let html = `${owner ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ral-chart" type="button">🎨 RAL colours</button><button class="btn" id="glass-lib" type="button">🟦 Glass samples</button><button class="btn" id="wood-lib" type="button">🪵 Woods</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div>` : ""}
     <div class="seg" id="jf">${[
       ["open", "Open"],
       ["closed", "Signed off"],
@@ -5003,6 +5003,7 @@ function jobsView() {
     GLO.wireJobs();
     /* the RAL chart and the glass samples, for anything (survey/glass-colours.js) */
     if ($("ral-chart")) $("ral-chart").onclick = () => GLC.pick(GLC.show, true);
+    if ($("glass-lib")) $("glass-lib").onclick = () => GLC.library();
     if ($("wood-lib")) $("wood-lib").onclick = () => WDS.open();
     WTN.wireJobs();
   }

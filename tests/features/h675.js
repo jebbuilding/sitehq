@@ -1,9 +1,11 @@
 // Glass colours (made-up sample): 🎨 Choose colour on coloured glass and splashbacks opens the RAL chart (search by number
-// or name); a photo of real glass added with 📷 Add a sample photo shows at the top and puts its photo on the piece;
-// a typed RAL number shows its colour; the order PDF has the colour square and the sample's photo.
+// or name); a sample of real glass (two photos, RAL number, finish) added there shows at the top and puts its photo on the piece;
+// a typed RAL number shows its colour; the order PDF has the colour square and the sample's photo. On Forms 🎨 RAL colours is
+// the chart only; 🟦 Glass samples lists the samples – tap to see the photos and details, ✎ Edit to change them.
 const fs=require('fs');const {chromium}=require('playwright');
 let src=fs.readFileSync('harness8src.js','utf8');
 const c=fs.readFileSync('crawl.js','utf8');const seedDef=c.slice(c.indexOf('const seed='),c.indexOf("src=src.replace('const store={}"));eval(seedDef.replace('const seed=','global.seed='));
+src=src.replace('upload:async(b)=>(window.__last=b,','upload:async(b)=>(window.__last=b,window.__blobs["up"+c]=b,');
 src=src.replace('const store={}, listeners=[];','const store={}, listeners=[];window.__st=store;window.__blobs={};'+seed);
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
@@ -38,15 +40,18 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  const it2=p.locator('.glo-item').nth(1);
  await it2.locator('[data-k=w]').fill('1800');await it2.locator('[data-k=h]').fill('600');
  await it2.locator('.glc-open').click();await p.waitForTimeout(400);
- await p.setInputFiles('.glc-file',{name:'sample.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});await p.waitForTimeout(500);
- await p.fill('#glc-nm','Smoked teal');await p.fill('#glc-nt','Example Glass sample, 6mm back-painted');
+ const png2=await p.evaluate(()=>{const c=document.createElement('canvas');c.width=80;c.height=60;const g=c.getContext('2d');g.fillStyle='#1d4f66';g.fillRect(0,0,80,60);return c.toDataURL('image/png').split(',')[1]});
+ await p.click('.glc-new');await p.waitForTimeout(400);
+ await p.setInputFiles('.glc-file',[{name:'sample.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')},{name:'fitted.png',mimeType:'image/png',buffer:Buffer.from(png2,'base64')}]);await p.waitForTimeout(500);
+ ok(await p.locator('.glc-ph').count()===2,'📷 Add a glass sample: two photos at once');
+ await p.locator('.glc-cap').nth(1).fill('Fitted, daylight');
+ await p.fill('#glc-nm','Smoked teal');await p.fill('#glc-ral','5021');await p.selectOption('#glc-fi','Gloss (back-painted)');await p.fill('#glc-gl','6mm toughened, back-painted');await p.fill('#glc-nt','Example Glass sample');
  await p.click('form.dimbox button[type=submit]');await p.waitForTimeout(1500);
- await p.evaluate(()=>{const x=(window.__S.glassColours||[])[0];if(x)window.__blobs[x.assetId]=window.__last;});
  const sm=Object.values(await p.evaluate(()=>window.__st)).find(v=>v&&v.kind==='glasscolour');
- ok(sm&&sm.name==='Smoked teal'&&sm.assetId,'📷 Add a sample photo keeps it with its name');
- ok(await p.locator('.glc-sp').count()===1&&/Smoked teal/.test(await p.innerText('.glc-sp')),'it shows at the top of the picker, under My glass samples');
+ ok(sm&&sm.name==='Smoked teal'&&sm.photos.length===2&&sm.photos[1].cap==='Fitted, daylight'&&sm.ral==='5021'&&sm.assetId===sm.photos[0].assetId,'saved with both photos, the RAL number, finish and glass');
+ ok(await p.locator('.glc-use').count()===1&&/Smoked teal/.test(await p.innerText('.glc-use'))&&await p.isVisible('.glc-edq'),'it shows at the top of the picker with ✎ Edit');
  await p.screenshot({path:'h675-samples.png'});
- await p.click('.glc-sp');await p.waitForTimeout(400);
+ await p.click('.glc-use');await p.waitForTimeout(400);
  ok(await it2.locator('[data-k=col]').inputValue()==='Smoked teal'&&await it2.locator('img.glc-chip').count()===1,'choosing it puts its name and photo on the piece');
  /* typed colour */
  await p.click('.glo-new[data-t=colour]');await p.waitForTimeout(300);
@@ -67,10 +72,24 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  await p.evaluate(()=>{window.__S.otab='jobs';window.render()});await p.waitForTimeout(600);
  ok(await p.isVisible('#ral-chart'),'Forms has 🎨 RAL colours');
  await p.click('#ral-chart');await p.waitForTimeout(500);
- ok(/RAL colours/.test(await p.innerText('.glc-head'))&&await p.locator('.glc-sw').count()>=210,'it opens the chart (and the glass samples)');
+ ok(/RAL colours/.test(await p.innerText('.glc-head'))&&await p.locator('.glc-sw').count()>=210&&await p.locator('.glc-use,.glc-new').count()===0,'it opens the RAL chart only – no glass samples');
  await p.fill('.glc-q','9016');await p.waitForTimeout(300);await p.click('.glc-sw');await p.waitForTimeout(400);
  ok(/RAL 9016 Traffic white/.test(await p.innerText('.glc-big'))&&await p.isVisible('.glc-cp'),'tapping a colour shows it big with its number and name, and 📋 Copy');
  await p.screenshot({path:'h675-big.png'});
+ await p.click('.glc-ok');await p.waitForTimeout(300);
+ /* 🟦 Glass samples, on their own page */
+ ok(await p.isVisible('#glass-lib'),'Forms has 🟦 Glass samples');
+ await p.click('#glass-lib');await p.waitForTimeout(500);
+ ok(await p.locator('.glc-see').count()===1&&/RAL 5021/.test(await p.innerText('.glc-see')),'it lists the sample, with its RAL number');
+ await p.click('.glc-see');await p.waitForTimeout(400);
+ ok(await p.locator('.glc-th').count()===2&&/6mm toughened/.test(await p.innerText('.glc-sbig')),'tapping it shows both photos and the details');
+ await p.click('.glc-ed');await p.waitForTimeout(400);
+ await p.locator('.glc-phx').nth(0).click();await p.waitForTimeout(300);
+ await p.selectOption('#glc-fi','Satin / acid-etched');
+ await p.click('form.dimbox button[type=submit]');await p.waitForTimeout(1200);
+ const sm2=Object.values(await p.evaluate(()=>window.__st)).find(v=>v&&v.kind==='glasscolour');
+ ok(sm2.photos.length===1&&sm2.photos[0].cap==='Fitted, daylight'&&sm2.finish==='Satin / acid-etched'&&sm2.assetId===sm2.photos[0].assetId,'✎ Edit: a photo taken out, the finish changed');
+ await p.screenshot({path:'h675-lib.png'});
  }catch(e){console.log('FAIL',e.message);bad++;}
  console.log(bad?`h675: ${bad} failed`:'h675: all passed');await b.close();process.exit(bad?1:0);
 })();

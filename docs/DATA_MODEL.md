@@ -44,7 +44,7 @@ Subcollections (`TR_COLLS`):
 | `maker` | manufacturer/supplier details (key matches built-in list or `mk-…`), `vis`/`people` |
 | `brochure` | brochure file for a maker (`maker`, `assetId`) |
 | `winsurvey` | door & window survey (`job`, `items[]` openings, `clientId`, `site`, `lastPdf`) |
-| `glasscolour` | a photo of real coloured glass for the glass order's colour picker (`name`, `note`, `assetId`) |
+| `glasscolour` | a photo of real coloured glass for the glass order's colour picker (`name`, `ral`, `glass`, `finish`, `supplier`, `price`, `note`, `photos` [{ `assetId`, `cap` }], `assetId` = the first photo); its own page, 🟦 Glass samples on Forms |
 | `woodsample` | a photo of real timber for 🪵 Woods on Forms (`name`, `wood`, `finish`, `supplier`, `price`, `traits` { hard, out, stab, stain }, `note`, `photos` [{ `assetId`, `cap` }], `assetId` = the first photo) |
 | `handover` | the client's handover pack, `ho-{client id}` (`clientId`, `site`, `items` { key: { st have/na, files[], note } }, `years`, `gtext` guarantee wording, `done` finished date, `sentAt`) |
 | `longlead` | a site's long-lead items, `ll-{site slug}` (`site`, `items` [{ id, what, weeks, stage (programme stage id), ordered (date) }]) |
