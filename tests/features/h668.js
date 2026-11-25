@@ -23,7 +23,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  await p.evaluate(()=>{window.__S.otab='jobs';window.render()});await p.waitForTimeout(500);
  ok(await p.isVisible('#glo-new')&&await p.isVisible('#ws-new'),'Job sheets has 🪟 Glass order beside 🪟 Door & window survey');
  await p.click('#glo-new');await p.waitForTimeout(500);
- ok(/Glass order GO-001/.test(await p.innerText('#sheettitle')),'a new glass order, GO-001');
+ ok(/Glass survey GO-001/.test(await p.innerText('#sheettitle')),'a new glass order, GO-001');
  const kinds=await p.$$eval('.glo-new',x=>x.map(b=>b.textContent.trim()));
  ok(['Sealed unit','handrail','Coloured glass','Splashback','Mirror','Single pane','Shelf','Something else'].every(k=>kinds.some(t=>t.includes(k))),'it can add: '+kinds.join(' / '));
  await p.selectOption('#glo-cl','c1');await p.dispatchEvent('#glo-cl','change');
@@ -51,7 +51,7 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  /* the PDF */
  await p.click('#glo-pdf');await p.waitForTimeout(3500);
  const pdf=await p.evaluate(async()=>{const d=(window.__dl||[]).slice(-1)[0];if(!d)return '';const b=new Uint8Array(await d.data.arrayBuffer());let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return d.filename+'\n'+s});
- ok(/^Glass order GO-001/.test(pdf)&&/Glass order/.test(pdf)&&/900 x 1100/.test(pdf)&&/Sealed unit/.test(pdf)&&/RAL 9010/.test(pdf)&&/Example Glass Ltd/.test(pdf),'📄 PDF: the order with the sizes, what each is and the supplier');
+ ok(/^Glass survey GO-001/.test(pdf)&&/Glass survey/.test(pdf)&&/900 x 1100/.test(pdf)&&/Sealed unit/.test(pdf)&&/RAL 9010/.test(pdf)&&/Example Glass Ltd/.test(pdf),'📄 PDF: the order with the sizes, what each is and the supplier');
  fs.writeFileSync('h668-order.pdf',Buffer.from(await p.evaluate(async()=>{const d=(window.__dl||[]).slice(-1)[0];const b=new Uint8Array(await d.data.arrayBuffer());let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return btoa(s)}),'base64'));await p.click('#pdfbar-x').catch(()=>{});await p.waitForTimeout(300);
  /* save */
  await p.click('#f-save');await p.waitForTimeout(800);

@@ -6,7 +6,7 @@ import { newId } from "../files/outbox.js";
 import { BIN_DAYS } from "../owner/deleted-items.js";
 import { shrinkImage } from "../safety/training.js";
 import { dlgEsc } from "./glass-colours.js";
-export { WDS };
+export { WDS, WOOD_LIST };
 /* James (Nov 2026): "maybe do something similar for different woods that I could upload, like the coloured glass". On
    Forms, 🪵 Woods opens: 📷 My wood samples – photos James takes of real timber (a supplier's sample, a stained finish,
    offcuts from a job), each with a name and a note, added with 📷 Add a sample photo – then the usual timbers and sheet

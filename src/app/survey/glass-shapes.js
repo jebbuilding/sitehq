@@ -47,6 +47,23 @@ const GLS = (() => {
       f: [
         ["side", "Shorter side", ["Left", "Right"]],
         ["hs", "Height of the shorter side (mm)"],
+        ["ang", "…or the angle of the slope (°) – works out the shorter side"],
+      ],
+    },
+    /* James (Nov 2026): "the glass order needs more options for panels for stairs – I need to be able to put the angle in" */
+    stair: {
+      l: "Stair panel – top and bottom follow the stairs",
+      f: [
+        ["ang", "Angle of the stairs (°)"],
+        ["side", "Rises to the", ["Right", "Left"]],
+      ],
+    },
+    rakeb: {
+      l: "Sloping bottom (level top, bottom follows the stairs)",
+      f: [
+        ["side", "Shorter side", ["Left", "Right"]],
+        ["hs", "Height of the shorter side (mm)"],
+        ["ang", "…or the angle of the slope (°) – works out the shorter side"],
       ],
     },
     arch: {
@@ -88,6 +105,24 @@ const GLS = (() => {
   ];
   const cutName = (k) => (CUTS.find((c) => c[0] === k) || CUTS[4])[1];
   const n = (v) => (v === "" || v == null || isNaN(+v) ? null : +v);
+  const tanA = (it) => {
+    const a = n(it.ang);
+    return a != null && a > 0 && a < 80 ? Math.tan((a * Math.PI) / 180) : null;
+  };
+  /* a stair panel's rise across its width (the height typed is measured plumb, the same all along) */
+  const rise = (it) => {
+    if (shapeKey(it) !== "stair") return 0;
+    const t = tanA(it);
+    return t ? Math.round((n(it.w) || 0) * t) : 0;
+  };
+  /* the box round the glass: a stair panel is its plumb height plus its rise */
+  const boxH = (it) => (n(it.h) || 0) + rise(it);
+  /* a sloping edge's shorter side: typed, or from the angle */
+  const shortSide = (it, W, H) => {
+    const t = tanA(it);
+    const v = t != null ? H - W * t : n(it.hs) == null ? H : n(it.hs);
+    return Math.min(H, Math.max(0, Math.round(v)));
+  };
   /* the glass thickness, from whichever box that kind of glass has */
   function thick(it) {
     const s = String(it.thk || it.typ || it.out || "");
@@ -97,7 +132,7 @@ const GLS = (() => {
   /* the outline in mm, from the bottom-left corner (y up) */
   function outline(it) {
     const W = n(it.w) || 0,
-      H = n(it.h) || 0;
+      H = boxH(it);
     if (!W || !H) return [];
     const k = shapeKey(it);
     const arc = (cx, cy, rx, ry, a0, a1, steps) => {
@@ -108,8 +143,41 @@ const GLS = (() => {
       }
       return out;
     };
+    if (k === "stair") {
+      const ph = n(it.h) || 0,
+        r = rise(it);
+      return it.side === "Left"
+        ? [
+            [0, r],
+            [W, 0],
+            [W, ph],
+            [0, r + ph],
+          ]
+        : [
+            [0, 0],
+            [W, r],
+            [W, r + ph],
+            [0, ph],
+          ];
+    }
+    if (k === "rakeb") {
+      const hs = shortSide(it, W, H);
+      return it.side === "Right"
+        ? [
+            [0, 0],
+            [W, H - hs],
+            [W, H],
+            [0, H],
+          ]
+        : [
+            [0, H - hs],
+            [W, 0],
+            [W, H],
+            [0, H],
+          ];
+    }
     if (k === "rake") {
-      const hs = Math.min(H, Math.max(0, n(it.hs) == null ? H : n(it.hs)));
+      const hs = shortSide(it, W, H);
       return it.side === "Right"
         ? [
             [0, 0],
@@ -223,7 +291,7 @@ const GLS = (() => {
      with the number typed – as lines in bottom-left mm */
   function dims(it) {
     const W = n(it.w) || 0,
-      H = n(it.h) || 0;
+      H = boxH(it);
     const rx = fromR(it) ? W : 0,
       ry = fromT(it) ? H : 0;
     const out = [];
@@ -245,7 +313,7 @@ const GLS = (() => {
   /* a position as typed (from the chosen corner) → from the bottom left, which the drawing and checks use */
   function at(it, x, y) {
     const W = n(it.w) || 0,
-      H = n(it.h) || 0;
+      H = boxH(it);
     return [x == null ? null : fromR(it) ? W - x : x, y == null ? null : fromT(it) ? H - y : y];
   }
   const holes = (it) => (Array.isArray(it.holes) ? it.holes : []);
@@ -276,7 +344,7 @@ const GLS = (() => {
   /* the warnings for one piece: the usual rules for toughened glass – check with the supplier */
   function checks(it) {
     const W = n(it.w),
-      H = n(it.h);
+      H = n(it.h) ? boxH(it) : null;
     const out = [];
     if (!W || !H) return out;
     const p = outline(it);
@@ -354,11 +422,23 @@ const GLS = (() => {
   function words(it) {
     const k = shapeKey(it);
     const out = [];
+    const angTxt = n(it.ang) != null ? ` (${it.ang}° slope)` : "";
     if (k === "rake")
       out.push(
-        `Sloping top: ${it.side === "Right" ? "right" : "left"} side ${it.hs || "?"}mm, other side ${it.h}mm`,
+        `Sloping top${angTxt}: ${it.side === "Right" ? "right" : "left"} side ${shortSide(it, n(it.w) || 0, n(it.h) || 0) || "?"}mm, other side ${it.h}mm`,
       );
-    else if (k === "arch")
+    else if (k === "rakeb")
+      out.push(
+        `Sloping bottom${angTxt}: ${it.side === "Right" ? "right" : "left"} side ${shortSide(it, n(it.w) || 0, n(it.h) || 0) || "?"}mm, other side ${it.h}mm, top level`,
+      );
+    else if (k === "stair") {
+      const t = tanA(it);
+      out.push(
+        t
+          ? `Stair panel: ${it.ang}° pitch, rising to the ${it.side === "Left" ? "left" : "right"}; ${it.h}mm high measured plumb, ${it.w}mm across; sloping top and bottom edges ${Math.round((n(it.w) || 0) / Math.cos(Math.atan(t)))}mm long; overall ${it.w} x ${boxH(it)}mm`
+          : "Stair panel: put in the angle of the stairs",
+      );
+    } else if (k === "arch")
       out.push(`Arched top: ${it.hs || "?"}mm at the sides, ${it.h}mm at the top of the arch`);
     else if (k === "tri")
       out.push(
@@ -391,7 +471,7 @@ const GLS = (() => {
   /* ---- the drawing in the form ---- */
   function svg(it) {
     const W = n(it.w),
-      H = n(it.h);
+      H = n(it.h) ? boxH(it) : null;
     if (!W || !H) return '<div class="who">Put the width and height in to see the drawing.</div>';
     const BW = 300,
       BH = 190,
@@ -514,7 +594,7 @@ const GLS = (() => {
   /* ---- the drawing on the PDF: in a box at x, y (top-left), w × h mm ---- */
   function pdfDraw(doc, it, bx, by, bw, bh, RED) {
     const W = n(it.w),
-      H = n(it.h);
+      H = n(it.h) ? boxH(it) : null;
     if (!W || !H) return;
     const P = 7;
     const s = Math.min((bw - 2 * P) / W, (bh - 2 * P) / H);
@@ -583,7 +663,7 @@ const GLS = (() => {
   /* how tall the drawing comes out in a box bw wide and at most mh tall (drawn from the top of the box) */
   function pdfHeight(it, bw, mh) {
     const W = n(it.w),
-      H = n(it.h);
+      H = n(it.h) ? boxH(it) : null;
     if (!W || !H) return 0;
     const s = Math.min((bw - 14) / W, (mh - 14) / H);
     return H * s + 9;

@@ -61,8 +61,9 @@ import { typeFor } from "../sites/trade-sites.js";
 import { GLC } from "./glass-colours.js";
 import { GLO } from "./glass-order.js";
 import { GLS_PATTERNS } from "./glass-shapes.js";
+import { ralFind } from "./ral-colours.js";
 import { WST } from "./survey-track.js";
-import { WDS } from "./wood-samples.js";
+import { WDS, WOOD_LIST } from "./wood-samples.js";
 export { DWS, jobDraft, jobsView, myName, openJob, openJobEditor, renderJobDetail, siteFilePicker };
 const DWS = (() => {
   const g = (id) => document.getElementById("wsx-" + id);
@@ -1081,7 +1082,7 @@ const DWS = (() => {
       w.push("Bi-fold leaf over 1200 wide or 3000 high – check with the supplier");
     if (leaves.some((l) => /^S[LR]$/.test(l.op)) && o.kind === "door" && (s.W > 6000 || s.H > 2500))
       w.push("Sliding door over 6000 × 2500");
-    if (/Alumin/.test(o.mat) && /Other RAL|Door:/.test(o.out + o.in))
+    if (/Alumin/.test(o.mat) && /Other RAL|RAL \d{4} |Door:/.test(o.out + o.in))
       w.push("RAL / special colour – allow about 8 weeks");
     return w;
   }
@@ -1370,16 +1371,60 @@ const DWS = (() => {
     "tweath",
     "tcons",
   ];
+  /* James (Nov 2026): "doors that are set for wood need different settings – they can choose from the wood types and
+     the picture changes colour; the cills and sides and all dimensions need to be adjustable and the picture changes to
+     suit". The timber list adds every timber from 🪵 Woods and James's own wood samples; unless it's painted, the drawing
+     is the wood's colour. Its sizes (o.td, mm): frame (jambs and head), stiles, top and bottom rails, cill horns. */
+  const timWoods = () => {
+    const base = TIM.tspec.filter((x) => !/^Other/.test(x));
+    const key = (n) => n.toLowerCase().split(" (")[0];
+    const more = WOOD_LIST.filter(
+      (w) =>
+        w.group !== "Sheet materials" && !base.some((b) => b.toLowerCase().includes(key(w.name))),
+    ).map((w) => w.name);
+    const mine = (S.woodSamples || []).map((x) => "My sample: " + x.name);
+    return [...base, ...more, ...mine, "Other (see note)"];
+  };
+  const timHex = (o) => {
+    let n = String(o.tspec || TIM.tspec[0]);
+    if (/^My sample: /.test(n)) {
+      const x = (S.woodSamples || []).find((y) => "My sample: " + y.name === n);
+      n = (x && (x.wood || x.name)) || n;
+    }
+    const lo = n.toLowerCase();
+    const w =
+      WOOD_LIST.find((y) => y.name.toLowerCase() === lo) ||
+      WOOD_LIST.find((y) => lo.includes(y.name.toLowerCase().split(" (")[0]));
+    return w ? w.hex : "";
+  };
+  /* painted (or primed, or a solid colour) shows the paint colour; stained, oiled, lacquered or bare shows the wood */
+  const timNat = (o) => !/spray painted|opaque|Primed|Dual/i.test(o.tfin || TIM.tfin[0]);
+  const TD_K = [
+    ["fr", "Frame – jambs & head"],
+    ["st", "Stiles (sides of the door / sash)"],
+    ["tr", "Top rail"],
+    ["br", "Bottom rail"],
+    ["hn", "Cill horns, each side"],
+  ];
+  const tdOf = (o) => {
+    const d = o.kind === "door";
+    return Object.assign(
+      { fr: 70, st: d ? 95 : 57, tr: d ? 95 : 57, br: d ? 200 : 85, hn: 0 },
+      o.td || {},
+    );
+  };
   const timList = (o, k) =>
-    k === "tstyle"
-      ? o.kind === "door"
-        ? TIM.dstyle
-        : TIM.wstyle
-      : k === "tiron"
+    k === "tspec"
+      ? timWoods()
+      : k === "tstyle"
         ? o.kind === "door"
-          ? TIM.diron
-          : TIM.wiron
-        : TIM[k];
+          ? TIM.dstyle
+          : TIM.wstyle
+        : k === "tiron"
+          ? o.kind === "door"
+            ? TIM.diron
+            : TIM.wiron
+          : TIM[k];
   const isTim = (o) => /Timber/.test(o.mat || "") && o.kind !== "garage" && o.kind !== "roof";
   const MFGL = {
     prof: [
@@ -1716,7 +1761,12 @@ const DWS = (() => {
     [/oak|wood/i, "#a86a2f"],
     [/grey|gray/i, "#8d9195"],
   ];
-  const wsShade = (name) => (WS_SHADES.find(([re]) => re.test(name || "")) || [0, "#f7f7f5"])[1];
+  const wsShade = (name) => {
+    /* a RAL number anywhere in the colour (picked from the chart with Other RAL…) is drawn in that colour */
+    const r = /\bRAL\s*\d{4}\b/i.test(name || "") ? ralFind(name) : null;
+    if (r) return r.hex;
+    return (WS_SHADES.find(([re]) => re.test(name || "")) || [0, "#f7f7f5"])[1];
+  };
   const WS_HW = {
     White: "#f4f4f2",
     Chrome: "#c9ccd0",
@@ -1731,7 +1781,8 @@ const DWS = (() => {
   };
   /* the palette for one opening: its frame colour (also doors and solid panels), lines that show on it, handles */
   function wsLook(o, C, sc) {
-    const ff = wsShade(o.out);
+    const tim = isTim(o);
+    const ff = (tim && timNat(o) && timHex(o)) || wsShade(o.out);
     return {
       ...C,
       sc,
@@ -1740,6 +1791,7 @@ const DWS = (() => {
       det: wsLight(ff) ? C.frame : "rgba(255,255,255,.4)",
       hw: WS_HW[o.hw] || (wsLight(ff) ? "#c9ccd0" : "#e8e8e6"),
       swing: o.swing,
+      td: tim ? tdOf(o) : null,
     };
   }
   /* a glazing bar: the frame colour with a thin dark edge so it shows on the glass */
@@ -1902,15 +1954,28 @@ const DWS = (() => {
     const slab = /^Door:/.test(fill),
       opens = /^(HL|HR|TH|BH|TTL|TTR|SV|SL|SR|DL|DR|FL|FR|CP)$/.test(op);
     /* anything that opens has its own sash (a door its leaf frame); fixed glass sits in the frame behind a bead */
-    let sw = 0;
+    let sw = 0,
+      swT = 0,
+      swB = 0;
     if (C.sc && opens && !slab) {
-      sw = Math.max(1.4, Math.min((/^D[LR]$/.test(op) ? 95 : 55) * C.sc, Math.min(W, H) * 0.16));
+      if (C.td) {
+        /* a wooden door or sash: its own stile, top rail and bottom rail sizes */
+        const k = Math.min(W, H) * 0.3;
+        sw = Math.max(1.4, Math.min(C.td.st * C.sc, k));
+        swT = Math.max(1.4, Math.min(C.td.tr * C.sc, k));
+        swB = Math.max(1.4, Math.min(C.td.br * C.sc, H * 0.35));
+      } else
+        sw =
+          swT =
+          swB =
+            Math.max(1.4, Math.min((/^D[LR]$/.test(op) ? 95 : 55) * C.sc, Math.min(W, H) * 0.16));
       s += `<rect x="${X}" y="${Y}" width="${W}" height="${H}" fill="${C.ff}" stroke="${C.frame}" stroke-width=".7"/>`;
-    } else if (C.sc && !slab) sw = Math.max(0.6, Math.min(10 * C.sc, Math.min(W, H) * 0.05));
+    } else if (C.sc && !slab)
+      sw = swT = swB = Math.max(0.6, Math.min(10 * C.sc, Math.min(W, H) * 0.05));
     const GX = X + sw,
-      GY = Y + sw,
+      GY = Y + swT,
       GW = W - 2 * sw,
-      GH = H - 2 * sw;
+      GH = H - swT - swB;
     const sty = /ribbed/i.test(fill) ? "rib" : /flat/i.test(fill) ? "flat" : "raised";
     const pn = (a, b, c, d) => {
       let r = `<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="${C.panel}" stroke="${C.frame}" stroke-width=".8"/>`;
@@ -1977,7 +2042,9 @@ const DWS = (() => {
       ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${C.ff}" stroke="${C.frame}" stroke-width="1"/>`
       : `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${C.bg}" stroke="${C.frame}" stroke-width="1.8"/>`;
     const t = C.sc
-        ? Math.max(1.4, Math.min(40 * sc, Math.min(w, h) * 0.06))
+        ? C.td
+          ? Math.max(1.4, Math.min(C.td.fr * sc, Math.min(w, h) * 0.2))
+          : Math.max(1.4, Math.min(40 * sc, Math.min(w, h) * 0.06))
         : Math.max(2.5, Math.min(w, h) * 0.035),
       cws = colWs(fwmm, fr.cols),
       tot = cws.reduce((a, b) => a + b, 0) || 1,
@@ -2100,7 +2167,8 @@ const DWS = (() => {
       A = addMm(o),
       nf = fws.length,
       bay = nf > 1,
-      cillH = hasCill(o) ? 4 : 0;
+      cillMm = hasCill(o) && isTim(o) ? cillHt(o) : 0,
+      cillH = hasCill(o) && !cillMm ? 4 : 0;
     const planH = bay ? Math.round(H * 0.2) : 0,
       jg = bay ? Math.max(3, W * 0.014) : 0,
       dimH = dims ? (bay ? fs * 3.1 : fs * 2.1) + (addMm(o).any ? fs * 1.3 : 0) : 0,
@@ -2112,10 +2180,12 @@ const DWS = (() => {
       1e-4,
       Math.min(
         (W - 2 * pad - jg * (nf - 1) - lw) / Math.max(totW, 1),
-        (H - 2 * pad - planH - dimH - topH - cillH) / Math.max(totH, 1),
+        (H - 2 * pad - planH - dimH - topH - cillH) / Math.max(totH + cillMm, 1),
       ),
     );
     C = wsLook(o, C, sc);
+    const cillPx = cillMm ? Math.max(3, cillMm * sc) : cillH,
+      hornPx = C.td && cillPx ? (+C.td.hn || 0) * sc : 0;
     /* words on the drawing (the bi-fold note) only on the full-size drawing, not the little design pictures */
     C.lbl = dims;
     const ww = totW * sc + jg * (nf - 1),
@@ -2132,8 +2202,8 @@ const DWS = (() => {
     o.frames.forEach((fr, i) => {
       const w = fws[i] * sc;
       s += frameSvg(o, fr, fws[i], fx, fy, w, fpx, sc, C);
-      if (cillH)
-        s += `<rect x="${fx - 2}" y="${fy + fpx + cillH}" width="${w + 4}" height="1.4" fill="#000" opacity=".14"/><rect x="${fx - 2}" y="${fy + fpx}" width="${w + 4}" height="${cillH}" fill="${C.ff}" stroke="${C.frame}" stroke-width=".7"/>`;
+      if (cillPx)
+        s += `<rect x="${fx - 2 - hornPx}" y="${fy + fpx + cillPx}" width="${w + 4 + 2 * hornPx}" height="1.4" fill="#000" opacity=".14"/><rect x="${fx - 2 - hornPx}" y="${fy + fpx}" width="${w + 4 + 2 * hornPx}" height="${cillPx}" fill="${C.ff}" stroke="${C.frame}" stroke-width=".7"/>`;
       if (i < nf - 1) {
         s += `<rect x="${fx + w}" y="${fy}" width="${jg}" height="${fpx}" fill="${C.ff}" stroke="${C.frame}" stroke-width=".7"/>`;
         if (dims)
@@ -2142,7 +2212,7 @@ const DWS = (() => {
       fx += w + jg;
     });
     if (dims) {
-      let by = y0 + hh + cillH + fs * 0.4;
+      let by = y0 + hh + cillPx + fs * 0.4;
       const FW = fws.reduce((a, b) => a + b, 0),
         fx1 = F0 + FW * sc + jg * (nf - 1);
       if (bay) {
@@ -2369,6 +2439,16 @@ const DWS = (() => {
       tim: isTim(o)
         ? [
             [o.tspec || TIM.tspec[0], 1],
+            (() => {
+              const t = tdOf(o);
+              return [
+                `Sizes (mm): frame ${t.fr}, ${o.kind === "door" ? "door" : "sash"} stiles ${t.st}, top rail ${t.tr}, bottom rail ${t.br}` +
+                  (hasCill(o)
+                    ? `, cill ${cillHt(o)} high${+t.hn ? ", horns " + t.hn + " each side" : ""}`
+                    : ""),
+                1,
+              ];
+            })(),
             [o.tstyle || ""],
             o.tmould && [o.tmould + " mouldings"],
             [o.tfin || TIM.tfin[0], 1],
@@ -2476,9 +2556,12 @@ const DWS = (() => {
   }
   function gallery(o) {
     const vh = o.kind === "bay" ? 110 : 92;
-    if (!thumbCache[o.kind])
-      thumbCache[o.kind] = PRE[o.kind].map((p, i) => {
-        const t = blank(o.kind);
+    const look = (t) =>
+      Object.assign(t, { mat: o.mat, out: o.out, tspec: o.tspec, tfin: o.tfin, td: o.td });
+    const ck = [o.kind, o.mat, o.out, o.tspec, o.tfin, JSON.stringify(o.td || {})].join("|");
+    if (!thumbCache[ck])
+      thumbCache[ck] = PRE[o.kind].map((p, i) => {
+        const t = look(blank(o.kind));
         t.gap = 0;
         t.cill = "No cill";
         applyPreset(t, o.kind, i);
@@ -2489,7 +2572,7 @@ const DWS = (() => {
       `<button type="button" class="wsgb wsdraw" data-draw="1"><span style="font-size:26px">✏️</span>Draw it myself</button>` +
       mine
         .map((d) => {
-          const t = blank(o.kind);
+          const t = look(blank(o.kind));
           t.gap = 0;
           t.cill = "No cill";
           applyCustom(t, d);
@@ -2499,7 +2582,7 @@ const DWS = (() => {
       PRE[o.kind]
         .map(
           (p, i) =>
-            `<button type="button" class="wsgb" data-i="${i}" aria-pressed="${o.pk === o.kind + ":" + i}">${thumbCache[o.kind][i]}${esc(p[0])}</button>`,
+            `<button type="button" class="wsgb" data-i="${i}" aria-pressed="${o.pk === o.kind + ":" + i}">${thumbCache[ck][i]}${esc(p[0])}</button>`,
         )
         .join("");
     g("d-name").textContent = usingSketch(o)
@@ -2711,7 +2794,7 @@ const DWS = (() => {
     const gar = o.kind === "garage";
     g("gar").hidden = g("gar-l").hidden = g("gar2").hidden = !gar;
     g("fb").hidden = g("fb-l").hidden = gar;
-    g("tim").hidden = g("tim-l").hidden = !isTim(o);
+    g("tim").hidden = g("tim-l").hidden = g("tdim").hidden = !isTim(o);
     {
       const el = g("g-ggear").value || "";
       const m = g("g-gmotor");
@@ -2773,6 +2856,10 @@ const DWS = (() => {
       const L = timList(o, k);
       fillSel("t-" + k, L, L.includes(o[k]) ? o[k] : L[0]);
     });
+    {
+      const td = tdOf(o);
+      TD_K.forEach(([k]) => (g("td-" + k).value = td[k]));
+    }
     g("d-num").value = o.num || "";
     g("d-slab").value = o.slab || "";
     g("d-gdes").value = o.gdes || "";
@@ -3033,7 +3120,11 @@ const DWS = (() => {
     o.lock = g("c-lock").value;
     FIDS.forEach((k) => (o[k] = g("f-" + k).value));
     DIDS.forEach((k) => (o[k] = g("d-" + k).value));
-    if (isTim(o)) TIDS.forEach((k) => (o[k] = g("t-" + k).value));
+    if (isTim(o)) {
+      TIDS.forEach((k) => (o[k] = g("t-" + k).value));
+      o.td = {};
+      TD_K.forEach(([k]) => (o.td[k] = Math.max(0, +g("td-" + k).value || 0)));
+    }
     o.num = g("d-num").value;
     o.slab = g("d-slab").value.trim();
     o.gdes = g("d-gdes").value.trim();
@@ -3221,6 +3312,7 @@ const DWS = (() => {
      <div class="wsrow" id="wsx-gar2" style="border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)"><span class="wslbl" style="grid-column:1/-1">⚡ Electric supply for the door</span>${sel("g-gelec", "Power at the motor position")}${sel("g-gby", "Who sorts the electrics")}<label class="wf" style="grid-column:1/-1">Where it runs from / notes<input id="wsx-g-gnote" placeholder="e.g. spur off garage lighting circuit, 13A socket on ceiling by motor"></label></div>
      <div class="wslbl" id="wsx-tim-l">🪵 Wooden window / door</div>
      <div class="wsrow" id="wsx-tim">${sel("t-tspec", "Timber")}${sel("t-tstyle", "Style")}${sel("t-tmould", "Moulding")}${sel("t-tfin", "Finish")}${sel("t-tglz", "Glazing")}${sel("t-tgm", "Glazing method")}${sel("t-tbars", "Glazing bars")}${sel("t-tcill", "Cill")}${sel("t-tiron", "Ironmongery")}${sel("t-tifin", "Ironmongery finish")}${sel("t-tweath", "Weather seals")}${sel("t-tcons", "Listed / conservation")}</div>
+     <div class="wsrow" id="wsx-tdim"><span class="wslbl" style="grid-column:1/-1">📐 Timber sizes (mm) – the drawing follows them</span>${TD_K.map(([k, l]) => `<label class="wf">${l}<input class="mm" id="wsx-td-${k}" inputmode="numeric"></label>`).join("")}<span class="who" style="grid-column:1/-1">The cill's height and projection are with the sizes above.</span></div>
      <div class="wslbl" id="wsx-fb-l">Frame &amp; build <button type="button" class="btn wssm wsx-br" style="margin-left:8px">📖 Brochures</button></div>
      <div class="wsrow" id="wsx-fb">${sel("f-sys", "System / range (supplier)")}${sel("f-prof", "Frame profile")}${sel("f-bead", "Glazing bead")}${sel("f-outer", "Frame outer")}${sel("f-reinf", "Reinforcing")}${sel("f-vents", "Trickle vents")}${sel("f-spacer", "Spacer bar")}${sel("f-gas", "Gas fill")}${sel("f-drain", "Drainage")}</div>
      <div class="wslbl">Extras</div><div class="wschips" id="wsx-extras"></div>
@@ -3584,7 +3676,33 @@ const DWS = (() => {
         refresh();
       }),
     );
-    ["o-loc", "f-qty", "m-rev", "o-notes", "d-num", "m-cillh", "m-cilld"].forEach((id) =>
+    /* Other RAL… opens the RAL chart; the colour picked is used (and drawn) */
+    ["c-out", "c-in"].forEach((id) =>
+      g(id).addEventListener("change", () => {
+        if (g(id).value !== "Other RAL…") return;
+        GLC.pick((v) => {
+          fillSel(id, COLS, v.col);
+          read();
+          vis();
+          refresh();
+          gallery(items[cur]);
+        }, true);
+      }),
+    );
+    /* the design pictures follow the colour and the wood */
+    ["c-out", "o-mat", "t-tspec", "t-tfin"].forEach((id) =>
+      g(id).addEventListener("change", () => setTimeout(() => gallery(items[cur]), 0)),
+    );
+    [
+      "o-loc",
+      "f-qty",
+      "m-rev",
+      "o-notes",
+      "d-num",
+      "m-cillh",
+      "m-cilld",
+      ...TD_K.map(([k]) => "td-" + k),
+    ].forEach((id) =>
       g(id).addEventListener("input", () => {
         read();
         refresh();
@@ -5178,7 +5296,7 @@ function jobsView() {
   );
   let html = `${
     owner
-      ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass order</button><button class="btn" id="ral-chart" type="button">🎨 RAL colours</button><button class="btn" id="glass-lib" type="button">🟦 Glass samples</button><button class="btn" id="wood-lib" type="button">🪵 Woods</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div><div class="flabel">✅ Checks &amp; inspections</div><div class="actions">${Object.entries(
+      ? `<div class="actions"><button class="btn primary" id="newJob" type="button">+ New job sheet</button><button class="btn hv" id="newSnag" type="button">+ New snag list</button><button class="btn" id="ws-new" type="button">🪟 Door &amp; window survey</button><button class="btn" id="glo-new" type="button">🪟 Glass survey</button><button class="btn" id="ral-chart" type="button">🎨 RAL colours</button><button class="btn" id="glass-lib" type="button">🟦 Glass samples</button><button class="btn" id="wood-lib" type="button">🪵 Woods</button><button class="btn" id="ws-broch" type="button">📖 Brochures &amp; suppliers</button><button class="btn" id="wt-new" type="button">♻️ Waste transfer note</button></div><div class="flabel">✅ Checks &amp; inspections</div><div class="actions">${Object.entries(
           KINDS,
         )
           .filter(([, K]) => (K.items || []).length)

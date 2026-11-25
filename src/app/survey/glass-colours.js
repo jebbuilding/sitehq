@@ -162,7 +162,7 @@ const GLC = (() => {
       const L = recs().filter((x) => matches(x, q));
       return `<div class="dimbox glc-box glc-lib" role="dialog" aria-label="Glass samples"><div class="glc-head"><b>🟦 Glass samples</b><button type="button" class="btn glc-x">Close</button></div>
         <input type="search" class="glc-q" placeholder="Search: e.g. grey, satin, 9005" value="${esc(q)}" aria-label="Search glass samples">
-        <div class="who">Photos of real coloured glass – supplier samples, jobs you've fitted. They're offered first when you choose a colour on a glass order.</div>
+        <div class="who">Photos of real coloured glass – supplier samples, jobs you've fitted. They're offered first when you choose a colour on a glass survey.</div>
         <div class="glc-grid">${L.map((x) => sampleTile(x, "glc-see")).join("")}
           <button type="button" class="glc-add glc-new">📷 Add a glass sample</button></div>
         ${q && !L.length ? '<div class="who">Nothing matches that.</div>' : ""}</div>`;

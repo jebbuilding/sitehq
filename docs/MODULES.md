@@ -6,9 +6,9 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 318 files, 5876 KB, 138689 lines.
-- 2832 names declared at the top level (the shared scope); 1461 of them are used by a file other than the one that declares them.
-- 3361 file-to-file dependencies (file A uses at least one name from file B).
+- 318 files, 5884 KB, 138887 lines.
+- 2832 names declared at the top level (the shared scope); 1462 of them are used by a file other than the one that declares them.
+- 3362 file-to-file dependencies (file A uses at least one name from file B).
 - 29 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 272 files, 12 files depend on each other in a loop (directly or through other files); the other 34 files are outside any loop.
 
@@ -2730,9 +2730,9 @@ UK MAP DATA: a built-in outline map of the UK for when map pictures can't load
 
 DOOR & WINDOW SURVEY: designs, sizes, add-ons → schedule / order request PDF
 
-- 6169 lines, 236 KB. Declares 15 names, 8 used elsewhere.
+- 6287 lines, 241 KB. Declares 15 names, 8 used elsewhere.
 - **Used elsewhere:** `myName` (21), `openJob` (8), `DWS` (5), `jobsView` (2), `jobDraft` (1), `openJobEditor` (1), `renderJobDetail` (1), `siteFilePicker` (1)
-- **Uses names from 47 files:** `core/helpers.js` (10), `sites/job-sheets.js` (8), `core/sheet.js` (7), `photos/photos.js` (7), `files/files.js` (6), `files/in-app-files.js` (4), `owner/owner.js` (4), `planner/board.js` (4), `core/company-names.js` (3), `core/state.js` (3), `clients/clients.js` (2), `core/fields.js` (2), `core/viewer.js` (2), `drawing/paving.js` (2), `files/outbox.js` (2), `purchasing/materials-receipts.js` (2), `sales/letterhead-setup.js` (2), `sites/job-details.js` (2), `clients/address-book.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/tabs-week.js` (1), `drawing/drawings-tab.js` (1), `drawing/trade-drawings.js` (1), `files/cut-outs.js` (1), `files/print.js` (1), `files/send-to.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `planner/time-off.js` (1), `purchasing/makers.js` (1), `safety/checklists.js` (1), `safety/checks.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `safety/waste-transfer-note.js` (1), `sites/plans-specs.js` (1), `sites/project-pages.js` (1), `sites/snag-quick.js` (1), `sites/summary.js` (1), `sites/trade-sites.js` (1), `survey/glass-colours.js` (1), `survey/glass-order.js` (1), `survey/glass-shapes.js` (1), `survey/survey-track.js` (1), `survey/wood-samples.js` (1)
+- **Uses names from 48 files:** `core/helpers.js` (10), `sites/job-sheets.js` (8), `core/sheet.js` (7), `photos/photos.js` (7), `files/files.js` (6), `files/in-app-files.js` (4), `owner/owner.js` (4), `planner/board.js` (4), `core/company-names.js` (3), `core/state.js` (3), `clients/clients.js` (2), `core/fields.js` (2), `core/viewer.js` (2), `drawing/paving.js` (2), `files/outbox.js` (2), `purchasing/materials-receipts.js` (2), `sales/letterhead-setup.js` (2), `sites/job-details.js` (2), `survey/wood-samples.js` (2), `clients/address-book.js` (1), `clients/portal.js` (1), `clients/quick-enquiry.js` (1), `clients/stages-planner.js` (1), `core/tabs-week.js` (1), `drawing/drawings-tab.js` (1), `drawing/trade-drawings.js` (1), `files/cut-outs.js` (1), `files/print.js` (1), `files/send-to.js` (1), `owner/company-details.js` (1), `owner/deleted-items.js` (1), `planner/time-off.js` (1), `purchasing/makers.js` (1), `safety/checklists.js` (1), `safety/checks.js` (1), `safety/site-inductions.js` (1), `safety/training.js` (1), `safety/waste-transfer-note.js` (1), `sites/plans-specs.js` (1), `sites/project-pages.js` (1), `sites/snag-quick.js` (1), `sites/summary.js` (1), `sites/trade-sites.js` (1), `survey/glass-colours.js` (1), `survey/glass-order.js` (1), `survey/glass-shapes.js` (1), `survey/ral-colours.js` (1), `survey/survey-track.js` (1)
 - **Used by 34 files**
 
 ### `survey/glass-colours.js`
@@ -2757,7 +2757,7 @@ GLASS ORDER: sealed units, toughened handrail panels, coloured glass, splashback
 
 GLASS SHAPES: a glass piece's shape, holes and socket / switch cut-outs – a drawing to scale and the checks
 
-- 609 lines, 26 KB. Declares 2 names, 2 used elsewhere.
+- 689 lines, 28 KB. Declares 2 names, 2 used elsewhere.
 - **Used elsewhere:** `GLS_PATTERNS` (2), `GLS` (1)
 - **Uses names from 1 files:** `core/helpers.js` (1)
 - **Used by 2 files**
@@ -2767,9 +2767,9 @@ GLASS SHAPES: a glass piece's shape, holes and socket / switch cut-outs – a dr
 RAL COLOURS: the RAL Classic chart (number, name, an on-screen colour) for picking glass colours
 
 - 241 lines, 6.5 KB. Declares 4 names, 3 used elsewhere.
-- **Used elsewhere:** `RAL_FAMILIES` (1), `RAL_LIST` (1), `ralFind` (1)
+- **Used elsewhere:** `ralFind` (2), `RAL_FAMILIES` (1), `RAL_LIST` (1)
 - **Uses names from 0 files:** none
-- **Used by 1 files**
+- **Used by 2 files**
 
 ### `survey/survey-track.js`
 
@@ -2784,8 +2784,8 @@ SURVEY TRACK: a door & window survey's progress – sent, followed up, client's 
 
 WOOD SAMPLES: common timbers and sheet materials, and photos of real wood samples to choose from
 
-- 369 lines, 20 KB. Declares 4 names, 1 used elsewhere.
-- **Used elsewhere:** `WDS` (1)
+- 369 lines, 20 KB. Declares 4 names, 2 used elsewhere.
+- **Used elsewhere:** `WDS` (1), `WOOD_LIST` (1)
 - **Uses names from 7 files:** `files/files.js` (3), `core/helpers.js` (2), `core/state.js` (1), `files/outbox.js` (1), `owner/deleted-items.js` (1), `safety/training.js` (1), `survey/glass-colours.js` (1)
 - **Used by 1 files**
 

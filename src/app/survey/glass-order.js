@@ -382,7 +382,7 @@ const GLO = (() => {
     };
     const draw = () => {
       openSheet(
-        `<h3 id="sheettitle">🪟 Glass order ${esc(r.ref)}</h3>
+        `<h3 id="sheettitle">🪟 Glass survey ${esc(r.ref)}</h3>
         <div class="who">Each piece of glass, its sizes and what it needs. 📄 PDF makes the order to send to the glass supplier.</div>
         <div class="glo-g2"><label>For (client)<select id="glo-cl"><option value="">– not for a client –</option>${(
           S.clients || []
@@ -435,7 +435,7 @@ const GLO = (() => {
             await keepSupplier(r);
             await save(r);
             closeForm();
-            toast("Glass order " + r.ref + " saved");
+            toast("Glass survey " + r.ref + " saved");
             render();
           } catch (e) {
             showErr("Couldn't save. Check your connection.");
@@ -611,7 +611,7 @@ const GLO = (() => {
           await S.db.doc("todos/" + r.id).delete();
           S.glassOrders = (S.glassOrders || []).filter((x) => x.id !== r.id);
           closeForm();
-          toast("Glass order deleted · in Setup › Deleted items for " + BIN_DAYS + " days");
+          toast("Glass survey deleted · in Setup › Deleted items for " + BIN_DAYS + " days");
           render();
         });
     };
@@ -698,7 +698,7 @@ const GLO = (() => {
     doc.setTextColor(17, 17, 17);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(19);
-    doc.text("Glass order", M, y + 4);
+    doc.text("Glass survey", M, y + 4);
     y += 10;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
@@ -884,7 +884,7 @@ const GLO = (() => {
     });
     lhFinish(doc, LH);
     const fn =
-      `Glass order ${r.ref} ${clean(siteLabel(r.site) || (c && c.name) || "")}`
+      `Glass survey ${r.ref} ${clean(siteLabel(r.site) || (c && c.name) || "")}`
         .replace(/[^\w\s-]/g, "")
         .trim() + ".pdf";
     const blob = doc.output("blob");
@@ -908,7 +908,7 @@ const GLO = (() => {
         `${i + 1}. ${it.room ? it.room + ": " : ""}${it.qty} x ${(TYPES[it.type] || TYPES.other).l} – ${it.w} x ${it.h} mm${specOf(it) ? " – " + specOf(it) : ""}${it.notes ? " – " + it.notes : ""}`,
     );
     const body = `Hello${r.supName ? " " + r.supName : ""},\n\nPlease could you quote and supply the glass below (order ${r.ref}).\n\n${lines.join("\n")}\n\n${nPieces(r)} pieces, ${tot(r).toFixed(2)} m² in all.\nDelivery: ${r.deliver}${r.deliver === "Deliver to site" && r.site ? " – " + (siteFull(r.site) || r.site) : ""}\nNeeded by: ${r.needBy ? shortDay(r.needBy) : "as soon as you can"}${r.notes ? "\n\n" + r.notes : ""}\n\nThe order is attached as a PDF.\n\nThanks,\n${bossName()}\n${coData().name || ""}`;
-    const subject = `Glass order ${r.ref}${r.site ? " – " + siteLabel(r.site) : ""}`;
+    const subject = `Glass survey ${r.ref}${r.site ? " – " + siteLabel(r.site) : ""}`;
     let how = "";
     try {
       const file = new File([out.blob], out.fn, { type: "application/pdf" });
@@ -940,7 +940,7 @@ const GLO = (() => {
   /* ---- lists: Job sheets, and a client's job page ---- */
   function rowHtml(r) {
     const c = clientOf(r);
-    return `<button type="button" class="glo-row" data-id="${esc(r.id)}"><span>🪟 <b>${esc(r.ref || "Glass order")}</b> ${r.status === "sent" ? '<span class="tag">Sent</span>' : '<span class="tag">Draft</span>'}<br><span class="who">${esc([r.site ? siteLabel(r.site) : "", c ? c.name : "", r.supName, nPieces(r) + " piece" + (nPieces(r) === 1 ? "" : "s") + " · " + tot(r).toFixed(2) + " m²"].filter(Boolean).join(" · "))}</span></span><span class="who">${esc(r.date ? shortDay(r.date) : "")} ›</span></button>`;
+    return `<button type="button" class="glo-row" data-id="${esc(r.id)}"><span>🪟 <b>${esc(r.ref || "Glass survey")}</b> ${r.status === "sent" ? '<span class="tag">Sent</span>' : '<span class="tag">Draft</span>'}<br><span class="who">${esc([r.site ? siteLabel(r.site) : "", c ? c.name : "", r.supName, nPieces(r) + " piece" + (nPieces(r) === 1 ? "" : "s") + " · " + tot(r).toFixed(2) + " m²"].filter(Boolean).join(" · "))}</span></span><span class="who">${esc(r.date ? shortDay(r.date) : "")} ›</span></button>`;
   }
   function wireRows(root) {
     root.querySelectorAll(".glo-row").forEach(
@@ -958,7 +958,7 @@ const GLO = (() => {
     if (!ownerMode()) return "";
     const L = recs();
     if (!L.length) return "";
-    return `<div class="day"><div class="dayh"><span>🪟 Glass orders</span><span class="sum">${L.length}</span></div><div class="glo-list" id="glo-jl">${L.slice(0, 30).map(rowHtml).join("")}</div></div>`;
+    return `<div class="day"><div class="dayh"><span>🪟 Glass surveys</span><span class="sum">${L.length}</span></div><div class="glo-list" id="glo-jl">${L.slice(0, 30).map(rowHtml).join("")}</div></div>`;
   }
   function wireJobs() {
     if ($("glo-jl")) wireRows($("glo-jl"));
@@ -967,7 +967,7 @@ const GLO = (() => {
   function clientHtml(c) {
     if (!ownerMode() || !c) return "";
     const L = recs().filter((r) => r.clientId === c.id);
-    return `<div class="flabel" style="margin-top:12px">🪟 Glass orders${L.length ? " (" + L.length + ")" : ""}</div><div class="glo-list" id="glo-cl-list">${L.map(rowHtml).join("")}</div><div class="actions"><button type="button" class="btn" id="glo-cnew">🪟 Glass order</button></div>`;
+    return `<div class="flabel" style="margin-top:12px">🪟 Glass surveys${L.length ? " (" + L.length + ")" : ""}</div><div class="glo-list" id="glo-cl-list">${L.map(rowHtml).join("")}</div><div class="actions"><button type="button" class="btn" id="glo-cnew">🪟 Glass order</button></div>`;
   }
   function wireClient(c) {
     if ($("glo-cl-list")) wireRows($("glo-cl-list"));
