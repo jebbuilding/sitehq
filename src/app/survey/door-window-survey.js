@@ -732,6 +732,17 @@ const DWS = (() => {
     "Solid panel – ribbed",
     ...DOORD,
   ];
+  /* a side panel's fill (James, Nov 2026: "side panels could be a mixture of glass and panelling"): glass, a panel,
+     or glass over a panel of a set height (c.ph mm from the bottom, c.pst its style) */
+  const SPF = [
+    "Glass",
+    "Solid panel – flat",
+    "Solid panel – raised",
+    "Solid panel – ribbed",
+    "Glass over panel",
+    "Half glazed – flat panel",
+    "Half glazed – raised panel",
+  ];
   const ANG = [90, 100, 110, 120, 130, 135, 140, 145, 150, 155, 160, 165, 168, 170, 175];
   const ANGN = {
     90: "box / corner",
@@ -752,6 +763,7 @@ const DWS = (() => {
     ["Bay pole – round", 0, "Between frames"],
     ["Bay pole – square", 0, "Between frames"],
     ["Box bay corner post 90°", 0, "Between frames"],
+    ["Corner post 90°", 0, "Between frames"],
     ["Variable angle bay coupler", 0, "Between frames"],
     ["Coupling mullion", 0, "Between frames"],
     ["Add-on – top", 0, "Head"],
@@ -1727,6 +1739,7 @@ const DWS = (() => {
       panel: ff,
       det: wsLight(ff) ? C.frame : "rgba(255,255,255,.4)",
       hw: WS_HW[o.hw] || (wsLight(ff) ? "#c9ccd0" : "#e8e8e6"),
+      swing: o.swing,
     };
   }
   /* a glazing bar: the frame colour with a thin dark edge so it shows on the glass */
@@ -1783,10 +1796,13 @@ const DWS = (() => {
           hgh = Math.max(3, Math.min(H * 0.06, 100 * sc)),
           hgx = L ? X - hgw / 2 : X + W - hgw / 2;
         let q = `<rect x="${hx - dpw / 2}" y="${hy - dph * 0.35}" width="${dpw}" height="${dph}" rx="${dpw / 2}" fill="${hw}" ${e}/><rect x="${dir < 0 ? hx - dlw : hx}" y="${hy - lt}" width="${dlw}" height="${lt * 1.6}" rx="${lt * 0.8}" fill="${hw}" ${e}/><circle cx="${hx}" cy="${hy + dph * 0.38}" r="${dpw * 0.28}" fill="${C.frame}"/>`;
-        [0.08, 0.5, 0.9].forEach(
-          (fy) =>
-            (q += `<rect x="${hgx}" y="${Y + H * fy - hgh / 2}" width="${hgw}" height="${hgh}" fill="${hw}" ${e}/>`),
-        );
+        /* viewed from outside, a door that opens in has its hinges on the inside – only one that opens out shows them
+           (James, Nov 2026) */
+        if (C.swing !== "Opens in")
+          [0.08, 0.5, 0.9].forEach(
+            (fy) =>
+              (q += `<rect x="${hgx}" y="${Y + H * fy - hgh / 2}" width="${hgw}" height="${hgh}" fill="${hw}" ${e}/>`),
+          );
         return q;
       }
     }
@@ -2009,6 +2025,28 @@ const DWS = (() => {
         RB = by;
       }
     }
+    /* bi-folds (James, Nov 2026): leaves that fold the same way are one set; their hinge marks alternate as the leaves
+       concertina (the one by the stacking side hinges on the frame), and an arrow shows which way they fold and stack */
+    const bfOp = {},
+      bfRuns = [],
+      colX = [];
+    for (let k = 0; k < fr.cols.length;) {
+      const op = fr.cols[k].op;
+      if (op !== "FL" && op !== "FR") {
+        k++;
+        continue;
+      }
+      let e = k;
+      while (e + 1 < fr.cols.length && fr.cols[e + 1].op === op) e++;
+      const n = e - k + 1;
+      for (let j = 0; j < n; j++) {
+        const fromStack = op === "FL" ? j : n - 1 - j;
+        const atStack = fromStack % 2 === 0;
+        bfOp[k + j] = (op === "FL") === atStack ? "FL" : "FR";
+      }
+      bfRuns.push([k, e, op]);
+      k = e + 1;
+    }
     fr.cols.forEach((c, k) => {
       const cw = (cws[k] / tot) * inner,
         top = RT,
@@ -2027,8 +2065,28 @@ const DWS = (() => {
           my = ty;
         }
       }
-      s += cell(cx, my, cw, bot - my, c.op, c.fill, c.st, C, isObs(o, c, "main"));
+      const sop = bfOp[k] || c.op;
+      if (c.fill === "Glass over panel") {
+        const ph = Math.max(6, Math.min(bot - my - 10, (+c.ph || 600) * sc));
+        s +=
+          cell(cx, my, cw, bot - my - ph, sop, "Glass", c.st, C, isObs(o, c, "main")) +
+          cell(cx, bot - ph, cw, ph, "F", "Solid panel – " + (c.pst || "flat"), false, C, false);
+      } else s += cell(cx, my, cw, bot - my, sop, c.fill, c.st, C, isObs(o, c, "main"));
+      colX[k] = [cx, cw];
       cx += cw;
+    });
+    bfRuns.forEach(([a, e, op]) => {
+      const x1 = colX[a][0] + 6,
+        x2 = colX[e][0] + colX[e][1] - 6;
+      if (x2 - x1 < 24) return;
+      const yy = RT + (RB - RT) * 0.88,
+        hs = Math.min(9, (x2 - x1) * 0.12),
+        from = op === "FL" ? x2 : x1,
+        to = op === "FL" ? x1 : x2,
+        dx = op === "FL" ? hs : -hs;
+      s += `<path d="M${from} ${yy}L${to} ${yy}M${to + dx} ${yy - hs * 0.55}L${to} ${yy}L${to + dx} ${yy + hs * 0.55}" fill="none" stroke="${C.dim}" stroke-width="1.6" stroke-linecap="round"/>`;
+      if (C.lbl && C.swing && C.swing !== "N/A")
+        s += `<text x="${(x1 + x2) / 2}" y="${yy - Math.max(3, hs * 0.7)}" text-anchor="middle" font-family="Arial,sans-serif" font-weight="600" font-size="${Math.max(6, Math.min(11, (RB - RT) * 0.04))}" fill="${C.dim}">folds ${C.swing === "Opens out" ? "out" : "in"} to the ${op === "FL" ? "left" : "right"}</text>`;
     });
     return s;
   }
@@ -2058,6 +2116,8 @@ const DWS = (() => {
       ),
     );
     C = wsLook(o, C, sc);
+    /* words on the drawing (the bi-fold note) only on the full-size drawing, not the little design pictures */
+    C.lbl = dims;
     const ww = totW * sc + jg * (nf - 1),
       hh = totH * sc,
       x0 = (W - ww + lw) / 2,
@@ -2114,7 +2174,11 @@ const DWS = (() => {
     if (bay) {
       const ang = o.frames.slice(0, -1).map((f) => +f.ang || 180),
         Tt = (ang.reduce((a, b) => a + (180 - b), 0) * Math.PI) / 180;
-      let dr = Tt / 2;
+      /* a bay is drawn evenly either side; a door with a corner post keeps the door straight across */
+      let dr =
+        o.kind === "door"
+          ? (ang.slice(0, spLeaf(o)).reduce((a, b) => a + (180 - b), 0) * Math.PI) / 180
+          : Tt / 2;
       const p = [[0, 0]];
       fws.forEach((fw, i) => {
         const l = p[p.length - 1];
@@ -2219,6 +2283,21 @@ const DWS = (() => {
           o.bead && o.bead !== "N/A" && [o.bead, /Ovolo|Sculpt/.test(o.bead)],
           [o.outer, o.outer !== "Standard outer"],
           [o.reinf, o.reinf !== "Reinforcing where required"],
+          ...(door
+            ? o.frames.flatMap((f) =>
+                f.cols
+                  .filter((c) => c.op === "F" && (c.fill !== "Glass" || +c.w))
+                  .map((c) => [
+                    "Side panel" +
+                      (+c.w ? " " + c.w + "mm" : "") +
+                      ": " +
+                      (c.fill === "Glass over panel"
+                        ? `glass over a ${c.pst || "flat"} panel ${+c.ph || 600}mm high`
+                        : String(c.fill).toLowerCase()),
+                    1,
+                  ]),
+              )
+            : []),
           bay && [`${s.fws.length} frames coupled: ${s.fws.join(" / ")}`, 1],
           bay && [
             "Angles " +
@@ -2428,6 +2507,88 @@ const DWS = (() => {
       : o.name + (o.pk ? "" : " (adjusted)");
     g("gal").querySelector(".wschev").textContent = PRE[o.kind].length + " designs ▾";
   }
+  /* James (Nov 2026): "I need to be able to add in side panels, corner posts" – on a door, each fixed pane is a side
+     panel with its own width and fill; + Side panel adds one either side; + Corner post adds a side panel round a 90°
+     corner (a frame of its own, joined by a corner post). The door stays the same size – the overall width grows,
+     unless the opening's been measured. */
+  const spLeaf = (o) => {
+    const i = o.frames.findIndex((f) => f.cols.some((c) => /^(DL|DR|FL|FR|SL|SR)$/.test(c.op)));
+    return i < 0 ? 0 : i;
+  };
+  function spHtml(o) {
+    const L = spLeaf(o);
+    let n = 0;
+    const rows = [];
+    o.frames.forEach((f, fi) =>
+      f.cols.forEach((c, ci) => {
+        if (c.op !== "F") return;
+        n++;
+        const li = f.cols.findIndex((x) => x.op !== "F");
+        const where =
+          fi < L
+            ? "round the left corner"
+            : fi > L
+              ? "round the right corner"
+              : li < 0
+                ? ""
+                : ci < li
+                  ? "left"
+                  : "right";
+        const a = `data-spf="${fi}" data-spc="${ci}"`;
+        rows.push(`<div class="wsfhd ws-sp"><span class="wslbl" style="flex:1 1 100%">Side panel ${n}${where ? " · " + where : ""}</span>
+        <label class="wf">Width (mm, 0 = share)<input class="mm" ${a} data-spk="w" value="${+c.w || 0}" inputmode="numeric"></label>
+        <label class="wf">Glass or panel<select ${a} data-spk="fill">${(SPF.includes(c.fill) ? SPF : [c.fill, ...SPF]).map((x) => `<option${x === c.fill ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+        ${c.fill === "Glass over panel" ? `<label class="wf">Panel height from the bottom (mm)<input class="mm" ${a} data-spk="ph" value="${+c.ph || 600}" inputmode="numeric"></label><label class="wf">Panel style<select ${a} data-spk="pst">${["flat", "raised", "ribbed"].map((x) => `<option${x === (c.pst || "flat") ? " selected" : ""}>${x}</option>`).join("")}</select></label>` : ""}
+        <button type="button" class="btn wssm" data-act="spdel" data-f="${fi}" data-c="${ci}">✕ Take it off</button></div>`);
+      }),
+    );
+    return `<div class="wsfhd"><span class="wslbl" style="flex:1 1 100%">Side panels &amp; corner posts</span></div>${rows.join("")}
+      <div class="wsfoot"><button type="button" class="btn wssm" data-act="spaddl">+ Side panel left</button><button type="button" class="btn wssm" data-act="spaddr">+ Side panel right</button><button type="button" class="btn wssm" data-act="cornl">+ Corner post, left</button><button type="button" class="btn wssm" data-act="cornr">+ Corner post, right</button><span class="who">A corner post joins a side panel at 90°, e.g. round a porch.</span></div>`;
+  }
+  function spAct(o, a, fi, ci) {
+    const P = () => ({ w: 400, tl: 0, tlop: "F", op: "F", fill: "Glass", st: false });
+    const grow = (mm) => {
+      if (!o.sized) o.sw = Math.max(0, (+o.sw || 0) + mm);
+    };
+    if (a === "spaddl" || a === "spaddr") {
+      const f = o.frames[spLeaf(o)];
+      if (a === "spaddl") f.cols.unshift(P());
+      else f.cols.push(P());
+      if (o.frames.length > 1) f.w = (+f.w || 0) + 400;
+      grow(400);
+    }
+    if (a === "cornl" || a === "cornr") {
+      if (o.frames.length === 1) o.frames[0].w = frameWs(o)[0];
+      const nf = { w: 400, ang: 180, cols: [P()] };
+      if (a === "cornl") {
+        nf.ang = 90;
+        o.frames.unshift(nf);
+      } else {
+        o.frames[o.frames.length - 1].ang = 90;
+        o.frames.push(nf);
+      }
+      o.addons = o.addons || [];
+      o.addons.push({ t: "Corner post 90°", mm: 0, pos: "Between frames" });
+      grow(400);
+    }
+    if (a === "spdel") {
+      const f = o.frames[fi];
+      const c = f && f.cols[ci];
+      if (!c) return;
+      if (f.cols.length > 1) {
+        f.cols.splice(ci, 1);
+        if (o.frames.length > 1) f.w = Math.max(0, (+f.w || 0) - (+c.w || 0));
+        grow(-(+c.w || 0));
+      } else if (o.frames.length > 1) {
+        o.frames.splice(fi, 1);
+        o.frames[o.frames.length - 1].ang = 180;
+        const k = (o.addons || []).findIndex((x) => x.t === "Corner post 90°");
+        if (k >= 0) o.addons.splice(k, 1);
+        grow(-(+f.w || 0));
+        if (o.frames.length === 1 && !o.sized) o.sw = (+o.frames[0].w || 0) + 2 * (+o.gap || 0);
+      }
+    }
+  }
   function dzRender() {
     const o = items[cur],
       multi = o.kind === "bay" || o.frames.length > 1;
@@ -2451,6 +2612,7 @@ const DWS = (() => {
       ${f.cols.length > 1 ? `<label class="wf" style="flex-basis:200px">Mullion positions (mm, comma between)<input class="mm" ${fa} data-k="mulv" placeholder="${(mf === "right" ? mp.map((p) => frameWs(o)[fi] - p).reverse() : mp).join(", ")}" inputmode="decimal"></label><label class="wf">Measured from<select ${fa} data-k="mulFrom"><option value="left"${mf === "left" ? " selected" : ""}>the left</option><option value="right"${mf === "right" ? " selected" : ""}>the right</option></select></label>` : ""}</div>`;
       }
     });
+    if (o.kind === "door") h += spHtml(o);
     if (o.kind === "bay")
       h += `<div class="wsfoot"><button type="button" class="btn wssm" data-act="addf">+ Frame</button><span class="who">Frame widths are the made sizes. Angles are the inside angle between frames.</span></div>`;
     g("dz").innerHTML = h;
@@ -3537,6 +3699,31 @@ const DWS = (() => {
       }
       refresh();
     });
+    /* a side panel's width, fill and panel height */
+    g("dz").addEventListener("input", (e) => {
+      const t = e.target,
+        k = t.dataset.spk;
+      if (!k) return;
+      const o = items[cur],
+        c = (o.frames[+t.dataset.spf] || { cols: [] }).cols[+t.dataset.spc];
+      if (!c) return;
+      if (k === "w") {
+        const f = o.frames[+t.dataset.spf],
+          was = +c.w || 0,
+          now = +t.value || 0;
+        c.w = now;
+        if (o.frames.length > 1) f.w = Math.max(0, (+f.w || 0) + now - was);
+        if (!o.sized && was) {
+          o.sw = Math.max(0, (+o.sw || 0) + now - was);
+          g("m-sw").value = o.sw;
+        }
+      } else if (k === "ph") c.ph = +t.value || 0;
+      else c[k] = t.value;
+      o.pk = "";
+      g("d-name").textContent = o.name + " (adjusted)";
+      if (k === "fill") dzRender();
+      refresh();
+    });
     g("dz").addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]");
       if (!b) return;
@@ -3556,6 +3743,10 @@ const DWS = (() => {
         });
       }
       if (a === "delf") o.frames.splice(fi, 1);
+      if (/^(spaddl|spaddr|cornl|cornr|spdel)$/.test(a)) {
+        spAct(o, a, fi, +b.dataset.c);
+        g("m-sw").value = o.sw;
+      }
       o.pk = "";
       g("d-name").textContent = o.name + " (adjusted)";
       dzRender();
