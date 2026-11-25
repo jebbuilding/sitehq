@@ -1101,8 +1101,22 @@ function ownerSetup() {
         .join("")}</div></div>
       <label for="es-day" id="es-dayl">Weekly check due on<select id="es-day">${[1, 2, 3, 4, 5, 6, 0].map((d) => `<option value="${d}" ${+(eq.dueDay ?? 1) === d ? "selected" : ""}>${DOW[d]}</option>`).join("")}</select></label>
       <div class="who">They get a pop-up and a reminder each time they open the app, from the due day until the check is done. The app can't send notifications to a phone that's closed.</div>
-      <div class="flabel">✅ What's checked</div><div class="who">Untick anything that doesn't apply to this ${esc(K.name.toLowerCase())}. To change the questions for every one, go to Setup › Your forms › Built-in checks.</div>
-      <div class="ck-items">${K.items.map(([k, l]) => `<label class="tick"><input type="checkbox" class="es-it" data-k="${esc(k)}" ${(eq.off || []).includes(k) ? "" : "checked"}> <span>${esc(l)}</span></label>`).join("")}</div>
+      <div class="flabel">✅ What's checked</div><div class="who">For this ${esc(K.name.toLowerCase())}: ✓ to check it, N/A to have it already marked N/A on the form, Off to leave it off. To change the questions for every one, go to Setup › Your forms › Built-in checks.</div>
+      <div class="ck-items">${K.items
+        .map(([k, l]) => {
+          const st = (eq.off || []).includes(k) ? "off" : (eq.na || []).includes(k) ? "na" : "on";
+          return `<div class="ck-row"><span>${esc(l)}</span><span class="seg ck-seg es-it" data-k="${esc(k)}">${[
+            ["on", "✓"],
+            ["na", "N/A"],
+            ["off", "Off"],
+          ]
+            .map(
+              ([v, t]) =>
+                `<button type="button" data-v="${v}" aria-pressed="${st === v}">${t}</button>`,
+            )
+            .join("")}</span></div>`;
+        })
+        .join("")}</div>
       ${formFoot(false, "Save")}`,
             async () => {
               const freq = $("es-freq").querySelector('[aria-pressed="true"]').dataset.v,
@@ -1112,8 +1126,13 @@ function ownerSetup() {
                 return;
               }
               /* the questions that don't apply to this one (James, Nov 2026: "there's no check boxes for the check") */
+              const stOf = (x) =>
+                (x.querySelector('[aria-pressed="true"]') || { dataset: {} }).dataset.v;
               const off = [...document.querySelectorAll(".es-it")]
-                .filter((x) => !x.checked)
+                .filter((x) => stOf(x) === "off")
+                .map((x) => x.dataset.k);
+              const na = [...document.querySelectorAll(".es-it")]
+                .filter((x) => stOf(x) === "na")
                 .map((x) => x.dataset.k);
               if (off.length && off.length === K.items.length) {
                 showErr("Leave at least one thing ticked to check.");
@@ -1122,7 +1141,7 @@ function ownerSetup() {
               try {
                 await S.db
                   .doc("equipment/" + eq.id)
-                  .update({ assignee: who, freq, dueDay: +$("es-day").value, off });
+                  .update({ assignee: who, freq, dueDay: +$("es-day").value, off, na });
                 closeForm();
                 toast("Saved");
                 render();
@@ -1132,6 +1151,15 @@ function ownerSetup() {
             },
             null,
           );
+          document
+            .querySelectorAll(".es-it button")
+            .forEach(
+              (x) =>
+                (x.onclick = () =>
+                  x.parentNode
+                    .querySelectorAll("button")
+                    .forEach((y) => y.setAttribute("aria-pressed", String(y === x)))),
+            );
           const sync = () => {
             $("es-dayl").hidden =
               $("es-freq").querySelector('[aria-pressed="true"]').dataset.v !== "weekly";

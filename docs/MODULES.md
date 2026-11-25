@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 318 files, 5884 KB, 138887 lines.
-- 2832 names declared at the top level (the shared scope); 1462 of them are used by a file other than the one that declares them.
+- 318 files, 5886 KB, 138939 lines.
+- 2833 names declared at the top level (the shared scope); 1462 of them are used by a file other than the one that declares them.
 - 3362 file-to-file dependencies (file A uses at least one name from file B).
 - 29 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 272 files, 12 files depend on each other in a loop (directly or through other files); the other 34 files are outside any loop.
@@ -1263,7 +1263,7 @@ MENUS: each firm names, orders and hides its own menu sections and pages
 
 OWNER
 
-- 1244 lines, 57 KB. Declares 27 names, 19 used elsewhere.
+- 1272 lines, 58 KB. Declares 27 names, 19 used elsewhere.
 - **Used elsewhere:** `nameOf` (105), `teamIds` (51), `allTeam` (49), `crewIds` (13), `allIds` (4), `roleOf` (4), `sheetOf` (4), `startPreview` (4), `roleShort` (3), `teamPlusMe` (3), `weekEntries` (3), `checkDetail` (2), `roleTag` (2), `companyOf` (1), `openStopFor` (1), `ownerInvoices` (1), `ownerPhotos` (1), `ownerSetup` (1), `ownerTime` (1)
 - **Uses names from 55 files:** `core/helpers.js` (15), `core/state.js` (5), `timesheets/filters.js` (5), `timesheets/overtime.js` (5), `core/sheet.js` (4), `photos/photos.js` (4), `safety/expiry-dates.js` (4), `sites/job-details.js` (4), `core/fields.js` (3), `owner/company-details.js` (3), `timesheets/not-checked-out.js` (3), `timesheets/time.js` (3), `timesheets/working-day.js` (3), `core/company-names.js` (2), `core/tabs-week.js` (2), `drawing/trade-drawings.js` (2), `files/files.js` (2), `owner/backup.js` (2), `owner/today-desk.js` (2), `people/reminders.js` (2), `purchasing/invoices.js` (2), `safety/check-items.js` (2), `safety/checklists.js` (2), `sales/doc-style.js` (2), `sales/letterhead-setup.js` (2), `sales/terms-setup.js` (2), `timesheets/all-weeks.js` (2), `timesheets/chase-hours.js` (2), `timesheets/my-time.js` (2), `timesheets/plan-check.js` (2), `timesheets/stray-hours.js` (2), `timesheets/week-close.js` (2), `core/data.js` (1), `core/dictation.js` (1), `core/viewer.js` (1), `files/outbox.js` (1), `owner/deletion-record.js` (1), `owner/menus.js` (1), `owner/reports.js` (1), `owner/trade-look.js` (1), `owner/week-wrap.js` (1), `people/access.js` (1), `people/portal-access.js` (1), `photos/doc-scan.js` (1), `planner/kit-out.js` (1), `planner/plant-care.js` (1), `purchasing/materials-receipts.js` (1), `safety/form-builder.js` (1), `sites/roll-call.js` (1), `timesheets/check-reasons.js` (1), `timesheets/day-work.js` (1), `timesheets/monthly-sheet.js` (1), `timesheets/pay-summary.js` (1), `timesheets/phone-sync.js` (1), `timesheets/quick-week.js` (1)
 - **Used by 118 files**
@@ -1938,7 +1938,7 @@ CHECKLISTS
 
 CHECKS
 
-- 272 lines, 12 KB. Declares 7 names, 2 used elsewhere.
+- 296 lines, 13 KB. Declares 8 names, 2 used elsewhere.
 - **Used elsewhere:** `openCheck` (4), `checkCard` (1)
 - **Uses names from 13 files:** `core/sheet.js` (9), `core/helpers.js` (7), `safety/hire-check.js` (7), `photos/photos.js` (5), `safety/checklists.js` (4), `core/fields.js` (3), `core/state.js` (3), `files/files.js` (2), `files/outbox.js` (2), `owner/owner.js` (2), `core/company-names.js` (1), `core/tabs-week.js` (1), `safety/site-inductions.js` (1)
 - **Used by 4 files**

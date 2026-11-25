@@ -53,11 +53,21 @@ function ckItemsFor(kind, asset) {
   const off = (eq && eq.off) || [];
   return K.items.filter(([k]) => !off.includes(k));
 }
+/* the questions James has set to N/A for this one in Setup – they start as N/A on a new check */
+function ckNaFor(kind, asset) {
+  const a = String(asset || "")
+    .trim()
+    .toLowerCase();
+  const eq = (S.equipment || []).find(
+    (e) => e.kind === kind && (e.name || "").trim().toLowerCase() === a,
+  );
+  return (eq && eq.na) || [];
+}
 const ckItemsHtml = (list) =>
   list
     .map(
       ([k, l]) => `<div class="citem"><span>${esc(l)}</span>
-      <span class="seg" data-k="${k}"><button type="button" data-v="ok">OK</button><button type="button" data-v="defect">Defect</button><button type="button" data-v="na">N/A</button></span></div>`,
+      <span class="seg ck-seg" data-k="${k}"><button type="button" data-v="ok" aria-label="OK">✓</button><button type="button" data-v="defect">Defect</button><button type="button" data-v="na">N/A</button></span></div>`,
     )
     .join("");
 function openCheck(kind, c0, presetAsset) {
@@ -66,6 +76,12 @@ function openCheck(kind, c0, presetAsset) {
   setEditing(c0 || null);
   setFormType("check");
   checkVals = Object.assign({}, (c && c.items) || {});
+  /* James (Nov 2026): "I need to be able to tick or tick N/A" – ✓ or N/A on each question, ✓ or N/A for the rest */
+  if (!c)
+    ckNaFor(
+      kind,
+      presetAsset || lastOf(S.mine.checks.map(ck), (x) => x.kind === kind, "asset"),
+    ).forEach((k) => (checkVals[k] = "na"));
   const last = presetAsset || lastOf(S.mine.checks.map(ck), (x) => x.kind === kind, "asset");
   openSheet(
     `<h3 id="sheettitle">${esc(K.name)} ${K.inspect ? "inspection" : "check"}</h3>
@@ -73,7 +89,7 @@ function openCheck(kind, c0, presetAsset) {
     ${K.reading ? `<label for="c-read">${K.reading}<input id="c-read" type="number" inputmode="decimal" min="0" step="any" placeholder="${kind === "digger" ? "e.g. 2450" : "Odometer"}" value="${esc(c ? c.reading : "")}"></label>` : "<span></span>"}</div>
     ${pickField("c-asset", K.asset || (kind === "vehicle" ? "Vehicle" : kind === "digger" ? "Digger" : kind === "trailer" ? "Trailer" : "Machine"), [...new Set(equipOf(kind).concat(K.sites ? siteNames() : []))], c ? c.asset : last, K.ph)}
     ${K.hire ? hicFields(c) : ""}
-    <div class="checkhead"><span class="flabel" style="margin:0">Checks</span><button type="button" class="pillbtn" id="c-allok">Mark the rest OK</button></div>
+    <div class="checkhead"><span class="flabel" style="margin:0">Checks</span><span class="ck-all"><button type="button" class="pillbtn" id="c-allok">✓ Tick the rest</button><button type="button" class="pillbtn" id="c-allna">N/A the rest</button></span></div>
     <div id="c-items">${ckItemsHtml(ckItemsFor(kind, c ? c.asset : last))}</div>
     <label for="c-notes">${K.hire ? "Damage or faults – describe every mark, dent or fault you can see" : "Defects or damage (describe anything marked Defect)"}<textarea id="c-notes" maxlength="${K.hire ? 1500 : 500}">${esc(c ? c.notes : "")}</textarea></label>
     ${c && c.photos && c.photos.length ? `<div><div class="flabel">Photos already added</div><div class="thumbs">${c.photos.map((id) => `<img src="${blobUrl(id)}" alt="Defect photo">`).join("")}</div></div>` : ""}
@@ -112,6 +128,8 @@ function openCheck(kind, c0, presetAsset) {
   const assetEl = $("c-asset");
   if (assetEl)
     assetEl.addEventListener("change", () => {
+      if (!c)
+        ckNaFor(kind, pickVal("c-asset")).forEach((k) => checkVals[k] || (checkVals[k] = "na"));
       $("c-items").innerHTML = ckItemsHtml(ckItemsFor(kind, pickVal("c-asset")));
       $("form")
         .querySelectorAll("#c-items .seg")
@@ -131,6 +149,12 @@ function openCheck(kind, c0, presetAsset) {
   $("c-allok").onclick = () => {
     ckItemsFor(kind, pickVal("c-asset")).forEach(([k]) => {
       if (!checkVals[k]) checkVals[k] = "ok";
+    });
+    paint();
+  };
+  $("c-allna").onclick = () => {
+    ckItemsFor(kind, pickVal("c-asset")).forEach(([k]) => {
+      if (!checkVals[k]) checkVals[k] = "na";
     });
     paint();
   };

@@ -23,11 +23,11 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  ok(/Who inspects it\?/.test(sh)&&/How often must it be inspected\?/.test(sh)&&!/drive|driver/i.test(sh),'it asks who inspects it and how often – nothing about driving');
  const n=await p.locator('.es-it').count();
  ok(n>=10&&/What's checked/.test(sh),'✅ What\'s checked lists the '+n+' questions as tick boxes');
- await p.uncheck('.es-it[data-k=brick]');
+ await p.click('.es-it[data-k=brick] [data-v=off]');await p.click('.es-it[data-k=weather] [data-v=na]');
  await p.click('#es-freq [data-v=weekly]');await p.selectOption('#es-who','emp1');
  await p.screenshot({path:'h695-setup.png'});
  await p.click('#f-save');await p.waitForTimeout(700);
- ok(JSON.stringify(await p.evaluate(()=>window.__st['equipment/sc1'].off))==='["brick"]','unticking brick guards is kept on this scaffold');
+ ok(JSON.stringify(await p.evaluate(()=>window.__st['equipment/sc1'].off))==='["brick"]'&&JSON.stringify(await p.evaluate(()=>window.__st['equipment/sc1'].na))==='["weather"]','brick guards Off and weather damage N/A are kept on this scaffold');
  await p.click('.eqdates[data-id=sc1]');await p.waitForTimeout(400);
  const det=await p.innerText('#sheet');
  ok(/Inspections, changes & repairs/.test(det)&&!/Hours \/ reading|Cost £|Garage|MOT/.test(det)&&/Who did it/.test(det)&&!(await p.isVisible('#el-miles'))&&!(await p.isVisible('#el-cost')),'Details: no reading, cost, garage or MOT – just inspections and who did it');
@@ -44,6 +44,8 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
  await p.dispatchEvent('#c-asset','change');await p.waitForTimeout(300);
  const ks=await p.$$eval('#c-items .seg',x=>x.map(e=>e.dataset.k));
  ok(!ks.includes('brick')&&ks.includes('guards'),'the form for this scaffold leaves out brick guards');
+ ok(await p.getAttribute('#c-items .seg[data-k=weather] [data-v=na]','aria-pressed')==='true','weather damage starts as N/A');
+ ok(await p.innerText('#c-items .seg[data-k=guards] [data-v=ok]')==='✓'&&await p.isVisible('#c-allna'),'each question has a ✓ tick, Defect and N/A, and N/A the rest');
  await p.click('#c-allok');
  await p.click('#f-save');await p.waitForTimeout(400);
  ok(/Sign it with your finger/.test(await p.innerText('#f-err')),'it won\'t submit until it\'s signed');
