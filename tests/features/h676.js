@@ -42,6 +42,11 @@ page_src=page_src.replace('const S = {\n  db: null','const S=window.__S={db:null
  let sm=Object.entries(await p.evaluate(()=>window.__st)).find(([k,v])=>v&&v.kind==='woodsample');
  ok(sm&&sm[1].name==='Oak, light oak stain'&&sm[1].photos.length===2&&sm[1].photos[1].cap==='Oiled'&&sm[1].traits.hard==='Hard'&&sm[1].wood==='European oak'&&await p.locator('.wds-sp').count()===1,'saved with both photos (with captions), the wood, finish, traits and notes');
  ok(/📷 2/.test(await p.innerText('.wds-sp')),'the sample shows it has 2 photos');
+ ok(await p.isVisible('.wds-edq'),'each sample has ✎ Edit right on the list');
+ await p.click('.wds-edq');await p.waitForTimeout(400);
+ ok(await p.inputValue('#wds-nm')==='Oak, light oak stain','✎ Edit on the list opens it to change');
+ await p.screenshot({path:'h676-list.png'});
+ await p.click('.wds-c');await p.waitForTimeout(300);
  await p.click('.wds-sp');await p.waitForTimeout(400);
  const big=await p.innerText('.wds-big');
  ok(await p.locator('.wds-th').count()===2&&/European oak/.test(big)&&/Durable outdoors/.test(big)&&/darker in sunlight/.test(big)&&/Raw/.test(big),'tapping it shows the photos, the traits and the notes');

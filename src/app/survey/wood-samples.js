@@ -101,7 +101,7 @@ const WDS = (() => {
         <div class="flabel">📷 My wood samples <span class="who">photos of real timber</span></div>
         <div class="glc-grid">${S2.map((x) => {
           const ph = photosOf(x);
-          return `<span class="glc-samp"><button type="button" class="glc-sp wds-sp" data-id="${esc(x.id)}">${ph.length ? `<img src="${blobUrl(ph[0].assetId)}" alt="">` : '<span class="wds-noph">🪵</span>'}<b>${esc(x.name)}</b>${sumOf(x) || x.note ? `<span>${esc(sumOf(x) || x.note)}</span>` : ""}${ph.length > 1 ? `<span class="wds-n">📷 ${ph.length}</span>` : ""}</button></span>`;
+          return `<span class="glc-samp"><button type="button" class="glc-sp wds-sp" data-id="${esc(x.id)}">${ph.length ? `<img src="${blobUrl(ph[0].assetId)}" alt="">` : '<span class="wds-noph">🪵</span>'}<b>${esc(x.name)}</b>${sumOf(x) || x.note ? `<span>${esc(sumOf(x) || x.note)}</span>` : ""}${ph.length > 1 ? `<span class="wds-n">📷 ${ph.length}</span>` : ""}</button><button type="button" class="pillbtn wds-edq" data-id="${esc(x.id)}" aria-label="Edit ${esc(x.name)}">✎ Edit</button></span>`;
         }).join("")}
           <button type="button" class="glc-add wds-new">📷 Add a wood sample</button></div>
         ${WOOD_GROUPS.map((g) => {
@@ -148,6 +148,14 @@ const WDS = (() => {
           }),
       );
       d.querySelector(".wds-new").onclick = () => edit(null, redraw);
+      /* ✎ Edit right on each sample, so it can be changed without opening it first */
+      d.querySelectorAll(".wds-edq").forEach(
+        (b) =>
+          (b.onclick = () => {
+            const x = findRec(b.dataset.id);
+            if (x) edit(x, redraw);
+          }),
+      );
     };
     d.innerHTML = draw("");
     document.body.appendChild(d);
