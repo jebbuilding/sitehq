@@ -6,10 +6,11 @@ import { render } from "../core/tabs-week.js";
 import { uploadErr, uploadFile } from "../files/files.js";
 import { openFile } from "../files/in-app-files.js";
 import { newId } from "../files/outbox.js";
+import { MKCSV } from "./makers-csv.js";
 import { scheduleMkSync, whoSeesDlg } from "./merchants.js";
 import { supSendSheet } from "./sup-send.js";
 import { DWS } from "../survey/door-window-survey.js";
-export { makersAll, makersView, wireMakers };
+export { MK_CATS, makersAll, makersView, wireMakers };
 const MK_CATS = [
   "Window & door systems",
   "Composite doors",
@@ -57,7 +58,7 @@ function makersAll() {
       out[k] = {
         key: k,
         m: r.name || B[k].m,
-        l: B[k].l,
+        l: B[k].l.concat(r.links || []),
         rec: r,
         cat: r.cat || MK_DEFCAT[k] || "Other",
         builtin: true,
@@ -69,9 +70,10 @@ function makersAll() {
       out[r.key] = {
         key: r.key,
         m: r.name,
-        l: r.website
+        l: (r.website
           ? [["Website", /^https?:/.test(r.website) ? r.website : "https://" + r.website]]
-          : [],
+          : []
+        ).concat(r.links || []),
         rec: r,
         cat: r.cat || "Other",
       };
@@ -123,6 +125,7 @@ function makersView() {
     );
   const cats = MK_CATS.filter((c) => L.some((M) => M.cat === c));
   return `<div class="actions"><button class="btn primary" id="mk-add" type="button">+ Add a supplier</button><button class="btn hv" id="mk-who" type="button">👥 Choose who sees what</button></div>
+    ${MKCSV.barHtml()}
     <div class="notice">The companies that make what you buy – window and door systems, composite and garage doors, timber joinery. Keep their details and brochures here; the brochures also show in the <b>door &amp; window survey</b> under <b>📖 Brochures</b>.</div>
     <input id="mk-q" type="search" placeholder="Search suppliers" value="${esc(S.f.mkq || "")}" aria-label="Search suppliers">
     ${
@@ -140,6 +143,7 @@ function makersView() {
     }`;
 }
 function wireMakers() {
+  MKCSV.wire();
   const A = makersAll();
   if ($("mk-add")) $("mk-add").onclick = () => makerEdit(null);
   if ($("mk-who")) $("mk-who").onclick = () => whoSeesDlg();

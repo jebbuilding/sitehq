@@ -42,3 +42,7 @@
 .mcsv-up{position:relative;overflow:hidden}
 .mcsv-up input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 .mcsv-l{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto;margin-bottom:6px}
+.mkcsv-bar{margin-top:0}
+.mkcsv-up{position:relative;overflow:hidden}
+.mkcsv-up input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.mkcsv-l{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto;margin-bottom:6px}
