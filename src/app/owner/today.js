@@ -22,6 +22,7 @@ import { SOCIAL } from "./social-posts.js";
 import { tdChatCard, tdSitesCard, tdWire } from "./today-cards.js";
 import { qaOpen, tdDeskWire, tdjCard, tdoCard, tdwCard } from "./today-desk.js";
 import { pcTodayCard, pcTodayWire, wuTodayCard, wuTodayWire } from "./week-wrap.js";
+import { SKL } from "../people/skills.js";
 import { kitView } from "../planner/kit-out.js";
 import { LLD } from "../planner/long-lead.js";
 import { eqmView } from "../planner/plant-care.js";
@@ -628,6 +629,7 @@ function todayView() {
     ${KEY.todayCard()}
     ${TLR.todayCard()}
     ${OFF.todayCard()}
+    ${SKL.todayCard()}
     ${JRV.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
@@ -655,6 +657,7 @@ function todayView() {
   KEY.wireToday();
   TLR.wireToday();
   OFF.wireToday();
+  SKL.wireToday();
   JRV.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();

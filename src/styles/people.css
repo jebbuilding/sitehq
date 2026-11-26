@@ -56,3 +56,18 @@
 .im-t .im-sendl{display:block;margin:4px auto 0;font-size:12px;min-height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .tmp-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
 .tmp-dot.tmp-emp{background:#1d7a4c}.tmp-dot.tmp-job{background:#7F191D}.tmp-dot.tmp-mer{background:#6250d6}
+/* skills & catch-ups */
+.skl-tabs{margin:8px 0}
+.skl-wrap{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:10px;margin-top:10px}
+.skl-g{border-collapse:collapse;font-size:13px}
+.skl-g th,.skl-g td{padding:2px 4px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.skl-g tbody th{text-align:left;position:sticky;left:0;background:var(--surface);font-weight:600}
+.skl-c{min-width:44px;min-height:44px;background:none;border:1px solid var(--line);border-radius:8px;font-size:18px;cursor:pointer;color:var(--ink)}
+.skl-add{display:flex;gap:8px;margin-top:10px}
+.skl-add input{flex:1}
+.skl-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.skl-cu{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}
+.skl-cu.late b{color:var(--danger)}
+.skl-txt{white-space:pre-wrap;margin-top:4px}
+.skl-hist{max-height:90vh;overflow:auto;width:min(520px,96vw)}
+.skl-h{padding:8px 0;border-bottom:1px solid var(--line)}

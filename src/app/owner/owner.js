@@ -40,6 +40,7 @@ import { wuOpen } from "./week-wrap.js";
 import { acView } from "../people/access.js";
 import { pvView } from "../people/portal-access.js";
 import { DOW, openPromptSender } from "../people/reminders.js";
+import { SKL } from "../people/skills.js";
 import { dscOpen } from "../photos/doc-scan.js";
 import { openEditFolders, photoTile, photoViewer, siteRec } from "../photos/photos.js";
 import { kitView } from "../planner/kit-out.js";
@@ -977,7 +978,7 @@ function ownerSetup() {
     ${dstCardHtml()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
-    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button><button type="button" class="btn" id="tlr-reg">🗃 Tools register: receipts, serial numbers, insurance</button><button type="button" class="btn" id="num-reg">🔢 My numbers: VAT, UTR, policies, memberships</button><button type="button" class="btn" id="off-reg">🆘 If I'm off: a pack for whoever steps in</button></div>
+    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button><button type="button" class="btn" id="tlr-reg">🗃 Tools register: receipts, serial numbers, insurance</button><button type="button" class="btn" id="num-reg">🔢 My numbers: VAT, UTR, policies, memberships</button><button type="button" class="btn" id="off-reg">🆘 If I'm off: a pack for whoever steps in</button><button type="button" class="btn" id="skl-reg">🧑‍🔧 Skills &amp; catch-ups: who can do what</button></div>
     ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 High Street")}
     ${Object.entries(KINDS)
       .map(([k, K]) =>
@@ -997,6 +998,7 @@ function ownerSetup() {
   if ($("tlr-reg")) $("tlr-reg").onclick = () => TLR.open();
   if ($("num-reg")) $("num-reg").onclick = () => NUM.open();
   if ($("off-reg")) $("off-reg").onclick = () => OFF.open();
+  if ($("skl-reg")) $("skl-reg").onclick = () => SKL.open();
   stWire();
   wireBackup();
   wireCompany();

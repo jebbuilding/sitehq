@@ -227,6 +227,8 @@ initOpening();
         S.toolRegs = all.filter((t) => t.kind === "tool");
         S.myNumbers = all.filter((t) => t.kind === "mynumbers");
         S.offPacks = all.filter((t) => t.kind === "offpack");
+        S.skillSets = all.filter((t) => t.kind === "skills");
+        S.catchUps = all.filter((t) => t.kind === "catchup");
         S.clips = all.filter((t) => t.kind === "clip");
         S.brochures = all.filter((t) => t.kind === "brochure");
         S.samples = all.filter((t) => t.kind === "sample");
