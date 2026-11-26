@@ -2,7 +2,7 @@
 import { $, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { coData } from "../owner/company-details.js";
-export { hrView };
+export { hrLoad, hrView };
 /* From 🏘️ on a drawing. Uses three.js (a 3D engine, loaded when first needed) to build the walls from the plan with
    real holes for the doors and windows, uPVC frames, glass that reflects the sky, stone sills, the storeys, and the
    roof chosen in 🏘️ (gable, hipped, lean-to or flat) with tiles or slates, fascias, soffits and ridge tiles. The

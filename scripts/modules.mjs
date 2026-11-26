@@ -13,7 +13,7 @@ import { root, APP_DIR, ENTRY, STYLES_DIR, parts, order, styleFiles } from "./bu
 import { analyzeApp, BROWSER } from "./analyze.mjs";
 
 // Globals created by the libraries the app loads from the CDN on demand (docs/ARCHITECTURE.md › Runtime).
-const LIBRARIES = new Set(["jspdf", "pdfjsLib", "XLSX", "JSZip", "mammoth", "qrcode"]);
+const LIBRARIES = new Set(["jspdf", "pdfjsLib", "XLSX", "JSZip", "mammoth", "qrcode", "THREE"]);
 const DOC = "docs/MODULES.md";
 
 const { files, owner, duplicates } = analyzeApp();

@@ -73,6 +73,11 @@
         "write": "owner"
       },
       {
+        "path": "scaffold",
+        "read": "owner",
+        "write": "owner"
+      },
+      {
         "path": "visitinds",
         "read": "owner",
         "write": "owner"

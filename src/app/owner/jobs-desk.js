@@ -6,8 +6,9 @@ import { ptOf } from "../clients/portal.js";
 import { viewClient } from "../clients/quick-enquiry.js";
 import { soNewSheet } from "../clients/sign-offs.js";
 import { $, addDays, esc, gbp, iso, shortDay, toast } from "../core/helpers.js";
-import { S, isArchivedSite } from "../core/state.js";
+import { S, isArchivedSite, ownerMode } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
+import { scfDesign } from "../drawing/scaffold-jobs.js";
 import { blobUrl } from "../files/files.js";
 import { allTeam, nameOf, teamIds } from "./owner.js";
 import { nlGo, nlOpenTab, nlSectionView } from "./today.js";
@@ -157,7 +158,7 @@ function jbJobHtml(n, embed) {
     .join(" · ");
   return `<section class="jb-job" aria-label="${esc(n)}">
     <div class="jb-card"><div class="jb-head"><div>${embed ? "" : `<h2>${esc(n)}</h2>`}<span class="who">${esc(dates || "No client or dates yet")}</span><label class="jb-hide"><input type="checkbox" id="jb-hide"${sr.hold ? " checked" : ""}> <span><b>Hide for now</b> – nobody else sees this job (trades, the planner, sign-in) until you untick it</span></label></div>
-      <div class="jb-acts">${c ? `<button type="button" class="btn" id="jb-msg">Message client</button>` : ""}<button type="button" class="btn primary" id="jb-sign">✍️ Sign-off sheet for the client</button>${embed ? "" : `<button type="button" class="btn" id="jb-open">Open the site page</button>`}</div></div>
+      <div class="jb-acts">${ownerMode() ? `<button type="button" class="btn" id="jb-scaf">🏗️ Design scaffold</button>` : ""}${c ? `<button type="button" class="btn" id="jb-msg">Message client</button>` : ""}<button type="button" class="btn primary" id="jb-sign">✍️ Sign-off sheet for the client</button>${embed ? "" : `<button type="button" class="btn" id="jb-open">Open the site page</button>`}</div></div>
       <div class="jb-stages" role="group" aria-label="Stages – tap one to sign it off">${st
         .map(
           (s, i) =>
@@ -205,6 +206,8 @@ function jbWireJob(n) {
   };
   if ($("jb-msg")) $("jb-msg").onclick = () => (ptOf(c) ? openClientChat(c) : viewClient(c));
   if ($("jb-sign")) $("jb-sign").onclick = () => soNewSheet(n, () => render());
+  /* James's scaffold designer, with this job's own design (drawing/scaffold-jobs.js) */
+  if ($("jb-scaf")) $("jb-scaf").onclick = () => scfDesign(n);
   /* stages are signed off, with a record kept (sites/stage-signoff.js) */
   document
     .querySelectorAll("#main .jb-st")

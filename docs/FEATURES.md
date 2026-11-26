@@ -25,6 +25,7 @@ Where to look: search `src/app/` for the function or module named; each file's f
 | 👷 Employees | `peopleView` | person pages, photo change/remove, documents (contract / **subcontractor agreement** `SUBAG`), sign-in-only switch, leavers |
 | Calculator | `calcView` | sums, m², m³, materials, roofing, falls, stairs, plasterboard, timber, aggregates, heating BTU |
 | ✏️ Drawings | `drawView` + notebook page | OneNote-style page, walls/symbols/timber/details, DXF export, scale ruler |
+| 🏗️ Scaffold designer | `scfDesign` / `scfPick` (`drawing/scaffold-jobs.js`), engine `scfEngine` | James's own designer, one design per job (🏗️ Design scaffold on the job, or Jobs & clients › Vans, tools and plant): plan, trace a drawing, 3D, elevations, parts list, picking list and client PDFs on the letterhead; costing owner-only |
 | ⚙️ Setup | `ownerSetup` | company details & logo, PIN, deletion record, deleted items, **📱 QR site sign-in**, **📖 Brochures**, **🎨 Samples**, waste transfer sites, backup |
 
 ## Door & window survey (`DWS`)

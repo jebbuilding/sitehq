@@ -19,7 +19,7 @@ A single-page app written in **vanilla JavaScript** with **no framework**: `src/
 │              ── window.claude.use("user")    ──► identity (id, isOwner, profiles)
 │              ── window.claude.use("downloads")─► "save file" with user consent
 │              ── window.claude.use("sample")  ──► calls Claude (AI helper, sketch reading)
-│  cdnjs: jsPDF 2.5.1, pdf.js 3.11.174, SheetJS 0.18.5, mammoth 1.8.0, JSZip 3.10.1, qrcode-generator 1.4.4
+│  cdnjs: jsPDF 2.5.1, pdf.js 3.11.174, SheetJS 0.18.5, mammoth 1.8.0, JSZip 3.10.1, qrcode-generator 1.4.4, three.js r128, jspdf-autotable 3.8.2
 └───────────────────────────────────────────────────┘
 ```
 The **only place the platform is acquired is the boot IIFE in `src/app/core/boot.js`** (`const use=n=>window.claude.use(n)...; const [db,user,assets,dl]=await Promise.all(...)`), plus `AI.sample` in the "Ask Claude" helper. That boot block is the seam for the production adapter – see *Own hosting* below.
@@ -130,6 +130,7 @@ The stylesheet used to be one 127 KB `<style>` block inside `src/shell.html`, pl
 - ~890 inline `style="…"` attributes in the HTML templates, mostly spacing (`margin-top:8px`); 46 of them hard-code a colour instead of a variable and are worth checking in dark mode;
 - sizes and positions set from script (`el.style.…`);
 - the tiny stylesheet of the print iframe in `files/print.js` (a separate document);
+- the scaffold designer's stylesheet (`SCF_CSS` in `drawing/scaffold-designer.js`): it lives inside the designer's shadow root, so it can't reach the rest of the page and the page's rules can't reach it; its colours are SiteHQ's variables, so dark mode follows;
 - PDF and canvas drawing colours, which are code, not CSS.
 
 **How the regroup was verified.** Moving the block out of `shell.html` left `dist/index.html` byte-for-byte identical. For the regroup, the old and new pages were driven side by side through the same clicks and the computed style of every element and its `::before`/`::after` compared after each step. Every tab and up to 45 buttons per tab were pressed as owner, trade and client at phone width in light mode and as owner at 1100 px in dark mode; every tab was also compared at 390, 600 and 1100 px in light, dark and forced-dark; and the survey editor and the waste transfer note were opened directly. About 1,200 states and 420,000 element checks, with no difference.

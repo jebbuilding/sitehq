@@ -2,7 +2,7 @@
 
 - Live version 522 (26 Nov 2026, from commit ebc4cc9; old copy: trades sent to sitehq.jevul.com). Live URL: `https://claude.ai/artifact/FjLkyzz3jsxrGeowjY2fmh` (also reachable as `claude.ai/code/artifact/77495b28-024d-4d88-a9dc-16dc78e93450`). Owner: James's claude.ai account.
 - Runtime contract **0.2.90** (pinned; newer exist). Type definitions in `platform/types/`.
-- Capabilities: `assets`, `db` (25 rules – `platform/capabilities.json`), `downloads`, `sample`, `user` (`scopes:["profile"]`).
+- Capabilities: `assets`, `db` (26 rules – `platform/capabilities.json`), `downloads`, `sample`, `user` (`scopes:["profile"]`).
 
 ## Publishing (until cutover)
 Publishing is done from a Claude session with the Artifact tool:
