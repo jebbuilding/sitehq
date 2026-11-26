@@ -1,18 +1,20 @@
 /* ================= TOOLS REGISTER: every power tool and hand tool with its photos, receipt, serial number and value – who has it, which van – and a PDF for the insurance ================= */
+import { bossFirst } from "../core/company-names.js";
 import { $, esc, gbp, iso, parse, stamp, toast } from "../core/helpers.js";
 import { S, siteNames } from "../core/state.js";
+import { render } from "../core/tabs-week.js";
 import { openViewer } from "../core/viewer.js";
 import { blobUrl, csvSave, uploadAnyFile, uploadErr, uploadFile } from "../files/files.js";
 import { getFileBlob, loadPdfJs, openFile } from "../files/in-app-files.js";
-import { newId } from "../files/outbox.js";
+import { newId, saveOrKeep, sentToast } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BIN_DAYS } from "../owner/deleted-items.js";
-import { crewIds, nameOf } from "../owner/owner.js";
+import { crewIds, nameOf, teamIds } from "../owner/owner.js";
 import { BRGB, pdfLogo } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { shrinkImage } from "../safety/training.js";
 import { lhFinish, lhFrame } from "../sales/letterhead-setup.js";
-export { TLR };
+export { TLR, initToolSync };
 /* James (Nov 2026): "a database of power tools and hand tools that has the receipt and photos and serial numbers to
    know what tools I have and for insurance purposes … print or PDF the tools that I need the information for. Group
    the tools by who has them to use and what van … link to the trade who has them and the van." 🗃 Tools register
@@ -136,6 +138,7 @@ const TLR = (() => {
   function open(opt) {
     if (opt && opt.g) st.g = opt.g;
     draw();
+    sync();
   }
   function shown() {
     const f = st.q.trim().toLowerCase();
@@ -173,7 +176,7 @@ const TLR = (() => {
     const total = A.reduce((s, t) => s + worth(t), 0);
     openViewer(`<div class="tlr"><div class="vhead"><b>🗃 Tools register</b></div>
       <div class="who">${A.length} tool${A.length === 1 ? "" : "s"} · worth ${esc(gbp(total))} to replace${A.filter((t) => !worth(t)).length ? ` · <span class="tlr-warn">${A.filter((t) => !worth(t)).length} with no value yet</span>` : ""}</div>
-      <div class="actions"><button type="button" class="btn primary" id="tlr-add">＋ Add a tool</button><button type="button" class="btn" id="tlr-pdf">📄 PDF${selN ? " of " + selN + " ticked" : " of all shown"}</button><button type="button" class="btn" id="tlr-csv">⬇ CSV</button></div>
+      <div class="actions"><button type="button" class="btn primary" id="tlr-add">＋ Add a tool</button><button type="button" class="btn" id="tlr-pdf">📄 PDF${selN ? " of " + selN + " ticked" : " of all shown"}</button><button type="button" class="btn" id="tlr-csv">⬇ CSV</button><button type="button" class="btn" id="tlr-tax">🧾 Bought this tax year</button></div>
       <input id="tlr-q" type="search" placeholder="Find: name, make, serial number, who…" value="${esc(st.q)}" aria-label="Find a tool">
       <div class="seg tlr-gs" role="group" aria-label="Group by">${GROUPS.map(([k, l]) => `<button type="button" class="tlr-g" data-g="${k}" aria-pressed="${st.g === k}">${l}</button>`).join("")}</div>
       <label class="inl"><input type="checkbox" id="tlr-gone"${st.gone ? " checked" : ""}> Show sold and scrapped ones</label>
@@ -181,13 +184,13 @@ const TLR = (() => {
         order
           .map(
             (k) =>
-              `<div class="flabel tlr-gh"><span>${esc(k)} (${groups[k].length}) · ${esc(gbp(groups[k].reduce((s, t) => s + worth(t), 0)))}</span><button type="button" class="pillbtn tlr-gsel" data-k="${esc(k)}">${groups[k].every((t) => st.sel.has(key(t))) ? "Untick these" : "Tick these"}</button></div>${groups[
+              `<div class="flabel tlr-gh"><span>${esc(k)} (${groups[k].length}) · ${esc(gbp(groups[k].reduce((s, t) => s + worth(t), 0)))}${st.g === "who" && groups[k][0].who && confirmTxt(groups[k][0].who) ? ` · <span class="tlr-ok">${esc(confirmTxt(groups[k][0].who))}</span>` : ""}</span><button type="button" class="pillbtn tlr-gsel" data-k="${esc(k)}">${groups[k].every((t) => st.sel.has(key(t))) ? "Untick these" : "Tick these"}</button></div>${groups[
                 k
               ]
                 .map((t) => {
                   const ph = (t.photos || [])[0];
                   const pat = t.pat && ["mains", "v110"].includes(t.cat) ? dTo(t.pat) : null;
-                  return `<div class="tlr-row"><input type="checkbox" class="tlr-sel" data-k="${esc(key(t))}"${st.sel.has(key(t)) ? " checked" : ""} aria-label="Tick ${esc(t.name)}"><button type="button" class="tlr-open" data-k="${esc(key(t))}">${ph ? `<img src="${blobUrl(ph.assetId)}" alt="">` : `<span class="tlr-noph" aria-hidden="true">${esc(catName(t.cat).split(" ")[0])}</span>`}<span><b>${esc(t.name || "Tool")}</b>${t.tag ? ` <span class="tag">${esc(t.tag)}</span>` : ""}${t.status ? ` <span class="tag bad">${esc(stName(t.status))}</span>` : ""}<br><span class="who">${esc([[t.make, t.model].filter(Boolean).join(" "), t.serial ? "S/N " + t.serial : "", worth(t) ? gbp(worth(t)) : ""].filter(Boolean).join(" · "))}</span><br><span class="who">${esc(whereTxt(t))}${(t.receipts || []).length ? " · 🧾 receipt" : t.virt ? "" : ' · <span class="tlr-warn">no receipt</span>'}${pat != null && pat <= 30 ? ` · <span class="tlr-warn">PAT ${pat < 0 ? "overdue" : "due " + esc(ukD(t.pat))}</span>` : ""}</span></span></button></div>`;
+                  return `<div class="tlr-row"><input type="checkbox" class="tlr-sel" data-k="${esc(key(t))}"${st.sel.has(key(t)) ? " checked" : ""} aria-label="Tick ${esc(t.name)}"><button type="button" class="tlr-open" data-k="${esc(key(t))}">${ph ? `<img src="${blobUrl(ph.assetId)}" alt="">` : `<span class="tlr-noph" aria-hidden="true">${esc(catName(t.cat).split(" ")[0])}</span>`}<span><b>${esc(t.name || "Tool")}</b>${t.tag ? ` <span class="tag">${esc(t.tag)}</span>` : ""}${t.status ? ` <span class="tag bad">${esc(stName(t.status))}</span>` : ""}${t.who && missingOf(t.who).includes(key(t)) ? ` <span class="tag bad">⚠ ${esc(nameOf(t.who))} hasn't got it</span>` : ""}<br><span class="who">${esc([[t.make, t.model].filter(Boolean).join(" "), t.serial ? "S/N " + t.serial : "", worth(t) ? gbp(worth(t)) : ""].filter(Boolean).join(" · "))}</span><br><span class="who">${esc(whereTxt(t))}${(t.receipts || []).length ? " · 🧾 receipt" : t.virt ? "" : ' · <span class="tlr-warn">no receipt</span>'}${pat != null && pat <= 30 ? ` · <span class="tlr-warn">PAT ${pat < 0 ? "overdue" : "due " + esc(ukD(t.pat))}</span>` : ""}</span></span></button></div>`;
                 })
                 .join("")}`,
           )
@@ -197,6 +200,7 @@ const TLR = (() => {
     const find = (k) => all().find((t) => key(t) === k);
     $("tlr-add").onclick = () => edit(null);
     $("tlr-csv").onclick = () => csv(L);
+    $("tlr-tax").onclick = () => taxYear();
     $("tlr-pdf").onclick = () => {
       const pick = L.filter((t) => st.sel.has(key(t)));
       pdfAsk(pick.length ? pick : L);
@@ -395,6 +399,7 @@ const TLR = (() => {
           try {
             await S.db.doc("todos/" + rec.id).delete();
             S.toolRegs = recs().filter((x) => x.id !== rec.id);
+            sync();
             toast("Tool deleted · in Setup › Deleted items for " + BIN_DAYS + " days");
             d.remove();
             draw();
@@ -465,6 +470,7 @@ const TLR = (() => {
           S.toolRegs = recs()
             .filter((x) => x.id !== id)
             .concat([Object.assign({ id }, data)]);
+          sync();
           toast(r.name + " saved");
           d.remove();
           draw();
@@ -479,7 +485,7 @@ const TLR = (() => {
     if (f && !rec) f.focus();
   }
   /* ⬇ CSV */
-  function csv(L) {
+  function csv(L, fn) {
     const H = [
       "Name",
       "Type",
@@ -532,17 +538,17 @@ const TLR = (() => {
         ].map((x) => (x == null ? "" : String(x))),
       ),
     );
-    csvSave("Tools register.csv", rows);
+    csvSave(fn || "Tools register.csv", rows);
   }
   /* 📄 PDF: ask whether to put the receipts in */
-  function pdfAsk(L) {
+  function pdfAsk(L, tax) {
     if (!L.length) return toast("No tools to put in it");
     const nR = L.reduce((s, t) => s + (t.receipts || []).length, 0);
     const d = document.createElement("div");
     d.className = "dimask";
     d.style.zIndex = "160";
-    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Tools PDF"><b>📄 PDF of ${L.length} tool${L.length === 1 ? "" : "s"}</b>
-      <div class="who">A list with a photo of each, the make, model and serial number, where it was bought, what it's worth and who has it, with the total. Save it, print it or send it to the insurer.</div>
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Tools PDF"><b>📄 ${tax ? esc(tax.title) : "PDF of " + L.length + " tool" + (L.length === 1 ? "" : "s")}</b>
+      <div class="who">${tax ? "For your accountant: what you paid for each, when and where, with the total – for capital allowances. " : ""}A list with a photo of each, the make, model and serial number, where it was bought, what it's worth and who has it, with the total. Save it, print it or send it to the insurer.</div>
       <label class="inl"><input type="checkbox" id="tlr-wr"${nR ? " checked" : " disabled"}> Put the receipts after the list (${nR})</label>
       <div class="dimbtns"><button type="button" class="btn tlr-pc">Cancel</button><button type="button" class="btn primary" id="tlr-go">📄 Make the PDF</button></div></div>`;
     document.body.appendChild(d);
@@ -552,7 +558,7 @@ const TLR = (() => {
       d.remove();
       toast("Making the PDF…");
       try {
-        const out = await pdf(L, wr);
+        const out = await pdf(L, wr, tax);
         await S.dl.save({ filename: out.fn, data: out.blob });
       } catch (e) {
         toast("Couldn't make the PDF");
@@ -590,7 +596,7 @@ const TLR = (() => {
     }
     return out;
   }
-  async function pdf(L, withReceipts) {
+  async function pdf(L, withReceipts, tax) {
     await loadJsPdf();
     const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
     const LH = await lhFrame();
@@ -615,11 +621,12 @@ const TLR = (() => {
       } catch (e) {}
     }
     let y = LH.top || 34;
-    const total = L.reduce((s, t) => s + worth(t), 0);
+    const val = (t) => (tax ? num(t.paid) || worth(t) : worth(t));
+    const total = L.reduce((s, t) => s + val(t), 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(...RED);
-    doc.text("Tools register", M, y);
+    doc.text(tax ? clean(tax.title) : "Tools register", M, y);
     y += 6;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
@@ -630,7 +637,7 @@ const TLR = (() => {
           coData().name,
           "as at " + ukD(iso(new Date())),
           L.length + " item" + (L.length === 1 ? "" : "s"),
-          "total to replace " + gbp(total),
+          (tax ? "total paid " : "total to replace ") + gbp(total),
         ]
           .filter(Boolean)
           .join(" · "),
@@ -645,7 +652,7 @@ const TLR = (() => {
       [M + 24, 50, "Item"],
       [M + 76, 34, "Serial / mark"],
       [M + 112, 30, "Bought"],
-      [M + 144, 18, "Value"],
+      [M + 144, 18, tax ? "Paid" : "Value"],
       [M + 164, CW - 164, "Who / where"],
     ];
     const head = () => {
@@ -709,7 +716,7 @@ const TLR = (() => {
             num(t.paid) ? "Paid " + gbp(num(t.paid)) : "",
             (t.receipts || []).length ? "Receipt kept" : "No receipt",
           ]),
-          cell(4, [worth(t) ? gbp(worth(t)) : "-"]),
+          cell(4, [val(t) ? gbp(val(t)) : "-"]),
           cell(5, [
             t.who ? nameOf(t.who) : "",
             t.van ? vanName(t.van) : "",
@@ -755,7 +762,9 @@ const TLR = (() => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(17, 17, 17);
-    doc.text("Total to replace: " + clean(gbp(total)), M + CW, y + 2, { align: "right" });
+    doc.text((tax ? "Total paid: " : "Total to replace: ") + clean(gbp(total)), M + CW, y + 2, {
+      align: "right",
+    });
     if (withReceipts) {
       for (const t of L)
         for (const r of t.receipts || []) {
@@ -819,10 +828,58 @@ const TLR = (() => {
     return {
       blob: doc.output("blob"),
       fn:
-        (L.length === 1 ? "Tool " + clean(L[0].name) : "Tools register " + iso(new Date()))
+        (tax
+          ? clean(tax.title)
+          : L.length === 1
+            ? "Tool " + clean(L[0].name)
+            : "Tools register " + iso(new Date())
+        )
           .replace(/[^\w\s-]/g, "")
           .trim() + ".pdf",
     };
+  }
+  /* 🧾 Bought this tax year (idea 2): the tools bought between 6 April and 5 April – this tax year or last – with
+     what was paid and the receipts, as a PDF or CSV for the accountant (capital allowances) */
+  function taxStart(d) {
+    const y =
+      d.getMonth() > 3 || (d.getMonth() === 3 && d.getDate() >= 6)
+        ? d.getFullYear()
+        : d.getFullYear() - 1;
+    return y;
+  }
+  function taxYear() {
+    const y0 = taxStart(new Date());
+    const yrs = [y0, y0 - 1];
+    const list = (y) =>
+      all().filter(
+        (t) => !t.virt && t.bought && t.bought >= y + "-04-06" && t.bought <= y + 1 + "-04-05",
+      );
+    const d = document.createElement("div");
+    d.className = "dimask";
+    d.style.zIndex = "160";
+    d.innerHTML = `<div class="dimbox" role="dialog" aria-label="Tools bought this tax year"><b>🧾 Tools bought in a tax year</b>
+      <div class="who">For your accountant: every tool bought between 6 April and 5 April, with what you paid and the receipts.</div>
+      ${yrs
+        .map((y) => {
+          const L = list(y);
+          const tot = L.reduce((s, t) => s + (num(t.paid) || worth(t)), 0);
+          return `<div class="tlr-ty"><b>${y}/${String(y + 1).slice(2)}</b> <span class="who">${L.length} tool${L.length === 1 ? "" : "s"} · ${esc(gbp(tot))} paid${L.filter((t) => !num(t.paid)).length ? " · " + L.filter((t) => !num(t.paid)).length + " with no price" : ""}</span><span class="actions"><button type="button" class="btn tlr-typ" data-y="${y}"${L.length ? "" : " disabled"}>📄 PDF</button><button type="button" class="btn tlr-tyc" data-y="${y}"${L.length ? "" : " disabled"}>⬇ CSV</button></span></div>`;
+        })
+        .join("")}
+      <div class="dimbtns"><button type="button" class="btn tlr-tyx">Close</button></div></div>`;
+    document.body.appendChild(d);
+    d.querySelector(".tlr-tyx").onclick = () => d.remove();
+    const title = (y) => "Tools bought " + y + "-" + String(y + 1).slice(2) + " tax year";
+    d.querySelectorAll(".tlr-typ").forEach(
+      (b) =>
+        (b.onclick = () => {
+          d.remove();
+          pdfAsk(list(+b.dataset.y), { title: title(+b.dataset.y) });
+        }),
+    );
+    d.querySelectorAll(".tlr-tyc").forEach(
+      (b) => (b.onclick = () => csv(list(+b.dataset.y), title(+b.dataset.y) + ".csv")),
+    );
   }
   /* ties to elsewhere */
   const listTxt = (L) =>
@@ -848,8 +905,143 @@ const TLR = (() => {
           out.push({ t, why: dTo(t.pat) < 0 ? "PAT test overdue" : "PAT test due " + ukD(t.pat) });
         if (t.warranty && dTo(t.warranty) >= 0 && dTo(t.warranty) <= 30)
           out.push({ t, why: "warranty ends " + ukD(t.warranty) });
+        if (t.who && missingOf(t.who).includes(key(t)))
+          out.push({ t, why: nameOf(t.who) + " says they haven't got it" });
       });
     return out;
+  }
+  /* 🧰 My tools for the trades (James, Nov 2026: "do them all" – idea 1): each trade's tools are copied to their own
+     sheet (sheets/{id}/signoffs/tools-held, type "toolsheld": items [{k, name, make, model, serial, tag, photo}],
+     stamp); on their Today they tick ✓ Got it or ✗ Not got it and confirm, every two months or when the list changes
+     (sheets/{id}/signoffs/tools-ok, type "toolsok": at, stamp, missing [k], names). James sees when each person last
+     confirmed, and anything they say they haven't got is on his Today. */
+  const OK_DAYS = 60;
+  const sigOf = (id, type) =>
+    ((S.data && S.data.signoffs && S.data.signoffs[id]) || []).find((x) => x.type === type) || null;
+  const okOf = (id) => sigOf(id, "toolsok");
+  const heldItems = (id) =>
+    heldBy(id).map((t) => ({
+      k: key(t),
+      name: t.name || "",
+      make: t.make || "",
+      model: t.model || "",
+      serial: t.serial || "",
+      tag: t.tag || "",
+      photo: ((t.photos || [])[0] || {}).assetId || "",
+    }));
+  const stampOf = (items) =>
+    items
+      .map((x) => x.k + ":" + x.name + ":" + x.serial)
+      .sort()
+      .join("|");
+  const missingOf = (id) => {
+    const ok = okOf(id),
+      held = sigOf(id, "toolsheld");
+    return ok && held && ok.stamp === held.stamp ? ok.missing || [] : [];
+  };
+  let syncT = null,
+    syncing = false;
+  function sync() {
+    if (!S.owner || !S.db) return;
+    clearTimeout(syncT);
+    syncT = setTimeout(syncNow, 1500);
+  }
+  async function syncNow() {
+    if (syncing || !S.owner) return;
+    syncing = true;
+    try {
+      for (const id of teamIds()) {
+        const items = heldItems(id);
+        const stamp = stampOf(items);
+        const have = sigOf(id, "toolsheld");
+        if ((have ? have.stamp : "") === stamp) continue;
+        await S.db
+          .doc("sheets/" + id + "/signoffs/tools-held")
+          .set({ type: "toolsheld", items, stamp, updated: Date.now() })
+          .catch(() => {});
+      }
+    } finally {
+      syncing = false;
+    }
+  }
+  function confirmTxt(id) {
+    const ok = okOf(id),
+      held = sigOf(id, "toolsheld");
+    if (!held || !(held.items || []).length) return "";
+    if (!ok) return "not confirmed yet";
+    const n = (ok.missing || []).length;
+    return (
+      (ok.stamp === held.stamp ? "✓ confirmed " : "confirmed (before the list changed) ") +
+      ukD(iso(new Date(ok.at))) +
+      (n && ok.stamp === held.stamp ? " · " + n + " not got" : "")
+    );
+  }
+  /* the trade's side */
+  let tlrPick = {};
+  function tradeCardHtml() {
+    if (S.owner) return "";
+    const held = (S.mine.signoffs || []).find((x) => x.type === "toolsheld");
+    const items = (held && held.items) || [];
+    if (!items.length) return "";
+    const ok = (S.mine.signoffs || []).find((x) => x.type === "toolsok");
+    const fresh = ok && ok.stamp === held.stamp && Date.now() - (ok.at || 0) < OK_DAYS * 864e5;
+    const miss = new Set(fresh ? ok.missing || [] : []);
+    const rows = items
+      .map((x) => {
+        const gone = fresh ? miss.has(x.k) : tlrPick[x.k] === "no";
+        return `<div class="tlr-mine">${x.photo ? `<img src="${blobUrl(x.photo)}" alt="">` : '<span class="tlr-noph" aria-hidden="true">🧰</span>'}<span><b>${esc(x.name)}</b>${x.tag ? ` <span class="tag">${esc(x.tag)}</span>` : ""}<br><span class="who">${esc([[x.make, x.model].filter(Boolean).join(" "), x.serial ? "S/N " + x.serial : ""].filter(Boolean).join(" · "))}</span></span>${fresh ? (gone ? '<span class="tag bad">Not got it</span>' : "") : `<span class="seg tlr-yn" role="group" aria-label="Have you got ${esc(x.name)}?"><button type="button" data-k="${esc(x.k)}" data-v="yes" aria-pressed="${!gone}">✓ Got it</button><button type="button" data-k="${esc(x.k)}" data-v="no" aria-pressed="${gone}">✗ Not got it</button></span>`}</div>`;
+      })
+      .join("");
+    return fresh
+      ? `<details class="tlr-tcard"><summary><b>🧰 Your tools (${items.length})</b> <span class="who">✓ checked ${esc(ukD(iso(new Date(ok.at))))}</span></summary>${rows}</details>`
+      : `<div class="tlr-tcard" id="tlr-tcard"><b class="tlr-th">🧰 Your tools (${items.length})</b><div class="who">${esc(bossFirst())} has these down as with you. Check you've still got each one.</div>${rows}<button type="button" class="btn primary tlr-wide" id="tlr-tok">✓ That's right – send it</button></div>`;
+  }
+  function wireTrade() {
+    const card = $("tlr-tcard");
+    if (!card) return;
+    card.querySelectorAll(".tlr-yn button").forEach(
+      (b) =>
+        (b.onclick = () => {
+          tlrPick[b.dataset.k] = b.dataset.v;
+          b.parentNode
+            .querySelectorAll("button")
+            .forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        }),
+    );
+    $("tlr-tok").onclick = async () => {
+      const held = (S.mine.signoffs || []).find((x) => x.type === "toolsheld");
+      if (!held) return;
+      const missing = (held.items || []).filter((x) => tlrPick[x.k] === "no");
+      const data = {
+        type: "toolsok",
+        at: Date.now(),
+        stamp: held.stamp,
+        missing: missing.map((x) => x.k),
+        names: missing.map((x) => x.name),
+      };
+      try {
+        const r = await saveOrKeep(
+          "sheets/" + S.me + "/signoffs/tools-ok",
+          "set",
+          data,
+          "Your tools checked",
+        );
+        S.mine.signoffs = (S.mine.signoffs || [])
+          .filter((x) => x.type !== "toolsok")
+          .concat([Object.assign({ id: "tools-ok" }, data)]);
+        tlrPick = {};
+        if (r === "queued") sentToast(r, "Your tools");
+        else
+          toast(
+            missing.length
+              ? "Sent – " + bossFirst() + " will see what you haven't got"
+              : "Thanks – sent",
+          );
+        render();
+      } catch (e) {
+        toast("Couldn't send – try again");
+      }
+    };
   }
   function todayCard() {
     if (!S.owner) return "";
@@ -860,5 +1052,24 @@ const TLR = (() => {
   function wireToday() {
     document.querySelectorAll(".tlr-tgo").forEach((b) => (b.onclick = () => open()));
   }
-  return { open, all, heldBy, onVan, leaverHtml, vanHtml, todayCard, wireToday, pdf, due };
+  return {
+    open,
+    all,
+    heldBy,
+    onVan,
+    leaverHtml,
+    vanHtml,
+    todayCard,
+    wireToday,
+    pdf,
+    due,
+    sync,
+    syncNow,
+    tradeCardHtml,
+    wireTrade,
+  };
 })();
+/* the trades' copies of their tools are brought up to date soon after James opens the app */
+function initToolSync() {
+  setTimeout(() => TLR.syncNow(), 10000);
+}

@@ -10,6 +10,7 @@ import { tsiCardHtml, tsiWire } from "./trade-signin.js";
 import { amForeman } from "../people/foreman.js";
 import { qrsTradeScan } from "../planner/qr-stickers.js";
 import { planEntries } from "../planner/time-off.js";
+import { TLR } from "../planner/tool-register.js";
 import { tradeMakersHtml, wireTradeMakers } from "../purchasing/merchants.js";
 import { openIncident } from "../safety/accidents.js";
 import { KINDS } from "../safety/checklists.js";
@@ -201,6 +202,7 @@ function tlHome() {
       }
       ${have.has("planner") ? `<button type="button" class="btn nl-wide tl-go" data-t="planner">🗓️ Open the planner</button>` : ""}
     </section>
+    ${TLR.tradeCardHtml() ? `<section class="nl-card">${TLR.tradeCardHtml()}</section>` : ""}
     ${
       waits.length
         ? `<section class="nl-card"><div class="nl-cardh"><h2>Waiting for you</h2></div>${waits
@@ -219,6 +221,7 @@ function tlHome() {
       .join("")}</div>
   </div>`;
   if ($("tsi-card")) tsiWire();
+  TLR.wireTrade();
   $("main")
     .querySelectorAll(".tl-go")
     .forEach(

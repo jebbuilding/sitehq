@@ -144,6 +144,7 @@ function kitBook(e) {
             `${e.name} booked out to ${[who ? nameOf(who) : "", site].filter(Boolean).join(" at ")}`,
           );
         kitView();
+        TLR.sync();
       } catch (er) {
         showErr("Couldn't save – check your connection");
       }
@@ -162,6 +163,7 @@ async function kitBack(e) {
     Object.assign(e, up);
     if (r === "queued") sentToast(r, "Booking in");
     else toast(e.name + " back in the yard");
+    TLR.sync();
     kitView();
   } catch (er) {
     toast("Couldn't save");
