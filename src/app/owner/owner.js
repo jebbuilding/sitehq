@@ -31,6 +31,7 @@ import { backupCard, wireBackup } from "./backup.js";
 import { coData, companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
 import { mnuView } from "./menus.js";
+import { NUM } from "./my-numbers.js";
 import { openMonthly } from "./reports.js";
 import { qaSetupCard, qaSetupWire } from "./today-desk.js";
 import { tlOn } from "./trade-look.js";
@@ -975,7 +976,7 @@ function ownerSetup() {
     ${dstCardHtml()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
-    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button><button type="button" class="btn" id="tlr-reg">🗃 Tools register: receipts, serial numbers, insurance</button></div>
+    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button><button type="button" class="btn" id="tlr-reg">🗃 Tools register: receipts, serial numbers, insurance</button><button type="button" class="btn" id="num-reg">🔢 My numbers: VAT, UTR, policies, memberships</button></div>
     ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 High Street")}
     ${Object.entries(KINDS)
       .map(([k, K]) =>
@@ -993,6 +994,7 @@ function ownerSetup() {
   if ($("eqm-reg")) $("eqm-reg").onclick = eqmView;
   if ($("kit-reg")) $("kit-reg").onclick = () => kitView();
   if ($("tlr-reg")) $("tlr-reg").onclick = () => TLR.open();
+  if ($("num-reg")) $("num-reg").onclick = () => NUM.open();
   stWire();
   wireBackup();
   wireCompany();

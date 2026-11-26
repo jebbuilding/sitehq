@@ -225,6 +225,7 @@ initOpening();
         S.longLeads = all.filter((t) => t.kind === "longlead");
         S.vanStocks = all.filter((t) => t.kind === "vanstock");
         S.toolRegs = all.filter((t) => t.kind === "tool");
+        S.myNumbers = all.filter((t) => t.kind === "mynumbers");
         S.clips = all.filter((t) => t.kind === "clip");
         S.brochures = all.filter((t) => t.kind === "brochure");
         S.samples = all.filter((t) => t.kind === "sample");
