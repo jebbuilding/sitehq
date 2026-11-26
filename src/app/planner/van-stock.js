@@ -3,6 +3,7 @@ import { $, esc, toast } from "../core/helpers.js";
 import { S } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { newId } from "../files/outbox.js";
+import { TLR } from "./tool-register.js";
 import { dlgEsc } from "../survey/glass-colours.js";
 export { VNS };
 /* James (Nov 2026, "what's on each van"): 🚐 Vehicles & plant › 📦 What's on each van. Pick a van: 🧰 the tools on it
@@ -77,6 +78,7 @@ const VNS = (() => {
       <button type="button" class="btn${low.length ? " primary" : ""}" id="vns-low">🛒 Restock list${low.length ? " (" + low.length + ")" : ""}</button>
       <div class="flabel">🧰 Tools on this van (${tools.length})</div>
       ${tools.map((e) => `<div class="vns-row"><span><b>${esc(e.name)}</b> ${e.tag ? `<span class="tag">${esc(e.tag)}</span>` : ""}</span><button type="button" class="pillbtn vns-off" data-id="${esc(e.id)}">Take off</button></div>`).join("") || '<div class="who">No tools on it yet.</div>'}
+      ${TLR.vanHtml(cur)}
       ${spare.length ? `<label class="vns-put">Put a tool on<select id="vns-tool"><option value="">Choose a tool…</option>${spare.map((e) => `<option value="${esc(e.id)}">${esc(e.name)}${e.out && e.out.van ? " (on " + esc(vanName(e.out.van)) + ")" : e.out && (e.out.who || e.out.site) ? " (out)" : ""}</option>`).join("")}</select></label>` : ""}
       <div class="flabel">📦 Stock</div>
       <div class="who">How many it has, and how many it should carry. Tap − as things are used.</div>

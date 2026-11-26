@@ -5,6 +5,7 @@ import { S } from "../core/state.js";
 import { render } from "../core/tabs-week.js";
 import { openViewer } from "../core/viewer.js";
 import { nameOf } from "../owner/owner.js";
+import { TLR } from "../planner/tool-register.js";
 export { accessNotice, leaversBlock, openLeaver, wireLeavers };
 function openLeaver(id) {
   const name = nameOf(id),
@@ -18,6 +19,7 @@ function openLeaver(id) {
     <label class="inl lv"><input type="checkbox" id="lv-pd" ${pd.length ? "checked" : ""} ${pd.length ? "" : "disabled"}> Delete personal documents (${pd.length}: licence, passport and so on)</label>
     <label class="inl lv"><input type="checkbox" id="lv-ph"> Delete their site photos (${ph.length})</label>
     <div class="notice" style="margin:0"><b>Kept:</b> timesheets, pay and invoices (keep for 6 years), accident reports, checks, inductions, RAMS and training signatures (keep for at least 3 years).</div>
+    ${TLR.leaverHtml(id)}
     <div class="notice warn" style="margin:0"><b>Last step, after this:</b> remove ${esc(name)} from this page's <b>Share</b> menu so they can't open the app any more.</div>
     ${formFoot(false, "Mark as left")}`,
     async () => {

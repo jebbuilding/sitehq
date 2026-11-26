@@ -7,6 +7,7 @@ import { loadScript } from "../files/in-app-files.js";
 import { obPending, saveOrKeep, sentToast } from "../files/outbox.js";
 import { crewIds, nameOf } from "../owner/owner.js";
 import { qrsOwnerOpen, qrsPrint } from "./qr-stickers.js";
+import { TLR } from "./tool-register.js";
 import { VNS } from "./van-stock.js";
 import { KINDS } from "../safety/checklists.js";
 import { EQ_DATES, daysTo } from "../safety/expiry-dates.js";
@@ -75,7 +76,7 @@ function kitView(q) {
     a === "In the yard" ? -1 : b === "In the yard" ? 1 : a.localeCompare(b),
   );
   openViewer(`<div class="kit"><div class="vhead"><b>🧰 Tools &amp; plant – who has what</b></div>
-    <div class="kit-top"><input id="kit-q" type="search" placeholder="Name or sticker number, e.g. T-004" value="${esc(q || "")}" aria-label="Find a tool"><button type="button" class="btn" id="kit-scan">📷 Scan a sticker</button><button type="button" class="btn" id="kit-qr">🏷 QR stickers</button></div>
+    <div class="kit-top"><input id="kit-q" type="search" placeholder="Name or sticker number, e.g. T-004" value="${esc(q || "")}" aria-label="Find a tool"><button type="button" class="btn" id="kit-scan">📷 Scan a sticker</button><button type="button" class="btn" id="kit-qr">🏷 QR stickers</button><button type="button" class="btn" id="kit-tlr">🗃 Tools register</button></div>
     ${
       keys
         .map(
@@ -107,6 +108,7 @@ function kitView(q) {
   document.querySelectorAll(".kit-out").forEach((b) => (b.onclick = () => kitBook(find(b))));
   document.querySelectorAll(".kit-in").forEach((b) => (b.onclick = () => kitBack(find(b))));
   $("kit-qr").onclick = qrsPrint;
+  $("kit-tlr").onclick = () => TLR.open();
   $("kit-scan").onclick = () => kitScan(qrsOwnerOpen);
 }
 function kitBook(e) {

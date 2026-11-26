@@ -24,6 +24,7 @@ import { pcTodayCard, pcTodayWire, wuTodayCard, wuTodayWire } from "./week-wrap.
 import { kitView } from "../planner/kit-out.js";
 import { LLD } from "../planner/long-lead.js";
 import { eqmView } from "../planner/plant-care.js";
+import { TLR } from "../planner/tool-register.js";
 import { VNS } from "../planner/van-stock.js";
 import { wpCard, wpWire } from "../planner/weather-plan.js";
 import { dueSoonCard } from "../safety/expiry-dates.js";
@@ -624,6 +625,7 @@ function todayView() {
     ${VNS.todayCard()}
     ${RFL.todayCard()}
     ${KEY.todayCard()}
+    ${TLR.todayCard()}
     ${JRV.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
@@ -649,6 +651,7 @@ function todayView() {
   VNS.wireToday();
   RFL.wireToday();
   KEY.wireToday();
+  TLR.wireToday();
   JRV.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
