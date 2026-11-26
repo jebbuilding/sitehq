@@ -6,6 +6,7 @@ import { render } from "../core/tabs-week.js";
 import { newId, obPending, saveOrKeep } from "../files/outbox.js";
 import { coData } from "../owner/company-details.js";
 import { BRGB } from "../photos/photos.js";
+import { PHI } from "./price-history.js";
 import { supMaster } from "./suppliers.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
 import { jcJob, jcSave } from "../sales/job-costs.js";
@@ -77,7 +78,15 @@ async function plSave(supId, items) {
       n: ups.length,
       avg: Math.round((ups.reduce((a, x) => a + x, 0) / ups.length) * 10) / 10,
     });
-  const rec = { kind: "pricelist", sup: supId, items, rises, updated: Date.now() };
+  const now = Date.now();
+  const rec = {
+    kind: "pricelist",
+    sup: supId,
+    items,
+    rises,
+    hist: PHI.histFor(old, items, now),
+    updated: now,
+  };
   await S.db.doc("todos/pl-" + supId).set(rec);
 }
 /* ---------- Merchants › Price lists ---------- */
@@ -85,6 +94,7 @@ function plView(seg) {
   const sups = supMaster();
   $("main").innerHTML = `${seg}
     <div class="notice">Your prices from each merchant, before VAT. Only you see them – they're never sent to the trades. A drawing's 🧮 Quantities uses them to price the job and make an order for each merchant.</div>
+    <div class="actions"><button type="button" class="btn" id="phi-open">📈 Price history: what's gone up</button></div>
     ${
       sups.length
         ? `<div class="pl-list">${sups
@@ -95,6 +105,7 @@ function plView(seg) {
             .join("")}</div>`
         : `<div class="empty"><strong>No merchants yet</strong>Add your merchants on the Merchants tab first.</div>`
     }`;
+  if ($("phi-open")) $("phi-open").onclick = () => PHI.open();
   document
     .querySelectorAll("#main .pl-edit")
     .forEach((b) => (b.onclick = () => plEdit(b.dataset.s)));
