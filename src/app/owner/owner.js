@@ -30,6 +30,7 @@ import { newId } from "../files/outbox.js";
 import { backupCard, wireBackup } from "./backup.js";
 import { coData, companyCard, wireCompany } from "./company-details.js";
 import { auditFirst } from "./deletion-record.js";
+import { OFF } from "./if-im-off.js";
 import { mnuView } from "./menus.js";
 import { NUM } from "./my-numbers.js";
 import { openMonthly } from "./reports.js";
@@ -976,7 +977,7 @@ function ownerSetup() {
     ${dstCardHtml()}
     ${backupCard()}
     <div class="notice">These lists fill the drop-downs your employees pick from. Only you can change them.</div>
-    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button><button type="button" class="btn" id="tlr-reg">🗃 Tools register: receipts, serial numbers, insurance</button><button type="button" class="btn" id="num-reg">🔢 My numbers: VAT, UTR, policies, memberships</button></div>
+    <div class="actions"><button type="button" class="btn" id="eqm-reg">🚐 Vehicles &amp; plant: due dates, bookings and history</button><button type="button" class="btn" id="kit-reg">🧰 Tools &amp; plant: who has what</button><button type="button" class="btn" id="tlr-reg">🗃 Tools register: receipts, serial numbers, insurance</button><button type="button" class="btn" id="num-reg">🔢 My numbers: VAT, UTR, policies, memberships</button><button type="button" class="btn" id="off-reg">🆘 If I'm off: a pack for whoever steps in</button></div>
     ${sec("sites", "Sites", "Job sites for timesheets, photos and plans", S.sites, "e.g. 12 High Street")}
     ${Object.entries(KINDS)
       .map(([k, K]) =>
@@ -995,6 +996,7 @@ function ownerSetup() {
   if ($("kit-reg")) $("kit-reg").onclick = () => kitView();
   if ($("tlr-reg")) $("tlr-reg").onclick = () => TLR.open();
   if ($("num-reg")) $("num-reg").onclick = () => NUM.open();
+  if ($("off-reg")) $("off-reg").onclick = () => OFF.open();
   stWire();
   wireBackup();
   wireCompany();

@@ -311,3 +311,9 @@ body.nl-on #h1[data-date=""]::before{display:none}
 .num-v{font-size:17px;user-select:all;-webkit-user-select:all;word-break:break-word}
 .num-ex{display:grid;grid-template-columns:1fr 1fr 44px;gap:6px;align-items:center;margin-bottom:6px}
 .num-ex .num-exx{min-height:44px}
+/* if I'm off */
+.off-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.off-txt{white-space:pre-wrap}
+.off-p{display:grid;grid-template-columns:1fr 1fr 1fr 44px;gap:6px;align-items:center;margin-bottom:6px}
+.off-p .off-px{min-height:44px}
+@media (max-width:520px){.off-p{grid-template-columns:1fr 1fr 44px}.off-p .off-pp{grid-column:1/3}}

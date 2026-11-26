@@ -13,6 +13,7 @@ import { OWN_TABS, empTabs, render } from "../core/tabs-week.js";
 import { ACS } from "./account-setup.js";
 import { brfCardHtml, brfWire } from "./briefing.js";
 import { coData } from "./company-details.js";
+import { OFF } from "./if-im-off.js";
 import { jbView } from "./jobs-desk.js";
 import { mnuSecHidden, mnuSecRenamed, mnuTabHidden, mnuTabRenamed } from "./menus.js";
 import { startPreview } from "./owner.js";
@@ -626,6 +627,7 @@ function todayView() {
     ${RFL.todayCard()}
     ${KEY.todayCard()}
     ${TLR.todayCard()}
+    ${OFF.todayCard()}
     ${JRV.todayCard()}
     <div class="nl-cols">
       <div class="nl-colL">${tdjCard()}<div class="td-two">${tdChatCard()}${tdSitesCard()}</div></div>
@@ -652,6 +654,7 @@ function todayView() {
   RFL.wireToday();
   KEY.wireToday();
   TLR.wireToday();
+  OFF.wireToday();
   JRV.wireToday();
   wpWire();
   if ($("nl-web")) $("nl-web").onclick = () => webView();
