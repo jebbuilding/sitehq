@@ -18,7 +18,9 @@ src=src.replace('upload:async(b)=>(window.__last=b,','upload:async(b)=>{const id
 eval(src.slice(src.indexOf('const fake='),src.indexOf('(async()=>{\n  const b=await chromium.launch();')).replace('const fake=','global.fake='));
 let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond)bad++;};
 const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null').replace('function render() {','window.render=render;function render() {')
- .replace('const blobUrl = (id) => "/_blob/" + id;','const blobUrl=id=>window.__blobs[id]?URL.createObjectURL(window.__blobs[id]):"/_blob/"+id;');
+ .replace('const blobUrl = (id) => "/_blob/" + id;','const blobUrl=id=>window.__blobs[id]?URL.createObjectURL(window.__blobs[id]):"/_blob/"+id;')
+ /* the tools-list entry's own function, to open it as Jobs & clients › Vans, tools and plant does */
+ .replace('async function scfPick() {','window.__scfPick=scfPick;async function scfPick() {');
 const SITE='4 Rolle Road, Exmouth',SITE2='9 Test Lane, Exmouth';
 const LIBS=[['three.min','threepkg/package/build/three.min.js'],['jspdf.plugin.autotable','autotablepkg/package/dist/jspdf.plugin.autotable.min.js'],['jspdf.umd','jspdfpkg/package/dist/jspdf.umd.min.js'],['pdf.worker','pdfjspkg/package/build/pdf.worker.min.js'],['pdf.min','pdfjspkg/package/build/pdf.min.js']];
 const fetched=[],blocked=[];
@@ -167,6 +169,38 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await close();
  ok(['three.min','jspdf.umd','jspdf.plugin.autotable','pdf.min'].every(k=>fetched.includes(k)),'three.js, jsPDF, autotable and pdf.js loaded through SiteHQ\'s loaders');
  ok(!blocked.length,'nothing else fetched'+(blocked.length?': '+blocked.slice(0,3).join(' '):''));
+ /* 9 a scaffold for an estimate or enquiry, or on its own (James: "new scaffold for estimate or jobs not just current jobs") */
+ ok(page_src.split('window.__scfPick=scfPick;').length===2,'test hook on the Scaffold designer entry found once');
+ const est=()=>p.evaluate(()=>Object.entries(window.__st).filter(([k])=>/^scaffold\/est-/.test(k)).map(([k,v])=>Object.assign({k},v)));
+ await p.evaluate(()=>window.__scfPick());await p.waitForTimeout(500);
+ ok(await p.locator('#scf-new').isVisible()&&/Current jobs/.test(await p.locator('.dimbox').innerText()),'Scaffold designer: ＋ New scaffold, and the current jobs');
+ await p.click('#scf-new');await p.waitForTimeout(300);
+ await p.selectOption('#scf-cl','c2');await p.waitForTimeout(200);
+ ok(await p.inputValue('#scf-nm')==='Bob Lee – Extension','picking the enquiry names it');
+ await p.click('#scf-go');await D.locator('#job').waitFor();await p.waitForTimeout(1200);
+ ok(await val('job')==='Bob Lee – Extension'&&await val('client')==='Bob Lee'&&await D.locator('#job').getAttribute('readonly')===null&&await D.locator('#client').getAttribute('readonly')!==null,'for an enquiry: its name can be typed, the client comes from the client');
+ let E=await est();
+ ok(E.length===1&&E[0].clientId==='c2'&&E[0].name==='Bob Lee – Extension'&&!E[0].site&&Array.isArray(E[0].data.blocks),'saved straight away, tied to the client, not to a job');
+ await D.locator('#job').fill('Bob Lee – extension estimate');await D.locator('#bay').fill('1.8');await p.waitForTimeout(1200);
+ await close();
+ E=await est();
+ ok(E[0].name==='Bob Lee – extension estimate'&&+E[0].data.bay===1.8,'its new name and changes are saved');
+ await p.evaluate(()=>window.__scfPick());await p.waitForTimeout(300);await p.click('#scf-new');await p.waitForTimeout(300);
+ await p.fill('#scf-nm','Barn at Lower Farm');await p.click('#scf-go');await D.locator('#job').waitFor();await p.waitForTimeout(800);
+ ok(await D.locator('#client').getAttribute('readonly')===null,'not for a client: the client and address can be typed');
+ await D.locator('#client').fill('Mr Test');await D.locator('#site').fill('Lower Farm, Testtown');await p.waitForTimeout(1200);
+ await close();
+ E=await est();const barn=E.find(x=>x.name==='Barn at Lower Farm');
+ ok(E.length===2&&!!barn&&barn.client==='Mr Test'&&barn.siteAddr==='Lower Farm, Testtown'&&!barn.clientId,'a scaffold on its own keeps its name, client and address');
+ await p.evaluate(()=>window.__scfPick());await p.waitForTimeout(800);
+ const oth=await p.locator('.scf-oth').allInnerTexts();
+ ok(oth.length===2&&oth.some(t=>/Bob Lee – extension estimate/.test(t)&&/Bob Lee/.test(t))&&oth.some(t=>/Barn at Lower Farm/.test(t)),'listed under Estimates and other scaffolds');
+ await p.locator('.scf-oth',{hasText:'Barn at Lower Farm'}).click();await D.locator('#job').waitFor();await p.waitForTimeout(800);
+ ok(await val('job')==='Barn at Lower Farm'&&await val('client')==='Mr Test'&&await val('site')==='Lower Farm, Testtown','opening it again brings it all back');
+ await D.locator('#jobfrom').click();await p.waitForTimeout(500);
+ ok((await p.locator('.scf-pick').allInnerTexts()).some(t=>/Bob Lee – extension estimate/.test(t)&&/Not on a job/.test(t)),'Copy scaffold design lists the estimate too');
+ await p.locator('.scf-x').click();
+ await close();
  /* 8 phone width, dark mode: the designer's cards take SiteHQ's dark colours and nothing runs off the side */
  await p.setViewportSize({width:430,height:900});await p.evaluate(()=>document.documentElement.setAttribute('data-theme','dark'));
  await openJob(SITE);await p.waitForTimeout(800);

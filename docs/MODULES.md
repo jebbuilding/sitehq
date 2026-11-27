@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 326 files, 6343 KB, 150661 lines.
-- 2857 names declared at the top level (the shared scope); 1476 of them are used by a file other than the one that declares them.
+- 326 files, 6349 KB, 150788 lines.
+- 2863 names declared at the top level (the shared scope); 1476 of them are used by a file other than the one that declares them.
 - 3445 file-to-file dependencies (file A uses at least one name from file B).
 - 30 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 279 files, 12 files depend on each other in a loop (directly or through other files); the other 35 files are outside any loop.
@@ -895,7 +895,7 @@ SCAFFOLD DESIGNER: James's scaffold designer – the building and scaffold on a 
 
 SCAFFOLD JOBS: the scaffold designer on each job – opening it, one design saved per job, the firm's scaffold settings
 
-- 311 lines, 13 KB. Declares 14 names, 2 used elsewhere.
+- 438 lines, 18 KB. Declares 20 names, 2 used elsewhere.
 - **Used elsewhere:** `scfDesign` (1), `scfPick` (1)
 - **Uses names from 15 files:** `core/helpers.js` (3), `core/state.js` (3), `drawing/scaffold-designer.js` (3), `files/in-app-files.js` (3), `sales/letterhead-setup.js` (3), `photos/photos.js` (2), `core/company-names.js` (1), `core/viewer.js` (1), `drawing/house-render.js` (1), `files/files.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `sites/job-details.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
 - **Used by 2 files**
