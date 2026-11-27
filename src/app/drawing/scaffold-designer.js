@@ -66,7 +66,10 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid c
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
 .co{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.co summary{font-weight:600;cursor:pointer;min-height:36px;display:flex;align-items:center}
 .logo-prev{margin-top:8px;display:flex;gap:10px;align-items:center}.logo-prev img{max-height:48px;max-width:180px;background:#fff;padding:4px;border-radius:6px;border:1px solid var(--line)}
-.arow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,.9fr) 40px;gap:6px;align-items:end;margin-bottom:6px}.arow label{margin:0 0 3px}
+@media(max-width:600px){.arow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}}
+.lrow{display:grid;grid-template-columns:52px minmax(0,1fr) auto 44px;gap:6px;align-items:center;margin-bottom:6px}.lrow span{font-size:14px;color:var(--mute)}.lrow .chk{margin:0}
+.liftwarn{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:4px 0 8px}.liftwarn button{text-align:left;min-height:44px;height:auto;padding:6px 12px}
+.arow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,1.1fr) 40px;gap:6px;align-items:end;margin-bottom:6px}.arow label{margin:0 0 3px}
 .cost{margin-top:18px;border-top:2px solid var(--line);padding-top:14px}.cxrow{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:6px;margin-bottom:6px}
 .ctab{width:100%;margin-top:12px}.ctab td{padding:6px 4px}.ctab td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.ctab tr.tot td{font:600 20px Oswald,sans-serif;border-top:2px solid var(--ink)}
 .x{padding:0;font-size:20px;color:var(--mute)}
@@ -141,7 +144,7 @@ const SCF_HTML = `<div class="scaf"><div class="scf-main">
     <label class="chk"><input type="checkbox" id="q_tr"> Temporary roof</label>
     <label class="chk"><input type="checkbox" id="q_pub"> Public footpath at the front (padding, lamps, fan)</label>
     <button class="pri" id="q_go" style="margin-top:12px;width:100%">Draw the building and scaffold</button>
-    <div class="sub" style="margin-top:6px">This replaces the current drawing (Undo brings it back). Fine-tune anything afterwards on the Plan.</div>
+    <div class="sub" style="margin-top:6px" id="q_note">This replaces the current drawing (Undo brings it back). Fine-tune anything afterwards on the Plan.</div>
   </details>
   <h2>Job</h2>
   <div class="sub">The job name, client and address come from the job in SiteHQ.</div>
@@ -667,12 +670,58 @@ function scfEngine(R, host) {
       L = [];
     let h = l1;
     if (H <= l1 + 0.05) return [H];
-    while (h < H - 0.3) {
+    // SiteHQ (James, Nov 2026: "it shows 2 lifts when one is all that is needed"): another lift only when there's more
+    // than 0.7m left above the last one – otherwise the top platform is that lift
+    while (H - h > 0.7) {
       L.push(+h.toFixed(2));
       h += lh;
     }
     L.push(H);
     return L;
+  }
+  // SiteHQ: a run's own lifts (James, Nov 2026: "I should be able to add the heights of each lift needed … I need to
+  // be able to adjust it easily"): b.lifts = [{ h, b }] – the height of each lift and whether it's boarded
+  function liftRows(b) {
+    const raw = b && b.lifts;
+    const R = (
+      Array.isArray(raw)
+        ? raw.map((r) => ({ h: parseFloat(r.h), b: r.b !== false }))
+        : String(raw || "")
+            .split(/[\s,;]+/)
+            .map((x) => ({ h: parseFloat(x), b: true }))
+    )
+      .filter((r) => isFinite(r.h) && r.h >= 0.5 && r.h <= 60)
+      .map((r) => ({ h: +r.h.toFixed(2), b: r.b }))
+      .sort((p, q) => p.h - q.h)
+      .filter((r, i, A) => !i || r.h !== A[i - 1].h);
+    return R.length ? R : null;
+  }
+  // when the top platform doesn't fall on 2m lifts from 2m: the ways to sort it, for James to pick
+  function liftChoices(H) {
+    const out = [],
+      g = (n, f) => [...Array(n).keys()].map(f);
+    const n2 = Math.floor((H + 0.05) / 2),
+      r = +(H - 2 * n2).toFixed(2);
+    if (H <= 2.75 || r < 0.05) return out;
+    [n2, n2 + 1].forEach((n) => {
+      const f = +(H - 2 * (n - 1)).toFixed(2);
+      if (n >= 1 && f >= 1.2 && f <= 3 && Math.abs(f - 2) > 0.05)
+        out.push({
+          t: `${f > 2 ? "Raise" : "Lower"} the first lift to ${f2s(f)}m – then 2m lifts up to ${f2s(H)}m`,
+          rows: g(n, (i) => ({ h: +(f + 2 * i).toFixed(2), b: true })),
+        });
+    });
+    if (n2 >= 1)
+      out.push({
+        t: `Lower the top platform to ${f2s(2 * n2)}m – 2m lifts all the way`,
+        rows: g(n2, (i) => ({ h: 2 * (i + 1), b: true })),
+      });
+    if (n2 >= 1 && r >= 0.5)
+      out.push({
+        t: `Keep 2m lifts, with the ${f2s(2 * n2)}m lift left without boards, and the top platform at ${f2s(H)}m`,
+        rows: [...g(n2, (i) => ({ h: 2 * (i + 1), b: i < n2 - 1 })), { h: +H.toFixed(2), b: true }],
+      });
+    return out;
   }
   function geomW() {
     const bw = Math.max(2, Math.min(8, +S.boards || 4)),
@@ -789,18 +838,28 @@ function scfEngine(R, host) {
 
   // ---------- MODEL: scaffold run along a wall (x along wall, y up, d out from wall) ----------
   function buildRun(b) {
-    const L = num(b.len, 1),
-      H = num(b.ht, 1),
+    const LR = liftRows(b),
+      LF = LR ? LR.map((r) => r.h) : null,
+      L = num(b.len, 1),
+      H = LF ? LF[LF.length - 1] : num(b.ht, 1),
       bayMax = num(b.bay, num(S.bay, 2));
     const n = Math.max(1, Math.ceil(L / bayMax - 1e-9)),
       bay = L / n,
       pairs = n + 1,
       SP = SUP[b.id];
-    const lv = levelsFor(H),
+    const lv = LF || levelsFor(H),
       all = S.baselift ? [0.15, ...lv] : lv,
       bl = [0.15, ...lv, ...(SP ? [Math.min(SP.yin, SP.yout)] : [])],
       nb = Math.min(+(b.boarded || S.boarded), lv.length),
-      boarded = lv.slice(lv.length - nb);
+      boarded = LR ? LR.filter((r) => r.b).map((r) => r.h) : lv.slice(lv.length - nb);
+    // worked-out lifts that aren't 2m apart from 2m (lifts set on the run are as James wants them)
+    const liftWarn =
+      !LR &&
+      !S.autolift &&
+      H > 2.75 &&
+      lv.some((h, i) => Math.abs(h - (i ? lv[i - 1] : 0) - 2) > 0.05)
+        ? { H, lv: lv.slice(), choices: liftChoices(H) }
+        : null;
     const { bw, w, hop, din, dout } = geomW(),
       trT = pick(TUBES, dout + 0.05),
       BT = beamType(S.beam);
@@ -1138,8 +1197,57 @@ function scfEngine(R, host) {
         });
       }
     }
-    // boarded lifts
-    const k = Math.max(0, Math.ceil(bay / 1.2 - 1e-9) - 1);
+    // SiteHQ (James, Nov 2026: "ladders need to go the other way … they need holes through the scaffold"): each ladder
+    // runs along the scaffold inside the platform, in the outer two board widths, from the lift below up through a
+    // hole (a ladder trap) in the boards at the far end of its bay – one transom space long, so the boards either side
+    // still end on a transom. Lifts go in alternate bays (zig-zag) so each ladder stands on whole boards. ac.dir: -1
+    // climbs towards the left. LADG: per ladder, per lift: { j, h, q, dir, xTop, xFoot, y0, hs, he }
+    const k = Math.max(0, Math.ceil(bay / 1.2 - 1e-9) - 1),
+      gapT = bay / (k + 1),
+      zRow = (r) => (din + dout) / 2 - (bw * 0.225) / 2 + 0.1125 + r * 0.225,
+      zl = bw >= 2 ? (zRow(bw - 1) + zRow(bw - 2)) / 2 : (din + dout) / 2;
+    const LADG = LDH.map((ac) => {
+      const base = Math.max(0, Math.min(n - 1, Math.floor(at0(ac) / bay + 1e-6))),
+        d0 = parseFloat(ac.dir) < 0 ? -1 : 1;
+      let prev = null;
+      return lv.map((h, j) => {
+        const q =
+            n > 1
+              ? Math.min(
+                  n - 1,
+                  base + (j % 2 && base < n - 1 ? 1 : 0) - (j % 2 && base === n - 1 ? 1 : 0),
+                )
+              : 0,
+          dir = n > 1 ? d0 : j % 2 ? -d0 : d0,
+          hs = dir > 0 ? X(q) + bay - gapT : X(q),
+          he = dir > 0 ? X(q) + bay : X(q) + gapT,
+          xTop = dir > 0 ? he - 0.12 : hs + 0.12,
+          y0 = prev != null ? prev + 0.12 : GD(xTop) + 0.05,
+          run = (h + 1.05 - y0) / 4,
+          xFoot = xTop - dir * run;
+        prev = h;
+        return { j, h, q, dir, xTop, xFoot, y0, hs, he };
+      });
+    });
+    const holesAt = (h) =>
+      LADG.flat()
+        .filter((g) => Math.abs(g.h - h) < 1e-6)
+        .map((g) => [g.hs, g.he])
+        .sort((a, c) => a[0] - c[0]);
+    const cutRun = (a, c, H) => {
+      let out = [[a, c]];
+      H.forEach(([u, v]) => {
+        out = out.flatMap(([p, q]) =>
+          v <= p || u >= q
+            ? [[p, q]]
+            : [
+                [p, u],
+                [v, q],
+              ],
+        );
+      });
+      return out.filter(([p, q]) => q - p > 0.05);
+    };
     boarded.forEach((h) => {
       const lab = `Lift ${lv.indexOf(h) + 1} at ${f1(h)}m`,
         y = h + 0.06,
@@ -1157,14 +1265,10 @@ function scfEngine(R, host) {
           fit([x, y, din], PUT, "Transom to ledger", lab, "put");
           fit([x, y, dout], PUT, "Transom to ledger", lab, "put");
         }
+      const HL = holesAt(h);
       for (let r = 0; r < bw; r++)
-        boardRun(
-          bx0,
-          bx1 - bx0,
-          by,
-          (din + dout) / 2 - (bw * 0.225) / 2 + 0.1125 + r * 0.225,
-          "Platform boards",
-          lab,
+        (HL.length && r >= bw - 2 ? cutRun(bx0, bx1, HL) : [[bx0, bx1]]).forEach(([u, v]) =>
+          boardRun(u, v - u, by, zRow(r), "Platform boards", lab),
         );
       for (let r = 0; r < hop; r++)
         boardRun(
@@ -1683,62 +1787,48 @@ function scfEngine(R, host) {
       // landing gap in the scaffold's outside guardrail at the top of the ramp
     });
     LDH.forEach((ac, a) => {
-      let prev = null;
-      const base = Math.max(0, Math.min(n - 1, Math.floor(at0(ac) / bay + 1e-6))),
-        acc = `Ladder access ${a + 1}`;
-      lv.forEach((h, j) => {
-        const q =
-            n > 1
-              ? Math.min(
-                  n - 1,
-                  base + (j % 2 && base < n - 1 ? 1 : 0) - (j % 2 && base === n - 1 ? 1 : 0),
-                )
-              : 0,
-          x = X(q) + bay / 2,
-          len = ladPick(h - (prev ?? GD(X(q) + bay / 2)) + 1.05),
-          y0 = prev != null ? prev + 0.12 : GD(X(q) + bay / 2) + 0.05;
+      const acc = `Ladder access ${a + 1}`;
+      LADG[a].forEach((g) => {
+        const len = ladPick(Math.hypot(g.h + 1.05 - g.y0, g.xTop - g.xFoot) + 0.05),
+          lab = `${acc}, lift ${g.j + 1}`;
         lad(
-          [x, y0, dout - 0.2],
-          [x, h + 1.05, din + 0.15],
+          [g.xFoot, g.y0, zl],
+          [g.xTop, g.h + 1.05, zl],
           `${len}m ladder`,
-          "Access ladder, 1m above landing",
-          `${acc}, lift ${j + 1}`,
+          "Access ladder, through a hole in the boards, 1m above the landing",
+          lab,
         );
-        fit(
-          [x - 0.22, h + 0.3, din + 0.2],
-          "Ladder clamp",
-          "Ties ladder to the scaffold",
-          `Lift ${j + 1}`,
-          "clip",
+        [-0.22, 0.22].forEach((o) =>
+          fit(
+            [g.xTop, g.h + 0.3, zl + o],
+            "Ladder clamp",
+            "Ties ladder to the scaffold",
+            `Lift ${g.j + 1}`,
+            "clip",
+          ),
         );
-        fit(
-          [x + 0.22, h + 0.3, din + 0.2],
-          "Ladder clamp",
-          "Ties ladder to the scaffold",
-          `Lift ${j + 1}`,
-          "clip",
-        );
-        box(
-          [x + 0.45, h + 0.6, (din + dout) / 2],
-          [0.04, 0.9, w * 0.6],
-          "Ladder gate",
-          "Self-closing gate at the landing",
-          `Lift ${j + 1}`,
-          "gate",
-        );
-        prev = h;
+        if (boarded.some((x) => Math.abs(x - g.h) < 1e-6))
+          box(
+            [g.dir > 0 ? g.hs : g.he, g.h + 0.6, zl],
+            [0.04, 0.9, 0.5],
+            "Ladder gate",
+            "Self-closing gate at the ladder hole",
+            `Lift ${g.j + 1}`,
+            "gate",
+          );
       });
-      const x = X(base) + bay / 2;
+      const g0 = LADG[a][0];
+      if (!g0) return;
       box(
-        [x, 1.0, dout - 0.22],
-        [0.52, 1.4, 0.03],
+        [g0.xFoot + g0.dir * 0.2, 1.0, zl],
+        [0.03, 1.4, 0.52],
         "Ladder guard",
         "Locks the ladder out of hours",
         acc,
         "lguard",
       );
       box(
-        [x + 0.55, 1.5, dout + 0.06],
+        [g0.xTop + 0.55, 1.5, dout + 0.06],
         [0.13, 0.19, 0.01],
         "Scafftag holder",
         "Shows the latest inspection",
@@ -1746,7 +1836,7 @@ function scfEngine(R, host) {
         "tag",
       );
       box(
-        [x - 0.6, 1.6, dout + 0.06],
+        [g0.xTop - 0.6, 1.6, dout + 0.06],
         [0.4, 0.3, 0.01],
         "Safety sign",
         "Scaffold access sign",
@@ -1893,6 +1983,7 @@ function scfEngine(R, host) {
       lv,
       all,
       boarded,
+      liftWarn,
       w,
       din,
       dout,
@@ -3306,6 +3397,10 @@ function scfEngine(R, host) {
       runs = MODELS.filter((m) => m.kind === "run");
     MODELS.forEach((m) => {
       if (m.err) W.push(esc(m.err));
+      if (m.kind === "run" && m.liftWarn)
+        W.push(
+          `${esc(m.b.name)}: the top platform is at ${f2s(m.H)}m, so the lifts aren't all 2m (${m.lv.map(f2s).join("m, ")}m) – tap the run on the Plan to choose what to do.`,
+        );
       if (m.kind === "run" && m.H > 20)
         W.push(
           `${esc(m.b.name)} is over 20m high — outside TG20 basic set-ups, needs a scaffold design.`,
@@ -6157,6 +6252,18 @@ function scfEngine(R, host) {
         cd = num(c.d, 0.6);
       g += `<rect data-sel="c:${c.id}" style="cursor:move" x="${PX(num0(c.x) - cw / 2)}" y="${PZ(num0(c.z) - cd / 2)}" width="${Math.max(6, cw * s)}" height="${Math.max(5, cd * s)}" fill="#9b4b3a" stroke="${sel ? "#d0262c" : "#4d241b"}" stroke-width="${sel ? 3 : 1.5}"/>`;
     });
+    // SiteHQ: ladders on the Plan – drag one along its run, or onto another run, and the scaffold follows
+    {
+      const { din: ld0, dout: ld1 } = geomW();
+      (S.access || []).forEach((ac, i) => {
+        if (ac.type === "stair" || ac.type === "ramp") return;
+        const b = blockById(ac.block);
+        if (!b) return;
+        const q = toW(b, [num0(ac.at), 0, (ld0 + ld1) / 2]),
+          r = Math.max(9, 0.35 * s);
+        g += `<g data-lad="${i}" style="cursor:grab"><circle cx="${PX(q[0])}" cy="${PZ(q[2])}" r="${r + 8}" fill="transparent"/><circle cx="${PX(q[0])}" cy="${PZ(q[2])}" r="${r}" fill="#fff" stroke="#1f4e79" stroke-width="2.5"/><text x="${PX(q[0])}" y="${PZ(q[2]) + 4}" text-anchor="middle" font-size="${11 * TS}" font-weight="700" fill="#1f4e79">L${i + 1}</text></g>`;
+      });
+    }
     if (showD) {
       const fs = 12 * TS,
         DC = "#1f4e79",
@@ -6320,6 +6427,11 @@ function scfEngine(R, host) {
         drag = null;
         return;
       }
+      const ld = e.target.closest("[data-lad]");
+      if (ld) {
+        drag = { lad: +ld.dataset.lad };
+        return;
+      }
       const rh = e.target.closest("[data-rh]"),
         ro = selObj();
       if (rh && ro && ro.type === "run") {
@@ -6391,6 +6503,27 @@ function scfEngine(R, host) {
         drawPlan();
         return;
       }
+      if (drag.lad != null) {
+        const ac = (S.access || [])[drag.lad];
+        if (!ac) return;
+        const w1 = world(e),
+          { din: ld0, dout: ld1 } = geomW();
+        let best = null;
+        S.blocks
+          .filter((b) => b.type === "run")
+          .forEach((b) => {
+            const L = toL(b, [w1[0], 0, w1[1]]),
+              len = num(b.len, 1),
+              t = Math.max(0, Math.min(len, L[0])),
+              dd = Math.hypot(L[0] - t, L[2] - (ld0 + ld1) / 2);
+            if (!best || dd < best.dd) best = { b, t, dd };
+          });
+        if (!best) return;
+        ac.block = best.b.id;
+        ac.at = Math.round(best.t * 10) / 10;
+        schedule();
+        return;
+      }
       if (drag.rh) {
         const w1 = world(e),
           r = drag.run,
@@ -6429,6 +6562,13 @@ function scfEngine(R, host) {
       if (drag && drag.rh) {
         drag = null;
         propsUI();
+        drawPlan();
+        return;
+      }
+      if (drag && drag.lad != null) {
+        if (moved < 6) toast("Drag the ladder to move it – along this side, or onto another side");
+        drag = null;
+        accUI();
         drawPlan();
         return;
       }
@@ -6535,6 +6675,7 @@ function scfEngine(R, host) {
           F("Name", "name", b.name, { text: 1 }) +
           F("Length (m)", "len", b.len) +
           F("Top platform height (m)", "ht", b.ht) +
+          liftsHtml(b) +
           (wg
             ? CHK(`Follow the ${esc(b.side || "")} wall of ${esc(wg.name)}`, "fit", b.fit !== false)
             : "") +
@@ -6665,6 +6806,45 @@ function scfEngine(R, host) {
       `<div class="pbtn">${btn}<button data-act="delete" class="danger">Delete</button><button data-act="desel">Done</button></div>`;
   }
   const REPROPS = ["fit", "roof", "kind", "type", "ridge", "ftype"];
+  // the run's lifts: a row each – height, boards, take out – and ＋ Add a lift; when worked-out lifts aren't 2m apart,
+  // what James wants to do about it
+  const liftRowsOf = (o) => {
+    const m = MODELS.find((x) => x.b && x.b.id === o.id && x.kind === "run");
+    return (
+      liftRows(o) ||
+      (m ? m.lv.map((h) => ({ h, b: m.boarded.some((x) => Math.abs(x - h) < 1e-6) })) : [])
+    );
+  };
+  function liftsHtml(b) {
+    const m = MODELS.find((x) => x.b && x.b.id === b.id && x.kind === "run"),
+      own = !!liftRows(b),
+      rows = liftRowsOf(b),
+      W = m && m.liftWarn;
+    return `<div class="wide lifts" id="liftsbox"><label>Lifts${own ? "" : " (worked out – change any to set your own)"}</label>
+      ${W ? `<div class="note liftwarn">⚠ The top platform is at ${f2s(W.H)}m, so the lifts can't all be 2m (now ${W.lv.map(f2s).join("m, ")}m). What do you want to do?${W.choices.map((c, i) => `<button data-lopt="${i}">${esc(c.t)}</button>`).join("")}<button data-lopt="keep">Keep it as it is</button></div>` : ""}
+      ${rows
+        .map(
+          (r, i) =>
+            `<div class="lrow"><span>Lift ${i + 1}</span><input data-lh="${i}" type="number" step="0.1" min="0.5" inputmode="decimal" value="${r.h}" aria-label="Lift ${i + 1} height (m)"><label class="chk"><input type="checkbox" data-lb="${i}" ${r.b ? "checked" : ""}> Boards</label><button data-lx="${i}" aria-label="Take out lift ${i + 1}">✕</button></div>`,
+        )
+        .join("")}
+      <div class="bar"><button data-ladd>＋ Add a lift</button>${own ? "<button data-lauto>Work them out again</button>" : ""}</div></div>`;
+  }
+  let liftT = 0;
+  function liftEdit(fn) {
+    const o = selObj();
+    if (!o || o.type !== "run") return;
+    const rows = fn(liftRowsOf(o).map((r) => ({ ...r })));
+    if (rows === null) delete o.lifts;
+    else {
+      o.lifts = rows;
+      const R = liftRows(o);
+      if (R) o.ht = R[R.length - 1].h;
+      else delete o.lifts;
+    }
+    update(true);
+    propsUI();
+  }
   function setField(o, f, t) {
     if (f === "kind" && o && o.eaves !== undefined && BPRE[t.value]) {
       Object.assign(o, BPRE[t.value]);
@@ -7010,6 +7190,7 @@ function scfEngine(R, host) {
    <div>${i ? "" : "<label>Type</label>"}<select data-ai="${i}" data-af="type" aria-label="Access type"><option value="ladder" ${a.type === "ladder" || !a.type ? "selected" : ""}>Ladder</option><option value="stair" ${a.type === "stair" ? "selected" : ""}>Stair tower</option><option value="ramp" ${a.type === "ramp" ? "selected" : ""}>Ramp to lift 1 (1 in 4, runs alongside)</option></select></div>
    <div>${i ? "" : "<label>Scaffold run</label>"}<select data-ai="${i}" data-af="block" aria-label="Scaffold run">${runs.map((r) => `<option value="${r.id}" ${a.block === r.id ? "selected" : ""}>${esc(r.name || "Run")}</option>`).join("")}</select></div>
    <div>${i ? "" : "<label>From left (m)</label>"}<input data-ai="${i}" data-af="at" type="number" step="0.1" min="0" inputmode="decimal" value="${esc(a.at)}" aria-label="Distance from left end"></div>
+   ${a.type === "stair" || a.type === "ramp" ? "<div></div>" : `<div>${i ? "" : "<label>Climbs</label>"}<select data-ai="${i}" data-af="dir" aria-label="Which way the ladder climbs"><option value="1" ${!(parseFloat(a.dir) < 0) ? "selected" : ""}>Towards the right →</option><option value="-1" ${parseFloat(a.dir) < 0 ? "selected" : ""}>← Towards the left</option></select></div>`}
    <button class="x" data-arm="${i}" aria-label="Remove access point">×</button></div>`,
         )
         .join("") || '<div class="sub">No access added yet.</div>';
@@ -7213,6 +7394,29 @@ function scfEngine(R, host) {
 
   R.addEventListener("input", (ev) => {
     const t = ev.target;
+    if (t.dataset.lb !== undefined) {
+      const i = +t.dataset.lb;
+      liftEdit((r) => {
+        if (r[i]) r[i].b = t.checked;
+        return r;
+      });
+      return;
+    }
+    if (t.dataset.lh !== undefined) {
+      const v = parseFloat(t.value),
+        i = +t.dataset.lh;
+      if (!isFinite(v) || v < 0.5) return;
+      clearTimeout(liftT);
+      liftT = setTimeout(
+        () =>
+          liftEdit((r) => {
+            if (r[i]) r[i].h = v;
+            return r;
+          }),
+        600,
+      );
+      return;
+    }
     if (t.dataset.pf) {
       const o = selObj();
       if (!o) return;
@@ -7220,6 +7424,11 @@ function scfEngine(R, host) {
       if (SELB.t === "b" && o.type === "run" && ["x", "z", "ry", "len"].includes(t.dataset.pf))
         o.fit = false;
       if (t.dataset.pf === "fit" && o.fit) refit();
+      // the lifts follow a new height straight away (and say if they can't all be 2m)
+      if (o.type === "run" && t.dataset.pf === "ht") {
+        update(true);
+        if ($("liftsbox")) $("liftsbox").outerHTML = liftsHtml(o);
+      }
       if (t.dataset.pf === "name") {
         accUI();
         tabs();
@@ -7307,6 +7516,29 @@ function scfEngine(R, host) {
   R.addEventListener("click", (ev) => {
     const t = ev.target.closest("button");
     if (!t) return;
+    if (t.dataset.lopt !== undefined) {
+      const o = selObj(),
+        m = o && MODELS.find((x) => x.b && x.b.id === o.id && x.kind === "run");
+      if (t.dataset.lopt === "keep") liftEdit((r) => r);
+      else if (m && m.liftWarn && m.liftWarn.choices[+t.dataset.lopt]) {
+        const c = m.liftWarn.choices[+t.dataset.lopt];
+        liftEdit(() => c.rows.map((x) => ({ ...x })));
+      }
+      return;
+    }
+    if (t.dataset.lx !== undefined) {
+      const i = +t.dataset.lx;
+      liftEdit((r) => (r.length > 1 ? r.filter((_, k) => k !== i) : r));
+      return;
+    }
+    if (t.dataset.ladd !== undefined) {
+      liftEdit((r) => [...r, { h: +((r.length ? r[r.length - 1].h : 0) + 2).toFixed(2), b: true }]);
+      return;
+    }
+    if (t.dataset.lauto !== undefined) {
+      liftEdit(() => null);
+      return;
+    }
     if (t.dataset.act) {
       act(t.dataset.act);
       return;
@@ -8678,7 +8910,7 @@ function scfEngine(R, host) {
     }
     $("q_tbl").checked = $("q_roof").value.startsWith("g");
   });
-  function quickDesign() {
+  function quickDesign(auto) {
     const st = $("q_style").value,
       W = num($("q_w").value, 9.6),
       D = num($("q_d").value, 6),
@@ -9041,11 +9273,44 @@ function scfEngine(R, host) {
     accUI();
     propsUI();
     update(false);
-    setView("3d");
-    reset3D && reset3D();
-    toast("Drawn — check the sizes, then fine-tune on the Plan");
+    if (!auto) {
+      setView("3d");
+      reset3D && reset3D();
+      toast("Drawn — check the sizes, then fine-tune on the Plan");
+    } else if (view === "plan") setView("3d");
+    qdSnap = qdSig();
+    qdNote();
   }
-  $("q_go").addEventListener("click", quickDesign);
+  // SiteHQ (James, Nov 2026: "instead of draw this every time I add or remove something it automatically does it"):
+  // changing anything in Building & scaffold redraws straight away – while the drawing is still the one this form
+  // made. Once it's been changed by hand on the Plan, it isn't wiped: the button redraws (Undo brings it back).
+  let qdSnap = null,
+    qdT = 0;
+  const qdSig = () =>
+    JSON.stringify(snapOf([S.wings, S.chims, S.blocks, S.access, S.removed, S.boards]));
+  const qdOwn = () => !(S.wings || []).length || (qdSnap != null && qdSig() === qdSnap);
+  function qdNote() {
+    const n = $("q_note");
+    if (n)
+      n.textContent = qdOwn()
+        ? "Changes here redraw it straight away. Fine-tune anything afterwards on the Plan."
+        : "You've changed the drawing by hand, so this won't redraw by itself – tap the button to redraw (it replaces your changes; Undo brings them back).";
+  }
+  $("q_go").addEventListener("click", () => quickDesign(false));
+  ["change", "input"].forEach((ev) =>
+    $("qd").addEventListener(ev, (e) => {
+      if (!e.target.closest("input,select") || e.target.id === "q_go") return;
+      clearTimeout(qdT);
+      qdT = setTimeout(
+        () => {
+          if (qdOwn()) quickDesign(true);
+          else qdNote();
+        },
+        ev === "input" ? 700 : 250,
+      );
+    }),
+  );
+  qdNote();
   docOn("keydown", (e) => {
     if (
       (e.ctrlKey || e.metaKey) &&

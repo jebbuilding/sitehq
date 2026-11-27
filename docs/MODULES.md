@@ -6,7 +6,7 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 326 files, 6351 KB, 150815 lines.
+- 326 files, 6363 KB, 151080 lines.
 - 2864 names declared at the top level (the shared scope); 1476 of them are used by a file other than the one that declares them.
 - 3445 file-to-file dependencies (file A uses at least one name from file B).
 - 30 statements run while the page loads, all in `core/boot.js`.
@@ -886,7 +886,7 @@ ROOM SKETCH: draw a room by hand, straighten it, measure it, make it to scale
 
 SCAFFOLD DESIGNER: James's scaffold designer – the building and scaffold on a plan, in 3D and as elevations, the parts list, picking list and client PDFs
 
-- 9110 lines, 345 KB. Declares 3 names, 3 used elsewhere.
+- 9375 lines, 357 KB. Declares 3 names, 3 used elsewhere.
 - **Used elsewhere:** `SCF_CSS` (1), `SCF_HTML` (1), `scfEngine` (1)
 - **Uses names from 0 files:** none
 - **Used by 1 files**

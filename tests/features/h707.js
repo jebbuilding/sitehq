@@ -238,6 +238,69 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  ok(left.c===0&&left.b===0,'deleting the building takes its chimney and chimney scaffold with it');
  await p.screenshot({path:'h707-startover.png'});
  await close();
+ /* 11 Building & scaffold redraws by itself ("instead of draw this every time … it automatically does it") until it's
+    changed by hand; ladders run along the scaffold through a hole in the boards ("ladders need to go the other way …
+    holes through the scaffold … the boards used would change"); dragging a ladder on the Plan moves it and the
+    scaffold follows ("move them about where i want and the scaffold adopts to that") */
+ await p.evaluate(()=>window.__scfBlank());await D.locator('#job').waitFor();await p.waitForTimeout(1200);
+ await D.locator('#q_acc').selectOption('ladder');await p.waitForTimeout(1500);
+ ok((await p.evaluate(()=>window.__scaf.state().wings.length))>0,'picking Ladders draws it straight away – no button');
+ await D.locator('#q_porch').check();await p.waitForTimeout(1500);
+ ok(await p.evaluate(()=>window.__scaf.state().wings.some(w=>w.name==='Porch')),'ticking Porch redraws with the porch');
+ const L=()=>p.evaluate(()=>{const out=[];window.__scaf.models().forEach((m,mi)=>(m.P||[]).forEach(q=>{if(q.k!=='lad'||m.kind!=='run')return;const h=q.b[1]-1.05,xh=q.b[0]-(q.b[0]-q.a[0])/(q.b[1]-q.a[1])*1.05;
+   const near=m.P.filter(r=>r.k==='box'&&r.role==='Platform boards'&&Math.abs(r.c[1]-(h+0.105))<0.02&&Math.abs(r.c[2]-q.a[2])<0.2);
+   out.push({m:mi,along:Math.abs(q.b[2]-q.a[2])<0.01&&Math.abs(q.b[0]-q.a[0])>0.3,dir:Math.sign(q.b[0]-q.a[0]),xa:q.a[0],rowBoards:near.length,blocked:near.filter(r=>Math.abs(r.c[0]-xh)<r.s[0]/2).length})}));return out});
+ const boards=()=>p.evaluate(()=>window.__scaf.models().reduce((t,m)=>t+(m.P||[]).filter(r=>r.k==='box'&&r.role==='Platform boards').length,0));
+ let LD=await L();
+ ok(LD.length>0&&LD.every(x=>x.along),'ladders run along the scaffold, not across it ('+LD.length+' ladders)');
+ ok(LD.some(x=>x.rowBoards>0)&&LD.every(x=>x.blocked===0),'each ladder goes up through a hole in the boards');
+ const bWith=await boards();
+ const acc0=await p.evaluate(()=>JSON.parse(JSON.stringify(window.__scaf.state().access)));
+ await D.locator('#acc select[data-ai="0"][data-af=dir]').selectOption('-1');await p.waitForTimeout(800);
+ LD=await L();
+ ok(LD.filter(x=>x.dir<0).length>=1,'Climbs ← Towards the left turns the ladder round');
+ await D.locator('#vP').click();await p.waitForTimeout(600);
+ const mk=D.locator('[data-lad="0"]');
+ ok(await mk.count()===1,'the ladder shows on the Plan (L1)');
+ const bb=await mk.boundingBox(),sc=await p.evaluate(()=>window.__scaf.PV().s);
+ await p.mouse.move(bb.x+bb.width/2,bb.y+bb.height/2);await p.mouse.down();await p.mouse.move(bb.x+bb.width/2+sc*1.2,bb.y+bb.height/2,{steps:6});await p.mouse.move(bb.x+bb.width/2+sc*2.5,bb.y+bb.height/2,{steps:6});await p.mouse.up();await p.waitForTimeout(800);
+ const acc1=await p.evaluate(()=>window.__scaf.state().access[0]);
+ const LD2=await L();
+ ok((acc1.at!==acc0[0].at||acc1.block!==acc0[0].block)&&JSON.stringify(LD2.map(x=>x.xa))!==JSON.stringify(LD.map(x=>x.xa)),'dragging L1 on the Plan moves it ('+acc0[0].at+'m → '+acc1.at+'m) and the ladders and holes follow');
+ ok(LD2.every(x=>x.blocked===0),'still a clear hole for every ladder after the move');
+ await p.screenshot({path:'h707-ladders-plan.png'});
+ await D.locator('#v3').click();await p.waitForTimeout(1000);await p.screenshot({path:'h707-ladders-3d.png'});
+ await D.locator('#acc .x[data-arm]').first().click();await p.waitForTimeout(800);
+ ok(await boards()!==bWith,'the boards used change with the ladder holes ('+bWith+' pieces with ladders, '+(await boards())+' with one taken out)');
+ /* lifts: one lift when one is enough ("it shows 2 lifts when one is all that is needed"), or the heights typed in */
+ await D.locator('#vP').click();await p.waitForTimeout(500);
+ const rid=await p.evaluate(()=>window.__scaf.state().blocks.find(b=>b.type==='run').id);
+ await D.locator('[data-sel="b:'+rid+'"]').first().click({force:true});await p.waitForTimeout(400);
+ const lvOf=()=>p.evaluate(id=>{const m=window.__scaf.models().find(m=>m.b.id===id);return m?m.lv:null},rid);
+ await D.locator('[data-pf=ht]').fill('2.4');await D.locator('[data-pf=ht]').dispatchEvent('change');await p.waitForTimeout(600);
+ ok(JSON.stringify(await lvOf())==='[2.4]','a 2.4m scaffold has one lift, not two ('+JSON.stringify(await lvOf())+')');
+ /* 2m lifts from 2m: a top platform at 4.6m can't be – it says so and offers the choices */
+ const bOf=()=>p.evaluate(id=>{const m=window.__scaf.models().find(m=>m.b.id===id);return m?m.boarded:null},rid);
+ await D.locator('[data-pf=ht]').fill('4.6');await p.waitForTimeout(800);
+  let warn=await D.locator('.liftwarn').innerText().catch(()=>'');
+ ok(/can't all be 2m/.test(warn)&&/Raise the first lift to 2.60m/.test(warn)&&/Lower the top platform to 4.00m/.test(warn)&&/without boards/.test(warn),'4.6m: ⚠ the lifts can\'t all be 2m – raise the first lift, lower the top, or a lift without boards');
+ await D.locator('.liftwarn button',{hasText:'Raise the first lift'}).click();await p.waitForTimeout(700);
+ ok(JSON.stringify(await lvOf())==='[2.6,4.6]'&&!(await D.locator('.liftwarn').count()),'Raise the first lift: 2.6m and 4.6m, no more warning');
+ await D.locator('[data-lauto]').click();await p.waitForTimeout(700);
+ await D.locator('.liftwarn button',{hasText:'without boards'}).click();await p.waitForTimeout(700);
+ ok(JSON.stringify(await lvOf())==='[2,4,4.6]'&&JSON.stringify(await bOf())==='[2,4.6]','a lift at 4m without boards, top platform at 4.6m');
+ await D.locator('[data-lh="0"]').fill('1.8');await p.waitForTimeout(1200);
+ await D.locator('[data-ladd]').click();await p.waitForTimeout(700);
+ ok(JSON.stringify(await lvOf())==='[1.8,4,4.6,6.6]','each lift can be changed, and ＋ Add a lift adds one 2m above');
+ await D.locator('[data-lx="3"]').click();await p.waitForTimeout(700);
+ await D.locator('[data-lb="1"]').check();await p.waitForTimeout(700);
+ ok(JSON.stringify(await lvOf())==='[1.8,4,4.6]'&&JSON.stringify(await bOf())==='[1.8,4,4.6]','✕ takes a lift out; Boards puts boards on a lift');
+ await p.screenshot({path:'h707-lifts.png'});
+ await D.locator('[data-lauto]').click();await p.waitForTimeout(500);
+ await p.evaluate(()=>{window.__scaf.state().wings[0].name='Changed by hand'});
+ await D.locator('#q_storeys').selectOption('3');await p.waitForTimeout(1200);
+ ok(await p.evaluate(()=>window.__scaf.state().wings[0].name)==='Changed by hand'&&/changed the drawing by hand/.test(await D.locator('#q_note').innerText()),'once it\'s changed by hand it doesn\'t redraw by itself – it says to tap the button');
+ await close();
  /* 8 phone width, dark mode: the designer's cards take SiteHQ's dark colours and nothing runs off the side */
  await p.setViewportSize({width:430,height:900});await p.evaluate(()=>document.documentElement.setAttribute('data-theme','dark'));
  await openJob(SITE);await p.waitForTimeout(800);
