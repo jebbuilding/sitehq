@@ -6,8 +6,8 @@ What each file under `src/app/` declares at its top level, which of those names 
 
 ## Totals
 
-- 326 files, 6349 KB, 150788 lines.
-- 2863 names declared at the top level (the shared scope); 1476 of them are used by a file other than the one that declares them.
+- 326 files, 6351 KB, 150815 lines.
+- 2864 names declared at the top level (the shared scope); 1476 of them are used by a file other than the one that declares them.
 - 3445 file-to-file dependencies (file A uses at least one name from file B).
 - 30 statements run while the page loads, all in `core/boot.js`.
 - Dependency cycles: 279 files, 12 files depend on each other in a loop (directly or through other files); the other 35 files are outside any loop.
@@ -886,7 +886,7 @@ ROOM SKETCH: draw a room by hand, straighten it, measure it, make it to scale
 
 SCAFFOLD DESIGNER: James's scaffold designer – the building and scaffold on a plan, in 3D and as elevations, the parts list, picking list and client PDFs
 
-- 9099 lines, 343 KB. Declares 3 names, 3 used elsewhere.
+- 9110 lines, 345 KB. Declares 3 names, 3 used elsewhere.
 - **Used elsewhere:** `SCF_CSS` (1), `SCF_HTML` (1), `scfEngine` (1)
 - **Uses names from 0 files:** none
 - **Used by 1 files**
@@ -895,8 +895,8 @@ SCAFFOLD DESIGNER: James's scaffold designer – the building and scaffold on a 
 
 SCAFFOLD JOBS: the scaffold designer on each job – opening it, one design saved per job, the firm's scaffold settings
 
-- 438 lines, 18 KB. Declares 20 names, 2 used elsewhere.
-- **Used elsewhere:** `scfDesign` (1), `scfPick` (1)
+- 454 lines, 19 KB. Declares 21 names, 2 used elsewhere.
+- **Used elsewhere:** `scfBlank` (1), `scfDesign` (1)
 - **Uses names from 15 files:** `core/helpers.js` (3), `core/state.js` (3), `drawing/scaffold-designer.js` (3), `files/in-app-files.js` (3), `sales/letterhead-setup.js` (3), `photos/photos.js` (2), `core/company-names.js` (1), `core/viewer.js` (1), `drawing/house-render.js` (1), `files/files.js` (1), `owner/company-details.js` (1), `safety/site-inductions.js` (1), `sites/job-details.js` (1), `sites/project-pages.js` (1), `sites/summary.js` (1)
 - **Used by 2 files**
 

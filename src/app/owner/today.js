@@ -10,7 +10,7 @@ import { WKU } from "../clients/weekly-update.js";
 import { $, esc, store } from "../core/helpers.js";
 import { S, ownerMode } from "../core/state.js";
 import { OWN_TABS, empTabs, render } from "../core/tabs-week.js";
-import { scfPick } from "../drawing/scaffold-jobs.js";
+import { scfBlank } from "../drawing/scaffold-jobs.js";
 import { ACS } from "./account-setup.js";
 import { brfCardHtml, brfWire } from "./briefing.js";
 import { coData } from "./company-details.js";
@@ -216,14 +216,14 @@ const NL_SUBS = [
     "profit spend per site",
     () => nlSub("accounts", { act: "jobs" }),
   ],
-  /* James's scaffold designer, next to the Calculator: pick the job, each keeps its own design (Nov 2026) */
+  /* James's scaffold designer, next to the Calculator: opens on a blank design; saved ones and jobs from inside it (Nov 2026) */
   [
     "scaf",
     "🏗️ Scaffold designer",
     "jobs",
     "Vans, tools and plant",
     "scaffold scaffolding tube fittings boards picking list design 3d elevation",
-    () => scfPick(),
+    () => scfBlank(),
   ],
   [
     "veh",

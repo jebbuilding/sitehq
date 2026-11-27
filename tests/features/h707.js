@@ -20,7 +20,7 @@ let bad=0;const ok=(cond,what)=>{console.log((cond?'✅ ':'❌ ')+what);if(!cond
 const page_src=fs.readFileSync('timesheets.html','utf8').replace('const S = {\n  db: null','const S=window.__S={db:null').replace('function render() {','window.render=render;function render() {')
  .replace('const blobUrl = (id) => "/_blob/" + id;','const blobUrl=id=>window.__blobs[id]?URL.createObjectURL(window.__blobs[id]):"/_blob/"+id;')
  /* the tools-list entry's own function, to open it as Jobs & clients › Vans, tools and plant does */
- .replace('async function scfPick() {','window.__scfPick=scfPick;async function scfPick() {');
+ .replace('async function scfPick() {','window.__scfPick=scfPick;async function scfPick() {').replace('function scfBlank() {','window.__scfBlank=scfBlank;function scfBlank() {');
 const SITE='4 Rolle Road, Exmouth',SITE2='9 Test Lane, Exmouth';
 const LIBS=[['three.min','threepkg/package/build/three.min.js'],['jspdf.plugin.autotable','autotablepkg/package/dist/jspdf.plugin.autotable.min.js'],['jspdf.umd','jspdfpkg/package/dist/jspdf.umd.min.js'],['pdf.worker','pdfjspkg/package/build/pdf.worker.min.js'],['pdf.min','pdfjspkg/package/build/pdf.min.js']];
 const fetched=[],blocked=[];
@@ -48,6 +48,9 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  ok(!(await D.locator('#file').count())&&!(await D.locator('#jobsbtn').count())&&await D.locator('#jobfrom').count()===1,'no AI drawing upload and no own job list; Copy scaffold design from another job is there');
  await p.waitForFunction(()=>window.__scaf&&window.__scaf.T()&&window.__scaf.T().scene,null,{timeout:15000});await p.waitForTimeout(800);
  ok(await D.locator('#load').evaluate(e=>getComputedStyle(e).display)==='none'&&await D.locator('#stage canvas').count()>0,'the 3D model loads');
+ ok((await p.evaluate(()=>window.__scaf.state().wings.length))===0&&await D.locator('#vP').getAttribute('aria-pressed')==='true','a job with no design opens blank, on the Plan, ready to draw');
+ ok(await D.locator('#gstart').isVisible()&&await D.locator('#jobopen').count()===1,'↺ Start over next to Undo, and 📂 Open a saved scaffold or a job');
+ await D.locator('#q_go').click();await p.waitForTimeout(1200);await D.locator('#v3').click();await p.waitForTimeout(1200);
  const pt=await p.evaluate(()=>{const T=window.__scaf.T(),M=window.__scaf.models(),c=T.r.domElement.getBoundingClientRect(),ray=new THREE.Raycaster();
   for(const m of T.pick){const u=m.userData;if(u.k!=='fit')continue;const q0=M[u.e]&&M[u.e].P[u.i];if(!q0||!/coupler/i.test(q0.name))continue;
    const v=new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()).project(T.cam);if(Math.abs(v.x)>0.7||Math.abs(v.y)>0.6)continue;
@@ -200,6 +203,40 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await D.locator('#jobfrom').click();await p.waitForTimeout(500);
  ok((await p.locator('.scf-pick').allInnerTexts()).some(t=>/Bob Lee – extension estimate/.test(t)&&/Not on a job/.test(t)),'Copy scaffold design lists the estimate too');
  await p.locator('.scf-x').click();
+ await close();
+ /* 10 the Scaffold designer tab opens blank ("it should open blank ready for a new design"), nothing kept until something
+    is drawn; 📂 Open a saved scaffold lists the others; ↺ Start over clears it (tap twice) and Undo brings it back; a
+    chimney fades with the building when it's see-through, and goes when its building is deleted */
+ const nEst=(await est()).length;
+ await p.evaluate(()=>window.__scfBlank());await D.locator('#job').waitFor();await p.waitForTimeout(1200);
+ ok(/^New scaffold/.test(await val('job'))&&(await p.evaluate(()=>window.__scaf.state().wings.length))===0&&await D.locator('#vP').getAttribute('aria-pressed')==='true','the Scaffold designer tab opens on a blank design, on the Plan');
+ ok((await est()).length===nEst,'nothing is kept until something is drawn');
+ await D.locator('#jobopen').click();await p.waitForTimeout(800);
+ ok(await p.locator('.scf-oth').count()===2&&await p.locator('#scf-new').count()===1,'📂 Open a saved scaffold or a job lists the saved ones');
+ await p.locator('.scf-x').click();await p.waitForTimeout(300);
+ await D.locator('#q_go').click();await p.waitForTimeout(1500);
+ ok((await p.evaluate(()=>window.__scaf.state().chims.length))>=1,'a quick design with a chimney');
+ await p.waitForTimeout(1200);
+ ok((await est()).length===nEst+1,'once something is drawn it is kept');
+ await D.locator('#v3').click();await p.waitForTimeout(800);
+ for(let i=0;i<3&&!/see/i.test(await D.locator('#bld').innerText());i++){await D.locator('#bld').click();await p.waitForTimeout(600)}
+ const fade=await p.evaluate(()=>{const T=window.__scaf.T();let solid=0,faded=0;T.scene.traverse(o=>{if(o.geometry===T.G.pot){if(o.material.transparent)faded++;else solid++}});return {solid,faded}});
+ ok(fade.solid===0&&fade.faded>=2,'see-through: the chimney pots fade with the building ('+JSON.stringify(fade)+')');
+ await D.locator('#bld').click();await p.waitForTimeout(400);if(!/solid/i.test(await D.locator('#bld').innerText()))await D.locator('#bld').click();
+ await D.locator('#gstart').click();await p.waitForTimeout(200);
+ ok(/Tap again/.test(await D.locator('#gstart').innerText())&&(await p.evaluate(()=>window.__scaf.state().wings.length))>0,'↺ Start over asks you to tap again first');
+ await D.locator('#gstart').click();await p.waitForTimeout(800);
+ const cleared=await p.evaluate(()=>{const S=window.__scaf.state();return S.wings.length+S.chims.length+S.blocks.length});
+ ok(cleared===0&&await D.locator('#vP').getAttribute('aria-pressed')==='true','tap again: cleared, ready to start over');
+ await D.locator('#gundo').click();await p.waitForTimeout(800);
+ ok((await p.evaluate(()=>window.__scaf.state().wings.length))>0,'Undo brings it back');
+ await D.locator('#vP').click();await p.waitForTimeout(500);
+ const wid=await p.evaluate(()=>window.__scaf.state().wings[0].id);
+ await D.locator('[data-sel="w:'+wid+'"]').first().click({force:true});await p.waitForTimeout(400);
+ await D.locator('[data-act=delete]').first().click();await p.waitForTimeout(600);
+ const left=await p.evaluate(()=>{const S=window.__scaf.state();return {c:S.chims.length,b:S.blocks.filter(b=>b.type==='chim').length}});
+ ok(left.c===0&&left.b===0,'deleting the building takes its chimney and chimney scaffold with it');
+ await p.screenshot({path:'h707-startover.png'});
  await close();
  /* 8 phone width, dark mode: the designer's cards take SiteHQ's dark colours and nothing runs off the side */
  await p.setViewportSize({width:430,height:900});await p.evaluate(()=>document.documentElement.setAttribute('data-theme','dark'));

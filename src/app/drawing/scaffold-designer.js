@@ -99,7 +99,7 @@ const SCF_HTML = `<div class="scaf"><div class="scf-main">
 <section class="card">
   <div class="bar">
     <div class="seg" role="group" aria-label="View"><button id="vP" aria-pressed="false">Plan</button><button id="v3" aria-pressed="true">3D model</button><button id="v2" aria-pressed="false">Elevation</button></div>
-    <button id="gundo" aria-label="Undo" disabled>↶ Undo</button><button id="gredo" aria-label="Redo" disabled>↷ Redo</button><button id="bld">Building: solid</button><button id="sty">Style: technical</button>
+    <button id="gundo" aria-label="Undo" disabled>↶ Undo</button><button id="gredo" aria-label="Redo" disabled>↷ Redo</button><button id="gstart" data-lbl="↺ Start over">↺ Start over</button><button id="bld">Building: solid</button><button id="sty">Style: technical</button>
     <div class="tabs" id="tabs"></div>
     <span class="hint" id="hint">Drag to turn · scroll or pinch to zoom · hover or tap a part</span>
   </div>
@@ -116,7 +116,7 @@ const SCF_HTML = `<div class="scaf"><div class="scf-main">
   <div class="layers" id="layers"></div>
   <div class="layers" id="rmbar"></div>
   <div class="stats" id="stats"></div>
-  <div class="plbar"><span>Add:</span><button data-act="addWing">Building</button><button data-act="addCons">Conservatory</button><button data-act="addBird">Birdcage</button><button data-act="addLoad">Loading bay</button><button data-act="addPerson">Person</button><button data-act="addCone">Cone</button><button data-act="addSleeper">Sleeper</button><button data-act="addSign">Sign board</button><button data-act="addRoad">Road</button><button data-act="addPath">Path</button><button data-act="addCrossing">Crossing</button><button data-act="addLamp">Lamppost</button><button data-act="addFence">Fence</button><button id="tracebtn">Trace a drawing</button><input type="file" id="tracefile" class="scf-file" accept="image/*,application/pdf" tabindex="-1" aria-hidden="true"><button id="newdesign" class="ghost">Start a new drawing</button></div>
+  <div class="plbar"><span>Add:</span><button data-act="addWing">Building</button><button data-act="addCons">Conservatory</button><button data-act="addBird">Birdcage</button><button data-act="addLoad">Loading bay</button><button data-act="addPerson">Person</button><button data-act="addCone">Cone</button><button data-act="addSleeper">Sleeper</button><button data-act="addSign">Sign board</button><button data-act="addRoad">Road</button><button data-act="addPath">Path</button><button data-act="addCrossing">Crossing</button><button data-act="addLamp">Lamppost</button><button data-act="addFence">Fence</button><button id="tracebtn">Trace a drawing</button><input type="file" id="tracefile" class="scf-file" accept="image/*,application/pdf" tabindex="-1" aria-hidden="true"><button id="newdesign" class="ghost" data-lbl="Start a new drawing">Start a new drawing</button></div>
   <div class="props" id="props"></div>
 </section>
 
@@ -145,7 +145,7 @@ const SCF_HTML = `<div class="scaf"><div class="scf-main">
   </details>
   <h2>Job</h2>
   <div class="sub">The job name, client and address come from the job in SiteHQ.</div>
-  <div class="jobbar"><button id="jobfrom">Copy scaffold design from another job</button></div>
+  <div class="jobbar"><button id="jobopen">📂 Open a saved scaffold or a job</button><button id="jobfrom">Copy scaffold design from another job</button></div>
   <label for="job">Job name</label><input id="job" readonly>
   <label for="client">Client name</label><input id="client" autocomplete="off" readonly>
   <label for="site">Site address</label><input id="site" autocomplete="off" readonly>
@@ -3787,10 +3787,10 @@ function scfEngine(R, host) {
         if (ub < xmin || ua > xmax) return;
         const yb = (roofYw(num0(c.x), num0(c.z)) ?? 0) - 0.1,
           yt = num(c.top, yb + 1);
-        g += `<rect x="${SX(ua)}" y="${SY(yt)}" width="${(ub - ua) * sc}" height="${(yt - yb) * sc}" fill="url(#${TECH ? "tbr" : "brk"}${mode})" stroke="${TECH ? "#6b737a" : "#5a2c20"}" opacity="${Math.min(1, op + 0.1)}"/><rect x="${SX(ua) - 0.04 * sc}" y="${SY(yt + 0.08)}" width="${(ub - ua + 0.08) * sc}" height="${0.08 * sc}" fill="#777"/>`;
+        g += `<rect x="${SX(ua)}" y="${SY(yt)}" width="${(ub - ua) * sc}" height="${(yt - yb) * sc}" fill="url(#${TECH ? "tbr" : "brk"}${mode})" stroke="${TECH ? "#6b737a" : "#5a2c20"}" opacity="${Math.min(1, op + 0.1)}"/><rect x="${SX(ua) - 0.04 * sc}" y="${SY(yt + 0.08)}" width="${(ub - ua + 0.08) * sc}" height="${0.08 * sc}" fill="#777"${S.bldMode === "see" ? ' opacity="0.3"' : ""}/>`;
         [0.3, 0.7].forEach((f) => {
           const px = ua + (ub - ua) * f;
-          g += `<rect x="${SX(px - 0.09)}" y="${SY(yt + 0.45)}" width="${0.18 * sc}" height="${0.37 * sc}" fill="#b5532f"/>`;
+          g += `<rect x="${SX(px - 0.09)}" y="${SY(yt + 0.45)}" width="${0.18 * sc}" height="${0.37 * sc}" fill="#b5532f"${S.bldMode === "see" ? ' opacity="0.3"' : ""}/>`;
         });
       });
     }
@@ -4949,6 +4949,11 @@ function scfEngine(R, host) {
     Object.assign(M.slateSee, { transparent: true, opacity: 0.18, depthWrite: false });
     M.brickCSee = M.brickC.clone();
     Object.assign(M.brickCSee, { transparent: true, opacity: 0.25, depthWrite: false });
+    // SiteHQ: the chimney's cap and pots fade with the building too (James, Nov 2026: the pots stayed when the building went)
+    M.capSee = M.cap.clone();
+    Object.assign(M.capSee, { transparent: true, opacity: 0.25, depthWrite: false });
+    M.potSee = M.pot.clone();
+    Object.assign(M.potSee, { transparent: true, opacity: 0.25, depthWrite: false });
     const G = {
       cyl: new THREE.CylinderGeometry(0.0242, 0.0242, 1, 14),
       hit: new THREE.CylinderGeometry(0.08, 0.08, 1, 6),
@@ -5508,7 +5513,7 @@ function scfEngine(R, host) {
           [0, D / 2, D, 1],
           [W_, D / 2, D, 1],
         ].forEach(([a2, b2, l2, rot]) => {
-          const q = new THREE.Mesh(G.box, M.cap);
+          const q = new THREE.Mesh(G.box, see ? M.capSee : M.cap);
           q.scale.set(rot ? 0.3 : l2 + 0.3, 0.06, rot ? l2 : 0.3);
           q.position.set(x0 + a2, e + num0(w.parapet) + 0.03, z0 + b2);
           sc.add(q);
@@ -5569,14 +5574,14 @@ function scfEngine(R, host) {
       m.position.set(X, (top + base) / 2, Z);
       m.castShadow = !see;
       sc.add(m);
-      const cap = new THREE.Mesh(G.box, M.cap);
+      const cap = new THREE.Mesh(G.box, see ? M.capSee : M.cap);
       cap.scale.set(cw + 0.08, 0.08, cd + 0.08);
       cap.position.set(X, top + 0.04, Z);
       sc.add(cap);
       [-1, 1].forEach((s) => {
-        const pot = new THREE.Mesh(G.pot, M.pot);
+        const pot = new THREE.Mesh(G.pot, see ? M.potSee : M.pot);
         pot.position.set(X + (s * cw) / 4, top + 0.28, Z);
-        pot.castShadow = true;
+        pot.castShadow = !see;
         sc.add(pot);
       });
     });
@@ -7487,18 +7492,19 @@ function scfEngine(R, host) {
       save();
       logoPrev();
       signPrev();
-    } else if (t.id === "newdesign") {
-      if (!confirmNew) {
-        confirmNew = true;
-        t.textContent = "Tap again to clear the drawing";
+    } else if (t.id === "newdesign" || t.id === "gstart") {
+      // SiteHQ: also ↺ Start over next to Undo (James, Nov 2026: "i need a start over button"); Undo brings it back
+      if (confirmNew !== t.id) {
+        confirmNew = t.id;
+        t.textContent = "Tap again to clear it";
         setTimeout(() => {
-          confirmNew = false;
-          t.textContent = "Start a new drawing";
+          if (confirmNew === t.id) confirmNew = false;
+          t.textContent = t.dataset.lbl;
         }, 3000);
         return;
       }
       confirmNew = false;
-      t.textContent = "Start a new drawing";
+      t.textContent = t.dataset.lbl;
       S.wings = [];
       S.chims = [];
       S.blocks = [];
@@ -7510,7 +7516,9 @@ function scfEngine(R, host) {
       propsUI();
       update(false);
       setView("plan");
-      toast("Cleared — add a building to start");
+      toast("Cleared — add a building to start (Undo brings it back)");
+    } else if (t.id === "jobopen") {
+      if (host.pickOpen) host.pickOpen();
     } else if (t.id === "jobfrom") {
       host.pickCopy(copyFrom);
     } else if (t.id === "copy") {
@@ -9062,12 +9070,15 @@ function scfEngine(R, host) {
   window.__scaf = { models: () => MODELS, state: () => S, T: () => T, H: () => HIST, PV: () => PV };
   sync();
   update();
-  setView("3d");
+  // SiteHQ: a blank design opens on the Plan, ready to add a building
+  const blankStart = !(S.wings || []).length && !(S.blocks || []).length;
+  setView(blankStart ? "plan" : "3d");
   loadThree()
     .then(() => {
       init3D();
       $("load").style.display = "none";
       build3D(false);
+      if (blankStart) setView("plan");
     })
     .catch(() => {
       $("load").textContent = "3D model couldn't load here — showing the plan.";

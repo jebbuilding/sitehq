@@ -14,7 +14,7 @@ import { lhFinish, lhFrame, lhLogoId } from "../sales/letterhead-setup.js";
 import { siteLabel } from "../sites/job-details.js";
 import { projectSites } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
-export { scfDesign, scfPick };
+export { scfBlank, scfDesign };
 /* James (Nov 2026): "add the scaffolding software into the app". His Scaffold Designer (drawing/scaffold-designer.js)
    opens full-page in the viewer from 🏗️ Design scaffold on a job, or from Jobs & clients › Vans, tools and plant ›
    🏗️ Scaffold designer (pick the job). Only James: the designer has his costing in it, and what it saves is
@@ -180,7 +180,12 @@ async function scfOpen(o) {
   if (!hostEl.isConnected) return;
   const job = jd && jd.exists ? jd.data() || {} : null;
   const set = sd && sd.exists ? sd.data() || {} : null;
-  const data = Object.assign({}, (job && job.data) || {});
+  /* nothing saved yet: a blank design, not the sample house (James, Nov 2026: "it should open blank ready for a new
+     design") */
+  const data =
+    job && job.data
+      ? Object.assign({}, job.data)
+      : { wings: [], chims: [], blocks: [], access: [], removed: [] };
   if (data.bgimgId) data.bgimg = await scfImgUrl(data.bgimgId);
   const shared = Object.assign({}, (set && set.shared) || {});
   delete shared.co;
@@ -256,6 +261,7 @@ async function scfOpen(o) {
     loadThree: () => hrLoad(),
     savePdf: (blob, fn) => S.dl.save({ filename: fn, data: blob }),
     pickCopy: (cb) => scfCopyPick(key, cb),
+    pickOpen: () => scfPick(),
   };
   hostEl.innerHTML = "";
   const R = hostEl.attachShadow({ mode: "open" });
@@ -435,4 +441,14 @@ function scfNew() {
     const o = { name, clientId: c ? c.id : "" };
     scfOther(key, o, true);
   };
+}
+/* 🏗️ Scaffold designer from the tools list opens straight on a blank design (James, Nov 2026: "when i open the
+   scaffold tab it should open blank ready for a new design"); it's only kept once something is drawn, and
+   📂 Open a saved scaffold or a job inside it lists the rest */
+function scfBlank() {
+  if (!ownerMode()) return toast("Only " + bossFirst() + " can open the scaffold designer");
+  const name =
+    "New scaffold " + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const key = "est-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  return scfOther(key, { name }, false);
 }
