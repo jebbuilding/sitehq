@@ -5,14 +5,17 @@ import { S, isArchivedSite, ownerMode } from "../core/state.js";
 import { openViewer } from "../core/viewer.js";
 import { hrLoad } from "./house-render.js";
 import { SCF_CSS, SCF_HTML, scfEngine } from "./scaffold-designer.js";
-import { uploadFile } from "../files/files.js";
-import { getFileBlob, loadPdfJs, loadScript } from "../files/in-app-files.js";
+import { isSketch } from "./trade-drawings.js";
+import { blobUrl, uploadAnyFile, uploadErr, uploadFile } from "../files/files.js";
+import { getFileBlob, loadPdfJs, loadScript, openFile } from "../files/in-app-files.js";
 import { coData } from "../owner/company-details.js";
+import { allTeam } from "../owner/owner.js";
 import { BRGB, siteRec } from "../photos/photos.js";
 import { loadJsPdf } from "../safety/site-inductions.js";
+import { shrinkImage } from "../safety/training.js";
 import { lhFinish, lhFrame, lhLogoId } from "../sales/letterhead-setup.js";
 import { siteLabel } from "../sites/job-details.js";
-import { projectSites } from "../sites/project-pages.js";
+import { projectSites, same } from "../sites/project-pages.js";
 import { siteClient } from "../sites/summary.js";
 export { scfBlank, scfDesign };
 /* James (Nov 2026): "add the scaffolding software into the app". His Scaffold Designer (drawing/scaffold-designer.js)
@@ -161,7 +164,7 @@ async function scfOpen(o) {
     if (p) scfQ = scfQ.then(() => p);
   }
   openViewer(
-    `<div class="scf-page"><div class="vhead"><b>🏗️ Scaffold designer</b> <span class="who">${esc(o.title)}</span></div><div id="scf-host"><div class="who">Opening the scaffold design…</div></div></div>`,
+    `<div class="scf-page"><div class="vhead"><b>🏗️ Scaffold designer</b> <span class="who">${esc(o.title)}</span></div><div id="scf-house"></div><div id="scf-host"><div class="who">Opening the scaffold design…</div></div></div>`,
   );
   const hostEl = $("scf-host");
   const key = o.key;
@@ -201,6 +204,7 @@ async function scfOpen(o) {
   let lastJob = null;
   let lastSet = null;
   const meta = Object.assign({}, o.meta);
+  if (job && job.house) meta.house = job.house;
   const host = {
     owner: true,
     initial,
@@ -281,6 +285,7 @@ async function scfOpen(o) {
   try {
     scfLive = scfEngine(R, host);
     scfLive.flush();
+    scfHouse(meta, R);
   } catch (e) {
     R.innerHTML = `<p style="padding:12px">The scaffold designer couldn't start: ${esc(e && e.message)}</p>`;
   }
@@ -451,4 +456,216 @@ function scfBlank() {
     "New scaffold " + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   const key = "est-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   return scfOther(key, { name }, false);
+}
+/* 🏠 About the house (James, Nov 2026: "need to add more details about the house like drawings or photos from saved and
+   while on site"): notes about the house, photos taken on site (📷 Take a photo opens the camera), drawings or photos
+   from the iPad, and ones already saved in SiteHQ – the job's site photos, its plans & drawings, and the client's
+   enquiry photos and documents. Tap one to look at it; ✏️ Trace puts a drawing or photo under the Plan to trace round.
+   Kept with the design: house { notes, media [{ assetId, name, type }] } on its scaffold record. */
+const scfIsImg = (m) =>
+  /^image\//.test(m.type || "") || /\.(jpe?g|png|webp|heic)$/i.test(m.name || "");
+const scfIsPdf = (m) => /pdf/i.test(m.type || "") || /\.pdf$/i.test(m.name || "");
+function scfHouse(meta, R) {
+  const box = $("scf-house");
+  if (!box) return;
+  const H = () => (meta.house = meta.house || { notes: "", media: [] });
+  const store = () => {
+    try {
+      if (scfLive && scfLive.saveNow) scfLive.saveNow();
+    } catch (e) {}
+  };
+  const client = meta.site
+    ? siteClient(meta.site)
+    : meta.clientId
+      ? (S.clients || []).find((c) => c.id === meta.clientId)
+      : null;
+  const site = meta.site || (client && client.site) || "";
+  /* what's already saved for this job or client */
+  function saved() {
+    const out = [];
+    if (site) {
+      allTeam("photos")
+        .filter((p) => same(p.site, site) && p.assetId && !isSketch(p))
+        .sort((a, b) => (b.takenAt || 0) - (a.takenAt || 0))
+        .forEach((p) =>
+          out.push({
+            g: "📷 Site photos",
+            assetId: p.assetId,
+            name: p.caption || "Site photo",
+            type: "image/jpeg",
+          }),
+        );
+      (S.docs || [])
+        .filter((d) => same(d.site, site) && d.assetId && (d.cat === "plans" || d.cat === "specs"))
+        .forEach((d) =>
+          out.push({
+            g: "📐 Plans & drawings",
+            assetId: d.assetId,
+            name: d.title || d.fileName || "Drawing",
+            type: d.contentType || "",
+          }),
+        );
+    }
+    if (client) {
+      (client.media || [])
+        .filter((m) => m.id && (m.kind || "photo") !== "video" && m.kind !== "voice")
+        .forEach((m) =>
+          out.push({
+            g: "🏡 " + (client.name || "Client") + "'s photos & sketches",
+            assetId: m.preview || m.id,
+            name: m.note || (m.kind === "sketch" ? "Sketch" : "Photo"),
+            type: "image/jpeg",
+          }),
+        );
+      (client.docs || [])
+        .filter((d) => d.assetId)
+        .forEach((d) =>
+          out.push({
+            g: "📄 " + (client.name || "Client") + "'s documents",
+            assetId: d.assetId,
+            name: d.name || "Document",
+            type: d.type || "application/pdf",
+          }),
+        );
+    }
+    return out;
+  }
+  function draw() {
+    const h = H();
+    box.innerHTML = `<details class="scf-hs" open><summary><b>🏠 About the house</b> <span class="who">${h.media.length ? h.media.length + " photo" + (h.media.length === 1 ? "" : "s") + " & drawing" + (h.media.length === 1 ? "" : "s") : "photos, drawings and notes"}</span></summary>
+      <label for="scf-hn">Notes about the house<textarea id="scf-hn" maxlength="3000" placeholder="e.g. Access down the side path. Glass conservatory roof at the back. Overhead cable on the left. Soft ground at the front.">${esc(h.notes || "")}</textarea></label>
+      <div class="scf-hg">${h.media
+        .map(
+          (m, i) =>
+            `<div class="scf-hm"><button type="button" class="scf-ho" data-i="${i}" aria-label="Open ${esc(m.name || "photo")}">${scfIsImg(m) ? `<img src="${blobUrl(m.assetId)}" alt="">` : `<span class="scf-hp">📄</span>`}<span class="who">${esc(m.name || "")}</span></button><span class="scf-hb">${scfIsImg(m) || scfIsPdf(m) ? `<button type="button" class="pillbtn scf-ht" data-i="${i}">✏️ Trace</button>` : ""}<button type="button" class="linkdanger scf-hx" data-i="${i}" aria-label="Take out ${esc(m.name || "this one")}">✕</button></span></div>`,
+        )
+        .join("")}</div>
+      <div class="actions"><label class="btn primary scf-hf">📷 Take a photo<input type="file" accept="image/*" capture="environment" multiple id="scf-hcam"></label><label class="btn scf-hf">📄 Add a drawing or photo<input type="file" accept="image/*,application/pdf,.pdf" multiple id="scf-hfile"></label><button type="button" class="btn" id="scf-hsaved">📁 From what's saved</button></div>
+      <div class="who" id="scf-hst" role="status"></div></details>`;
+    let nt = 0;
+    $("scf-hn").oninput = (e) => {
+      clearTimeout(nt);
+      nt = setTimeout(() => {
+        H().notes = e.target.value;
+        store();
+      }, 800);
+    };
+    box.querySelectorAll(".scf-ho").forEach(
+      (b) =>
+        (b.onclick = () => {
+          const m = H().media[+b.dataset.i];
+          if (m) openFile(m.assetId, m.name, m.type);
+        }),
+    );
+    box.querySelectorAll(".scf-hx").forEach(
+      (b) =>
+        (b.onclick = (e) => {
+          if (b.dataset.armed !== "1") {
+            b.dataset.armed = "1";
+            b.textContent = "Sure?";
+            return;
+          }
+          H().media.splice(+b.dataset.i, 1);
+          store();
+          draw();
+        }),
+    );
+    box.querySelectorAll(".scf-ht").forEach(
+      (b) =>
+        (b.onclick = async () => {
+          const m = H().media[+b.dataset.i];
+          if (!m) return;
+          try {
+            const bl = await getFileBlob(m.assetId);
+            const f = new File([bl], m.name || (scfIsPdf(m) ? "Drawing.pdf" : "Photo.jpg"), {
+              type: bl.type || m.type || (scfIsPdf(m) ? "application/pdf" : "image/jpeg"),
+            });
+            const inp = R.getElementById("tracefile");
+            const dt = new DataTransfer();
+            dt.items.add(f);
+            inp.files = dt.files;
+            inp.dispatchEvent(new Event("change", { bubbles: true }));
+          } catch (x) {
+            toast("Couldn't open that one to trace");
+          }
+        }),
+    );
+    const add = async (files, from) => {
+      const L = [...(files || [])];
+      if (!L.length) return;
+      if (!S.assets) return toast(uploadErr({ code: "not_granted" }));
+      const st = $("scf-hst");
+      for (let i = 0; i < L.length; i++) {
+        const f = L[i];
+        if (st) st.textContent = `Saving ${i + 1} of ${L.length}…`;
+        try {
+          const img = /^image\//.test(f.type || "");
+          let b = f;
+          if (img)
+            try {
+              b = await shrinkImage(f, 1800);
+            } catch (x) {}
+          const nm = img
+            ? (from === "cam"
+                ? "On site " + new Date().toLocaleDateString("en-GB")
+                : (f.name || "Photo").replace(/\.[^.]+$/, "")) + ".jpg"
+            : f.name || "Drawing.pdf";
+          const a = await uploadAnyFile(b, nm);
+          H().media.push({
+            assetId: a.id,
+            name: nm,
+            type: img ? "image/jpeg" : f.type || "application/pdf",
+          });
+        } catch (x) {
+          toast("Couldn't save " + (f.name || "that one"));
+        }
+      }
+      store();
+      draw();
+    };
+    $("scf-hcam").onchange = (e) => {
+      const f = e.target.files;
+      add(f, "cam").then(() => {});
+      e.target.value = "";
+    };
+    $("scf-hfile").onchange = (e) => {
+      const f = e.target.files;
+      add(f, "file").then(() => {});
+      e.target.value = "";
+    };
+    $("scf-hsaved").onclick = () => pickSaved();
+  }
+  function pickSaved() {
+    const L = saved();
+    const have = new Set(H().media.map((m) => m.assetId));
+    const d = document.createElement("div");
+    d.className = "dimask";
+    d.style.zIndex = "160";
+    const groups = [...new Set(L.map((x) => x.g))];
+    d.innerHTML = `<div class="dimbox scf-hpick" role="dialog" aria-label="Photos and drawings already saved"><b>📁 From what's saved</b>
+      <div class="who">${site || client ? "Tick the ones to keep with this scaffold." : "This scaffold isn't for a job or a client yet, so there's nothing saved to pick from."}</div>
+      ${
+        groups
+          .map(
+            (g) =>
+              `<div class="flabel">${esc(g)}</div><div class="scf-hg">${L.map((x, i) => (x.g === g ? `<label class="scf-hm scf-hpk"><input type="checkbox" data-i="${i}" ${have.has(x.assetId) ? "checked disabled" : ""}>${scfIsImg(x) ? `<img src="${blobUrl(x.assetId)}" alt="">` : `<span class="scf-hp">📄</span>`}<span class="who">${esc(x.name)}</span></label>` : "")).join("")}</div>`,
+          )
+          .join("") ||
+        (site || client ? '<div class="who">Nothing saved for this job yet.</div>' : "")
+      }
+      <div class="dimbtns"><button type="button" class="btn scf-hpx">Cancel</button><button type="button" class="btn primary scf-hpok">Add the ticked ones</button></div></div>`;
+    document.body.appendChild(d);
+    d.querySelector(".scf-hpx").onclick = () => d.remove();
+    d.querySelector(".scf-hpok").onclick = () => {
+      d.querySelectorAll("input[data-i]:checked:not(:disabled)").forEach((c) => {
+        const x = L[+c.dataset.i];
+        if (x && !have.has(x.assetId))
+          H().media.push({ assetId: x.assetId, name: x.name, type: x.type });
+      });
+      d.remove();
+      store();
+      draw();
+    };
+  }
+  draw();
 }

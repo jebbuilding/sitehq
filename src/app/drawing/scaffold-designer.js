@@ -1344,8 +1344,39 @@ function scfEngine(R, host) {
               "mesh",
             );
     });
+    // SiteHQ (James, Nov 2026: "access onto the gable are needed when gable hops are added"): a ladder up to each
+    // table lift from the platform below it, through a hole in the table lift's boards like the main ladders, in a bay
+    // where its foot stands on whole boards (clear of any hole below)
+    const TLAD_HOLES = [];
+    const TLAD = TBL.map((r, t) => {
+      const lower = TBL.filter((u) => u.h < r.h - 1e-6 && u.i0 <= r.i0 && u.i1 >= r.i1).reduce(
+          (m, u) => Math.max(m, u.h),
+          H,
+        ),
+        below = lower > H + 1e-6 ? TLAD_HOLES.filter((x) => Math.abs(x.h - lower) < 1e-6) : null,
+        holesBelow = below ? below.map((x) => [x.hs, x.he]) : holesAt(H),
+        y0 = lower + 0.12,
+        bays = [...Array(r.i1 - r.i0).keys()].map((k) => r.i0 + k),
+        midB = Math.floor((r.i0 + r.i1 - 1) / 2),
+        order = bays.sort((a, c) => Math.abs(a - midB) - Math.abs(c - midB) || a - c);
+      for (const q of order)
+        for (const dir of [t % 2 ? -1 : 1, t % 2 ? 1 : -1]) {
+          const gl = stdX[q + 1] - stdX[q],
+            kk = Math.max(0, Math.ceil(gl / 1.2 - 1e-9) - 1),
+            gT = gl / (kk + 1),
+            hs = dir > 0 ? stdX[q + 1] - gT : stdX[q],
+            he = dir > 0 ? stdX[q + 1] : stdX[q] + gT,
+            xTop = dir > 0 ? he - 0.12 : hs + 0.12,
+            xFoot = xTop - (dir * (r.h + 1.05 - y0)) / 4;
+          if (holesBelow.some(([u, v]) => xFoot > u - 0.15 && xFoot < v + 0.15)) continue;
+          const g = { h: r.h, q, dir, hs, he, xTop, xFoot, y0 };
+          TLAD_HOLES.push(g);
+          return g;
+        }
+      return null;
+    });
     // gable table lifts
-    TBL.forEach((r) => {
+    TBL.forEach((r, t) => {
       const lab = `Gable table lift at ${f1(r.h)}m`,
         xa = stdX[r.i0],
         xb = stdX[r.i1],
@@ -1378,15 +1409,40 @@ function scfEngine(R, host) {
           fit([x, y, dout], PUT, "Transom to ledger", lab, "put");
         }
       }
+      const TL = TLAD[t];
       for (let q = 0; q < bw; q++)
-        boardRun(
-          xa - 0.1,
-          xb - xa + 0.2,
-          by,
-          (din + dout) / 2 - (bw * 0.225) / 2 + 0.1125 + q * 0.225,
-          "Table lift boards",
-          lab,
+        (TL && q >= bw - 2
+          ? cutRun(xa - 0.1, xb + 0.1, [[TL.hs, TL.he]])
+          : [[xa - 0.1, xb + 0.1]]
+        ).forEach(([u, v]) => boardRun(u, v - u, by, zRow(q), "Table lift boards", lab));
+      if (TL) {
+        const len = ladPick(Math.hypot(TL.h + 1.05 - TL.y0, TL.xTop - TL.xFoot) + 0.05),
+          al = `Ladder to the gable table lift at ${f1(r.h)}m`;
+        lad(
+          [TL.xFoot, TL.y0, zl],
+          [TL.xTop, TL.h + 1.05, zl],
+          `${len}m ladder`,
+          "Access ladder up to the gable table lift, through a hole in its boards",
+          al,
         );
+        [-0.22, 0.22].forEach((o) =>
+          fit(
+            [TL.xTop, TL.h + 0.3, zl + o],
+            "Ladder clamp",
+            "Ties ladder to the scaffold",
+            al,
+            "clip",
+          ),
+        );
+        box(
+          [TL.dir > 0 ? TL.hs : TL.he, TL.h + 0.6, zl],
+          [0.04, 0.9, 0.5],
+          "Ladder gate",
+          "Self-closing gate at the ladder hole",
+          al,
+          "gate",
+        );
+      }
       toe(xa - 0.12, xb + 0.12, by, dout - 0.04, 0, "Toe board", lab);
       const et = pick(BOARDS, w + 0.1);
       [xa - 0.12, xb + 0.12].forEach((x) =>
@@ -9360,6 +9416,11 @@ function scfEngine(R, host) {
   return {
     state: () => S,
     flush,
+    // SiteHQ: save now (the house details changed)
+    saveNow: () => {
+      clearTimeout(jobT);
+      return storeJob();
+    },
     destroy() {
       OFF.forEach((f) => f());
       const p = flush();

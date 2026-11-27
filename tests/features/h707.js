@@ -254,6 +254,10 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  let LD=await L();
  ok(LD.length>0&&LD.every(x=>x.along),'ladders run along the scaffold, not across it ('+LD.length+' ladders)');
  ok(LD.some(x=>x.rowBoards>0)&&LD.every(x=>x.blocked===0),'each ladder goes up through a hole in the boards');
+ /* "access onto the gable are needed when gable hops are added": a ladder up to every table lift, through a hole */
+ const TB=await p.evaluate(()=>{let tbl=0,lads=0,blocked=0;window.__scaf.models().forEach(m=>{if(m.kind!=='run')return;tbl+=m.tbl||0;(m.P||[]).forEach(q=>{if(q.k!=='lad'||!/gable table lift/.test(q.role))return;lads++;const h=q.b[1]-1.05,xh=q.b[0]-(q.b[0]-q.a[0])/(q.b[1]-q.a[1])*1.05;
+   blocked+=m.P.filter(r=>r.k==='box'&&r.role==='Table lift boards'&&Math.abs(r.c[1]-(h+0.105))<0.02&&Math.abs(r.c[2]-q.a[2])<0.2&&Math.abs(r.c[0]-xh)<r.s[0]/2).length})});return {tbl,lads,blocked}});
+ ok(TB.tbl>0&&TB.lads===TB.tbl&&TB.blocked===0,'a ladder up onto every gable table lift, through a hole in its boards ('+TB.lads+' of '+TB.tbl+')');
  const bWith=await boards();
  const acc0=await p.evaluate(()=>JSON.parse(JSON.stringify(window.__scaf.state().access)));
  await D.locator('#acc select[data-ai="0"][data-af=dir]').selectOption('-1');await p.waitForTimeout(800);
@@ -300,6 +304,35 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await p.evaluate(()=>{window.__scaf.state().wings[0].name='Changed by hand'});
  await D.locator('#q_storeys').selectOption('3');await p.waitForTimeout(1200);
  ok(await p.evaluate(()=>window.__scaf.state().wings[0].name)==='Changed by hand'&&/changed the drawing by hand/.test(await D.locator('#q_note').innerText()),'once it\'s changed by hand it doesn\'t redraw by itself – it says to tap the button');
+ await close();
+ /* 12 🏠 About the house ("more details about the house like drawings or photos from saved and while on site"): notes,
+    a photo taken on site, the job's saved site photo and plan picked in, a photo traced under the Plan; all still there
+    when it's opened again */
+ await p.evaluate(async(site)=>{const c=document.createElement('canvas');c.width=320;c.height=240;const g=c.getContext('2d');g.fillStyle='#9ab';g.fillRect(0,0,320,240);g.fillStyle='#733';g.fillRect(60,60,200,140);
+  const bl=await new Promise(r=>c.toBlob(r,'image/jpeg',0.8));window.__blobs.hph1=bl;window.__blobs.hpl1=bl;
+  await window.__S.db.doc('sheets/emp1/photos/hph1').set({site,assetId:'hph1',caption:'Front of the house',takenAt:Date.now(),date:'2026-11-20'});
+  await window.__S.db.doc('docs/hpl1').set({site,cat:'plans',assetId:'hpl1',fileName:'Ground floor plan.jpg',title:'Ground floor plan',contentType:'image/jpeg'});},SITE);
+ await p.waitForTimeout(800);
+ await openJob(SITE);
+ ok(await p.locator('#scf-house .scf-hs').count()===1&&await p.locator('#scf-hcam').getAttribute('capture')==='environment','🏠 About the house, with 📷 Take a photo (opens the camera)');
+ await p.fill('#scf-hn','Access down the side path. Glass conservatory roof at the back.');await p.waitForTimeout(1500);
+ const cam=await p.evaluate(async()=>{const c=document.createElement('canvas');c.width=200;c.height=150;c.getContext('2d').fillRect(10,10,50,50);return (await new Promise(r=>c.toBlob(r,'image/jpeg',0.8))).arrayBuffer().then(b=>Array.from(new Uint8Array(b)))});
+ await p.setInputFiles('#scf-hcam',{name:'IMG_1.jpg',mimeType:'image/jpeg',buffer:Buffer.from(cam)});await p.waitForTimeout(1500);
+ ok(await p.locator('#scf-house .scf-hm').count()===1,'a photo taken on site is added');
+ await p.click('#scf-hsaved');await p.waitForTimeout(500);
+ const pk=await p.locator('.scf-hpick').innerText();
+ ok(/Site photos/.test(pk)&&/Front of the house/.test(pk)&&/Plans & drawings/.test(pk)&&/Ground floor plan/.test(pk),'From what\'s saved: the job\'s site photos and plans & drawings');
+ await p.locator('.scf-hpick input[data-i]').nth(0).check();await p.locator('.scf-hpick input[data-i]').nth(1).check();
+ await p.click('.scf-hpok');await p.waitForTimeout(1500);
+ ok(await p.locator('#scf-house .scf-hm').count()===3,'the ticked ones are added (3 now)');
+ await p.locator('#scf-house .scf-ht').nth(1).click();await p.waitForTimeout(1500);
+ ok(await p.evaluate(()=>!!window.__scaf.state().bgimg),'✏️ Trace puts it under the Plan to trace round');
+ await p.waitForTimeout(1200);
+ const hrec=await p.evaluate(()=>{const k=Object.keys(window.__st).find(k=>/^scaffold\/job-/.test(k)&&window.__st[k]&&window.__st[k].house);return k?window.__st[k].house:null});
+ ok(hrec&&/side path/.test(hrec.notes)&&hrec.media.length===3,'kept with the scaffold design: the notes and 3 photos & drawings');
+ await p.screenshot({path:'h707-house.png'});
+ await close();await openJob(SITE);
+ ok(/side path/.test(await p.inputValue('#scf-hn'))&&await p.locator('#scf-house .scf-hm').count()===3,'opened again: all still there');
  await close();
  /* 8 phone width, dark mode: the designer's cards take SiteHQ's dark colours and nothing runs off the side */
  await p.setViewportSize({width:430,height:900});await p.evaluate(()=>document.documentElement.setAttribute('data-theme','dark'));

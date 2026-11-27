@@ -249,3 +249,20 @@ body>.dimask.cb3-sg{z-index:320}
 .scf-page .vhead .who{font-weight:400}
 .scf-list{display:flex;flex-direction:column;gap:8px;margin:10px 0;max-height:55vh;overflow:auto}
 .scf-list .scf-pick{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:44px}
+/* scaffold designer: about the house */
+.scf-hs{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin:0 0 12px}
+.scf-hs summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.scf-hg{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.scf-hm{display:flex;flex-direction:column;gap:4px;width:124px}
+.scf-ho{display:flex;flex-direction:column;gap:4px;background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.scf-hm img,.scf-hp{width:124px;height:92px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:30px}
+.scf-hm .who{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scf-hb{display:flex;gap:4px;align-items:center}
+.scf-hb .scf-hx{min-width:44px;min-height:44px}
+.scf-hf{position:relative;overflow:hidden}
+.scf-hf input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.scf-hpick{max-height:90vh;overflow:auto;width:min(620px,96vw)}
+.scf-hpk{position:relative;cursor:pointer}
+.scf-hpk input{position:absolute;top:6px;left:6px;width:24px;height:24px;z-index:1}
+.scf-hf:not(.primary){color:var(--ink);font-weight:600}
+.scf-hb .scf-ht{white-space:nowrap;min-height:44px;padding:0 10px}
